@@ -241,4 +241,19 @@ public class ECDH {
     	//Curves.P384.getKeyPairGenerator();
     	//Curves.P521.getKeyPairGenerator();
     }
+
+    /** Return the public key as a byte[] in network format */
+	public byte[] getPublicKeyNetworkFormat() {
+        byte[] ret = getPublicKey().getEncoded();
+        if(ret.length == curve.modulusSize) {
+        	return ret;
+        } else if(ret.length > curve.modulusSize) {
+        	throw new IllegalStateException("Encoded public key too long: should be "+curve.modulusSize+" bytes but is "+ret.length);
+        } else {
+        	Logger.warning(this, "Padding public key from "+ret.length+" to "+curve.modulusSize+" bytes");
+        	byte[] out = new byte[curve.modulusSize];
+        	System.arraycopy(ret, 0, out, 0, ret.length);
+        	return ret;
+        }
+	}
 }

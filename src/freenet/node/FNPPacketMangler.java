@@ -369,7 +369,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuth(payload, pn, peer, oldOpennetPeer);
 			pn.reportIncomingBytes(length);
@@ -425,7 +425,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuthAnon(payload, peer);
 			return true;
@@ -482,7 +482,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		byte[] realHash = SHA256.digest(payload);
 
-		if(Arrays.equals(realHash, hash)) {
+		if(MessageDigest.isEqual(realHash, hash)) {
 			// Got one
 			processDecryptedAuthAnonReply(payload, peer, pn);
 			return true;
@@ -794,7 +794,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// Check IDr'
 			offset += modulusLength;
 			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
-			if(!Arrays.equals(expectedIdentityHash, crypto.identityHash)) {
+			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.identityHash)) {
 				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
 				return;
 			}
@@ -1081,7 +1081,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myNi = null;
 		synchronized (pn) {
 			for(byte[] buf : pn.jfkNoncesSent) {
-				if(Arrays.equals((negType > 8 ?  SHA256.digest(buf) : buf), nonceInitiator))
+				if(MessageDigest.isEqual(nonceInitiator, (negType > 8 ?  SHA256.digest(buf) : buf)))
 					myNi = buf;
 			}
 		}

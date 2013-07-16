@@ -425,12 +425,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		method = method.toUpperCase();
 		if(!(method.equals("POST") || method.equals("GET"))) 
 			return null; // no irregular form sending methods
-		// Everything is allowed to / - updating the node, shutting it down, everything.
-		// Why? Becuase it's all protected by formPassword anyway.
-		// FIXME whitelist? Most things are okay if the user is prompted for a confirmation...
 		// FIXME what about /downloads/ /friends/ etc?
 		// Allow access to Library for searching, form passwords are used for actions such as adding bookmarks
-		if(action.equals("/") || action.equals("/library/"))
+		if(action.equals("/library/"))
 			return action;
 		try {
 			URI uri = URIPreEncoder.encodeURI(action);

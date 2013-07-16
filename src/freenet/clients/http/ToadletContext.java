@@ -12,6 +12,7 @@ import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Object represents context for a single request. Is used as a token,
@@ -20,16 +21,24 @@ import freenet.support.api.BucketFactory;
 public interface ToadletContext {
 
 	/**
-	 * Write reply headers.
+	 * Write reply headers, with a customised modification time, e.g. for fproxy content.
 	 * @param code HTTP code.
 	 * @param desc HTTP code description.
-	 * @param mvt Any extra headers.
+	 * @param mvt Any extra headers. Can be null.
 	 * @param mimeType The MIME type of the reply.
 	 * @param length The length of the reply.
 	 * @param mTime The modification time of the data being sent or null for 'now' and disabling caching
 	 */
 	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
 	
+	/**
+	 * Write reply headers.
+	 * @param code HTTP code.
+	 * @param desc HTTP code description.
+	 * @param mvt Any extra headers. Can be null.
+	 * @param mimeType The MIME type of the reply.
+	 * @param length The length of the reply.
+	 */
 	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
 	/**
@@ -77,6 +86,31 @@ public interface ToadletContext {
 	 * Get the form password required for "dangerous" operations.
 	 */
 	String getFormPassword();
+
+	/**
+	 * Check a request for the form password, and send an error to the client if the password is
+	 * not valid.
+	 * @param request The request to check.
+	 * @param redirectTo The location to redirect to if the password is not set.
+	 * 
+	 * @return Whether the request contains a valid form password
+	 */
+	boolean checkFormPassword(HTTPRequest request, String redirectTo) throws ToadletContextClosedException, IOException;
+	
+	/**
+	 * Check a request for the form password, and send an error to the client if the password is
+	 * not valid.
+	 * @param request The request to check.
+	 * @return Whether the request contains a valid form password
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 */
+	boolean checkFormPassword(HTTPRequest request) throws ToadletContextClosedException, IOException;
+
+	/** Check a request for the form password. Some Toadlet's will want to e.g. send a confirmation page
+	 * using the submitted data if the form password isn't present. 
+	 * @throws IOException */
+	boolean hasFormPassword(HTTPRequest request) throws IOException;
 	
 	/**
 	 * Get the user alert manager.

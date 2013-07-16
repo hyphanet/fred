@@ -73,6 +73,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		if (ctx.isAllowedFullAccess()) contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		contentNode.addChild(createInsertBox(pageMaker, ctx, ctx.isAdvancedModeEnabled()));
+		if(ctx.isAdvancedModeEnabled())
+			contentNode.addChild(createFilterBox(pageMaker, ctx));
 		
 		writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
 	}
@@ -95,6 +97,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
+		if(isAdvancedModeEnabled)
+			insertForm.addChild("#", " "+l10n("insertCanonicalAdvanced"));
 		insertForm.addChild("br");
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -104,6 +108,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		insertForm.addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
+		if(isAdvancedModeEnabled)
+			insertForm.addChild("#", " "+l10n("insertRandomAdvanced"));
 		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("input",
@@ -168,50 +174,70 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		                NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
 		insertForm.addChild("#", " \u00a0 ");
 		
-		// controls for previewing the filtered file
-		if (isAdvancedModeEnabled) {
-		    insertForm.addChild("br");
-		    insertForm.addChild("br");
-		    insertForm.addChild("#", l10n("filterFileLabel"));
-		    insertForm.addChild("br");
-		    insertForm.addChild("br");
-            
-	        // apply read filter, write filter, or both
-	        //TODO: radio buttons to select, once ContentFilter supports write filtering
-		    insertForm.addChild("input",
-	                new String[] { "type", "name", "value" },
-	                new String[] { "hidden", "filter-operation", FilterOperation.BOTH.toString() });
-
-	        // display in browser or save to disk
-		    insertForm.addChild("input",
-	                new String[] { "type", "name", "value" },
-	                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString() });
-		    insertForm.addChild("#", ContentFilterToadlet.l10n("displayResultLabel"));
-		    insertForm.addChild("br");
-		    insertForm.addChild("input",
-	                new String[] { "type", "name", "value" },
-	                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString() });
-		    insertForm.addChild("#", ContentFilterToadlet.l10n("saveResultLabel"));
-		    insertForm.addChild("br");
-		    insertForm.addChild("br");
-	        
-            // mime type
-            insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeLabel") + ": ");
-            insertForm.addChild("input",
-                    new String[] { "type", "name", "value" },
-                    new String[] { "text", "mime-type", "" });
-            insertForm.addChild("br");
-            insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeText"));
-            insertForm.addChild("br");
-            insertForm.addChild("br");
-	        
-		    insertForm.addChild("input",
-	                new String[] { "type", "name", "value" },
-	                new String[] { "submit", "filter-upload",
-	                        ContentFilterToadlet.l10n("filterFileFilterLabel") });
-		}
-		
 		return insertBox;
+	}
+	
+	private HTMLNode createFilterBox (PageMaker pageMaker, ToadletContext ctx) {
+		/* the insert file box */
+		InfoboxNode infobox = pageMaker.getInfobox(
+		        l10n("previewFilterFile"), "insert-queue", true);
+		HTMLNode insertBox = infobox.outer;
+		HTMLNode insertContent = infobox.content;
+		HTMLNode insertForm = ctx.addFormChild(insertContent, ContentFilterToadlet.PATH, "filterPreviewForm");
+	    insertForm.addChild("#", l10n("filterFileLabel"));
+	    insertForm.addChild("br");
+	    insertForm.addChild("br");
+        
+        // apply read filter, write filter, or both
+        //TODO: radio buttons to select, once ContentFilter supports write filtering
+	    insertForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "hidden", "filter-operation", FilterOperation.BOTH.toString() });
+
+        // display in browser or save to disk
+	    insertForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "radio", "result-handling", ResultHandling.DISPLAY.toString() });
+	    insertForm.addChild("#", ContentFilterToadlet.l10n("displayResultLabel"));
+	    insertForm.addChild("br");
+	    insertForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "radio", "result-handling", ResultHandling.SAVE.toString() });
+	    insertForm.addChild("#", ContentFilterToadlet.l10n("saveResultLabel"));
+	    insertForm.addChild("br");
+	    insertForm.addChild("br");
+        
+        // mime type
+        insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeLabel") + ": ");
+        insertForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "text", "mime-type", "" });
+        insertForm.addChild("br");
+        insertForm.addChild("#", ContentFilterToadlet.l10n("mimeTypeText"));
+        insertForm.addChild("br");
+        insertForm.addChild("br");
+        
+		// Local file browser
+		if (ctx.isAllowedFullAccess()) {
+			insertForm.addChild("#",
+			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			insertForm.addChild("input",
+			        new String[] { "type", "name", "value" },
+			        new String[] { "submit", "filter-local",
+			                NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
+			insertForm.addChild("br");
+		}
+		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
+		insertForm.addChild("input",
+		        new String[] { "type", "name", "value" },
+		        new String[] { "file", "filename", "" });
+		insertForm.addChild("#", " \u00a0 ");
+        
+	    insertForm.addChild("input",
+                new String[] { "type", "name", "value" },
+                new String[] { "submit", "filter-upload",
+                        ContentFilterToadlet.l10n("filterFileFilterLabel") });
+	    return insertBox;
 	}
 	
 	String l10n (String key) {

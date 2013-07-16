@@ -55,18 +55,15 @@ public class PproxyToadlet extends Toadlet {
 		super(client);
 		this.node = node;
 	}
+	
+	public boolean allowPOSTWithoutPassword() {
+		return true;
+	}
 
 	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if((pass == null) || !pass.equals(ctx.getFormPassword())) {
-			headers.put("Location", "/plugins/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
 
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, l10n("unauthorizedTitle"), l10n("unauthorized"));
@@ -85,6 +82,7 @@ public class PproxyToadlet extends Toadlet {
 
 		if(path.length()>0)
 		{
+			// Plugins handle their own formPassword checking.
 			try
 			{
 				String plugin = null;
@@ -129,6 +127,8 @@ public class PproxyToadlet extends Toadlet {
 		}
 		else
 		{
+			if(!ctx.checkFormPassword(request)) return;
+			
 			PageMaker pageMaker = ctx.getPageMaker();
 			
 			if (request.isPartSet("submit-official")) {

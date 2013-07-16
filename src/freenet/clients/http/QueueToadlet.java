@@ -147,7 +147,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			// The user will know soon enough
 		}
 	}
-
+	
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
@@ -198,15 +198,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} catch (URISyntaxException e) {
 					//Shouldn't happen, path is defined as such.
 				}
-			}
-
-			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(ctx.getFormPassword())) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", path());
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
-				return;
 			}
 
 			if(request.isPartSet("delete_request") && (request.getPartAsStringFailsafe("delete_request", 128).length() > 0)) {
@@ -867,9 +858,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 				}
 				return;
-            // Filter File button on upload page
-            } else if (request.isPartSet("filter-upload")) {
-                ContentFilterToadlet.handleUploadedFilterRequest(request, ctx, core);
 			} else if (request.isPartSet("recommend_request")) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("recommendAFileToFriends"), ctx);
 				HTMLNode pageNode = page.outer;

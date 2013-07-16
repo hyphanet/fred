@@ -128,14 +128,6 @@ public class N2NTMToadlet extends Toadlet {
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(ctx.getFormPassword())) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/send_n2ntm/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;

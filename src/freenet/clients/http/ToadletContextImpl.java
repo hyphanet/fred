@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,6 +14,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -213,6 +215,37 @@ public class ToadletContextImpl implements ToadletContext {
 	@Override
 	public String getFormPassword() {
 		return container.getFormPassword();
+	}
+	
+	@Override
+	public boolean checkFormPassword(HTTPRequest request)
+			throws ToadletContextClosedException, IOException {
+		return checkFormPassword(request, "/");
+	}
+	
+	@Override
+	public boolean checkFormPassword(HTTPRequest request, String redirectTo)
+			throws ToadletContextClosedException, IOException {
+		if (!hasFormPassword(request)) {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", redirectTo);
+			sendReplyHeaders(302, "Found", headers, null, 0);
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	@Override
+	public boolean hasFormPassword(HTTPRequest request) throws IOException {
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
+		byte[] inputBytes = pass.getBytes("UTF-8");
+		byte[] compareBytes = getFormPassword().getBytes("UTF-8");
+		if(!MessageDigest.isEqual(inputBytes, compareBytes)) {
+			if (logMINOR)
+				Logger.minor(this, "Bad formPassword: " + pass);
+			return false;
+		} else return true;
 	}
 	
 	@Override
@@ -546,37 +579,19 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						
+						// require form password if it's a POST, unless the toadlet requests otherwise
+						if (method.equals("POST") && !t.allowPOSTWithoutPassword()) {
+							if (!ctx.checkFormPassword(req, t.path())) {
+								break;
+							}
+						}
+						
 						if(ctx.isAllowedFullAccess()) {
 							ctx.getPageMaker().parseMode(req, container);
 						}
 						
 						try {
-							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
-							try {
-								Class<? extends Toadlet> c = t.getClass();
-								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
-								if (methodIsConfigurable) {
-									AllowData anno = m.getAnnotation(AllowData.class);
-									if (anno == null) {
-										if (data != null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
-											ctx.close();
-											return;
-										}
-									} else if (anno.value()) {
-										if (data == null) {
-											sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
-											ctx.close();
-											return;
-										}
-									}
-								}
-								ctx.setActiveToadlet(t);
-								Object arglist[] = new Object[] {uri, req, ctx};
-								m.invoke(t, arglist);
-							} catch (InvocationTargetException ite) {
-								throw ite.getCause();
-							}
+							callToadletMethod(t, method, uri, req, ctx, data, sock, redirect);
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
@@ -628,6 +643,47 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
+	private static void callToadletMethod(Toadlet t, String method, URI uri, HTTPRequestImpl req, 
+			ToadletContextImpl ctx, Bucket data, Socket sock, boolean methodIsConfigurable) throws Throwable {
+		String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
+		if("GET".equals(method)) {
+			// Short cut the common case.
+			if (data != null) {
+				sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+				ctx.close();
+				return;
+			}
+			ctx.setActiveToadlet(t);
+			t.handleMethodGET(uri, req, ctx);
+			return;
+		}
+		try {
+			Class<? extends Toadlet> c = t.getClass();
+			Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
+			if (methodIsConfigurable) {
+				AllowData anno = m.getAnnotation(AllowData.class);
+				if (anno == null) {
+					if (data != null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+						ctx.close();
+						return;
+					}
+				} else if (anno.value()) {
+					if (data == null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
+						ctx.close();
+						return;
+					}
+				}
+			}
+			ctx.setActiveToadlet(t);
+			Object arglist[] = new Object[] {uri, req, ctx};
+			m.invoke(t, arglist);
+		} catch (InvocationTargetException ite) {
+			throw ite.getCause();
+		}
+	}
+
 	private void setActiveToadlet(Toadlet t) {
 		this.activeToadlet = t;
 	}

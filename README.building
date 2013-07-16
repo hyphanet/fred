@@ -1,8 +1,21 @@
 == Building Freenet from source: Short version ==
 
+Install junit 3.
 Install ant.
 Run ant.
 It will tell you what is missing and where to put it.
+In particular, you need freenet-ext.jar in lib/freenet/ and bcprov.jar in lib/
+You can get both of these jars from a node install, or from https://downloads.freenetproject.org/alpha/
+
+== Building Freenet from source: Using Eclipse etc ==
+
+You may want to use the command line git client, as people have sometimes had problems with the egit plugin for Eclipse.
+
+You will need to manually download the two jars mentioned above, and install junit 3. You may need to add the two jars, and junit 3, to the build path for the project, although the .project might help with this.
+
+== Building Freenet from source: Caveats ==
+
+Don't use build-clean.xml, or call "ant distclean". This will cause problems. In particular it may delete the GWT-generated javascript in src/freenet/clients/http/staticfiles/freenetjs/ . If this happens just checkout that folder again, or do "git reset --hard" to reset the whole project. Note that the generated javascript isn't actually used unless web-pushing is enabled in the config, but it is needed for building Freenet.
 
 == Building Freenet from source: Long version ==
 
@@ -22,7 +35,10 @@ effort than the default build path; help in easing this would be appreciated.
 
 A. The build scripts need to know where the contrib jars are. By default, they
 look in lib/freenet; you can override this by setting `lib.contrib.dir` - see
-build.properties for more details.
+build.properties for more details. Similarly, you will need to tell build.xml
+where the GWT jars are, see the "gjs.lib.jars" variable in build.properties;
+you need to put the jars in lib/ and edit override.properties to include
+gjs.lib.jars= [ list of jar names for GWT within lib/ ]
 
 B. You may need to install extra Java libraries. These are listed in build.xml,
 in the <path> elements. If you already have these installed, but ANT can't find
