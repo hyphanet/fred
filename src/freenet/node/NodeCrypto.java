@@ -426,7 +426,7 @@ public class NodeCrypto {
 	    try{
 	        byte[] ref = mySignedReference.getBytes("UTF-8");
 	        // We don't need a padded signature here
-	        byte[] sig = ecdsaP256.signToNetworkFormat(ref);
+	        byte[] sig = ecdsaP256.sign(ref);
 	        if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
 	            throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 	        return Base64.encode(sig);

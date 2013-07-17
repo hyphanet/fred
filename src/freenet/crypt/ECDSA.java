@@ -201,7 +201,7 @@ public class ECDSA {
         this.curve = curve;
     }
     
-    byte[] sign(byte[]... data) {
+    public byte[] sign(byte[]... data) {
         byte[] result = null;
         try {
             while(true) {
