@@ -4175,6 +4175,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		if(physicalUDPEntries != null) {
 			fs.putOverwrite("physical.udp", physicalUDPEntries);
 		}
+		// FIXME remove when make peerECDSA* final.
+		fs.putOverwrite("ecdsa.P256.pub", nfs.get("ecdsa.P256.pub"));
 		if(!fs.isEmpty()) {
 			if(logMINOR) Logger.minor(this, "fs is '" + fs.toString() + "'");
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
