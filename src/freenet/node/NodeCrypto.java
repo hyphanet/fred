@@ -426,7 +426,7 @@ public class NodeCrypto {
 	    try{
 	        byte[] ref = mySignedReference.getBytes("UTF-8");
 	        // We don't need a padded signature here
-	        byte[] sig = ecdsaP256.sign(ref);
+	        byte[] sig = ecdsaP256.signToNetworkFormat(ref);
 	        if(logMINOR && !ECDSA.verify(Curves.P256, getECDSAP256Pubkey(), sig, ref))
 	            throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 	        return Base64.encode(sig);
@@ -532,7 +532,7 @@ public class NodeCrypto {
 	/** Sign data with the node's ECDSA key. The data does not need to be hashed, the signing code
 	 * will handle that for us, using an algorithm appropriate for the keysize. */
 	byte[] ecdsaSign(byte[]... data) {
-	    return ecdsaP256.sign(data);
+	    return ecdsaP256.signToNetworkFormat(data);
 	}
 
 	public ECPublicKey getECDSAP256Pubkey() {
