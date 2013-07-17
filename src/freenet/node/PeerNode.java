@@ -272,8 +272,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** Peer node public key; changing this means new noderef */
 	final DSAPublicKey peerPubKey;
-	final ECPublicKey peerECDSAPubKey;
-	final byte[] peerECDSAPubKeyHash;
+	// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove getter, synchronization and complexity in parseECDSA().
+	private ECPublicKey peerECDSAPubKey;
+	private byte[] peerECDSAPubKeyHash;
 	final byte[] pubKeyHash;
 	final byte[] pubKeyHashHash;
 	private boolean isSignatureVerificationSuccessfull;
@@ -512,24 +513,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
 			}
 			
-			sfs = fs.subset("ecdsa.P256");
-			if(sfs == null) {
-			    // Old peer, no negtype > 8
-			    this.peerECDSAPubKey = null;
-			    this.peerECDSAPubKeyHash = null;
-			    for(int type : negTypes)
-			    	if(type >= 9 && !fromAnonymousInitiator)
-			    		throw new FSParseException("Neg type 9 or later must have an ECDSA key: "+Arrays.toString(negTypes));
-			} else {
-	            byte[] pub = Base64.decode(sfs.get("pub"));
-	            if (pub.length > ECDSA.Curves.P256.modulusSize)
-	                throw new FSParseException("ecdsa.P256.pub is not the right size!");
-                this.peerECDSAPubKey = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
-	            this.peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
-	            if(peerECDSAPubKey == null)
-	                throw new FSParseException("ecdsa.P256.pub is invalid!");
-			}
-
+			parseECDSA(fs, fromAnonymousInitiator);
 			if(noSig || verifyReferenceSignature(fs)) {
 				this.isSignatureVerificationSuccessfull = true;
 			}
@@ -756,6 +740,53 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
+	}
+
+	/** @return True if there is a new ECDSA key */
+	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator) throws FSParseException {
+		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
+		if(sfs == null) {
+			boolean changed = false;
+			if(this.peerECDSAPubKey != null) {
+				Logger.error(this, "Peer downgraded to pre-negType 9 build, deleting ECDSA key! This is unsafe but we will support it for one build for back compatibility reasons! From "+userToString());
+				// FIXME SECURITY URGENT In the next build we will throw here...
+				// Evil back compatibility hack.
+				// If you own the DSA key you can change the ECDSA key; the DSA key is significantly weaker, so this is bad.
+				// Hence we will get rid of this in the next build and just throw, prohibiting downgrading to pre-negType9.
+				changed = true;
+			}
+		    // Old peer, no negtype > 8
+		    this.peerECDSAPubKey = null;
+		    this.peerECDSAPubKeyHash = null;
+		    // FIXME URGENT reinstate the below in the next build.
+//		    for(int type : negTypes)
+//		    	if(type >= 9 && !fromAnonymousInitiator)
+//		    		throw new FSParseException("Neg type 9 or later must have an ECDSA key: "+Arrays.toString(negTypes));
+		    return changed;
+		} else {
+            byte[] pub;
+			try {
+				pub = Base64.decode(sfs.get("pub"));
+			} catch (IllegalBase64Exception e) {
+				Logger.error(this, "Caught " + e + " parsing ECC pubkey", e);
+				throw new FSParseException(e);
+			}
+            if (pub.length > ECDSA.Curves.P256.modulusSize)
+                throw new FSParseException("ecdsa.P256.pub is not the right size!");
+            ECPublicKey key = ECDSA.getPublicKey(pub, ECDSA.Curves.P256);
+            if(key == null)
+                throw new FSParseException("ecdsa.P256.pub is invalid!");
+            if(peerECDSAPubKey == null) {
+            	Logger.normal(this, "Peer now has an ECDSA key, upgraded to negType 9+: "+userToString());
+            	this.peerECDSAPubKey = key;
+                peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+                return true;
+            } else if(!key.equals(peerECDSAPubKey)) {
+            	throw new FSParseException("Changing ECDSA key not allowed!");
+            } else {
+            	return false;
+            }
+		}
 	}
 
 	abstract boolean dontKeepFullFieldSet();
@@ -2677,6 +2708,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				negTypes = newNegTypes;
 			}
 		}
+		this.parseECDSA(fs, false);
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
@@ -3765,11 +3797,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
 		int[] myNegTypes = mangler.supportedNegTypes(false);
+		boolean supportECDSA;
 		synchronized(this) {
 			hisNegTypes = negTypes;
+			supportECDSA = this.peerECDSAPubKey != null; // FIXME REMOVE
 		}
 		int bestNegType = -1;
 		for(int negType: myNegTypes) {
+			if(negType >= 9 && !supportECDSA)
+				continue; // FIXME REMOVE
 			for(int hisNegType: hisNegTypes) {
 				if(hisNegType == negType) {
 					bestNegType = negType;
@@ -5914,5 +5950,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	        return peerECDSAPubKeyHash;
 	    else
 	        return identity;
+	}
+
+	synchronized ECPublicKey peerECDSAPubKey() {
+		// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove this getter.
+		return peerECDSAPubKey;
+	}
+
+	synchronized byte[] peerECDSAPubKeyHash() {
+		// FIXME when negType 9 is mandatory, make peerECDSAPubKey final and remove this getter.
+		return peerECDSAPubKeyHash;
 	}
 }

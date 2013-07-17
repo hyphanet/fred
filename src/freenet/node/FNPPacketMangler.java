@@ -1118,9 +1118,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    }
 		} else {
 		    // Verify the ECDSA signature ; We are assuming that it's the curve we expect
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, hisExponential)) {
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, hisExponential)) {
 	              Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
-	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+" with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash)+" signature "+HexUtil.bytesToHex(sig));
+	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+
+	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash())+
+	            		  " signature "+HexUtil.bytesToHex(sig));
 	              return;
 		    }
 		}
@@ -1366,7 +1368,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		        return;
 		    }
 		} else {
-		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, toVerify)) {
+		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, toVerify)) {
 	              Logger.error(this, "The ECDSA signature verification has failed!! JFK(3) - "+pn.getPeer());
 	                return;
 		    }
@@ -1614,7 +1616,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	            return true;
 	        }
 	    } else { // ECDSA sig
-	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, locallyGeneratedText)) {
+	        if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, locallyGeneratedText)) {
 	            Logger.error(this, "The ECDSA signature verification has failed!! JFK(4) - "+pn.getPeer()+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID);
 	            return true;
 	        }
