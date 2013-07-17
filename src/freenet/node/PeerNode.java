@@ -2708,7 +2708,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				negTypes = newNegTypes;
 			}
 		}
-		this.parseECDSA(fs, false);
+		changedAnything |= parseECDSA(fs, false);
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
