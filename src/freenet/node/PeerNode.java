@@ -746,23 +746,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator) throws FSParseException {
 		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
 		if(sfs == null) {
-			boolean changed = false;
-			if(this.peerECDSAPubKey != null) {
-				Logger.error(this, "Peer downgraded to pre-negType 9 build, deleting ECDSA key! This is unsafe but we will support it for one build for back compatibility reasons! From "+userToString());
-				// FIXME SECURITY URGENT In the next build we will throw here...
-				// Evil back compatibility hack.
-				// If you own the DSA key you can change the ECDSA key; the DSA key is significantly weaker, so this is bad.
-				// Hence we will get rid of this in the next build and just throw, prohibiting downgrading to pre-negType9.
-				changed = true;
-			}
-		    // Old peer, no negtype > 8
-		    this.peerECDSAPubKey = null;
-		    this.peerECDSAPubKeyHash = null;
-		    // FIXME URGENT reinstate the below in the next build.
-//		    for(int type : negTypes)
-//		    	if(type >= 9 && !fromAnonymousInitiator)
-//		    		throw new FSParseException("Neg type 9 or later must have an ECDSA key: "+Arrays.toString(negTypes));
-		    return changed;
+			// ECDSA is not sent on connect, for example.
+			// This is fine, don't change the existing reference.
+			return false;
 		} else {
             byte[] pub;
 			try {
@@ -782,7 +768,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
                 peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
                 return true;
             } else if(!key.equals(peerECDSAPubKey)) {
-            	throw new FSParseException("Changing ECDSA key not allowed!");
+            	Logger.error(this, "Changing ECDSA key on "+userToString()+" - DANGEROUS! Did your neighbour downgrade to a pre-negType9 build???");
+            	this.peerECDSAPubKey = key;
+                peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+                return true;
+            	// FIXME URGENT SECURITY need to throw as soon as the build adding negType9 is mandatory.
+                // For now allow it so that people can test and downgrade.
+                // This means that the current ECDSA-based setup is no more safe than the previous DSA-based setup.
+            	//throw new FSParseException("Changing ECDSA key not allowed!");
             } else {
             	return false;
             }
