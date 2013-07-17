@@ -1119,7 +1119,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		} else {
 		    // Verify the ECDSA signature ; We are assuming that it's the curve we expect
 		    if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey(), sig, hisExponential)) {
-	              Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
+	              if(pn.peerECDSAPubKeyHash() == null) {
+	            	  // FIXME remove when remove DSA support.
+	            	  // Caused by nodes running broken early versions of negType9.
+	            	  Logger.error(this, "Peer attempting negType "+negType+" with ECDSA but no ECDSA key known: "+pn.userToString());
+	            	  return;
+	              }
+		    	  Logger.error(this, "The ECDSA signature verification has failed in JFK(2)!! "+pn.getPeer());
 	              if(logDEBUG) Logger.debug(this, "Expected signature on "+HexUtil.bytesToHex(hisExponential)+
 	            		  " with "+HexUtil.bytesToHex(pn.peerECDSAPubKeyHash())+
 	            		  " signature "+HexUtil.bytesToHex(sig));
