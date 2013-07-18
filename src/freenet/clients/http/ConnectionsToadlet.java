@@ -503,7 +503,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// our reference
 		if(shouldDrawNoderefBox(advancedMode)) {
 			drawAddPeerBox(contentNode, ctx);
-			drawNoderefBox(contentNode, getNoderef(), true);
+			drawNoderefBox(contentNode, getNoderef(), true, isOpennet());
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -752,7 +752,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param showNoderef If true, render the text of the noderef so that it may be copy-pasted. If false, only
 	 *                    show a link to download it.
 	 */
-	static void drawNoderefBox(HTMLNode contentNode, SimpleFieldSet fs, boolean showNoderef) {
+	static void drawNoderefBox(HTMLNode contentNode, SimpleFieldSet fs, boolean showNoderef, boolean isOpennet) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
@@ -761,13 +761,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				new HTMLNode[] { REF_LINK, REFTEXT_LINK });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		
-		HTMLNode myName = referenceInfoboxContent.addChild("p");
-		myName.addChild("span",
-				NodeL10n.getBase().getString("DarknetConnectionsToadlet.myName", "name", fs.get("myName")));
-		myName.addChild("span", " [");
-		myName.addChild("span").addChild("a", "href", "/config/node#name",
-				NodeL10n.getBase().getString("DarknetConnectionsToadlet.changeMyName"));
-		myName.addChild("span", "]");
+		if(!isOpennet) {
+			HTMLNode myName = referenceInfoboxContent.addChild("p");
+			myName.addChild("span",
+					NodeL10n.getBase().getString("DarknetConnectionsToadlet.myName", "name", fs.get("myName")));
+			myName.addChild("span", " [");
+			myName.addChild("span").addChild("a", "href", "/config/node#name",
+					NodeL10n.getBase().getString("DarknetConnectionsToadlet.changeMyName"));
+			myName.addChild("span", "]");
+		}
 
 		if (showNoderef) {
 			HTMLNode warningSentence = referenceInfoboxContent.addChild("p");

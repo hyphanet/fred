@@ -107,7 +107,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		
 		ConnectionsToadlet.drawAddPeerBox(contentNode, ctx, false, "/friends/");
 		
-		ConnectionsToadlet.drawNoderefBox(contentNode, getNoderef(), pageMaker.advancedMode(request, this.container));
+		ConnectionsToadlet.drawNoderefBox(contentNode, getNoderef(), pageMaker.advancedMode(request, this.container), true);
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
