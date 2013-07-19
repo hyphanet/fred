@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -1268,6 +1269,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		}
 		
 	};
+
+	public static FreenetURI generateRandomCHK(Random rand) {
+		byte[] rkey = new byte[32];
+		rand.nextBytes(rkey);
+		byte[] ckey = new byte[32];
+		rand.nextBytes(ckey);
+		byte[] extra = ClientCHK.getExtra(Key.ALGO_AES_CTR_256_SHA256, (short)-1, false);
+		return new FreenetURI("CHK", null, rkey, ckey, extra);
+	}
 
 	// TODO add something like the following?
 	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }
