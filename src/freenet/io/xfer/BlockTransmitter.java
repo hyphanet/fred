@@ -151,7 +151,11 @@ public class BlockTransmitter {
 		}
 		
 		public void schedule() {
-			if(_failed || _receivedSendCompletion || _completed) return;
+			if(_failed || _receivedSendCompletion || _completed) {
+				if(logMINOR) Logger.minor(this, "Not scheduling for "+_uid+" to "+_destination+" :"+
+						(_failed ? "(failed) " : "") + (_receivedSendCompletion ? "(receivedSendCompletion) " : "") + (_completed ? "(completed) " : ""));
+				return;
+			}
 			_executor.execute(this, "BlockTransmitter block sender for "+_uid+" to "+_destination);
 		}
 
@@ -622,6 +626,7 @@ public class BlockTransmitter {
 					@Override
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
+							if(logMINOR) Logger.minor(this, "Got packet "+packetNo+" for "+_uid+" to "+_destination);
 							if(_unsent.contains(packetNo)) {
 								Logger.error(this, "Already in unsent: "+packetNo+" for "+this+" unsent is "+_unsent, new Exception("error"));
 								return;
