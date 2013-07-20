@@ -1160,7 +1160,7 @@ public class PeerManager {
 		
 		if(recentlyFailed != null && logMINOR)
 			Logger.minor(this, "Count waiting: "+countWaiting);
-		int maxCountWaiting = maxCountWaiting();
+		int maxCountWaiting = maxCountWaiting(peers);
 		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
 				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
@@ -1247,11 +1247,12 @@ public class PeerManager {
 	}
 
 	/**
+	 * @param peers 
 	 * @return The minimum number of peers which are waiting for timeouts due to RecentlyFailed or 
 	 * DNF's for which we will terminate the request with a RecentlyFailed of our own.
 	 */
-	private int maxCountWaiting() {
-		int count = countConnectedPeers();
+	private int maxCountWaiting(PeerNode[] peers) {
+		int count = countConnectedPeers(peers);
 		return Math.max(3, count / 2);
 	}
 
@@ -2082,10 +2083,13 @@ public class PeerManager {
 		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
 		return count;
 	}
-
+	
 	public int countConnectedPeers() {
+		return countConnectedPeers(myPeers());
+	}
+
+	private int countConnectedPeers(PeerNode[] peers) {
 		int count = 0;
-		PeerNode[] peers = myPeers();
 		for(PeerNode peer: peers) {
 			if(peer == null)
 				continue;
