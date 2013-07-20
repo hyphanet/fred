@@ -105,6 +105,13 @@ class FailureTableEntry implements TimedOutNodesList {
 		requestedTimeoutHTLs = EMPTY_SHORT_ARRAY;
 	}
 	
+	/** A request failed to a specific peer.
+	 * @param routedTo The peer we routed to.
+	 * @param rfTimeout The time until we can route to the node again, for purposes of RecentlyFailed.
+	 * @param ftTimeout The time until we can route to the node again, for purposes of per-node failure tables.
+	 * @param now The current time.
+	 * @param htl The HTL of the request. Note that timeouts only apply to the same HTL.
+	 */
 	public synchronized void failedTo(PeerNodeUnlocked routedTo, int rfTimeout, int ftTimeout, long now, short htl) {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+rfTimeout+" / "+ftTimeout);
