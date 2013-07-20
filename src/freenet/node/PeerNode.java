@@ -772,6 +772,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
             	Logger.error(this, "Changing ECDSA key on "+userToString()+" - DANGEROUS! Did your neighbour downgrade to a pre-negType9 build???");
             	this.peerECDSAPubKey = key;
                 peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+                if(isDarknet()) node.peers.writePeersDarknetUrgent();
                 return true;
             	// FIXME URGENT SECURITY need to throw as soon as the build adding negType9 is mandatory.
                 // For now allow it so that people can test and downgrade.
