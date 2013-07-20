@@ -1251,7 +1251,8 @@ public class PeerManager {
 	 * DNF's for which we will terminate the request with a RecentlyFailed of our own.
 	 */
 	private int maxCountWaiting() {
-		return 3;
+		int count = countConnectedPeers();
+		return Math.max(3, count / 2);
 	}
 
 	static final int MIN_DELTA = 2000;
