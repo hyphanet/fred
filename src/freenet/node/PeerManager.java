@@ -1160,7 +1160,8 @@ public class PeerManager {
 		
 		if(recentlyFailed != null && logMINOR)
 			Logger.minor(this, "Count waiting: "+countWaiting);
-		if(recentlyFailed != null && countWaiting >= 3 && 
+		int maxCountWaiting = maxCountWaiting();
+		if(recentlyFailed != null && countWaiting >= maxCountWaiting && 
 				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
@@ -1182,7 +1183,7 @@ public class PeerManager {
 							// This is the sooner of the two top nodes' timeouts.
 							// We also take into account the sooner of any timed out node, IF there are exactly 3 nodes waiting.
 							long until = Math.min(secondTime, firstTime);
-							if(countWaiting == 3) {
+							if(countWaiting == maxCountWaiting) {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
@@ -1243,6 +1244,14 @@ public class PeerManager {
 		}
 		
 		return best;
+	}
+
+	/**
+	 * @return The minimum number of peers which are waiting for timeouts due to RecentlyFailed or 
+	 * DNF's for which we will terminate the request with a RecentlyFailed of our own.
+	 */
+	private int maxCountWaiting() {
+		return 3;
 	}
 
 	static final int MIN_DELTA = 2000;
