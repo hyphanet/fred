@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
@@ -148,7 +149,7 @@ public class OpennetManager {
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = 110;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
-	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
+	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = TimeUnit.DAYS.toMillis(31);
 
 	// This is only relevant while the connection is in the grace period.
 	// Null means none of the above e.g. not in grace period.
