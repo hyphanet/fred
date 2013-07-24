@@ -154,12 +154,14 @@ public class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
+		    /** The values are case sensitive, but the keys aren't */
+		    String lowcaseLine = line.toLowerCase();
 			// The classpath numbers are not reliable.
 			// We have to check the content.
 			
 			boolean dontWrite = false;
 			
-			if(line.startsWith("wrapper.java.classpath.")) {
+			if(lowcaseLine.startsWith("wrapper.java.classpath.")) {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
@@ -184,7 +186,7 @@ public class UpdateDeployContext {
 						}
 					}
 				}
-			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
 			}
 			if(!dontWrite)
