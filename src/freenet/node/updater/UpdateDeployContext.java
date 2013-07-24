@@ -138,6 +138,10 @@ public class UpdateDeployContext {
 		String line;
 			
 		boolean writtenReload = false;
+		/** On Windows, we need the anchor file option explicitly. */
+		boolean writtenAnchor = false;
+		/** Write the anchor polling interval too if it doesn't exist already */
+		boolean writtenAnchorInterval = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
@@ -188,6 +192,10 @@ public class UpdateDeployContext {
 				}
 			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
+			    writtenAnchor = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchor.poll_interval=")) {
+			    writtenAnchorInterval = true;
 			}
 			if(!dontWrite)
 				otherLines.add(line);
@@ -222,6 +230,12 @@ public class UpdateDeployContext {
 		if(!writtenReload) {
 			// Add it.
 			bw.write("wrapper.restart.reload_configuration=TRUE\n");
+		}
+		if(!writtenAnchor) {
+		    bw.write("wrapper.anchorfile=Freenet.anchor\n");
+		}
+		if(!writtenAnchorInterval) {
+		    bw.write("wrapper.anchor.poll_interval=1\n");
 		}
 		
 		bw.close();
