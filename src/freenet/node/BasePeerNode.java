@@ -84,6 +84,8 @@ public interface BasePeerNode extends PeerContext {
 	/** Report when a packet was acked. */
 	void receivedAck(long currentTimeMillis);
 	
+	boolean linkStatsAvailable();
+	
 	LinkStatistics getTotalLinkStats();
 	LinkStatistics getShortRunLinkStats();
 

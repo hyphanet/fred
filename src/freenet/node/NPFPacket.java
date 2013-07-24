@@ -421,6 +421,10 @@ class NPFPacket {
 			// frag.wrapper is always non-null on sending.
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);
 		}			
+		if (pn.linkStatsAvailable()){
+			pn.getTotalLinkStats().onUsefullPaybackSend(totalMessageData);
+			pn.getShortRunLinkStats().onUsefullPaybackSend(totalMessageData);
+		}
 	}
 	
 	String fragmentsAsString() {

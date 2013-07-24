@@ -412,12 +412,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return linkStatsShortRun;
 	}
 	
-	public boolean areStatsAvailable(){
-		return isRealConnection();
-	}
-	
-	protected boolean shouldUpdateStats(){
-		return areStatsAvailable() && isRealConnection();
+	public boolean linkStatsAvailable(){
+		return true;
 	}
 	
 	/**
@@ -3750,6 +3746,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
 		totalBytesExchangedWithCurrentTracker += length;
+		linkStatsTotal.onDataSend(length);
+		linkStatsShortRun.onDataSend(length);
 	}
 
 	public synchronized long getTotalInputBytes() {
@@ -4230,6 +4228,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
+		linkStatsTotal.onAverageRTTChange(averagePingTime());
+		linkStatsShortRun.onAverageRTTChange(averagePingTime());
 		synchronized(this) {
 			consecutiveRTOBackoffs = 0;
 			// Update RTT according to RFC 2988.
@@ -4270,6 +4270,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO+" SRTT is "+SRTT+" RTTVAR is "+RTTVAR+" for "+shortToString());
 		}
+		linkStatsTotal.onRTOChange(RTO);
+		linkStatsShortRun.onRTOChange(RTO);
 	}
 	
 	/**
@@ -4297,6 +4299,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			reportedRTT = false;
 		}
 		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString()+" consecutive RTO backoffs is "+consecutiveRTOBackoffs);
+		linkStatsShortRun.reset();
+		linkStatsTotal.onSeriousBackoff(1);
+		linkStatsShortRun.onRTOChange(RTO);
+		linkStatsTotal.onRTOChange(RTO);
 	}
 
 	private long resendBytesSent;
@@ -5536,6 +5542,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	@Override
 	public void resentBytes(int length) {
 		resendByteCounter.sentBytes(length);
+		linkStatsTotal.onDataRetransmit(length);
+		linkStatsShortRun.onDataRetransmit(length);
 	}
 	
 	// FIXME move this to PacketFormat eventually.

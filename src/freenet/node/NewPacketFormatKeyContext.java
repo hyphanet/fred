@@ -122,6 +122,10 @@ public class NewPacketFormatKeyContext {
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
 				validAck = true;
+				if (pn.linkStatsAvailable()) {
+					pn.getTotalLinkStats().onNewDataAcked(sent.packetLength, sent.getSentTime());
+					pn.getShortRunLinkStats().onNewDataAcked(sent.packetLength, sent.getSentTime());
+				}
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				lostBeforeAcked = true;
@@ -149,8 +153,10 @@ public class NewPacketFormatKeyContext {
 			if(!lostBeforeAcked){
 				throttle.notifyOfPacketAcknowledged(maxSize);
 				double ws = throttle.getWindowSize();
-				pn.getTotalLinkStats().setWindowSize(ws);
-				pn.getShortRunLinkStats().setWindowSize(ws);
+				if (pn.linkStatsAvailable()) {
+					pn.getTotalLinkStats().onWindowSizeChange(ws);
+					pn.getShortRunLinkStats().onWindowSizeChange(ws);
+				}
 			}
 		}
 	}
@@ -300,9 +306,11 @@ public class NewPacketFormatKeyContext {
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
-					double ws = throttle.getWindowSize();
-					pn.getTotalLinkStats().setWindowSize(ws);
-					pn.getShortRunLinkStats().setWindowSize(ws);
+					if (pn.linkStatsAvailable()) {
+						double ws = throttle.getWindowSize();
+						pn.getTotalLinkStats().onWindowSizeChange(ws);
+						pn.getShortRunLinkStats().onWindowSizeChange(ws);
+					}
 				}
 			}
 			pn.backoffOnResend();
