@@ -86,6 +86,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		
 		alertNode.addChild("#", ut.firstBit);
 		
+		// No need for formPassword, since we want to show the confirmation page anyway.
 		if(ut.formText != null) {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}

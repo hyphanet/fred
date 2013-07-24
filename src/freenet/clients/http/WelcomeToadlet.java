@@ -100,6 +100,11 @@ public class WelcomeToadlet extends Toadlet {
             addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"), noActiveLinks, ctx);
         }
     }
+    
+    public boolean allowPOSTWithoutPassword() {
+    	// We need to show some confirmation pages.
+    	return true;
+    }
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
         if (!ctx.isAllowedFullAccess()) {
@@ -108,6 +113,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
         if (request.getPartAsStringFailsafe("updateconfirm", 32).length() > 0) {
+        	if(!ctx.checkFormPassword(request)) return;
             // false for no navigation bars, because that would be very silly
             PageNode page = ctx.getPageMaker().getPageNode(l10n("updatingTitle"), ctx);
             HTMLNode pageNode = page.outer;
@@ -129,6 +135,7 @@ public class WelcomeToadlet extends Toadlet {
             updateForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "updateconfirm", l10n("update")});
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	} else if (request.isPartSet("getThreadDump")) {
+    	if(!ctx.checkFormPassword(request)) return;
             PageNode page = ctx.getPageMaker().getPageNode(l10n("threadDumpTitle"), ctx);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
@@ -143,6 +150,7 @@ public class WelcomeToadlet extends Toadlet {
             }
             this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
         } else if (request.isPartSet("disable")) {
+        	if(!ctx.checkFormPassword(request)) return;
 	    int validAlertsRemaining = 0;
             UserAlert[] alerts = ctx.getAlertManager().getAlerts();
             for (UserAlert alert: alerts) {
@@ -163,6 +171,9 @@ public class WelcomeToadlet extends Toadlet {
             writePermanentRedirect(ctx, l10n("disabledAlert"), (validAlertsRemaining > 0 ? "/alerts/" : "/"));
             return;
         } else if (request.isPartSet("key") && request.isPartSet("filename")) {
+        	if(!ctx.checkFormPassword(request)) return;
+        	// FIXME do we still use this? where?
+        	// FIXME If we support it from freesites we need a confirmation page with the formPassword.
             FreenetURI key = new FreenetURI(request.getPartAsStringFailsafe("key", 128));
             String type = request.getPartAsStringFailsafe("content-type", 128);
             if (type == null) {
@@ -224,6 +235,7 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             return;
         } else if (request.isPartSet("shutdownconfirm")) {
+        	if(!ctx.checkFormPassword(request)) return;
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -247,6 +259,7 @@ public class WelcomeToadlet extends Toadlet {
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             return;
         } else if (request.isPartSet("restartconfirm")) {
+        	if(!ctx.checkFormPassword(request)) return;
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + ctx.getFormPassword());
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -259,6 +272,7 @@ public class WelcomeToadlet extends Toadlet {
                     }, 1);
             return;
         } else if(request.isPartSet("dismiss-events")) {
+        	if(!ctx.checkFormPassword(request)) return;
         	String alertsToDump = request.getPartAsStringFailsafe("events", Integer.MAX_VALUE);
         	String[] alertAnchors = alertsToDump.split(",");
         	HashSet<String> toDump = new HashSet<String>();
