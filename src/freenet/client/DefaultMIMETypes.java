@@ -782,7 +782,7 @@ public class DefaultMIMETypes {
 		String[] extensions = allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
 		for(String extension: extensions)
-			if(oldExt.equals(extension)) return true;
+			if(oldExt.equalsIgnoreCase(extension)) return true;
 		return false;
 	}
 	
