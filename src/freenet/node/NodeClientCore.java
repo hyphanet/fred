@@ -249,7 +249,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		});
 
-		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp-"+portNumber).toString(),
+		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp").toString(),
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		initPTBF(container, nodeConfig);
 
