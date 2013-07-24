@@ -1253,7 +1253,7 @@ public class PeerManager {
 	 */
 	private int maxCountWaiting(PeerNode[] peers) {
 		int count = countConnectedPeers(peers);
-		return Math.max(3, count / 2);
+		return Math.max(3, count / 4);
 	}
 
 	static final int MIN_DELTA = 2000;
