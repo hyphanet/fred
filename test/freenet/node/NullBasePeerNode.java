@@ -272,4 +272,12 @@ public class NullBasePeerNode implements BasePeerNode {
 		return 10;
 	}
 
+    public LinkStatistics getTotalLinkStats(){
+        return null;
+    }
+
+    public LinkStatistics getShortRunLinkStats(){
+        return null;
+    }
+
 }

@@ -68,6 +68,7 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.LinkStatistics;
 import freenet.support.Base64;
 import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
@@ -395,6 +396,30 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 
+	protected LinkStatistics linkStatsTotal;
+	/** Is reset upon each major failure - serious backoff, serious idle time, etc... */ 
+	protected LinkStatistics linkStatsShortRun;
+	
+	/* Quadrotip: all updates should act like that:
+	 * 		Check if we can update -> Probably reset shortrun -> update shortrun -> update total
+	 */
+	
+	public LinkStatistics getTotalLinkStats(){
+		return linkStatsTotal;
+	}
+	
+	public LinkStatistics getShortRunLinkStats(){
+		return linkStatsShortRun;
+	}
+	
+	public boolean areStatsAvailable(){
+		return isRealConnection();
+	}
+	
+	protected boolean shouldUpdateStats(){
+		return areStatsAvailable() && isRealConnection();
+	}
+	
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -445,6 +470,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param node2 The running Node we are part of.
 	*/
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		this.linkStatsTotal = new LinkStatistics();
+		this.linkStatsShortRun = new LinkStatistics();
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
@@ -769,8 +796,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
                 if(isDarknet()) node.peers.writePeersDarknetUrgent();
                 return true;
             } else if(!key.equals(peerECDSAPubKey)) {
-            	Logger.error(this, "Tried to change ECDSA key on "+userToString()+" - did neighbour try to downgrade? Rejecting...");
-            	throw new FSParseException("Changing ECDSA key not allowed!");
+            	Logger.error(this, "Changing ECDSA key on "+userToString()+" - DANGEROUS! Did your neighbour downgrade to a pre-negType9 build???");
+            	this.peerECDSAPubKey = key;
+                peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
+                if(isDarknet()) node.peers.writePeersDarknetUrgent();
+                return true;
+            	// FIXME URGENT SECURITY need to throw as soon as the build adding negType9 is mandatory.
+                // For now allow it so that people can test and downgrade.
+                // This means that the current ECDSA-based setup is no more safe than the previous DSA-based setup.
+            	//throw new FSParseException("Changing ECDSA key not allowed!");
             } else {
             	return false;
             }
@@ -2937,6 +2971,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 	
+	/*Quadronote*/
+	
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
@@ -3256,6 +3292,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private double SRTT = 1000;
 	private double RTTVAR = 0;
 	private double RTO = 1000;
+	
+	/*Quadromark*/
 	
 	/** Calculated as per RFC 2988 */
 	@Override
@@ -4194,6 +4232,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
 
+	/*Quadronote*/
+	
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
@@ -5760,7 +5800,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeSendAcks();
 	}
-
+	
+	/*Quadronote*/
+	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {

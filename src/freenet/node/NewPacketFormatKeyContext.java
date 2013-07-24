@@ -11,6 +11,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SentTimes;
 import freenet.support.Logger.LogLevel;
+import freenet.node.LinkStatistics;
 
 /** NewPacketFormat's context for each SessionKey. Specifically, packet numbers are unique
  * to a SessionKey, because the packet number is used in encrypting the packet. Hence this
@@ -104,6 +105,8 @@ public class NewPacketFormatKeyContext {
 		}
 	}
 
+	/*Quadronote*/
+	
 	/** One of our outgoing packets has been acknowledged.
 	 * @return False if we have already acked the packet */
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
@@ -143,8 +146,12 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			if(!lostBeforeAcked)
+			if(!lostBeforeAcked){
 				throttle.notifyOfPacketAcknowledged(maxSize);
+				double ws = throttle.getWindowSize();
+				pn.getTotalLinkStats().setWindowSize(ws);
+				pn.getShortRunLinkStats().setWindowSize(ws);
+			}
 		}
 	}
 
@@ -238,12 +245,16 @@ public class NewPacketFormatKeyContext {
 			}
 		}
 	}
-
+	
 	public long timeCheckForLostPackets(double averageRTT) {
 		long timeCheck = Long.MAX_VALUE;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+
+			/* Quadrothought: rewrite this O(n) hell with simple priority multimap?
+			 * But memory will suffer heavily, once and again..*/
+			
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
@@ -254,6 +265,8 @@ public class NewPacketFormatKeyContext {
 		}
 		return timeCheck;
 	}
+	
+	/*Quadronote*/
 
 	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
@@ -287,6 +300,9 @@ public class NewPacketFormatKeyContext {
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
+					double ws = throttle.getWindowSize();
+					pn.getTotalLinkStats().setWindowSize(ws);
+					pn.getShortRunLinkStats().setWindowSize(ws);
 				}
 			}
 			pn.backoffOnResend();
