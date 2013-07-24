@@ -346,7 +346,7 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> cssMedia = new HashSet<String>();
 	static {
-	    cssMedia.addAll(Arrays.asList(new String[]{"all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"}));
+	    cssMedia.addAll(Arrays.asList("all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"));
 	}
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);

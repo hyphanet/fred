@@ -639,9 +639,9 @@ final public class FileUtil {
 		long freeSpace = -1;
 		try {
 			Class<? extends File> c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
+			Method m = c.getDeclaredMethod("getFreeSpace");
 			if(m != null) {
-				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+				Long lFreeSpace = (Long) m.invoke(dir);
 				if(lFreeSpace != null) {
 					freeSpace = lFreeSpace.longValue();
 					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
