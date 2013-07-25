@@ -3,6 +3,8 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import freenet.support.LogThresholdCallback;
 import freenet.support.TimeUtil;
 
@@ -123,9 +125,9 @@ public class DecompressorThreadManager {
 				// FIXME remove the timeout here.
 				// Something wierd is happening...
 				//wait(0)
-				wait(20*60*1000);
+				wait(MINUTES.toMillis(20));
 				long time = System.currentTimeMillis()-start;
-				if(time > 20*60*1000)
+				if(time > MINUTES.toMillis(20))
 					Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(time));
 			} catch(InterruptedException e) {
 				//Do nothing

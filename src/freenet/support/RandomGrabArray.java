@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.Arrays;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -693,7 +695,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	// At present it is only called on startup so this is okay.
 	public void moveElementsTo(RandomGrabArray existingGrabber,
 			ObjectContainer container, boolean canCommit) {
-		WrapperManager.signalStarting(5*60*1000);
+		WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 		for(Block block: blocks) {
 			if(persistent) container.activate(block, 1);
 			for(int j=0;j<block.reqs.length;j++) {

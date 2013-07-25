@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -51,9 +53,9 @@ public class Announcer {
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
-	private static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
+	private static final long MIN_ADDED_SEEDS_INTERVAL = SECONDS.toMillis(60);
 	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
-	static final int COOLING_OFF_PERIOD = 30*1000;
+	static final long COOLING_OFF_PERIOD = SECONDS.toMillis(30);
 	/** Pubkey hashes of nodes we have announced to */
 	private final HashSet<ByteArrayWrapper> announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
@@ -62,7 +64,7 @@ public class Announcer {
 	private static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
-	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
+	private static final long NOT_ALL_CONNECTED_DELAY = SECONDS.toMillis(60);
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
@@ -404,9 +406,9 @@ public class Announcer {
 	}
 
 	/** 1 minute after we have enough peers, remove all seednodes left (presumably disconnected ones) */
-	private static final int FINAL_DELAY = 60*1000;
+	private static final long FINAL_DELAY = SECONDS.toMillis(60);
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
-	static final int RETRY_DELAY = 60*1000;
+	static final long RETRY_DELAY = SECONDS.toMillis(60);
 	private boolean started = false;
 
 	private final Runnable checker = new Runnable() {

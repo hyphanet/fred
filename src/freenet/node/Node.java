@@ -11,6 +11,11 @@ import static freenet.node.stats.DataStoreType.CACHE;
 import static freenet.node.stats.DataStoreType.CLIENT;
 import static freenet.node.stats.DataStoreType.SLASHDOT;
 import static freenet.node.stats.DataStoreType.STORE;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -509,29 +514,28 @@ public class Node implements TimeSkewDetectorCallback {
 	// timeout. Most nodes don't need to send keepalives because they are constantly busy,
 	// this is only an issue for disabled darknet connections, very quiet private networks
 	// etc.
-	public static final int KEEPALIVE_INTERVAL = 7000;
+	public static final long KEEPALIVE_INTERVAL = SECONDS.toMillis(7);
 	// If no activity for 30 seconds, node is dead
 	// 35 seconds allows plenty of time for resends etc even if above is 14 sec as it is on older nodes.
-	public static final int MAX_PEER_INACTIVITY = 35000;
+	public static final long MAX_PEER_INACTIVITY = SECONDS.toMillis(35);
 	/** Time after which a handshake is assumed to have failed. */
-	public static final int HANDSHAKE_TIMEOUT = 4800; // Keep the below within the 30 second assumed timeout.
+	public static final long HANDSHAKE_TIMEOUT = MILLISECONDS.toMillis(4800); // Keep the below within the 30 second assumed timeout.
 	// Inter-handshake time must be at least 2x handshake timeout
-	public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10-20 secs
-	public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // avoid overlap when the two handshakes are at the same time
-	public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
-	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
-	public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*4;
-	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 20-30 secs
-	public static final int MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*24; // 2-5 minutes
-	public static final int RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*36;
+	public static final long MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10-20 secs
+	public static final long RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // avoid overlap when the two handshakes are at the same time
+	public static final long MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
+	public static final long RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+	public static final long MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*4;
+	public static final long RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+	public static final long MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*24; // 2-5 minutes
+	public static final long RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*36;
 	public static final int MIN_BURSTING_HANDSHAKE_BURST_SIZE = 1; // 1-4 handshake sends per burst
 	public static final int RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE = 3;
 	// If we don't receive any packets at all in this period, from any node, tell the user
-	public static final long ALARM_TIME = 60*1000;
+	public static final long ALARM_TIME = MINUTES.toMillis(1);
 
-	// 900ms
-	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
-	static final int MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = 1000;
+	static final long MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = MILLISECONDS.toMillis(900);
+	static final long MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = MILLISECONDS.toMillis(1000);
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
 
 	/** Datastore directory */
@@ -605,7 +609,7 @@ public class Node implements TimeSkewDetectorCallback {
 	// FIXME make the first two configurable
 	private long maxSlashdotCacheSize;
 	private int maxSlashdotCacheKeys;
-	static final long PURGE_INTERVAL = 60*1000;
+	static final long PURGE_INTERVAL = SECONDS.toMillis(60);
 
 	private CHKStore chkSlashdotcache;
 	private SlashdotStore<CHKBlock> chkSlashdotcacheStore;
@@ -710,7 +714,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Should inserts ignore low backoff times by default? */
 	public static final boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
-	public static final int LOW_BACKOFF = 30*1000;
+	public static final long LOW_BACKOFF = SECONDS.toMillis(30);
 	/** Should inserts be fairly blatently prioritised on accept by default? */
 	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
@@ -1612,7 +1616,7 @@ public class Node implements TimeSkewDetectorCallback {
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
-						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
+						outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
 		});
@@ -1632,7 +1636,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must have at least space for ONE PACKET.
 		// FIXME: make compatible with alternate transports.
 		bucketSize = Math.max(bucketSize, 2048);
-		outputThrottle = new TokenBucket(bucketSize, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
+		outputThrottle = new TokenBucket(bucketSize, SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override
@@ -2437,7 +2441,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
-		nodeConfig.register("slashdotCacheLifetime", 30*60*1000L, sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
+		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -2595,7 +2599,7 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
 			@Override
 			public void realRun() {
-				pluginManager.stop(30*1000); // FIXME make it configurable??
+				pluginManager.stop(SECONDS.toMillis(30)); // FIXME make it configurable??
 			}
 		});
 
@@ -2606,7 +2610,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// it's likely (on reports so far) that a restart will fix it.
 		// And we have to get a build out because ALL plugins are now failing to load,
 		// including the absolutely essential (for most nodes) JSTUN and UPnP.
-		WrapperManager.signalStarting(120*1000);
+		WrapperManager.signalStarting((int) MINUTES.toMillis(2));
 
 		FetchContext ctx = clientCore.makeClient((short)0, true, false).getFetchContext();
 
@@ -2914,7 +2918,7 @@ public class Node implements TimeSkewDetectorCallback {
 					(EncryptingIoAdapter) adapter.open(dbFileCrypt.toString(), false, 0, true);
 				long length = readAdapter.getLength();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -2968,7 +2972,7 @@ public class Node implements TimeSkewDetectorCallback {
 				FileInputStream fis = new FileInputStream(dbFile);
 				long length = dbFile.length();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -3171,7 +3175,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
-		WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+		WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
@@ -4750,7 +4754,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return lm.getAverageSwapTime();
 	}
 
-	public int getSendSwapInterval() {
+	public long getSendSwapInterval() {
 		return lm.getSendSwapInterval();
 	}
 
@@ -5138,7 +5142,7 @@ public class Node implements TimeSkewDetectorCallback {
 							}
 						}
 
-					}, 10*60*1000);
+					}, MINUTES.toMillis(10));
 				}
 			} else wantClientCache = true;
 			wantDatabase = db == null;

@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -1698,7 +1700,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	@Override
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
-		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
+		if((now - peerAddedTime) > DAYS.toMillis(30))
 			peerAddedTime = 0;
 		if(!neverConnected)
 			peerAddedTime = 0;

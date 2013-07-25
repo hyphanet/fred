@@ -1,5 +1,10 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -57,30 +62,30 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 	
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
-	public static final long DEFAULT_SUB_MAX_PING_TIME = 700;
+	public static final long DEFAULT_SUB_MAX_PING_TIME = MILLISECONDS.toMillis(700);
 	/** Maximum overall average ping time. If ping is greater than this,
 	 * we reject all requests. */
-	public static final long DEFAULT_MAX_PING_TIME = 1500;
+	public static final long DEFAULT_MAX_PING_TIME = MILLISECONDS.toMillis(1500);
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
-	public static final long MAX_THROTTLE_DELAY_RT = 2000;
-	public static final long MAX_THROTTLE_DELAY_BULK = 10000;
+	public static final long MAX_THROTTLE_DELAY_RT = SECONDS.toMillis(2);
+	public static final long MAX_THROTTLE_DELAY_BULK = SECONDS.toMillis(10);
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
-	public static final long SUB_MAX_THROTTLE_DELAY_RT = 1000;
-	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 5000;
+	public static final long SUB_MAX_THROTTLE_DELAY_RT = SECONDS.toMillis(1);
+	public static final long SUB_MAX_THROTTLE_DELAY_BULK = SECONDS.toMillis(5);
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY_BULK;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = MINUTES.toMillis(10);
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = MINUTES.toMillis(10);
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
 	 */
-	public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	public static final long MAX_INTERREQUEST_TIME = SECONDS.toMillis(10);
 	/** Locations of incoming requests */
 	private final int[] incomingRequestsByLoc = new int[10];
 	private int incomingRequestsAccounted = 0;
@@ -577,9 +582,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
 		requestOutputThrottle =
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), SECONDS.toNanos(1) / obwLimit, 0);
 		requestInputThrottle =
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
+			new TokenBucket(Math.max(ibwLimit*60, 32768*20), SECONDS.toNanos(1) / ibwLimit, 0);
 
 		double nodeLoc=node.lm.getLocation();
 		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
@@ -618,12 +623,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(!NodeStarter.isTestingVM()) {
 			// Normal mode
 			minReportsNoisyRejectStats = 200;
-			rejectStatsUpdateInterval = 10*60*1000;
+			rejectStatsUpdateInterval = MINUTES.toMillis(10);
 			rejectStatsFuzz = 10.0;
 		} else {
 			// Stuff we only do in testing VMs
 			minReportsNoisyRejectStats = 1;
-			rejectStatsUpdateInterval = 10*1000;
+			rejectStatsUpdateInterval = SECONDS.toMillis(10);
 			rejectStatsFuzz = -1.0;
 		}
 	}
@@ -650,7 +655,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
 	 * (If no packets have been sent, the throttledPacketSendAverage should decrease; if it doesn't, it may go high,
 	 * and then no requests will be accepted, and it will stay high forever. */
-	static final int CHECK_THROTTLE_TIME = 60 * 1000;
+	static final long CHECK_THROTTLE_TIME = SECONDS.toMillis(60);
 	/** Absolute limit of 4MB queued to any given peer. FIXME make this configurable.
 	 * Note that for many MessageItem's, the actual memory usage will be significantly more than this figure. */
 	private static final long MAX_PEER_QUEUE_BYTES = 4 * 1024 * 1024;
@@ -670,14 +675,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * using at most half the limit, so the time will be slightly over the overall limit. */
 	
 	// FIXME increase to 4 minutes when bulk/realtime flag merged!
-	
-	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
+
+	private static final long MAX_PEER_QUEUE_TIME = MINUTES.toMillis(2);
 
 	private long lastAcceptedRequest = -1;
 
 	static final double DEFAULT_OVERHEAD = 0.7;
-	static final long DEFAULT_ONLY_PERIOD = 60*1000;
-	static final long DEFAULT_TRANSITION_PERIOD = 240*1000;
+	static final long DEFAULT_ONLY_PERIOD = MINUTES.toMillis(1);
+	static final long DEFAULT_TRANSITION_PERIOD = MINUTES.toMillis(4);
 	/** Relatively high minimum overhead. A low overhead estimate becomes a self-fulfilling
 	 * prophecy, and it takes a long time to shake it off as the averages gradually increase.
 	 * If we accept no requests then everything is overhead! Whereas with a high minimum
@@ -1990,7 +1995,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
 		for (int t = 1 ; t < 7; t++) {
 			int hour = t * 24;
-			long limit = now - t * ((long) 24 * 60 * 60 * 1000);
+			long limit = now - DAYS.toMillis(t);
 
 			fs.put("opennetSizeEstimate"+hour+"hourRecent", getOpennetSizeEstimate(limit));
 			fs.put("networkSizeEstimate"+hour+"hourRecent", getDarknetSizeEstimate(limit));
@@ -2271,14 +2276,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	public void setOutputLimit(int obwLimit) {
-		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit)), Math.max(obwLimit*60, 32768*20));
+		requestOutputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, Math.max(obwLimit*60, 32768*20));
 		if(node.inputLimitDefault) {
 			setInputLimit(obwLimit * 4);
 		}
 	}
 
 	public void setInputLimit(int ibwLimit) {
-		requestInputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (ibwLimit)), Math.max(ibwLimit*60, 32768*20));
+		requestInputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / ibwLimit, Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
@@ -2986,7 +2991,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 */
 	public double getSentOverheadPerSecond() {
 		long uptime = node.getUptime();
-		return (getSentOverhead() * 1000.0) / uptime;
+		// actually we’d want to convert uptime to seconds here but this is results in better accuracy.
+		return getSentOverhead() * SECONDS.toMillis(1) / uptime;
 	}
 
 	public synchronized void successfulBlockReceive(boolean realTimeFlag, boolean isLocal) {
@@ -3876,7 +3882,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	/** How many reports to require before returning a value for reject stats */
 	private final int minReportsNoisyRejectStats;
 	/** How often to update the reject stats */
-	private final int rejectStatsUpdateInterval;
+	private final long rejectStatsUpdateInterval;
 	/** If positive, the level of fuzz (size of 1 standard deviation for gauss in percent) to use */
 	private final double rejectStatsFuzz;
 	

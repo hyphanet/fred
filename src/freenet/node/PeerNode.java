@@ -1,5 +1,11 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -175,14 +181,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
-	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
+	public static final long SELECTION_SAMPLING_PERIOD = MINUTES.toMillis(5);
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
 	public static final int SELECTION_PERCENTAGE_WARNING = 30;
 	// Minimum number of routable peers to have for the selection code to have any effect
 	public static final int SELECTION_MIN_PEERS = 5;
 	// Should be good enough provided we don't get selected more than 10 times per/sec
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
-	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000;
+	public static final int SELECTION_MAX_SAMPLES = (int) (10 * SECONDS.convert(SELECTION_SAMPLING_PERIOD, MILLISECONDS));
 
 	/** Is the peer connected? If currentTracker == null then we have no way to send packets 
 	 * (though we may be able to receive them on the other trackers), and are disconnected. So we
@@ -316,7 +322,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 
-	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
+	static final long CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
 	static final byte[] TEST_AS_BYTES;
 	static {
@@ -361,10 +367,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 	/** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
 	* it will have difficulty resolving date-based content etc. */
-	private static final long MAX_CLOCK_DELTA = 24L * 60L * 60L * 1000L;
+	private static final long MAX_CLOCK_DELTA = DAYS.toMillis(1);
 	/** 1 hour after the node is disconnected, if it is still disconnected and hasn't connected in that time,
 	 * clear the message queue */
-	private static final long CLEAR_MESSAGE_QUEUE_AFTER = 60 * 60 * 1000L;
+	private static final long CLEAR_MESSAGE_QUEUE_AFTER = HOURS.toMillis(1);
 	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference<PeerNode> myRef;
@@ -392,7 +398,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
 	 */
-	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
+	public static final long BLACK_MAGIC_BACKOFF_PRUNING_TIME = MINUTES.toMillis(5);
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 
 	/**
@@ -644,11 +650,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		// So go for a filter.
 		pingAverage =
 			// Short average otherwise we will reject for a *REALLY* long time after any spike.
-			new TimeDecayingRunningAverage(1, 30 * 1000, 0, NodePinger.CRAZY_MAX_PING_TIME, node);
+			new TimeDecayingRunningAverage(1, SECONDS.toMillis(30), 0, NodePinger.CRAZY_MAX_PING_TIME, node);
 
 		// TDRA for probability of rejection
 		pRejected =
-			new TimeDecayingRunningAverage(0, 240 * 1000, 0.0, 1.0, node);
+			new TimeDecayingRunningAverage(0, MINUTES.toMillis(4), 0.0, 1.0, node);
 
 		// ARK stuff.
 
@@ -908,7 +914,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		Peer localDetectedPeer = null;
 		synchronized(this) {
 			localDetectedPeer = detectedPeer;
-			if((now - lastAttemptedHandshakeIPUpdateTime) < (5 * 60 * 1000)) {  // 5 minutes
+			if((now - lastAttemptedHandshakeIPUpdateTime) < MINUTES.toMillis(5)) {
 				//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
 				return;
 			}
@@ -1534,11 +1540,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			long delay;
 			if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
 				// Let them know we're here, but have no hope of routing general data to them.
-				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 			} else if(invalidVersion() && !firstHandshake) {
-				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
 			} else {
-				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 			}
 			// FIXME proper multi-homing support!
 			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
@@ -1565,13 +1571,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long delay;
 		if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
 			delay = Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
-				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
+				+ node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
 			listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
 					+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
 			isBursting = false;
 		} else {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				+ node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
 		// FIXME proper multi-homing support!
 		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
@@ -1603,7 +1609,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * once every UPDATE_BURST_NOW_PERIOD. */
 	private boolean burstNow;
 	private long timeSetBurstNow;
-	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
+	static final long UPDATE_BURST_NOW_PERIOD = MINUTES.toMillis(5);
 	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
 
@@ -1645,14 +1651,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/**
 	* @return The maximum time between received packets.
 	*/
-	public int maxTimeBetweenReceivedPackets() {
+	public long maxTimeBetweenReceivedPackets() {
 		return Node.MAX_PEER_INACTIVITY;
 	}
 
 	/**
 	* @return The maximum time between received packets.
 	*/
-	public int maxTimeBetweenReceivedAcks() {
+	public long maxTimeBetweenReceivedAcks() {
 		return Node.MAX_PEER_INACTIVITY;
 	}
 
@@ -1711,13 +1717,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException, SyncSendWaitedTooLongException {
 		SyncMessageCallback cb = new SyncMessageCallback();
 		MessageItem item = sendAsync(req, cb, ctr);
-		cb.waitForSend(60 * 1000);
+		cb.waitForSend(MINUTES.toMillis(1));
 		if (!cb.done) {
 			Logger.warning(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout", realTime);
 			// Try to unqueue it, since it presumably won't be of any use now.
 			if(!messageQueue.removeMessage(item)) {
-				cb.waitForSend(10 * 1000);
+				cb.waitForSend(SECONDS.toMillis(10));
 				if(!cb.done) {
 					Logger.error(this, "Waited too long for blocking send and then could not unqueue for "+req+" to "+PeerNode.this, new Exception("error"));
 					// Can't cancel yet can't send, something seriously wrong.
@@ -2811,7 +2817,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			fs.put("averagePingTime", averagePingTime());
 			long idle = now - lastReceivedPacketTime();
-			if(idle > (60 * 1000) && -1 != lastReceivedPacketTime())  // 1 minute
+			if(idle > SECONDS.toMillis(60) && -1 != lastReceivedPacketTime())
 
 				fs.put("idle", idle);
 			if(peerAddedTime > 1)
@@ -2892,7 +2898,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return hashCode;
 	}
 
-	public boolean isRoutingBackedOff(int ignoreBackoffUnder, boolean realTime) {
+	public boolean isRoutingBackedOff(long ignoreBackoffUnder, boolean realTime) {
 		long now = System.currentTimeMillis();
 		double pingTime;
 		synchronized(this) {
@@ -2940,27 +2946,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
-	static final int INITIAL_ROUTING_BACKOFF_LENGTH = 1000;  // 1 second
+	static final long INITIAL_ROUTING_BACKOFF_LENGTH = SECONDS.toMillis(1);
 	/** How much to multiply by during fast routing backoff */
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final int MAX_ROUTING_BACKOFF_LENGTH = 3 * 60 * 60 * 1000;  // 3 hours
+	static final long MAX_ROUTING_BACKOFF_LENGTH = HOURS.toMillis(3);
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
 
 	long transferBackedOffUntilRT = -1;
 	long transferBackedOffUntilBulk = -1;
-	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = 30*1000; // 60 seconds, but it starts at twice this.
+	static final long INITIAL_TRANSFER_BACKOFF_LENGTH = SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_TRANSFER_BACKOFF_LENGTH = 3 * 60 * 60 * 1000; // 3 hours
+	static final long MAX_TRANSFER_BACKOFF_LENGTH = HOURS.toMillis(3);
 
-	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
-	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	long transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	long transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 
-	int routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
-	int routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
+	long routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
+	long routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
 	String lastRoutingBackoffReasonRT;
 	String lastRoutingBackoffReasonBulk;
@@ -2982,23 +2988,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// FIXME 3 different kinds of backoff? Can we get rid of some???
 	
 	long mandatoryBackoffUntilRT = -1;
-	int mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	long mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
 	long mandatoryBackoffUntilBulk = -1;
-	int mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
-	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = 1*1000;
+	long mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	static final long INITIAL_MANDATORY_BACKOFF_LENGTH = SECONDS.toMillis(1);
 	static final int MANDATORY_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_MANDATORY_BACKOFF_LENGTH = 5*60*1000;
-	
+	static final long MAX_MANDATORY_BACKOFF_LENGTH = MINUTES.toMillis(5);
+
 	/** When load management predicts that a peer will definitely accept the request, both
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
 	public void enterMandatoryBackoff(String reason, boolean realTime) {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
-			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
+			long mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
 			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
-			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
+			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt((int) (mandatoryBackoffLength/2));
 			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 			node.nodeStats.reportMandatoryBackoff(reason, mandatoryBackoffUntil - now, realTime);
 			if(realTime) {
@@ -3083,12 +3089,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
 			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
-			int routingBackoffLength = realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
+			long routingBackoffLength = realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
-				int x = node.random.nextInt(routingBackoffLength);
+				int x = node.random.nextInt((int) routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
 				if(logMINOR) {
@@ -3165,12 +3171,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
 			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
-			int transferBackoffLength = realTime ? transferBackoffLengthRT : transferBackoffLengthBulk;
+			long transferBackoffLength = realTime ? transferBackoffLengthRT : transferBackoffLengthBulk;
 			if(now > transferBackedOffUntil) {
 				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
 				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
 					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
-				int x = node.random.nextInt(transferBackoffLength);
+				int x = node.random.nextInt((int) transferBackoffLength);
 				transferBackedOffUntil = now + x;
 				node.nodeStats.reportTransferBackoff(reason, x, realTime);
 				if(logMINOR) {
@@ -3278,7 +3284,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return remoteDetectedPeer;
 	}
 
-	public synchronized int getRoutingBackoffLength(boolean realTime) {
+	public synchronized long getRoutingBackoffLength(boolean realTime) {
 		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 
@@ -4186,8 +4192,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return IPUtil.isValidAddress(addr, false);
 	}
 
-	static final double MAX_RTO = 60*1000;
-	static final double MIN_RTO = 1000;
+	static final long MAX_RTO = SECONDS.toMillis(60);
+	static final long MIN_RTO = SECONDS.toMillis(1);
 	private int consecutiveRTOBackoffs;
 
 	// Clock generally has 20ms granularity or better, right?
@@ -4322,7 +4328,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public synchronized double selectionRate() {
 		long timeSinceConnected = System.currentTimeMillis() - this.connectedTime;
 		// Avoid bias due to short uptime.
-		if(timeSinceConnected < 10*1000) return 0.0;
+		if(timeSinceConnected < SECONDS.toMillis(10)) return 0.0;
 		return countSelectionsSinceConnected / (double) timeSinceConnected;
 	}
 

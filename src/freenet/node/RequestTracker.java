@@ -1,5 +1,8 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -512,7 +515,7 @@ public class RequestTracker {
 
 	// Must include bulk inserts so fairly long.
 	// 21 minutes is enough for a fatal timeout.
-	static final int TIMEOUT = 21 * 60 * 1000;
+	static final long TIMEOUT = MINUTES.toMillis(21);
 
 	void startDeadUIDChecker() {
 		ticker.queueTimedJob(deadUIDChecker, TIMEOUT);
@@ -535,7 +538,7 @@ public class RequestTracker {
 				checkUIDs(runningSSKOfferReplyUIDsBulk);
 				checkUIDs(runningCHKOfferReplyUIDsBulk);
 			} finally {
-				ticker.queueTimedJob(this, 60*1000);
+				ticker.queueTimedJob(this, SECONDS.toMillis(60));
 			}
 		}
 

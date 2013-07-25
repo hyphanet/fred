@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -61,8 +63,8 @@ public class SeedAnnounceTracker {
 	
 	// Reset every 2 hours.
 	// FIXME implement something smoother.
-	static final long RESET_TIME = 2*60*60*1000;
-	
+	static final long RESET_TIME = HOURS.toMillis(2);
+
 	private long lastReset;
 
 	/** If the IP has had at least 5 noderefs, and is out of date, 80% chance of rejection.

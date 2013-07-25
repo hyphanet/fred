@@ -1,5 +1,8 @@
 package freenet.support.io;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -147,7 +150,7 @@ public class PersistentBlobTempBucketFactory {
 		}
 		size -= size % blockSize;
 		long blocks = size / blockSize;
-		WrapperManager.signalStarting((int) Math.max(blocks * 100, 24*60*60*1000));
+		WrapperManager.signalStarting((int) Math.max(blocks * 100, HOURS.toMillis(24)));
 		if(blocks > Integer.MAX_VALUE) {
 			Logger.error(this, "Unable to create free blocks cache!");
 			throw new IOException("Blob file already too big!");
@@ -690,7 +693,7 @@ outer:		while(true) {
 		synchronized(this) {
 		
 			int blocksMoved = 0;
-			if(now - lastCheckedEnd > 60*1000 || DISABLE_SANITY_CHECKS_DEFRAG) {
+			if(now - lastCheckedEnd > SECONDS.toMillis(60) || DISABLE_SANITY_CHECKS_DEFRAG) {
 				if(logMINOR) Logger.minor(this, "maybeShrink() inner");
 				// Check whether there is a big white space at the end of the file.
 				long blocks = getSize();
@@ -1011,8 +1014,8 @@ outer:				while(true) {
 					// Not much we can do
 				}
 			}
-			
-		}, 61*1000);
+
+		}, SECONDS.toMillis(61));
 	}
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {

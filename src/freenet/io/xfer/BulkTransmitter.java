@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
@@ -35,9 +38,9 @@ public class BulkTransmitter {
 	}
 
 	/** If no packets sent in this period, and no completion acknowledgement / cancellation, assume failure. */
-	static final int TIMEOUT = 5*60*1000;
+	static final long TIMEOUT = MINUTES.toMillis(5);
 	/** Time to hang around listening for the last FNPBulkReceivedAll message */
-	static final int FINAL_ACK_TIMEOUT = 10*1000;
+	static final long FINAL_ACK_TIMEOUT = SECONDS.toMillis(10);
 	final AllSentCallback allSentCallback;
 	/** Available blocks */
 	final PartiallyReceivedBulk prb;
@@ -302,7 +305,7 @@ outer:	while(true) {
 					
 					// Wait for a packet to come in, BulkReceivedAll or BulkReceiveAborted
 					try {
-						wait(60*1000);
+						wait(SECONDS.toMillis(60));
 					} catch (InterruptedException e) {
 						// No problem
 						continue;

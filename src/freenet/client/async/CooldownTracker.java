@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -308,7 +310,7 @@ public class CooldownTracker {
 		if(logMINOR) Logger.minor(this, "Removed "+removedPersistent+" persistent cooldown cache items and "+removedTransient+" transient cooldown cache items");
 	}
 	
-	private static final long MAINTENANCE_PERIOD = 10*60*1000;
+	private static final long MAINTENANCE_PERIOD = MINUTES.toMillis(10);
 	
 	public void startMaintenance(final Ticker ticker) {
 		ticker.queueTimedJob(new Runnable() {

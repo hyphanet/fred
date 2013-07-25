@@ -31,14 +31,14 @@ public class IPAddressDetector implements Runnable {
 	}
 	
 	//private String preferedAddressString = null;
-	private final int interval;
+	private final long interval;
 	private final NodeIPDetector detector;
         /**
          * 
          * @param interval
          * @param detector
          */
-        public IPAddressDetector(int interval, NodeIPDetector detector) {
+        public IPAddressDetector(long interval, NodeIPDetector detector) {
 		this.interval = interval;
 		this.detector = detector;
 	}

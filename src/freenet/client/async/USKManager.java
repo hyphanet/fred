@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -384,7 +386,7 @@ public class USKManager {
 		}
 	}
 	
-	static final int PREFETCH_DELAY = 60*1000;
+	static final long PREFETCH_DELAY = SECONDS.toMillis(60);
 	
 	private void schedulePrefetchChecker() {
 		context.ticker.queueTimedJob(prefetchChecker, "Check for USKs to prefetch", PREFETCH_DELAY, false, true);

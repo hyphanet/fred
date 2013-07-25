@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -338,11 +341,11 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 	
     // Constants
-    static final int ACCEPTED_TIMEOUT = 10000;
-    static final int TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME = 60*1000;
-    static final int TRANSFER_COMPLETION_ACK_TIMEOUT_BULK = 300*1000;
+    static final long ACCEPTED_TIMEOUT = SECONDS.toMillis(10);
+    static final long TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME = MINUTES.toMillis(1);
+    static final long TRANSFER_COMPLETION_ACK_TIMEOUT_BULK = MINUTES.toMillis(5);
 
-    final int transferCompletionTimeout;
+    final long transferCompletionTimeout;
     
     // Basics
     final long origUID;
@@ -630,7 +633,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 
 	@Override
-	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next, int acceptedTimeout, UIDTag tag) {
+	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next, long acceptedTimeout, UIDTag tag) {
 		// Use the right UID here, in case we fork on cacheable.
 		final long uid = tag.uid;
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPAccepted);
@@ -644,7 +647,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
-	private static final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
+	private static final long TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = MINUTES.toMillis(1);
 
 	@Override
 	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {
@@ -994,7 +997,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					
 					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
 					try {
-						backgroundTransfers.wait(100*1000);
+						backgroundTransfers.wait(SECONDS.toMillis(100));
 					} catch (InterruptedException e) {
 						// Ignore
 					}
@@ -1011,7 +1014,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	public synchronized void waitForStatus() {
 		while(status == NOT_FINISHED) {
 			try {
-				CHKInsertSender.this.wait(100*1000);
+				CHKInsertSender.this.wait(SECONDS.toMillis(100));
 			} catch (InterruptedException e) {
 				// Ignore
 			}
@@ -1113,7 +1116,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 
 	@Override
-	protected int getAcceptedTimeout() {
+	protected long getAcceptedTimeout() {
 		return ACCEPTED_TIMEOUT;
 	}
 
@@ -1387,7 +1390,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	}
 	
 	@Override
-	protected int ignoreLowBackoff() {
+	protected long ignoreLowBackoff() {
 		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
 	}
 

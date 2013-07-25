@@ -742,7 +742,7 @@ public class BlockTransmitter {
 				completed = true;
 				if(lastSentPacket > 0) {
 					delta = now - lastSentPacket;
-					int threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
+					long threshold = (realTime ? BlockReceiver.RECEIPT_TIMEOUT_REALTIME : BlockReceiver.RECEIPT_TIMEOUT_BULK);
 					if(delta > threshold)
 						Logger.warning(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 					else if(delta > threshold / 5)

@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -17,8 +19,8 @@ class Persister implements Runnable {
         static {
             Logger.registerClass(Persister.class);
         }
-        
-        static final int PERIOD = 900*1000;
+
+        static final long PERIOD = MINUTES.toMillis(15);
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;

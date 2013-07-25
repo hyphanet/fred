@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import java.util.WeakHashMap;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -439,7 +440,7 @@ public abstract class ClientRequester {
 					if(!req.checkForBrokenClient(container, clientContext))
 						if(logMINOR) Logger.minor(req, "Request is clean.");
 					else {
-						WrapperManager.signalStarting(5*60*1000);
+						WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 						container.commit();
 					}
 				}

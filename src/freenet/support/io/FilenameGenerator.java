@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
@@ -57,7 +59,7 @@ public class FilenameGenerator {
 			File[] filenames = tmpDir.listFiles();
 			if(filenames != null) {
 				for(int i=0;i<filenames.length;i++) {
-					WrapperManager.signalStarting(5*60*1000);
+					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					if(i % 1024 == 0 && i > 0)
 						// User may want some feedback during startup
 						System.err.println("Deleted "+wipedFiles+" temp files ("+(i - wipeableFiles)+" non-temp files in temp dir)");

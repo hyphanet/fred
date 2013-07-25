@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -194,7 +196,7 @@ public class RequestStarterGroup {
 		private final boolean realTime;
 
 		public MyRequestThrottle(int rtt, String string, SimpleFieldSet fs, int size, boolean realTime) {
-			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10, fs == null ? null : fs.subset("RoundTripTime"));
+			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, MINUTES.toMillis(5), 10, fs == null ? null : fs.subset("RoundTripTime"));
 			this.size = size;
 			this.realTime = realTime;
 		}

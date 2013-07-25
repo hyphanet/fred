@@ -1,5 +1,8 @@
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -84,7 +87,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	// ?force= links become invalid after 2 hours.
-	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
+	private static final long FORCE_GRAIN_INTERVAL = HOURS.toMillis(1);
 	/** Maximum size for transparent pass-through, should be a config option */
 	public static long MAX_LENGTH_WITH_PROGRESS = (5*1024*1024 * 11) / 10; // 2MB plus a bit due to buggy inserts
 	public static long MAX_LENGTH_NO_PROGRESS = (2*1024*1024 * 11) / 10; // 2MB plus a bit due to buggy inserts
@@ -660,7 +663,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						@Override
 						public void run() {
 							for(FreenetURI uri : uris) {
-								client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
+								client.prefetch(uri, SECONDS.toMillis(60), 512*1024, prefetchAllowedTypes);
 							}
 						}
 						

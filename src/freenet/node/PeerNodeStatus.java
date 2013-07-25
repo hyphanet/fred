@@ -44,8 +44,8 @@ public class PeerNodeStatus {
 
 	private final int simpleVersion;
 
-	private final int routingBackoffLengthRT;
-	private final int routingBackoffLengthBulk;
+	private final long routingBackoffLengthRT;
+	private final long routingBackoffLengthBulk;
 
 	private final long routingBackedOffUntilRT;
 	private final long routingBackedOffUntilBulk;
@@ -351,7 +351,7 @@ public class PeerNodeStatus {
 	/**
 	 * @return the routingBackoffLength
 	 */
-	public int getRoutingBackoffLength(boolean realTime) {
+	public long getRoutingBackoffLength(boolean realTime) {
 		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 

@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -98,27 +102,27 @@ public class OpennetManager {
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	public static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
-	public static final int DONT_READD_TIME = 60*1000;
+	public static final long DONT_READD_TIME = MINUTES.toMillis(1);
 	/** Don't drop a node until it's at least this old, if it's connected. */
-	public static final int DROP_MIN_AGE = 300*1000;
+	public static final long DROP_MIN_AGE = MINUTES.toMillis(5);
 	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE.
 	 * Relatively generous because noderef transfers e.g. for announcement can be slow (Note
 	 * that announcements actually wait for previous transfers!). */
-	public static final int DROP_MIN_AGE_DISCONNECTED = 300*1000;
+	public static final long DROP_MIN_AGE_DISCONNECTED = MINUTES.toMillis(5);
 	/** Don't drop a node until this long after startup */
-	public static final int DROP_STARTUP_DELAY = 120*1000;
+	public static final long DROP_STARTUP_DELAY = MINUTES.toMillis(2);
 	/** Don't drop a node until this long after losing connection to it.
 	 * This should be long enough to cover a typical reboot, but not so long as to result in a lot
 	 * of disconnected nodes in the Strangers list. Also it should probably not be longer than DROP_MIN_AGE! */
-	public static final int DROP_DISCONNECT_DELAY = 5*60*1000;
+	public static final long DROP_DISCONNECT_DELAY = MINUTES.toMillis(5);
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
-	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
+	public static final long DROP_DISCONNECT_DELAY_COOLDOWN = MINUTES.toMillis(60);
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected.
 	 * This is per connection type, we should consider whether to reduce it further. */
-	public static final int DROP_CONNECTED_TIME = 5*60*1000;
+	public static final long DROP_CONNECTED_TIME = MINUTES.toMillis(5);
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
-	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
+	public static final long MIN_TIME_BETWEEN_OFFERS = SECONDS.toMillis(30);
 
 	private static volatile boolean logMINOR;
 
@@ -149,7 +153,7 @@ public class OpennetManager {
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = 110;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
-	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = TimeUnit.DAYS.toMillis(31);
+	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = DAYS.toMillis(31);
 
 	// This is only relevant while the connection is in the grace period.
 	// Null means none of the above e.g. not in grace period.
@@ -1166,7 +1170,7 @@ public class OpennetManager {
 	}
 
 
-	private static final long MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+	private static final long MAX_AGE = DAYS.toMillis(7);
 	private static final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
 
 	private static void registerKnownIdentity(String d) {

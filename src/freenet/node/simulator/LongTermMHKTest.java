@@ -1,5 +1,7 @@
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -280,7 +282,7 @@ public class LongTermMHKTest extends LongTermTest {
 					linesNoURL++;
 					continue;
 				}
-				if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < 12*60*60*1000) {
+				if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
 					System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
 					System.out.println("Version: "+split[1]);
 					match = true;

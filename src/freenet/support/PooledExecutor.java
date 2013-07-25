@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +45,7 @@ public class PooledExecutor implements Executor {
 		waitingThreadsCount = 0;
 	}
 	/** Maximum time a thread will wait for a job */
-	static final int TIMEOUT = 1 * 60 * 1000;
+	static final long TIMEOUT = MINUTES.toMillis(1);
 
 	public void start() {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
