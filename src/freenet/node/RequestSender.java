@@ -1507,7 +1507,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
     	long now = System.currentTimeMillis();
-    	long deadline = now + (realTimeFlag ? MINUTES.toMillis(3) : MINUTES.toMillis(21));
+    	long deadline = now + (realTimeFlag ? MINUTES.toMillis(5) : MINUTES.toMillis(21));
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
