@@ -1540,11 +1540,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			long delay;
 			if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
 				// Let them know we're here, but have no hope of routing general data to them.
-				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
 			} else if(invalidVersion() && !firstHandshake) {
-				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
 			} else {
-				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 			}
 			// FIXME proper multi-homing support!
 			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
@@ -1571,7 +1571,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long delay;
 		if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
 			delay = Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
-				+ node.random.nextInt((int) Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
+				+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
 			listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
 					+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
 			isBursting = false;
@@ -2946,27 +2946,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
-	static final long INITIAL_ROUTING_BACKOFF_LENGTH = SECONDS.toMillis(1);
+	static final int INITIAL_ROUTING_BACKOFF_LENGTH = (int) SECONDS.toMillis(1);
 	/** How much to multiply by during fast routing backoff */
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final long MAX_ROUTING_BACKOFF_LENGTH = HOURS.toMillis(3);
+	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
 
 	long transferBackedOffUntilRT = -1;
 	long transferBackedOffUntilBulk = -1;
-	static final long INITIAL_TRANSFER_BACKOFF_LENGTH = SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
+	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final long MAX_TRANSFER_BACKOFF_LENGTH = HOURS.toMillis(3);
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
 
-	long transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
-	long transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 
-	long routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
-	long routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
+	int routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
+	int routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
 	String lastRoutingBackoffReasonRT;
 	String lastRoutingBackoffReasonBulk;
@@ -2988,12 +2988,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// FIXME 3 different kinds of backoff? Can we get rid of some???
 	
 	long mandatoryBackoffUntilRT = -1;
-	long mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	int mandatoryBackoffLengthRT = INITIAL_MANDATORY_BACKOFF_LENGTH;
 	long mandatoryBackoffUntilBulk = -1;
-	long mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
-	static final long INITIAL_MANDATORY_BACKOFF_LENGTH = SECONDS.toMillis(1);
+	int mandatoryBackoffLengthBulk = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = (int) SECONDS.toMillis(1);
 	static final int MANDATORY_BACKOFF_MULTIPLIER = 2;
-	static final long MAX_MANDATORY_BACKOFF_LENGTH = MINUTES.toMillis(5);
+	static final int MAX_MANDATORY_BACKOFF_LENGTH = (int) MINUTES.toMillis(5);
 
 	/** When load management predicts that a peer will definitely accept the request, both
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
@@ -3001,7 +3001,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
-			long mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
+			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
 			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
 			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt((int) (mandatoryBackoffLength/2));
@@ -3089,7 +3089,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
 			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
-			long routingBackoffLength = realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
+			int routingBackoffLength = realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
@@ -3171,7 +3171,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
 			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
-			long transferBackoffLength = realTime ? transferBackoffLengthRT : transferBackoffLengthBulk;
+			int transferBackoffLength = realTime ? transferBackoffLengthRT : transferBackoffLengthBulk;
 			if(now > transferBackedOffUntil) {
 				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
 				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
