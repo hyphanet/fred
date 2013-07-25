@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
@@ -120,7 +123,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
 			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
-					System.currentTimeMillis() - om.getCreationTime() < 5*60*1000) {
+					System.currentTimeMillis() - om.getCreationTime() < MINUTES.toMillis(5)) {
 				try {
 					synchronized(this) {
 						wait(1000);
@@ -199,7 +202,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = sched.grabRequest();
 					if(req == null) {
 						try {
-							wait(1*1000); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
+							wait(SECONDS.toMillis(1)); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
 							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
 						} catch (InterruptedException e) {
 							// Ignore

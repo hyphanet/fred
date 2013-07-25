@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
@@ -90,7 +92,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			synchronized(this) {
 				while(queue.isEmpty()) {
 					try {
-						wait(100*1000);
+						wait(SECONDS.toMillis(100));
 					} catch (InterruptedException e) {
 						// Ignore
 					}

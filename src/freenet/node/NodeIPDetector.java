@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -119,7 +121,7 @@ public class NodeIPDetector {
 	public NodeIPDetector(Node node) {
 		this.node = node;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
-		ipDetector = new IPAddressDetector(10*1000, this);
+		ipDetector = new IPAddressDetector(SECONDS.toMillis(10), this);
 		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		portDetectors = new NodeIPPortDetector[0];
@@ -550,7 +552,7 @@ public class NodeIPDetector {
 				for(NodeIPPortDetector detector: detectors)
 					detector.startARK();
 			}
-		}, 60*1000);
+		}, SECONDS.toMillis(60));
 	}
 
 	public void onConnectedPeer() {

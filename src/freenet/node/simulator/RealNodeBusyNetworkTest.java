@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 
@@ -149,7 +151,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	ClientCHK key = keys[i];
         	System.err.println("Queueing requests for "+i+" of "+INSERT_KEYS);
         	for(int j=0;j<nodes.length;j++) {
-        		clients[j].prefetch(key.getURI(), 24*60*60*1000, 32768, null);
+        		clients[j].prefetch(key.getURI(), DAYS.toMillis(1), 32768, null);
         	}
         	long totalRunningRequests = 0;
         	for(int j=0;j<nodes.length;j++) {

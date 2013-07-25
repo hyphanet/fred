@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -20,7 +22,7 @@ import freenet.support.ShortBuffer;
  */
 public class BulkReceiver {
 
-	static final int TIMEOUT = 60*1000;
+	static final long TIMEOUT = SECONDS.toMillis(60);
 	/** Tracks the data we have received */
 	final PartiallyReceivedBulk prb;
 	/** Peer we are receiving from */

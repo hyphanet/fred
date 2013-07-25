@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
@@ -55,8 +57,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public static final int MIN_CONN_ERROR_ALERT_THRESHOLD = 5;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
-	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
-	
+	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = DAYS.toMillis(14); // 2 weeks
+
 	public PeerManagerUserAlert(NodeStats n, NodeUpdateManager nodeUpdater) {
 		super(false, null, null, null, null, (short) 0, true, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 		this.n = n;

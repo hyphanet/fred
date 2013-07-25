@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -434,7 +436,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * the above limit. So we have a higher limit before we complain that 
 	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
 	static final int WARNING_STARTER_QUEUE_SIZE = 800;
-	private static final long WAIT_AFTER_NOTHING_TO_START = 60*1000;
+	private static final long WAIT_AFTER_NOTHING_TO_START = SECONDS.toMillis(60);
 	
 	private final transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
 	

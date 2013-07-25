@@ -1,5 +1,7 @@
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -347,7 +349,7 @@ public class ToadletContextImpl implements ToadletContext {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 		} else {
 			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + (24 * 60 * 60 * 1000));
+			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + DAYS.toMillis(1));
 		}
 		mvt.put("expires", expiresTime);
 		

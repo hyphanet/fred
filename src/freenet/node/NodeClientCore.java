@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -171,7 +173,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			System.err.println("Database corrupted (before entering NodeClientCore)!");
 		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, 30*1000, this, node.nodeStats);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, SECONDS.toMillis(30), this, node.nodeStats);
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -1391,7 +1393,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				synchronized(is) {
 					if(is.getStatus() == CHKInsertSender.NOT_FINISHED)
 						try {
-							is.wait(5 * 1000);
+							is.wait(SECONDS.toMillis(5));
 						} catch(InterruptedException e) {
 							// Ignore
 						}
@@ -1410,7 +1412,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(is.completed())
 						break;
 					try {
-						is.wait(10 * 1000);
+						is.wait(SECONDS.toMillis(10));
 					} catch(InterruptedException e) {
 						// Go around again
 					}
@@ -1515,7 +1517,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				synchronized(is) {
 					if(is.getStatus() == SSKInsertSender.NOT_FINISHED)
 						try {
-							is.wait(5 * 1000);
+							is.wait(SECONDS.toMillis(5));
 						} catch(InterruptedException e) {
 							// Ignore
 						}
@@ -1534,7 +1536,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(is.getStatus() != SSKInsertSender.NOT_FINISHED)
 						break;
 					try {
-						is.wait(10 * 1000);
+						is.wait(SECONDS.toMillis(10));
 					} catch(InterruptedException e) {
 						// Go around again
 					}
@@ -1849,9 +1851,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	private long lastCommitted = System.currentTimeMillis();
 
-	static final int MAX_COMMIT_INTERVAL = 30*1000;
+	static final long MAX_COMMIT_INTERVAL = SECONDS.toMillis(30);
 
-	static final int SOON_COMMIT_INTERVAL = 5*1000;
+	static final long SOON_COMMIT_INTERVAL = SECONDS.toMillis(5);
 
 	class DBJobWrapper implements Runnable {
 

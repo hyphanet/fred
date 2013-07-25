@@ -1,5 +1,7 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -319,8 +321,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					public void run() {
 						start(wasAggressive, false);
 					}
-					
-				}, 1*1000);
+
+				}, SECONDS.toMillis(1));
 			} else {
 				start(wasAggressive, false);
 			}

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
@@ -234,7 +235,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 					return false;
 				}
 			}
-			long deadline = System.currentTimeMillis() + 10*1000;
+			long deadline = System.currentTimeMillis() + SECONDS.toMillis(10);
 			if(registerMeSet == null) {
 				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
 				return false;

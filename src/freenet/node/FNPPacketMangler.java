@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -108,11 +112,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
 	/** The key used to authenticate the hmac */
 	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
-	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
+	public static final long TRANSIENT_KEY_REKEYING_MIN_INTERVAL = MINUTES.toMillis(30);
 	/** The rekeying interval for the session key (keytrackers) */
-	public static final int SESSION_KEY_REKEYING_INTERVAL = 60*60*1000;
+	public static final long SESSION_KEY_REKEYING_INTERVAL = MINUTES.toMillis(60);
 	/** The max amount of time we will accept to use the current tracker when it should have been replaced */
-	public static final int MAX_SESSION_KEY_REKEYING_DELAY = 5*60*1000;
+	public static final long MAX_SESSION_KEY_REKEYING_DELAY = MINUTES.toMillis(5);
 	/** The amount of data sent before we ask for a rekey */
 	public static final int AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY = 1024 * 1024 * 1024;
 	/** The Runnable in charge of rekeying on a regular basis */
@@ -799,11 +803,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	}
 	
 	private long lastLoggedNoContexts = -1;
-	private static int LOG_NO_CONTEXTS_INTERVAL = 60*1000;
-	
+	private static long LOG_NO_CONTEXTS_INTERVAL = MINUTES.toMillis(1);
+
 	private void handleNoContextsException(NoContextsException e,
 			freenet.node.FNPPacketMangler.NoContextsException.CONTEXT context) {
-		if(node.getUptime() < 30*1000) {
+		if(node.getUptime() < SECONDS.toMillis(30)) {
 			Logger.warning(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
 			return;
 		}
@@ -1459,7 +1463,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
 		if(pn.jfkMyRef == null) {
 			String error = "Got a JFK(4) message but no pn.jfkMyRef for "+pn;
-			if(node.getUptime() < 60*1000) {
+			if(node.getUptime() < SECONDS.toMillis(60)) {
 				Logger.minor(this, error);
 			} else {
 				Logger.error(this, error);
@@ -1825,9 +1829,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 					}
 				}
 			}
-		}, 5*1000);
+		}, SECONDS.toMillis(5));
 		long t2=System.currentTimeMillis();
-		if((t2-t1)>500)
+		if((t2-t1)>MILLISECONDS.toMillis(500))
 			Logger.error(this,"Message3 timeout error:Sending packet for "+pn.getPeer());
 	}
 
@@ -2363,7 +2367,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@Override
 	public Status getConnectivityStatus() {
 		long now = System.currentTimeMillis();
-		if (now - lastConnectivityStatusUpdate < 3 * 60 * 1000)
+		if (now - lastConnectivityStatusUpdate < MINUTES.toMillis(3))
 			return lastConnectivityStatus;
 
 		Status value;

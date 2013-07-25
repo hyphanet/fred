@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -1082,7 +1084,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		public void run() {
 			synchronized(list) {
 				closed = true;
-				long deadline = System.currentTimeMillis() + 10*1000;
+				long deadline = System.currentTimeMillis() + SECONDS.toMillis(10);
 				while(!closedFinished) {
 					int wait = (int) (deadline - System.currentTimeMillis());
 					if(wait <= 0) return;

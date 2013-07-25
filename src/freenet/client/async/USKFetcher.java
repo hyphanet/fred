@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -493,10 +496,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	final long origMinFailures;
 	boolean firstLoop;
-	
-	static final int origSleepTime = 30 * 60 * 1000;
-	static final int maxSleepTime = 24 * 60 * 60 * 1000;
-	int sleepTime = origSleepTime;
+
+	static final long origSleepTime = MINUTES.toMillis(30);
+	static final long maxSleepTime = HOURS.toMillis(24);
+	long sleepTime = origSleepTime;
 
 	private long valueAtSchedule;
 	
@@ -716,10 +719,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				started = false; // don't finish before have rescheduled
                 
                 //Find out when we should check next ('end'), in an increasing delay (unless we make progress).
-                int newSleepTime = sleepTime * 2;
+                long newSleepTime = sleepTime * 2;
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
-				end = now + context.random.nextInt(sleepTime);
+				end = now + context.random.nextInt((int) sleepTime);
 
 				if(valAtEnd > valueAtSchedule && valAtEnd > origUSK.suggestedEdition) {
 					// We have advanced; keep trying as if we just started.

@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -45,8 +47,8 @@ public abstract class BaseSender implements ByteCounter {
     final Node node;
     protected final long startTime;
     long uid;
-    static final int SEARCH_TIMEOUT_BULK = 600*1000;
-    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
+    static final long SEARCH_TIMEOUT_BULK = MINUTES.toMillis(10);
+    static final long SEARCH_TIMEOUT_REALTIME = MINUTES.toMillis(1);
     final int incomingSearchTimeout;
     
     BaseSender(Key key, boolean realTimeFlag, PeerNode source, Node node, short htl, long uid) {
@@ -703,7 +705,7 @@ loadWaiterLoop:
 		return msg.getSpec() == DMT.FNPAccepted;
 	}
 
-	protected abstract int getAcceptedTimeout();
+	protected abstract long getAcceptedTimeout();
 	
 	/** We timed out while waiting for a slot from any node. Fail the request.
 	 * @param load The proportion of requests getting timed out, on average,
@@ -728,13 +730,13 @@ loadWaiterLoop:
 	 * we need to use the old tag.
 	 */
 	protected abstract MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout, UIDTag tag);
+			long acceptedTimeout, UIDTag tag);
 	
 	protected abstract void forwardRejectedOverload();
 	
 	protected abstract boolean isInsert();
 	
-	protected int ignoreLowBackoff() {
+	protected long ignoreLowBackoff() {
 		return 0;
 	}
 	

@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -45,22 +50,22 @@ public class PacketSender implements Runnable {
 	}
 
 	/** Maximum time we will queue a message for in milliseconds */
-	static final int MAX_COALESCING_DELAY = 100;
+	static final long MAX_COALESCING_DELAY = MILLISECONDS.toMillis(100);
 	/** Maximum time we will queue a message for in milliseconds if it is bulk data.
 	 * Note that we will send the data immediately anyway because it will normally be big
 	 * enough to send a full packet. However this impacts the choice of whether to send
 	 * realtime or bulk data, see PeerMessageQueue.addMessages(). */
-	static final int MAX_COALESCING_DELAY_BULK = 5000;
+	static final long MAX_COALESCING_DELAY_BULK = SECONDS.toMillis(5);
 	/** If opennet is enabled, and there are fewer than this many connections,
 	 * we MAY attempt to contact old opennet peers (opennet peers we have
 	 * dropped from the routing table but kept around in case we can't connect). */
 	static final int MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS = 5;
 	/** We send connect attempts to old-opennet-peers no more than once every
 	 * this many milliseconds. */
-	static final int MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS = 10 * 1000;
+	static final long MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS = SECONDS.toMillis(10);
 	/** We send connect attempts to old-opennet-peers no more than once every
 	 * this many milliseconds. */
-	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60 * 1000;
+	static final long MIN_OLD_OPENNET_CONNECT_DELAY = SECONDS.toMillis(60);
 	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
@@ -169,7 +174,7 @@ public class PacketSender implements Runnable {
 			canSendThrottled = true;
 		else {
 			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-			canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
+			canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
@@ -230,7 +235,7 @@ public class PacketSender implements Runnable {
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.
 					// So it is helpful for them to know that we are disconnecting.
-					node.peers.disconnect(pn, true, true, false, true, false, 5*1000);
+					node.peers.disconnect(pn, true, true, false, true, false, SECONDS.toMillis(5));
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
@@ -319,7 +324,7 @@ public class PacketSender implements Runnable {
 			}
 			
 			long tempNow = System.currentTimeMillis();
-			if((tempNow - oldTempNow) > (5 * 1000))
+			if((tempNow - oldTempNow) > SECONDS.toMillis(5))
 				Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
 			oldTempNow = tempNow;
 		}
@@ -360,7 +365,7 @@ public class PacketSender implements Runnable {
 					else {
 						canSendThrottled = false;
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
+						canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 						if(logMINOR)
 							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
@@ -390,7 +395,7 @@ public class PacketSender implements Runnable {
 					else {
 						canSendThrottled = false;
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
+						canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 						if(logMINOR)
 							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
@@ -417,7 +422,7 @@ public class PacketSender implements Runnable {
 			long beforeHandshakeTime = System.currentTimeMillis();
 			toSendHandshake.getOutgoingMangler().sendHandshake(toSendHandshake, false);
 			long afterHandshakeTime = System.currentTimeMillis();
-			if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+			if((afterHandshakeTime - beforeHandshakeTime) > SECONDS.toMillis(2))
 				Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + toSendHandshake.userToString());
 		}
 		
@@ -437,7 +442,7 @@ public class PacketSender implements Runnable {
 		 * Well worth it to allow us to reconnect more quickly. */
 
 		OpennetManager om = node.getOpennet();
-		if(om != null && node.getUptime() > 30*1000) {
+		if(om != null && node.getUptime() > SECONDS.toMillis(30)) {
 			PeerNode[] peers = om.getOldPeers();
 
 			for(PeerNode pn : peers) {
@@ -460,7 +465,7 @@ public class PacketSender implements Runnable {
 					long beforeHandshakeTime = System.currentTimeMillis();
 					pn.getOutgoingMangler().sendHandshake(pn, true);
 					long afterHandshakeTime = System.currentTimeMillis();
-					if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+					if((afterHandshakeTime - beforeHandshakeTime) > SECONDS.toMillis(2))
 						Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
 				}
 			}
@@ -472,7 +477,7 @@ public class PacketSender implements Runnable {
 		// Send may have taken some time
 		now = System.currentTimeMillis();
 
-		if((now - oldNow) > (10 * 1000))
+		if((now - oldNow) > SECONDS.toMillis(10))
 			Logger.error(this, "now is more than 10 seconds past oldNow (" + (now - oldNow) + ") in PacketSender");
 
 		long sleepTime = nextActionTime - now;
@@ -480,9 +485,9 @@ public class PacketSender implements Runnable {
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
 		sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
 
-		if(now - node.startupTime > 60 * 1000 * 5)
+		if(now - node.startupTime > MINUTES.toMillis(5))
 			if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
-				Logger.error(this, "Have not received any packets from any node in last " + Node.ALARM_TIME / 1000 + " seconds");
+				Logger.error(this, "Have not received any packets from any node in last " + SECONDS.convert(Node.ALARM_TIME, MILLISECONDS) + " seconds");
 				lastReportedNoPackets = now;
 			}
 

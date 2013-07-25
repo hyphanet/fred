@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Random;
@@ -412,7 +414,7 @@ public class DatastoreChecker implements PrioRunnable {
 				waited = true;
 				try {
 					// Wait for anything.
-					wait(100*1000);
+					wait(SECONDS.toMillis(100));
 				} catch (InterruptedException e) {
 					// Ok
 				}

@@ -1,5 +1,9 @@
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -254,13 +258,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(advancedMode) {
 
 				/* node status values */
-				long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+				long nodeUptimeSeconds = SECONDS.convert(now - node.startupTime, MILLISECONDS);
 				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
 				int networkSizeEstimateRecent = 0;
-				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				if(nodeUptimeSeconds > HOURS.toSeconds(48)) {
+					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - HOURS.toMillis(48));
 				}
 				DecimalFormat fix4 = new DecimalFormat("0.0000");
 				double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
@@ -269,8 +273,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
 				double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
 				double backedOffPercent =  stats.backedOffPercent.currentValue();
-				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
-				
+				String nodeUptimeString = TimeUtil.formatTime(MILLISECONDS.convert(nodeUptimeSeconds, SECONDS));
+
 				// BEGIN OVERVIEW TABLE
 				HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 				HTMLNode overviewTableRow = overviewTable.addChild("tr");
@@ -283,7 +287,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 				overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
 				overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + networkSizeEstimateSession + "\u00a0nodes");
-				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+				if(nodeUptimeSeconds > HOURS.toSeconds(48)) {
 					overviewList.addChild("li", "darknetSizeEstimateRecent:\u00a0" + networkSizeEstimateRecent + "\u00a0nodes");
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);

@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.SimpleFieldSet;
@@ -119,12 +122,12 @@ public class SeedClientPeerNode extends PeerNode {
 			// Synchronize to avoid messy races.
 			synchronized(this) {
 				if(timeLastConnectionCompleted() > 0 &&
-						System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
+						System.currentTimeMillis() - lastReceivedPacketTime() > SECONDS.toMillis(60))
 				return true;
 			}
 		} else {
 			// Disconnect after an hour in any event.
-			if(System.currentTimeMillis() - timeLastConnectionCompleted() > 60*60*1000)
+			if(System.currentTimeMillis() - timeLastConnectionCompleted() > HOURS.toMillis(1))
 				return true;
 		}
 		return false;

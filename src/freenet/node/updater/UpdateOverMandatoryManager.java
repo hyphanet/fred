@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -107,9 +110,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	// 2 for reliability, no more as gets very slow/wasteful
 	static final int MAX_NODES_SENDING_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
-	static final int REQUEST_MAIN_JAR_TIMEOUT = 60 * 1000;
+	static final long REQUEST_MAIN_JAR_TIMEOUT = SECONDS.toMillis(60);
 	//** Grace time before we use UoM to update */
-	public static final int GRACE_TIME = 3 * 60 * 60 * 1000; // 3h
+	public static final long GRACE_TIME = HOURS.toMillis(3);
 	private UserAlert alert;
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
@@ -304,8 +307,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				System.err.println("Peer "+source+" (build #" + source.getSimpleVersion() + ") said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
 				maybeNotRevoked();
 			}
-			
-		}, 60*1000);
+
+		}, SECONDS.toMillis(60));
 
 	// The reply message will start the transfer. It includes the revocation URI
 	// so we can tell if anything wierd is happening.

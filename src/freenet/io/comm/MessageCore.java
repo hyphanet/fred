@@ -18,6 +18,10 @@
  */
 package freenet.io.comm;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,11 +60,11 @@ public class MessageCore {
 	private final LinkedList<MessageFilter> _filters = new LinkedList<MessageFilter>();
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
-	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
+	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = MINUTES.toMillis(10);  // maybe this should be per message type??
 	// FIXME do we need MIN_FILTER_REMOVE_TIME? Can we make this more efficient?
 	// FIXME may not work well for newly added filters with timeouts close to the minimum, or filters with timeouts close to the minimum in general.
-	private static final int MAX_FILTER_REMOVE_TIME = 1000;
-	private static final int MIN_FILTER_REMOVE_TIME = 100;
+	private static final long MAX_FILTER_REMOVE_TIME = SECONDS.toMillis(1);
+	private static final long MIN_FILTER_REMOVE_TIME = MILLISECONDS.toMillis(100);
 	private long startedTime;
 	
 	public synchronized long getStartedTime() {

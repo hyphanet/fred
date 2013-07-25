@@ -1,5 +1,8 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -364,7 +367,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				freenet.support.Logger.OSThread.logPID(this);
 				tryMaybeRun();
 			}
-		}, 60*1000);
+		}, MINUTES.toMillis(1));
 	}
 
 	/**
@@ -468,7 +471,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
 			if(failedRunners.size() == plugins.length) {
-				if(now - lastDetectAttemptEndedTime < 5*60*1000) {
+				if(now - lastDetectAttemptEndedTime < MINUTES.toMillis(5)) {
 					if(logMINOR) Logger.minor(this, "Last detect failed less than 5 minutes ago");
 					return;
 				} else {
@@ -503,7 +506,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * @return True if we should run a detection.
 	 */
 	private boolean shouldDetectNoPeers(long now) {
-		if(now - lastDetectAttemptEndedTime < 6*60*60*1000) {
+		if(now - lastDetectAttemptEndedTime < HOURS.toMillis(6)) {
 			// No peers, only try every 6 hours.
 			if(logMINOR) Logger.minor(this, "No peers but detected less than 6 hours ago");
 			return false;
@@ -555,7 +558,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				realConnections++;
 			else {
 				realDisconnected++;
-				if(now - p.lastReceivedPacketTime() < 5*60*1000)
+				if(now - p.lastReceivedPacketTime() < MINUTES.toMillis(5))
 					recentlyConnected++;
 			}
 		}
@@ -572,7 +575,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				// Allow 2 minutes to get incoming connections and therefore detect from them.
 				// In the meantime, *hopefully* our oldIPAddress is valid.
 				// If not, we'll find out in 2 minutes.
-				if(now - firstTimeUrgent > 2*60*1000) {
+				if(now - firstTimeUrgent > MINUTES.toMillis(2)) {
 					detect = true;
 					firstTimeUrgent = now; // Reset now rather than on next round.
 					if(logMINOR) Logger.minor(this, "Detecting now as 2 minutes are up (have oldIPAddress)");
@@ -592,7 +595,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		// If we have no connections, and have lost several connections recently, we should 
 		// do a detection soon, regardless of the 1 detection per hour throttle.
 		if(realConnections == 0 && realDisconnected > 0 && recentlyConnected > 2) {
-			if(now - lastDetectAttemptEndedTime > 6 * 60 * 1000) {
+			if(now - lastDetectAttemptEndedTime > MINUTES.toMillis(6)) {
 				return true;
 			}
 		}
@@ -603,7 +606,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return true;
 		
 		if(detect) {
-			if(now - lastDetectAttemptEndedTime < 60*60*1000) {
+			if(now - lastDetectAttemptEndedTime < HOURS.toMillis(1)) {
 				// Only try every hour
 				if(logMINOR) Logger.minor(this, "Only trying once per hour");
 				return false;
@@ -625,7 +628,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private boolean shouldDetectDespiteRealIP(long now, PeerNode[] peers, FreenetInetAddress[] nodeAddrs) {
 		// We might still be firewalled?
 		// First, check only once per day or startup
-		if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
+		if(now - lastDetectAttemptEndedTime < HOURS.toMillis(12)) {
 			if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 12 hours ago");
 			return false;
 		}
@@ -636,7 +639,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		HashSet<InetAddress> addressesConnected = null;
 		boolean hasOldPeers = false;
 		for(PeerNode p : peers) {
-			if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
+			if(p.isConnected() || (now - p.lastReceivedPacketTime() < HOURS.toMillis(24))) {
 				// Has been connected in the last 24 hours.
 				// Unique IP address?
 				Peer peer = p.getPeer();
@@ -667,7 +670,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					}
 				}
 				long l = p.getPeerAddedTime();
-				if((l <= 0) || (now - l > 30*60*1000)) {
+				if((l <= 0) || (now - l > MINUTES.toMillis(30))) {
 					hasOldPeers = true;
 				}
 			}

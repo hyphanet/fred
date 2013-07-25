@@ -1,5 +1,10 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -427,9 +432,7 @@ public class NodeUpdateManager {
 										+ filename
 										+ " after fetching it from Freenet.");
 						try {
-							Thread.sleep(1000 + node.fastWeakRandom
-									.nextInt(((int) (1000 * Math.min(
-											Math.pow(2, i), 15 * 60 * 1000)))));
+							Thread.sleep(SECONDS.toMillis(1) + node.fastWeakRandom.nextInt((int) SECONDS.toMillis((long) Math.min(Math.pow(2, i), MINUTES.toSeconds(15)))));
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -912,8 +915,8 @@ public class NodeUpdateManager {
 		deployOffThread(0, false);
 	}
 
-	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240 * 1000;
-	private static final int RECENT_REVOCATION_INTERVAL = 120 * 1000;
+	private static final long WAIT_FOR_SECOND_FETCH_TO_COMPLETE = MINUTES.toMillis(4);
+	private static final long RECENT_REVOCATION_INTERVAL = MINUTES.toMillis(2);
 	/**
 	 * After 5 minutes, deploy the update even if we haven't got 3 DNFs on the
 	 * revocation key yet. Reason: we want to be able to deploy UOM updates on
@@ -921,7 +924,7 @@ public class NodeUpdateManager {
 	 * Note that with UOM, revocation certs are automatically propagated node to
 	 * node, so this should be *relatively* safe. Any better ideas, tell us.
 	 */
-	private static final int REVOCATION_FETCH_TIMEOUT = 5 * 60 * 1000;
+	private static final long REVOCATION_FETCH_TIMEOUT = MINUTES.toMillis(5);
 
 	/**
 	 * Does the updater have an update ready to deploy? May be called
@@ -997,7 +1000,7 @@ public class NodeUpdateManager {
 				Logger.minor(this, "Returning true because of ignoreRevocation");
 			return true;
 		}
-		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
+		long waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
 		if(logMINOR) Logger.minor(this, "Will deploy in "+waitTime+"ms");
 		deployOffThread(waitTime, false);
 		return false;
@@ -1309,7 +1312,7 @@ public class NodeUpdateManager {
 			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
 		try {
-			Thread.sleep(5 * 60 * 1000);
+			Thread.sleep(MINUTES.toMillis(5));
 		} catch (InterruptedException e) {
 			// Break
 		} // in case it's still restarting
@@ -1476,7 +1479,7 @@ public class NodeUpdateManager {
 			public void run() {
 				revocationChecker.start(false);
 			}
-		}, node.random.nextInt(24 * 60 * 60 * 1000));
+		}, node.random.nextInt((int) DAYS.toMillis(1)));
 	}
 
 	private void deployPluginUpdates() {
@@ -1820,7 +1823,7 @@ public class NodeUpdateManager {
 			// We are a seednode.
 			// Normally this means we won't send UOM.
 			// However, if something breaks severely, we need an escape route.
-			if (node.getUptime() > 5 * 60 * 1000
+			if (node.getUptime() > MINUTES.toMillis(5)
 					&& node.peers.countCompatibleRealPeers() == 0)
 				return false;
 			return true;

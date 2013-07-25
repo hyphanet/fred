@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.store.saltedhash;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -1102,7 +1105,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
 						if (starting) {
-							WrapperManager.signalStarting(5*60*1000);
+							WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 							if ( x++ % 32 == 0 )
 								System.err.println("Preallocating space for " + name + ": " + currentHdLen + "/" + newHdLen);
 						}
@@ -1424,7 +1427,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						configLock.writeLock().unlock();
 					}
 
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(30) + SECONDS.toMillis(1)));
 				}
 
 				@Override
@@ -1466,7 +1469,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				int i = 0;
 				@Override
 				public boolean batch(long entriesLeft) {
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(30) + SECONDS.toMillis(1)));
 
 					if (i++ % 16 == 0)
 						writeConfigFile();
@@ -1536,8 +1539,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					} finally {
 						configLock.writeLock().unlock();
 					}
-					
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
+
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(5) + SECONDS.toMillis(1)));
 				}
 				
 				@Override
@@ -1564,7 +1567,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				int i = 0;
 				@Override
 				public boolean batch(long entriesLeft) {
-					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
+					WrapperManager.signalStarting((int) (RESIZE_MEMORY_ENTRIES * SECONDS.toMillis(5) + SECONDS.toMillis(1)));
 
 					if (i++ % 16 == 0)
 						writeConfigFile();

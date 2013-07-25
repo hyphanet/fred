@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -242,7 +244,7 @@ public class PluginManager {
 		}
 	}
 
-	public void stop(int maxWaitTime) {
+	public void stop(long maxWaitTime) {
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
 		synchronized(this) {
@@ -965,7 +967,7 @@ public class PluginManager {
 		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
 	}
 
-	public void killPlugin(String name, int maxWaitTime, boolean reloading) {
+	public void killPlugin(String name, long maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -981,7 +983,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
-	public void killPluginByFilename(String name, int maxWaitTime, boolean reloading) {
+	public void killPluginByFilename(String name, long maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -997,7 +999,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
-	public void killPluginByClass(String name, int maxWaitTime) {
+	public void killPluginByClass(String name, long maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -1013,7 +1015,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
-	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
+	public void killPlugin(FredPlugin plugin, long maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -1260,7 +1262,7 @@ public class PluginManager {
 				try {
 					downloaded = true;
 					System.err.println("Downloading plugin "+name);
-					WrapperManager.signalStarting(5*60*1000);
+					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
 					InputStream pluginInputStream = null;

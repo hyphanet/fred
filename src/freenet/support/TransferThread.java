@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.Collection;
 
 import com.db4o.ObjectContainer;
@@ -67,7 +71,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 
 	@Override
 	public void run() {
-		long sleepTime = 1 * 1000;
+		long sleepTime = SECONDS.toMillis(1);
 		try {
 			Logger.debug(this, "Loop running...");
 			iterate();
@@ -77,7 +81,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			Logger.error(this, "Error in iterate() or getSleepTime() probably", e);
 		}
 		finally {
-			Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
+			Logger.debug(this, "Loop finished. Sleeping for " + MINUTES.convert(sleepTime, MILLISECONDS) + " minutes.");
 			mTicker.queueTimedJob(this, mName, sleepTime, false, true);
 		}
 	}

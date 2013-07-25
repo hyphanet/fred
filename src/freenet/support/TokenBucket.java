@@ -1,5 +1,8 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -31,7 +34,7 @@ public class TokenBucket {
 		}
 		this.nanosPerTick = nanosPerTick;
 		long now = System.currentTimeMillis();
-		this.timeLastTick = now * (1000 * 1000);
+		this.timeLastTick = NANOSECONDS.convert(now, MILLISECONDS);
 		if(nanosPerTick <= 0) throw new IllegalArgumentException();
 		if(max <= 0) throw new IllegalArgumentException();
 	}
@@ -139,7 +142,7 @@ public class TokenBucket {
 		}
 		
 		long minDelayNS = nanosPerTick * (-current);
-		long minDelayMS = (minDelayNS + 1000*1000 - 1) / (1000*1000);
+		long minDelayMS = MILLISECONDS.convert(minDelayNS + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 		long now = System.currentTimeMillis();
 		long wakeAt = now + minDelayMS;
 		
@@ -216,11 +219,11 @@ public class TokenBucket {
 	}
 	
 	synchronized long tokensToAdd() {
-		long nowNS = System.currentTimeMillis() * (1000 * 1000);
+		long nowNS = NANOSECONDS.convert(System.currentTimeMillis(), MILLISECONDS);
 		if(timeLastTick > nowNS) {
-			System.err.println("CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime((timeLastTick - nowNS)/(1000*1000), 2, true));
+			System.err.println("CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime(MILLISECONDS.convert(timeLastTick - nowNS, NANOSECONDS), 2, true));
 			System.err.println("FREENET WILL BREAK SEVERELY IF THIS KEEPS HAPPENING!");
-			Logger.error(this, "CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime((timeLastTick - nowNS)/(1000*1000), 2, true));
+			Logger.error(this, "CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime(MILLISECONDS.convert(timeLastTick - nowNS, NANOSECONDS), 2, true));
 			timeLastTick = nowNS;
 			return 0;
 		}
