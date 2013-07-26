@@ -135,6 +135,22 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 	
+	/** Add a request (or insert) to the request selection tree.
+	 * @param priorityClass The priority of the request.
+	 * @param client Label object indicating which larger group of requests this request belongs to
+	 * (e.g. the global queue, or an FCP client), and whether it is persistent.
+	 * @param cr The high-level request that this single block request is part of. E.g. a fetch for 
+	 * a single key may download many blocks in a splitfile; an insert for a large freesite is 
+	 * considered a single @see ClientRequester.
+	 * @param req A single SendableRequest object which is one or more low-level requests. E.g. it 
+	 * can be an insert of a single block, or it can be a request or insert for a single segment 
+	 * within a splitfile. 
+	 * @param random Random number generator
+	 * @param container The database handle, if the request is persistent, in which case this will
+	 * be a ClientRequestSchedulerCore. If so, this method must be called on the database thread.
+	 * @param context The client context object, which contains links to all the important objects
+	 * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
+	 */
 	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
