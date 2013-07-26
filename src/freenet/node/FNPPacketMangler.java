@@ -2199,7 +2199,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     /**
      * Change the ECDH key on a regular basis but at most once every 30sec
      *
-     * @return {@link DiffieHellmanLightContext}
+     * @return {@link ECDHLightContext}
      * @throws NoContextsException 
      */
     private ECDHLightContext getECDHLightContext() throws NoContextsException {
