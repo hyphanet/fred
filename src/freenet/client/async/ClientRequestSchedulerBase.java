@@ -31,9 +31,15 @@ import freenet.support.SortedVectorByNumber;
 import freenet.support.Logger.LogLevel;
 
 /**
- * Base class for ClientRequestSchedulerCore and ClientRequestSchedulerNonPersistent, 
- * contains some of the methods and most of the variables. In particular, it contains all 
- * the methods that deal primarily with pendingKeys.
+ * <p>Base class for @see ClientRequestSchedulerCore and @see ClientRequestSchedulerNonPersistent, 
+ * contains some of the methods and most of the variables, in particular it contains the base of
+ * the request selection tree. The actual request selection algorithm is in 
+ * @see ClientRequestSchedulerSelector .</p>
+ * 
+ * <p>It also contains separate structures which track exactly which keys we are listening
+ * for. This is decoupled from actually requesting them because we want to pick up the data
+ * even if we didn't request it - some nearby node requested it, it got inserted through
+ * this node, it was offered via ULPRs some time after we requested it etc.</p>
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
