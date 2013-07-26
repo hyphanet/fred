@@ -496,9 +496,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			// END PEER TABLE
 
-			//FOAF info not generally useful anyway; should be hidden by default.
-			//if (showFoafTable)
-			{
+			// FOAF locations table.
+			if(advancedMode) {
 				//requires a location-to-list/count in-memory transform
 				List<Double> locations=new ArrayList<Double>();
 				List<List<PeerNodeStatus>> peerGroups=new ArrayList<List<PeerNodeStatus>>();
