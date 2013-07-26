@@ -69,17 +69,7 @@ abstract class ClientRequestSchedulerBase {
 	final boolean isRTScheduler;
 	
 	/**
-	 * Structure:
-	 * array (by priority) -> // one element per possible priority
-	 * SortedVectorByNumber (by # retries) -> // contains each current #retries
-	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
-	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
-	 * 
-	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
-	 */
-	protected SortedVectorByNumber[] priorities;
-	/**
-	 * New structure:
+	 * The base of the tree.
 	 * array (by priority) -> // one element per possible priority
 	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
 	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
@@ -96,7 +86,6 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
-		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
@@ -476,65 +465,9 @@ abstract class ClientRequestSchedulerBase {
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);
-			if(priorities != null)
-				migrateToNewPriorities(container, context);
 		}
 	}
 	
-	private void migrateToNewPriorities(ObjectContainer container,
-			ClientContext context) {
-		System.err.println("Migrating old priorities to new priorities ...");
-		for(int prio=0;prio<priorities.length;prio++) {
-			System.err.println("Priority "+prio);
-			SortedVectorByNumber retryList = priorities[prio];
-			if(retryList == null) continue;
-			if(persistent()) container.activate(retryList, 1);
-			if(!retryList.isEmpty()) {
-				while(retryList.count() > 0) {
-					int retryCount = retryList.getNumberByIndex(0);
-					System.err.println("Retry count "+retryCount+" for priority "+prio);
-					SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) retryList.getByIndex(0);
-					if(retryTracker == null) {
-						System.out.println("Retry count is empty");
-						retryList.remove(retryCount, container);
-						continue; // Fault tolerance in migration is good!
-					}
-					if(persistent()) container.activate(retryTracker, 1);
-					// Move everything from the retryTracker to the new priority
-					if(newPriorities[prio] == null) {
-						newPriorities[prio] = new SectoredRandomGrabArray(persistent(), container, null);
-						if(persistent()) {
-							container.store(newPriorities[prio]);
-							container.store(this);
-						}
-					} else {
-						if(persistent())
-							container.activate(newPriorities[prio], 1);
-					}
-					SectoredRandomGrabArray newTopLevel = newPriorities[prio];
-					retryTracker.moveElementsTo(newTopLevel, container, true);
-					if(persistent()) {
-						container.deactivate(newTopLevel, 1);
-						retryTracker.removeFrom(container);
-					}
-					retryList.remove(retryCount, container);
-					if(persistent()) container.commit();
-					System.out.println("Migrated retry count "+retryCount+" on priority "+prio);
-				}
-			}
-			retryList.removeFrom(container);
-			priorities[prio] = null;
-			if(persistent()) container.commit();
-			System.out.println("Migrated priority "+prio);
-		}
-		if(persistent()) {
-			priorities = null;
-			container.store(this);
-			container.commit();
-			System.out.println("Migrated all priorities");
-		}
-	}
-
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
