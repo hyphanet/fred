@@ -19,10 +19,12 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-/** A high level client request. A request (either fetch or put) started
- * by a Client. Has a suitable context and a URI; is fulfilled only when
- * we have followed all the redirects etc, or have an error. Can be
- * retried.
+/** A high level request or insert. This may create any number of low-level requests of inserts,
+ * for example a request may follow redirects, download splitfiles and unpack containers, while an
+ * insert (for a file or a freesite) may also have to insert many blocks. A high-level request is
+ * created by a client, has a FetchContext or InsertContext for configuration. Compare to 
+ * @see SendableRequest for a low-level request (which may still be multiple actual requests or 
+ * inserts).
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class ClientRequester {
