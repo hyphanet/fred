@@ -519,7 +519,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				pubKeyHashHash = SHA256.digest(pubKeyHash);
 			}
 			
-			parseECDSA(fs, fromAnonymousInitiator);
+			parseECDSA(fs, fromAnonymousInitiator, true);
 			if(noSig || verifyReferenceSignature(fs)) {
 				this.isSignatureVerificationSuccessfull = true;
 			}
@@ -749,7 +749,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	/** @return True if there is a new ECDSA key */
-	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator) throws FSParseException {
+	private synchronized boolean parseECDSA(SimpleFieldSet fs, boolean fromAnonymousInitiator, boolean startup) throws FSParseException {
+	    // FIXME When negType9 is mandatory, make the fields final and move back into PeerNode.
 		SimpleFieldSet sfs = fs.subset("ecdsa.P256");
 		if(sfs == null) {
 			// ECDSA is not sent on connect, for example.
@@ -769,10 +770,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
             if(key == null)
                 throw new FSParseException("ecdsa.P256.pub is invalid!");
             if(peerECDSAPubKey == null) {
-            	Logger.normal(this, "Peer now has an ECDSA key, upgraded to negType 9+: "+userToString());
-            	this.peerECDSAPubKey = key;
+                this.peerECDSAPubKey = key;
                 peerECDSAPubKeyHash = SHA256.digest(peerECDSAPubKey.getEncoded());
-                if(isDarknet()) node.peers.writePeersDarknetUrgent();
+                if(!startup) {
+                    Logger.normal(this, "Peer now has an ECDSA key, upgraded to negType 9+: "+userToString());
+                    if(isDarknet()) node.peers.writePeersDarknetUrgent();
+                }
                 return true;
             } else if(!key.equals(peerECDSAPubKey)) {
             	Logger.error(this, "Tried to change ECDSA key on "+userToString()+" - did neighbour try to downgrade? Rejecting...");
@@ -2702,7 +2705,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				negTypes = newNegTypes;
 			}
 		}
-		changedAnything |= parseECDSA(fs, false);
+		changedAnything |= parseECDSA(fs, false, false);
 
 		if(parseARK(fs, false, forDiffNodeRef))
 			changedAnything = true;
