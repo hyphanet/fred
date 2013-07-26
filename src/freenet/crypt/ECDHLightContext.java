@@ -34,7 +34,9 @@ public class ECDHLightContext extends KeyAgreementSchemeContext {
      * Calling the following is costy; avoid
      */
     public byte[] getHMACKey(ECPublicKey peerExponential) {
-        lastUsedTime = System.currentTimeMillis();
+        synchronized(this) {
+            lastUsedTime = System.currentTimeMillis();
+        }
         byte[] sharedKey = ecdh.getAgreedSecret(peerExponential);
 
         if (logMINOR) {
