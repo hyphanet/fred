@@ -218,10 +218,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.deactivate(req, 1);
 					return;
 				}
-				schedCore.innerRegister(req, random, container, clientContext, null);
+				schedCore.innerRegister(req, container, clientContext, null);
 				starter.wakeUp();
 		} else {
-			schedTransient.innerRegister(req, random, null, clientContext, null);
+			schedTransient.innerRegister(req, null, clientContext, null);
 			starter.wakeUp();
 		}
 	}
@@ -339,7 +339,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(!(getter.isCancelled(container))) {
 							wereAnyValid = true;
 							if(!getter.preRegister(container, clientContext, true)) {
-								schedCore.innerRegister(getter, random, container, clientContext, getters);
+								schedCore.innerRegister(getter, container, clientContext, getters);
 							}
 						} else
 							getter.preRegister(container, clientContext, false);
@@ -365,7 +365,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(getter.preRegister(container, clientContext, true)) continue;
 				}
 				if(!getter.isCancelled(null))
-					schedTransient.innerRegister(getter, random, null, clientContext, getters);
+					schedTransient.innerRegister(getter, null, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -862,9 +862,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container, short oldPrio) {
-		schedTransient.reregisterAll(request, random, this, null, clientContext, oldPrio);
+		schedTransient.reregisterAll(request, this, null, clientContext, oldPrio);
 		if(schedCore != null)
-			schedCore.reregisterAll(request, random, this, container, clientContext, oldPrio);
+			schedCore.reregisterAll(request, this, container, clientContext, oldPrio);
 		starter.wakeUp();
 	}
 	

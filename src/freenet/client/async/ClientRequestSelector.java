@@ -430,9 +430,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
 					}
 					if(req.persistent())
-						schedCore.innerRegister(req, random, container, context, null);
+						schedCore.innerRegister(req, container, context, null);
 					else
-						schedTransient.innerRegister(req, random, container, context, null);
+						schedTransient.innerRegister(req, container, context, null);
 					continue;
 				}
 				

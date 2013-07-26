@@ -93,7 +93,6 @@ abstract class ClientRequestSchedulerBase {
 	
 	/**
 	 * @param req
-	 * @param random
 	 * @param container
 	 * @param maybeActive Array of requests, can be null, which are being registered
 	 * in this group. These will be ignored for purposes of checking whether stuff
@@ -103,7 +102,7 @@ abstract class ClientRequestSchedulerBase {
 	 * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
 	 * or make req a SendableRequest[] and register them all at once.
 	 */
-	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
+	void innerRegister(SendableRequest req, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
 		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
@@ -115,7 +114,7 @@ abstract class ClientRequestSchedulerBase {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, random, container, context);
+		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
 		if(persistent())
 			sched.maybeAddToStarterQueue(req, container, maybeActive);
@@ -145,13 +144,12 @@ abstract class ClientRequestSchedulerBase {
 	 * @param req A single SendableRequest object which is one or more low-level requests. E.g. it 
 	 * can be an insert of a single block, or it can be a request or insert for a single segment 
 	 * within a splitfile. 
-	 * @param random Random number generator
 	 * @param container The database handle, if the request is persistent, in which case this will
 	 * be a ClientRequestSchedulerCore. If so, this method must be called on the database thread.
 	 * @param context The client context object, which contains links to all the important objects
 	 * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
 	 */
-	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
+	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
@@ -212,7 +210,7 @@ abstract class ClientRequestSchedulerBase {
 			cr.removeFromRequests(req, container, dontComplain);
 	}
 	
-	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
+	public void reregisterAll(ClientRequester request, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
 		if(request.persistent() != persistent()) return;
 		SendableRequest[] reqs = getSendableRequests(request, container);
 		
@@ -247,7 +245,7 @@ abstract class ClientRequestSchedulerBase {
 			// Then can do innerRegister() (not register()).
 			if(persistent())
 				container.activate(req, 1);
-			innerRegister(req, random, container, context, null);
+			innerRegister(req, container, context, null);
 			if(persistent())
 				container.deactivate(req, 1);
 		}
