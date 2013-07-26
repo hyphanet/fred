@@ -446,7 +446,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
 				if (advancedMode) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", l10n("locationTitle"));
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoffRT")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy (realtime)? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff (realtime)");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoffBulk")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy (bulk)? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff (bulk)");
 
@@ -534,21 +534,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					else
 						nonTrivialCount++;
 				}
-				peerTableInfoboxContent.addChild("b", locations.size()+" Second-Degree Connections");
+				peerTableInfoboxContent.addChild("b", l10n("secondDegreeConnectionsCountTitle", "count", Integer.toString(locations.size())));
 				peerTableInfoboxContent.addChild("br");
 				if (!showTrivialFoafConnections) {
-					peerTableInfoboxContent.addChild("i", trivialCount+" non-overlapping connections potentially hidden");
+					peerTableInfoboxContent.addChild("i", l10n("secondDegreeTrivialHiddenCount", "count", Integer.toString(trivialCount)));
 					//@todo: add "show these" link
 				} else {
-					peerTableInfoboxContent.addChild("i", nonTrivialCount+" reachable through more than one peer");
+					peerTableInfoboxContent.addChild("i", l10n("secondDegreeNonTrivialCount", "count", Integer.toString(nonTrivialCount)));
 					//@todo: add "hide these" link
 				}
 				HTMLNode foafTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections"); //@todo: change css class?
 				HTMLNode foafRow = foafTable.addChild("tr");
 				{
-					foafRow.addChild("th", "Location");
-					foafRow.addChild("th", "Count");
-					foafRow.addChild("th", "Reachable Through");
+					foafRow.addChild("th", l10n("locationTitle"));
+					foafRow.addChild("th", l10n("countTitle"));
+					foafRow.addChild("th", l10n("foafReachableThroughTitle"));
 				}
 				int max=locations.size();
 				for (int i=0; i<max; i++) {
@@ -583,7 +583,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					}
 				}
 				if (transitiveCount>0) {
-					peerTableInfoboxContent.addChild("i", transitiveCount+" locations likely also our peers (in bold)");
+					peerTableInfoboxContent.addChild("i", l10n("secondDegreeAlsoOurs", "count", Integer.toString(transitiveCount)));
 				}
 			}
 			// END FOAF TABLE
@@ -1187,6 +1187,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+string);
 	}
 	
+    private static String l10n(String string, String pattern, String value) {
+        return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+string, pattern, value);
+    }
+    
 	private String sortString(boolean isReversed, String type) {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
