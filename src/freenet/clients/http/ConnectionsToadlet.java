@@ -508,6 +508,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 							for (double location : peersLoc) {
 								int i;
 								int max=locations.size();
+								// FIXME Fix O(n^2): Use Arrays.binarySearch or use a TreeMap.
 								for (i=0; i<max && locations.get(i)<location; i++);
 								//i now points to the proper location (equal, insertion point, or end-of-list)
 								//maybe better called "reverseGroup"?
