@@ -173,6 +173,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.core = core;
 		this.stats = n.nodeStats;
 		this.peers = n.peers;
+	    REF_LINK = HTMLNode.link(path()+"myref.fref").setReadOnly();
+	    REFTEXT_LINK = HTMLNode.link(path()+"myref.txt").setReadOnly();
 	}
 
 	abstract SimpleColumn[] endColumnHeaders(boolean advancedModeEnabled);
@@ -602,7 +604,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// our reference
 		if(shouldDrawNoderefBox(advancedMode)) {
 			drawAddPeerBox(contentNode, ctx);
-			drawNoderefBox(contentNode, getNoderef(), true, isOpennet());
+			drawNoderefBox(contentNode, getNoderef(), true);
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -841,8 +843,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
 
-	static final HTMLNode REF_LINK = HTMLNode.link("myref.fref").setReadOnly();
-	static final HTMLNode REFTEXT_LINK = HTMLNode.link("myref.txt").setReadOnly();
+	final HTMLNode REF_LINK;
+	final HTMLNode REFTEXT_LINK;
 
 	/**
 	 *
@@ -851,7 +853,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param showNoderef If true, render the text of the noderef so that it may be copy-pasted. If false, only
 	 *                    show a link to download it.
 	 */
-	static void drawNoderefBox(HTMLNode contentNode, SimpleFieldSet fs, boolean showNoderef, boolean isOpennet) {
+	void drawNoderefBox(HTMLNode contentNode, SimpleFieldSet fs, boolean showNoderef) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
@@ -860,7 +862,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				new HTMLNode[] { REF_LINK, REFTEXT_LINK });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		
-		if(!isOpennet) {
+		if(!isOpennet()) {
 			HTMLNode myName = referenceInfoboxContent.addChild("p");
 			myName.addChild("span",
 					NodeL10n.getBase().getString("DarknetConnectionsToadlet.myName", "name", fs.get("myName")));
