@@ -496,7 +496,7 @@ public class SimpleFieldSet {
 
     	// Output
     	for(i=0; i < keys.length; i++) {
-    		writeValue(w, keys[i], get(keys[i]), prefix, false);
+    		writeValue(w, keys[i], get(keys[i]), prefix, useBase64);
     	}
 
     	if(subsets != null) {
