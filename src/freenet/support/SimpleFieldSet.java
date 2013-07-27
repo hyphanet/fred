@@ -88,7 +88,7 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
         this(shortLived);
-        read(Readers.fromBufferedReader(br), allowMultiple);
+        read(Readers.fromBufferedReader(br), allowMultiple, false);
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -120,11 +120,11 @@ public class SimpleFieldSet {
      * small.
      * @throws IOException if the string is too short or invalid.
      */
-    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
-	    read(Readers.fromBufferedReader(br), allowMultiple);
+	    read(Readers.fromBufferedReader(br), allowMultiple, allowBase64);
     }
     
     /**
@@ -141,16 +141,16 @@ public class SimpleFieldSet {
      * small.
      * @throws IOException
      */
-    public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
-    	read(Readers.fromStringArray(content), allowMultiple);
+    	read(Readers.fromStringArray(content), allowMultiple, allowBase64);
     }
     
     /**
      * @see #read(LineReader, int, int, boolean, boolean)
      */
-	private void read(LineReader lr, boolean allowMultiple) throws IOException {
-		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple, false);
+	private void read(LineReader lr, boolean allowMultiple, boolean allowBase64) throws IOException {
+		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple, allowBase64);
 	}
 	
 	/**

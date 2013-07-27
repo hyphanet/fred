@@ -452,7 +452,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String[][] methodStringPairs = SAMPLE_STRING_PAIRS;
 		String methodStringToParse = sfsReadyString(methodStringPairs);
 		try {
-			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false,false);
 			for (int i=0; i < methodStringPairs.length; i++)
 				assertEquals(methodSFS.get(methodStringPairs[i][0]),
 						methodStringPairs[i][1]);
@@ -512,7 +512,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String methodEndMarker = "ANOTHER-ENDING";
 		String methodStringToParse = sfsReadyString(SAMPLE_STRING_PAIRS);
 		try {
-			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false);
+			SimpleFieldSet methodSFS = new SimpleFieldSet(methodStringToParse,false,false,false);
 			assertEquals(methodSFS.getEndMarker(),SAMPLE_END_MARKER);
 			methodSFS.setEndMarker(methodEndMarker);
 			assertEquals(methodSFS.getEndMarker(),methodEndMarker);

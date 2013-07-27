@@ -3704,7 +3704,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 
 		SimpleFieldSet fs;
 		try {
-			fs = new SimpleFieldSet(ref, false, true);
+			fs = new SimpleFieldSet(ref, false, true, false);
 			if(logMINOR)
 				Logger.minor(this, "Got ARK for " + this);
 			gotARK(fs, edition);
