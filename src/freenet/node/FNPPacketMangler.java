@@ -1376,7 +1376,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		boolean completed = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
-				incommingKey, replyTo, true, negType, false, hmacKey, ivCipher,
+				incommingKey, replyTo, true, negType, hmacKey, ivCipher,
 				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
 		if(completed) {
@@ -1619,7 +1619,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		boolean completed = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
-				pn.incommingKey, replyTo, false, negType, true, pn.hmacKey,
+				pn.incommingKey, replyTo, false, negType, pn.hmacKey,
 				ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID,
 				pn.theirInitialMsgID);
 		if(completed) {

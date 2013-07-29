@@ -2026,20 +2026,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param length Number of bytes to read.
 	* @param encKey The new session key.
 	* @param replyTo The IP the handshake came in on.
-	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If any
-	* other value, check whether we have it, and if we do, return that, otherwise return the ID of the
-	* new tracker.
-	* @param isJFK4 If true, we are processing a JFK(4) and must respect the tracker ID chosen by the
-	* responder. If false, we are processing a JFK(3) and we can either reuse the suggested tracker ID,
-	* which the other side is able to reuse, or we can create a new tracker ID.
-	* @param jfk4SameAsOld If true, the responder chose to use the tracker ID that we provided. If
-	* we don't have it now the connection fails.
+	* @param isJFK4 If true, we are processing a JFK(4). If false, we are processing a JFK(3).
 	* @return True if the handshake was successful, false if an error occurred and we were unable 
 	* to connect, in which case we will have disconnected any existing connection.
 	*/
-	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, boolean isJFK4, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
+	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "completedHandshake: isJFK4="+isJFK4);
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
