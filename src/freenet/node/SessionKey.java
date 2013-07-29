@@ -27,13 +27,11 @@ public class SessionKey {
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
 	
-	final long trackerID;
-	
 	public final NewPacketFormatKeyContext packetContext;
 
 	SessionKey(PeerNode parent, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
-			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context, long trackerID) {
+			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context) {
 		this.pn = parent;
 		this.outgoingCipher = outgoingCipher;
 		this.outgoingKey = outgoingKey;
@@ -43,7 +41,6 @@ public class SessionKey {
 		this.ivNonce = ivNonce;
 		this.hmacKey = hmacKey;
 		this.packetContext = context;
-		this.trackerID = trackerID;
 	}
 	
 	public void disconnected() {

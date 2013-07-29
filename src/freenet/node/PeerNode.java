@@ -2034,13 +2034,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* which the other side is able to reuse, or we can create a new tracker ID.
 	* @param jfk4SameAsOld If true, the responder chose to use the tracker ID that we provided. If
 	* we don't have it now the connection fails.
-	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
-	* it's a new tracker. -1 to indicate failure.
+	* @return True if the handshake was successful, false if an error occurred and we were unable 
+	* to connect, in which case we will have disconnected any existing connection.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
+	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, boolean isJFK4, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
-		if(trackerID < 0) trackerID = Math.abs(node.random.nextLong());
+		if(logMINOR) Logger.minor(this, "completedHandshake: isJFK4="+isJFK4);
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
@@ -2058,7 +2057,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
 			node.peers.disconnected(this);
-			return -1;
+			return false;
 		}
 		boolean routable = true;
 		boolean newer = false;
@@ -2099,21 +2098,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				if(Arrays.equals(outgoingKey, currentTracker.outgoingKey)
 						&& Arrays.equals(incommingKey, currentTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
-					return -1;
+					return false;
 				}
 			}
 			if(previousTracker != null) {
 				if(Arrays.equals(outgoingKey, previousTracker.outgoingKey)
 						&& Arrays.equals(incommingKey, previousTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to previous, maybe replayed JFK(4)?");
-					return -1;
+					return false;
 				}
 			}
 			if(unverifiedTracker != null) {
 				if(Arrays.equals(outgoingKey, unverifiedTracker.outgoingKey)
 						&& Arrays.equals(incommingKey, unverifiedTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to unverified, maybe replayed JFK(4)?");
-					return -1;
+					return false;
 				}
 			}
 			handshakeCount = 0;
@@ -2129,7 +2128,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
-			boolean notReusingTracker = false;
 			long oldBootID;
 			oldBootID = bootID.getAndSet(thisBootID);
 			bootIDChanged = oldBootID != thisBootID;
@@ -2165,7 +2163,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum), trackerID);
+			newTracker = new SessionKey(this, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum));
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -2246,7 +2244,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		
 		crypto.maybeBootConnection(this, replyTo.getFreenetAddress());
 
-		return trackerID;
+		return true;
 	}
 
 	protected abstract void maybeClearPeerAddedTimeOnConnect();
@@ -4365,22 +4363,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			pf = packetFormat;
 		}
 		return pf.maybeSendPacket(now, ackOnly);
-	}
-
-	/**
-	 * @return The ID of a reusable PacketTracker if there is one, otherwise -1.
-	 */
-	public long getReusableTrackerID() {
-		SessionKey cur;
-		synchronized(this) {
-			cur = currentTracker;
-		}
-		if(cur == null) {
-			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
-			return -1;
-		}
-		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.trackerID+" on "+this);
-		return cur.trackerID;
 	}
 
 	private long lastFailedRevocationTransfer;

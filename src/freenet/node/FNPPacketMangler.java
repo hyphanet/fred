@@ -1290,9 +1290,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		int ptr = 0;
-		long trackerID;
-		trackerID = Fields.bytesToLong(data, ptr);
-		if(trackerID < 0) trackerID = -1;
+		// FIXME remove: trackerID ignored, leftover from FNP.
 		ptr += 8;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
@@ -1376,16 +1374,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			dontWant = true;
 		}
 
-		long newTrackerID = pn.completedHandshake(
+		boolean completed = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
-				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
+				incommingKey, replyTo, true, negType, false, hmacKey, ivCipher,
 				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
-		if(newTrackerID > 0) {
+		if(completed) {
 
 			// Send reply
 			sendJFKMessage4(1, negType, 3, nonceInitiatorHashed, nonceResponder,initiatorExponential, responderExponential,
-					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
+					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType);
 
 			if(dontWant) {
 				node.peers.disconnectAndRemove(pn, true, true, true); // Let it connect then tell it to remove it.
@@ -1537,11 +1535,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		int ptr = 0;
-		long trackerID;
-		boolean reusedTracker;
-		trackerID = Fields.bytesToLong(data, ptr);
-		ptr += 8;
-		reusedTracker = data[ptr++] != 0;
+		// FIXME remove trackerID stuff
+		ptr += 9;
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
 		byte[] hisRef = Arrays.copyOfRange(data, ptr, data.length);
@@ -1622,12 +1617,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		incommingCipher.initialize(pn.incommingKey);
 		ivCipher.initialize(pn.ivKey);
 
-		long newTrackerID = pn.completedHandshake(
+		boolean completed = pn.completedHandshake(
 				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
-				pn.incommingKey, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey,
+				pn.incommingKey, replyTo, false, negType, true, pn.hmacKey,
 				ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID,
 				pn.theirInitialMsgID);
-		if(newTrackerID >= 0) {
+		if(completed) {
 			if(dontWant) {
 				node.peers.disconnectAndRemove(pn, true, true, true);
 			} else {
@@ -1695,11 +1690,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
 		byte[] data = new byte[8 + 8 + pn.jfkMyRef.length];
 		int ptr = 0;
-		long trackerID;
-		trackerID = pn.getReusableTrackerID();
-		System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
+		// FIXME remove trackerID
+		System.arraycopy(Fields.longToBytes(1), 0, data, ptr, 8);
 		ptr += 8;
-		if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
@@ -1873,7 +1866,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiatorHashed,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID)
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiatorHashed,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn.getPeer());
@@ -1882,9 +1875,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myRef = crypto.myCompressedSetupRef();
 		byte[] data = new byte[9 + 8 + myRef.length + hisRef.length];
 		int ptr = 0;
-		System.arraycopy(Fields.longToBytes(newTrackerID), 0, data, ptr, 8);
+		
+		// FIXME trackerID no longer used.. Remove this.
+		System.arraycopy(Fields.longToBytes(1), 0, data, ptr, 8);
 		ptr += 8;
-		data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
+		data[ptr++] = (byte) (1);
 
 		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
