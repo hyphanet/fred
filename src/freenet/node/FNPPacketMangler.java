@@ -871,7 +871,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * We send IDr' only if unknownInitiator is set.
 	 * @param pn The node to encrypt the message to. Cannot be null, because we are the initiator and we
 	 * know the responder in all cases.
-	 * @param replyTo The peer to send the actual packet to.
+     * @param replyTo The peer to send the actual packet to.
+	 * @param unknownInitiator True if we are using an "anonymous initiator" protocol, where the
+	 * recipient doesn't know us already, e.g. for connecting to a seednode for initial 
+	 * announcement on opennet. False in all other cases i.e. connecting to a node where both sides
+	 * already know the other (any normal connection, opennet or darknet). 
+     * @param setupType The connection setup type in the case of anonymous initiator.
+	 * @param negType The connection setup protocol version number.
 	 */
 	private void sendJFKMessage1(PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(1) message to "+replyTo+" for "+pn.getPeer());
@@ -925,8 +931,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 *
 	 * NB: we don't send IDr nor groupinfo as we know them: even if the responder doesn't know the initiator,
 	 * the initiator ALWAYS knows the responder.
+	 * @param nonceInitiator The initiator's nonce (random data).
+	 * @param hisExponential The initiator's public key.
 	 * @param pn The node to encrypt the message for. CAN BE NULL if anonymous-initiator.
 	 * @param replyTo The peer to send the packet to.
+	 * @param unknownInitiator True if we are using an "anonymous initiator" protocol, where the
+     * recipient doesn't know us already, e.g. for connecting to a seednode for initial 
+     * announcement on opennet. False in all other cases i.e. connecting to a node where both sides
+     * already know the other (any normal connection, opennet or darknet). 
+     * @param setupType The connection setup type in the case of anonymous initiator.
+	 * @param negType The connection setup protocol version number.
 	 */
 	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws NoContextsException {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
@@ -1668,10 +1682,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * HMAC{Ka}(cyphertext)
 	 * IV + E{KE}[S{i}[Ni',Nr,g^i,g^r,idR, bootID, znoderefI], bootID, znoderefI]
 	 *
+     * @param negType The connection setup protocol version number.
+     * @param nonceInitiator The initiator's nonce (random data).
+     * @param nonceResponder The responder's nonce (random data).
+     * @param hisExponential The responder's public key.
+     * @param authenticator The authenticator (an HMAC which guarantees we've had a round-trip, 
+     * important for DoS prevention).
 	 * @param pn The PeerNode to encrypt the message for. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer to send the packet to.
+     * @param unknownInitiator True if we are using an "anonymous initiator" protocol, where the
+     * recipient doesn't know us already, e.g. for connecting to a seednode for initial 
+     * announcement on opennet. False in all other cases i.e. connecting to a node where both sides
+     * already know the other (any normal connection, opennet or darknet). 
+	 * @param setupType The connection setup type in the case of anonymous initiator.
 	 */
-
 	private void sendJFKMessage3(final int negType,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
@@ -1862,9 +1886,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * HMAC{Ka}(cyphertext)
 	 * IV, E{Ke}[S{R}[Ni',Nr,g^i,g^r,idI, bootID, znoderefR, znoderefI],bootID,znoderefR]
 	 *
+     * @param negType The connection setup protocol version number.
+     * @param nonceInitiatorHashed The hash of the initiator's nonce (which is random data).
+     * @param nonceResponder The responder's nonce (random data).
+     * @param initiatorExponential The initiator's public key.
+     * @param responderExponential The responder's public key.
 	 * @param replyTo The Peer we are replying to.
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
+	 * @param c A block cipher initialised with the negotiated setup encryption key Ke, used to 
+	 * encrypt JFK(3) and the signature on JFK(4).
+	 * @param Ka The HMAC key generated during setup, used to authenticate JFK(3) and the 
+	 * signature on JFK(4).
+     * @param authenticator The authenticator (an HMAC which proves we've had a round-trip, 
+     * important for DoS prevention).
+     * @param hisRef Initiator's compressed noderef. On a normal reconnection this will be a 
+     * minimal diff, just including critical fields which may have changed such as IP addresses, 
+     * but anonymous initiator it could be fairly large.
+     * @param unknownInitiator True if we are using an "anonymous initiator" protocol, where the
+     * recipient doesn't know us already, e.g. for connecting to a seednode for initial 
+     * announcement on opennet. False in all other cases i.e. connecting to a node where both sides
+     * already know the other (any normal connection, opennet or darknet). 
+	 * @param setupType The connection setup type in the case of anonymous initiator. Not used at 
+	 * present.
 	 */
 	private void sendJFKMessage4(int negType,byte[] nonceInitiatorHashed,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType)
 	{
