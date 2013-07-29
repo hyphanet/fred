@@ -884,6 +884,10 @@ public class DarknetPeerNode extends PeerNode {
 		// FIXME do something
 	}
 
+	// FIXME refactor this. We want to be able to send file transfers from code that isn't related to fproxy.
+	// FIXME and it should be able to talk to plugins on other nodes etc etc.
+	// FIXME there are already type fields etc, so this shouldn't be too difficult? But it's not really supported at the moment.
+	// FIXME See also e.g. fcp/SendTextMessage.
 	class FileOffer {
 		final long uid;
 		final String filename;
