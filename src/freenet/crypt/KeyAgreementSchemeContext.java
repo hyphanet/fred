@@ -29,5 +29,8 @@ public abstract class KeyAgreementSchemeContext {
         this.dsaSig = sig;
     }
 	
+    /** Get the Diffie-Hellman or ECDH exponential (ephemeral public key used for securely
+     * generating a session key). 
+     * @return The exponential in network format (that is, fixed length). */
 	public abstract byte[] getPublicKeyNetworkFormat();
 }

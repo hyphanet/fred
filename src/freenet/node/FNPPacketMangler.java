@@ -932,7 +932,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * NB: we don't send IDr nor groupinfo as we know them: even if the responder doesn't know the initiator,
 	 * the initiator ALWAYS knows the responder.
 	 * @param nonceInitiator The initiator's nonce (random data).
-	 * @param hisExponential The initiator's public key.
+	 * @param hisExponential The initiator's ECDH exponential (ephemeral public key used for 
+	 * securely generating a session key).
 	 * @param pn The node to encrypt the message for. CAN BE NULL if anonymous-initiator.
 	 * @param replyTo The peer to send the packet to.
 	 * @param unknownInitiator True if we are using an "anonymous initiator" protocol, where the
@@ -1685,7 +1686,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
      * @param negType The connection setup protocol version number.
      * @param nonceInitiator The initiator's nonce (random data).
      * @param nonceResponder The responder's nonce (random data).
-     * @param hisExponential The responder's public key.
+     * @param hisExponential The responder's ECDH exponential (ephemeral public key used for 
+     * securely generating a session key).
      * @param authenticator The authenticator (an HMAC which guarantees we've had a round-trip, 
      * important for DoS prevention).
 	 * @param pn The PeerNode to encrypt the message for. Cannot be null as we are the initiator.
@@ -1889,8 +1891,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
      * @param negType The connection setup protocol version number.
      * @param nonceInitiatorHashed The hash of the initiator's nonce (which is random data).
      * @param nonceResponder The responder's nonce (random data).
-     * @param initiatorExponential The initiator's public key.
-     * @param responderExponential The responder's public key.
+     * @param initiatorExponential The initiator's ECDH exponential (ephemeral public key used for 
+     * securely generating a session key).
+     * @param responderExponential The responder's ECDH exponential (ephemeral public key used for 
+     * securely generating a session key).
 	 * @param replyTo The Peer we are replying to.
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
