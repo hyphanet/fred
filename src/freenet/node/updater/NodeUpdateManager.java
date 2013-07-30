@@ -1,5 +1,10 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -156,6 +161,7 @@ public class NodeUpdateManager {
 	private volatile boolean hasNewMainJar;
 	/** If another main jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextMainJar;
+	/** Time when we got the jar */
 	private long gotJarTime;
 
 	// Revocation alert
@@ -426,9 +432,7 @@ public class NodeUpdateManager {
 										+ filename
 										+ " after fetching it from Freenet.");
 						try {
-							Thread.sleep(1000 + node.fastWeakRandom
-									.nextInt(((int) (1000 * Math.min(
-											Math.pow(2, i), 15 * 60 * 1000)))));
+							Thread.sleep(SECONDS.toMillis(1) + node.fastWeakRandom.nextInt((int) SECONDS.toMillis((long) Math.min(Math.pow(2, i), MINUTES.toSeconds(15)))));
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -911,8 +915,8 @@ public class NodeUpdateManager {
 		deployOffThread(0, false);
 	}
 
-	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240 * 1000;
-	private static final int RECENT_REVOCATION_INTERVAL = 120 * 1000;
+	private static final long WAIT_FOR_SECOND_FETCH_TO_COMPLETE = MINUTES.toMillis(4);
+	private static final long RECENT_REVOCATION_INTERVAL = MINUTES.toMillis(2);
 	/**
 	 * After 5 minutes, deploy the update even if we haven't got 3 DNFs on the
 	 * revocation key yet. Reason: we want to be able to deploy UOM updates on
@@ -920,11 +924,14 @@ public class NodeUpdateManager {
 	 * Note that with UOM, revocation certs are automatically propagated node to
 	 * node, so this should be *relatively* safe. Any better ideas, tell us.
 	 */
-	private static final int REVOCATION_FETCH_TIMEOUT = 5 * 60 * 1000;
+	private static final long REVOCATION_FETCH_TIMEOUT = MINUTES.toMillis(5);
 
 	/**
 	 * Does the updater have an update ready to deploy? May be called
-	 * synchronized(this)
+	 * synchronized(this).
+	 * @param ignoreRevocation If true, return whether we will deploy when the revocation check 
+	 * finishes. If false, return whether we can deploy now, and if not, deploy after a delay with
+	 * deployOffThread().
 	 */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
@@ -993,7 +1000,7 @@ public class NodeUpdateManager {
 				Logger.minor(this, "Returning true because of ignoreRevocation");
 			return true;
 		}
-		int waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
+		long waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
 		if(logMINOR) Logger.minor(this, "Will deploy in "+waitTime+"ms");
 		deployOffThread(waitTime, false);
 		return false;
@@ -1132,8 +1139,9 @@ public class NodeUpdateManager {
 		if (hasNewMainJar) {
 			File mainJar = ctx.getMainJar();
 			File newMainJar = ctx.getNewMainJar();
+			File backupJar = ctx.getBackupJar();
 			try {
-				if (writeJar(mainJar, newMainJar, mainUpdater, "main",
+				if (writeJar(mainJar, newMainJar, backupJar, mainUpdater, "main",
 						tryEasyWay))
 					writtenNewJar = true;
 			} catch (UpdateFailedException e) {
@@ -1177,6 +1185,10 @@ public class NodeUpdateManager {
 	 *            The location of the current jar file.
 	 * @param newMainJar
 	 *            The location of the new jar file.
+	 * @param backupMainJar
+	 *            On Windows, we alternate between freenet.jar and freenet.jar.new, so we do not 
+	 *            need to write a backup - the user can rename between these two. On Unix, we 
+	 *            copy to freenet.jar.bak before updating, in case something horrible happens. 
 	 * @param mainUpdater
 	 *            The NodeUpdater for the file in question, so we can ask it to
 	 *            write the file.
@@ -1190,7 +1202,7 @@ public class NodeUpdateManager {
 	 * @throws UpdateFailedException
 	 *             If something breaks.
 	 */
-	private boolean writeJar(File mainJar, File newMainJar,
+	private boolean writeJar(File mainJar, File newMainJar, File backupMainJar,
 			NodeUpdater mainUpdater, String name, boolean tryEasyWay)
 			throws UpdateFailedException {
 		boolean writtenToTempFile = false;
@@ -1237,6 +1249,7 @@ public class NodeUpdateManager {
 			} else {
 				writeJarTo(newMainJar);
 			}
+			System.out.println("Written new main jar to "+newMainJar);
 		} catch (IOException e) {
 			throw new UpdateFailedException("Cannot update: Cannot write to "
 					+ (tryEasyWay ? " temp file " : "new jar ") + newMainJar);
@@ -1244,6 +1257,9 @@ public class NodeUpdateManager {
 
 		if (tryEasyWay) {
 			// Do it the easy way. Just rewrite the main jar.
+			backupMainJar.delete();
+			if(FileUtil.copyFile(mainJar, backupMainJar))
+				System.err.println("Written backup of current main jar to "+backupMainJar+" (if freenet fails to start up try renaming "+backupMainJar+" over "+mainJar);
 			if (!newMainJar.renameTo(mainJar)) {
 				Logger.error(NodeUpdateManager.class,
 						"Cannot rename temp file " + newMainJar
@@ -1256,10 +1272,11 @@ public class NodeUpdateManager {
 				}
 				// Try the hard way
 			} else {
-				System.err.println("Written new Freenet jar.");
+				System.err.println("Completed writing new Freenet jar to "+mainJar+".");
 				return false;
 			}
 		}
+		System.err.println("Rewriting wrapper.conf to point to "+newMainJar+" rather than "+mainJar+" (if Freenet fails to start after the update you could try changing wrapper.conf to use the old jar)");
 		return true;
 	}
 
@@ -1295,7 +1312,7 @@ public class NodeUpdateManager {
 			Logger.minor(this, "Restarting...");
 		node.getNodeStarter().restart();
 		try {
-			Thread.sleep(5 * 60 * 1000);
+			Thread.sleep(MINUTES.toMillis(5));
 		} catch (InterruptedException e) {
 			// Break
 		} // in case it's still restarting
@@ -1462,7 +1479,7 @@ public class NodeUpdateManager {
 			public void run() {
 				revocationChecker.start(false);
 			}
-		}, node.random.nextInt(24 * 60 * 60 * 1000));
+		}, node.random.nextInt((int) DAYS.toMillis(1)));
 	}
 
 	private void deployPluginUpdates() {
@@ -1701,7 +1718,8 @@ public class NodeUpdateManager {
 
 			@Override
 			public void run() {
-				isReadyToDeployUpdate(false);
+				if(isReadyToDeployUpdate(false))
+					deployUpdate();
 			}
 
 		}, "Check for updates");
@@ -1805,7 +1823,7 @@ public class NodeUpdateManager {
 			// We are a seednode.
 			// Normally this means we won't send UOM.
 			// However, if something breaks severely, we need an escape route.
-			if (node.getUptime() > 5 * 60 * 1000
+			if (node.getUptime() > MINUTES.toMillis(5)
 					&& node.peers.countCompatibleRealPeers() == 0)
 				return false;
 			return true;
@@ -1833,7 +1851,9 @@ public class NodeUpdateManager {
 			this.dependenciesValidForBuild = deps.build;
 		}
 		revocationChecker.start(true);
-		deployOffThread(REVOCATION_FETCH_TIMEOUT, true);
+		// Deploy immediately if the revocation checker has already reported in but we were waiting for deps.
+		// Otherwise wait for the revocation checker.
+		deployOffThread(0, true);
 	}
 
 	public File getTransitionExtBlob() {

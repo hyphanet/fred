@@ -8,6 +8,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -48,6 +49,16 @@ public class BucketChainBucket implements Bucket {
 		this.readOnly = readOnly;
 		this.bf = bf2;
 		this.cacheWholeBucket = cacheWholeBucket;
+	}
+	
+	public static BucketChainBucket constructReadOnly(Bucket[] buckets) {
+		Vector<Bucket> copy = new Vector<Bucket>(buckets.length);
+		long totalSize = 0;
+		for(Bucket bucket : buckets) {
+			totalSize += bucket.size();
+			copy.add(bucket);
+		}
+		return new BucketChainBucket(copy, 0, totalSize, true, null, false);
 	}
 
 	@Override

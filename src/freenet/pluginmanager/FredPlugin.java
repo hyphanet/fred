@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+/** All the FredPlugin* APIs must be implemented by the main class - the class that implements 
+ * FredPlugin, because that's where we look for them when loading a plugin. That allows us to 
+ * automatically register the plugin for whichever service it is using. */
 public interface FredPlugin {
 	// HTTP-stuff has been moved to FredPluginHTTP
 	

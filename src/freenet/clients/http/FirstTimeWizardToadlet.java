@@ -174,14 +174,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 
-		String passwd = request.getPartAsStringFailsafe("formPassword", 32);
-		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
-		if(noPassword) {
-			if(logMINOR) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+ ')');
-			super.writeTemporaryRedirect(ctx, "invalid/unhandled data", "/");
-			return;
-		}
-
 		WIZARD_STEP currentStep;
 		try {
 			//Attempt to parse the current step, defaulting to WELCOME if unspecified or invalid.

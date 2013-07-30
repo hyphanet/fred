@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.ArrayDeque;
 
 import freenet.node.NodeStats;
@@ -30,8 +32,8 @@ public class PrioritizedSerialExecutor implements Executor {
 	private boolean running;
 	private final ExecutorIdleCallback callback;
 
-	private static final int DEFAULT_JOB_TIMEOUT = 5*60*1000;
-	private final int jobTimeout;
+	private static final long DEFAULT_JOB_TIMEOUT = MINUTES.toMillis(5);
+	private final long jobTimeout;
 
 	private final Runner runner = new Runner();
 	
@@ -148,7 +150,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param defaultPriority
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
-	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
+	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, long jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
 		@SuppressWarnings("unchecked") ArrayDeque<Runnable>[] jobs = new ArrayDeque[internalPriorityCount];
 		for (int i=0;i<jobs.length;i++) {
 			jobs[i] = new ArrayDeque<Runnable>();

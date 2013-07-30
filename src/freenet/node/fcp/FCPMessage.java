@@ -33,6 +33,9 @@ public abstract class FCPMessage {
 	public static final String BULK_SSK_REQUEST_REJECTS = "Rejects.Bulk.Request.SSK";
 	public static final String BULK_CHK_INSERT_REJECTS = "Rejects.Bulk.Insert.CHK";
 	public static final String BULK_SSK_INSERT_REJECTS = "Rejects.Bulk.Insert.SSK";
+	public static final String OUTPUT_BANDWIDTH_CLASS = "OutputBandwidthClass";
+	public static final String OVERALL_BULK_OUTPUT_CAPACITY_USAGE = "OverallBulkOutputCapacityUsage";
+	
 
         private static volatile boolean logDEBUG;
 	static {
@@ -148,6 +151,8 @@ public abstract class FCPMessage {
 		if(name.equals(WatchGlobal.NAME))
 			return new WatchGlobal(fs);
 		if(name.equals(ProbeRequest.NAME)) return new ProbeRequest(fs);
+		if(name.equals(FilterMessage.NAME))
+			return new FilterMessage(fs, bfTemp);
 		if(name.equals("Void"))
 			return null;
 

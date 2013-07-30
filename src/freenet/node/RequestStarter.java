@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
@@ -120,7 +123,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
 			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
-					System.currentTimeMillis() - om.getCreationTime() < 5*60*1000) {
+					System.currentTimeMillis() - om.getCreationTime() < MINUTES.toMillis(5)) {
 				try {
 					synchronized(this) {
 						wait(1000);
@@ -199,7 +202,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = sched.grabRequest();
 					if(req == null) {
 						try {
-							wait(1*1000); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
+							wait(SECONDS.toMillis(1)); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
 							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
 						} catch (InterruptedException e) {
 							// Ignore
@@ -230,7 +233,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				return false;
 			}
 		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
-			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token)) {
+			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey())) {
 				req.onDumped();
 				return false;
 			}
@@ -283,7 +286,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(req.sendIsBlocking()) {
 					if(key != null) sched.removeFetchingKey(key);
 					else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
-						sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
+						sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey());
 					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 					// so wake the starter thread.
 					wakeUp();

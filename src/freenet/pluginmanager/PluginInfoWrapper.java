@@ -39,12 +39,13 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
 	private final boolean isConfigurablePlugin;
+	private final boolean isOfficialPlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
 	
-	public PluginInfoWrapper(Node node, FredPlugin plug, String filename) throws IOException {
+	public PluginInfoWrapper(Node node, FredPlugin plug, String filename, boolean isOfficial) throws IOException {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
@@ -75,6 +76,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			subconfig = null;
 			configToadlet = null;
 		}
+		isOfficialPlugin = isOfficial;
 	}
 
 	void setThread(Thread ps) {
@@ -140,10 +142,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			stopping = true;
 		}
 	}
-	
-	
-	
-	public boolean finishShutdownPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+
+	public boolean finishShutdownPlugin(PluginManager manager, long maxWaitTime, boolean reloading) {
 		boolean success = true;
 		if(thread != null) {
 			thread.interrupt();
@@ -180,7 +180,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
 	 * or else a value in milliseconds.
 	 **/
-	public void stopPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+	public void stopPlugin(PluginManager manager, long maxWaitTime, boolean reloading) {
 		startShutdownPlugin(manager, reloading);
 		finishShutdownPlugin(manager, maxWaitTime, reloading);
 		// always remove plugin
@@ -283,5 +283,16 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 
 	public ConfigToadlet getConfigToadlet() {
 		return configToadlet;
+	}
+
+	public boolean isOfficialPlugin() {
+		return isOfficialPlugin;
+	}
+
+	public String getLocalisedPluginName() {
+		String pluginName = getFilename();
+		if(isOfficialPlugin())
+			return PluginManager.getOfficialPluginLocalisedName(pluginName);
+		else return pluginName;
 	}
 }

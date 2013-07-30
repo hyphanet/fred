@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,21 +76,21 @@ public class FailureTable implements OOMHook {
 	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
-	static final int REJECT_TIME = 10*60*1000;
+	static final long REJECT_TIME = MINUTES.toMillis(10);
 	/** Maximum time for a RecentlyFailed. I.e. until this period expires, we take a request into account
 	 * when deciding whether we have recently failed to this peer. If we get a DNF, we use this figure.
 	 * If we get a RF, we use what it tells us, which can be less than this. Most other failures use
 	 * shorter periods. */
-	static final int RECENTLY_FAILED_TIME = 30*60*1000;
+	static final long RECENTLY_FAILED_TIME = MINUTES.toMillis(30);
 	/** After 1 hour we forget about an entry completely */
-	static final int MAX_LIFETIME = 60*60*1000;
+	static final long MAX_LIFETIME = MINUTES.toMillis(60);
 	/** Offers expire after 10 minutes */
-	static final int OFFER_EXPIRY_TIME = 10*60*1000;
+	static final long OFFER_EXPIRY_TIME = MINUTES.toMillis(10);
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
 	/** Clean up old data every 10 minutes to save memory and improve privacy */
-	static final int CLEANUP_PERIOD = 10*60*1000;
-	
+	static final long CLEANUP_PERIOD = MINUTES.toMillis(10);
+
 	FailureTable(Node node) {
 		entriesByKey = LRUMap.createSafeMap();
 		blockOfferListByKey = LRUMap.createSafeMap();
@@ -113,7 +115,7 @@ public class FailureTable implements OOMHook {
 	 * @param htl
 	 * @param timeout
 	 */
-	public void onFailed(Key key, PeerNode routedTo, short htl, int rfTimeout, int ftTimeout) {
+	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
@@ -147,7 +149,7 @@ public class FailureTable implements OOMHook {
 	 * avoid problems.
 	 * LOCKING: NEVER synchronize on PeerNode before calling any FailureTable method.
 	 */
-	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int rfTimeout, int ftTimeout, PeerNode requestor) {
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, long rfTimeout, long ftTimeout, PeerNode requestor) {
 		if(ftTimeout < -1 || ftTimeout > REJECT_TIME) {
 			// -1 is a valid no-op.
 			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));

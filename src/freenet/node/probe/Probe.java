@@ -1,5 +1,8 @@
 package freenet.node.probe;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
@@ -74,29 +77,24 @@ public class Probe implements ByteCounter {
 	/**
 	 * In ms, per HTL above HTL = 1.
 	 */
-	public static final int TIMEOUT_PER_HTL = 3000;
+	public static final long TIMEOUT_PER_HTL = SECONDS.toMillis(3);
 
 	/**
 	 * In ms, to account for probabilistic decrement at HTL = 1.
 	 */
-	public static final int TIMEOUT_HTL1 = (int)(TIMEOUT_PER_HTL / DECREMENT_PROBABILITY);
-
-	/**
-	 * Minute in milliseconds.
-	 */
-	private static final long MINUTE = 60 * 1000;
+	public static final long TIMEOUT_HTL1 = (long) (TIMEOUT_PER_HTL / DECREMENT_PROBABILITY);
 
 	/**
 	 * To make the timing less obvious when a node responds with a local result instead of forwarding at
 	 * HTL = 1, delay for a number of milliseconds, specifically an exponential distribution with this constant as
 	 * its mean.
 	 */
-	public static final long WAIT_BASE = 1000L;
+	public static final long WAIT_BASE = SECONDS.toMillis(1);
 
 	/**
 	 * Maximum number of milliseconds to wait before sending a response.
 	 */
-	public static final long WAIT_MAX = 2000L;
+	public static final long WAIT_MAX = SECONDS.toMillis(2);
 
 	/**
 	 * Maximum number of probes accepted from a single peer in the past minute.
@@ -130,13 +128,14 @@ public class Probe implements ByteCounter {
 	private volatile boolean respondStoreSize;
 	private volatile boolean respondUptime;
 	private volatile boolean respondRejectStats;
+	private volatile boolean respondOverallBulkOutputCapacityUsage;
 
 	private volatile long probeIdentifier;
 
 	/**
 	 * Applies multiplicative Gaussian noise of mean 1.0 and the specified sigma to the input value.
 	 * @param input Value to apply noise to.
-	 * @param sigma Percentage change at one standard deviation.
+	 * @param sigma Proportion change at one standard deviation.
 	 * @return Value +/- Gaussian percentage.
 	 */
 	private final double randomNoise(final double input, final double sigma) {
@@ -280,6 +279,24 @@ public class Probe implements ByteCounter {
 				}
 			});
 			respondRejectStats = nodeConfig.getBoolean("probeRejectStats");
+			
+		nodeConfig.register("probeOverallBulkOutputCapacityUsage", true, sortOrder++, true, true, "Node.respondOverallBulkOutputCapacityUsage",
+				"Node.respondOverallBulkOutputCapacityUsageLong", new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return respondOverallBulkOutputCapacityUsage;
+					}
+
+					@Override
+					public void set(Boolean val)
+							throws InvalidConfigValueException,
+							NodeNeedRestartException {
+						respondOverallBulkOutputCapacityUsage = val;
+					}
+			
+		});
+		respondOverallBulkOutputCapacityUsage = nodeConfig.getBoolean("probeOverallBulkOutputCapacityUsage");
 
 		nodeConfig.register("identifier", -1, sortOrder++, true, true, "Node.probeIdentifierShort",
 			"Node.probeIdentifierLong", new LongCallback() {
@@ -419,7 +436,7 @@ public class Probe implements ByteCounter {
 			return;
 		}
 		//One-minute window on acceptance; free up this probe slot in 60 seconds.
-		timer.schedule(task, MINUTE);
+		timer.schedule(task, MINUTES.toMillis(1));
 
 		/*
 		 * Route to a peer, using Metropolis-Hastings correction and ignoring backoff to get a more uniform
@@ -533,7 +550,7 @@ public class Probe implements ByteCounter {
 	 * @return filter for the requested result type, probe error, and probe refusal.
 	 */
 	private static MessageFilter createResponseFilter(final Type type, final PeerNode candidate, final long uid, final byte htl) {
-		final int timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
+		final long timeout = (htl - 1) * TIMEOUT_PER_HTL + TIMEOUT_HTL1;
 		final MessageFilter filter = createFilter(candidate, uid, timeout);
 
 		switch (type) {
@@ -546,6 +563,7 @@ public class Probe implements ByteCounter {
 			case UPTIME_48H:
 			case UPTIME_7D: filter.setType(DMT.ProbeUptime); break;
 			case REJECT_STATS: filter.setType(DMT.ProbeRejectStats); break;
+			case OVERALL_BULK_OUTPUT_CAPACITY_USAGE: filter.setType(DMT.ProbeOverallBulkOutputCapacityUsage); break;
 			default: throw new UnsupportedOperationException("Missing filter for " + type.name());
 		}
 
@@ -556,7 +574,7 @@ public class Probe implements ByteCounter {
 		return filter;
 	}
 
-	private static MessageFilter createFilter(final PeerNode source, final long uid, final int timeout) {
+	private static MessageFilter createFilter(final PeerNode source, final long uid, final long timeout) {
 		return MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(timeout);
 	}
 
@@ -657,6 +675,12 @@ public class Probe implements ByteCounter {
 			byte[] stats = node.nodeStats.getNoisyRejectStats();
 			listener.onRejectStats(stats);
 			break;
+		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE:
+			byte bandwidthClass = 
+				DMT.bandwidthClassForCapacityUsage(node.getOutputBandwidthLimit());
+			listener.onOverallBulkOutputCapacity(bandwidthClass, 
+					(float)randomNoise(node.nodeStats.getBandwidthLiabilityUsage(), 0.1));
+			break;
 		default:
 			throw new UnsupportedOperationException("Missing response for " + type.name());
 		}
@@ -673,6 +697,7 @@ public class Probe implements ByteCounter {
 		case UPTIME_48H:
 		case UPTIME_7D: return respondUptime;
 		case REJECT_STATS: return respondRejectStats;
+		case OVERALL_BULK_OUTPUT_CAPACITY_USAGE: return respondOverallBulkOutputCapacityUsage;
 		default: throw new UnsupportedOperationException("Missing permissions check for " + type.name());
 		}
 	}
@@ -735,6 +760,8 @@ public class Probe implements ByteCounter {
 				listener.onUptime(message.getFloat(DMT.UPTIME_PERCENT));
 			} else if (message.getSpec().equals(DMT.ProbeRejectStats)) {
 				listener.onRejectStats(message.getShortBufferBytes(DMT.REJECT_STATS));
+			} else if (message.getSpec().equals(DMT.ProbeOverallBulkOutputCapacityUsage)) {
+				listener.onOverallBulkOutputCapacity(message.getByte(DMT.OUTPUT_BANDWIDTH_CLASS), message.getFloat(DMT.CAPACITY_USAGE));
 			} else if (message.getSpec().equals(DMT.ProbeError)) {
 				final byte rawError = message.getByte(DMT.TYPE);
 				if (Error.isValid(rawError)) {
@@ -854,6 +881,14 @@ public class Probe implements ByteCounter {
 					stats = Arrays.copyOf(stats, 4);
 				send(DMT.createProbeRejectStats(uid, stats));
 			}
+		}
+
+		@Override
+		public void onOverallBulkOutputCapacity(
+				byte bandwidthClassForCapacityUsage, float capacityUsage) {
+			send(DMT.createProbeOverallBulkOutputCapacityUsage(uid, bandwidthClassForCapacityUsage, capacityUsage));
+			// TODO Auto-generated method stub
+			
 		}
 	}
 }

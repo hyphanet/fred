@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -193,6 +195,9 @@ public class PluginManager {
 			System.err.println("KeyExplorer plugin renamed to KeyUtils");
 		}
 
+		// This should default to false. Even though we use SSL, a wiretapper may be able to tell which
+		// plugin is being loaded, and correlate that with identity creation; plus of course they can see
+		// that somebody is using Freenet.
 		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromCentralServer", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
 			@Override
@@ -208,19 +213,10 @@ public class PluginManager {
 		});
 
 		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-
-		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == oldLevel) return;
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
-					alwaysLoadOfficialPluginsFromCentralServer = true;
-				else if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
-					alwaysLoadOfficialPluginsFromCentralServer = false;
-			}
-
-		});
+		if(node.lastVersion <= 1437)
+			// Overwrite this setting, since it will have been set by the old callback and then written as it's not default.
+			// FIXME remove back compatibility code.
+			alwaysLoadOfficialPluginsFromCentralServer = false;
 
 		pmconfig.finishedInitialization();
 
@@ -248,7 +244,7 @@ public class PluginManager {
 		}
 	}
 
-	public void stop(int maxWaitTime) {
+	public void stop(long maxWaitTime) {
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
 		synchronized(this) {
@@ -396,7 +392,7 @@ public class PluginManager {
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
-			pi = new PluginInfoWrapper(node, plug, filename);
+			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
@@ -711,11 +707,11 @@ public class PluginManager {
 	 *            The key to fetch
 	 * @return The translation
 	 */
-	private String l10n(String key) {
+	static String l10n(String key) {
 		return NodeL10n.getBase().getString("PluginManager." + key);
 	}
 
-	private String l10n(String key, String pattern, String value) {
+	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("PluginManager." + key, pattern, value);
 	}
 
@@ -971,7 +967,7 @@ public class PluginManager {
 		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
 	}
 
-	public void killPlugin(String name, int maxWaitTime, boolean reloading) {
+	public void killPlugin(String name, long maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -987,7 +983,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
-	public void killPluginByFilename(String name, int maxWaitTime, boolean reloading) {
+	public void killPluginByFilename(String name, long maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -1003,7 +999,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
-	public void killPluginByClass(String name, int maxWaitTime) {
+	public void killPluginByClass(String name, long maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -1019,7 +1015,7 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
-	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
+	public void killPlugin(FredPlugin plugin, long maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -1078,6 +1074,14 @@ public class PluginManager {
 			this.experimental = experimental;
 			this.advanced = advanced;
 		}
+
+		public String getLocalisedPluginName() {
+			return getOfficialPluginLocalisedName(name);
+		}
+
+		public String getLocalisedPluginDescription() {
+			return l10n("pluginDesc."+name);
+		}
 	}
 	
 	public static OfficialPluginDescription getOfficialPlugin(String name) {
@@ -1092,11 +1096,12 @@ public class PluginManager {
 
 	static {
 		try {
-		addOfficialPlugin("Freemail", "communication", false, 15, true, new FreenetURI("CHK@6dfMgGf7YEfJhF0W~K0HUv0fnbuRwYH6iMqrLIbTI7k,huYBf8oBevwW6lRQnz-0jDP1dl5ej7FKeyVZ3CnH0Ec,AAMC--8/Freemail.jar"));
+		addOfficialPlugin("Freemail", "communication", false, 15, true, new FreenetURI("CHK@6dfMgGf7YEfJhF0W~K0HUv0fnbuRwYH6iMqrLIbTI7k,huYBf8oBevwW6lRQnz-0jDP1dl5ej7FKeyVZ3CnH0Ec,AAMC--8/Freemail.jar"), true, false, false);
+		addOfficialPlugin("Freemail_wot", "communication", false, 22, false, new FreenetURI("CHK@K5k-X3NYB2w2gFZyuuzzJZjYqLCdFmyU3iyYpEtLV~E,lB00kThLv0iwEoQCSfyZkf09EgL3AgUUjlt0pm8z1ng,AAMC--8/Freemail_wot.jar"));
 		addOfficialPlugin("HelloWorld", "example", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", "example", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", "technical", false, 5019, false, new FreenetURI("CHK@j4-VTe0i6cUjqZxXvjUArVLQe7pr7a0EHARups8Qckk,LvC7BFBtIom29Na2KM1PMbo-G10hyCgNGlzJfj8jovw,AAMC--8/KeyUtils.jar"), false, false, true);
+		addOfficialPlugin("KeyUtils", "technical", false, 5020, false, new FreenetURI("CHK@llroMhtxumQZG1~3g3YEE8sK7ceJUIZ8Jl6Gqg~5RXk,CKf~Qxcf1ouLOIs3yjT7Re2DZ9GqGNC3HB-TiVEXgQ4,AAMC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", "connectivity", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", "connectivity", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
 		addOfficialPlugin("TestGallery", "example", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"), false, true, false);
@@ -1105,11 +1110,11 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", "index", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"), true, false, false);
 		addOfficialPlugin("XMLSpider", "index", false, 48, true, new FreenetURI("CHK@ne-aaLuzVZLcHj0YmrclaCXJqxsSb7q-J0eYEiL9V9o,v0EdgDGBhTE9k6GsB44UrQ4ADUq5LCUVknLaE4iSEBk,AAMC--8/XMLSpider.jar"), true, false, false);
 		addOfficialPlugin("Freereader", "index", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", "index", false, 26, true, new FreenetURI("CHK@q~V5riY6S4hNm11BSPWgU8C5DA7Bem91upsKkzsV0Ms,qx2WP1hrDiB3iPqquosKln9jm~RRL5lKEEhRsGLThVY,AAIC--8/Library.jar"));
-		addOfficialPlugin("Spider", "index", false, 50, false, new FreenetURI("CHK@K4Sawgmq9dqvySTrrvcCnXRLtKuSbHK9DxBNTqVZfKQ,s~6SIL9X9FsFA7yNmB4MF7DUEMMuz1VVht1CKvOPApE,AAMC--8/Spider.jar"), false, false, true);
+		addOfficialPlugin("Library", "index", false, 34, true, new FreenetURI("CHK@q1NEAHGaa~kl2x-BhgaZMrExgEnFsxDfk588gjRNCI0,aeGkaVZlnaFfZMRNUlE10o0jlzFI6idfh~JMY3On0zU,AAMC--8/Library.jar"));
+		addOfficialPlugin("Spider", "index", false, 51, false, new FreenetURI("CHK@CcJfB~uOTgbzdpVr8htrhLXs0uNsVW6KFRpEvHGjXDU,BPr2fm9Cq9gj7BQeJdLbkCmcmXRx-e-b6aerDzSK4zk,AAMC--8/Spider.jar"), false, false, true);
 		addOfficialPlugin("Freetalk", "communication", false, 13, true, new FreenetURI("CHK@zZDy-KwoZHYy4ZRpK9ZNNQb1vyespIIi9b-RPIyRM0k,EDHJbQpLtGSW4WHA23UHt6MpcoAp--dR7zmX-SGzzis,AAMC--8/Freetalk.jar"), false, false, true);
 		addOfficialPlugin("WebOfTrust", "communication", false, 12, true, new FreenetURI("CHK@Z6jitqIR4tJc9gOXih5cbTJxwnThweDvE5e-pTzetGM,vJfK3hmt06b-dF0yIbovPZlCUqTdgZ5-xsRzcslq1KU,AAIC--8/WebOfTrust.jar"), false, false, false); // from 35617f66afba287d98320843a521a9b395a5fbb3 (WoT build fix for headless)
-		addOfficialPlugin("FlogHelper", "communication", false, 28, true, new FreenetURI("CHK@VnLCVZjapukeSY~H3FkNNlXnp2Yfg8GNwHyh~Xx2H~0,0EBr1kWcsPpnsgeqeet8JMeh-2g8Lni6LexEw9S9f6g,AAMC--8/FlogHelper.jar"), false, false, false);
+		addOfficialPlugin("FlogHelper", "communication", false, 29, true, new FreenetURI("CHK@deSqrIbHCOtLe6n1HdvhCprm-mAm9Fo7dxN9fGcGHmU,mqT5nMqNftPnoYd0JEuftSP3yInvZxYeF2PQMIJeerU,AAMC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
@@ -1257,7 +1262,7 @@ public class PluginManager {
 				try {
 					downloaded = true;
 					System.err.println("Downloading plugin "+name);
-					WrapperManager.signalStarting(5*60*1000);
+					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
 					InputStream pluginInputStream = null;
@@ -1446,7 +1451,8 @@ public class PluginManager {
 				Logger.error(this, "could not find plugin class", cnfe1);
 				pluginFile.delete();
 				if(!downloaded) continue;
-				throw new PluginNotFoundException("could not find plugin class", cnfe1);
+				throw new PluginNotFoundException(
+					"could not find plugin class: \"" + cnfe1.getMessage() + "\"", cnfe1);
 			} catch(InstantiationException ie1) {
 				Logger.error(this, "could not instantiate plugin", ie1);
 				pluginFile.delete();
@@ -1687,6 +1693,21 @@ public class PluginManager {
 		public void setDownloading() {
 			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
 		}
+		
+		public boolean isOfficialPlugin() {
+			return loader.isOfficialPluginLoader();
+		}
+
+		public String getLocalisedPluginName() {
+			String pluginName = getName();
+			if(isOfficialPlugin()) {
+				return getOfficialPluginLocalisedName(pluginName);
+			} else return pluginName;
+		}
+	}
+	
+	static String getOfficialPluginLocalisedName(String pluginName) {
+		return l10n("pluginName."+pluginName);
 	}
 
 	public void setFProxyTheme(final THEME cssName) {

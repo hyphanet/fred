@@ -164,7 +164,7 @@ public final class PageMaker {
 				navigationLinkL10n.put(name, l10n);
 		}
 
-		@Deprecated
+		/** Remove a link from this sub-menu. */
 		public void removeNavigationLink(String name) {
 			navigationLinkTexts.remove(name);
 			navigationLinkTextsNonFull.remove(name);
@@ -173,7 +173,7 @@ public final class PageMaker {
 			navigationLinkL10n.remove(name); //Should this be here? If so, why not remove from navigationLinkCallbacks too
 		}
 
-		@Deprecated
+		/** Clear this sub-menu */
 		public void removeAllNavigationLinks() {
 			navigationLinkTexts.clear();
 			navigationLinkTextsNonFull.clear();
@@ -236,18 +236,12 @@ public final class PageMaker {
 			throw new NullPointerException("there is no menu named "+menutext);
 		menu.addNavigationLink(path, name, title, fullOnly, cb, l10n);
 	}
-	
-	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
-	@Deprecated
+
+	/** Remove a navigation link from a sub-menu. Applies globally, do not use this to customise 
+	 * menus when sending one page! */
 	public synchronized void removeNavigationLink(String menutext, String name) {
 		SubMenu menu = subMenus.get(menutext);
 		menu.removeNavigationLink(name);
-	}
-	
-	@Deprecated
-	public synchronized void removeAllNavigationLinks() {
-		for(SubMenu menu : subMenus.values())
-			menu.removeAllNavigationLinks();
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
@@ -319,7 +313,9 @@ public final class PageMaker {
 	 * @param title
 	 *            Title of the page.
 	 * @param ctx
-	 *            ToadletContext to use to render the page.
+	 *            ToadletContext to use to render the page. Can be null, e.g. if the HTML is not 
+	 *            being generated as part of a toadlet request, for example if it's using the old
+	 *            FredPluginHTTP interface.
 	 * @param renderParameters
 	 *            Parameters for inclusion or omission of certain page elements
 	 * @return A template PageNode.
@@ -381,7 +377,7 @@ public final class PageMaker {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
 			 if (node != null && node.clientCore != null) {
-				 final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+				 final HTMLNode alerts = ctx.getAlertManager().createSummary(true);
 				 if (alerts != null) {
 					 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
 					 statusBarDiv.addChild("div", "class", "separator", "\u00a0");
@@ -392,7 +388,7 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
 			if (node.clientCore != null && ctx != null && renderParameters.isRenderModeSwitch()) {
-				boolean isAdvancedMode = ctx.activeToadlet().container.isAdvancedModeEnabled();
+				boolean isAdvancedMode = ctx.isAdvancedModeEnabled();
 				String uri = ctx.getUri().getQuery();
 				Map<String, List<String>> parameters = HTTPRequestImpl.parseUriParameters(uri, true);
 				List<String> newModeSwitchValues = new ArrayList<String>();
@@ -494,6 +490,9 @@ public final class PageMaker {
 						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
 						if(l10n == null) l10n = menu.plugin;
 						if(l10n != null) {
+							// From a plugin. Include the plugin name in the id.
+							sublistItem.addAttribute("id", getPluginL10nCSSIdentifier(l10n, navigationTitle));
+
 							if(navigationTitle != null) {
 								String newNavigationTitle = l10n.getString(navigationTitle);
 								if(newNavigationTitle == null) {
@@ -511,6 +510,9 @@ public final class PageMaker {
 								}
 							}
 						} else {
+							// Not from a plugin. Add the localization key as id.
+							sublistItem.addAttribute("id", filterCSSIdentifier(navigationTitle));
+
 							if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
 							if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
 						}
@@ -532,20 +534,19 @@ public final class PageMaker {
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
 						if(menu.plugin == null) {
-							//If not from a plugin, add the localization key as id.
+							// Not from a plugin. Add the localization key as id.
 							listItem.addAttribute("id", filterCSSIdentifier(menuItemTitle));
 
 							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 							text = NodeL10n.getBase().getString(text);
 						} else {
-							/* If from a plugin, add localization key appended to class
-							 * name, separated by a dash, so that plugins with multiple
-							 * menus still have distinguishable IDs. Please note that a
-							 * plugin could misbehave and not register its menu with proper
-							 * localization keys.
+							/*
+							 * From a plugin. Include the plugin name in the id.
+							 *
+							 * Note that a plugin could misbehave and fail to register its
+							 * menu with proper localization keys.
 							 */
-							String id = menu.plugin.getClass().getName()+'-'+text;
-							listItem.addAttribute("id", filterCSSIdentifier(id));
+							listItem.addAttribute("id", getPluginL10nCSSIdentifier(menu.plugin, text));
 
 							String newTitle = menu.plugin.getString(menuItemTitle);
 							if(newTitle == null) {
@@ -605,6 +606,17 @@ public final class PageMaker {
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
 		return new PageNode(pageNode, headNode, contentDiv);
+	}
+
+	/**
+	 * Create a CSS identifier incorporating both a class name and a localization key.
+	 * @param plugin plugin localization instance (used for class name)
+	 * @param key localization key
+	 * @return valid CSS identifier.
+	 */
+	// TODO: Less-stupid name.
+	public static String getPluginL10nCSSIdentifier(FredPluginL10n plugin, String key) {
+		return filterCSSIdentifier(plugin.getClass().getName()+'-'+key);
 	}
 
 	/**

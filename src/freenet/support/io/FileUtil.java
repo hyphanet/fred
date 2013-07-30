@@ -386,7 +386,7 @@ final public class FileUtil {
 			}
 		}
 
-		for(char c : buffer.array()) {
+		for(char c : buffer.array()) { // Note that this will add extra whitespace to the end, which we will trim later.
 			
 			if(extraChars.indexOf(c) != -1) {
 				sb.append(def);
@@ -448,7 +448,8 @@ final public class FileUtil {
 			sb.append("Invalid filename"); // TODO: L10n
 		}
 
-		return sb.toString();
+		return sb.toString().trim(); // Trim leading and trailing whitespace.
+		// Some of the trailing whitespace may be from the CharBuffer.
 	}
 
 	public static String sanitize(String fileName) {
@@ -463,13 +464,7 @@ final public class FileUtil {
 	public static String sanitize(String filename, String mimeType) {
 		filename = sanitize(filename);
 		if(mimeType == null) return filename;
-		if(filename.indexOf('.') >= 0) {
-			String oldExt = filename.substring(filename.lastIndexOf('.'));
-			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
-		}
-		String defaultExt = DefaultMIMETypes.getExtension(filename);
-		if(defaultExt == null) return filename;
-		else return filename + '.' + defaultExt;
+		return DefaultMIMETypes.forceExtension(filename, mimeType);
 	}
 
 	/**
@@ -644,9 +639,9 @@ final public class FileUtil {
 		long freeSpace = -1;
 		try {
 			Class<? extends File> c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
+			Method m = c.getDeclaredMethod("getFreeSpace");
 			if(m != null) {
-				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+				Long lFreeSpace = (Long) m.invoke(dir);
 				if(lFreeSpace != null) {
 					freeSpace = lFreeSpace.longValue();
 					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
@@ -730,6 +725,19 @@ final public class FileUtil {
 			File directory) throws IOException {
 		if(directory == null) directory = new File(".");
 		return File.createTempFile(prefix, suffix, directory);
+	}
+
+	public static boolean copyFile(File copyFrom, File copyTo) {
+		copyTo.delete();
+		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false, false);
+		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false, false);
+		try {
+			BucketTools.copy(inBucket, outBucket);
+			return true;
+		} catch (IOException e) {
+			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
+			return false;
+		}
 	}
 
 }

@@ -31,9 +31,15 @@ import freenet.support.SortedVectorByNumber;
 import freenet.support.Logger.LogLevel;
 
 /**
- * Base class for ClientRequestSchedulerCore and ClientRequestSchedulerNonPersistent, 
- * contains some of the methods and most of the variables. In particular, it contains all 
- * the methods that deal primarily with pendingKeys.
+ * <p>Base class for @see ClientRequestSchedulerCore and @see ClientRequestSchedulerNonPersistent, 
+ * contains some of the methods and most of the variables, in particular it contains the base of
+ * the request selection tree. The actual request selection algorithm is in 
+ * @see ClientRequestSchedulerSelector .</p>
+ * 
+ * <p>It also contains separate structures which track exactly which keys we are listening
+ * for. This is decoupled from actually requesting them because we want to pick up the data
+ * even if we didn't request it - some nearby node requested it, it got inserted through
+ * this node, it was offered via ULPRs some time after we requested it etc.</p>
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
@@ -63,17 +69,7 @@ abstract class ClientRequestSchedulerBase {
 	final boolean isRTScheduler;
 	
 	/**
-	 * Structure:
-	 * array (by priority) -> // one element per possible priority
-	 * SortedVectorByNumber (by # retries) -> // contains each current #retries
-	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
-	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
-	 * 
-	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
-	 */
-	protected SortedVectorByNumber[] priorities;
-	/**
-	 * New structure:
+	 * The base of the tree.
 	 * array (by priority) -> // one element per possible priority
 	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
 	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
@@ -90,7 +86,6 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
-		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
@@ -98,7 +93,6 @@ abstract class ClientRequestSchedulerBase {
 	
 	/**
 	 * @param req
-	 * @param random
 	 * @param container
 	 * @param maybeActive Array of requests, can be null, which are being registered
 	 * in this group. These will be ignored for purposes of checking whether stuff
@@ -108,7 +102,7 @@ abstract class ClientRequestSchedulerBase {
 	 * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
 	 * or make req a SendableRequest[] and register them all at once.
 	 */
-	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
+	void innerRegister(SendableRequest req, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
 		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
@@ -120,7 +114,7 @@ abstract class ClientRequestSchedulerBase {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, random, container, context);
+		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
 		if(persistent())
 			sched.maybeAddToStarterQueue(req, container, maybeActive);
@@ -140,7 +134,22 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 	
-	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
+	/** Add a request (or insert) to the request selection tree.
+	 * @param priorityClass The priority of the request.
+	 * @param client Label object indicating which larger group of requests this request belongs to
+	 * (e.g. the global queue, or an FCP client), and whether it is persistent.
+	 * @param cr The high-level request that this single block request is part of. E.g. a fetch for 
+	 * a single key may download many blocks in a splitfile; an insert for a large freesite is 
+	 * considered a single @see ClientRequester.
+	 * @param req A single SendableRequest object which is one or more low-level requests. E.g. it 
+	 * can be an insert of a single block, or it can be a request or insert for a single segment 
+	 * within a splitfile. 
+	 * @param container The database handle, if the request is persistent, in which case this will
+	 * be a ClientRequestSchedulerCore. If so, this method must be called on the database thread.
+	 * @param context The client context object, which contains links to all the important objects
+	 * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
+	 */
+	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
@@ -201,7 +210,7 @@ abstract class ClientRequestSchedulerBase {
 			cr.removeFromRequests(req, container, dontComplain);
 	}
 	
-	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
+	public void reregisterAll(ClientRequester request, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
 		if(request.persistent() != persistent()) return;
 		SendableRequest[] reqs = getSendableRequests(request, container);
 		
@@ -236,7 +245,7 @@ abstract class ClientRequestSchedulerBase {
 			// Then can do innerRegister() (not register()).
 			if(persistent())
 				container.activate(req, 1);
-			innerRegister(req, random, container, context, null);
+			innerRegister(req, container, context, null);
 			if(persistent())
 				container.deactivate(req, 1);
 		}
@@ -470,65 +479,9 @@ abstract class ClientRequestSchedulerBase {
 		if(newPriorities == null) {
 			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			if(persistent()) container.store(this);
-			if(priorities != null)
-				migrateToNewPriorities(container, context);
 		}
 	}
 	
-	private void migrateToNewPriorities(ObjectContainer container,
-			ClientContext context) {
-		System.err.println("Migrating old priorities to new priorities ...");
-		for(int prio=0;prio<priorities.length;prio++) {
-			System.err.println("Priority "+prio);
-			SortedVectorByNumber retryList = priorities[prio];
-			if(retryList == null) continue;
-			if(persistent()) container.activate(retryList, 1);
-			if(!retryList.isEmpty()) {
-				while(retryList.count() > 0) {
-					int retryCount = retryList.getNumberByIndex(0);
-					System.err.println("Retry count "+retryCount+" for priority "+prio);
-					SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) retryList.getByIndex(0);
-					if(retryTracker == null) {
-						System.out.println("Retry count is empty");
-						retryList.remove(retryCount, container);
-						continue; // Fault tolerance in migration is good!
-					}
-					if(persistent()) container.activate(retryTracker, 1);
-					// Move everything from the retryTracker to the new priority
-					if(newPriorities[prio] == null) {
-						newPriorities[prio] = new SectoredRandomGrabArray(persistent(), container, null);
-						if(persistent()) {
-							container.store(newPriorities[prio]);
-							container.store(this);
-						}
-					} else {
-						if(persistent())
-							container.activate(newPriorities[prio], 1);
-					}
-					SectoredRandomGrabArray newTopLevel = newPriorities[prio];
-					retryTracker.moveElementsTo(newTopLevel, container, true);
-					if(persistent()) {
-						container.deactivate(newTopLevel, 1);
-						retryTracker.removeFrom(container);
-					}
-					retryList.remove(retryCount, container);
-					if(persistent()) container.commit();
-					System.out.println("Migrated retry count "+retryCount+" on priority "+prio);
-				}
-			}
-			retryList.removeFrom(container);
-			priorities[prio] = null;
-			if(persistent()) container.commit();
-			System.out.println("Migrated priority "+prio);
-		}
-		if(persistent()) {
-			priorities = null;
-			container.store(this);
-			container.commit();
-			System.out.println("Migrated all priorities");
-		}
-	}
-
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();

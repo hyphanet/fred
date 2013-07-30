@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -102,11 +104,16 @@ public class DarknetPeerNode extends PeerNode {
 		NORMAL,
 		HIGH;
 
+		private static final FRIEND_TRUST[] valuesBackwards;
+		static {
+			final FRIEND_TRUST[] values = values();
+			valuesBackwards = new FRIEND_TRUST[values.length];
+			for(int i=0;i<values.length;i++)
+				valuesBackwards[i] = values[values.length-i-1];
+		}
+
 		public static FRIEND_TRUST[] valuesBackwards() {
-			FRIEND_TRUST[] valuesBackwards = new FRIEND_TRUST[values().length];
-			for(int i=0;i<values().length;i++)
-				valuesBackwards[i] = values()[values().length-i-1];
-			return valuesBackwards;
+			return valuesBackwards.clone();
 		}
 
 	}
@@ -877,6 +884,10 @@ public class DarknetPeerNode extends PeerNode {
 		// FIXME do something
 	}
 
+	// FIXME refactor this. We want to be able to send file transfers from code that isn't related to fproxy.
+	// FIXME and it should be able to talk to plugins on other nodes etc etc.
+	// FIXME there are already type fields etc, so this shouldn't be too difficult? But it's not really supported at the moment.
+	// FIXME See also e.g. fcp/SendTextMessage.
 	class FileOffer {
 		final long uid;
 		final String filename;
@@ -1693,7 +1704,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	@Override
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
-		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
+		if((now - peerAddedTime) > DAYS.toMillis(30))
 			peerAddedTime = 0;
 		if(!neverConnected)
 			peerAddedTime = 0;

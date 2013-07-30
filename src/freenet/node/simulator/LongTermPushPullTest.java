@@ -1,5 +1,8 @@
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -255,7 +258,7 @@ public class LongTermPushPullTest extends LongTermTest {
 			if(prevDate != null) {
 				long now = calendar.getTimeInMillis();
 				long prev = prevDate.getTimeInMillis();
-				long dist = (now - prev) / (24 * 60 * 60 * 1000);
+				long dist = DAYS.convert(now - prev, MILLISECONDS);
 				if(dist != 1) System.out.println(""+dist+" days since last report");
 			}
 			prevDate = calendar;

@@ -1,5 +1,10 @@
 package freenet.clients.http;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.IOException;
 import java.net.URI;
 import java.text.DecimalFormat;
@@ -169,7 +174,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle"), ctx);
-		boolean advancedMode = ctx.getContainer().isAdvancedModeEnabled();
+		boolean advancedMode = ctx.isAdvancedModeEnabled();
 		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -179,7 +184,7 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
@@ -908,7 +913,7 @@ public class StatisticsToadlet extends Toadlet {
 		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
 		double locChangeSession = node.getLocationChangeSession();
 		int averageSwapTime = node.getAverageOutgoingSwapTime();
-		int sendSwapInterval = node.getSendSwapInterval();
+		long sendSwapInterval = node.getSendSwapInterval();
 
 		HTMLNode locationSwapInfoboxContent = locationSwapInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode locationSwapList = locationSwapInfoboxContent.addChild("ul");
@@ -1098,6 +1103,7 @@ public class StatisticsToadlet extends Toadlet {
 				activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 			activityList.addChild("li", "BackgroundFetcherByUSKSize:\u00a0" + node.clientCore.uskManager.getBackgroundFetcherByUSKSize());
 			activityList.addChild("li", "temporaryBackgroundFetchersLRUSize:\u00a0" + node.clientCore.uskManager.getTemporaryBackgroundFetchersLRU());
+			activityList.addChild("li", "outputBandwidthLiabilityUsage:\u00a0" + this.fix3p1pct.format(node.nodeStats.getBandwidthLiabilityUsage()));
 		}
 		
 	}
@@ -1259,21 +1265,21 @@ public class StatisticsToadlet extends Toadlet {
 		int darknetSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
 		int darknetSizeEstimate24h = 0;
 		int darknetSizeEstimate48h = 0;
-		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
-			darknetSizeEstimate24h = stats.getDarknetSizeEstimate(now - (24*60*60*1000));  // 48 hours
+		if(nodeUptimeSeconds > HOURS.toSeconds(24)) {
+			darknetSizeEstimate24h = stats.getDarknetSizeEstimate(now - HOURS.toMillis(24));
 		}
-		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-			darknetSizeEstimate48h = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
+		if(nodeUptimeSeconds > HOURS.toSeconds(48)) {
+			darknetSizeEstimate48h = stats.getDarknetSizeEstimate(now - HOURS.toMillis(48));
 		}
 		// Opennet
 		int opennetSizeEstimateSession = stats.getOpennetSizeEstimate(-1);
 		int opennetSizeEstimate24h = 0;
 		int opennetSizeEstimate48h = 0;
-		if (nodeUptimeSeconds > (24 * 60 * 60)) { // 24 hours
-			opennetSizeEstimate24h = stats.getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 48 hours
+		if (nodeUptimeSeconds > HOURS.toSeconds(24)) {
+			opennetSizeEstimate24h = stats.getOpennetSizeEstimate(now - HOURS.toMillis(24));
 		}
-		if (nodeUptimeSeconds > (48 * 60 * 60)) { // 48 hours
-			opennetSizeEstimate48h = stats.getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
+		if (nodeUptimeSeconds > HOURS.toSeconds(48)) {
+			opennetSizeEstimate48h = stats.getOpennetSizeEstimate(now - HOURS.toMillis(48));
 		}
 		
 		double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
@@ -1287,23 +1293,23 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "bwlimitDelayTimeRT:\u00a0" + bwlimitDelayTimeRT + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
 		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + darknetSizeEstimateSession + "\u00a0nodes");
-		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
+		if(nodeUptimeSeconds > DAYS.toSeconds(1)) {
 			overviewList.addChild("li", "darknetSizeEstimate24h:\u00a0" + darknetSizeEstimate24h + "\u00a0nodes");
 		}
-		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+		if(nodeUptimeSeconds > DAYS.toSeconds(2)) {
 			overviewList.addChild("li", "darknetSizeEstimate48h:\u00a0" + darknetSizeEstimate48h + "\u00a0nodes");
 		}
 		overviewList.addChild("li", "opennetSizeEstimateSession:\u00a0" + opennetSizeEstimateSession + "\u00a0nodes");
-		if (nodeUptimeSeconds > (24 * 60 * 60)) { // 24 hours
+		if (nodeUptimeSeconds > DAYS.toSeconds(1)) {
 			overviewList.addChild("li", "opennetSizeEstimate24h:\u00a0" + opennetSizeEstimate24h + "\u00a0nodes");
 		}
-		if (nodeUptimeSeconds > (48 * 60 * 60)) { // 48 hours
+		if (nodeUptimeSeconds > DAYS.toSeconds(2)) {
 			overviewList.addChild("li", "opennetSizeEstimate48h:\u00a0" + opennetSizeEstimate48h + "\u00a0nodes");
 		}
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
 			overviewList.addChild("li", "avrConnPeersPerNode:\u00a0" + fix6p6.format(numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps)) + "\u00a0peers");
 		}
-		overviewList.addChild("li", "nodeUptimeSession:\u00a0" + TimeUtil.formatTime(nodeUptimeSeconds * 1000));
+		overviewList.addChild("li", "nodeUptimeSession:\u00a0" + TimeUtil.formatTime(MILLISECONDS.convert(nodeUptimeSeconds, SECONDS)));
 		overviewList.addChild("li", "nodeUptimeTotal:\u00a0" + TimeUtil.formatTime(nodeUptimeTotal));
 		overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix1p4.format(routingMissDistanceLocal));
 		overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix1p4.format(routingMissDistanceRemote));
@@ -1382,7 +1388,7 @@ public class StatisticsToadlet extends Toadlet {
 	private final static int PEER_CIRCLE_RADIUS = 100;
 	private final static int PEER_CIRCLE_INNER_RADIUS = 60;
 	private final static int PEER_CIRCLE_ADDITIONAL_FREE_SPACE = 10;
-	private final static long MAX_CIRCLE_AGE_THRESHOLD = 24l*60*60*1000;   // 24 hours
+	private final static long MAX_CIRCLE_AGE_THRESHOLD = HOURS.toMillis(24);
 	private final static int HISTOGRAM_LENGTH = 10;
 
 	private void addNodeCircle (HTMLNode circleTable, double myLocation) {

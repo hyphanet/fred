@@ -281,10 +281,10 @@ public class SubConfig implements Comparable<SubConfig> {
 					fs.put(key, o.isForcedWrite());
 					break;
 				case SHORT_DESCRIPTION:
-					fs.putSingle(key, NodeL10n.getBase().getString(o.getShortDesc()));
+					fs.putSingle(key, o.getLocalisedShortDesc());
 					break;
 				case LONG_DESCRIPTION:
-					fs.putSingle(key, NodeL10n.getBase().getString(o.getLongDesc()));
+					fs.putSingle(key, o.getLocalisedLongDesc());
 					break;
 				case DATA_TYPE:
 					fs.putSingle(key, o.getDataTypeStr());

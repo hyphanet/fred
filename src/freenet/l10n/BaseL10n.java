@@ -410,16 +410,33 @@ public class BaseL10n {
 
 	/**
 	 * Get a localized string and put it in a HTMLNode for the translation page.
-	 * @param key Key to search for.
+	 * @param values Values to replace patterns with.
 	 * @return HTMLNode
 	 */
 	public HTMLNode getHTMLNode(String key) {
+		return getHTMLNode(key, null, null);
+	}
+	
+	/**
+	 * Get a localized string and put it in a HTMLNode for the translation page.
+	 * @param key Key to search for.
+	 * @param patterns Patterns to replace. May be null, if so values must also be null.
+	 * @param values Values to replace patterns with.
+	 * @return HTMLNode
+	 */
+	public HTMLNode getHTMLNode(String key, String[] patterns, String[] values) {
 		String value = this.getString(key, true);
 		if (value != null) {
-			return new HTMLNode("#", value);
+			if(patterns != null)
+				return new HTMLNode("#", getString(key, patterns, values));
+			else
+				return new HTMLNode("#", value);
 		}
 		HTMLNode translationField = new HTMLNode("span", "class", "translate_it");
-		translationField.addChild("#", getDefaultString(key));
+		if(patterns != null)
+			translationField.addChild("#", getDefaultString(key, patterns, values));
+		else
+			translationField.addChild("#", getDefaultString(key));
 		translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL + "?translate=" + key).addChild("small", " (translate it in your native language!)");
 
 		return translationField;
@@ -446,6 +463,22 @@ public class BaseL10n {
 		return key;
 	}
 
+	/**
+	 * Get the default value for a key.
+	 * @param key Key to search for.
+	 * @return String
+	 */
+	public String getDefaultString(String key, String[] patterns, String[] values) {
+		assert (patterns.length == values.length);
+		String result = getDefaultString(key);
+
+		for (int i = 0; i < patterns.length; i++) {
+			result = result.replaceAll("\\$\\{" + patterns[i] + "\\}", quoteReplacement(values[i]));
+		}
+
+		return result;
+	}
+	
 	/**
 	 * Get a localized string, and replace on-the-fly some values.
 	 * @param key Key to search for.

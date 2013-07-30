@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -13,7 +15,6 @@ import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.JceLoader;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
@@ -161,7 +162,7 @@ public class NodeStarter implements WrapperListener {
 				public void run() {
 					while(true) {
 						try {
-							Thread.sleep(60 * 60 * 1000);
+							Thread.sleep(MINUTES.toMillis(60));
 						} catch(InterruptedException e) {
 							// Ignore
 						} catch(Throwable t) {
@@ -291,8 +292,6 @@ public class NodeStarter implements WrapperListener {
 		// Setup RNG
 		RandomSource random = new Yarrow();
 
-		DiffieHellman.init(random);
-
 		if(enablePlug) {
 
 			// Thread to keep the node up.
@@ -307,7 +306,7 @@ public class NodeStarter implements WrapperListener {
 					public void run() {
 						while(true) {
 							try {
-								Thread.sleep(60 * 60 * 1000);
+								Thread.sleep(MINUTES.toMillis(60));
 							} catch(InterruptedException e) {
 								// Ignore
 							} catch(Throwable t) {
@@ -471,9 +470,10 @@ public class NodeStarter implements WrapperListener {
 		long limit = getMemoryLimitBytes();
 		if(limit <= 0) return limit;
 		if(limit == Long.MAX_VALUE) return -2;
+		limit /= (1024 * 1024);
 		if(limit > Integer.MAX_VALUE)
 			return -1; // Seems unlikely. FIXME 2TB limit!
-		return limit / (1024 * 1024);
+		return limit;
 	}
 	
 	/** Get the memory limit in bytes. Return -1 if we don't know. Compensate for odd JVMs' 

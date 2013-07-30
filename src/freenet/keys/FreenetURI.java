@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -951,7 +952,8 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	/** Generate a suggested filename for the URI. This may be constructed
 	 * from more than one part of the URI e.g. SSK@blah,blah,blah/sitename/
-	 * might return sitename. */
+	 * might return sitename. The returned string will already have been 
+	 * through FileUtil.sanitize(). */
 	public String getPreferredFilename() {
 		if (logMINOR)
 			Logger.minor(this, "Getting preferred filename for " + this);
@@ -969,15 +971,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 			}
 		}
 		if(metaStr != null)
-			for(int i = 0; i < metaStr.length; i++) {
-				if(metaStr[i] == null || metaStr[i].equals("")) {
+			for(String s : metaStr) {
+				if(s == null || s.equals("")) {
 					if(logMINOR)
-						Logger.minor(this, "metaString " + i + ": was null or empty");
+						Logger.minor(this, "metaString \"" + s + "\": was null or empty");
 					continue;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Adding metaString " + i + ": " + metaStr[i]);
-				names.add(metaStr[i]);
+					Logger.minor(this, "Adding metaString \"" + s + "\"");
+				names.add(s);
 			}
 		StringBuilder out = new StringBuilder();
 		for(int i = 0; i < names.size(); i++) {
@@ -1004,6 +1006,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
+		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+"\"";
 		return out.toString();
 	}
 
@@ -1134,7 +1137,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 
 	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
-		return keyType.equalsIgnoreCase("SSK") && docNameWithEditionPattern.matcher(docName).matches();
+		return keyType.equalsIgnoreCase("SSK") && docName != null && docNameWithEditionPattern.matcher(docName).matches();
 	}
 
 	/** Convert an SSK into a USK, if possible. */
@@ -1159,6 +1162,9 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
+			if(docName == null)
+				throw new IllegalStateException();
+			
 			Matcher matcher = docNameWithEditionPattern.matcher(docName);
 			if (!matcher.matches()) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
@@ -1214,6 +1220,41 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		return 0;
 	}
 	
+	/**
+	 * If this object is a USK/SSK insert URI, this function computes the request URI which belongs to it.
+	 * If it is a CHK/KSK, the original URI is returned as CHK/KSK do not have a private insert URI, they are their own "insert URI".
+	 * 
+	 * If you want to give people access to content at an URI, you should always publish only the request URI.
+	 * Never give away the insert URI, this allows anyone to insert under your URI!
+	 *  
+	 * @return The request URI which belongs to this insert URI.
+	 * @throws MalformedURLException If this object is a USK/SSK request URI already. NOT thrown for CHK/KSK URIs!
+	 */
+	public FreenetURI deriveRequestURIFromInsertURI() throws MalformedURLException {
+		final FreenetURI originalURI = this;
+		
+		if(originalURI.isCHK()) {
+			return originalURI;
+		} else if(originalURI.isSSK() || originalURI.isUSK()) {
+			FreenetURI newURI = originalURI;
+			if(originalURI.isUSK())
+				newURI = newURI.sskForUSK();
+			InsertableClientSSK issk = InsertableClientSSK.create(newURI);
+			newURI = issk.getURI();
+			if(originalURI.isUSK()) {
+				newURI = newURI.uskForSSK();
+				newURI = newURI.setSuggestedEdition(originalURI.getSuggestedEdition());
+			}
+			// docName will be preserved.
+			// Any meta strings *should not* be preserved.
+			return newURI;
+		} else if(originalURI.isKSK()) {
+			return originalURI;
+		} else {
+			throw new IllegalArgumentException("Not implemented yet for this key type: " + getKeyType());
+		}
+	}
+
 	public static final Comparator<FreenetURI> FAST_COMPARATOR = new Comparator<FreenetURI>() {
 
 		@Override
@@ -1228,6 +1269,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI> {
 		}
 		
 	};
+
+	public static FreenetURI generateRandomCHK(Random rand) {
+		byte[] rkey = new byte[32];
+		rand.nextBytes(rkey);
+		byte[] ckey = new byte[32];
+		rand.nextBytes(ckey);
+		byte[] extra = ClientCHK.getExtra(Key.ALGO_AES_CTR_256_SHA256, (short)-1, false);
+		return new FreenetURI("CHK", null, rkey, ckey, extra);
+	}
 
 	// TODO add something like the following?
 	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }

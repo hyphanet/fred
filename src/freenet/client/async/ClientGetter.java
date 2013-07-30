@@ -29,6 +29,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.DataFilterException;
 import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
@@ -365,7 +366,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
 		} catch(UnsafeContentTypeException e) {
 			Logger.normal(this, "Error filtering content: will not validate", e);
-			ex = new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME);
+			ex = e.createFetchException(ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME, expectedSize);
 			/*Not really the state's fault*/
 		} catch(URISyntaxException e) {
 			//Impossible
@@ -447,8 +448,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				if(mime != null && !"".equals(mime)) {
 					// Even if it's the default, it is set because we have the final size.
 					UnsafeContentTypeException unsafe = ContentFilter.checkMIMEType(mime);
-					if(unsafe != null)
-						e = new FetchException(unsafe.getFetchErrorCode(), e.expectedSize, unsafe, mime);
+					if(unsafe != null) {
+						e = unsafe.recreateFetchException(e, mime);
+					}
 				}
 			}
 		}
@@ -729,7 +731,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(ctx.filterData) {
 			UnsafeContentTypeException e = ContentFilter.checkMIMEType(mime);
 			if(e != null) {
-				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, mime);
+				throw e.createFetchException(mime, expectedSize);
 			}
 			if(forceCompatibleExtension != null)
 				checkCompatibleExtension(mime);

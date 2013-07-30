@@ -19,6 +19,9 @@ public class USKDateHint {
 		DAY,
 		WEEK;
 
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final Type[] values = values();
+
 		public boolean alwaysMorePreciseThan(Type type) {
 			if(this.equals(type)) return false;
 			if(this.equals(DAY)) { // Day beats everything.
@@ -68,18 +71,18 @@ public class USKDateHint {
 	
 	/** Return the URL's to insert hint data to */
 	public FreenetURI[] getInsertURIs(InsertableUSK key) {
-		FreenetURI[] uris = new FreenetURI[Type.values().length];
+		FreenetURI[] uris = new FreenetURI[Type.values.length];
 		int x = 0;
-		for(Type t : Type.values())
+		for(Type t : Type.values)
 			uris[x++] = key.getInsertableSSK(key.siteName+PREFIX+get(t)).getInsertURI();
 		return uris;
 	}
 
 	/** Return the URL's to fetch hint data from */
 	public ClientSSK[] getRequestURIs(USK key) {
-		ClientSSK[] uris = new ClientSSK[Type.values().length];
+		ClientSSK[] uris = new ClientSSK[Type.values.length];
 		int x = 0;
-		for(Type t : Type.values())
+		for(Type t : Type.values)
 			uris[x++] = key.getSSK(key.siteName+PREFIX+get(t));
 		return uris;
 	}

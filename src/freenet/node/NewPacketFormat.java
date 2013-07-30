@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,7 +38,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
-	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
+	private static final long MAX_MSGID_BLOCK_TIME = MINUTES.toMillis(10);
 	private static final int MAX_ACKS = 500;
 	static boolean DO_KEEPALIVES = true;
 
@@ -793,6 +795,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 									item = new MessageItem(msg, null, null);
 									item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 									wasGeneratedPing = true;
+									// Should we report this on the PeerNode's stats? We'd need to run a job off-thread, so probably not worth it.
 								} else {
 									break prio;
 								}

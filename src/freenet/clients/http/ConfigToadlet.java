@@ -51,6 +51,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	 * Prompt for node restart
 	 */
 	private class NeedRestartUserAlert extends AbstractUserAlert {
+		private final String formPassword;
+		
+		public NeedRestartUserAlert(String formPassword) {
+			this.formPassword = formPassword;
+		}
+		
 		@Override
 		public String getTitle() {
 			return l10n("needRestartTitle");
@@ -81,7 +87,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 								"restartForm", "utf-8" }).addChild("div");
 				restartForm.addChild("input", new String[] { "type", "name",
 						"value" }, new String[] { "hidden", "formPassword",
-						node.clientCore.formPassword });
+						formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -183,14 +189,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			super.sendErrorPage(ctx, 403,
 					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
 					NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", path());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
 
@@ -393,8 +391,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 
 				if (needRestartUserAlert == null) {
-					needRestartUserAlert = new NeedRestartUserAlert();
-					node.clientCore.alerts.register(needRestartUserAlert);
+					needRestartUserAlert = new NeedRestartUserAlert(ctx.getFormPassword());
+					ctx.getAlertManager().register(needRestartUserAlert);
 				}
 			}
 		} else {
@@ -434,15 +432,14 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 
-		boolean advancedModeEnabled = ctx.getContainer()
-				.isAdvancedModeEnabled();
+		boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 
 		PageNode page = ctx.getPageMaker().getPageNode(
 				NodeL10n.getBase().getString("ConfigToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		HTMLNode infobox = contentNode.addChild("div", "class",
 				"infobox infobox-normal");
@@ -556,12 +553,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				// config descriptions, otherwise use the node's BaseL10n
 				// instance like
 				// normal.
-				HTMLNode shortDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getShortDesc()) : new HTMLNode("#",
-						plugin.getString(o.getShortDesc()));
-				HTMLNode longDesc = (plugin == null) ? NodeL10n.getBase()
-						.getHTMLNode(o.getLongDesc()) : new HTMLNode("#",
-						plugin.getString(o.getLongDesc()));
+				HTMLNode shortDesc = o.getShortDescNode(plugin);
+				HTMLNode longDesc = o.getLongDescNode(plugin);
 
 				HTMLNode configItemNode = configGroupUlNode.addChild("li");
 				String defaultValue;
@@ -797,7 +790,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	@Override
 	public boolean isEnabled(ToadletContext ctx) {
 		Option<?>[] o = subConfig.getOptions();
-		if (core.isAdvancedModeEnabled())
+		if (ctx.isAdvancedModeEnabled())
 			return true;
 		for (Option<?> option : o)
 			if (!option.isExpert())

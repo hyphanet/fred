@@ -91,7 +91,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -106,7 +106,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.setCompatibilityMode(compatibilityMode);
 		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
-		publicURI = getPublicURI(this.uri);
+		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
+		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
 
 	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
@@ -122,7 +123,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
-			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -136,32 +137,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		ctx.localRequestOnly = localRequestOnly;
 		ctx.setCompatibilityMode(compatMode);
+		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		this.earlyEncode = earlyEncode;
-		publicURI = getPublicURI(this.uri);
-	}
-
-	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
-		String type = uri.getKeyType();
-		if(type.equalsIgnoreCase("CHK")) {
-			return uri;
-		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
-			FreenetURI u = uri;
-			if(type.equalsIgnoreCase("USK"))
-				uri = uri.setKeyType("SSK");
-			InsertableClientSSK issk = InsertableClientSSK.create(uri);
-			uri = issk.getURI();
-			if(type.equalsIgnoreCase("USK")) {
-				uri = uri.setKeyType("USK");
-				uri = uri.setSuggestedEdition(u.getSuggestedEdition());
-			}
-			// docName will be preserved.
-			// Any meta strings *should not* be preserved.
-			return uri;
-		} else if(type.equalsIgnoreCase("KSK")) {
-			return uri;
-		} else {
-			throw new IllegalArgumentException();
-		}
+		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
 
 	@Override

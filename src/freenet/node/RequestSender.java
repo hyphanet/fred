@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
 
 import freenet.crypt.CryptFormatException;
@@ -58,13 +61,13 @@ import freenet.support.math.MedianMeanRunningAverage;
 public final class RequestSender extends BaseSender implements PrioRunnable {
 
     // Constants
-    static final int ACCEPTED_TIMEOUT = 10000;
+    static final long ACCEPTED_TIMEOUT = SECONDS.toMillis(10);
     // After a get offered key fails, wait this long for two stage timeout. Probably we will
     // have disconnected by then.
-    static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
-    final int getOfferedTimeout;
+    static final long GET_OFFER_LONG_TIMEOUT = SECONDS.toMillis(60);
+    final long getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
-    static final int OPENNET_TIMEOUT = 120000;
+    static final long OPENNET_TIMEOUT = MINUTES.toMillis(2);
     /** One in this many successful requests is randomly reinserted.
      * This is probably a good idea anyway but with the split store it's essential. */
     static final int RANDOM_REINSERT_INTERVAL = 200;
@@ -393,11 +396,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
            	return;
         }
 	}
-    
-	private synchronized int timeSinceSentForTimeout() {
+
+	private synchronized long timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
-    		if(time < searchTimeout + 10*1000) return FailureTable.REJECT_TIME;
+    		if(time < searchTimeout + SECONDS.toMillis(10)) return FailureTable.REJECT_TIME;
     		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
     		return FailureTable.REJECT_TIME;
     	}
@@ -664,7 +667,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
 	}
 
-	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, int timeout) {
+	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, long timeout) {
     	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
     	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPGetOfferedKeyInvalid);
     	if(isSSK) {
@@ -923,7 +926,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 
 	@Override
 	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout, UIDTag tag) {
+			long acceptedTimeout, UIDTag tag) {
 		assert(tag == origTag);
 		/**
 		 * What are we waiting for?
@@ -1235,7 +1238,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
-			int t = timeSinceSentForTimeout();
+			long t = timeSinceSentForTimeout();
     		node.failureTable.onFailed(key, next, htl, t, t);
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
@@ -1504,7 +1507,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
     	long now = System.currentTimeMillis();
-    	long deadline = now + (realTimeFlag ? 300 * 1000 : 1260 * 1000);
+    	long deadline = now + (realTimeFlag ? MINUTES.toMillis(5) : MINUTES.toMillis(21));
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -2090,8 +2093,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         }
         cb.schedule();
 	}
-	
-	protected int getAcceptedTimeout() {
+
+	protected long getAcceptedTimeout() {
 		return ACCEPTED_TIMEOUT;
 	}
 
@@ -2125,9 +2128,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		
 		final short htl = this.htl;
 		origTag.handlingTimeout(next);
-		
-		int timeout = 60*1000;
-		
+
+		long timeout = MINUTES.toMillis(1);
+
 		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout, origTag);
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {

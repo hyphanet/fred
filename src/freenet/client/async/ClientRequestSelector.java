@@ -21,6 +21,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -82,9 +83,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	private static class RunningTransientInsert {
 		
 		final SendableInsert insert;
-		final Object token;
+		final SendableRequestItemKey token;
 		
-		RunningTransientInsert(SendableInsert i, Object t) {
+		RunningTransientInsert(SendableInsert i, SendableRequestItemKey t) {
 			insert = i;
 			token = t;
 		}
@@ -429,9 +430,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
 					}
 					if(req.persistent())
-						schedCore.innerRegister(req, random, container, context, null);
+						schedCore.innerRegister(req, container, context, null);
 					else
-						schedTransient.innerRegister(req, random, container, context, null);
+						schedTransient.innerRegister(req, container, context, null);
 					continue;
 				}
 				
@@ -685,14 +686,14 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 
 	@Override
-	public boolean hasTransientInsert(SendableInsert insert, Object token) {
+	public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		synchronized(runningTransientInserts) {
 			return runningTransientInserts.contains(tmp);
 		}
 	}
 
-	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		synchronized(runningTransientInserts) {
 			boolean retval = runningTransientInserts.add(tmp);
@@ -706,7 +707,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 	
-	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		if(logMINOR)
 			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);

@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -18,6 +22,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;
@@ -58,6 +63,9 @@ import freenet.support.transport.ip.IPUtil;
  * In particular:
  * - Opennet crypto
  * - LRU connections
+ * 
+ * Both here and in OpennetPeerNode there are lots of dubious heuristics to avoid excessive 
+ * connection churn.
  * @author toad
  */
 public class OpennetManager {
@@ -83,7 +91,8 @@ public class OpennetManager {
 	private final EnumMap<ConnectionType,Long> connectionAttemptsAddedPlentySpace;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedByPerTypeEnforcement;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedNoPeersDroppable;
-	/** Number of successful CHK requests since last added a node */
+	/** Number of successful CHK requests since last added a node. All values are incremented on a 
+	 * successful request, but when we add a node, we reset the value for that type of node. */
 	private final EnumMap<ConnectionType,Long> successCount;
 
 	/** Only drop a connection after at least this many successful requests.
@@ -93,27 +102,27 @@ public class OpennetManager {
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
 	public static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
-	public static final int DONT_READD_TIME = 60*1000;
+	public static final long DONT_READD_TIME = MINUTES.toMillis(1);
 	/** Don't drop a node until it's at least this old, if it's connected. */
-	public static final int DROP_MIN_AGE = 300*1000;
+	public static final long DROP_MIN_AGE = MINUTES.toMillis(5);
 	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE.
 	 * Relatively generous because noderef transfers e.g. for announcement can be slow (Note
 	 * that announcements actually wait for previous transfers!). */
-	public static final int DROP_MIN_AGE_DISCONNECTED = 300*1000;
+	public static final long DROP_MIN_AGE_DISCONNECTED = MINUTES.toMillis(5);
 	/** Don't drop a node until this long after startup */
-	public static final int DROP_STARTUP_DELAY = 120*1000;
+	public static final long DROP_STARTUP_DELAY = MINUTES.toMillis(2);
 	/** Don't drop a node until this long after losing connection to it.
 	 * This should be long enough to cover a typical reboot, but not so long as to result in a lot
 	 * of disconnected nodes in the Strangers list. Also it should probably not be longer than DROP_MIN_AGE! */
-	public static final int DROP_DISCONNECT_DELAY = 5*60*1000;
+	public static final long DROP_DISCONNECT_DELAY = MINUTES.toMillis(5);
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
-	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
+	public static final long DROP_DISCONNECT_DELAY_COOLDOWN = MINUTES.toMillis(60);
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected.
 	 * This is per connection type, we should consider whether to reduce it further. */
-	public static final int DROP_CONNECTED_TIME = 5*60*1000;
+	public static final long DROP_CONNECTED_TIME = MINUTES.toMillis(5);
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
-	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
+	public static final long MIN_TIME_BETWEEN_OFFERS = SECONDS.toMillis(30);
 
 	private static volatile boolean logMINOR;
 
@@ -140,11 +149,11 @@ public class OpennetManager {
 	/** Minimum number of peers */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers. */
-	public static final int MAX_PEERS_FOR_SCALING = 40;
+	public static final int MAX_PEERS_FOR_SCALING = 100;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
-	public static final int PANIC_MAX_PEERS = 50;
+	public static final int PANIC_MAX_PEERS = 110;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
-	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
+	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = DAYS.toMillis(31);
 
 	// This is only relevant while the connection is in the grace period.
 	// Null means none of the above e.g. not in grace period.
@@ -165,32 +174,21 @@ public class OpennetManager {
 			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
 
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			timeLastDropped.put(c, 0L);
-
 		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttempts.put(c, 0L);
-
 		connectionAttemptsAdded = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAdded.put(c, 0L);
-
 		connectionAttemptsAddedPlentySpace = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsAddedPlentySpace.put(c, 0L);
-
 		connectionAttemptsRejectedByPerTypeEnforcement = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
-
 		connectionAttemptsRejectedNoPeersDroppable = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
-			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
-
 		successCount = new EnumMap<ConnectionType,Long>(ConnectionType.class);
-		for(ConnectionType c : ConnectionType.values())
+		for(ConnectionType c : ConnectionType.values()) {
+			timeLastDropped.put(c, 0L);
+			connectionAttempts.put(c, 0L);
+			connectionAttemptsAdded.put(c, 0L);
+			connectionAttemptsAddedPlentySpace.put(c, 0L);
+			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
+			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
 			successCount.put(c, 0L);
+		}
 
 		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
 		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
@@ -207,39 +205,7 @@ public class OpennetManager {
 		}
 		peersLRU = new LRUQueue<PeerNode>();
 		oldPeers = new LRUQueue<PeerNode>();
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
-		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
-		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
-			@Override
-			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
-				if(pn1 == pn2) return 0;
-				long lastSuccess1 = pn1.timeLastSuccess();
-				long lastSuccess2 = pn2.timeLastSuccess();
-
-				if(lastSuccess1 > lastSuccess2) return 1;
-				if(lastSuccess2 > lastSuccess1) return -1;
-
-				boolean neverConnected1 = pn1.neverConnected();
-				boolean neverConnected2 = pn2.neverConnected();
-				if(neverConnected1 && (!neverConnected2))
-					return -1;
-				if((!neverConnected1) && neverConnected2)
-					return 1;
-				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
-				if(pn1.hashCode > pn2.hashCode) return 1;
-				else if(pn1.hashCode < pn2.hashCode) return -1;
-				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
-				return Fields.compareObjectID(pn1, pn2);
-			}
-		});
-		for(OpennetPeerNode opn: nodes)
-			peersLRU.push(opn);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
-		if(logMINOR) {
-			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
-			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
-			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
-		}
 	}
 
 	public void writeFile() {
@@ -309,6 +275,38 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			@Override
+			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
+				if(pn1 == pn2) return 0;
+				long lastSuccess1 = pn1.timeLastSuccess();
+				long lastSuccess2 = pn2.timeLastSuccess();
+
+				if(lastSuccess1 > lastSuccess2) return 1;
+				if(lastSuccess2 > lastSuccess1) return -1;
+
+				boolean neverConnected1 = pn1.neverConnected();
+				boolean neverConnected2 = pn2.neverConnected();
+				if(neverConnected1 && (!neverConnected2))
+					return -1;
+				if((!neverConnected1) && neverConnected2)
+					return 1;
+				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
+				if(pn1.hashCode > pn2.hashCode) return 1;
+				else if(pn1.hashCode < pn2.hashCode) return -1;
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				return Fields.compareObjectID(pn1, pn2);
+			}
+		});
+		for(OpennetPeerNode opn: nodes)
+			peersLRU.push(opn);
+		if(logMINOR) {
+			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
+			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
+			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
+		}
 		dropExcessPeers();
 		writeFile();
 		// Read old peers
@@ -1172,7 +1170,7 @@ public class OpennetManager {
 	}
 
 
-	private static final long MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+	private static final long MAX_AGE = DAYS.toMillis(7);
 	private static final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
 
 	private static void registerKnownIdentity(String d) {

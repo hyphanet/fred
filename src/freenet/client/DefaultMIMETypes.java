@@ -782,7 +782,7 @@ public class DefaultMIMETypes {
 		String[] extensions = allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
 		for(String extension: extensions)
-			if(oldExt.equals(extension)) return true;
+			if(oldExt.equalsIgnoreCase(extension)) return true;
 		return false;
 	}
 	
@@ -801,5 +801,24 @@ public class DefaultMIMETypes {
 	
 	static String[] getMIMETypes() {
 		return mimeTypesByNumber.toArray(new String[mimeTypesByNumber.size()]);
+	}
+
+	/** Make sure the filename has the correct extension for the MIME type */
+	public static String forceExtension(String s, String expectedMimeType) {
+		int dotIdx = s.lastIndexOf('.');
+		String ext = getExtension(expectedMimeType);
+		if(ext == null)
+			ext = "bin";
+		if((dotIdx == -1) && (expectedMimeType != null)) {
+			s += '.' + ext;
+			return s;
+		}
+		if(dotIdx != -1) {
+			String oldExt = s.substring(dotIdx+1);
+			if(DefaultMIMETypes.isValidExt(expectedMimeType, oldExt))
+				return s;
+			return s + '.' + ext;
+		}
+		return s + '.' + ext;
 	}
 }

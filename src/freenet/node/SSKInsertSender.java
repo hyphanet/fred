@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.io.comm.AsyncMessageCallback;
@@ -32,7 +34,7 @@ import freenet.support.io.NativeThread;
 public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 
     // Constants
-    static final int ACCEPTED_TIMEOUT = 10000;
+    static final long ACCEPTED_TIMEOUT = SECONDS.toMillis(10);
 
     // Basics
     final NodeSSK myKey;
@@ -289,7 +291,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	NEXT_PEER
     }
 
-	private static final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
+	private static final long TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = SECONDS.toMillis(60);
 
 	@Override
 	protected void handleAcceptedRejectedTimeout(final PeerNode next, final UIDTag tag) {
@@ -495,7 +497,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected MessageFilter makeAcceptedRejectedFilter(PeerNode next,
-			int acceptedTimeout, UIDTag tag) {
+			long acceptedTimeout, UIDTag tag) {
 		// Use the right UID here, in case we fork.
 		final long uid = tag.uid;
         /*
@@ -696,7 +698,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
 
 	@Override
-	protected int getAcceptedTimeout() {
+	protected long getAcceptedTimeout() {
 		return ACCEPTED_TIMEOUT;
 	}
 
@@ -867,7 +869,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
 
 	@Override
-	protected int ignoreLowBackoff() {
+	protected long ignoreLowBackoff() {
 		return ignoreLowBackoff ? Node.LOW_BACKOFF : 0;
 	}
 

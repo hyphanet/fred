@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -119,7 +121,7 @@ public class NodeIPDetector {
 	public NodeIPDetector(Node node) {
 		this.node = node;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
-		ipDetector = new IPAddressDetector(10*1000, this);
+		ipDetector = new IPAddressDetector(SECONDS.toMillis(10), this);
 		invalidAddressOverrideAlert = new InvalidAddressOverrideUserAlert(node);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		portDetectors = new NodeIPPortDetector[0];
@@ -384,16 +386,24 @@ public class NodeIPDetector {
 	public void processDetectedIPs(DetectedIP[] list) {
 		pluginDetectedIPs = list;
 		boolean mtuChanged = false;
-		for(DetectedIP pluginDetectedIP: pluginDetectedIPs) {
-			if(pluginDetectedIP.publicAddress instanceof Inet6Address)
-				mtuChanged |= minimumMTUIPv6.report(pluginDetectedIP.mtu);
-			else
-				mtuChanged |= minimumMTUIPv4.report(pluginDetectedIP.mtu);
-			
-		}
-		if(mtuChanged) node.updateMTU();
+		for(DetectedIP pluginDetectedIP: pluginDetectedIPs)
+		    reportMTU(pluginDetectedIP.mtu, pluginDetectedIP.publicAddress instanceof Inet6Address);
 		redetectAddress();
 	}
+
+	/**
+	 * Is called by IPAddressDetector to inform NodeIPDetector about the MTU
+	 * associated to this interface
+	 */
+        public void reportMTU(int mtu, boolean forIPv6) {
+	    boolean mtuChanged = false;
+	    if(forIPv6)
+		mtuChanged |= minimumMTUIPv6.report(mtu);
+	    else	
+		mtuChanged |= minimumMTUIPv4.report(mtu);
+
+	    if (mtuChanged) node.updateMTU();
+        }
 
 	public void redetectAddress() {
 		FreenetInetAddress[] newIP = detectPrimaryIPAddress(false);
@@ -542,7 +552,7 @@ public class NodeIPDetector {
 				for(NodeIPPortDetector detector: detectors)
 					detector.startARK();
 			}
-		}, 60*1000);
+		}, SECONDS.toMillis(60));
 	}
 
 	public void onConnectedPeer() {

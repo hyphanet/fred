@@ -157,7 +157,9 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */ 
 	public synchronized void add(int num) {
 		int x = binarySearch(num);
-		if(x >= 0) throw new IllegalArgumentException(); // already exists
+		if(x >= 0) {
+			throw new IllegalArgumentException(); // already exists
+		}
 		// insertion point
 		x = -x-1;
 		push(num, x);

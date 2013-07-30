@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -61,7 +63,7 @@ public class TempBucketFactory implements BucketFactory {
 	private long maxRamUsed;
 
 	/** How old is a long-lived RAMBucket? */
-	private final static int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
+	private final static long RAMBUCKET_MAX_AGE = MINUTES.toMillis(5);
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	

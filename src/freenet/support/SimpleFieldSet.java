@@ -35,7 +35,20 @@ import freenet.support.io.Readers;
  * @author amphibian
  *
  * Very very simple FieldSet type thing, which uses the standard
- * Java facilities.
+ * Java facilities. Should always be written as UTF-8. Simpler than Properties.
+ * 
+ * DETAILS:
+ * <key>=<value> 
+ * Key is split into a tree via "."'s.
+ * Value is a string.
+ * Conversion methods are provided for most key types, one notable issue is arrays of string, 
+ * which are separated by ";".
+ * 
+ * ALTERNATE FORMAT:
+ * <key>==<standard base64 encoded value>
+ * The value is encoded. We will use this later on to prevent problems when transferring noderefs 
+ * (line breaks, whitespace get changes when people paste stuff etc), and to allow e.g. newlines 
+ * in strings. For now we only *read* such formats.
  */
 public class SimpleFieldSet {
 
@@ -75,7 +88,7 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
         this(shortLived);
-        read(Readers.fromBufferedReader(br), allowMultiple);
+        read(Readers.fromBufferedReader(br), allowMultiple, false);
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -88,8 +101,12 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
+    	this(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple, shortLived, false);
+    }
+
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
-    	read(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple);
+    	read(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple, allowBase64);
     }
 
     /**
@@ -103,11 +120,11 @@ public class SimpleFieldSet {
      * small.
      * @throws IOException if the string is too short or invalid.
      */
-    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
-	    read(Readers.fromBufferedReader(br), allowMultiple);
+	    read(Readers.fromBufferedReader(br), allowMultiple, allowBase64);
     }
     
     /**
@@ -124,16 +141,16 @@ public class SimpleFieldSet {
      * small.
      * @throws IOException
      */
-    public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(String[] content, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
     	this(shortLived);
-    	read(Readers.fromStringArray(content), allowMultiple);
+    	read(Readers.fromStringArray(content), allowMultiple, allowBase64);
     }
     
     /**
      * @see #read(LineReader, int, int, boolean, boolean)
      */
-	private void read(LineReader lr, boolean allowMultiple) throws IOException {
-		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple);
+	private void read(LineReader lr, boolean allowMultiple, boolean allowBase64) throws IOException {
+		read(lr, Integer.MAX_VALUE, 0x100, true, allowMultiple, allowBase64);
 	}
 	
 	/**
@@ -151,7 +168,7 @@ public class SimpleFieldSet {
 	 *
 	 * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
 	 */
-	private void read(LineReader br, int maxLength, int bufferSize, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
+	private void read(LineReader br, int maxLength, int bufferSize, boolean utfOrIso88591, boolean allowMultiple, boolean allowBase64) throws IOException {
 		boolean firstLine = true;
 		boolean headerSection = true;
 		List<String> headers = new ArrayList<String>();
@@ -181,8 +198,17 @@ public class SimpleFieldSet {
 				int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
 				if(index >= 0) {
 					// Mapping
-					String before = line.substring(0, index);
+					String before = line.substring(0, index).trim();
 					String after = line.substring(index+1);
+					if((!after.isEmpty()) && after.charAt(0) == '=' && allowBase64) {
+						try {
+							after = after.substring(1);
+							after = after.replaceAll("\\s", "");
+							after = Base64.decodeUTF8(after);
+						} catch (IllegalBase64Exception e) {
+							throw new IOException("Unable to decode UTF8, = should not be allowed as first character of a value");
+						}
+					}
 					if(!shortLived) after = after.intern();
 					put(before, after, allowMultiple, false, true);
 				} else {
@@ -389,33 +415,36 @@ public class SimpleFieldSet {
      * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
 	public void writeTo(Writer w) throws IOException {
-		writeTo(w, "", false);
+		writeTo(w, "", false, false);
 	}
 
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
      * Note: The caller *must* buffer the writer to avoid lousy performance!
      * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
-     *
-     * @warning keep in mind that a Writer is not necessarily UTF-8!!
+     * 
+     * @param w The Writer to write to. @warning keep in mind that a Writer is not necessarily UTF-8!!
+     * @param prefix String to prefix the keys with. (E.g. when writing a tree of SFS's).
+     * @param noEndMarker If true, don't write the end marker (the last line, the only one with no
+     * "=" in it).
+     * @param useBase64 If true, use Base64 for any value that has control characters, whitespace, 
+     * or characters used by SimpleFieldSet in it. In this case the separator will be "==" not "=".
+     * This is mainly useful for node references, which tend to lose whitespace, gain newlines etc
+     * in transit.
      */
-    synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
+    synchronized void writeTo(Writer w, String prefix, boolean noEndMarker, boolean useBase64) throws IOException {
 		writeHeader(w);
     	for (Map.Entry<String, String> entry: values.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
-            w.write(prefix);
-            w.write(key);
-            w.write(KEYVALUE_SEPARATOR_CHAR);
-            w.write(value);
-            w.write('\n');
+			writeValue(w, key, value, prefix, useBase64);
     	}
     	if(subsets != null) {
     		for (Map.Entry<String, SimpleFieldSet> entry: subsets.entrySet()) {
 				String key = entry.getKey();
 				SimpleFieldSet subset = entry.getValue();
     			if(subset == null) throw new NullPointerException();
-    			subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
+    			subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true, useBase64);
     		}
     	}
     	if(!noEndMarker) {
@@ -428,11 +457,36 @@ public class SimpleFieldSet {
     	}
     }
 
-    public void writeToOrdered(Writer w) throws IOException {
-		writeToOrdered(w, "", false);
+    private void writeValue(Writer w, String key, String value, String prefix, boolean useBase64) throws IOException {
+        w.write(prefix);
+        w.write(key);
+        w.write(KEYVALUE_SEPARATOR_CHAR);
+        if(useBase64 && shouldBase64(value)) {
+        	w.write(KEYVALUE_SEPARATOR_CHAR);
+        	w.write(Base64.encodeUTF8(value));
+        } else {
+        	w.write(value);
+        }
+        w.write('\n');
 	}
 
-    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+	private boolean shouldBase64(String value) {
+    	for(int i=0;i<value.length();i++) {
+    		char c = value.charAt(i);
+    		if(c == SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR) return true;
+    		if(c == SimpleFieldSet.MULTI_LEVEL_CHAR) return true;
+    		if(c == SimpleFieldSet.MULTI_VALUE_CHAR) return true;
+    		if(Character.isISOControl(c)) return true;
+    		if(Character.isWhitespace(c)) return true;
+    	}
+    	return false;
+	}
+
+	public void writeToOrdered(Writer w) throws IOException {
+		writeToOrdered(w, "", false, false);
+	}
+
+    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker, boolean useBase64) throws IOException {
 		writeHeader(w);
     	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
@@ -441,8 +495,9 @@ public class SimpleFieldSet {
     	Arrays.sort(keys);
 
     	// Output
-    	for(i=0; i < keys.length; i++)
-    		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
+    	for(i=0; i < keys.length; i++) {
+    		writeValue(w, keys[i], get(keys[i]), prefix, useBase64);
+    	}
 
     	if(subsets != null) {
     		String[] orderedPrefixes = subsets.keySet().toArray(new String[subsets.size()]);
@@ -452,7 +507,7 @@ public class SimpleFieldSet {
         	for(i=0; i < orderedPrefixes.length; i++) {
     			SimpleFieldSet subset = subset(orderedPrefixes[i]);
     			if(subset == null) throw new NullPointerException();
-    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
+    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true, useBase64);
     		}
     	}
 

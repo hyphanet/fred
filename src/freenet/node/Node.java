@@ -11,6 +11,11 @@ import static freenet.node.stats.DataStoreType.CACHE;
 import static freenet.node.stats.DataStoreType.CLIENT;
 import static freenet.node.stats.DataStoreType.SLASHDOT;
 import static freenet.node.stats.DataStoreType.STORE;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -65,7 +70,6 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
@@ -511,12 +515,12 @@ public class Node implements TimeSkewDetectorCallback {
 	// timeout. Most nodes don't need to send keepalives because they are constantly busy,
 	// this is only an issue for disabled darknet connections, very quiet private networks
 	// etc.
-	public static final int KEEPALIVE_INTERVAL = 7000;
+	public static final long KEEPALIVE_INTERVAL = SECONDS.toMillis(7);
 	// If no activity for 30 seconds, node is dead
 	// 35 seconds allows plenty of time for resends etc even if above is 14 sec as it is on older nodes.
-	public static final int MAX_PEER_INACTIVITY = 35000;
+	public static final long MAX_PEER_INACTIVITY = SECONDS.toMillis(35);
 	/** Time after which a handshake is assumed to have failed. */
-	public static final int HANDSHAKE_TIMEOUT = 4800; // Keep the below within the 30 second assumed timeout.
+	public static final int HANDSHAKE_TIMEOUT = (int) MILLISECONDS.toMillis(4800); // Keep the below within the 30 second assumed timeout.
 	// Inter-handshake time must be at least 2x handshake timeout
 	public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10-20 secs
 	public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // avoid overlap when the two handshakes are at the same time
@@ -529,11 +533,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int MIN_BURSTING_HANDSHAKE_BURST_SIZE = 1; // 1-4 handshake sends per burst
 	public static final int RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE = 3;
 	// If we don't receive any packets at all in this period, from any node, tell the user
-	public static final long ALARM_TIME = 60*1000;
+	public static final long ALARM_TIME = MINUTES.toMillis(1);
 
-	// 900ms
-	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
-	static final int MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = 1000;
+	static final long MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = MILLISECONDS.toMillis(900);
+	static final long MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = MILLISECONDS.toMillis(1000);
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
 
 	/** Datastore directory */
@@ -607,7 +610,7 @@ public class Node implements TimeSkewDetectorCallback {
 	// FIXME make the first two configurable
 	private long maxSlashdotCacheSize;
 	private int maxSlashdotCacheKeys;
-	static final long PURGE_INTERVAL = 60*1000;
+	static final long PURGE_INTERVAL = SECONDS.toMillis(60);
 
 	private CHKStore chkSlashdotcache;
 	private SlashdotStore<CHKBlock> chkSlashdotcacheStore;
@@ -712,7 +715,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Should inserts ignore low backoff times by default? */
 	public static final boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
-	public static final int LOW_BACKOFF = 30*1000;
+	public static final long LOW_BACKOFF = SECONDS.toMillis(30);
 	/** Should inserts be fairly blatently prioritised on accept by default? */
 	public static final boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
@@ -1087,6 +1090,12 @@ public class Node implements TimeSkewDetectorCallback {
 					return;
 				System.out.println("Not enough entropy available.");
 				System.out.println("Trying to gather entropy (randomness) by reading the disk...");
+				if(File.separatorChar == '/') {
+					if(new File("/dev/hwrng").exists())
+						System.out.println("/dev/hwrng exists - have you installed rng-tools?");
+					else
+						System.out.println("You should consider installing a better random number generator e.g. haveged.");
+				}
 				extendTimeouts();
 				for(File root : File.listRoots()) {
 					if(isPRNGReady)
@@ -1095,7 +1104,9 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 			
-			static final int EXTEND_BY = 10*60*1000;
+			/** This is ridiculous, but for some users it can take more than an hour, and timing out sucks
+			 * a few bytes and then times out again. :( */
+			static final int EXTEND_BY = 60*60*1000;
 			
 			private void extendTimeouts() {
 				long now = System.currentTimeMillis();
@@ -1123,7 +1134,6 @@ public class Node implements TimeSkewDetectorCallback {
 			entropyGatheringThread.start();
 			// Can block.
 			this.random = new Yarrow(seed);
-			DiffieHellman.init(random);
 			// http://bugs.sun.com/view_bug.do;jsessionid=ff625daf459fdffffffffcd54f1c775299e0?bug_id=4705093
 			// This might block on /dev/random while doing new SecureRandom(). Once it's created, it won't block.
 			ECDH.blockingInit();
@@ -1607,7 +1617,7 @@ public class Node implements TimeSkewDetectorCallback {
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
-						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
+						outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
 		});
@@ -1627,7 +1637,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must have at least space for ONE PACKET.
 		// FIXME: make compatible with alternate transports.
 		bucketSize = Math.max(bucketSize, 2048);
-		outputThrottle = new TokenBucket(bucketSize, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
+		outputThrottle = new TokenBucket(bucketSize, SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override
@@ -1712,8 +1722,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Then read the peers
 		peers = new PeerManager(this, shutdownHook);
-		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
-		peers.updatePMUserAlert();
 		
 		tracker = new RequestTracker(peers, ticker);
 
@@ -1729,6 +1737,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
+		toadlets.setCore(clientCore);
 
 		if(showFriendsVisibilityAlert)
 			registerFriendsVisibilityAlert();
@@ -1805,7 +1814,7 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Integer inputMaxOpennetPeers) throws InvalidConfigValueException {
 						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
-						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
+						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess", "maxpeers", Integer.toString(OpennetManager.MAX_PEERS_FOR_SCALING)));
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
 					}
@@ -2437,7 +2446,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
-		nodeConfig.register("slashdotCacheLifetime", 30*60*1000L, sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
+		nodeConfig.register("slashdotCacheLifetime", MINUTES.toMillis(30), sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -2595,7 +2604,7 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
 			@Override
 			public void realRun() {
-				pluginManager.stop(30*1000); // FIXME make it configurable??
+				pluginManager.stop(SECONDS.toMillis(30)); // FIXME make it configurable??
 			}
 		});
 
@@ -2606,7 +2615,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// it's likely (on reports so far) that a restart will fix it.
 		// And we have to get a build out because ALL plugins are now failing to load,
 		// including the absolutely essential (for most nodes) JSTUN and UPnP.
-		WrapperManager.signalStarting(120*1000);
+		WrapperManager.signalStarting((int) MINUTES.toMillis(2));
 
 		FetchContext ctx = clientCore.makeClient((short)0, true, false).getFetchContext();
 
@@ -2914,7 +2923,7 @@ public class Node implements TimeSkewDetectorCallback {
 					(EncryptingIoAdapter) adapter.open(dbFileCrypt.toString(), false, 0, true);
 				long length = readAdapter.getLength();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -2968,7 +2977,7 @@ public class Node implements TimeSkewDetectorCallback {
 				FileInputStream fis = new FileInputStream(dbFile);
 				long length = dbFile.length();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -3171,7 +3180,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
-		WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
+		WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
@@ -3385,78 +3394,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
 		if(clientCore.alerts == null) throw new NullPointerException();
-		((SaltedHashFreenetStore<CHKBlock>) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<CHKBlock>) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<DSAPublicKey>) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<SSKBlock>) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-		((SaltedHashFreenetStore<SSKBlock>) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-
-		if (isBDBStoreExist(suffix)) {
-			clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"),
-			        NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"), NodeL10n.getBase()
-			                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
-
-				@Override
-				public HTMLNode getHTMLText() {
-					HTMLNode div = new HTMLNode("div");
-					div.addChild("#", NodeL10n.getBase().getString("Node.storeSaltHashMigrated"));
-					HTMLNode ul = div.addChild("ul");
-
-					for (String type : new String[] { "chk", "pubkey", "ssk" })
-						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-						        "cache.keys", "cache.lru" }) {
-							File f = storeDir.file(type + suffix + "." + storecache);
-							if (f.exists())
-								ul.addChild("li", f.getAbsolutePath());
-						}
-
-					File dbDir = storeDir.file("database" + suffix);
-					if (dbDir.exists())
-						ul.addChild("li", dbDir.getAbsolutePath());
-
-					return div;
-				}
-
-				@Override
-				public String getText() {
-					StringBuilder sb = new StringBuilder();
-					sb.append(NodeL10n.getBase().getString("Node.storeSaltHashMigrated") + " \n");
-
-					for (String type : new String[] { "chk", "pubkey", "ssk" })
-						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-						        "cache.keys", "cache.lru" }) {
-							File f = storeDir.file(type + suffix + "." + storecache);
-					if (f.exists())
-								sb.append(" - ");
-							sb.append(f.getAbsolutePath());
-							sb.append("\n");
-					}
-					File dbDir = storeDir.file("database" + suffix);
-					if (dbDir.exists()) {
-						sb.append(" - ");
-						sb.append(dbDir.getAbsolutePath());
-						sb.append("\n");
-					}
-
-					return sb.toString();
-				}
-
-				@Override
-				public boolean isValid() {
-					return isBDBStoreExist(suffix);
-				}
-
-				@Override
-				public void onDismiss() {
-				}
-
-				@Override
-				public boolean userCanDismiss() {
-					return true;
-				}
-			});
-		}
+		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		pubKeyDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
+		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
+		sskDatacache.getStore().setUserAlertManager(clientCore.alerts);
 	}
 
 	private void initRAMFS() {
@@ -3475,18 +3418,6 @@ public class Node implements TimeSkewDetectorCallback {
 		new RAMFreenetStore<SSKBlock>(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 	}
 
-	private boolean isBDBStoreExist(final String suffix) {
-		for(String type : new String[] { "chk", "pubkey", "ssk" }) {
-			for(String ver : new String[] { "store", "cache" }) {
-				for(String ext : new String[] { "", ".keys", ".lru" }) {
-					if(storeDir.file(type + suffix + "." + ver + ext).exists()) return true;
-				}
-			}
-		}
-		if(storeDir.file("database" + suffix).exists()) return true;
-		return false;
-    }
-	
 	private long cachingFreenetStoreMaxSize;
 	private long cachingFreenetStorePeriod;
 	private CachingFreenetStoreTracker cachingFreenetStoreTracker;
@@ -3681,7 +3612,12 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
-
+		
+		// IMPORTANT: Read the peers only after we have finished initializing Node.
+		// Peer constructors are complex and can call methods on Node.
+		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
+		peers.updatePMUserAlert();
+		
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		peers.start(); // must be before usm
@@ -4469,23 +4405,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	/**
-	 * @return Data String for freeviz.
-	 */
-	public String getFreevizOutput() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("\ntransferring_requests=");
-		sb.append(tracker.getNumTransferringRequestSenders());
-
-		sb.append('\n');
-
-		if (peers != null)
-			sb.append(peers.getFreevizOutput());
-
-		return sb.toString();
-	}
-
 	/** Length of signature parameters R and S */
 	static final int SIGNATURE_PARAMETER_LENGTH = 32;
 
@@ -4649,7 +4568,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
+				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -4679,7 +4598,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
+				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
 			} catch (UnsupportedEncodingException e) {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			} catch (IOException e) {
@@ -4841,7 +4760,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return lm.getAverageSwapTime();
 	}
 
-	public int getSendSwapInterval() {
+	public long getSendSwapInterval() {
 		return lm.getSendSwapInterval();
 	}
 
@@ -5229,7 +5148,7 @@ public class Node implements TimeSkewDetectorCallback {
 							}
 						}
 
-					}, 10*60*1000);
+					}, MINUTES.toMillis(10));
 				}
 			} else wantClientCache = true;
 			wantDatabase = db == null;
@@ -5333,6 +5252,16 @@ public class Node implements TimeSkewDetectorCallback {
 		return db != null;
 	}
 
+        /**
+         * @return canonical path of the database file in use.
+         */
+        public String getDatabasePath() throws IOException {
+                if (isDatabaseEncrypted()) {
+                        return dbFileCrypt.getCanonicalPath();
+                } else {
+                        return dbFile.getCanonicalPath();
+                }
+        }
 
 	public synchronized boolean autoChangeDatabaseEncryption() {
 		return autoChangeDatabaseEncryption;
@@ -5481,7 +5410,12 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
-		return nodeStats.enableNewLoadManagement(realTimeFlag);
+		NodeStats stats = this.nodeStats;
+		if(stats == null) {
+			Logger.error(this, "Calling enableNewLoadManagement before Node constructor completes! FIX THIS!", new Exception("error"));
+			return false;
+		}
+		return stats.enableNewLoadManagement(realTimeFlag);
 	}
 	
 	/** FIXME move to Probe.java? */

@@ -1,5 +1,7 @@
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
@@ -33,6 +35,7 @@ public abstract class UIDTag {
 	protected final RequestTracker tracker;
 	protected boolean accepted;
 	protected boolean sourceRestarted;
+	private boolean slowDown;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -379,7 +382,7 @@ public abstract class UIDTag {
 	}
 
 	private long loggedStillPresent;
-	private static final int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
+	private static final long LOGGED_STILL_PRESENT_INTERVAL = SECONDS.toMillis(60);
 
 	public void maybeLogStillPresent(long now, Long uid) {
 		if(now - createdTime > RequestTracker.TIMEOUT) {
@@ -461,4 +464,13 @@ public abstract class UIDTag {
 		return waitingForSlot;
 	}
 
+	/** Set a flag indicating the originator should slow down. Only used at the shouldRejectRequest stage. */
+	synchronized void slowDown() {
+		slowDown = true;
+	}
+
+	/** Query the slow-down flag. Should be checked after shouldRejectRequest. */
+	synchronized boolean shouldSlowDown() {
+		return slowDown;
+	}
 }

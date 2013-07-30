@@ -7,6 +7,9 @@ import freenet.node.DarknetPeerNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.BucketTools;
 
+// FIXME proper support for sending large files.
+// FIXME with confirmation on the other side like darknet transfers.
+// FIXME Generalise the darknet file transfer API in DarknetPeerNode.
 public class SendTextMessage extends SendPeerMessage {
 
 	public static final String NAME = "SendText";

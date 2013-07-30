@@ -1,5 +1,8 @@
 package freenet.node.updater;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -97,7 +100,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	protected void maybeProcessOldBlob() {
 		File oldBlob = getBlobFile(currentVersion);
-		if(oldBlob != null) {
+		if(oldBlob.exists()) {
 			File temp;
 			try {
 				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
@@ -159,7 +162,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			public void run() {
 				maybeUpdate();
 			}
-		}, 60 * 1000); // leave some time in case we get later editions
+		}, SECONDS.toMillis(60)); // leave some time in case we get later editions
 		// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 		if(found <= currentVersion) {
 			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
@@ -239,7 +242,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			cancelled.cancel(null, core.clientContext);
 	}
 
-	File getBlobFile(int availableVersion) {
+	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
 	Bucket getBlobBucket(int availableVersion) {
@@ -453,7 +456,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					public void run() {
 						maybeUpdate();
 					}
-				}, 60 * 60 * 1000);
+				}, HOURS.toMillis(1));
 		}
 	}
 

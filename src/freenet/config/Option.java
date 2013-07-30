@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import freenet.l10n.BaseL10n;
+import freenet.l10n.NodeL10n;
+import freenet.pluginmanager.FredPluginConfigurable;
+import freenet.support.HTMLNode;
+
 
 /**
  * A config option.
@@ -97,11 +102,14 @@ public abstract class Option<T> {
 		return name;
 	}
 	
+	/** Used in alt="" to label a box with the option name used in the config file. 
+	 * FIXME get rid of said alt=""? Not much use for most users. See caller. */
 	public String getShortDesc(){
 		return shortDesc;
 	}
 	
-	public String getLongDesc(){
+	/** Not used outside the class. */
+	private String getLongDesc(){
 		return longDesc;
 	}
 	
@@ -169,4 +177,47 @@ public abstract class Option<T> {
 	public final ConfigCallback<T> getCallback() {
 		return cb;
 	}
+
+	/** Useful for plugins as can pass own BaseL10n in */
+	public String getLocalisedShortDesc(BaseL10n l10n) {
+		return l10n.getString(getShortDesc(), "default", getDefault());
+	}
+	
+	/** Get the localised short description */
+	public String getLocalisedShortDesc() {
+		return getLocalisedShortDesc(NodeL10n.getBase());
+	}
+	
+	/** Useful for plugins as can pass own BaseL10n in */
+	public String getLocalisedLongDesc(BaseL10n l10n) {
+		return l10n.getString(getLongDesc(), "default", getDefault());
+	}
+	
+	/** Get the localised long description */
+	public String getLocalisedLongDesc() {
+		return getLocalisedLongDesc(NodeL10n.getBase());
+	}
+
+	/** Get the localised short description as an HTMLNode, possibly with translation link */
+	public HTMLNode getShortDescNode(FredPluginConfigurable plugin) {
+		return (plugin == null) ? NodeL10n.getBase()
+				.getHTMLNode(getShortDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
+				plugin.getString(getShortDesc()));
+	}
+	
+	public HTMLNode getShortDescNode() {
+		return getShortDescNode(null);
+	}
+
+	/** Get the localised long description as an HTMLNode, possibly with translation link */
+	public HTMLNode getLongDescNode(FredPluginConfigurable plugin) {
+		return (plugin == null) ? NodeL10n.getBase()
+				.getHTMLNode(getLongDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
+				plugin.getString(getLongDesc()));
+	}
+	
+	public HTMLNode getLongDescNode() {
+		return getLongDescNode(null);
+	}
+	
 }

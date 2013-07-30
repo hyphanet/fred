@@ -274,22 +274,66 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		return addChild(nodeName, null);
 	}
 
+	/** Add a tag with content inside/under this node.
+	 * @param nodeName The tag name e.g. "div". "#" means add content only, no tag.
+	 * @param content The content (to be added as body text).
+	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
+	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
+	 * tag in its output. 
+	 */
 	public HTMLNode addChild(String nodeName, String content) {
 		return addChild(nodeName, (String[]) null, (String[]) null, content);
 	}
 
+	/** Add a tag with one attribute inside/under this node.
+	 * @param nodeName The tag name e.g. "div".
+	 * @param attributeName The name of the attribute, e.g. "class"
+	 * @param attributeValue The value of the attribute.
+	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
+	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
+	 * tag in its output. 
+	 */
 	public HTMLNode addChild(String nodeName, String attributeName, String attributeValue) {
 		return addChild(nodeName, attributeName, attributeValue, null);
 	}
 
+	/**
+	 * Add a tag with one attribute and body text inside/under this node.
+	 * @param nodeName The tag name e.g. "div".
+	 * @param attributeName The name of the attribute, e.g. "class"
+	 * @param attributeValue The value of the attribute.
+	 * @param content The content (to be added as body text).
+	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
+	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
+	 * tag in its output. 
+	 */
 	public HTMLNode addChild(String nodeName, String attributeName, String attributeValue, String content) {
 		return addChild(nodeName, new String[] { attributeName }, new String[] { attributeValue }, content);
 	}
 
+	/**
+	 * Add a tag with several attributes inside/under this node.
+	 * @param nodeName The tag name e.g. "div".
+	 * @param attributeName The name of the attribute, e.g. "class"
+	 * @param attributeValue The value of the attribute.
+	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
+	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
+	 * tag in its output. 
+	 */
 	public HTMLNode addChild(String nodeName, String[] attributeNames, String[] attributeValues) {
 		return addChild(nodeName, attributeNames, attributeValues, null);
 	}
 
+	/**
+	 * Add a tag with several attributes and body text inside/under this node.
+	 * @param nodeName The tag name e.g. "div".
+	 * @param attributeName The name of the attribute, e.g. "class"
+	 * @param attributeValue The value of the attribute.
+	 * @param content The content (to be added as body text).
+	 * @return The added node. You can add more tags inside it with addChild(), or add attributes
+	 * with addAttribute() etc. If you render the parent tag with generate(), it will include this 
+	 * tag in its output. 
+	 */
 	public HTMLNode addChild(String nodeName, String[] attributeNames, String[] attributeValues, String content) {
 		return addChild(new HTMLNode(nodeName, attributeNames, attributeValues, content));
 	}
@@ -468,5 +512,11 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 
 	public static HTMLNode text(short count) {
 		return new HTMLNode("#", Short.toString(count));
+	}
+
+	public void removeChildren() {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
+		children.clear();
 	}
 }

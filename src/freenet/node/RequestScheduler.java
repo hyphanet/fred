@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.FECQueue;
@@ -23,7 +25,7 @@ public interface RequestScheduler {
 
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 30*60*1000;
+	public static final long COOLDOWN_PERIOD = MINUTES.toMillis(30);
 	/** The number of times a key can be requested before triggering the cooldown period. 
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
@@ -69,9 +71,9 @@ public interface RequestScheduler {
 
 	public void start(NodeClientCore core);
 
-	public boolean addTransientInsertFetching(SendableInsert insert, Object token);
+	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
 
-	public void removeTransientInsertFetching(SendableInsert insert, Object token);
+	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
 
 	public void wakeStarter();
 

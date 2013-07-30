@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -123,7 +125,7 @@ public class BookmarkManager implements RequestClient {
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
+				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, MINUTES.toMillis(60), FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
@@ -247,8 +249,8 @@ public class BookmarkManager implements RequestClient {
 			for(int i = 0; i < cat.size(); i++)
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
-		} else
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
+		} else {
+			if(((BookmarkItem) bookmark).getKeyType().equals("USK")) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					if(!wantUSK(u, (BookmarkItem)bookmark)) {
@@ -256,6 +258,8 @@ public class BookmarkManager implements RequestClient {
 					}
 				} catch(MalformedURLException mue) {
 				}
+			}
+		}
 
 		getCategoryByPath(parentPath(path)).removeBookmark(bookmark);
 		synchronized(bookmarks) {
@@ -342,8 +346,8 @@ public class BookmarkManager implements RequestClient {
 						isSavingBookmarksLazy = false;
 					}
 				}
-				
-			}, 5*60*1000);
+
+			}, MINUTES.toMillis(5));
 		}
 	}
 

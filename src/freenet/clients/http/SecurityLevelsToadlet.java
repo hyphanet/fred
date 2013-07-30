@@ -64,14 +64,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 			return;
 		}
 
-		String formPassword = request.getPartAsStringFailsafe("formPassword", 32);
-		if((formPassword == null) || !formPassword.equals(core.formPassword)) {
-			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", "/seclevels/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
 		if(request.isPartSet("seclevels")) {
 			// Handle the security level changes.
 			HTMLNode pageNode = null;
@@ -474,7 +466,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(ctx.getAlertManager().createSummary());
 
 		drawSecurityLevelsPage(contentNode, ctx);
 

@@ -187,7 +187,17 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				continue;
 			totalNumber++;
 			alertsNode.addChild("a", "name", alert.anchor());
-			alertsNode.addChild(renderAlert(alert));
+			if(showOnlyErrors) {
+				// Paranoia. Don't break the web interface no matter what.
+				try {
+					alertsNode.addChild(renderAlert(alert));
+				} catch (Throwable t) {
+					Logger.error(this, "FAILED TO RENDER ALERT: "+alert+" : "+t, t);
+				}
+			} else {
+				// Alerts toadlet itself can error, that's OK.
+				alertsNode.addChild(renderAlert(alert));
+			}
 		}
 		if (totalNumber == 0) {
 			return new HTMLNode("#", "");

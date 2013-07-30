@@ -8,8 +8,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Security;
 
-import javax.crypto.SecretKey;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import freenet.crypt.ECDH.Curves;
@@ -30,13 +28,13 @@ public class ECDHTest extends TestCase {
     }
 
     public void testGetAgreedSecret() throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        SecretKey aliceS = alice.getAgreedSecret(bob.getPublicKey());
-        SecretKey bobS = bob.getAgreedSecret(alice.getPublicKey());
+        byte[] aliceS = alice.getAgreedSecret(bob.getPublicKey());
+        byte[] bobS = bob.getAgreedSecret(alice.getPublicKey());
         assertNotNull(aliceS);
         assertNotNull(bobS);
-        assertEquals(aliceS, bobS);
-        assertEquals(aliceS.getEncoded().length, curveToTest.derivedSecretSize);
-        assertEquals(bobS.getEncoded().length, curveToTest.derivedSecretSize);
+        assertEquals(toHex(aliceS), toHex(bobS));
+        assertEquals(aliceS.length, curveToTest.derivedSecretSize);
+        assertEquals(bobS.length, curveToTest.derivedSecretSize);
     }
 
     public void testGetPublicKey() {
@@ -63,8 +61,8 @@ public class ECDHTest extends TestCase {
         System.out.println("Alice P: "+toHex(aliceP.getEncoded()));
         System.out.println("Bob   P: "+toHex(bobP.getEncoded()));
         
-        System.out.println("Alice S: "+toHex(alice.getAgreedSecret(bob.getPublicKey()).getEncoded()));
-        System.out.println("Bob   S: "+toHex(bob.getAgreedSecret(alice.getPublicKey()).getEncoded()));
+        System.out.println("Alice S: "+toHex(alice.getAgreedSecret(bob.getPublicKey())));
+        System.out.println("Bob   S: "+toHex(bob.getAgreedSecret(alice.getPublicKey())));
     }
     
     public static String toHex(byte[] arg) {

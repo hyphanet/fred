@@ -48,6 +48,8 @@ public class InsertContext implements Cloneable {
 	/** Number of extra inserts for a block inserted above a splitfile. */
 	public int extraInsertsSplitfileHeaderBlock;
 	public boolean localRequestOnly;
+	/** Don't insert USK DATEHINTs (and ignore them on polling for maximum edition). */
+	public boolean ignoreUSKDatehints;
 	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	
@@ -70,10 +72,12 @@ public class InsertContext implements Cloneable {
 		/** 1416: New CHK encryption */
 		COMPAT_1416;
 		
+		/** cached values(). Never modify or pass this array to outside code! */
+		private static final CompatibilityMode[] values = values();
+
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.
 		public static CompatibilityMode latest() {
-			CompatibilityMode[] values = values();
 			return values[values.length-1];
 		}
 	}
@@ -83,7 +87,7 @@ public class InsertContext implements Cloneable {
 	private long compatibilityMode;
 	
 	public CompatibilityMode getCompatibilityMode() {
-		return CompatibilityMode.values()[(int)compatibilityMode];
+		return CompatibilityMode.values[(int)compatibilityMode];
 	}
 	
 	public long getCompatibilityCode() {
@@ -115,6 +119,7 @@ public class InsertContext implements Cloneable {
 			compatibilityMode = CompatibilityMode.latest();
 		this.compatibilityMode = compatibilityMode.ordinal();
 		this.localRequestOnly = localRequestOnly;
+		this.ignoreUSKDatehints = false;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -131,6 +136,7 @@ public class InsertContext implements Cloneable {
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
 		this.compatibilityMode = ctx.compatibilityMode;
 		this.localRequestOnly = ctx.localRequestOnly;
+		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

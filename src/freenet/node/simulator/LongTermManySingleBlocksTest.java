@@ -1,5 +1,7 @@
 package freenet.node.simulator;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -100,7 +102,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				} finally {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
-						System.out.println("Stopping insert: running "+runningInserts);
+						System.out.println("Completed insert: running "+runningInserts);
 						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
@@ -349,7 +351,7 @@ loopOverLines:
 					System.out.println("Key insert "+i+" : "+insertedURIs[i]+" in "+insertTimes[i]);
 				}
 				for(int i=0;i<targets.length;i++) {
-					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < 12*60*60*1000) {
+					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
 						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
 						System.out.println("Version: "+split[1]);
 						csvLine.add(Integer.toString(i));
