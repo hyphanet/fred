@@ -228,10 +228,10 @@ public class CachingFreenetStore<T extends StorableBlock> extends ProxyFreenetSt
 		configLock.writeLock().lock();
 		try {
 			shuttingDown = true;
-			tracker.unregisterCachingFS(this);
 		} finally {
 			configLock.writeLock().unlock();
 		}
+        tracker.unregisterCachingFS(this);
 	}
 	
 	/** Only for unit tests */
