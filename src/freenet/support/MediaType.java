@@ -18,7 +18,7 @@
 package freenet.support;
 
 import java.net.MalformedURLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -46,7 +46,7 @@ public class MediaType {
 	private final String subtype;
 
 	/** The parameters. */
-	private final Map<String, String> parameters = new HashMap<String, String>();
+	private final LinkedHashMap<String, String> parameters = new LinkedHashMap<String, String>();
 
 	/**
 	 * Creates a new media type by parsing the given string.
@@ -262,5 +262,11 @@ public class MediaType {
 		if(charset == null) return "UTF-8";
 		return charset;
 	}
+
+    public LinkedHashMap<String, String> getParameters() {
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+        map.putAll(parameters);
+        return map;
+    }
 
 }
