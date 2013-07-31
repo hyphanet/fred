@@ -400,10 +400,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	/** Is reset upon each major failure - serious backoff, serious idle time, etc... */ 
 	protected LinkStatistics linkStatsShortRun;
 	
-	/* Quadrotip: all updates should act like that:
-	 * 		Check if we can update -> Probably reset shortrun -> update shortrun -> update total
-	 */
-	
 	public LinkStatistics getTotalLinkStats(){
 		return linkStatsTotal;
 	}
@@ -2960,8 +2956,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		return false;
 	}
 	
-	/*Quadronote*/
-	
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
@@ -3018,6 +3012,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
 	public void enterMandatoryBackoff(String reason, boolean realTime) {
 		long now = System.currentTimeMillis();
+		/* FIXME: Should we need to report onSeriousBackoff here?
+		 * But congestion window still will not be fully utilized and will be decayed each RTO, so perhaps no. */
 		synchronized(this) {
 			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
 			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
@@ -3281,8 +3277,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	private double SRTT = 1000;
 	private double RTTVAR = 0;
 	private double RTO = 1000;
-	
-	/*Quadromark*/
 	
 	/** Calculated as per RFC 2988 */
 	@Override
@@ -3746,8 +3740,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public synchronized void reportOutgoingBytes(int length) {
 		totalBytesOut += length;
 		totalBytesExchangedWithCurrentTracker += length;
-		linkStatsTotal.onDataSend(length);
-		linkStatsShortRun.onDataSend(length);
 	}
 
 	public synchronized long getTotalInputBytes() {
@@ -4222,8 +4214,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// Clock generally has 20ms granularity or better, right?
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
-
-	/*Quadronote*/
 	
 	@Override
 	public void reportPing(long t) {
@@ -5801,8 +5791,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeSendAcks();
 	}
-
-	/*Quadronote*/
 	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */

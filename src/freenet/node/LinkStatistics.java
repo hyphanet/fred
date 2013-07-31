@@ -12,8 +12,8 @@ public class LinkStatistics {
 	   	     o.getQueueBacklog(), o.getWindowSize(), o.getMaxUsedWindow(), o.getAverageRTT(), o.getRTO());
 	}
 	
-	public LinkStatistics(long lastupdated, long lastreset, int datasent, int usefullpaybacksent, int dataacked,
-						  int dataretransmitted, int retransmitcount, int seriousbackoffs, 
+	public LinkStatistics(long lastupdated, long lastreset, long datasent, long usefullpaybacksent, long dataacked,
+						  long dataretransmitted, long retransmitcount, long seriousbackoffs, 
 						  double queuebacklog, double windowsize, double maxusedwindow, double averagertt, double rto) {
         Tracker = new StatsChangeTracker();
 		lastUpdated = lastupdated;
@@ -30,9 +30,9 @@ public class LinkStatistics {
 		RTO = rto;
 	}
 	
-	public LinkStatistics(StatsChangeTracker tracker, long lastupdated, long lastreset, int datasent, int usefullpaybacksent, 
-					      int dataacked, int dataretransmitted, int retransmitcount, int seriousbackoffs, 
-			  			  double queuebacklog, double windowsize, double maxusedwindow, int averagertt, int rto) {
+	public LinkStatistics(StatsChangeTracker tracker, long lastupdated, long lastreset, long datasent, long usefullpaybacksent, 
+					      long dataacked, long dataretransmitted, long retransmitcount, long seriousbackoffs, 
+			  			  double queuebacklog, double windowsize, double maxusedwindow, long averagertt, long rto) {
 		this(lastupdated, lastreset, datasent, usefullpaybacksent, dataacked, dataretransmitted, retransmitcount, seriousbackoffs, 
 				queuebacklog, windowsize, maxusedwindow, averagertt, rto);
 		Tracker = tracker;
@@ -48,32 +48,40 @@ public class LinkStatistics {
 	
 	/** Contains a bunch on-modification callbacks, if you want to pipe stats over somewhere - overload them. */
 	public static class StatsChangeTracker {
-		
-		public void dataSentChanged(int previousval, int newval){
+		public void dataSentChanged(long previousval, long newval, long time) {
 	    }
-		public void usefullPaybackSentChanged(int previousval, int newval){
+		public void usefullPaybackSentChanged(long previousval, long newval, long time) {
 	    }
-		public void acksSentChanged(int previousval, int newval){
+		public void acksSentChanged(long previousval, long newval, long time) {
 	    }
-		public void pureAcksSentChanged(int previousval, int newval){
+		public void pureAcksSentChanged(long previousval, long newval, long time) {
 	    }
-		public void dataRetransmittedChanged(int previousval, int newval){
+		public void dataRetransmittedChanged(long previousval, long newval, long time) {
 	    }
-		public void seriousBackoffsChanged(int previousval, int newval){
+		public void seriousBackoffsChanged(long previousval, long newval, long time) {
 	    }
-		public void queueBacklogChanged(double previousval, double newval){
+		public void queueBacklogChanged(double previousval, double newval, long time) {
 	    }
-		public void windowSizeChanged(double previousval, double newval){
+		public void windowSizeChanged(double previousval, double newval, long time) {
 	    }
-		public void maxUsedWindowChanged(double previousval, double newval){
+		public void maxUsedWindowChanged(double previousval, double newval, long time) {
 	    }
-		public void averageRTTChanged(double previousval, double newval){
+		public void averageRTTChanged(double previousval, double newval, long time) {
 	    }
-		public void RTOChanged(double previousval, double newval){
+		public void RTOChanged(double previousval, double newval, long time) {
 	    }
 	}
 	
     public StatsChangeTracker Tracker;
+    
+    /* Resets statistics and assigns new tracker */
+    public void attachListener(StatsChangeTracker t) {
+    	synchronized (this) {
+    		reset();
+    		seriousBackoffs = 0;
+    		Tracker = t;
+    	}
+    }
 
 	protected long lastUpdated;
 	/* The last time reset() was called */
@@ -81,20 +89,20 @@ public class LinkStatistics {
 	
 	/** Inside part - tracked directly in PeerNode */
 	
-	/* TODO: Have a look at RunningAverage 's, perhaps utilize some of those? */
+	/* TODO: Have a look at RunningAverage 's, perhaps utilize some of those? e.g. for bandwidth */
 	
-	protected int dataSent;
+	protected long dataSent;
 	/** This excludes all the additional headers, acks, etc. Counts pure transmitted payback. In bytes */
-	protected int usefullPaybackSent;
+	protected long usefullPaybackSent;
 	/** Amount of data (in bytes) that we received an ack for. 
 	 *  Includes only acknowledged data that was transmitted after the last reset */
-	protected int dataAcked;
+	protected long dataAcked;
 	/** How many times did we retransmit a packet */
-	protected int retransmitCount;
+	protected long retransmitCount;
 	/** How much data did we retransmit */
-	protected int dataRetransmitted;
+	protected long dataRetransmitted;
 	/** How many times did we back off. Note that it will always be zero upon reset, e.g. due to backoff */
-	protected int seriousBackoffs;
+	protected long seriousBackoffs;
 	/** Amount of data already sent over the link. In bytes */
 	
 	/** Outside part - gathered from outermost controllers */
@@ -115,8 +123,7 @@ public class LinkStatistics {
 	public void reset(){
 		lastUpdated = System.currentTimeMillis();
         lastReset = lastUpdated;
-		dataSent = usefullPaybackSent = dataAcked = dataRetransmitted = 
-				seriousBackoffs = 0;
+		dataSent = usefullPaybackSent = dataAcked = dataRetransmitted = 0;
         queueBacklog = windowSize = maxUsedWindow = RTO = averageRTT = 0.0;
 	}
 	
@@ -126,22 +133,22 @@ public class LinkStatistics {
     public long getLastReset(){
         return lastReset;
     }
-	public int getDataSent(){
+	public long getDataSent(){
         return dataSent;
     }
-	public int getUsefullPaybackSent(){
+	public long getUsefullPaybackSent(){
         return usefullPaybackSent;
     }
-	public int getDataAcked(){
+	public long getDataAcked(){
         return dataAcked;
     }
-	public int getDataRetransmitted(){
+	public long getDataRetransmitted(){
         return dataRetransmitted;
     }
-	public int getRetransmitCount(){
+	public long getRetransmitCount(){
 		return retransmitCount;
 	}
-	public int getSeriousBackoffs(){
+	public long getSeriousBackoffs(){
         return seriousBackoffs;
     }
 	public double getQueueBacklog(){
@@ -160,72 +167,92 @@ public class LinkStatistics {
         return RTO;
     }
     
-	public void onDataSend(int amount){
-        lastUpdated = System.currentTimeMillis();
-        int previousval = dataSent;
-        dataSent += amount;
-        Tracker.dataSentChanged(previousval, dataSent);
+	public void onDataSend(long amount){
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            long previousval = dataSent;
+            dataSent += amount;
+            Tracker.dataSentChanged(previousval, dataSent, lastUpdated);
+        }
     }
-	public void onUsefullPaybackSend(int amount){
-        lastUpdated = System.currentTimeMillis();
-        int previousval = usefullPaybackSent;
-        usefullPaybackSent += amount;
-        Tracker.usefullPaybackSentChanged(previousval, usefullPaybackSent);
+	public void onUsefullPaybackSend(long amount){
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            long previousval = usefullPaybackSent;
+            usefullPaybackSent += amount;
+            Tracker.usefullPaybackSentChanged(previousval, usefullPaybackSent, lastUpdated);
+        }
     }
 	/**
 	 * @param amount - amount of data acknowledged
 	 * @param whenSent - time when the acknowledged data was last sent or retransmitted  
 	 */
-	public void onNewDataAcked(int amount, long whenSent){
-        if (whenSent > lastReset) {
-			lastUpdated = System.currentTimeMillis();
-	        int previousval = dataAcked;
-	        dataAcked += amount;
-	        Tracker.acksSentChanged(previousval, dataAcked); 
+	public void onNewDataAck(long amount, long whenSent){
+        synchronized (this) {
+            if (whenSent > lastReset) {
+			    lastUpdated = System.currentTimeMillis();
+	            long previousval = dataAcked;
+	            dataAcked += amount;
+                Tracker.acksSentChanged(previousval, dataAcked, lastUpdated); 
+            }
         }
     }
-	public void onDataRetransmit(int amount){
-        lastUpdated = System.currentTimeMillis();
-        ++retransmitCount;
-        int previousval = dataRetransmitted;
-        dataRetransmitted += amount;
-        Tracker.dataRetransmittedChanged(previousval, dataRetransmitted);
+	public void onDataRetransmit(long amount){
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            ++retransmitCount;
+            long previousval = dataRetransmitted;
+            dataRetransmitted += amount;
+            Tracker.dataRetransmittedChanged(previousval, dataRetransmitted, lastUpdated);
+        }
     }
-	public void onSeriousBackoff(int amount){
-        lastUpdated = System.currentTimeMillis();
-        int previousval = seriousBackoffs;
-        seriousBackoffs += amount;
-        Tracker.seriousBackoffsChanged(previousval, seriousBackoffs);
+	public void onSeriousBackoff(long amount){
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            long previousval = seriousBackoffs;
+            seriousBackoffs += amount;
+            Tracker.seriousBackoffsChanged(previousval, seriousBackoffs, lastUpdated);
+        }
     }
 	public void onQueueBacklogChange(double newval){ // For later use
-        lastUpdated = System.currentTimeMillis();
-        double previousval = queueBacklog;
-        queueBacklog += newval;
-        Tracker.queueBacklogChanged(previousval, queueBacklog);
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            double previousval = queueBacklog;
+            queueBacklog += newval;
+            Tracker.queueBacklogChanged(previousval, queueBacklog, lastUpdated);
+        }
     }
 	public void onWindowSizeChange(double newval){
-        lastUpdated = System.currentTimeMillis();
-        double previousval = windowSize;
-        windowSize = newval;
-        Tracker.windowSizeChanged(previousval, windowSize);
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            double previousval = windowSize;
+            windowSize = newval;
+            Tracker.windowSizeChanged(previousval, windowSize, lastUpdated);
+        }
     }
 	public void onMaxUsedWindowChange(double newval){ // For later use
-        lastUpdated = System.currentTimeMillis();
-        double previousval = maxUsedWindow;
-        maxUsedWindow = newval;
-        Tracker.maxUsedWindowChanged(previousval, maxUsedWindow);
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            double previousval = maxUsedWindow;
+            maxUsedWindow = newval;
+            Tracker.maxUsedWindowChanged(previousval, maxUsedWindow, lastUpdated);
+        }
     }
 	public void onAverageRTTChange(double newval){
-        lastUpdated = System.currentTimeMillis();
-        double previousval = averageRTT;
-        averageRTT = newval;
-        Tracker.averageRTTChanged(previousval, averageRTT);
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            double previousval = averageRTT;
+            averageRTT = newval;
+            Tracker.averageRTTChanged(previousval, averageRTT, lastUpdated);
+        }
     }
 	public void onRTOChange(double newval){
-        lastUpdated = System.currentTimeMillis();
-        double previousval = RTO;
-        RTO = newval;
-        Tracker.RTOChanged(previousval, RTO);
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            double previousval = RTO;
+            RTO = newval;
+            Tracker.RTOChanged(previousval, RTO, lastUpdated);
+        }
     }
 
 }

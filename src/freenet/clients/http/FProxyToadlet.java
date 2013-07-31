@@ -1287,6 +1287,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(translationToadlet, "FProxyToadlet.categoryConfig", TranslationToadlet.TOADLET_URL,
 		        true, "TranslationToadlet.title", "TranslationToadlet.titleLong", true, null);
 
+		LinkStatisticsToadlet linkStatisticsToadlet = new LinkStatisticsToadlet(node, client);
+		server.register(linkStatisticsToadlet, null, "/test_connection/", true, true);
+
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 		server.register(firstTimeWizardToadlet, null, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 

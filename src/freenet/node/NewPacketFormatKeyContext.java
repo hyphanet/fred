@@ -104,8 +104,6 @@ public class NewPacketFormatKeyContext {
 			return seqNum;
 		}
 	}
-
-	/*Quadronote*/
 	
 	/** One of our outgoing packets has been acknowledged.
 	 * @return False if we have already acked the packet */
@@ -123,8 +121,8 @@ public class NewPacketFormatKeyContext {
 				sentTimes.removeTime(ack);
 				validAck = true;
 				if (pn.linkStatsAvailable()) {
-					pn.getTotalLinkStats().onNewDataAcked(sent.packetLength, sent.getSentTime());
-					pn.getShortRunLinkStats().onNewDataAcked(sent.packetLength, sent.getSentTime());
+					pn.getTotalLinkStats().onNewDataAck(sent.packetLength, sent.getSentTime());
+					pn.getShortRunLinkStats().onNewDataAck(sent.packetLength, sent.getSentTime());
 				}
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
@@ -257,9 +255,6 @@ public class NewPacketFormatKeyContext {
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
-
-			/* Quadrothought: rewrite this O(n) hell with simple priority multimap?
-			 * But memory will suffer heavily, once and again..*/
 			
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
@@ -271,8 +266,6 @@ public class NewPacketFormatKeyContext {
 		}
 		return timeCheck;
 	}
-	
-	/*Quadronote*/
 
 	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
@@ -306,12 +299,12 @@ public class NewPacketFormatKeyContext {
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
-					if (pn.linkStatsAvailable()) {
-						double ws = throttle.getWindowSize();
-						pn.getTotalLinkStats().onWindowSizeChange(ws);
-						pn.getShortRunLinkStats().onWindowSizeChange(ws);
-					}
 				}
+			}
+			if (pn.linkStatsAvailable()) {
+				double ws = throttle.getWindowSize();
+				pn.getTotalLinkStats().onWindowSizeChange(ws);
+				pn.getShortRunLinkStats().onWindowSizeChange(ws);
 			}
 			pn.backoffOnResend();
 		}

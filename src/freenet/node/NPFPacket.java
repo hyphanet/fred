@@ -424,6 +424,8 @@ class NPFPacket {
 		if (pn.linkStatsAvailable()){
 			pn.getTotalLinkStats().onUsefullPaybackSend(totalMessageData);
 			pn.getShortRunLinkStats().onUsefullPaybackSend(totalMessageData);
+			pn.getTotalLinkStats().onDataSend(totalPacketLength);
+			pn.getShortRunLinkStats().onDataSend(totalPacketLength);
 		}
 	}
 	
