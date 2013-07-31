@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import freenet.client.DefaultMIMETypes;
+
 /**
  * A media type denotes the content type of a document. A media consists of a
  * top-level type, a subtype, and an optional list of key-value pairs. An
@@ -64,6 +66,8 @@ public class MediaType {
 		if (mediaType == null) {
 			throw new NullPointerException("contentType must not be null");
 		}
+		if(!DefaultMIMETypes.isPlausibleMIMEType(mediaType))
+		    throw new MalformedURLException("Doesn't look like a MIME type");
 		int slash = mediaType.indexOf('/');
 		if (slash == -1) {
 			throw new MalformedURLException("mediaType does not contain ‘/’!");
