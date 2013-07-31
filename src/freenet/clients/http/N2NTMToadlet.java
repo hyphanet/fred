@@ -42,8 +42,7 @@ public class N2NTMToadlet extends Toadlet {
 			RedirectException {
 
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase()
-					.getString("Toadlet.unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 
@@ -129,7 +128,7 @@ public class N2NTMToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 

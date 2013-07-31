@@ -68,7 +68,7 @@ public class PproxyToadlet extends Toadlet {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, l10n("unauthorizedTitle"), l10n("unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 
@@ -339,7 +339,7 @@ public class PproxyToadlet extends Toadlet {
 		try {
 			if (path.equals("")) {
 				if (!ctx.isAllowedFullAccess()) {
-					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
+				    sendUnauthorizedPage(ctx);
 					return;
 				}
 
