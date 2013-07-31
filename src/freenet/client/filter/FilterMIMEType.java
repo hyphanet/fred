@@ -4,7 +4,13 @@
 package freenet.client.filter;
 
 /**
- * A MIME type, for purposes of the filter.
+ * A MIME type, for purposes of the filter. There is one instance of this class for every MIME 
+ * type that we have a filter for or that we have some knowledge of. Hence we can either filter the
+ * content or generate a localised warning page with specific information such as the name of the
+ * format and what the likely threats are.
+ * 
+ * @see freenet.client.MediaType MediaType represents an individual parsed MIME type string, e.g.
+ * "text/plain; charset=ISO-8859-1". 
  */
 public class FilterMIMEType {
 	
