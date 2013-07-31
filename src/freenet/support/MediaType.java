@@ -273,4 +273,9 @@ public class MediaType {
         return map;
     }
 
+    /** Get the base type without any parameters */
+    public String getPlainType() {
+        return type + '/' + subtype;
+    }
+
 }
