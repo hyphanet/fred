@@ -275,6 +275,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 		
 		if(forceCompatibleExtension != null && ctx.filterData) {
+		    if(mimeType == null) {
+		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+"\""), null, container, context);
+		        return;
+		    }
 			try {
 				checkCompatibleExtension(mimeType);
 			} catch (FetchException e) {
