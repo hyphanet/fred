@@ -6,7 +6,7 @@ package freenet.client.filter;
 /**
  * A MIME type, for purposes of the filter.
  */
-public class MIMEType {
+public class FilterMIMEType {
 	
 	public final String primaryMimeType;
 	public final String[] alternateMimeTypes;
@@ -56,7 +56,7 @@ public class MIMEType {
 	 * So far this is only used by CSS. */
 	public final boolean useMaybeCharset;
 	
-	MIMEType(String type, String ext, String[] extraTypes, String[] extraExts,
+	FilterMIMEType(String type, String ext, String[] extraTypes, String[] extraExts,
 			boolean safeToRead, boolean safeToWrite, ContentDataFilter readFilter,
 			ContentDataFilter writeFilter, boolean dangerousLinks, boolean dangerousInlines,
 			boolean dangerousScripting, boolean dangerousReadMetadata, 

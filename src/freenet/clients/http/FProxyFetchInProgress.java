@@ -30,7 +30,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.MIMEType;
+import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnknownContentTypeException;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -240,7 +240,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		}
 		String fullMimeType = mimeType;
 		mimeType = ContentFilter.stripMIMEType(mimeType);
-		MIMEType type = ContentFilter.getMIMEType(mimeType);
+		FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
 			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
 			data.free();

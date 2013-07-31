@@ -20,7 +20,7 @@ import freenet.client.filter.CSSReadFilter;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.DataFilterException;
 import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.MIMEType;
+import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
@@ -718,7 +718,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
 	}
 
-	MIMEType cssMIMEType;
+	FilterMIMEType cssMIMEType;
 
 	@Override
 	public void setUp() throws InvalidThresholdException {

@@ -12,9 +12,9 @@ import freenet.support.HTMLEncoder;
 
 public class KnownUnsafeContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;
-	MIMEType type;
+	FilterMIMEType type;
 	
-	public KnownUnsafeContentTypeException(MIMEType type) {
+	public KnownUnsafeContentTypeException(FilterMIMEType type) {
 		this.type = type;
 	}
 	

@@ -28,7 +28,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
-import freenet.client.filter.MIMEType;
+import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.clients.http.ajaxpush.DismissAlertToadlet;
@@ -287,7 +287,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&
 			!mimeType.equals("")) {
-			MIMEType type = ContentFilter.getMIMEType(mimeType);
+			FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 			if((type == null || (!(type.safeToRead || type.readFilter != null))) &&
 				        !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH ||
 				        threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||

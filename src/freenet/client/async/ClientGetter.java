@@ -30,7 +30,7 @@ import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.DataFilterException;
-import freenet.client.filter.MIMEType;
+import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
@@ -752,7 +752,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	private void checkCompatibleExtension(String mimeType) throws FetchException {
-		MIMEType type = ContentFilter.getMIMEType(mimeType);
+		FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 		if(type == null)
 			// Not our problem, will be picked up elsewhere.
 			return;

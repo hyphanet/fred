@@ -518,7 +518,7 @@ public class ContentFilterTest extends TestCase {
 	}
 	
 	public void testLowerCaseExtensions() {
-		for(MIMEType type : ContentFilter.mimeTypesByName.values()) {
+		for(FilterMIMEType type : ContentFilter.mimeTypesByName.values()) {
 			String ext = type.primaryExtension;
 			if(ext != null)
 				assertEquals(ext, ext.toLowerCase());

@@ -45,7 +45,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
-import freenet.client.filter.MIMEType;
+import freenet.client.filter.FilterMIMEType;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
@@ -1262,7 +1262,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						list.add(download);
 					} else if(failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME) {
 						mimeType = ContentFilter.stripMIMEType(mimeType);
-						MIMEType type = ContentFilter.getMIMEType(mimeType);
+						FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list;
 						if(type == null) {
 							Logger.error(this, "Bad MIME failure code yet MIME is "+mimeType+" which does not have a handler!");
@@ -1617,7 +1617,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				LinkedList<DownloadRequestStatus> getters = failedBadMIMEType.get(type);
 				String atype = type.replace("-", "--").replace('/', '-');
 				contentNode.addChild("a", "id", "failedDownload-badtype-"+atype);
-				MIMEType typeHandler = ContentFilter.getMIMEType(type);
+				FilterMIMEType typeHandler = ContentFilter.getMIMEType(type);
 				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", l10n("failedDBadMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+atype, false);
 				// FIXME add a class for easier styling.
 				KnownUnsafeContentTypeException e = new KnownUnsafeContentTypeException(typeHandler);
