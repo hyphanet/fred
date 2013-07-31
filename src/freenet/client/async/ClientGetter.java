@@ -283,6 +283,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				checkCompatibleExtension(mimeType);
 			} catch (FetchException e) {
 				onFailure(e, null, container, context);
+				return;
 			}
 		}
 
