@@ -10,6 +10,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import freenet.support.Logger;
+import freenet.support.MediaType;
 
 /**
  * Holds the default MIME types.
@@ -786,6 +787,10 @@ public class DefaultMIMETypes {
 		return false;
 	}
 	
+    public static boolean isValidExt(MediaType parsedType, String forceCompatibleExtension) {
+        return isValidExt(parsedType.getPlainType(), forceCompatibleExtension);
+    }
+	
 	private static final String TOP_LEVEL = "(?>[a-zA-Z-]+)";
 	private static final String CHARS = "(?>[a-zA-Z0-9+_\\-\\.]+)";
 	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
@@ -821,4 +826,5 @@ public class DefaultMIMETypes {
 		}
 		return s + '.' + ext;
 	}
+
 }
