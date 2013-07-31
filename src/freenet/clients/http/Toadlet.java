@@ -413,6 +413,10 @@ public abstract class Toadlet {
 		
 		writeHTMLReply(ctx, 500, desc, pageNode.generate());
 	}
+	
+    protected void sendUnauthorizedPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+        sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+    }
 
 	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		Logger.error(this, "Caught "+t, t);
