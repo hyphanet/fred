@@ -19,8 +19,19 @@ public interface ToadletContainer {
 	
 	/** Register a Toadlet. All requests whose URL starts with the given
 	 * prefix will be passed to this toadlet.
-	 * @param atFront If true, add to front of list (where is checked first),
-	 * else add to back of list (where is checked last).
+     * @param t the toadlet to register
+     * @param menu the menu category to register a navigation link with with. It is
+     *        most likely also a l10n key, though that is irrelevant to this method.
+     * @param urlPrefix the prefix that the Toadlet will serve; should be a path like
+     *        /foo/bar/baz, most likely the string returned by the toadlet's path() method
+     * @param atFront If true, this Toadlet will take precedence over any other
+     *        previously-registered Toadlet whose urlPrefix also matches. Otherwise,
+     *        the other matching Toadlet is used instead.
+     * @param fullOnly Whether or not the navigation link is shown when the http client
+     *        does not have full security access. Note that passing false does not prevent
+     *        the Toadlet from receiving requests under urlPrefix, so Toadlet authors
+     *        are advised to check for full access themselves, possibly returning a
+     *        403 error code.
 	 */
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullAccessOnly);
 
