@@ -1243,6 +1243,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Bytes 13-16: Initial message id for the responder
 		 * Note that we are the responder */
 		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiatorHashed, nonceResponder, "6");
+		Arrays.fill(computedExponential, (byte)0);
 		int theirInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
 				| ((sharedData[1] & 0xFF) << 16)
 				| ((sharedData[2] & 0xFF) << 8)
@@ -1756,6 +1757,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		 * Bytes 13-16: Initial message id for the responder
 		 * Note that we are the initiator */
 		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiatorHashed, nonceResponder, "6");
+	    Arrays.fill(computedExponential, (byte)0);
 		pn.ourInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
 				| ((sharedData[1] & 0xFF) << 16)
 				| ((sharedData[2] & 0xFF) << 8)
