@@ -20,15 +20,22 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BulkTransmitter;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.LinkStatistics;
+import freenet.node.PeerNode;
 import freenet.support.BandwidthStatsContainer;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
@@ -44,14 +51,16 @@ import freenet.support.MultiValueTable;
 
 public class LinkStatisticsToadlet extends Toadlet {
 
+	public static int SEND_TIMEOUT = BlockTransmitter.SEND_TIMEOUT;
+	
 	private long transitionStarted = -1;
 	private long transitionFinished = -1;
 	private long transitionTime = -1;
-	private boolean transitionComplete = false;
-	private LinkStatistics trackedStats = null;
-	DarknetPeerNode testedNode = null;
 	
-	final ByteCounter emptyByteCounter = new ByteCounter() {
+	private LinkStatistics trackedStats = null;
+	private DarknetPeerNode testedNode = null;
+	
+	public final static ByteCounter emptyByteCounter = new ByteCounter() {
 		// Just ignore all that, is already gathered by a stats tracker
 		@Override
 		public void receivedBytes(int x) {
@@ -64,32 +73,13 @@ public class LinkStatisticsToadlet extends Toadlet {
 		}
 
 	};
-	final AsyncMessageCallback transitionCallback = new AsyncMessageCallback() {
-		synchronized public void sent() {
-			trackedStats.reset();
-			transitionStarted = System.currentTimeMillis();
-		}
-	    synchronized public void acknowledged() {
-				transitionFinished = System.currentTimeMillis();
-				transitionComplete = true;
-				notifyAll();
-	    }
-	    synchronized public void disconnected() {
-				transitionComplete = true;
-				notifyAll();
-	    }
-	    synchronized public void fatalError() {
-				transitionComplete = true;
-				notifyAll();
-	    }
-	};
 	/* Will need this for plotting and bandwith measuring purposes */
 	final LinkStatistics.StatsChangeTracker statsTracker = new LinkStatistics.StatsChangeTracker() {
 		@Override
 		public void dataSentChanged(long previousval, long newval, long time) {
 		}
 		@Override
-		public void usefullPaybackSentChanged(long previousval, long newval, long time) {
+		public void messagePayloadSentChanged(long previousval, long newval, long time) {
 	    }
 		@Override
 		public void acksSentChanged(long previousval, long newval, long time) {
@@ -128,11 +118,20 @@ public class LinkStatisticsToadlet extends Toadlet {
 	}
 	
 	@Override
-	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) 
+			throws ToadletContextClosedException, IOException, RedirectException {
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, 
+					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
+		
+		transitionStarted = -1;
+		transitionFinished = -1;
+		transitionTime = -1;
+		
+		trackedStats = null;
+		testedNode = null;
 		
 		if (request.isParameterSet("peernode_hashcode")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
@@ -157,7 +156,8 @@ public class LinkStatisticsToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) 
+			throws ToadletContextClosedException, IOException, RedirectException {
 		
 		if (request.isPartSet("size")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
@@ -187,23 +187,35 @@ public class LinkStatisticsToadlet extends Toadlet {
 			
 			trackedStats = testedNode.getTotalLinkStats();
 			trackedStats.attachListener(statsTracker);
+			long sessionUID = node.random.nextLong();
 			
-			HTTPUploadedFileImpl data = 
-					new HTTPUploadedFileImpl("sample", DefaultMIMETypes.DEFAULT_MIME_TYPE, new ArrayBucket(new byte [sampleSize]));
-			testedNode.sendFileOffer(data, "sample", transitionCallback);
-			
-			try {
-				synchronized (transitionCallback) {
-					while (!transitionComplete) {
-						transitionCallback.wait();
+			try { // Initiate a session and transfer a bulk of a given size
+				transitionFinished = -1;
+				// Initiate
+				testedNode.sendAsync(DMT.createFNPLinkTestInitiator(sessionUID, sampleSize), null, emptyByteCounter);
+				// Wait for reply
+				if (waitForAccepted(sessionUID, SEND_TIMEOUT)) {
+					// Got confirmation - start sampling
+					ByteArrayRandomAccessThing rat = new ByteArrayRandomAccessThing(new byte [sampleSize]);
+					PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), sampleSize, Node.PACKET_SIZE, rat, true);
+					BulkTransmitter sender = new BulkTransmitter(prb, testedNode, sessionUID, false, emptyByteCounter, false);
+					transitionStarted = System.currentTimeMillis();
+					if (sender.send()) {
+						transitionFinished = System.currentTimeMillis();
 					}
+				} else {
+					super.sendErrorPage(ctx, 403, 
+							"FATAL: Node refused the probe", "Sampling failed: node ("+testedNode.getName()+") refused to start a test");
 				}
-			} catch (InterruptedException e) {
-				// FIXME: Do something?
+			} catch (NotConnectedException e) {
+				// Ignore here, handle below
+			} catch (DisconnectedException e) {
+				// Ignore here, handle below
 			}
 
 			if (transitionFinished == -1) {
-				super.sendErrorPage(ctx, 403, "FATAL: No connection to node", "Sampling failed: no connection to node");
+				trackedStats.attachListener(null);
+				super.sendErrorPage(ctx, 403, "FATAL: No connection to node", "Sampling failed: no connection to node. ");
 				return;
 			} else {
 				transitionTime = transitionFinished - transitionStarted;
@@ -225,7 +237,7 @@ public class LinkStatisticsToadlet extends Toadlet {
 			HTMLNode dataStatsList = dataStatsContent.addChild("ul");
 			dataStatsList.addChild("li", "Data sent:" + '\u00a0' + trackedStats.getDataSent());
 			dataStatsList.addChild("li", "Data acknowledged:" + '\u00a0' + trackedStats.getDataAcked());
-			dataStatsList.addChild("li", "Usefull data (does not include overhead) sent:" + '\u00a0' + trackedStats.getUsefullPaybackSent());
+			dataStatsList.addChild("li", "Usefull data (does not include overhead) sent:" + '\u00a0' + trackedStats.getMessagePayloadSent());
 			
 			dataStatsInfobox = commonStatsContent.addChild("div", "class", "infobox");
 			dataStatsInfobox.addChild("div", "class", "infobox-header", "Troubles encountered");
@@ -275,6 +287,7 @@ public class LinkStatisticsToadlet extends Toadlet {
 			dataStatsList = dataStatsContent.addChild("ul");
 			dataStatsList.addChild("li", "Current queue backlog size:" + '\u00a0' + trackedStats.getQueueBacklog());
 
+			trackedStats.attachListener(null);
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -306,6 +319,40 @@ public class LinkStatisticsToadlet extends Toadlet {
 			}
 		}
 		return foundNode;
+	}
+	
+	/**
+	 * @param sessionUID - uid for sampling session
+	 * @param timeout - max time that we will wait until a message is received
+	 * @return true if received FNPAccepted, false if received FNPRejectedOverload
+	 * @throws DisconnectedException - in case of wait timeout or absence of connection to {@code testedNode}
+	 */
+	private boolean waitForAccepted(long sessionUID, int timeout) throws DisconnectedException {
+		MessageFilter mf = createAcceptedRejectedOverloadFilter(sessionUID, timeout);
+		Message msg = node.getUSM().waitFor(mf, null);
+		
+		if(msg == null) {
+			// Timeout waiting for message
+			throw new DisconnectedException();
+		}
+		
+		if(msg.getSpec() == DMT.FNPRejectedOverload) {
+			return false;
+		} else if(msg.getSpec() == DMT.FNPAccepted) {
+			return true;
+		} else {
+			// Received unknown message type - shouldn't happen
+			return false;
+		}
+		
+	}
+	
+	private MessageFilter createAcceptedRejectedOverloadFilter(long uid, int timeout) {
+		MessageFilter mfAccepted = MessageFilter.create().setSource(testedNode) 
+				.setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPAccepted);
+		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(testedNode) 
+				.setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
+		return mfAccepted.or(mfRejectedOverload);
 	}
 
 	private static String l10n(String key) {

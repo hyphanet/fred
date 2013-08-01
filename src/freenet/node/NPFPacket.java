@@ -422,8 +422,8 @@ class NPFPacket {
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);
 		}			
 		if (pn.linkStatsAvailable()){
-			pn.getTotalLinkStats().onUsefullPaybackSend(totalMessageData);
-			pn.getShortRunLinkStats().onUsefullPaybackSend(totalMessageData);
+			pn.getTotalLinkStats().onMessagePayloadSent(totalMessageData);
+			pn.getShortRunLinkStats().onMessagePayloadSent(totalMessageData);
 			pn.getTotalLinkStats().onDataSend(totalPacketLength);
 			pn.getShortRunLinkStats().onDataSend(totalPacketLength);
 		}

@@ -145,6 +145,7 @@ public class DMT {
 	public static final String REJECT_STATS = "rejectStats";
 	public static final String OUTPUT_BANDWIDTH_CLASS = "outputBandwidthClass";
 	public static final String CAPACITY_USAGE = "capacityUsage";
+	public static final String SAMPLING_DATA_SIZE = "samplingDataSize";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -247,6 +248,18 @@ public class DMT {
 	
 	public static Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
 		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data), realTime);
+	}
+	
+	public static final MessageType FNPLinkTestInitiator = new MessageType("FNPLinkTest", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+		addField(SAMPLING_DATA_SIZE, Integer.class);
+	}};
+	
+	public static Message createFNPLinkTestInitiator(long uid, int size) {
+		Message msg = new Message(FNPLinkTestInitiator);
+		msg.set(UID, uid);
+		msg.set(SAMPLING_DATA_SIZE, size);
+		return msg;
 	}
 	
 	public static final MessageType FNPBulkSendAborted = new MessageType("FNPBulkSendAborted", PRIORITY_UNSPECIFIED) {{

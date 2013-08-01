@@ -899,7 +899,6 @@ public class DarknetPeerNode extends PeerNode {
 		private BulkReceiver receiver;
 		/** True if the offer has either been accepted or rejected */
 		private boolean acceptedOrRejected;
-		private AsyncMessageCallback transitionCallback = null;
 
 		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
 			this.uid = uid;
@@ -928,11 +927,6 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			comment = s;
 			this.amIOffering = amIOffering;
-		}
-		
-		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment, AsyncMessageCallback cb) throws IOException {
-			this(uid, data, filename, mimeType, comment);
-			transitionCallback = cb;
 		}
 
 		public void toFieldSet(SimpleFieldSet fs) {
@@ -1008,27 +1002,17 @@ public class DarknetPeerNode extends PeerNode {
 					if(logMINOR)
 						Logger.minor(this, "Sending file");
 					try {
-						if (transitionCallback != null)
-							transitionCallback.sent();
 						if(!transmitter.send()) {
 							String err = "Failed to send "+uid+" for "+FileOffer.this;
 							Logger.error(this, err);
 							System.err.println(err);
-							if (transitionCallback != null)
-								transitionCallback.fatalError();
 						}
-						if (transitionCallback != null)
-							transitionCallback.acknowledged();
 					} catch (DisconnectedException e) {
 						Logger.error(this, "Disconnected while sending a file", e);
 						remove();
-						if (transitionCallback != null)
-							transitionCallback.disconnected();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" sending file", t);
 						remove();
-						if (transitionCallback != null)
-							transitionCallback.fatalError();
 					}
 					if(logMINOR)
 						Logger.minor(this, "Sent file");
@@ -1441,10 +1425,10 @@ public class DarknetPeerNode extends PeerNode {
 		return getPeerNodeStatus();
 	}
 
-	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data, AsyncMessageCallback cb) throws IOException {
+	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data) throws IOException {
 		long uid = node.random.nextLong();
 		long now = System.currentTimeMillis();
-		FileOffer fo = new FileOffer(uid, data, fnam, mime, message, cb);
+		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
 			myFileOffersByUID.put(uid, fo);
 		}
@@ -1464,21 +1448,21 @@ public class DarknetPeerNode extends PeerNode {
 		String fnam = file.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
 		RandomAccessThing data = new RandomAccessFileWrapper(file, "r");
-		return sendFileOffer(fnam, mime, message, data, null);
+		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
 		String fnam = file.getFilename();
 		String mime = file.getContentType();
 		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
-		return sendFileOffer(fnam, mime, message, data, null);
+		return sendFileOffer(fnam, mime, message, data);
 	}
 	
 	public int sendFileOffer(HTTPUploadedFile file, String message, AsyncMessageCallback cb) throws IOException {
 		String fnam = file.getFilename();
 		String mime = file.getContentType();
 		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
-		return sendFileOffer(fnam, mime, message, data, cb);
+		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
