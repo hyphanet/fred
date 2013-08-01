@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
+import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
@@ -34,6 +35,11 @@ import freenet.support.compress.InvalidCompressionCodecException;
 public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;
+	
+	private static boolean logMINOR;
+	static {
+	    Logger.registerClass(InsertableClientSSK.class);
+	}
 	
 	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey, byte cryptoAlgorithm) throws MalformedURLException {
 		super(docName, pubKeyHash, getExtraBytes(cryptoAlgorithm), pubKey, cryptoKey);
@@ -178,7 +184,7 @@ public class InsertableClientSSK extends ClientSSK {
 			if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
 				throw new IllegalStateException("Too long");
 			try {
-				return new ClientSSKBlock(data, headers, this, true);
+				return new ClientSSKBlock(data, headers, this, !logMINOR);
 			} catch (SSKVerifyException e) {
 				throw (AssertionError)new AssertionError("Impossible encoding error").initCause(e);
 			}
