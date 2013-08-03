@@ -173,14 +173,6 @@ public final class PageMaker {
 			navigationLinkL10n.remove(name); //Should this be here? If so, why not remove from navigationLinkCallbacks too
 		}
 
-		/** Clear this sub-menu */
-		public void removeAllNavigationLinks() {
-			navigationLinkTexts.clear();
-			navigationLinkTextsNonFull.clear();
-			navigationLinkTitles.clear();
-			navigationLinks.clear();
-			navigationLinkL10n.clear(); //Should this be here? If so, why not clear navigationLinkCallbacks too
-		}
 	}
 	
 	protected PageMaker(THEME t, Node n) {
