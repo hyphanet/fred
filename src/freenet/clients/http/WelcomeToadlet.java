@@ -287,8 +287,8 @@ public class WelcomeToadlet extends Toadlet {
 
             if (request.isParameterSet("latestlog")) {
                 final File logs = new File(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
-
-                this.writeTextReply(ctx, 200, "OK", FileUtil.readUTF(logs));
+                String text = readLogTail(logs, 100000);
+                this.writeTextReply(ctx, 200, "OK", text);
                 return;
             } else if (request.isParameterSet("terminated")) {
                 if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(ctx.getFormPassword())) {
@@ -507,13 +507,37 @@ public class WelcomeToadlet extends Toadlet {
         if(logs.exists() && logs.isFile() && logs.canRead() && (logSize > 0)) {
             try {
             	HTMLNode logInfoboxContent = ctx.getPageMaker().getInfobox("infobox-info", "Current status", contentNode, "start-progress", true);
-                boolean isShortFile = logSize < 2000;
-                String content = FileUtil.readUTF(logs, (isShortFile ? 0 : logSize - 2000));
-                int eol = content.indexOf('\n');
-                boolean shallStripFirstLine = (!isShortFile) && (eol > 0);
-                logInfoboxContent.addChild("%", content.substring((shallStripFirstLine ? eol + 1 : 0)).replaceAll("\n", "<br>\n"));
+            	String content = readLogTail(logs, 2000);
+                logInfoboxContent.addChild("%", content.replaceAll("\n", "<br>\n"));
             } catch(IOException e) {}
         }
+    }
+    
+    /**
+     * Reads and returns the content of <code>logfile</code>. At most <code>byteLimit</code>
+     * bytes will be read. If <code>byteLimit</code> is less than the size of <code>logfile</code>,
+     * the first part of the file will be skipped. If this leaves a partial line at the beginning
+     * of the content to return, that partial line will also be skipped.
+     * @param logfile The file to read
+     * @param byteLimit The maximum number of bytes to read
+     * @return The trailing portion of the file
+     * @throws IOException if an I/O error occurs
+     */
+    private static String readLogTail(File logfile, long byteLimit) throws IOException {
+        long length = logfile.length();
+        long skip = 0;
+        if (length > byteLimit) {
+            skip = length - byteLimit;
+        }
+        
+        String text = FileUtil.readUTF(logfile, skip);
+        if (skip > 0) {
+            int i = text.indexOf('\n');
+            if (i >= 0) {
+                text = text.substring(i + 1);
+            }
+        }
+        return text;
     }
 
 	public static final String PATH = "/";
