@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -34,10 +32,10 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
@@ -237,6 +235,19 @@ public class ToadletContextImpl implements ToadletContext {
 			return true;
 		}
 	}
+	
+	/**
+	 * @see ToadletContext#checkFullAccess(Toadlet)
+	 */
+	@Override
+    public boolean checkFullAccess(Toadlet toadlet) throws ToadletContextClosedException, IOException {
+        if(isAllowedFullAccess()) {
+            return true;
+        } else {
+            toadlet.sendUnauthorizedPage(this);
+            return false;
+        }
+    }
 	
 	@Override
 	public boolean hasFormPassword(HTTPRequest request) throws IOException {

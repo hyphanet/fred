@@ -58,8 +58,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 //		}
 
 		if (container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-			        NodeL10n.getBase().getString("Toadlet.unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 		

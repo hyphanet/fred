@@ -170,10 +170,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
-			if(!ctx.isAllowedFullAccess()) {
-				super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
-				return;
-			}
+	    if(!ctx.checkFullAccess(this))
+	        return;
+
 		PageMaker pageMaker = ctx.getPageMaker();
 		BookmarkManager bookmarkManager = ctx.getBookmarkManager();
 		String editorTitle = NodeL10n.getBase().getString("BookmarkEditorToadlet.title");

@@ -67,10 +67,8 @@ public class PproxyToadlet extends Toadlet {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, l10n("unauthorizedTitle"), l10n("unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		String path=request.getPath();
 
@@ -338,10 +336,8 @@ public class PproxyToadlet extends Toadlet {
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
-				if (!ctx.isAllowedFullAccess()) {
-					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
-					return;
-				}
+		        if(!ctx.checkFullAccess(this))
+		            return;
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 

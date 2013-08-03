@@ -107,10 +107,8 @@ public class WelcomeToadlet extends Toadlet {
     }
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        if (!ctx.isAllowedFullAccess()) {
-            super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
+        if(!ctx.checkFullAccess(this))
             return;
-		}
 
         if (request.getPartAsStringFailsafe("updateconfirm", 32).length() > 0) {
         	if(!ctx.checkFormPassword(request)) return;
