@@ -58,10 +58,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if (!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		if(request.isPartSet("seclevels")) {
 			// Handle the security level changes.
@@ -455,11 +453,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
     public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-
-		if(!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("SecurityLevelsToadlet.fullTitle"), ctx);
 		HTMLNode pageNode = page.outer;

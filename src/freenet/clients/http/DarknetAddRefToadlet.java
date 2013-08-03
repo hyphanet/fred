@@ -25,10 +25,8 @@ public class DarknetAddRefToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if(!ctx.isAllowedFullAccess()) {
-			sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 		
 		String path = uri.getPath();
 		if(path.endsWith(NodeUpdateManager.WINDOWS_FILENAME)) {

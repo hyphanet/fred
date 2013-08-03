@@ -119,11 +119,9 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-
-		if(!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
+        
 		final SubConfig nodeConfig = node.config.get("node");
 		
 		final String requestPath = request.getPath().substring(path().length());

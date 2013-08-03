@@ -23,10 +23,8 @@ public class UserAlertsToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		if (!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;

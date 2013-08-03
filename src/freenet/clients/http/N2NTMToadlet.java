@@ -41,10 +41,8 @@ public class N2NTMToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
 
-		if (!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		if (request.isParameterSet("peernode_hashcode")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
@@ -127,10 +125,9 @@ public class N2NTMToadlet extends Toadlet {
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
-		if (!ctx.isAllowedFullAccess()) {
-		    sendUnauthorizedPage(ctx);
-			return;
-		}
+	    
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		//Browse button clicked. Redirect.
 		if(request.isPartSet("n2nm-browse"))
