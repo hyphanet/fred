@@ -185,12 +185,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	public void handleMethodPOST(URI uri, HTTPRequest request,
 			ToadletContext ctx) throws ToadletContextClosedException,
 			IOException, RedirectException {
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403,
-					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-					NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
+	    
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		// User requested reset to defaults, so present confirmation page.
 		if (request.isPartSet("confirm-reset-to-defaults")) {
@@ -425,13 +422,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 
-		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403,
-					NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"),
-					NodeL10n.getBase().getString("Toadlet.unauthorized"));
-			return;
-		}
-
+        if(!ctx.checkFullAccess(this))
+            return;
+        
 		boolean advancedModeEnabled = ctx.isAdvancedModeEnabled();
 
 		PageNode page = ctx.getPageMaker().getPageNode(

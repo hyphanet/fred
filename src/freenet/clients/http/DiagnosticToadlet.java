@@ -70,11 +70,8 @@ public class DiagnosticToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, baseL10n.getString("Toadlet.unauthorizedTitle"), baseL10n.getString("Toadlet.unauthorized"));
-			return;
-		}
+        if(!ctx.checkFullAccess(this))
+            return;
 
 		node.clientCore.bandwidthStatsPutter.updateData();
 

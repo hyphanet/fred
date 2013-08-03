@@ -112,6 +112,19 @@ public interface ToadletContext {
 	 * @throws IOException */
 	boolean hasFormPassword(HTTPRequest request) throws IOException;
 	
+	   
+    /**
+     * Check a context for whether {@link #isAllowedFullAccess()} is true.
+     * 
+     * If it is false, an error page is sent to the client, and false is returned.
+     * You can then abort processing of the request.
+     * 
+     * @return The return value of {@link #isAllowedFullAccess()}.
+     * @throws IOException See {@link Toadlet#sendUnauthorizedPage(ToadletContext)}
+     * @throws ToadletContextClosedException See {@link Toadlet#sendUnauthorizedPage(ToadletContext)}
+     */
+    boolean checkFullAccess(Toadlet toadlet) throws ToadletContextClosedException, IOException;
+    
 	/**
 	 * Get the user alert manager.
 	 */

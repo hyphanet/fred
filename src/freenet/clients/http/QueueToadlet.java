@@ -151,7 +151,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 
@@ -1063,7 +1063,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
+		    sendUnauthorizedPage(ctx);
 			return;
 		}
 
