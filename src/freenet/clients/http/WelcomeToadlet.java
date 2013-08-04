@@ -4,6 +4,7 @@
 package freenet.clients.http;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
@@ -33,7 +34,9 @@ import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.LineReadingInputStream;
 
 public class WelcomeToadlet extends Toadlet {
 
@@ -507,12 +510,55 @@ public class WelcomeToadlet extends Toadlet {
         final File logs = new File("wrapper.log");
         long logSize = logs.length();
         if(logs.exists() && logs.isFile() && logs.canRead() && (logSize > 0)) {
+            HTMLNode logInfoboxContent = ctx.getPageMaker().getInfobox("infobox-info", "Current status", contentNode, "start-progress", true);
+            LineReadingInputStream logreader = null;
             try {
-            	HTMLNode logInfoboxContent = ctx.getPageMaker().getInfobox("infobox-info", "Current status", contentNode, "start-progress", true);
-            	String content = readLogTail(logs, 2000);
-                logInfoboxContent.addChild("%", content.replaceAll("\n", "<br>\n"));
+            	logreader = getLogTailReader(logs, 2000);
+            	String line;
+            	while ((line = logreader.readLine(100000, 200, true)) != null) {
+            	    logInfoboxContent.addChild("#", line);
+            	    logInfoboxContent.addChild("br");
+            	}
             } catch(IOException e) {}
+            finally {
+                Closer.close(logreader);
+            }
         }
+    }
+    
+    /**
+     * Returns a line reading stream for the content of <code>logfile</code>. The stream will
+     * contain at most <code>byteLimit</code> bytes. If <code>byteLimit</code> is less than the
+     * size of <code>logfile</code>, the first part of the file will be skipped. If this leaves a
+     * partial line at the beginning of the content to read, that partial line will also be
+     * skipped.
+     * @param logfile The file to open
+     * @param byteLimit The maximum number of bytes to read
+     * @return A line reader for the trailing portion of the file
+     * @throws IOException if an I/O error occurs
+     */
+    private static LineReadingInputStream getLogTailReader(File logfile, long byteLimit) throws IOException {
+        long length = logfile.length();
+        long skip = 0;
+        if (length > byteLimit) {
+            skip = length - byteLimit;
+        }
+        
+        FileInputStream fis = null;
+        LineReadingInputStream lis = null;
+        try {
+            fis = new FileInputStream(logfile);
+            lis = new LineReadingInputStream(fis);
+            if (skip > 0) {
+                lis.skip(skip);
+                lis.readLine(100000, 200, true);
+            }
+        } catch (IOException e) {
+            Closer.close(lis);
+            Closer.close(fis);
+            throw e;
+        }
+        return lis;
     }
     
     /**
@@ -526,20 +572,13 @@ public class WelcomeToadlet extends Toadlet {
      * @throws IOException if an I/O error occurs
      */
     private static String readLogTail(File logfile, long byteLimit) throws IOException {
-        long length = logfile.length();
-        long skip = 0;
-        if (length > byteLimit) {
-            skip = length - byteLimit;
+        LineReadingInputStream stream = null;
+        try {
+            stream = getLogTailReader(logfile, byteLimit);
+            return FileUtil.readUTF(stream);
+        } finally {
+            Closer.close(stream);
         }
-        
-        String text = FileUtil.readUTF(logfile, skip);
-        if (skip > 0) {
-            int i = text.indexOf('\n');
-            if (i >= 0) {
-                text = text.substring(i + 1);
-            }
-        }
-        return text;
     }
 
 	public static final String PATH = "/";
