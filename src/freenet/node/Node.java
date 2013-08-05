@@ -1142,6 +1142,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		// This can block too.
 		this.secureRandom = new SecureRandom();
+		secureRandom.nextBytes(new byte[16]); // Force it to seed itself so it blocks now not later.
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
 		if(weakRandom == null) {
