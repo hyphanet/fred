@@ -427,7 +427,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			File currentFile = null;
 
 			if(type == DEPENDENCY_TYPE.CLASSPATH || type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE) {
-				s = props.getProperty("order");
+				s = props.getProperty(baseName+".order");
 				if(s != null) {
 					try {
 						// Order is an optional field.
@@ -670,7 +670,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
-			s = props.getProperty("order");
+			s = props.getProperty(baseName+".order");
 			if(s != null) {
 				try {
 					// Order is an optional field.
