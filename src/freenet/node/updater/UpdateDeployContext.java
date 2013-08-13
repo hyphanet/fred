@@ -247,7 +247,7 @@ public class UpdateDeployContext {
 				continue;
 			}
 			if(rhs.equals(f)) return dep;
-			if(rhsName.equals(f.getName())) return dep;
+			if(rhsName.equals(f.getName().toLowerCase())) return dep;
 		}
 		for(Dependency dep : deps.dependencies) {
 			Pattern p = dep.regex();
