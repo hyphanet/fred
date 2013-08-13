@@ -308,9 +308,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		synchronized(fetchers) {
 			if(!fetchers.isEmpty()) {
 				alertNode.addChild("p", l10n("fetchingDependencies")+":");
-				alertNode.addChild("table");
+				HTMLNode table = alertNode.addChild("table");
 				for(DependencyJarFetcher f : fetchers) {
-					alertNode.addChild(f.renderRow());
+					table.addChild(f.renderRow());
 				}
 			}
 		}
