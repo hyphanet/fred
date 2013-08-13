@@ -189,6 +189,10 @@ public class MainJarDependenciesChecker {
 			if(ret != 0) return ret;
 			return newFilename.compareTo(arg0.newFilename);
 		}
+
+        public int order() {
+            return order;
+        }
 		
 	}
 	

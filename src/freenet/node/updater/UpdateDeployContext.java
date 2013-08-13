@@ -179,6 +179,7 @@ public class UpdateDeployContext {
 						if(dep != null) {
 							System.out.println("Found dependency "+dep.oldFilename());
 						} else { // dep == null
+						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
 							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
 						}
@@ -202,6 +203,7 @@ public class UpdateDeployContext {
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
+		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
 			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
 			count++;
 		}
