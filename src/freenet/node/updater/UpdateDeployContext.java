@@ -242,6 +242,7 @@ public class UpdateDeployContext {
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
 		String rhsName = rhs.getName().toLowerCase();
+		// Check for files already in use.
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
 			if(f == null) {
@@ -251,6 +252,13 @@ public class UpdateDeployContext {
 			if(rhs.equals(f)) return dep;
 			if(rhsName.equals(f.getName().toLowerCase())) return dep;
 		}
+		// It may be already on the classpath even though it's a new file officially.
+        for(Dependency dep : deps.dependencies) {
+            File f = dep.newFilename();
+            if(rhs.equals(f)) return dep;
+            if(rhsName.equals(f.getName().toLowerCase())) return dep;
+        }
+        // Slightly more expensive test.
 		for(Dependency dep : deps.dependencies) {
 			Pattern p = dep.regex();
 			if(p != null) {
