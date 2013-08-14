@@ -9,6 +9,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.interfaces.ECPublicKey;
@@ -18,13 +19,17 @@ import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DHGroup;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSASignature;
+import freenet.crypt.DiffieHellman;
+import freenet.crypt.DiffieHellmanLightContext;
 import freenet.crypt.ECDH;
 import freenet.crypt.ECDHLightContext;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
+import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.PCFBMode;
@@ -100,6 +105,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
 	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
+	/*
+	* The FIFO itself
+	* Get a lock on dhContextFIFO before touching it!
+	*/
+	private final LinkedList<DiffieHellmanLightContext> dhContextFIFO = new LinkedList<DiffieHellmanLightContext>();
+	/* The element which is about to be prunned from the FIFO */
+	private DiffieHellmanLightContext dhContextToBePrunned = null;
+	private static final DHGroup dhGroupToUse = Global.DHgroupA;
+	private long jfkDHLastGenerationTimestamp = 0;
 	
 	private final LinkedList<ECDHLightContext> ecdhContextFIFO = new LinkedList<ECDHLightContext>();
     private ECDHLightContext ecdhContextToBePrunned;
@@ -164,7 +178,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public void start() {
 		// Run it directly so that the transient key is set.
 		maybeResetTransientKey();
-		// Fill the ECDH FIFO on-thread
+		// Fill the DH FIFO on-thread
+		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
+			_fillJFKDHFIFO();
+		}
 		for(int i=0;i<DH_CONTEXT_BUFFER_SIZE;i++) {
 			_fillJFKECDHFIFO();
 		}
@@ -520,8 +537,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 8 || negType == 9)) {
-			if(negType > 9)
+		if(!(negType == 7 || negType == 8 || negType == 9)) {
+			if(negType > 8)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
@@ -580,8 +597,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 8 || negType == 9)) {
-			if(negType > 9)
+		if(!(negType == 7 || negType == 8 || negType == 9)) {
+			if(negType > 8)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
@@ -655,11 +672,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType >= 0 && negType < 8) {
+		if(negType >= 0 && negType < 7) {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 8 || negType == 9) {
+		} else if (negType == 7 || negType == 8 || negType == 9) {
 		    // negType == 9 => Lots of changes:
 		    //      Security fixes:
 		    //      - send Ni' (a hash of Ni) in JFK1 to prevent a potential CPU DoS		    
@@ -668,6 +685,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    //      - use a 128bit nonce instead of a 64bit one
 		    //      - use the hash of the pubkey as an identity instead of just random (forgeable) data
 		    // negType == 8 => use ECDH with P256 instead of DH1024
+			// negType == 7 => same as 6, but determine the initial sequence number by hashing the identity
+			// instead of negotiating it
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -788,12 +807,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(throttleRekey(pn, replyTo)) return;
 		   
 
-		// JFK protects us from weak key attacks on ECDH, so we don't need to check.
-		try {
-			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
-		} catch (NoContextsException e) {
-			handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
-			return;
+		if(negType >= 8 || DiffieHellman.checkDHExponentialValidity(this.getClass(), new NativeBigInteger(1,hisExponential))) {
+			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
+		    try {
+		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
+		    } catch (NoContextsException e) {
+		    	handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
+		    	return;
+		    }
+		} else {
+		    Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 		}
 
 		long t2=System.currentTimeMillis();
@@ -881,9 +904,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         int nonceSize = getNonceSize(negType);
 		
 		KeyAgreementSchemeContext ctx = pn.getKeyAgreementSchemeContext();
-		if((ctx == null) || !(ctx instanceof ECDHLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
-			pn.jfkContextLifetime = now;
-			pn.setKeyAgreementSchemeContext(ctx = getECDHLightContext());
+		if(negType < 8) { // Legacy DH
+		    if((ctx == null) || !(ctx instanceof DiffieHellmanLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
+			    pn.jfkContextLifetime = now;
+			    pn.setKeyAgreementSchemeContext(ctx = getLightDiffieHellmanContext());
+		    }
+		} else {
+            if((ctx == null) || !(ctx instanceof ECDHLightContext) || ((pn.jfkContextLifetime + DH_GENERATION_INTERVAL*DH_CONTEXT_BUFFER_SIZE) < now)) {
+                pn.jfkContextLifetime = now;
+                pn.setKeyAgreementSchemeContext(ctx = getECDHLightContext());
+            }
 		}
 		
 		int offset = 0;
@@ -933,7 +963,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int modulusLength = getModulusLength(negType);
 		int nonceSize = getNonceSize(negType);
 		// g^r
-		KeyAgreementSchemeContext ctx = getECDHLightContext();
+		// Neg type 8 and later use ECDH for generating the keys.
+		KeyAgreementSchemeContext ctx = negType < 8 ? getLightDiffieHellmanContext() : getECDHLightContext();
 		
 		// Nr
 		byte[] myNonce = new byte[nonceSize];
@@ -1064,6 +1095,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			}
 			return;
+		}
+
+		if(negType < 8) { // legacy DH
+		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+		    if(!DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
+		        Logger.error(this, "We can't accept the exponential "+pn.getPeer()+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
+		        return;
+		    }
+			// JFK protects us from weak key attacks on ECDH, so we don't need to check.
 		}
 
 		if(negType < 9) {
@@ -1215,16 +1255,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		inputOffset += HASH_LENGTH;
 
 		byte[] computedExponential;
-		ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
-		ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
-		ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
-		if (ctx == null) {
-			Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
-			// Possible this is a replay or severely delayed? We don't keep
-			// every exponential we ever use.
-			return;
-		}
-		computedExponential = ctx.getHMACKey(initiatorKey);
+		if(negType < 8) { // Legacy DH
+			NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
+			NativeBigInteger _ourExponential = new NativeBigInteger(1, responderExponential);
+
+			DiffieHellmanLightContext ctx = findContextByExponential(_ourExponential);
+			if(ctx == null) {
+				Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
+				// Possible this is a replay or severely delayed? We don't keep every exponential we ever use.
+				return;
+			}
+			computedExponential = ctx.getHMACKey(_hisExponential);
+        } else {
+            ECPublicKey initiatorKey = ECDH.getPublicKey(initiatorExponential, ecdhCurveToUse);
+            ECPublicKey responderKey = ECDH.getPublicKey(responderExponential, ecdhCurveToUse);
+            ECDHLightContext ctx = findECDHContextByPubKey(responderKey);
+            if (ctx == null) {
+                Logger.error(this, "WTF? the HMAC verified but we don't know about that exponential! SHOULDN'T HAPPEN! - JFK3 - "+pn);
+                // Possible this is a replay or severely delayed? We don't keep
+                // every exponential we ever use.
+                return;
+            }
+            computedExponential = ctx.getHMACKey(initiatorKey);
+        }
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential) +" for " + pn);
 		
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
@@ -1739,7 +1792,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] sig = (negType < 9 ? crypto.sign(SHA256.digest(toSign)) : crypto.ecdsaSign(toSign));
 
 		byte[] computedExponential;
-		computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
+		if (negType < 8 ) { // Legacy DH
+		    NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
+		    computedExponential= ((DiffieHellmanLightContext)ctx).getHMACKey(_hisExponential);
+		}else {
+		    computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
+		}
 		if(logDEBUG) Logger.debug(this, "The shared Master secret is : "+HexUtil.bytesToHex(computedExponential)+ " for " + pn);
 		/* 0 is the outgoing key for the initiator, 7 for the responder */
 		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiatorHashed, nonceResponder, "0");
@@ -2133,7 +2191,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(forPublic)
 			return new int[] { 8, 9 };
 		else
-			return new int[] { 8, 9 };
+			return new int[] { 7, 8, 9 };
 	}
 
 	@Override
@@ -2156,6 +2214,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		return crypto.config.alwaysAllowLocalAddresses();
 	}
 
+	private DiffieHellmanLightContext _genLightDiffieHellmanContext() {
+		final DiffieHellmanLightContext ctx = DiffieHellman.generateLightContext(dhGroupToUse);
+		if(logDEBUG) Logger.debug(this, "Signing for DiffieHellman: "+HexUtil.bytesToHex(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())))+" for "+HexUtil.bytesToHex(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup())));
+		ctx.setDSASignature(crypto.sign(SHA256.digest(assembleDHParams(ctx.getPublicKeyNetworkFormat(), crypto.getCryptoGroup()))));
+
+		return ctx;
+	}
+    
 	private ECDHLightContext _genECDHLightContext() {
         final ECDHLightContext ctx = new ECDHLightContext(ecdhCurveToUse);
         ctx.setECDSASignature(crypto.ecdsaSign(ctx.getPublicKeyNetworkFormat()));
@@ -2164,6 +2230,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         return ctx;
     }
 	
+	private void _fillJFKDHFIFOOffThread() {
+		// do it off-thread
+		node.executor.execute(new PrioRunnable() {
+			@Override
+			public void run() {
+				_fillJFKDHFIFO();
+			}
+			@Override
+			public int getPriority() {
+				return NativeThread.MIN_PRIORITY;
+			}
+		}, "DiffieHellman exponential signing");
+	}
+
     private void _fillJFKECDHFIFOOffThread() {
         // do it off-thread
         node.executor.execute(new PrioRunnable() {
@@ -2177,6 +2257,26 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
             }
         }, "ECDH exponential signing");
     }
+    
+	private void _fillJFKDHFIFO() {
+	    synchronized (dhContextFIFO) {
+	        int size = dhContextFIFO.size();
+	        if((size > 0) && (size + 1 > DH_CONTEXT_BUFFER_SIZE)) {
+	            DiffieHellmanLightContext result = null;
+	            long oldestSeen = Long.MAX_VALUE;
+
+				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
+					if(tmp.lifetime < oldestSeen) {
+						oldestSeen = tmp.lifetime;
+						result = tmp;
+					}
+				}
+				dhContextFIFO.remove(dhContextToBePrunned = result);
+			}
+
+			dhContextFIFO.addLast(_genLightDiffieHellmanContext());
+		}
+	}
     
 	private void _fillJFKECDHFIFO() {
         synchronized (ecdhContextFIFO) {
@@ -2198,6 +2298,35 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         }
     }	
 
+	/**
+	 * Change the DH Exponents on a regular basis but at most once every 30sec
+	 *
+	 * @return {@link DiffieHellmanLightContext}
+	 */
+	private DiffieHellmanLightContext getLightDiffieHellmanContext() {
+		final long now = System.currentTimeMillis();
+		DiffieHellmanLightContext result = null;
+
+		synchronized (dhContextFIFO) {
+			result = dhContextFIFO.pollFirst();
+
+			// Shall we replace one element of the queue ?
+			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
+				jfkDHLastGenerationTimestamp = now;
+				_fillJFKDHFIFOOffThread();
+			}
+
+            // If we didn't get any, generate on-thread
+            if(result == null)
+                result = _genLightDiffieHellmanContext();
+            
+			dhContextFIFO.addLast(result);
+		}
+
+		if(logMINOR) Logger.minor(this, "getLightDiffieHellmanContext() is serving "+result.hashCode());
+		return result;
+	}
+	
     /**
      * Change the ECDH key on a regular basis but at most once every 30sec
      *
@@ -2236,6 +2365,29 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
     		REPLYING
     	};
     }
+	
+
+	/**
+	 * Used in processJFK[3|4]
+	 * That's O^(n) ... but we have only a few elements and
+	 * we call it only once a round-trip has been done
+	 *
+	 * @param exponential
+	 * @return the corresponding DiffieHellmanLightContext with the right exponent
+	 */
+	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
+		synchronized (dhContextFIFO) {
+			for (DiffieHellmanLightContext result : dhContextFIFO) {
+				if(exponential.equals(result.myExponential)) {
+					return result;
+				}
+			}
+
+			if((dhContextToBePrunned != null) && ((dhContextToBePrunned.myExponential).equals(exponential)))
+				return dhContextToBePrunned;
+		}
+		return null;
+	}
 	
 	 /**
      * Used in processJFK[3|4]
@@ -2395,7 +2547,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	/** @returns the modulus length in bytes for a given negType */
 	private int getModulusLength(int negType) {
-		return ecdhCurveToUse.modulusSize;
+	    if(negType < 8)
+	        return DiffieHellman.modulusLengthInBytes();
+	    else
+	        return ecdhCurveToUse.modulusSize;
 	}
 	
 	private int getSignatureLength(int negType) {
