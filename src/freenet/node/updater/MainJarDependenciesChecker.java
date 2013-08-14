@@ -189,6 +189,10 @@ public class MainJarDependenciesChecker {
 			if(ret != 0) return ret;
 			return newFilename.compareTo(arg0.newFilename);
 		}
+
+        public int order() {
+            return order;
+        }
 		
 	}
 	
@@ -282,8 +286,14 @@ public class MainJarDependenciesChecker {
 	}
 	
 	enum DEPENDENCY_TYPE {
-		/** A jar we want to put on the classpath */
+		/** A jar we want to put on the classpath. Normally we move to a new filename when there is
+		 * a new version of such a dependency; supports most features of dependencies.properties. */
 		CLASSPATH,
+		/** A jar we want to put on the classpath but after that we won't update it even if there 
+		 * is a new version. Used for wrapper.jar since we will update it via a separate mechanism,
+		 * because we have to update other files too. No regex support - must match the exact 
+		 * filename. We do however check for 0 length files just in case. */
+		OPTIONAL_CLASSPATH_NO_UPDATE,
 		/** A file to download, which does not block the update. */
 		OPTIONAL_PRELOAD;
 	}
@@ -416,8 +426,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			int order = 0;
 			File currentFile = null;
 
-			if(type == DEPENDENCY_TYPE.CLASSPATH) {
-				s = props.getProperty("order");
+			if(type == DEPENDENCY_TYPE.CLASSPATH || type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE) {
+				s = props.getProperty(baseName+".order");
 				if(s != null) {
 					try {
 						// Order is an optional field.
@@ -434,6 +444,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				currentFile = getDependencyInUse(baseName, p);
 			}
 			
+			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
+			    if(filename.canRead() && filename.length() > 0) {
+			        System.out.println("Assuming non-updated dependency file is current: "+filename);
+			        dependencies.add(new Dependency(currentFile, filename, p, order));
+			        continue;
+			    } else {
+			        System.out.println("Non-updated dependency is empty?: "+filename+" - will try to fetch it");
+			        filename.delete();
+			    }
+			}
 			if(validFile(filename, expectedHash, size)) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
@@ -650,7 +670,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
-			s = props.getProperty("order");
+			s = props.getProperty(baseName+".order");
 			if(s != null) {
 				try {
 					// Order is an optional field.

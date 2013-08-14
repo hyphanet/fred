@@ -188,6 +188,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				}
 				fetched = true;
 			}
+            if(!MainJarDependenciesChecker.validFile(tempFile, expectedHash, expectedLength)) {
+                Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
+                System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
+                onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "), state, null);
+                tempFile.delete();
+                return;
+            }
 			if(!FileUtil.renameTo(tempFile, filename)) {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
@@ -301,9 +308,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		synchronized(fetchers) {
 			if(!fetchers.isEmpty()) {
 				alertNode.addChild("p", l10n("fetchingDependencies")+":");
-				alertNode.addChild("table");
+				HTMLNode table = alertNode.addChild("table");
 				for(DependencyJarFetcher f : fetchers) {
-					alertNode.addChild(f.renderRow());
+					table.addChild(f.renderRow());
 				}
 			}
 		}

@@ -179,6 +179,7 @@ public class UpdateDeployContext {
 						if(dep != null) {
 							System.out.println("Found dependency "+dep.oldFilename());
 						} else { // dep == null
+						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
 							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
 						}
@@ -202,6 +203,7 @@ public class UpdateDeployContext {
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
+		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
 			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
 			count++;
 		}
@@ -240,6 +242,7 @@ public class UpdateDeployContext {
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
 		String rhsName = rhs.getName().toLowerCase();
+		// Check for files already in use.
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
 			if(f == null) {
@@ -247,8 +250,15 @@ public class UpdateDeployContext {
 				continue;
 			}
 			if(rhs.equals(f)) return dep;
-			if(rhsName.equals(f.getName())) return dep;
+			if(rhsName.equals(f.getName().toLowerCase())) return dep;
 		}
+		// It may be already on the classpath even though it's a new file officially.
+        for(Dependency dep : deps.dependencies) {
+            File f = dep.newFilename();
+            if(rhs.equals(f)) return dep;
+            if(rhsName.equals(f.getName().toLowerCase())) return dep;
+        }
+        // Slightly more expensive test.
 		for(Dependency dep : deps.dependencies) {
 			Pattern p = dep.regex();
 			if(p != null) {
