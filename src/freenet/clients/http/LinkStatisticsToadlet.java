@@ -1,6 +1,9 @@
 package freenet.clients.http;
 
+import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -11,7 +14,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.ArrayList;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
@@ -38,6 +43,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ByteArrayRandomAccessThing;
@@ -46,6 +52,23 @@ import freenet.support.io.RandomAccessThing;
 import freenet.node.DarknetPeerNode;
 import freenet.support.MultiValueTable;
 
+// JFreeChart
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.TextTitle;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.chart.plot.XYPlot;
 
 /* FIXME: Localize all this and check for grammar! */
 
@@ -59,6 +82,18 @@ public class LinkStatisticsToadlet extends Toadlet {
 	
 	private LinkStatistics trackedStats = null;
 	private DarknetPeerNode testedNode = null;
+	
+	static class SampleData {
+		public ArrayList<Long> times = new ArrayList<Long>();
+		public ArrayList<Double> values = new ArrayList<Double>();
+		public synchronized void addPair(long a, double b) {
+			times.add(a);
+			values.add(b);
+		}
+	}
+	
+	SampleData cwndSamples = null;
+	SampleData dataInFlightSamples = null;
 	
 	public final static ByteCounter emptyByteCounter = new ByteCounter() {
 		// Just ignore all that, is already gathered by a stats tracker
@@ -77,6 +112,8 @@ public class LinkStatisticsToadlet extends Toadlet {
 	final LinkStatistics.StatsChangeTracker statsTracker = new LinkStatistics.StatsChangeTracker() {
 		@Override
 		public void dataSentChanged(long previousval, long newval, long time) {
+		}
+		public void dataLostChanged(long previousval, long newval, long time) {
 		}
 		@Override
 		public void messagePayloadSentChanged(long previousval, long newval, long time) {
@@ -98,6 +135,13 @@ public class LinkStatisticsToadlet extends Toadlet {
 	    }
 		@Override
 		public void windowSizeChanged(double previousval, double newval, long time) {
+			synchronized (this) {
+				if (LinkStatisticsToadlet.this.transitionInProcess()) {
+					cwndSamples.addPair(time - transitionStarted, newval);
+					// That's the reason to call all the tracker's callbacks inside sync block in LinkStats
+					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+				}
+			}
 	    }
 		@Override
 		public void maxUsedWindowChanged(double previousval, double newval, long time) {
@@ -126,14 +170,17 @@ public class LinkStatisticsToadlet extends Toadlet {
 			return;
 		}
 		
-		transitionStarted = -1;
-		transitionFinished = -1;
-		transitionTime = -1;
-		
-		trackedStats = null;
-		testedNode = null;
-		
 		if (request.isParameterSet("peernode_hashcode")) {
+			
+			transitionStarted = -1;
+			transitionFinished = -1;
+			transitionTime = -1;
+			
+			trackedStats = null;
+			testedNode = null;
+			cwndSamples = new SampleData();
+			dataInFlightSamples = new SampleData();
+			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -149,11 +196,33 @@ public class LinkStatisticsToadlet extends Toadlet {
 				testedNode = pn;
 			}
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		} else if (request.isParameterSet("generate_plot")) {
+			Bucket data = ctx.getBucketFactory().makeBucket(-1);
+			OutputStream os = data.getOutputStream();
+			try {
+				XYSeriesCollection cwndToTimeDataset = new XYSeriesCollection();
+				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "CWND from Time", cwndSamples.times, cwndSamples.values);
+				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "DataInFlight from Time", 
+						dataInFlightSamples.times, dataInFlightSamples.values);
+				JFreeChart chart = createChart("Data amounts from time", "Time", "Full packets", cwndToTimeDataset);
+				XYPlot plot = (XYPlot) chart.getPlot();
+				//XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+				//renderer.setBaseShapesVisible(true);
+				//renderer.setBaseShapesFilled(false);
+				chart.setBackgroundPaint(new Color(232, 232, 232));
+				plot.setBackgroundPaint(new Color(240, 240, 240));
+				ChartUtilities.writeChartAsPNG(os, chart, 500, 300);
+			} finally {
+				os.close();
+			}
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), null);
+			ctx.writeData(data);
+		} else {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		}
-		
-		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
-		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) 
@@ -215,13 +284,18 @@ public class LinkStatisticsToadlet extends Toadlet {
 
 			if (transitionFinished == -1) {
 				trackedStats.attachListener(null);
-				super.sendErrorPage(ctx, 403, "FATAL: No connection to node", "Sampling failed: no connection to node. ");
+				super.sendErrorPage(ctx, 403, "FATAL: No connection to node", "Sampling failed: no connection to node.");
 				return;
 			} else {
 				transitionTime = transitionFinished - transitionStarted;
 			}
 			
 			contentNode.addChild(ctx.getAlertManager().createSummary());
+			HTMLNode plotNode = contentNode.addChild("img", "src", path() + "?generate_plot");
+			plotNode.addAttribute("border", "1");
+			plotNode.addAttribute("width", "500");
+			plotNode.addAttribute("height", "300");
+			
 			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 			HTMLNode overviewTableRow = overviewTable.addChild("tr");
 			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -243,6 +317,7 @@ public class LinkStatisticsToadlet extends Toadlet {
 			dataStatsInfobox.addChild("div", "class", "infobox-header", "Troubles encountered");
 			dataStatsContent = dataStatsInfobox.addChild("div", "class", "infobox-content");
 			dataStatsList = dataStatsContent.addChild("ul");
+			dataStatsList.addChild("li", "Bytes lost:" + '\u00a0' + trackedStats.getDataLost());
 			dataStatsList.addChild("li", "Retransmit count:" + '\u00a0' + trackedStats.getRetransmitCount());
 			dataStatsList.addChild("li", "Amount of data retransmitted:" + '\u00a0' + trackedStats.getDataRetransmitted());
 			dataStatsList.addChild("li", "Serious backoffs encountered:" + '\u00a0' + trackedStats.getSeriousBackoffs());
@@ -286,8 +361,17 @@ public class LinkStatisticsToadlet extends Toadlet {
 			dataStatsContent = dataStatsInfobox.addChild("div", "class", "infobox-content");
 			dataStatsList = dataStatsContent.addChild("ul");
 			dataStatsList.addChild("li", "Current queue backlog size:" + '\u00a0' + trackedStats.getQueueBacklog());
-
+			
+			/* Graphs */
+			
+			
+			
+			contentNode.addChild("br");
+			//HTMLNode nextPlotCell = contentNode.addChild("br");
+			
+	
 			trackedStats.attachListener(null);
+
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -295,6 +379,29 @@ public class LinkStatisticsToadlet extends Toadlet {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+	}
+	
+	private XYSeriesCollection addSeriesToDataset(XYSeriesCollection dataset, String name, ArrayList<Long> xs, ArrayList<Double> ys) {
+		XYSeries series = new XYSeries(name);
+		Iterator <Long> xIt = xs.iterator();
+		Iterator <Double> yIt = ys.iterator();
+		while (xIt.hasNext() && yIt.hasNext())
+			series.add(xIt.next(), yIt.next());
+		dataset.addSeries(series);
+		return dataset;
+	}
+	
+	private JFreeChart createChart(String name, String domainName, String valueName, XYSeriesCollection dataset) {
+		JFreeChart chart = ChartFactory.createXYLineChart(
+				name,
+				domainName,
+				valueName,
+				dataset,
+				PlotOrientation.VERTICAL,
+				true,
+				false,
+				false);
+		return chart;
 	}
 	
 	private DarknetPeerNode findPeerByRequest(HTTPRequest request) {
@@ -401,6 +508,10 @@ public class LinkStatisticsToadlet extends Toadlet {
 	    Date date = new Date(time);
 	    Format formatWith = new SimpleDateFormat(format);
 	    return formatWith.format(date).toString();
+	}
+	
+	protected boolean transitionInProcess() {
+		return ((transitionStarted > 0) && (transitionFinished == -1));
 	}
 
 	@Override
