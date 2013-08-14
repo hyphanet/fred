@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1974,8 +1975,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Closer.close(raf);
 						if(tmp != null) 
 							tmp.delete();
-						if(failed)
+						if(failed) {
 							start();
+							if(fetchFrom.isConnected() && fetchFrom.isDarknet()) {
+							    // Darknet peers only: Try again in an hour.
+							    // On opennet we'll just keep announcing until we succeed.
+							    updateManager.node.getTicker().queueTimedJob(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        peerMaybeFreeSlots(fetchFrom);
+                                    }
+							        
+							    }, TimeUnit.HOURS.toMillis(1));
+							}
+						}
 					}
 				}
 				
