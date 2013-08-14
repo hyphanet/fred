@@ -285,9 +285,13 @@ public class NewPacketFormatKeyContext {
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
 						                + "threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 					}
-					s.lost();
+					int bytesLost = s.lost();
 					it.remove();
 					bigLostCount++;
+					if (pn.linkStatsAvailable()) {
+						pn.getTotalLinkStats().onDataLost(bytesLost);
+						pn.getShortRunLinkStats().onDataLost(bytesLost);
+					}
 				} else
 					count++;
 			}

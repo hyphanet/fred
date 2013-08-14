@@ -1202,16 +1202,19 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			return System.currentTimeMillis() - sentTime;
 		}
 
-		public void lost() {
+		public int lost() {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
+			int totalBytesLost = 0;
 
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
 
-				wrapper.lost(range[0], range[1]);
+				totalBytesLost += wrapper.lost(range[0], range[1]);
 			}
+			
+			return totalBytesLost;
 		}
 
 		public void sent(int length) {

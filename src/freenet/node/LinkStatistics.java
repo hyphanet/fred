@@ -7,19 +7,20 @@ package freenet.node;
 public class LinkStatistics {
 	
 	public LinkStatistics(LinkStatistics o){
-		this(o.getLastUpdated(), o.getLastReset(), o.getDataSent(), o.getMessagePayloadSent(), o.getDataAcked(),
+		this(o.getLastUpdated(), o.getLastReset(), o.getDataSent(), o.getDataLost(), o.getMessagePayloadSent(), o.getDataAcked(),
 		     o.getDataRetransmitted(), o.getRetransmitCount(), o.getSeriousBackoffs(), 
-	   	     o.getQueueBacklog(), o.getWindowSize(), o.getMaxUsedWindow(), o.getAverageRTT(), o.getRTO());
+	   	     o.getQueueBacklog(), o.getWindowSize(), o.getMaxUsedWindow(), o.getAverageRTT(), o.getRTO(), o.getDataInFlight());
 	}
 	
-	public LinkStatistics(long lastupdated, long lastreset, long datasent, long usefullpaybacksent, long dataacked,
+	public LinkStatistics(long lastupdated, long lastreset, long datasent, long datalost, long usefullpaybacksent, long dataacked,
 						  long dataretransmitted, long retransmitcount, long seriousbackoffs, 
-						  double queuebacklog, double windowsize, double maxusedwindow, double averagertt, double rto) {
+						  double queuebacklog, double windowsize, double maxusedwindow, double averagertt, double rto, long datainflight) {
         tracker = new StatsChangeTracker();
 		lastUpdated = lastupdated;
 		dataSent = datasent;
 		messagePayloadSent = usefullpaybacksent;
 		dataAcked = dataacked;
+		dataLost = datalost;
 		dataRetransmitted = dataretransmitted;
 		retransmitCount = retransmitcount;
 		seriousBackoffs = seriousbackoffs;
@@ -28,27 +29,30 @@ public class LinkStatistics {
 		maxUsedWindow = maxusedwindow;
 		averageRTT = averagertt;
 		RTO = rto;
+		dataInFlight = datainflight;
 	}
 	
-	public LinkStatistics(StatsChangeTracker fromTracker, long lastupdated, long lastreset, long datasent, long usefullpaybacksent, 
+	public LinkStatistics(StatsChangeTracker fromTracker, long lastupdated, long lastreset, long datasent, long datalost, long usefullpaybacksent, 
 					      long dataacked, long dataretransmitted, long retransmitcount, long seriousbackoffs, 
-			  			  double queuebacklog, double windowsize, double maxusedwindow, long averagertt, long rto) {
-		this(lastupdated, lastreset, datasent, usefullpaybacksent, dataacked, dataretransmitted, retransmitcount, seriousbackoffs, 
-				queuebacklog, windowsize, maxusedwindow, averagertt, rto);
+			  			  double queuebacklog, double windowsize, double maxusedwindow, long averagertt, long rto, long datainflight) {
+		this(lastupdated, lastreset, datasent, datalost, usefullpaybacksent, dataacked, dataretransmitted, retransmitcount, seriousbackoffs, 
+				queuebacklog, windowsize, maxusedwindow, averagertt, rto, datainflight);
 		tracker = fromTracker;
 		}
 
 	public LinkStatistics(){
-		this(System.currentTimeMillis(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		this(System.currentTimeMillis(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 	
 	public LinkStatistics(StatsChangeTracker fromTracker){
-		this(fromTracker, System.currentTimeMillis(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		this(fromTracker, System.currentTimeMillis(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 	
 	/** Contains a bunch on-modification callbacks, if you want to pipe stats over somewhere - overload them. */
 	public static class StatsChangeTracker {
 		public void dataSentChanged(long previousval, long newval, long time) {
+	    }
+		public void dataLostChanged(long previousval, long newval, long time) {
 	    }
 		public void messagePayloadSentChanged(long previousval, long newval, long time) {
 	    }
@@ -92,6 +96,7 @@ public class LinkStatistics {
 	/* TODO: Have a look at RunningAverage 's, perhaps utilize some of those? e.g. for bandwidth */
 	
 	protected long dataSent;
+	protected long dataLost;
 	/** This excludes all the additional headers, acks, etc. Counts pure transmitted payback. In bytes */
 	protected long messagePayloadSent;
 	/** Amount of data (in bytes) that we received an ack for. 
@@ -119,12 +124,14 @@ public class LinkStatistics {
 	protected double averageRTT;
 	/** See PacketThrottle */
 	protected double RTO;
+	/** Increased upon sending new data, reduced upon acknowledging */
+	protected long dataInFlight;
 	
 	
 	public void reset(){
 		lastUpdated = System.currentTimeMillis();
         lastReset = lastUpdated;
-		dataSent = messagePayloadSent = dataAcked = dataRetransmitted = 0;
+		dataSent = dataLost = messagePayloadSent = dataAcked = dataRetransmitted = dataInFlight = 0;
         queueBacklog = windowSize = maxUsedWindow = RTO = averageRTT = 0.0;
 	}
 	
@@ -136,6 +143,9 @@ public class LinkStatistics {
     }
 	public long getDataSent(){
         return dataSent;
+    }
+	public long getDataLost(){
+        return dataLost;
     }
 	public long getMessagePayloadSent(){
         return messagePayloadSent;
@@ -167,6 +177,9 @@ public class LinkStatistics {
 	public double getRTO(){
         return RTO;
     }
+	public long getDataInFlight(){
+		return dataInFlight;
+	}
     
 	public void onDataSend(long amount){
 		long previousval;
@@ -174,9 +187,21 @@ public class LinkStatistics {
             lastUpdated = System.currentTimeMillis();
             previousval = dataSent;
             dataSent += amount;
+            dataInFlight += amount;
         }
         if (tracker != null)
         tracker.dataSentChanged(previousval, dataSent, lastUpdated);
+    }
+	public void onDataLost(long amount){
+		long previousval;
+        synchronized (this) {
+            lastUpdated = System.currentTimeMillis();
+            previousval = dataLost;
+            dataLost += amount;
+            dataInFlight -= amount;
+        }
+        if (tracker != null)
+        tracker.dataLostChanged(previousval, dataLost, lastUpdated);
     }
 	public void onMessagePayloadSent(long amount){
         long previousval;
@@ -199,6 +224,7 @@ public class LinkStatistics {
             if (whenSent > lastReset) {
 			    lastUpdated = System.currentTimeMillis();
 	            dataAcked += amount;
+	            dataInFlight -= amount;
             }
         }
         if (whenSent > lastReset && tracker != null)
