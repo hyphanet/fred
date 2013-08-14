@@ -56,7 +56,7 @@ public class LinkStatistics {
 	    }
 		public void messagePayloadSentChanged(long previousval, long newval, long time) {
 	    }
-		public void acksSentChanged(long previousval, long newval, long time) {
+		public void dataAckedChanged(long previousval, long newval, long time) {
 	    }
 		public void pureAcksSentChanged(long previousval, long newval, long time) {
 	    }
@@ -228,7 +228,7 @@ public class LinkStatistics {
             }
         }
         if (whenSent > lastReset && tracker != null)
-        	tracker.acksSentChanged(previousval, dataAcked, lastUpdated); 
+        	tracker.dataAckedChanged(previousval, dataAcked, lastUpdated); 
     }
 	public void onDataRetransmit(long amount){
         long previousval;

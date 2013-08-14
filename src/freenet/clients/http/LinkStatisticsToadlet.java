@@ -112,14 +112,26 @@ public class LinkStatisticsToadlet extends Toadlet {
 	final LinkStatistics.StatsChangeTracker statsTracker = new LinkStatistics.StatsChangeTracker() {
 		@Override
 		public void dataSentChanged(long previousval, long newval, long time) {
+			synchronized (this) {
+				if (LinkStatisticsToadlet.this.transitionInProcess())
+					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+			}
 		}
 		public void dataLostChanged(long previousval, long newval, long time) {
+			synchronized (this) {
+				if (LinkStatisticsToadlet.this.transitionInProcess())
+					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+			}
 		}
 		@Override
 		public void messagePayloadSentChanged(long previousval, long newval, long time) {
 	    }
 		@Override
-		public void acksSentChanged(long previousval, long newval, long time) {
+		public void dataAckedChanged(long previousval, long newval, long time) {
+			synchronized (this) {
+				if (LinkStatisticsToadlet.this.transitionInProcess())
+					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+			}
 	    }
 		@Override
 		public void pureAcksSentChanged(long previousval, long newval, long time) {
@@ -136,11 +148,8 @@ public class LinkStatisticsToadlet extends Toadlet {
 		@Override
 		public void windowSizeChanged(double previousval, double newval, long time) {
 			synchronized (this) {
-				if (LinkStatisticsToadlet.this.transitionInProcess()) {
+				if (LinkStatisticsToadlet.this.transitionInProcess())
 					cwndSamples.addPair(time - transitionStarted, newval);
-					// That's the reason to call all the tracker's callbacks inside sync block in LinkStats
-					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
-				}
 			}
 	    }
 		@Override
@@ -267,7 +276,7 @@ public class LinkStatisticsToadlet extends Toadlet {
 					// Got confirmation - start sampling
 					ByteArrayRandomAccessThing rat = new ByteArrayRandomAccessThing(new byte [sampleSize]);
 					PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), sampleSize, Node.PACKET_SIZE, rat, true);
-					BulkTransmitter sender = new BulkTransmitter(prb, testedNode, sessionUID, false, emptyByteCounter, false);
+					BulkTransmitter sender = new BulkTransmitter(prb, testedNode, sessionUID, false, node.nodeStats.getN2NCounter(), false);
 					transitionStarted = System.currentTimeMillis();
 					if (sender.send()) {
 						transitionFinished = System.currentTimeMillis();

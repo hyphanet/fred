@@ -2883,6 +2883,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 
 	};
+	
+	public ByteCounter getN2NCounter() {
+		return nodeToNodeCounter;
+	}
 
 	public long getNodeToNodeBytesSent() {
 		return nodeToNodeSentBytes;
