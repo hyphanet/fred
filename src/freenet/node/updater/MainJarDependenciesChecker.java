@@ -157,11 +157,20 @@ public class MainJarDependenciesChecker {
 		public void onFailure(FetchException e);
 	}
 
+	/** A dependency, for purposes of writing the new wrapper.conf. Contains its new filename, its
+	 * priority (order) in the wrapper.conf classpath, and all that is needed to identify the 
+	 * previous line referring to this file.
+	 * @author toad 
+	 */
 	final class Dependency implements Comparable<Dependency> {
+	    /** The old filename, if known. This will be in wrapper.conf. */
 		private File oldFilename;
+		/** The new filename, to which we will download the file. */
 		private File newFilename;
-		/** For last resort matching */
+		/** Pattern to recognise filenames for this dependency in the last resort. */
 		private Pattern regex;
+		/** Priority of the dependency within the wrapper.conf classpath. Smaller value = earlier
+		 * in the classpath = used first. */
 		private int order;
 		
 		private Dependency(File oldFilename, File newFilename, Pattern regex, int order) {
@@ -217,10 +226,16 @@ public class MainJarDependenciesChecker {
 	private int build;
 	
 	private class Downloader implements JarFetcherCallback {
-		
+
+	    /** The JarFetcher which fetches the dependency from Freenet or via UOM. */
 		final JarFetcher fetcher;
+		/** The dependency. Will be added to the set of downloaded dependencies after the fetch 
+		 * completes if this is an essential dependency for the build currently being fetched. */
 		final Dependency dep;
+		/** True if this dependency is required prior to deploying the next build. False if it's
+		 * just OPTIONAL_PRELOAD. */
 		final boolean essential;
+		/** The build number that this dependency is being downloaded for */
 		final int forBuild;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
@@ -273,6 +288,8 @@ public class MainJarDependenciesChecker {
 		
 	}
 	
+	/** The dependency downloads currently running which are required for the next build. Hence 
+	 * non-essential (preload) dependencies are not added to this set. */
 	private final HashSet<Downloader> downloaders = new HashSet<Downloader>();
 	private final Executor executor;
 	
