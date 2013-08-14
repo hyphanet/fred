@@ -537,7 +537,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 7 || negType == 8 || negType == 9)) {
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
 			if(negType > 8)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -597,7 +597,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 7 || negType == 8 || negType == 9)) {
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
 			if(negType > 8)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -672,11 +672,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType >= 0 && negType < 7) {
+		if(negType >= 0 && negType < 6) {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 7 || negType == 8 || negType == 9) {
+		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9) {
 		    // negType == 9 => Lots of changes:
 		    //      Security fixes:
 		    //      - send Ni' (a hash of Ni) in JFK1 to prevent a potential CPU DoS		    
@@ -1306,12 +1306,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
 		int theirInitialMsgID, ourInitialMsgID;
-		theirInitialMsgID =
-			unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-				getInitialMessageID(pn.identity, crypto.myIdentity);
-		ourInitialMsgID =
-			unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-				getInitialMessageID(crypto.myIdentity, pn.identity);
+		if(negType >= 7) {
+			theirInitialMsgID =
+				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+					getInitialMessageID(pn.identity, crypto.myIdentity);
+			ourInitialMsgID =
+				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+					getInitialMessageID(crypto.myIdentity, pn.identity);
+		} else {
+			theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+			ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+		}
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
 
@@ -1824,12 +1835,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[5] & 0xFF) << 16)
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
-		pn.theirInitialMsgID =
-			unknownInitiator ? getInitialMessageID(pn.identity) :
-				getInitialMessageID(pn.identity, crypto.myIdentity);
-		pn.ourInitialMsgID =
-			unknownInitiator ? getInitialMessageID(pn.identity) :
-				getInitialMessageID(crypto.myIdentity, pn.identity);
+		if(negType >= 7) {
+			pn.theirInitialMsgID =
+				unknownInitiator ? getInitialMessageID(pn.identity) :
+					getInitialMessageID(pn.identity, crypto.myIdentity);
+			pn.ourInitialMsgID =
+				unknownInitiator ? getInitialMessageID(pn.identity) :
+					getInitialMessageID(crypto.myIdentity, pn.identity);
+		} else {
+			pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+			pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+		}
 			
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
@@ -2189,7 +2211,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
-			return new int[] { 8, 9 };
+			return new int[] { 6, 7, 8, 9 };
 		else
 			return new int[] { 7, 8, 9 };
 	}
