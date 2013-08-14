@@ -256,8 +256,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		synchronized(dependencyFetchers) {
 			fetchList = new HashSet<UOMDependencyFetcher>(dependencyFetchers.values());
 		}
-		for(UOMDependencyFetcher f : fetchList)
+		for(UOMDependencyFetcher f : fetchList) {
+		    f.peerMaybeFreeSlots(source);
 			f.start();
+		}
 	}
 
 	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
