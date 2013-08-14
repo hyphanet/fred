@@ -142,6 +142,9 @@ public class MainJarDependenciesChecker {
 		 * listed in the dependencies file.
 		 * @param filename The local file to serve it from. */
 		public void addDependency(byte[] expectedHash, File filename);
+		/** We have just downloaded a dependency needed for the current build. Reannounce to tell
+		 * our peers about it. */
+        public void reannounce();
 	}
 	
 	interface JarFetcher {
@@ -234,13 +237,19 @@ public class MainJarDependenciesChecker {
 				return;
 			}
 			System.out.println("Downloaded "+dep.newFilename+" needed for update "+forBuild+"...");
+			boolean toDeploy = false;
+			boolean forCurrentVersion = false;
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
-				if(forBuild != build) return;
-				dependencies.add(dep);
-				if(!ready()) return;
+				if(forBuild > build) {
+				    dependencies.add(dep);
+				    toDeploy = ready();
+				} else {
+				    forCurrentVersion = (forBuild == build);
+				}
 			}
-			deploy();
+			if(toDeploy) deploy();
+			else if(forCurrentVersion) deployer.reannounce();
 		}
 
 		@Override

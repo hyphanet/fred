@@ -347,4 +347,10 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		manager.uom.addDependency(expectedHash, filename);
 	}
 
+    @Override
+    public void reannounce() {
+        this.manager.broadcastUOMAnnouncesNew();
+        this.manager.broadcastUOMAnnouncesOld();
+    }
+
 }
