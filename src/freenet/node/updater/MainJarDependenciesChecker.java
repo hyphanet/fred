@@ -29,6 +29,7 @@ import java.util.zip.ZipInputStream;
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.Version;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -241,11 +242,11 @@ public class MainJarDependenciesChecker {
 			boolean forCurrentVersion = false;
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
-				if(forBuild > build) {
+				if(forBuild != build) {
 				    dependencies.add(dep);
 				    toDeploy = ready();
 				} else {
-				    forCurrentVersion = (forBuild == build);
+				    forCurrentVersion = (forBuild == Version.buildNumber());
 				}
 			}
 			if(toDeploy) deploy();
