@@ -258,7 +258,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			fetchList = new HashSet<UOMDependencyFetcher>(dependencyFetchers.values());
 		}
 		for(UOMDependencyFetcher f : fetchList) {
-		    f.peerMaybeFreeSlots(source);
+		    if(source.isDarknet()) f.peerMaybeFreeSlots(source);
 			f.start();
 		}
 	}
