@@ -34,7 +34,11 @@ public class FetchContext implements Cloneable {
 	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
-	/** Maximum number of containers to fetch during a request */
+	/** Maximum number of containers to fetch during a request. If this is 0 then the fetch will 
+	 * fail if it encounters a manifest lookup (including containers). Metadata in one manifest or 
+	 * container can redirect to another one, so there needs to be a limit. This is distinct from 
+	 * maxRecursionLevel, which counts all redirects; maxArchiveLevels is a limit on the number of
+	 * *manifests*, which generally involves unpacking containers, @see ArchiveContext . */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
 	/** Maximum number of retries (after the original attempt) for a
