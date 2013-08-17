@@ -257,7 +257,7 @@ public class MainJarDependenciesChecker {
 			boolean forCurrentVersion = false;
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
-				if(forBuild == build) {
+				if(forBuild == build) { // If the dependency is for the build we are about to deploy...
 				    dependencies.add(dep);
 				    toDeploy = ready();
 				} else {
