@@ -368,6 +368,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				broken = true;
 				continue;
 			}
+			if(filename.getParentFile() != null)
+			    filename.getParentFile().mkdirs();
 			FreenetURI maxCHK = null;
 			s = props.getProperty(baseName+".key");
 			if(s == null) {
