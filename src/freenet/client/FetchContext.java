@@ -34,11 +34,15 @@ public class FetchContext implements Cloneable {
 	 * is not recommended. */
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
-	/** Maximum number of containers to fetch during a request. If this is 0 then the fetch will 
-	 * fail if it encounters a manifest lookup (including containers). Metadata in one manifest or 
-	 * container can redirect to another one, so there needs to be a limit. This is distinct from 
-	 * maxRecursionLevel, which counts all redirects; maxArchiveLevels is a limit on the number of
-	 * *manifests*, which generally involves unpacking containers, @see ArchiveContext . */
+	/** Maximum number of manifest lookups during a request. A manifest lookup is looking up a part
+	 * of a pathname in a "manifest", which is essentially a directory (folder). Usually manifest 
+	 * lookups are inside containers (archives), which are usually tar files, which may or may not 
+	 * be compressed (compression occurs transparently on a different level). This is not 
+	 * necessarily the same as the number of slashes in the key after the part for the key itself,
+	 * since keys can redirect to other keys. If you are fetching user-uploaded keys, e.g. in 
+	 * fproxy, especially freesites, you will want this to be non-zero. However if you are using 
+	 * keys only internally, and never upload freesites, you should set this to 0. 
+	 * @see ArchiveContext where this is enforced. */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
 	/** Maximum number of retries (after the original attempt) for a
