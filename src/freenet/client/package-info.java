@@ -1,5 +1,9 @@
 /**
- * <p>Client layer. Implements high-level requests, i.e. download a whole
+ * <p>Client layer (support code: metadata, MIME types, container unpacking etc). 
+ * @see freenet.client.async for most of the actual implementation.</p>
+ * 
+ * <h1>Overview of the client layer</h1>
+ * <p>The client layer implements high-level requests, i.e. download a whole
  * file from a key, upload a whole file, etc. Metadata, FEC encoding and
  * decoding, classes to parse the metadata and decide how to fetch the file,
  * support for files bigger than a single key, support for fetching files
