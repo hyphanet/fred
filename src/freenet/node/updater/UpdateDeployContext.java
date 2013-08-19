@@ -138,6 +138,10 @@ public class UpdateDeployContext {
 		String line;
 			
 		boolean writtenReload = false;
+		/** On Windows, we need the anchor file option explicitly. */
+		boolean writtenAnchor = false;
+		/** Write the anchor polling interval too if it doesn't exist already */
+		boolean writtenAnchorInterval = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
@@ -154,12 +158,14 @@ public class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
+		    /** The values are case sensitive, but the keys aren't */
+		    String lowcaseLine = line.toLowerCase();
 			// The classpath numbers are not reliable.
 			// We have to check the content.
 			
 			boolean dontWrite = false;
 			
-			if(line.startsWith("wrapper.java.classpath.")) {
+			if(lowcaseLine.startsWith("wrapper.java.classpath.")) {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
@@ -185,8 +191,12 @@ public class UpdateDeployContext {
 						}
 					}
 				}
-			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
+			    writtenAnchor = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchor.poll_interval=")) {
+			    writtenAnchorInterval = true;
 			}
 			if(!dontWrite)
 				otherLines.add(line);
@@ -222,6 +232,12 @@ public class UpdateDeployContext {
 		if(!writtenReload) {
 			// Add it.
 			bw.write("wrapper.restart.reload_configuration=TRUE\n");
+		}
+		if(!writtenAnchor) {
+		    bw.write("wrapper.anchorfile=Freenet.anchor\n");
+		}
+		if(!writtenAnchorInterval) {
+		    bw.write("wrapper.anchor.poll_interval=1\n");
 		}
 		
 		bw.close();
