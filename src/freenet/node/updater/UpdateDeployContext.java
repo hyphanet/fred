@@ -138,6 +138,10 @@ public class UpdateDeployContext {
 		String line;
 			
 		boolean writtenReload = false;
+		/** On Windows, we need the anchor file option explicitly. */
+		boolean writtenAnchor = false;
+		/** Write the anchor polling interval too if it doesn't exist already */
+		boolean writtenAnchorInterval = false;
 		
 		String newMain = mainJarAbsolute ? newMainJar.getAbsolutePath() : newMainJar.getPath();
 		
@@ -154,12 +158,14 @@ public class UpdateDeployContext {
 		// able to overwrite either of them, so we'll just restart every 5 minutes forever!
 		
 		while((line = br.readLine()) != null) {
+		    /** The values are case sensitive, but the keys aren't */
+		    String lowcaseLine = line.toLowerCase();
 			// The classpath numbers are not reliable.
 			// We have to check the content.
 			
 			boolean dontWrite = false;
 			
-			if(line.startsWith("wrapper.java.classpath.")) {
+			if(lowcaseLine.startsWith("wrapper.java.classpath.")) {
 				line = line.substring("wrapper.java.classpath.".length());
 				int idx = line.indexOf('=');
 				if(idx != -1) {
@@ -179,13 +185,18 @@ public class UpdateDeployContext {
 						if(dep != null) {
 							System.out.println("Found dependency "+dep.oldFilename());
 						} else { // dep == null
+						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
 							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
 						}
 					}
 				}
-			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
 				writtenReload = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
+			    writtenAnchor = true;
+			} else if(lowcaseLine.startsWith("wrapper.anchor.poll_interval=")) {
+			    writtenAnchorInterval = true;
 			}
 			if(!dontWrite)
 				otherLines.add(line);
@@ -202,6 +213,7 @@ public class UpdateDeployContext {
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
+		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
 			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
 			count++;
 		}
@@ -220,6 +232,12 @@ public class UpdateDeployContext {
 		if(!writtenReload) {
 			// Add it.
 			bw.write("wrapper.restart.reload_configuration=TRUE\n");
+		}
+		if(!writtenAnchor) {
+		    bw.write("wrapper.anchorfile=Freenet.anchor\n");
+		}
+		if(!writtenAnchorInterval) {
+		    bw.write("wrapper.anchor.poll_interval=1\n");
 		}
 		
 		bw.close();
@@ -240,6 +258,7 @@ public class UpdateDeployContext {
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
 		String rhsName = rhs.getName().toLowerCase();
+		// Check for files already in use.
 		for(Dependency dep : deps.dependencies) {
 			File f = dep.oldFilename();
 			if(f == null) {
@@ -247,8 +266,15 @@ public class UpdateDeployContext {
 				continue;
 			}
 			if(rhs.equals(f)) return dep;
-			if(rhsName.equals(f.getName())) return dep;
+			if(rhsName.equals(f.getName().toLowerCase())) return dep;
 		}
+		// It may be already on the classpath even though it's a new file officially.
+        for(Dependency dep : deps.dependencies) {
+            File f = dep.newFilename();
+            if(rhs.equals(f)) return dep;
+            if(rhsName.equals(f.getName().toLowerCase())) return dep;
+        }
+        // Slightly more expensive test.
 		for(Dependency dep : deps.dependencies) {
 			Pattern p = dep.regex();
 			if(p != null) {

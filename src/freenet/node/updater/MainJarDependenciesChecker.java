@@ -29,6 +29,7 @@ import java.util.zip.ZipInputStream;
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.Version;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -142,6 +143,9 @@ public class MainJarDependenciesChecker {
 		 * listed in the dependencies file.
 		 * @param filename The local file to serve it from. */
 		public void addDependency(byte[] expectedHash, File filename);
+		/** We have just downloaded a dependency needed for the current build. Reannounce to tell
+		 * our peers about it. */
+        public void reannounce();
 	}
 	
 	interface JarFetcher {
@@ -153,11 +157,20 @@ public class MainJarDependenciesChecker {
 		public void onFailure(FetchException e);
 	}
 
+	/** A dependency, for purposes of writing the new wrapper.conf. Contains its new filename, its
+	 * priority (order) in the wrapper.conf classpath, and all that is needed to identify the 
+	 * previous line referring to this file.
+	 * @author toad 
+	 */
 	final class Dependency implements Comparable<Dependency> {
+	    /** The old filename, if known. This will be in wrapper.conf. */
 		private File oldFilename;
+		/** The new filename, to which we will download the file. */
 		private File newFilename;
-		/** For last resort matching */
+		/** Pattern to recognise filenames for this dependency in the last resort. */
 		private Pattern regex;
+		/** Priority of the dependency within the wrapper.conf classpath. Smaller value = earlier
+		 * in the classpath = used first. */
 		private int order;
 		
 		private Dependency(File oldFilename, File newFilename, Pattern regex, int order) {
@@ -189,6 +202,10 @@ public class MainJarDependenciesChecker {
 			if(ret != 0) return ret;
 			return newFilename.compareTo(arg0.newFilename);
 		}
+
+        public int order() {
+            return order;
+        }
 		
 	}
 	
@@ -209,10 +226,16 @@ public class MainJarDependenciesChecker {
 	private int build;
 	
 	private class Downloader implements JarFetcherCallback {
-		
+
+	    /** The JarFetcher which fetches the dependency from Freenet or via UOM. */
 		final JarFetcher fetcher;
+		/** The dependency. Will be added to the set of downloaded dependencies after the fetch 
+		 * completes if this is an essential dependency for the build currently being fetched. */
 		final Dependency dep;
+		/** True if this dependency is required prior to deploying the next build. False if it's
+		 * just OPTIONAL_PRELOAD. */
 		final boolean essential;
+		/** The build number that this dependency is being downloaded for */
 		final int forBuild;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
@@ -230,13 +253,19 @@ public class MainJarDependenciesChecker {
 				return;
 			}
 			System.out.println("Downloaded "+dep.newFilename+" needed for update "+forBuild+"...");
+			boolean toDeploy = false;
+			boolean forCurrentVersion = false;
 			synchronized(MainJarDependenciesChecker.this) {
 				downloaders.remove(this);
-				if(forBuild != build) return;
-				dependencies.add(dep);
-				if(!ready()) return;
+				if(forBuild == build) { // If the dependency is for the build we are about to deploy...
+				    dependencies.add(dep);
+				    toDeploy = ready();
+				} else {
+				    forCurrentVersion = (forBuild == Version.buildNumber());
+				}
 			}
-			deploy();
+			if(toDeploy) deploy();
+			else if(forCurrentVersion) deployer.reannounce();
 		}
 
 		@Override
@@ -259,6 +288,8 @@ public class MainJarDependenciesChecker {
 		
 	}
 	
+	/** The dependency downloads currently running which are required for the next build. Hence 
+	 * non-essential (preload) dependencies are not added to this set. */
 	private final HashSet<Downloader> downloaders = new HashSet<Downloader>();
 	private final Executor executor;
 	
@@ -282,8 +313,14 @@ public class MainJarDependenciesChecker {
 	}
 	
 	enum DEPENDENCY_TYPE {
-		/** A jar we want to put on the classpath */
+		/** A jar we want to put on the classpath. Normally we move to a new filename when there is
+		 * a new version of such a dependency; supports most features of dependencies.properties. */
 		CLASSPATH,
+		/** A jar we want to put on the classpath but after that we won't update it even if there 
+		 * is a new version. Used for wrapper.jar since we will update it via a separate mechanism,
+		 * because we have to update other files too. No regex support - must match the exact 
+		 * filename. We do however check for 0 length files just in case. */
+		OPTIONAL_CLASSPATH_NO_UPDATE,
 		/** A file to download, which does not block the update. */
 		OPTIONAL_PRELOAD;
 	}
@@ -358,6 +395,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				broken = true;
 				continue;
 			}
+			if(filename.getParentFile() != null)
+			    filename.getParentFile().mkdirs();
 			FreenetURI maxCHK = null;
 			s = props.getProperty(baseName+".key");
 			if(s == null) {
@@ -416,8 +455,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			int order = 0;
 			File currentFile = null;
 
-			if(type == DEPENDENCY_TYPE.CLASSPATH) {
-				s = props.getProperty("order");
+			if(type == DEPENDENCY_TYPE.CLASSPATH || type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE) {
+				s = props.getProperty(baseName+".order");
 				if(s != null) {
 					try {
 						// Order is an optional field.
@@ -434,6 +473,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				currentFile = getDependencyInUse(baseName, p);
 			}
 			
+			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
+			    if(filename.canRead() && filename.length() > 0) {
+			        System.out.println("Assuming non-updated dependency file is current: "+filename);
+			        dependencies.add(new Dependency(currentFile, filename, p, order));
+			        continue;
+			    } else {
+			        System.out.println("Non-updated dependency is empty?: "+filename+" - will try to fetch it");
+			        filename.delete();
+			    }
+			}
 			if(validFile(filename, expectedHash, size)) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
@@ -650,7 +699,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				return false;
 			}
 			
-			s = props.getProperty("order");
+			s = props.getProperty(baseName+".order");
 			if(s != null) {
 				try {
 					// Order is an optional field.

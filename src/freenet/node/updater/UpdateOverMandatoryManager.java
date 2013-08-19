@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -256,8 +257,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		synchronized(dependencyFetchers) {
 			fetchList = new HashSet<UOMDependencyFetcher>(dependencyFetchers.values());
 		}
-		for(UOMDependencyFetcher f : fetchList)
+		for(UOMDependencyFetcher f : fetchList) {
+		    if(source.isDarknet()) f.peerMaybeFreeSlots(source);
 			f.start();
+		}
 	}
 
 	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
@@ -348,6 +351,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					if(mainJarURI.equals(updateManager.getURI().setSuggestedEdition(mainJarVersion)))
 						sendUOMRequest(source, true);
 					else
+					    // FIXME don't log if it's the transitional version.
 						System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
 							"our key: " + updateManager.getURI() + "\nhis key:" + mainJarURI);
 				} catch(MalformedURLException e) {
@@ -1972,8 +1976,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Closer.close(raf);
 						if(tmp != null) 
 							tmp.delete();
-						if(failed)
+						if(failed) {
 							start();
+							if(fetchFrom.isConnected() && fetchFrom.isDarknet()) {
+							    // Darknet peers only: Try again in an hour.
+							    // On opennet we'll just keep announcing until we succeed.
+							    updateManager.node.getTicker().queueTimedJob(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        peerMaybeFreeSlots(fetchFrom);
+                                    }
+							        
+							    }, TimeUnit.HOURS.toMillis(1));
+							}
+						}
 					}
 				}
 				

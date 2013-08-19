@@ -15,6 +15,7 @@ import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.JceLoader;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SSL;
@@ -291,6 +292,8 @@ public class NodeStarter implements WrapperListener {
 
 		// Setup RNG
 		RandomSource random = new Yarrow();
+
+		DiffieHellman.init(random);
 
 		if(enablePlug) {
 
