@@ -716,6 +716,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(type == DEPENDENCY_TYPE.CLASSPATH)
 				currentFile = getDependencyInUse(baseName, p);
 			
+			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
+			    if(filename.canRead() && filename.length() > 0) {
+			        Logger.normal(MainJarDependenciesChecker.class, "Assuming non-updated dependency file is current: "+filename);
+			        continue;
+			    } else {
+			        System.out.println("Non-updated dependency is empty?: "+filename+" - will try to fetch it");
+			        filename.delete();
+			    }
+			}
+			
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
 				if(validFile(currentFile, expectedHash, size)) {
