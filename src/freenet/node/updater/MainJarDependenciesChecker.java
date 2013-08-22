@@ -726,6 +726,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    }
 			}
 			
+			if(!(type == DEPENDENCY_TYPE.CLASSPATH || type == DEPENDENCY_TYPE.OPTIONAL_PRELOAD || 
+			        type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE)) {
+			    // Whitelist types to preload.
+			    // Update this if new types need to be preloaded.
+			    continue;
+			}
+			
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
 				if(validFile(currentFile, expectedHash, size)) {
