@@ -243,6 +243,16 @@ public class SimpleFieldSet {
     	return split(k);
     }
 
+    public String[] getAllEncoded(String key) throws IllegalBase64Exception {
+        String k = get(key);
+        if(k == null) return null;
+        String[] ret = split(k);
+        for(int i=0;i<ret.length;i++) {
+            ret[i] = Base64.decodeUTF8(ret[i]);
+        }
+        return ret;
+    }
+
     private static String[] split(String string) {
     	if(string == null) return EMPTY_STRING_ARRAY;
     	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
@@ -1115,6 +1125,13 @@ public class SimpleFieldSet {
 	public void putOverwrite(String key, String[] strings) {
 		putOverwrite(key, unsplit(strings));
 	}
+
+    public void putEncoded(String key, String[] strings) {
+        for(int i=0;i<strings.length;i++) {
+            strings[i] = Base64.encodeUTF8(strings[i]);
+        }
+        putSingle(key, unsplit(strings));
+    }
 
 	public String getString(String key) throws FSParseException {
 		String s = get(key);
