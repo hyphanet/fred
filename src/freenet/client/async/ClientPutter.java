@@ -92,8 +92,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/**
 	 * @param client The object to call back when we complete, or don't.
-	 * @param data The data to insert. This will not be freed by ClientPutter, the callback must do that. However,
-	 * buckets used internally by the client layer will be freed.
+	 * @param data The data to insert. This will be freed when the insert has completed, whether 
+	 * it succeeds or not, so wrap it in a @link freenet.support.io.NoFreeBucket if you don't want 
+	 * it to be freed.
 	 * @param targetURI
 	 * @param cm
 	 * @param ctx
