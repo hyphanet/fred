@@ -265,6 +265,7 @@ public class SimpleFieldSet {
     	StringBuilder sb = new StringBuilder();
     	for(String s: strings) {
     		sb.append(s);
+    		assert(s.indexOf(MULTI_VALUE_CHAR) == -1);
 			sb.append(MULTI_VALUE_CHAR);
     	}
 		// assert(sb.length() > 0) -- always true as strings.length != 0
@@ -405,6 +406,10 @@ public class SimpleFieldSet {
 
 	public void put(String key, double windowSize) {
 		putSingle(key, Double.toString(windowSize));
+	}
+	
+	public void put(String key, byte[] bytes) {
+	    putSingle(key, Base64.encode(bytes));
 	}
 
     /**
@@ -932,6 +937,16 @@ public class SimpleFieldSet {
 			return def;
 		}
 	}
+	
+	public byte[] getByteArray(String key) throws FSParseException {
+        String s = get(key);
+        if(s == null) throw new FSParseException("No key " + key);
+        try {
+            return Base64.decode(s);
+        } catch (IllegalBase64Exception e) {
+            throw new FSParseException("Cannot parse value \""+s+"\" as a byte[]");
+        }
+	}
 
 	public char getChar(String key) throws FSParseException {
 		String s = get(key);
@@ -979,7 +994,17 @@ public class SimpleFieldSet {
 		removeValue(key);
 		for (float v : value) putAppend(key, String.valueOf(v));
 	}
-
+	
+    public void put(String key, short[] value) {
+        removeValue(key);
+        for (short v : value) putAppend(key, String.valueOf(v));
+    }
+    
+    public void put(String key, long[] value) {
+        removeValue(key);
+        for (long v : value) putAppend(key, String.valueOf(v));
+    }
+    
 	public int[] getIntArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -1054,4 +1079,7 @@ public class SimpleFieldSet {
 		return this.header;
 	}
 
+	public void put(String key, String[] values) {
+	    putSingle(key, unsplit(values));
+	}
 }
