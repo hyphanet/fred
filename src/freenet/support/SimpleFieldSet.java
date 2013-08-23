@@ -18,11 +18,13 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -697,6 +699,18 @@ public class SimpleFieldSet {
 			throw new UnsupportedOperationException();
 		}
 	}
+    
+    public Map<String, String> directKeyValues() {
+        return Collections.unmodifiableMap(values);
+    }
+
+    public Set<String> directKeys() {
+        return Collections.unmodifiableSet(values.keySet());
+    }
+
+    public Map<String, SimpleFieldSet> directSubsets() {
+        return Collections.unmodifiableMap(subsets);
+    }
 
     /** Tolerant put(); does nothing if fs is empty */
     public void tput(String key, SimpleFieldSet fs) {
@@ -1020,6 +1034,36 @@ public class SimpleFieldSet {
 		return ret;
 	}
 
+    public short[] getShortArray(String key) {
+        String[] strings = getAll(key);
+        if(strings == null) return null;
+        short[] ret = new short[strings.length];
+        for(int i=0;i<strings.length;i++) {
+            try {
+                ret[i] = Short.parseShort(strings[i]);
+            } catch (NumberFormatException e) {
+                Logger.error(this, "Cannot parse "+strings[i]+" : "+e, e);
+                return null;
+            }
+        }
+        return ret;
+    }
+
+    public long[] getLongArray(String key) {
+        String[] strings = getAll(key);
+        if(strings == null) return null;
+        long[] ret = new long[strings.length];
+        for(int i=0;i<strings.length;i++) {
+            try {
+                ret[i] = Long.parseLong(strings[i]);
+            } catch (NumberFormatException e) {
+                Logger.error(this, "Cannot parse "+strings[i]+" : "+e, e);
+                return null;
+            }
+        }
+        return ret;
+    }
+
 	public double[] getDoubleArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -1051,6 +1095,22 @@ public class SimpleFieldSet {
 
 		return ret;
 	}
+
+    public boolean[] getBooleanArray(String key) {
+        String[] strings = getAll(key);
+        if(strings == null) return null;
+        boolean[] ret = new boolean[strings.length];
+        for(int i=0;i<strings.length;i++) {
+            try {
+                ret[i] = Boolean.valueOf(strings[i]);
+            } catch(NumberFormatException e) {
+                Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
+                return null;
+            }
+        }
+
+        return ret;
+    }
 
 	public void putOverwrite(String key, String[] strings) {
 		putOverwrite(key, unsplit(strings));
