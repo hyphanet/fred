@@ -17,19 +17,19 @@ import com.db4o.io.MemoryIoAdapter;
  * @author Artefact2
  */
 public class PluginStore {
-	public HashMap<String, PluginStore> subStores = new HashMap<String, PluginStore>();
-	public HashMap<String, Long> longs = new HashMap<String, Long>();
-	public HashMap<String, long[]> longsArrays = new HashMap<String, long[]>();
-	public HashMap<String, Integer> integers = new HashMap<String, Integer>();
-	public HashMap<String, int[]> integersArrays = new HashMap<String, int[]>();
-	public HashMap<String, Short> shorts = new HashMap<String, Short>();
-	public HashMap<String, short[]> shortsArrays = new HashMap<String, short[]>();
-	public HashMap<String, Boolean> booleans = new HashMap<String, Boolean>();
-	public HashMap<String, boolean[]> booleansArrays = new HashMap<String, boolean[]>();
-	public HashMap<String, Byte> bytes = new HashMap<String, Byte>();
-	public HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
-	public HashMap<String, String> strings = new HashMap<String, String>();
-	public HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
+	public final HashMap<String, PluginStore> subStores = new HashMap<String, PluginStore>();
+	public final HashMap<String, Long> longs = new HashMap<String, Long>();
+	public final HashMap<String, long[]> longsArrays = new HashMap<String, long[]>();
+	public final HashMap<String, Integer> integers = new HashMap<String, Integer>();
+	public final HashMap<String, int[]> integersArrays = new HashMap<String, int[]>();
+	public final HashMap<String, Short> shorts = new HashMap<String, Short>();
+	public final HashMap<String, short[]> shortsArrays = new HashMap<String, short[]>();
+	public final HashMap<String, Boolean> booleans = new HashMap<String, Boolean>();
+	public final HashMap<String, boolean[]> booleansArrays = new HashMap<String, boolean[]>();
+	public final HashMap<String, Byte> bytes = new HashMap<String, Byte>();
+	public final HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
+	public final HashMap<String, String> strings = new HashMap<String, String>();
+	public final HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
 
 	public byte[] exportStore() {
 		Configuration conf = Db4o.newConfiguration();
