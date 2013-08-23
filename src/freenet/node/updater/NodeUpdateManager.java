@@ -58,8 +58,21 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
- * Supervises NodeUpdater's. Enables us to easily update multiple files, change
- * the URI's on the fly, eliminates some messy code in the callbacks etc.
+ * <p>Supervises NodeUpdater's. Enables us to easily update multiple files, change
+ * the URI's on the fly, eliminates some messy code in the callbacks etc.</p>
+ * 
+ * <p>Procedure for updating the update key: Create a new key. Create a new build X, the 
+ * "transition version". This must be UOM-compatible with the previous transition version. 
+ * UOM-compatible means UOM should work from the older builds. This in turn means that it should 
+ * support an overlapping set of connection setup negTypes (@link 
+ * FNPPacketMangler.supportedNegTypes()). Similarly there may be issues with changes to the UOM
+ * messages, or to messages in general. Build X is inserted to both the old key and the new key.
+ * Build X's SSK URI (on the old auto-update key) will be hard-coded as the new transition version. 
+ * Then the next build, X+1, can get rid of some of the back compatibility cruft (especially old 
+ * connection setup types), and will be inserted only to the new key. Secure backups of the new 
+ * key are required and are documented elsewhere.</p>
+ * 
+ * FIXME: See bug #6009 for some current UOM compatibility issues.
  */
 public class NodeUpdateManager {
 
