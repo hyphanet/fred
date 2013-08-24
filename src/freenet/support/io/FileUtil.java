@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -812,7 +813,7 @@ final public class FileUtil {
             int toRead = (int)Math.min(BUFFER_SIZE, size - checked);
             aIn.readFully(aBuffer, 0, toRead);
             bIn.readFully(bBuffer, 0, toRead);
-            if(!Arrays.equals(aBuffer, bBuffer))
+            if(!MessageDigest.isEqual(aBuffer, bBuffer))
                 return false;
             checked += toRead;
         }
