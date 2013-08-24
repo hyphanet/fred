@@ -24,6 +24,11 @@ public class TrivialPaddedBucket implements Bucket {
     private long size;
     private boolean outputStreamOpen;
     private boolean readOnly;
+
+    /** Create a TrivialPaddedBucket, assumed to be empty */
+    public TrivialPaddedBucket(Bucket underlying) {
+        this(underlying, 0);
+    }
     
     /** Create a TrivialPaddedBucket, specifying the actual size of the existing bucket, which we
      * do not store on disk.
