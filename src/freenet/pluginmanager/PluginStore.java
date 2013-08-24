@@ -179,7 +179,9 @@ public class PluginStore {
         }
         group = sfs.subset("string");
         if(group != null) {
-            strings.putAll(group.directKeyValues());
+            for(String s : group.directKeys()) {
+                strings.put(decode(s), group.get(s));
+            }
         }
         group = sfs.subset("strings");
         if(group != null) {
