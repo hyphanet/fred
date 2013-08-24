@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -28,6 +29,7 @@ import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.node.NodeStarter;
@@ -768,10 +770,13 @@ final public class FileUtil {
 	            if(cis == null || cisCounter > Long.MAX_VALUE/2) {
 	                // Reset it well before the birthday paradox (note this is actually counting bytes).
 	                byte[] key = new byte[16];
-	                NodeStarter.getGlobalSecureRandom().nextBytes(key);
+	                byte[] iv = new byte[16];
+	                SecureRandom rng = NodeStarter.getGlobalSecureRandom();
+	                rng.nextBytes(key);
+	                rng.nextBytes(iv);
 	                AESFastEngine e = new AESFastEngine();
 	                SICBlockCipher ctr = new SICBlockCipher(e);
-	                ctr.init(true, new KeyParameter(key));
+	                ctr.init(true, new ParametersWithIV(new KeyParameter(key),iv));
 	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
 	                cisCounter = 0;
 	            }
