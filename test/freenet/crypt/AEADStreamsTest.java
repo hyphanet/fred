@@ -35,6 +35,15 @@ public class AEADStreamsTest extends TestCase {
         }
     }
     
+    public void testTruncatedReadsWritesRoundTrip() throws IOException {
+        Random random = new Random(0x49ee92f5);
+        ArrayBucket input = new ArrayBucket();
+        BucketTools.fill(input, random, 512*1024);
+        checkSuccessfulRoundTripRandomSplits(16, random, input, new ArrayBucket(), new ArrayBucket());
+        checkSuccessfulRoundTripRandomSplits(24, random, input, new ArrayBucket(), new ArrayBucket());
+        checkSuccessfulRoundTripRandomSplits(32, random, input, new ArrayBucket(), new ArrayBucket());
+    }
+    
     public void checkSuccessfulRoundTrip(int keysize, Random random, Bucket input, Bucket output, Bucket decoded) throws IOException {
         byte[] key = new byte[keysize];
         random.nextBytes(key);
@@ -70,6 +79,21 @@ public class AEADStreamsTest extends TestCase {
         }
         assertEquals(decoded.size(), input.size());
         assertFalse(BucketTools.equalBuckets(decoded, input));
+    }
+
+    public void checkSuccessfulRoundTripRandomSplits(int keysize, Random random, Bucket input, Bucket output, Bucket decoded) throws IOException {
+        byte[] key = new byte[keysize];
+        random.nextBytes(key);
+        OutputStream os = output.getOutputStream();
+        AEADOutputStream cos = AEADOutputStream.innerCreateAES(os, key, random);
+        BucketTools.copyTo(input, new RandomShortWriteOutputStream(cos, random), -1);
+        cos.close();
+        assertTrue(output.size() > input.size());
+        InputStream is = output.getInputStream();
+        AEADInputStream cis = AEADInputStream.createAES(is, key);
+        BucketTools.copyFrom(decoded, new RandomShortReadInputStream(cis, random), -1);
+        assertEquals(decoded.size(), input.size());
+        assertTrue(BucketTools.equalBuckets(decoded, input));
     }
 
 
