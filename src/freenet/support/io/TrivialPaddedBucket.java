@@ -156,7 +156,7 @@ public class TrivialPaddedBucket implements Bucket {
             synchronized(TrivialPaddedBucket.this) {
                 if(counter >= size) return -1;
                 if(counter + length >= size) {
-                    length = (int)Math.min(length, counter + length - size);
+                    length = (int)Math.min(length, size - counter);
                 }
             }
             int ret = in.read(buf, offset, length);
