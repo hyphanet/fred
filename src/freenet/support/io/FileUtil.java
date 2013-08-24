@@ -771,6 +771,7 @@ final public class FileUtil {
 	                SICBlockCipher ctr = new SICBlockCipher(e);
 	                ctr.init(true, new KeyParameter(key));
 	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
+	                cisCounter = 0;
 	            }
 	            read = cis.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
 	            cisCounter += read;
