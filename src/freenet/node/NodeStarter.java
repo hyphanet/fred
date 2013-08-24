@@ -500,14 +500,8 @@ public class NodeStarter implements WrapperListener {
 	/** Static instance of SecureRandom, as opposed to Node's copy. @see getSecureRandom() */
     private static SecureRandom globalSecureRandom;
 	
-	static synchronized void setGlobalSecureRandom(SecureRandom secureRandom) {
-	    if(globalSecureRandom == null)
-	        globalSecureRandom = secureRandom;
-	}
-	
 	public static synchronized SecureRandom getGlobalSecureRandom() {
 	    if(globalSecureRandom == null) {
-	        System.err.println("Creating global SecureRandom (this should have happened in the Node constructor!)");
 	        globalSecureRandom = new SecureRandom();
 	        globalSecureRandom.nextBytes(new byte[16]); // Force it to seed itself so it blocks now not later.
 	    }

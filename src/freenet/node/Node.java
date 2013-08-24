@@ -1143,9 +1143,7 @@ public class Node implements TimeSkewDetectorCallback {
 			// if it's not null it's because we are running in the simulator
 		}
 		// This can block too.
-		this.secureRandom = new SecureRandom();
-		secureRandom.nextBytes(new byte[16]); // Force it to seed itself so it blocks now not later.
-        NodeStarter.setGlobalSecureRandom(secureRandom);
+		this.secureRandom = NodeStarter.getGlobalSecureRandom();
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
 		if(weakRandom == null) {
