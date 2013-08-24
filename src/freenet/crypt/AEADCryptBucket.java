@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /** Does not support persistence because of the need for a SecureRandom. FIXME we will need to
@@ -74,6 +75,11 @@ public class AEADCryptBucket implements Bucket {
     @Override
     public void removeFrom(ObjectContainer container) {
         throw new UnsupportedOperationException();
+    }
+    
+    public boolean objectCanNew(ObjectContainer container) {
+        Logger.error(this, "Not storing AEADCryptBucket in database", new Exception("error"));
+        return false;
     }
 
     @Override
