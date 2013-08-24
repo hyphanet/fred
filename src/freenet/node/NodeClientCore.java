@@ -339,6 +339,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
+		if(container != null)
+		    migratePluginStores(container);
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
@@ -650,6 +652,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
 		initKeys(container);
+		migratePluginStores(container);
 		if(!killedDatabase)
 			fcpServer.load(container);
 		synchronized(this) {
@@ -695,6 +698,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		System.out.println("Late database initialisation completed.");
 		return true;
 	}
+
+	private void migratePluginStores(ObjectContainer container) {
+	    PluginRespirator.migrateAllPluginStores(container, pluginStoresDir.dir(), node.nodeDBHandle);
+    }
 
     private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
 		fecQueue = initFECQueue(nodeDBHandle, container, fecQueue);

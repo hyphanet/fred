@@ -197,4 +197,25 @@ public class PluginStore {
 	    return Base64.decodeUTF8(s);
 	}
 
+    public void removeFrom(ObjectContainer container) {
+        for(PluginStore s : subStores.values()) {
+            s.removeFrom(container);
+        }
+        subStores.clear();
+        container.delete(subStores);
+        container.delete(longs);
+        container.delete(longsArrays);
+        container.delete(integers);
+        container.delete(integersArrays);
+        container.delete(shorts);
+        container.delete(shortsArrays);
+        container.delete(booleans);
+        container.delete(booleansArrays);
+        container.delete(bytes);
+        container.delete(bytesArrays);
+        container.delete(strings);
+        container.delete(stringsArrays);
+        container.delete(this);
+    }
+
 }
