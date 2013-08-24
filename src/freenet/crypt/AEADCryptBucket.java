@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -20,7 +21,7 @@ public class AEADCryptBucket implements Bucket {
     
     public AEADCryptBucket(Bucket underlying, byte[] key, SecureRandom random) {
         this.underlying = underlying;
-        this.key = key;
+        this.key = Arrays.copyOf(key, key.length);
         this.random = random;
     }
 

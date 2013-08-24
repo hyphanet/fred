@@ -62,6 +62,7 @@ public class AEADInputStream extends FilterInputStream {
         // FIXME no idea whether it's safe to use in=out here.
         byte[] temp = new byte[length];
         int read = in.read(temp);
+        if(read <= 0) return read;
         return cipher.processBytes(temp, 0, read, buf, offset);
     }
     
