@@ -111,31 +111,13 @@ public class PluginRespirator {
 	 * @throws DatabaseDisabledException
 	 */
 	public PluginStore getStore() throws DatabaseDisabledException {
-		final PluginStoreContainer example = new PluginStoreContainer();
-		example.nodeDBHandle = this.node.nodeDBHandle;
-		example.storeIdentifier = this.plugin.getClass().getCanonicalName();
-		example.pluginStore = null;
-
-		// This runs off-thread, so we need to synchronize, even though we wait for it to complete.
-		this.node.clientCore.runBlocking(new DBJob() {
-
-			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
-				ObjectSet<PluginStoreContainer> stores = container.queryByExample(example);
-				synchronized(PluginRespirator.this) {
-					if(stores.size() == 0) store = new PluginStore();
-					else {
-						store = stores.get(0).pluginStore;
-						container.activate(store, Integer.MAX_VALUE);
-					}
-				}
-				return false;
-			}
-		}, NativeThread.HIGH_PRIORITY);
-		synchronized(this) {
-			if(store == null) throw new NullPointerException();
-			return store;
-		}
+	    synchronized(this) {
+	        if(store != null) return store;
+	        store = stores.loadPluginStore(this.plugin.getClass().getCanonicalName());
+	        if(store == null)
+	            store = new PluginStore();
+	        return store;
+	    }
 	}
 
 	/**
@@ -146,31 +128,7 @@ public class PluginRespirator {
 	 * @throws DatabaseDisabledException
 	 */
 	public void putStore(final PluginStore store) throws DatabaseDisabledException {
-		final PluginStoreContainer storeC = new PluginStoreContainer();
-		storeC.nodeDBHandle = this.node.nodeDBHandle;
-		storeC.pluginStore = null;
-		storeC.storeIdentifier = this.plugin.getClass().getCanonicalName();
-
-		this.node.clientCore.queue(new DBJob() {
-
-			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
-				// cascadeOnDelete(true) will make the calls to store() delete
-				// any precedent stored instance of PluginStore.
-
-				if(container.queryByExample(storeC).size() == 0) {
-					// Let's store the whole container.
-					storeC.pluginStore = store;
-					container.ext().store(storeC, Integer.MAX_VALUE);
-				} else {
-					// Only update the PluginStore.
-					// Check all subStores for changes, not only the top-level store.
-					storeC.pluginStore = store;
-					container.ext().store(storeC.pluginStore, Integer.MAX_VALUE);
-				}
-				return true;
-			}
-		}, NativeThread.NORM_PRIORITY, false);
+	    stores.writePluginStore(this.plugin.getClass().getCanonicalName(), store);
 	}
 
 	/**
