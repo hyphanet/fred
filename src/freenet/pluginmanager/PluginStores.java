@@ -109,7 +109,7 @@ public class PluginStores {
         try {
             try {
                 is = bucket.getInputStream();
-                SimpleFieldSet fs = SimpleFieldSet.readFrom(is, false, false, true);
+                SimpleFieldSet fs = SimpleFieldSet.readFrom(is, false, false, true, true);
                 return new PluginStore(fs);
             } finally {
                 // Do NOT use Closer.close().

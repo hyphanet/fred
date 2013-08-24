@@ -86,7 +86,7 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
-        this(br, allowMultiple, shortLived, false);
+        this(br, allowMultiple, shortLived, false, false);
     }
     
     /**
@@ -100,8 +100,8 @@ public class SimpleFieldSet {
      * @throws IOException If the buffer could not be read, or if there was a formatting
      * problem.
      */
-    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
-        this(shortLived);
+    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived, boolean allowBase64, boolean alwaysBase64) throws IOException {
+        this(shortLived, alwaysBase64);
         read(Readers.fromBufferedReader(br), allowMultiple, allowBase64);
     }
 
@@ -819,10 +819,24 @@ public class SimpleFieldSet {
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
-	    return readFrom(is, allowMultiple, shortLived, false);
+	    return readFrom(is, allowMultiple, shortLived, false, false);
 	}
 
-	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
+	/**
+	 * Read a SimpleFieldSet from an InputStream.
+	 * @param is The InputStream to read from. We will use the UTF-8 charset.
+	 * @param allowMultiple Whether to allow multiple entries for each key (and automatically 
+	 * combine them). Not usually useful except maybe in FCP.
+	 * @param shortLived If true, don't intern the strings.
+	 * @param allowBase64 If true, allow reading Base64 encoded lines (key==base64(value)).
+	 * @param alwaysBase64 If true, the resulting SFS should have the alwaysUseBase64 flag enabled, 
+	 * i.e it can store anything in key values including newlines, special chars such as = etc. 
+	 * Otherwise, even if allowBase64 is enabled, invalid chars will not be.
+	 * @return A new SimpleFieldSet.
+	 * @throws IOException If a read error occurs, including a formatting error, illegal 
+	 * characters etc.
+	 */
+	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived, boolean allowBase64, boolean alwaysBase64) throws IOException {
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
@@ -837,7 +851,7 @@ public class SimpleFieldSet {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
 			br = new BufferedReader(isr);
-			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived, allowBase64);
+			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived, allowBase64, alwaysBase64);
 			br.close();
 
 			return fs;
