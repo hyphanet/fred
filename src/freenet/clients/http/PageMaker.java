@@ -233,7 +233,9 @@ public final class PageMaker {
 	 * menus when sending one page! */
 	public synchronized void removeNavigationLink(String menutext, String name) {
 		SubMenu menu = subMenus.get(menutext);
-		menu.removeNavigationLink(name);
+		// The menu may have already been removed.
+		if(menu != null)
+		    menu.removeNavigationLink(name);
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
