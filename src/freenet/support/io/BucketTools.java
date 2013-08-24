@@ -11,7 +11,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
@@ -488,5 +490,48 @@ public class BucketTools {
 			return b;
 		} finally { Closer.close(os); }
 	}
+
+    public static boolean equalBuckets(Bucket a, Bucket b) throws IOException {
+        if(a.size() != b.size()) return false;
+        long size = a.size();
+        byte[] aBuffer = new byte[BUFFER_SIZE];
+        byte[] bBuffer = new byte[BUFFER_SIZE];
+        DataInputStream aIn = null, bIn = null;
+        try {
+            aIn = new DataInputStream(a.getInputStream());
+            bIn = new DataInputStream(b.getInputStream());
+            long checked = 0;
+            while(checked < size) {
+                int toRead = (int)Math.min(BUFFER_SIZE, size - checked);
+                aIn.readFully(aBuffer, 0, toRead);
+                bIn.readFully(bBuffer, 0, toRead);
+                if(!Arrays.equals(aBuffer, bBuffer))
+                    return false;
+                checked += toRead;
+            }
+            return true;
+        } finally {
+            // Do NOT use Closer.close() here, IOE's on close may be important especially with authenticated streams.
+            if(aIn != null) aIn.close();
+            if(bIn != null) bIn.close();
+        }
+    }
+    
+    public static void fill(Bucket bucket, Random random, long length) throws IOException {
+        long moved = 0;
+        byte[] buf = new byte[BUFFER_SIZE];
+        OutputStream os = null;
+        try {
+            os = bucket.getOutputStream();
+            while(moved < length) {
+                int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
+                random.nextBytes(buf);
+                os.write(buf, 0, toRead);
+                moved += toRead;
+            }
+        } finally {
+            if(os != null) os.close();
+        }
+    }
 
 }
