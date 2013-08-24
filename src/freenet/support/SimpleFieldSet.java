@@ -398,7 +398,7 @@ public class SimpleFieldSet {
 				subsets = new HashMap<String, SimpleFieldSet>();
 			fs = subsets.get(before);
 			if(fs == null) {
-				fs = new SimpleFieldSet(shortLived);
+				fs = new SimpleFieldSet(shortLived, alwaysUseBase64);
 				if(!shortLived) before = before.intern();
 				subsets.put(before, fs);
 			}
