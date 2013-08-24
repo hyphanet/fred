@@ -22,7 +22,7 @@ import java.nio.charset.Charset;
 import java.util.Random;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -767,7 +767,7 @@ final public class FileUtil {
 	                // Reset it well before the birthday paradox (note this is actually counting bytes).
 	                byte[] key = new byte[16];
 	                NodeStarter.getGlobalSecureRandom().nextBytes(key);
-	                AESEngine e = new AESEngine();
+	                AESFastEngine e = new AESFastEngine();
 	                SICBlockCipher ctr = new SICBlockCipher(e);
 	                ctr.init(true, new KeyParameter(key));
 	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
