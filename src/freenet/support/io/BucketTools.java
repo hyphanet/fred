@@ -494,26 +494,14 @@ public class BucketTools {
     public static boolean equalBuckets(Bucket a, Bucket b) throws IOException {
         if(a.size() != b.size()) return false;
         long size = a.size();
-        byte[] aBuffer = new byte[BUFFER_SIZE];
-        byte[] bBuffer = new byte[BUFFER_SIZE];
-        DataInputStream aIn = null, bIn = null;
+        InputStream aIn = null, bIn = null;
         try {
-            aIn = new DataInputStream(a.getInputStream());
-            bIn = new DataInputStream(b.getInputStream());
-            long checked = 0;
-            while(checked < size) {
-                int toRead = (int)Math.min(BUFFER_SIZE, size - checked);
-                aIn.readFully(aBuffer, 0, toRead);
-                bIn.readFully(bBuffer, 0, toRead);
-                if(!Arrays.equals(aBuffer, bBuffer))
-                    return false;
-                checked += toRead;
-            }
-            return true;
+            aIn = a.getInputStream();
+            bIn = b.getInputStream();
+            return FileUtil.equalStreams(aIn, bIn, size);
         } finally {
-            // Do NOT use Closer.close() here, IOE's on close may be important especially with authenticated streams.
-            if(aIn != null) aIn.close();
-            if(bIn != null) bIn.close();
+            aIn.close();
+            bIn.close();
         }
     }
     

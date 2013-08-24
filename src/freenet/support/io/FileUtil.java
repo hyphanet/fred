@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -799,6 +800,23 @@ final public class FileUtil {
             os.write(buf, 0, toRead);
             moved += toRead;
         }
+    }
+
+    public static boolean equalStreams(InputStream a, InputStream b, long size) throws IOException {
+        byte[] aBuffer = new byte[BUFFER_SIZE];
+        byte[] bBuffer = new byte[BUFFER_SIZE];
+        DataInputStream aIn = new DataInputStream(a);
+        DataInputStream bIn = new DataInputStream(b);
+        long checked = 0;
+        while(checked < size) {
+            int toRead = (int)Math.min(BUFFER_SIZE, size - checked);
+            aIn.readFully(aBuffer, 0, toRead);
+            bIn.readFully(bBuffer, 0, toRead);
+            if(!Arrays.equals(aBuffer, bBuffer))
+                return false;
+            checked += toRead;
+        }
+        return true;
     }
 
 }
