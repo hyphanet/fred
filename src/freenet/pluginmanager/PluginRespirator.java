@@ -1,14 +1,8 @@
 package freenet.pluginmanager;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.List;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -22,13 +16,10 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
 import freenet.config.SubConfig;
-import freenet.crypt.CipherBucket;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
-import freenet.support.api.Bucket;
-import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
@@ -41,6 +32,7 @@ public class PluginRespirator {
 	private final Node node;
 	private final FredPlugin plugin;
 	private final PluginInfoWrapper pi;
+	private final PluginStores stores;
 
 	private PluginStore store;
 	
@@ -49,6 +41,7 @@ public class PluginRespirator {
 		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false);
 		this.plugin = pi.getPlugin();
 		this.pi = pi;
+		stores = node.clientCore.getPluginStores();
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
@@ -109,64 +102,6 @@ public class PluginRespirator {
 		return node.clientCore.getToadletContainer();
 	}
 	
-	public static void migrateAllPluginStores(ObjectContainer container, File pluginStoresDir, long nodeDBHandle) {
-	    List<PluginStoreContainer> pscs = new ArrayList<PluginStoreContainer>();
-        ObjectSet<PluginStoreContainer> stores = container.query(PluginStoreContainer.class);
-        for(PluginStoreContainer psc : stores) {
-            if(psc.nodeDBHandle != nodeDBHandle) continue;
-            if(psc.pluginStore == null) {
-                System.err.println("No pluginStore on PSC for "+psc.storeIdentifier);
-                continue;
-            }
-            pscs.add(psc);
-        }
-        if(pscs.isEmpty()) {
-            System.out.println("No plugin stores to migrate.");
-            return;
-        }
-        System.out.println("Plugin stores to migrate: "+pscs.size());
-        for(PluginStoreContainer psc : pscs) {
-            container.activate(psc, Integer.MAX_VALUE);
-            migratePluginStores(container, pluginStoresDir, psc);
-        }
-	}
-	
-	/** Migrate a single PluginStore from the database to on disk 
-	 * @throws IOException */
-	public static void migratePluginStores(ObjectContainer container, File pluginStoresDir, PluginStoreContainer psc) {
-	    try {
-	        Bucket bucket = writePluginStoreFile(pluginStoresDir, psc.storeIdentifier);
-	        OutputStream os = bucket.getOutputStream();
-	        try {
-	            if(psc.pluginStore != null) {
-	                psc.pluginStore.exportStoreAsSFS().writeTo(os);
-	            }
-	        } finally {
-	            os.close();
-	        }
-	        // FIXME implement removal when sure it works.
-	        //psc.pluginStore.removeFrom(container);
-	        container.commit();
-	        System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
-	    } catch (IOException e) {
-	        System.err.println("Unable to migrate plugin store for "+psc.storeIdentifier+" from database to disk : "+e);
-	    }
-	}
-
-	private static Bucket writePluginStoreFile(File pluginStoresDir, String storeIdentifier) throws FileNotFoundException {
-	    String filename = storeIdentifier;
-	    filename += ".data";
-//	    boolean isEncrypted = node.isDatabaseEncrypted();
-//	    if(isEncrypted)
-//	        filename += ".crypt";
-	    File f = new File(pluginStoresDir, filename);
-	    Bucket bucket = new FileBucket(f, false, true, false, false, false);
-	    // FIXME REINSTATE
-//	    if(isEncrypted)
-//	        bucket = new CipherBucket(bucket, node.getPluginStoreKey(storeIdentifier));
-	    return bucket;
-    }
-
     /**
 	 * Get a PluginStore that can be used by the plugin to put data in a database.
 	 * The database used is the node's database, so all the encrypt/decrypt part

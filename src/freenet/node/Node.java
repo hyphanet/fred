@@ -2705,7 +2705,7 @@ public class Node implements TimeSkewDetectorCallback {
 	** Sets up a program directory using the config value defined by the given
 	** parameters.
 	*/
-	protected ProgramDirectory setupProgramDir(SubConfig installConfig,
+	public ProgramDirectory setupProgramDir(SubConfig installConfig,
 	  String cfgKey, String defaultValue, String shortdesc, String longdesc, String moveErrMsg,
 	  SubConfig oldConfig) throws NodeInitException {
 		ProgramDirectory dir = new ProgramDirectory(moveErrMsg);

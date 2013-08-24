@@ -66,7 +66,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.pluginmanager.PluginRespirator;
+import freenet.pluginmanager.PluginStores;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
@@ -163,13 +163,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
-	private final ProgramDirectory pluginStoresDir;
+	private final PluginStores pluginStores;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
+		this.pluginStores = new PluginStores(node, installConfig);
 		killedDatabase = container == null;
 		if(killedDatabase)
 			System.err.println("Database corrupted (before entering NodeClientCore)!");
@@ -186,8 +187,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			initRestartJobs(nodeDBHandle, container);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ticker, node.getRunDir());
-		pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
-		        "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR)
@@ -700,7 +699,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	private void migratePluginStores(ObjectContainer container) {
-	    PluginRespirator.migrateAllPluginStores(container, pluginStoresDir.dir(), node.nodeDBHandle);
+	    pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
     }
 
     private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
@@ -2115,5 +2114,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
+
+    public PluginStores getPluginStores() {
+        return pluginStores;
+    }
 
 }
