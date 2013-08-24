@@ -66,6 +66,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
@@ -162,6 +163,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
+	private final ProgramDirectory pluginStoresDir;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -184,6 +186,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			initRestartJobs(nodeDBHandle, container);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ticker, node.getRunDir());
+		pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
+		        "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR)
@@ -692,7 +696,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return true;
 	}
 
-	private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
+    private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
 		fecQueue = initFECQueue(nodeDBHandle, container, fecQueue);
 		clientContext.setFECQueue(fecQueue);
 	}
