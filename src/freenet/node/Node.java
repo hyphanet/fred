@@ -1145,6 +1145,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// This can block too.
 		this.secureRandom = new SecureRandom();
 		secureRandom.nextBytes(new byte[16]); // Force it to seed itself so it blocks now not later.
+        NodeStarter.setGlobalSecureRandom(secureRandom);
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
 		if(weakRandom == null) {
@@ -2644,7 +2645,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
-	/** Delete files from old BDB-index datastore. */
+    /** Delete files from old BDB-index datastore. */
 	private void deleteOldBDBIndexStoreFiles() {
 		File dbDir = storeDir.file("database-"+getDarknetPortNumber());
 		FileUtil.removeAll(dbDir);
