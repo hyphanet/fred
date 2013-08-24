@@ -77,7 +77,7 @@ public class PluginStores {
         OutputStream os = bucket.getOutputStream();
         try {
             if(pluginStore != null) {
-                pluginStore.exportStoreAsSFS().writeTo(os);
+                pluginStore.exportStoreAsSFS().writeToWithBase64(os);
             }
         } finally {
             os.close();
@@ -109,7 +109,7 @@ public class PluginStores {
         try {
             try {
                 is = bucket.getInputStream();
-                SimpleFieldSet fs = SimpleFieldSet.readFrom(is, false, false);
+                SimpleFieldSet fs = SimpleFieldSet.readFrom(is, false, false, true);
                 return new PluginStore(fs);
             } finally {
                 // Do NOT use Closer.close().

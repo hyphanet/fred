@@ -77,6 +77,10 @@ public class SimpleFieldSet {
        	this.shortLived = shortLived;
     }
 
+    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
+        this(br, allowMultiple, shortLived, false);
+    }
+    
     /**
      * Construct a SimpleFieldSet from reading a BufferedReader.
      * @param br
@@ -88,9 +92,9 @@ public class SimpleFieldSet {
      * @throws IOException If the buffer could not be read, or if there was a formatting
      * problem.
      */
-    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
         this(shortLived);
-        read(Readers.fromBufferedReader(br), allowMultiple, false);
+        read(Readers.fromBufferedReader(br), allowMultiple, allowBase64);
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
@@ -424,6 +428,10 @@ public class SimpleFieldSet {
 	    putSingle(key, Base64.encode(bytes));
 	}
 
+	public void writeTo(Writer w) throws IOException {
+	    writeTo(w, false);
+	}
+	
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
      * Note: The caller *must* buffer the writer to avoid lousy performance!
@@ -431,8 +439,8 @@ public class SimpleFieldSet {
      *
      * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
-	public void writeTo(Writer w) throws IOException {
-		writeTo(w, "", false, false);
+	public void writeTo(Writer w, boolean useBase64) throws IOException {
+		writeTo(w, "", false, useBase64);
 	}
 
     /**
@@ -806,6 +814,10 @@ public class SimpleFieldSet {
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {
+	    return readFrom(is, allowMultiple, shortLived, false);
+	}
+
+	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived, boolean allowBase64) throws IOException {
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
@@ -820,7 +832,7 @@ public class SimpleFieldSet {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
 			br = new BufferedReader(isr);
-			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
+			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived, allowBase64);
 			br.close();
 
 			return fs;
@@ -835,19 +847,24 @@ public class SimpleFieldSet {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
 
-	/** Write to the given OutputStream and flush it. */
+    /** Write to the given OutputStream and flush it. */
     public void writeTo(OutputStream os) throws IOException {
-    	writeTo(os, 4096);
-    }	
-	
+        writeTo(os, 4096, false);
+    }   
+    
+    /** Write to the given OutputStream and flush it. */
+    public void writeToWithBase64(OutputStream os) throws IOException {
+        writeTo(os, 4096, true);
+    }   
+    
 	/** Write to the given OutputStream and flush it. Use a big buffer, for jobs that aren't called
 	 * too often e.g. persisting a file every 10 minutes. */
     public void writeToBigBuffer(OutputStream os) throws IOException {
-    	writeTo(os, 65536);
+    	writeTo(os, 65536, false);
     }	
 	
 	/** Write to the given OutputStream and flush it. */
-        public void writeTo(OutputStream os, int bufferSize) throws IOException {
+        public void writeTo(OutputStream os, int bufferSize, boolean useBase64) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
@@ -860,7 +877,7 @@ public class SimpleFieldSet {
             	throw e;
             }
             bw = new BufferedWriter(osw);
-            writeTo(bw);
+            writeTo(bw, useBase64);
             bw.flush();
         }
 
