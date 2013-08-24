@@ -517,18 +517,23 @@ public class BucketTools {
         }
     }
     
+    /** @deprecated Only for unit tests */
     public static void fill(Bucket bucket, Random random, long length) throws IOException {
-        long moved = 0;
-        byte[] buf = new byte[BUFFER_SIZE];
         OutputStream os = null;
         try {
             os = bucket.getOutputStream();
-            while(moved < length) {
-                int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
-                random.nextBytes(buf);
-                os.write(buf, 0, toRead);
-                moved += toRead;
-            }
+            FileUtil.fill(os, random, length);
+        } finally {
+            if(os != null) os.close();
+        }
+    }
+
+    /** Fill a bucket with hard to identify random data */
+    public static void fill(Bucket bucket, long length) throws IOException {
+        OutputStream os = null;
+        try {
+            os = bucket.getOutputStream();
+            FileUtil.fill(os, length);
         } finally {
             if(os != null) os.close();
         }

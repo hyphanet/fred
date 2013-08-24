@@ -21,7 +21,14 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Random;
 
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.io.CipherInputStream;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+
 import freenet.client.DefaultMIMETypes;
+import freenet.node.NodeStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
@@ -739,5 +746,58 @@ final public class FileUtil {
 			return false;
 		}
 	}
+	
+	private static CipherInputStream cis;
+	private static ZeroInputStream zis = new ZeroInputStream();
+	private static long cisCounter;
+	
+	/** Write hard to identify random data to the OutputStream. Does not drain the global secure 
+	 * random number generator, and is significantly faster than it.
+	 * @param os The stream to write to.
+	 * @param length The number of bytes to write.
+	 * @throws IOException If unable to write to the stream.
+	 */
+	public static void fill(OutputStream os, long length) throws IOException {
+	    long remaining = length;
+	    byte[] buffer = new byte[BUFFER_SIZE];
+	    int read = 0;
+	    while ((remaining == -1) || (remaining > 0)) {
+	        synchronized(FileUtil.class) {
+	            if(cis == null || cisCounter > Long.MAX_VALUE/2) {
+	                // Reset it well before the birthday paradox (note this is actually counting bytes).
+	                byte[] key = new byte[16];
+	                NodeStarter.getGlobalSecureRandom().nextBytes(key);
+	                AESEngine e = new AESEngine();
+	                SICBlockCipher ctr = new SICBlockCipher(e);
+	                ctr.init(true, new KeyParameter(key));
+	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
+	            }
+	            read = cis.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
+	            cisCounter += read;
+	        }
+	        if (read == -1) {
+	            if (length == -1) {
+	                return;
+	            }
+	            throw new EOFException("stream reached eof");
+	        }
+	        os.write(buffer, 0, read);
+	        if (remaining > 0)
+	            remaining -= read;
+	    }
+	    
+	}
+
+	/** @deprecated */
+    public static void fill(OutputStream os, Random random, long length) throws IOException {
+        long moved = 0;
+        byte[] buf = new byte[BUFFER_SIZE];
+        while(moved < length) {
+            int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
+            random.nextBytes(buf);
+            os.write(buf, 0, toRead);
+            moved += toRead;
+        }
+    }
 
 }
