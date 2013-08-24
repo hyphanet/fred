@@ -77,7 +77,7 @@ public class PluginStores {
         OutputStream os = bucket.getOutputStream();
         try {
             if(pluginStore != null) {
-                pluginStore.exportStoreAsSFS().writeToWithBase64(os);
+                pluginStore.exportStoreAsSFS().writeTo(os);
             }
         } finally {
             os.close();

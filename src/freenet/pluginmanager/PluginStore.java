@@ -73,7 +73,7 @@ public class PluginStore {
 	}
 	
 	public SimpleFieldSet exportStoreAsSFS() {
-	    SimpleFieldSet fs = new SimpleFieldSet(true);
+	    SimpleFieldSet fs = new SimpleFieldSet(true, true);
 	    for(Map.Entry<String, PluginStore> entry : subStores.entrySet()) {
 	        fs.put("substore."+encode(entry.getKey()), entry.getValue().exportStoreAsSFS());
 	    }

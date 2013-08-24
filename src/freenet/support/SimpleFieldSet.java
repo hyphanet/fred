@@ -58,6 +58,7 @@ public class SimpleFieldSet {
     private Map<String, SimpleFieldSet> subsets;
     private String endMarker;
     private final boolean shortLived;
+    private final boolean alwaysUseBase64;
     protected String[] header;
 
     public static final char MULTI_LEVEL_CHAR = '.';
@@ -65,16 +66,23 @@ public class SimpleFieldSet {
     public static final char KEYVALUE_SEPARATOR_CHAR = '=';
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
+    public SimpleFieldSet(boolean shortLived) {
+        this(shortLived, false);
+    }
+    
     /**
      * Create a SimpleFieldSet.
      * @param shortLived If false, strings will be interned to ensure that they use as
      * little memory as possible. Only set to true if the SFS will be short-lived or
      * small.
+     * @param alwaysUseBase64 If true, the SFS can contain newlines etc in values, and we will
+     * always use base64 for the values if they contain such invalid characters.
      */
-    public SimpleFieldSet(boolean shortLived) {
+    public SimpleFieldSet(boolean shortLived, boolean alwaysUseBase64) {
         values = new HashMap<String, String>();
        	subsets = null;
        	this.shortLived = shortLived;
+       	this.alwaysUseBase64 = alwaysUseBase64;
     }
 
     public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
@@ -104,6 +112,7 @@ public class SimpleFieldSet {
     	this.shortLived = false; // it's been copied!
     	this.header = sfs.header;
     	this.endMarker = sfs.endMarker;
+    	this.alwaysUseBase64 = sfs.alwaysUseBase64;
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
@@ -364,7 +373,7 @@ public class SimpleFieldSet {
 	private synchronized boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
 		int idx;
 		if(value == null) return true; // valid no-op
-		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
+		if((!alwaysUseBase64) && value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
 		if(allowMultiple && (!fromRead) && value.indexOf(MULTI_VALUE_CHAR) != -1) {
 			throw new IllegalArgumentException("Appending a string to a SimpleFieldSet value should not contain the multi-value char \""+String.valueOf(MULTI_VALUE_CHAR)+"\" but it does: \"" +value+"\" for \""+key+"\"", new Exception("error"));
 		}
@@ -428,10 +437,6 @@ public class SimpleFieldSet {
 	    putSingle(key, Base64.encode(bytes));
 	}
 
-	public void writeTo(Writer w) throws IOException {
-	    writeTo(w, false);
-	}
-	
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
      * Note: The caller *must* buffer the writer to avoid lousy performance!
@@ -439,8 +444,8 @@ public class SimpleFieldSet {
      *
      * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
-	public void writeTo(Writer w, boolean useBase64) throws IOException {
-		writeTo(w, "", false, useBase64);
+	public void writeTo(Writer w) throws IOException {
+		writeTo(w, "", false, false);
 	}
 
     /**
@@ -455,7 +460,7 @@ public class SimpleFieldSet {
      * @param useBase64 If true, use Base64 for any value that has control characters, whitespace, 
      * or characters used by SimpleFieldSet in it. In this case the separator will be "==" not "=".
      * This is mainly useful for node references, which tend to lose whitespace, gain newlines etc
-     * in transit.
+     * in transit. Can be overridden (to true) by alwaysUseBase64 setting.
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker, boolean useBase64) throws IOException {
 		writeHeader(w);
@@ -486,7 +491,7 @@ public class SimpleFieldSet {
         w.write(prefix);
         w.write(key);
         w.write(KEYVALUE_SEPARATOR_CHAR);
-        if(useBase64 && shouldBase64(value)) {
+        if((useBase64 || alwaysUseBase64) && shouldBase64(value)) {
         	w.write(KEYVALUE_SEPARATOR_CHAR);
         	w.write(Base64.encodeUTF8(value));
         } else {
@@ -508,10 +513,10 @@ public class SimpleFieldSet {
 	}
 
 	public void writeToOrdered(Writer w) throws IOException {
-		writeToOrdered(w, "", false, false);
+		writeToOrdered(w, "", false);
 	}
 
-    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker, boolean useBase64) throws IOException {
+    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
 		writeHeader(w);
     	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
@@ -521,7 +526,7 @@ public class SimpleFieldSet {
 
     	// Output
     	for(i=0; i < keys.length; i++) {
-    		writeValue(w, keys[i], get(keys[i]), prefix, useBase64);
+    		writeValue(w, keys[i], get(keys[i]), prefix, false);
     	}
 
     	if(subsets != null) {
@@ -532,7 +537,7 @@ public class SimpleFieldSet {
         	for(i=0; i < orderedPrefixes.length; i++) {
     			SimpleFieldSet subset = subset(orderedPrefixes[i]);
     			if(subset == null) throw new NullPointerException();
-    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true, useBase64);
+    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
     		}
     	}
 
@@ -849,22 +854,17 @@ public class SimpleFieldSet {
 
     /** Write to the given OutputStream and flush it. */
     public void writeTo(OutputStream os) throws IOException {
-        writeTo(os, 4096, false);
-    }   
-    
-    /** Write to the given OutputStream and flush it. */
-    public void writeToWithBase64(OutputStream os) throws IOException {
-        writeTo(os, 4096, true);
+        writeTo(os, 4096);
     }   
     
 	/** Write to the given OutputStream and flush it. Use a big buffer, for jobs that aren't called
 	 * too often e.g. persisting a file every 10 minutes. */
     public void writeToBigBuffer(OutputStream os) throws IOException {
-    	writeTo(os, 65536, false);
+    	writeTo(os, 65536);
     }	
 	
 	/** Write to the given OutputStream and flush it. */
-        public void writeTo(OutputStream os, int bufferSize, boolean useBase64) throws IOException {
+        public void writeTo(OutputStream os, int bufferSize) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
@@ -877,7 +877,7 @@ public class SimpleFieldSet {
             	throw e;
             }
             bw = new BufferedWriter(osw);
-            writeTo(bw, useBase64);
+            writeTo(bw);
             bw.flush();
         }
 
