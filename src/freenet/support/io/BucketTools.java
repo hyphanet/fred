@@ -55,7 +55,7 @@ public class BucketTools {
 		WritableByteChannel writeChannel = Channels.newChannel(out);
 		try {
 
-		ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+		ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
 			while(buffer.hasRemaining())
