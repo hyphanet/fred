@@ -40,6 +40,9 @@ public class AEADInputStream extends FilterInputStream {
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE, nonce);
         cipher.init(false, params);
+        excess = new byte[mainCipher.getBlockSize()];
+        excessEnd = 0;
+        excessPtr = 0;
     }
     
     public final int getIVSize() {
@@ -47,6 +50,10 @@ public class AEADInputStream extends FilterInputStream {
     }
     
     private final byte[] onebyte = new byte[1];
+    
+    private final byte[] excess;
+    private int excessEnd;
+    private int excessPtr;
     
     public int read() throws IOException {
         int length = read(onebyte);
@@ -59,12 +66,38 @@ public class AEADInputStream extends FilterInputStream {
     }
     
     public int read(byte[] buf, int offset, int length) throws IOException {
-        // FIXME no idea whether it's safe to use in=out here.
-        byte[] temp = new byte[length];
-        int read = in.read(temp);
-        if(read <= 0) return read;
-        assert(read <= length);
-        return cipher.processBytes(temp, 0, read, buf, offset);
+        if(excessEnd != 0) {
+            length = Math.min(length, excessEnd - excessPtr);
+            if(length > 0) {
+                System.arraycopy(excess, excessPtr, buf, offset, length);
+                excessPtr += length;
+                if(excessEnd == excessPtr) {
+                    excessEnd = 0;
+                    excessPtr = 0;
+                }
+                return length;
+            }
+        }
+        while(true) {
+            byte[] temp = new byte[length];
+            int read = in.read(temp);
+            if(read <= 0) return read;
+            assert(read <= length);
+            int outLength = cipher.getUpdateOutputSize(read);
+            if(outLength > length) {
+                byte[] outputTemp = new byte[outLength];
+                int decryptedBytes = cipher.processBytes(temp, 0, read, outputTemp, 0);
+                assert(decryptedBytes == outLength);
+                System.arraycopy(outputTemp, 0, buf, offset, length);
+                excessEnd = outLength - length;
+                assert(excessEnd < excess.length);
+                System.arraycopy(outputTemp, length, excess, 0, excessEnd);
+                return length;
+            } else {
+                int decryptedBytes = cipher.processBytes(temp, 0, read, buf, offset);
+                if(decryptedBytes > 0) return decryptedBytes;
+            }
+        }
     }
     
     public void close() throws IOException {
