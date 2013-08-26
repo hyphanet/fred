@@ -71,6 +71,8 @@ public class AEADOutputStream extends FilterOutputStream {
     }
     
     static final int MAC_SIZE = 128;
+    static final int AES_BLOCK_SIZE = 16;
+    public static final int AES_OVERHEAD = AES_BLOCK_SIZE + MAC_SIZE;
     
     public static AEADOutputStream createAES(OutputStream os, byte[] key, SecureRandom random) throws IOException {
         return innerCreateAES(os, key, random);

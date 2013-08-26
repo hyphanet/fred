@@ -19,6 +19,7 @@ public class AEADCryptBucket implements Bucket {
     private final byte[] key;
     private final SecureRandom random;
     private boolean readOnly;
+    private static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
     
     public AEADCryptBucket(Bucket underlying, byte[] key, SecureRandom random) {
         this.underlying = underlying;
@@ -49,7 +50,7 @@ public class AEADCryptBucket implements Bucket {
 
     @Override
     public long size() {
-        return underlying.size();
+        return underlying.size() - OVERHEAD;
     }
 
     @Override
