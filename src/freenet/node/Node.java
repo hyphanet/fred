@@ -5431,4 +5431,9 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
+
+    public byte[] getPluginStoreKey(String storeIdentifier) {
+        return null;
+    }
+
 }

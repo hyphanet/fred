@@ -12,14 +12,17 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.config.SubConfig;
+import freenet.crypt.AEADCryptBucket;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.NodeStarter;
 import freenet.node.ProgramDirectory;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.TrivialPaddedBucket;
 
 public class PluginStores {
     
@@ -87,14 +90,18 @@ public class PluginStores {
     private Bucket getPluginStoreFile(String storeIdentifier) throws FileNotFoundException {
         String filename = storeIdentifier;
         filename += ".data";
-//      boolean isEncrypted = node.isDatabaseEncrypted();
-//      if(isEncrypted)
-//          filename += ".crypt";
+        boolean isEncrypted = node.isDatabaseEncrypted();
+        if(isEncrypted)
+            filename += ".crypt";
         File f = pluginStoresDir.file(filename);
         Bucket bucket = new FileBucket(f, false, false, false, false, false);
-        // FIXME REINSTATE
-//      if(isEncrypted)
-//          bucket = new CipherBucket(bucket, node.getPluginStoreKey(storeIdentifier));
+        if(isEncrypted) {
+            byte[] key = node.getPluginStoreKey(storeIdentifier);
+            if(key != null) {
+                bucket = new TrivialPaddedBucket(bucket);
+                bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+            }
+        }
         return bucket;
     }
 
