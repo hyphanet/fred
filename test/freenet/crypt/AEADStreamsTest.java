@@ -112,7 +112,7 @@ public class AEADStreamsTest extends TestCase {
         Bucket output = new ArrayBucket();
         OutputStream os = output.getOutputStream();
         AEADOutputStream cos = AEADOutputStream.innerCreateAES(os, key, random);
-        BucketTools.copyTo(input, cos, 1024);
+        BucketTools.copyTo(input, cos, 2048);
         cos.close();
         InputStream is = output.getInputStream();
         AEADInputStream cis = AEADInputStream.createAES(is, key);
