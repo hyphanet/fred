@@ -18,6 +18,7 @@ public class AEADInputStream extends FilterInputStream {
     
     private static final int MAC_SIZE_BITS = AEADOutputStream.MAC_SIZE_BITS;
     private final AEADBlockCipher cipher;
+    private boolean finished;
     
     /** Create a decrypting, authenticating InputStream. IMPORTANT: We only authenticate when 
      * closing the stream, so do NOT use Closer.close() etc and swallow IOException's on close(),
@@ -83,11 +84,27 @@ public class AEADInputStream extends FilterInputStream {
                 return length;
             }
         }
+        if(finished) return -1;
         // FIXME OPTIMISE Can we avoid allocating new buffers here? We can't safely use in=out when
         // calling cipher.processBytes().
         while(true) {
             byte[] temp = new byte[length];
             int read = in.read(temp);
+            if(read == 0) return read; // Nasty ambiguous case.
+            if(read < 0) {
+                // End of stream.
+                // The last few bytes will still be in the cipher's buffer and have to be retrieved by doFinal().
+                try {
+                    excessEnd = cipher.doFinal(excess, 0);
+                } catch (InvalidCipherTextException e) {
+                    throw new AEADVerificationFailedException();
+                }
+                finished = true;
+                if(excessEnd > 0)
+                    return read(buf, offset, length);
+                else
+                    return -1;
+            }
             if(read <= 0) return read;
             assert(read <= length);
             int outLength = cipher.getUpdateOutputSize(read);
@@ -150,13 +167,6 @@ public class AEADInputStream extends FilterInputStream {
     
     @Override
     public void close() throws IOException {
-        byte[] tag = new byte[cipher.getOutputSize(0)];
-        new DataInputStream(in).readFully(tag);
-        try {
-            cipher.doFinal(tag, 0);
-        } catch (InvalidCipherTextException e) {
-            throw new AEADVerificationFailedException();
-        }
         in.close();
     }
     
