@@ -652,7 +652,7 @@ public class TempBucketFactory implements BucketFactory {
 		    byte[] key = new byte[16];
 		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
 		    srng.nextBytes(key);
-		    fileBucket = new AEADCryptBucket(fileBucket, key, srng);
+		    fileBucket = new AEADCryptBucket(fileBucket, key);
 		}
 		return fileBucket;
 	}
