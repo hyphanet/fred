@@ -12,10 +12,9 @@ import com.db4o.ObjectContainer;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
-/** Pads a bucket to the next power of 2 file size. Not persistent for now because needs a Random.
- * You can however persist it yourself by recreating it and passing in the known size. If you don't 
- * know the size, but the format is self-terminating, you can maybe get away with passing in the 
- * file size. This pads with FileUtil.fill(), which is reasonably random but is faster than using
+/** Pads a bucket to the next power of 2 file size. 
+ * Note that self-terminating formats do not work with AEADCryptBucket; it needs to know the real 
+ * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
 public class TrivialPaddedBucket implements Bucket {
@@ -217,19 +216,16 @@ public class TrivialPaddedBucket implements Bucket {
 
     @Override
     public void storeTo(ObjectContainer container) {
-        throw new UnsupportedOperationException();
+        underlying.storeTo(container);
+        container.store(this);
     }
 
     @Override
     public void removeFrom(ObjectContainer container) {
-        throw new UnsupportedOperationException();
+        underlying.removeFrom(container);
+        container.delete(this);
     }
     
-    public boolean objectCanNew(ObjectContainer container) {
-        Logger.error(this, "Not storing TrivialPaddedBucket in database", new Exception("error"));
-        return false;
-    }
-
     @Override
     public Bucket createShadow() {
         Bucket shadow = underlying.createShadow();
