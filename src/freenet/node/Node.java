@@ -5445,7 +5445,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 
     public byte[] getPluginStoreKey(String storeIdentifier) {
-        return null;
+        DatabaseKey key;
+        synchronized(this) {
+            key = databaseKey;
+        }
+        if(key != null)
+            return key.getPluginStoreKey(storeIdentifier);
+        else
+            return null;
     }
 
 }
