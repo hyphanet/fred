@@ -76,7 +76,7 @@ public class PluginStores {
     }
 
     private void writePluginStoreInner(String storeIdentifier, PluginStore pluginStore) throws IOException {
-        Bucket bucket = getPluginStoreFile(storeIdentifier);
+        Bucket bucket = getPluginStoreBucket(storeIdentifier);
         OutputStream os = bucket.getOutputStream();
         try {
             if(pluginStore != null) {
@@ -86,14 +86,18 @@ public class PluginStores {
             os.close();
         }
     }
-
-    private Bucket getPluginStoreFile(String storeIdentifier) throws FileNotFoundException {
+    
+    private File getPluginStoreBucket(String storeIdentifier, boolean encrypted) {
         String filename = storeIdentifier;
         filename += ".data";
-        boolean isEncrypted = node.isDatabaseEncrypted();
-        if(isEncrypted)
+        if(encrypted)
             filename += ".crypt";
-        File f = pluginStoresDir.file(filename);
+        return pluginStoresDir.file(filename);
+    }
+
+    private Bucket getPluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
+        boolean isEncrypted = node.isDatabaseEncrypted();
+        File f = getPluginStoreBucket(storeIdentifier, isEncrypted);
         Bucket bucket = new FileBucket(f, false, false, false, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
@@ -108,7 +112,7 @@ public class PluginStores {
     public PluginStore loadPluginStore(String storeIdentifier) {
         Bucket bucket;
         try {
-            bucket = getPluginStoreFile(storeIdentifier);
+            bucket = getPluginStoreBucket(storeIdentifier);
         } catch (FileNotFoundException e) {
             return null;
         }
