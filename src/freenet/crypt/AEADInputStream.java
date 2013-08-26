@@ -106,6 +106,15 @@ public class AEADInputStream extends FilterInputStream {
     }
     
     @Override
+    public int available() throws IOException {
+        int excess = excessEnd - excessPtr;
+        if(excess > 0) return excess;
+        // FIXME Not very accurate as may include the MAC - or it may not, this is not the full 
+        // length of the stream. Maybe we should return 0?
+        return in.available();
+    }
+    
+    @Override
     public void close() throws IOException {
         byte[] tag = new byte[cipher.getOutputSize(0)];
         new DataInputStream(in).readFully(tag);
