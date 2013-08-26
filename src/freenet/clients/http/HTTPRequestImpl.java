@@ -757,7 +757,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		try {
 			is = part.getInputStream();
 			dis = new DataInputStream(is);
-			byte[] buf = new byte[Math.min(dis.available(), maxLength)];
+			byte[] buf = new byte[(int)Math.min(part.size(), maxLength)];
 			dis.readFully(buf, 0, buf.length);
 			return buf;
 		} catch (IOException ioe) {
