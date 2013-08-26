@@ -113,7 +113,7 @@ public class PluginStores {
             if(key != null) {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
-                bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+                bucket = new AEADCryptBucket(bucket, key);
                 bucket = new TrivialPaddedBucket(bucket);
             }
         }
@@ -134,7 +134,7 @@ public class PluginStores {
             if(key != null) {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
-                bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+                bucket = new AEADCryptBucket(bucket, key);
                 bucket = new TrivialPaddedBucket(bucket, bucket.size());
             }
         }
