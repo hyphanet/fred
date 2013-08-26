@@ -78,6 +78,8 @@ public class AEADInputStream extends FilterInputStream {
                 return length;
             }
         }
+        // FIXME OPTIMISE Can we avoid allocating new buffers here? We can't safely use in=out when
+        // calling cipher.processBytes().
         while(true) {
             byte[] temp = new byte[length];
             int read = in.read(temp);
