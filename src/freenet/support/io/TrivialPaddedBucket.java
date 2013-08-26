@@ -99,6 +99,10 @@ public class TrivialPaddedBucket implements Bucket {
             }
         }
         
+        public String toString() {
+            return "TrivialPaddedBucketOutputStream:"+out+"("+TrivialPaddedBucket.this+")";
+        }
+
     }
     
     private static final long MIN_PADDED_SIZE = 1024;
@@ -233,5 +237,5 @@ public class TrivialPaddedBucket implements Bucket {
         ret.setReadOnly();
         return ret;
     }
-
+    
 }

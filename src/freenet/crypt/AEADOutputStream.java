@@ -93,4 +93,9 @@ public class AEADOutputStream extends FilterOutputStream {
         return new AEADOutputStream(os, key, nonce, hashCipher, mainCipher);
     }
     
+    @Override
+    public String toString() {
+        return "AEADOutputStream:"+out.toString();
+    }
+    
 }
