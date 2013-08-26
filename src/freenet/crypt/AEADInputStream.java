@@ -69,6 +69,8 @@ public class AEADInputStream extends FilterInputStream {
     
     @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
+        if(length < 0) return -1;
+        if(length == 0) return 0;
         if(excessEnd != 0) {
             length = Math.min(length, excessEnd - excessPtr);
             if(length > 0) {
