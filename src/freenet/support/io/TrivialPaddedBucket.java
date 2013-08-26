@@ -154,6 +154,8 @@ public class TrivialPaddedBucket implements Bucket {
         @Override
         public int read(byte[] buf, int offset, int length) throws IOException {
             synchronized(TrivialPaddedBucket.this) {
+                if(length < 0) return -1;
+                if(length == 0) return 0;
                 if(counter >= size) return -1;
                 if(counter + length >= size) {
                     length = (int)Math.min(length, size - counter);
