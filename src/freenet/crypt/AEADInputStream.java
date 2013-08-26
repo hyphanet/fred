@@ -160,6 +160,21 @@ public class AEADInputStream extends FilterInputStream {
         in.close();
     }
     
+    @Override
+    public boolean markSupported() {
+        return false;
+    }
+    
+    @Override
+    public void mark(int readlimit) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void reset() throws IOException {
+        throw new IOException("Mark/reset not supported");
+    }
+    
     public static AEADInputStream createAES(InputStream is, byte[] key) throws IOException {
         AESEngine mainCipher = new AESEngine();
         AESLightEngine hashCipher = new AESLightEngine();
