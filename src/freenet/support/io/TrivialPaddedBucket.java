@@ -187,7 +187,7 @@ public class TrivialPaddedBucket implements Bucket {
         }
         
         @Override
-        public int available() throws IOException {
+        public synchronized int available() throws IOException {
             long max = size - counter;
             int ret = in.available();
             if(max < ret) ret = (int)max;
