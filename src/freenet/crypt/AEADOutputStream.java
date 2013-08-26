@@ -44,20 +44,24 @@ public class AEADOutputStream extends FilterOutputStream {
         cipher.init(true, params);
     }
     
+    @Override
     public void write(int b) throws IOException {
         write(new byte[] { (byte)b });
     }
     
+    @Override
     public void write(byte[] buf) throws IOException {
         write(buf, 0, buf.length);
     }
     
+    @Override
     public void write(byte[] buf, int offset, int length) throws IOException {
         byte[] output = new byte[cipher.getUpdateOutputSize(length)];
         cipher.processBytes(buf, offset, length, output, 0);
         out.write(output);
     }
     
+    @Override
     public void close() throws IOException {
         byte[] output = new byte[cipher.getOutputSize(0)];
         try {

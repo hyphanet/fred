@@ -55,16 +55,19 @@ public class AEADInputStream extends FilterInputStream {
     private int excessEnd;
     private int excessPtr;
     
+    @Override
     public int read() throws IOException {
         int length = read(onebyte);
         if(length <= 0) return -1;
         else return onebyte[0];
     }
     
+    @Override
     public int read(byte[] buf) throws IOException {
         return read(buf, 0, buf.length);
     }
     
+    @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
         if(excessEnd != 0) {
             length = Math.min(length, excessEnd - excessPtr);
@@ -102,6 +105,7 @@ public class AEADInputStream extends FilterInputStream {
         }
     }
     
+    @Override
     public void close() throws IOException {
         byte[] tag = new byte[cipher.getOutputSize(0)];
         new DataInputStream(in).readFully(tag);
