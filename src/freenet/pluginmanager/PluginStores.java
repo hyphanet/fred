@@ -22,6 +22,7 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.TrivialPaddedBucket;
 
 public class PluginStores {
@@ -76,7 +77,7 @@ public class PluginStores {
     }
 
     private void writePluginStoreInner(String storeIdentifier, PluginStore pluginStore) throws IOException {
-        Bucket bucket = getPluginStoreBucket(storeIdentifier);
+        Bucket bucket = makePluginStoreBucket(storeIdentifier);
         OutputStream os = bucket.getOutputStream();
         try {
             if(pluginStore != null) {
@@ -95,9 +96,16 @@ public class PluginStores {
         return pluginStoresDir.file(filename);
     }
 
-    private Bucket getPluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
+    private Bucket makePluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
         boolean isEncrypted = node.isDatabaseEncrypted();
         File f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+        if(f.exists()) {
+            try {
+                FileUtil.secureDelete(f, node.fastWeakRandom);
+            } catch (IOException e) {
+                // Ignore.
+            }
+        }
         Bucket bucket = new FileBucket(f, false, false, false, false, false);
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
@@ -109,10 +117,31 @@ public class PluginStores {
         return bucket;
     }
 
+    private Bucket findPluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
+        boolean isEncrypted = node.isDatabaseEncrypted();
+        File f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+        if(!f.exists()) {
+            isEncrypted = !isEncrypted;
+            f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+            if(!f.exists()) return null;
+        }
+        Bucket bucket = new FileBucket(f, false, false, false, false, false);
+        if(isEncrypted) {
+            byte[] key = node.getPluginStoreKey(storeIdentifier);
+            if(key != null) {
+                // The stream is self-terminating so it's okay to pass the padded size in here.
+                bucket = new TrivialPaddedBucket(bucket, bucket.size());
+                bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+            }
+        }
+        return bucket;
+    }
+
     public PluginStore loadPluginStore(String storeIdentifier) {
         Bucket bucket;
         try {
-            bucket = getPluginStoreBucket(storeIdentifier);
+            bucket = findPluginStoreBucket(storeIdentifier);
+            if(bucket == null) return null;
         } catch (FileNotFoundException e) {
             return null;
         }
