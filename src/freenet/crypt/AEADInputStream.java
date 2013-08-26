@@ -128,6 +128,7 @@ public class AEADInputStream extends FilterInputStream {
     public int available() throws IOException {
         int excess = excessEnd - excessPtr;
         if(excess > 0) return excess;
+        if(finished) return 0;
         // FIXME Not very accurate as may include the MAC - or it may not, this is not the full 
         // length of the stream. Maybe we should return 0?
         return in.available();
