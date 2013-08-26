@@ -117,6 +117,38 @@ public class AEADInputStream extends FilterInputStream {
     }
     
     @Override
+    public long skip(long n) throws IOException {
+        long skipped = 0;
+        byte[] temp = new byte[excess.length];
+        while(n > 0) {
+            int excessLeft = excessEnd - excessPtr;
+            if(excessLeft > 0) {
+                if(n < excessLeft) {
+                    excessPtr += (int)n;
+                    return n;
+                }
+                n -= excessLeft;
+                skipped += excessLeft;
+                excessEnd = 0;
+                excessPtr = 0;
+                continue;
+            }
+            if(n < temp.length) {
+                int read = read(temp, 0, (int)n);
+                if(read <= 0) return skipped;
+                skipped += read;
+                n -= read;
+            } else {
+                int read = read(temp);
+                if(read <= 0) return skipped;
+                skipped += read;
+                n -= read;
+            }
+        }
+        return skipped;
+    }
+    
+    @Override
     public void close() throws IOException {
         byte[] tag = new byte[cipher.getOutputSize(0)];
         new DataInputStream(in).readFully(tag);
