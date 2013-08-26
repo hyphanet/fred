@@ -46,7 +46,7 @@ public class Closer {
 			try {
 				closable.close();
 			} catch (IOException e) {
-				Logger.error(Closer.class, "Error during close().", e);
+				Logger.error(Closer.class, "Error during close() on "+closable, e);
 			}
 		}
 	}
