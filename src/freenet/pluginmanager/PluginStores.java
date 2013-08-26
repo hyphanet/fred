@@ -110,8 +110,10 @@ public class PluginStores {
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {
-                bucket = new TrivialPaddedBucket(bucket);
+                // We pad then encrypt, which is wasteful, but we have no way to persist the size.
+                // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+                bucket = new TrivialPaddedBucket(bucket);
             }
         }
         return bucket;
@@ -129,9 +131,10 @@ public class PluginStores {
         if(isEncrypted) {
             byte[] key = node.getPluginStoreKey(storeIdentifier);
             if(key != null) {
-                // The stream is self-terminating so it's okay to pass the padded size in here.
-                bucket = new TrivialPaddedBucket(bucket, bucket.size());
+                // We pad then encrypt, which is wasteful, but we have no way to persist the size.
+                // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key, NodeStarter.getGlobalSecureRandom());
+                bucket = new TrivialPaddedBucket(bucket, bucket.size());
             }
         }
         return bucket;
