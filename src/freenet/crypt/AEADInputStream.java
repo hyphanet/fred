@@ -63,6 +63,7 @@ public class AEADInputStream extends FilterInputStream {
         byte[] temp = new byte[length];
         int read = in.read(temp);
         if(read <= 0) return read;
+        assert(read <= length);
         return cipher.processBytes(temp, 0, read, buf, offset);
     }
     
