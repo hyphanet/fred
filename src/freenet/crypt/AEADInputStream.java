@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 
 public class AEADInputStream extends FilterInputStream {
     
-    private static final int MAC_SIZE = AEADOutputStream.MAC_SIZE;
+    private static final int MAC_SIZE_BITS = AEADOutputStream.MAC_SIZE_BITS;
     private final AEADBlockCipher cipher;
     
     /** Create a decrypting, authenticating InputStream. IMPORTANT: We only authenticate when 
@@ -38,7 +38,7 @@ public class AEADInputStream extends FilterInputStream {
         new DataInputStream(is).readFully(nonce);
         cipher = new OCBBlockCipher(hashCipher, mainCipher);
         KeyParameter keyParam = new KeyParameter(key);
-        AEADParameters params = new AEADParameters(keyParam, MAC_SIZE, nonce);
+        AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(false, params);
         excess = new byte[mainCipher.getBlockSize()];
         excessEnd = 0;
