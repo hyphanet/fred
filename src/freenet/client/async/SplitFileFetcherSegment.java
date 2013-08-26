@@ -1162,8 +1162,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					if(wrapper != data) {
 						assert(!persistent);
 						wrapper.free();
+					} else {
+					    data.free();
 					}
-					data.free();
 					if(persistent) data.removeFrom(container);
 					checkBuckets[i].clearData();
 				} else {
