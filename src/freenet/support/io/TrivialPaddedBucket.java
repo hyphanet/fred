@@ -186,6 +186,14 @@ public class TrivialPaddedBucket implements Bucket {
             return ret;
         }
         
+        @Override
+        public int available() throws IOException {
+            long max = size - counter;
+            int ret = in.available();
+            if(max < ret) ret = (int)max;
+            return ret;
+        }
+        
     }
 
     @Override
