@@ -55,6 +55,7 @@ public class BucketTools {
 		WritableByteChannel writeChannel = Channels.newChannel(out);
 		try {
 
+		// No benefit to allocateDirect() as we're wrapping streams anyway, and worse, it'd be a memory leak.
 		ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
