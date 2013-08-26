@@ -69,6 +69,7 @@ public class PluginStores {
             writePluginStoreInner(psc.storeIdentifier, psc.pluginStore);
             // FIXME implement removal when sure it works.
             psc.pluginStore.removeFrom(container);
+            container.delete(psc);
             container.commit();
             System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
         } catch (IOException e) {
