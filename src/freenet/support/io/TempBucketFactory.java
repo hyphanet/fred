@@ -648,7 +648,7 @@ public class TempBucketFactory implements BucketFactory {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
-            //fileBucket = new TrivialPaddedBucket(fileBucket);
+            fileBucket = new TrivialPaddedBucket(fileBucket);
 		    byte[] key = new byte[16];
 		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
 		    srng.nextBytes(key);
