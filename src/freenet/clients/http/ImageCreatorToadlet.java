@@ -47,7 +47,7 @@ public class ImageCreatorToadlet extends Toadlet {
 				// If the received date is equal to the last modification of this class, then it doesn't need regeneration
 				if (ToadletContextImpl.parseHTTPDate(ctx.getHeaders().get("if-modified-since")).compareTo(LAST_MODIFIED) == 0) {
 					// So we just send the NOT_MODIFIED response, and skip the generation
-					ctx.sendReplyHeaders(304, "Not Modified", null, "image/png", 0, LAST_MODIFIED);
+					ctx.sendReplyHeadersStatic(304, "Not Modified", null, "image/png", 0, LAST_MODIFIED);
 					needsGeneration = false;
 				}
 			} catch (ParseException pe) {
@@ -97,7 +97,7 @@ public class ImageCreatorToadlet extends Toadlet {
 				os.close();
 			}
 			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
-			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
+			ctx.sendReplyHeadersStatic(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
 		}
 	}

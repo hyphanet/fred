@@ -190,7 +190,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				        "&compress="+String.valueOf(request.getPartAsStringFailsafe("compress", 128).length() > 0)+
 				        "&compatibilityMode="+request.getPartAsStringFailsafe("compatibilityMode", 100)+
 				        "&overrideSplitfileKey="+request.getPartAsStringFailsafe("overrideSplitfileKey", 65));
-				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0, null);
+				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			} else if (request.isPartSet("select-location")) {
 				try {

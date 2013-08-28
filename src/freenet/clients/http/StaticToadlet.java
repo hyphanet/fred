@@ -75,7 +75,7 @@ public class StaticToadlet extends Toadlet {
 			}
 			try {
 				FileBucket fb = new FileBucket(from, true, false, false, false, false);
-				ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), fb.size(), new Date(System.currentTimeMillis() - 1000)); // Already expired, we want it to reload it.
+				ctx.sendReplyHeadersStatic(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), fb.size(), new Date(System.currentTimeMillis() - 1000)); // Already expired, we want it to reload it.
 				ctx.writeData(fb);
 				return;
 			} catch (IOException e) {
@@ -107,7 +107,7 @@ public class StaticToadlet extends Toadlet {
 		URL url = getClass().getResource(ROOT_PATH+path);
 		Date mTime = getUrlMTime(url);
 		
-		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size(), mTime);
+		ctx.sendReplyHeadersStatic(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size(), mTime);
 
 		ctx.writeData(data);
 	}
