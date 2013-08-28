@@ -89,7 +89,7 @@ public class PluginStores {
         }
     }
     
-    private File getPluginStoreBucket(String storeIdentifier, boolean encrypted) {
+    private File getPluginStoreFile(String storeIdentifier, boolean encrypted) {
         String filename = storeIdentifier;
         filename += ".data";
         if(encrypted)
@@ -99,7 +99,7 @@ public class PluginStores {
 
     private Bucket makePluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
         boolean isEncrypted = node.isDatabaseEncrypted();
-        File f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+        File f = getPluginStoreFile(storeIdentifier, isEncrypted);
         if(f.exists()) {
             try {
                 FileUtil.secureDelete(f, node.fastWeakRandom);
@@ -119,13 +119,13 @@ public class PluginStores {
         }
         return bucket;
     }
-
+    
     private Bucket findPluginStoreBucket(String storeIdentifier) throws FileNotFoundException {
         boolean isEncrypted = node.isDatabaseEncrypted();
-        File f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+        File f = getPluginStoreFile(storeIdentifier, isEncrypted);
         if(!f.exists()) {
             isEncrypted = !isEncrypted;
-            f = getPluginStoreBucket(storeIdentifier, isEncrypted);
+            f = getPluginStoreFile(storeIdentifier, isEncrypted);
             if(!f.exists()) return null;
         }
         Bucket bucket = new FileBucket(f, false, false, false, false, false);
