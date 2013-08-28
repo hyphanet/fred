@@ -58,17 +58,6 @@ public interface ToadletContext {
 	 */
 	void sendReplyHeadersFProxy(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
-    /**
-     * Write reply headers for the fproxy outlink confirmation page. This is the only case where
-     * fproxy can link to external links.
-     * @param code HTTP code.
-     * @param desc HTTP code description.
-     * @param mvt Any extra headers. Can be null.
-     * @param mimeType The MIME type of the reply.
-     * @param length The length of the reply.
-     */
-    void sendReplyHeadersOutlinkConfirmation(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
-
 	/**
 	 * Write data. Note you must send reply headers first.
 	 */

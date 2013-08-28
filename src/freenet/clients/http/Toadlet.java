@@ -211,7 +211,7 @@ public abstract class Toadlet {
 	 * HTML, plain text etc).
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
-		writeReply(ctx, code, mimeType, desc, null, reply, false);
+		writeReply(ctx, code, mimeType, desc, null, reply);
 	}
 	
 	/**
@@ -222,7 +222,7 @@ public abstract class Toadlet {
 	 * @param reply The HTML page, as a String.
 	 */
 	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
-		writeReply(ctx, code, "text/html; charset=utf-8", desc, null, reply, false);
+		writeReply(ctx, code, "text/html; charset=utf-8", desc, null, reply);
 	}
 	
 	/**
@@ -233,22 +233,9 @@ public abstract class Toadlet {
 	 * @param reply The text of the page, as a String.
 	 */
 	protected void writeTextReply(ToadletContext ctx, int code, String desc, String reply) throws ToadletContextClosedException, IOException {
-		writeReply(ctx, code, "text/plain; charset=utf-8", desc, null, reply, false);
+		writeReply(ctx, code, "text/plain; charset=utf-8", desc, null, reply);
 	}
 
-    /**
-     * Write an HTTP response as HTML, possibly with custom headers, for example, we may want to 
-     * send a redirect, or a file with a specified filename. 
-     * @param ctx The specific request to reply to.
-     * @param code The HTTP reply code to use.
-     * @param desc The HTTP response description for the code.
-     * @param headers The additional HTTP headers to send.
-     * @param reply The HTML page, as a String.
-     */
-	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
-	    writeHTMLReply(ctx, code, desc, headers, reply, false);
-	}
-	
 	/**
 	 * Write an HTTP response as HTML, possibly with custom headers, for example, we may want to 
 	 * send a redirect, or a file with a specified filename. 
@@ -257,11 +244,9 @@ public abstract class Toadlet {
 	 * @param desc The HTTP response description for the code.
 	 * @param headers The additional HTTP headers to send.
 	 * @param reply The HTML page, as a String.
-     * @param allowExternalLinks If true, this is a confirmation page for an external link, outside
-     * of Freenet. This should ONLY be used by ExternalLinkToadlet.
 	 */
-	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply, boolean allowExternalLinks) throws ToadletContextClosedException, IOException {
-		writeReply(ctx, code, "text/html; charset=utf-8", desc, headers, reply, allowExternalLinks);
+	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
+		writeReply(ctx, code, "text/html; charset=utf-8", desc, headers, reply);
 	}
 	
 	/**
@@ -274,29 +259,13 @@ public abstract class Toadlet {
 	 * @param reply The text of the page, as a String.
 	 */
 	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
-		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply, false);
+		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply);
 	}
 	
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
-	    writeReply(context, code, mimeType, desc, headers, reply, false);
+	    writeReply(context, code, mimeType, desc, headers, reply);
 	}
 
-	/**
-	 * Write an HTTP response, e.g. a page, an image, an error message, possibly with custom 
-	 * headers, for example, we may want to send a redirect, or a file with a specified filename.
-	 * @param context The specific request to reply to.
-	 * @param code The HTTP reply code to use.
-	 * @param mimeType The MIME type of the data we are returning.
-	 * @param desc The HTTP response description for the code.
-	 * @param headers The additional HTTP headers to send.
-	 * @param reply The reply data, as a String (so only use this for text-based replies, e.g. 
-	 * HTML, plain text etc).
-	 */
-	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply, boolean allowExternalLinks) throws ToadletContextClosedException, IOException {
-		byte[] buffer = reply.getBytes("UTF-8");
-		writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length, allowExternalLinks);
-	}
-	
 	/**
 	 * Write a generated HTTP response, e.g. a page, an image, an error message, possibly with 
 	 * custom headers, for example, we may want to send a redirect, or a file with a specified 
@@ -309,14 +278,9 @@ public abstract class Toadlet {
 	 * @param data The data to write as the response body.
 	 * @param offset The offset within data of the first byte to send.
 	 * @param length The number of bytes of data to send as the response body.
-	 * @param allowExternalLinks If true, this is a confirmation page for an external link, outside
-	 * of Freenet. This should ONLY be used by ExternalLinkToadlet.
 	 */
-	private void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, byte[] buffer, int startIndex, int length, boolean allowExternalLinks) throws ToadletContextClosedException, IOException {
-	    if(allowExternalLinks)
-	        context.sendReplyHeadersOutlinkConfirmation(code, desc, headers, mimeType, length);
-	    else
-	        context.sendReplyHeaders(code, desc, headers, mimeType, length);
+	private void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, byte[] buffer, int startIndex, int length) throws ToadletContextClosedException, IOException {
+	    context.sendReplyHeaders(code, desc, headers, mimeType, length);
 		context.writeData(buffer, startIndex, length);
 	}
 	

@@ -78,7 +78,7 @@ public class ExternalLinkToadlet extends Toadlet {
 			new String[]{"type", "name", "value"},
 			new String[]{"submit", "Go", l10n("goToExternalLink")});
 
-		this.writeHTMLReply(ctx, 200, "OK", null, pageNode.generate(), true);
+		this.writeHTMLReply(ctx, 200, "OK", null, pageNode.generate());
 	}
 
 	/**

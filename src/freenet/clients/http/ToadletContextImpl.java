@@ -201,11 +201,6 @@ public class ToadletContextImpl implements ToadletContext {
 	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
 	}
 	
-	@Override
-    public void sendReplyHeadersOutlinkConfirmation(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, true, false, false);
-	}
-
 	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		if(sentReplyHeaders) {
