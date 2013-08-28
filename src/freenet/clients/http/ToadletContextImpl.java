@@ -192,7 +192,7 @@ public class ToadletContextImpl implements ToadletContext {
 			if (mvt == null) {
 				mvt = new MultiValueTable<String,String>();
 			}
-			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
+			mvt.put("cache-control", "no-cache=\"set-cookie\"");
 			
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
