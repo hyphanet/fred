@@ -1,5 +1,6 @@
 package freenet.pluginmanager;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -128,7 +129,13 @@ public class PluginRespirator {
 	 * @throws DatabaseDisabledException
 	 */
 	public void putStore(final PluginStore store) throws DatabaseDisabledException {
-	    stores.writePluginStore(this.plugin.getClass().getCanonicalName(), store);
+	    String name = this.plugin.getClass().getCanonicalName();
+	    try {
+            stores.writePluginStore(name, store);
+        } catch (IOException e) {
+            System.err.println("Unable to write plugin data for "+name+" : "+e);
+            return;
+        }
 	}
 
 	/**
