@@ -136,6 +136,7 @@ public class AEADInputStream extends FilterInputStream {
     
     @Override
     public long skip(long n) throws IOException {
+        // FIXME unit test skip()
         long skipped = 0;
         byte[] temp = new byte[excess.length];
         while(n > 0) {
