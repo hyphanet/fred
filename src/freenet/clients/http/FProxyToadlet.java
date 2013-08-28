@@ -527,24 +527,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				return;
 			}
 		}else if(ks.equals("/favicon.ico")){
-			byte[] buf = new byte[1024];
-			int len;
-			InputStream strm = getClass().getResourceAsStream("staticfiles/favicon.ico");
-
-			try {
-				if (strm == null) {
-					this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
-					return;
-				}
-				ctx.sendReplyHeadersFProxy(200, "OK", null, "image/x-icon", strm.available());
-
-				while ( (len = strm.read(buf)) > 0) {
-					ctx.writeData(buf, 0, len);
-				}
-			} finally {
-				Closer.close(strm);
-			}
-			return;
+		    try {
+                throw new RedirectException(StaticToadlet.ROOT_PATH+"favicon.ico");
+            } catch (URISyntaxException e) {
+                throw new Error(e);
+            }
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
 			//TODO Better way to find the host. Find if https is used?
 			String host = ctx.getHeaders().get("host");
