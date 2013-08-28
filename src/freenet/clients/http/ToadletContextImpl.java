@@ -157,7 +157,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable<String,String>();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect);
+		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false);
 		os.write(messageBytes);
 	}
 	
@@ -192,7 +192,6 @@ public class ToadletContextImpl implements ToadletContext {
 			if (mvt == null) {
 				mvt = new MultiValueTable<String,String>();
 			}
-			mvt.put("cache-control", "no-cache=\"set-cookie\"");
 			
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
@@ -204,7 +203,7 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		}
 		
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, true);
 	}
 	
 	@Override
@@ -341,7 +340,7 @@ public class ToadletContextImpl implements ToadletContext {
 		replyCookies.add(newCookie);
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean withCookies) throws IOException {
 		
 		// Construct headers
 		if(mvt == null)
@@ -376,7 +375,10 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("date", nowString);
 		if (mTime == null) {
 			mvt.put("pragma", "no-cache");
-			mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
+			String cacheControl = "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0";
+			if(withCookies)
+			    cacheControl += ", no-cache=\"set-cookie\"";
+			mvt.put("cache-control", cacheControl);
 		}
 		if(disconnect)
 			mvt.put("connection", "close");
@@ -648,7 +650,7 @@ public class ToadletContextImpl implements ToadletContext {
 				pw.flush();
 				msg = msg + sw.toString() + "</pre></body></html>";
 				byte[] messageBytes = msg.getBytes("UTF-8");
-				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true);
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return
