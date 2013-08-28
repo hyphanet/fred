@@ -577,10 +577,6 @@ final public class FileUtil {
 	}
 	
 	public static void secureDelete(File file) throws IOException {
-		secureDelete(file, false);
-	}
-
-	public static void secureDelete(File file, boolean quick) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();
@@ -590,24 +586,10 @@ final public class FileUtil {
 				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
 				raf = new RandomAccessFile(file, "rw");
 				long count;
-				if(!quick) {
-					// Random data first.
-                    raf.seek(0);
-					fill(new RandomAccessFileOutputStream(raf), size);
-					raf.getFD().sync();
-				}
-                // Now zero it out
-                raf.seek(0);
-                byte[] buf = new byte[4096];
-                for(int i=0;i<buf.length;i++)
-                    buf[i] = 0;
-                count = 0;
-                while(count < size) {
-                    int written = (int) Math.min(buf.length, size - count);
-                    raf.write(buf, 0, written);
-                    count += written;
-                }
-                raf.getFD().sync();
+				// Random data first.
+				raf.seek(0);
+				fill(new RandomAccessFileOutputStream(raf), size);
+				raf.getFD().sync();
 				raf.close();
 				raf = null;
 			} finally {

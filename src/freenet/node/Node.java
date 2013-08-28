@@ -2655,7 +2655,7 @@ public class Node implements TimeSkewDetectorCallback {
 					name.toLowerCase().matches("((chk)|(ssk)|(pubkey))-[0-9]*\\.((store)|(cache))(\\.((keys)|(lru)))?")) {
 				System.out.println("Deleting old datastore file \""+f+"\"");
 				try {
-					FileUtil.secureDelete(f, true);
+					FileUtil.secureDelete(f);
 				} catch (IOException e) {
 					System.err.println("Failed to delete old datastore file \""+f+"\": "+e);
 					e.printStackTrace();
