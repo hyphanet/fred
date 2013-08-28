@@ -21,7 +21,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -536,11 +535,11 @@ final public class FileUtil {
 		}
 	}
 	
-	public static boolean secureDeleteAll(File wd, Random random) throws IOException {
+	public static boolean secureDeleteAll(File wd) throws IOException {
 		if(!wd.isDirectory()) {
 			System.err.println("DELETING FILE "+wd);
 			try {
-				secureDelete(wd, random);
+				secureDelete(wd);
 			} catch (IOException e) {
 				Logger.error(FileUtil.class, "Could not delete file: "+wd, e);
 				return false;
@@ -577,11 +576,11 @@ final public class FileUtil {
 		return true;
 	}
 	
-	public static void secureDelete(File file, Random random) throws IOException {
-		secureDelete(file, random, false);
+	public static void secureDelete(File file) throws IOException {
+		secureDelete(file, false);
 	}
 
-	public static void secureDelete(File file, Random random, boolean quick) throws IOException {
+	public static void secureDelete(File file, boolean quick) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();
@@ -614,14 +613,8 @@ final public class FileUtil {
 					}
 					raf.getFD().sync();
 					// Then random data
-					random.nextBytes(buf);
-					raf.seek(0);
-					count = 0;
-					while(count < size) {
-						int written = (int) Math.min(buf.length, size - count);
-						raf.write(buf, 0, written);
-						count += written;
-					}
+                    raf.seek(0);
+					fill(new RandomAccessFileOutputStream(raf), size);
 					raf.getFD().sync();
 					raf.seek(0);
 					// Then 0's again

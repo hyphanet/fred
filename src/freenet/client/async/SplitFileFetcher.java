@@ -617,7 +617,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false, cachedMainBloomFilter, cachedSegmentBloomFilters, container, onStartup, realTimeFlag);
 				if(main != null) {
 					try {
-						FileUtil.secureDelete(main, context.fastWeakRandom);
+						FileUtil.secureDelete(main);
 					} catch (IOException e) {
 						System.err.println("Failed to delete old bloom filter file: "+main+" - this may leak information about a download : "+e);
 						e.printStackTrace();
@@ -625,7 +625,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				}
 				if(alt != null) {
 					try {
-						FileUtil.secureDelete(alt, context.fastWeakRandom);
+						FileUtil.secureDelete(alt);
 					} catch (IOException e) {
 						System.err.println("Failed to delete old segment filters file: "+alt+" - this may leak information about a download : "+e);
 					}
@@ -633,12 +633,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			} catch (IOException e) {
 				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...", e);
 				try {
-					FileUtil.secureDelete(main, context.fastWeakRandom);
+					FileUtil.secureDelete(main);
 				} catch (IOException e2) {
 					// Ignore
 				}
 				try {
-					FileUtil.secureDelete(alt, context.fastWeakRandom);
+					FileUtil.secureDelete(alt);
 				} catch (IOException e2) {
 					// Ignore
 				}

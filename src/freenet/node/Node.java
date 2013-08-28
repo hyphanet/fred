@@ -1241,7 +1241,7 @@ public class Node implements TimeSkewDetectorCallback {
 				db.close();
 				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 					try {
-						FileUtil.secureDelete(dbFileCrypt, random);
+						FileUtil.secureDelete(dbFileCrypt);
 					} catch (IOException e) {
 						// Ignore
 					} finally {
@@ -2655,7 +2655,7 @@ public class Node implements TimeSkewDetectorCallback {
 					name.toLowerCase().matches("((chk)|(ssk)|(pubkey))-[0-9]*\\.((store)|(cache))(\\.((keys)|(lru)))?")) {
 				System.out.println("Deleting old datastore file \""+f+"\"");
 				try {
-					FileUtil.secureDelete(f, fastWeakRandom, true);
+					FileUtil.secureDelete(f, true);
 				} catch (IOException e) {
 					System.err.println("Failed to delete old datastore file \""+f+"\": "+e);
 					e.printStackTrace();
@@ -2878,10 +2878,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-				databaseKey = new byte[32];
-				random.nextBytes(databaseKey);
-				FileUtil.secureDelete(dbFileCrypt, random);
-				FileUtil.secureDelete(dbFile, random);
+                databaseKey = new byte[32];
+                random.nextBytes(databaseKey);
+                FileUtil.secureDelete(dbFileCrypt);
+                FileUtil.secureDelete(dbFile);
 				database = openCryptDatabase(databaseKey);
 				synchronized(this) {
 					databaseEncrypted = true;
@@ -2987,7 +2987,7 @@ public class Node implements TimeSkewDetectorCallback {
 				fis.close();
 				readAdapter.close();
 				if(FileUtil.renameTo(tempFile, dbFileCrypt)) {
-					FileUtil.secureDelete(dbFile, random);
+					FileUtil.secureDelete(dbFile);
 					System.err.println("Completed encrypting the old node.db4o.");
 					database = openCryptDatabase(databaseKey);
 					synchronized(this) {
@@ -3181,10 +3181,10 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
-		FileUtil.secureDelete(backupFile, random);
+		FileUtil.secureDelete(backupFile);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
-		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(tmpFile);
 
 
 
@@ -3196,7 +3196,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} catch (IOException e) {
 			if(backupFile.exists()) {
 				System.err.println("Defrag failed. Trying to preserve original database file.");
-				FileUtil.secureDelete(databaseFile, random);
+				FileUtil.secureDelete(databaseFile);
 				if(!backupFile.renameTo(databaseFile)) {
 					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
 					WrapperManager.restart();
@@ -3206,7 +3206,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} catch (Db4oException e) {
 			if(backupFile.exists()) {
 				System.err.println("Defrag failed. Trying to preserve original database file.");
-				FileUtil.secureDelete(databaseFile, random);
+				FileUtil.secureDelete(databaseFile);
 				if(!backupFile.renameTo(databaseFile)) {
 					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
 					WrapperManager.restart();
@@ -3227,8 +3227,8 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		} else {
 			double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
-			FileUtil.secureDelete(tmpFile, random);
-			FileUtil.secureDelete(backupFile, random);
+			FileUtil.secureDelete(tmpFile);
+			FileUtil.secureDelete(backupFile);
 			System.err.println("Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
 		}
 
@@ -3250,7 +3250,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public void killMasterKeysFile() throws IOException {
-		MasterKeys.killMasterKeys(masterKeysFile, random);
+		MasterKeys.killMasterKeys(masterKeysFile);
 	}
 
 
@@ -5218,8 +5218,8 @@ public class Node implements TimeSkewDetectorCallback {
 			db = null;
 		}
 		try {
-			FileUtil.secureDelete(dbFile, random);
-			FileUtil.secureDelete(dbFileCrypt, random);
+			FileUtil.secureDelete(dbFile);
+			FileUtil.secureDelete(dbFileCrypt);
 		} catch (IOException e) {
 			// Ignore
 		}
