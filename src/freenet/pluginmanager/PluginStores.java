@@ -188,10 +188,10 @@ public class PluginStores {
     public void writePluginStore(String storeIdentifier, PluginStore store) throws IOException {
         boolean isEncrypted = node.isDatabaseEncrypted();
         File backup = getPluginStoreFile(storeIdentifier, isEncrypted, true);
-        if(backup.exists()) {
+        File main = getPluginStoreFile(storeIdentifier, isEncrypted, false);
+        if(backup.exists() && main.exists()) {
             FileUtil.secureDelete(backup);
         }
-        File main = getPluginStoreFile(storeIdentifier, isEncrypted, false);
         if(main.exists()) {
             if(!main.renameTo(backup))
                 System.err.println("Unable to rename "+main+" to "+backup+" when writing pluginstore for "+storeIdentifier);
