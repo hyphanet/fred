@@ -189,7 +189,7 @@ public class PluginStores {
         boolean isEncrypted = node.isDatabaseEncrypted();
         File backup = getPluginStoreFile(storeIdentifier, isEncrypted, true);
         if(backup.exists()) {
-            backup.delete(); // FIXME SecureDelete.
+            FileUtil.secureDelete(backup);
         }
         File main = getPluginStoreFile(storeIdentifier, isEncrypted, false);
         if(main.exists()) {
@@ -199,11 +199,11 @@ public class PluginStores {
         writePluginStoreInner(storeIdentifier, store, isEncrypted, false);
         File f = getPluginStoreFile(storeIdentifier, !isEncrypted, true);
         if(f.exists()) {
-            f.delete(); // FIXME SecureDelete.
+            FileUtil.secureDelete(f);
         }
         f = getPluginStoreFile(storeIdentifier, !isEncrypted, false);
         if(f.exists()) {
-            f.delete(); // FIXME SecureDelete.
+            FileUtil.secureDelete(f);
         }
     }
 
