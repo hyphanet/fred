@@ -157,7 +157,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable<String,String>();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false, false);
+		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false);
 		os.write(messageBytes);
 	}
 	
@@ -222,7 +222,7 @@ public class ToadletContextImpl implements ToadletContext {
 					Logger.minor(this, "set-cookie: " + cookieHeader);
 			}
 		}
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, isOutlinkConfirmationPage, allowFrames);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, allowFrames);
 	}
 	
 	@Override
@@ -359,7 +359,7 @@ public class ToadletContextImpl implements ToadletContext {
 		replyCookies.add(newCookie);
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowOutlinks, boolean allowFrames) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowFrames) throws IOException {
 		
 		// Construct headers
 		if(mvt == null)
@@ -401,7 +401,7 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt.put("connection", "close");
 		else
 			mvt.put("connection", "keep-alive");
-		String contentSecurityPolicy = generateCSP(allowScripts, allowOutlinks, allowFrames);
+		String contentSecurityPolicy = generateCSP(allowScripts, allowFrames);
 		mvt.put("content-security-policy", contentSecurityPolicy);
 		mvt.put("x-content-security-policy", contentSecurityPolicy);
 		mvt.put("x-webkit-csp", contentSecurityPolicy);
@@ -427,12 +427,9 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
-	private static String generateCSP(boolean allowScripts, boolean allowOutlinks,
-            boolean allowFrames) {
+	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("default-src ");
-	    sb.append(allowOutlinks ? "*" : "'self'");
-	    sb.append("; image-src 'self'; script-src ");
+	    sb.append("default-src 'self'; image-src 'self'; script-src ");
 	    sb.append(allowScripts ? "'self'" : "'none'");
 	    sb.append("; frame-src ");
         sb.append(allowFrames ? "'self'" : "'none'");
@@ -684,7 +681,7 @@ public class ToadletContextImpl implements ToadletContext {
 				pw.flush();
 				msg = msg + sw.toString() + "</pre></body></html>";
 				byte[] messageBytes = msg.getBytes("UTF-8");
-				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false, false);
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return
