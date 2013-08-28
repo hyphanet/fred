@@ -600,6 +600,11 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file "+file);
 	}
 
+	/** @Deprecated */
+    public static void secureDelete(File file, Random random) throws IOException {
+        secureDelete(file);
+    }
+    
 	public static long getFreeSpace(File dir) {
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
