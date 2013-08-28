@@ -205,7 +205,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(oldTemp.exists() && oldTemp.isDirectory() && !FileUtil.equals(tempDir.dir, oldTemp)) {
 			System.err.println("Deleting old temporary dir: "+oldTemp);
 			try {
-				FileUtil.secureDeleteAll(oldTemp, new MersenneTwister(random.nextLong()));
+				FileUtil.secureDeleteAll(oldTemp);
 			} catch (IOException e) {
 				// Ignore.
 			}
