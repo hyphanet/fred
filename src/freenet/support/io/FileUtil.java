@@ -589,45 +589,25 @@ final public class FileUtil {
 			try {
 				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
 				raf = new RandomAccessFile(file, "rw");
-				raf.seek(0);
 				long count;
-				byte[] buf = new byte[4096];
-				// First zero it out
-				count = 0;
-				while(count < size) {
-					int written = (int) Math.min(buf.length, size - count);
-					raf.write(buf, 0, written);
-					count += written;
-				}
-				raf.getFD().sync();
 				if(!quick) {
-					// Then ffffff it out
-					for(int i=0;i<buf.length;i++)
-						buf[i] = (byte)0xFF;
-					raf.seek(0);
-					count = 0;
-					while(count < size) {
-						int written = (int) Math.min(buf.length, size - count);
-						raf.write(buf, 0, written);
-						count += written;
-					}
-					raf.getFD().sync();
-					// Then random data
+					// Random data first.
                     raf.seek(0);
 					fill(new RandomAccessFileOutputStream(raf), size);
 					raf.getFD().sync();
-					raf.seek(0);
-					// Then 0's again
-					for(int i=0;i<buf.length;i++)
-						buf[i] = 0;
-					count = 0;
-					while(count < size) {
-						int written = (int) Math.min(buf.length, size - count);
-						raf.write(buf, 0, written);
-						count += written;
-					}
-					raf.getFD().sync();
 				}
+                // Now zero it out
+                raf.seek(0);
+                byte[] buf = new byte[4096];
+                for(int i=0;i<buf.length;i++)
+                    buf[i] = 0;
+                count = 0;
+                while(count < size) {
+                    int written = (int) Math.min(buf.length, size - count);
+                    raf.write(buf, 0, written);
+                    count += written;
+                }
+                raf.getFD().sync();
 				raf.close();
 				raf = null;
 			} finally {
