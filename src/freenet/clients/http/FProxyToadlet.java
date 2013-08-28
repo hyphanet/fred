@@ -231,7 +231,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			// see http://onjava.com/pub/a/onjava/excerpt/jebp_3/index3.html
 			// Testing on FF3.5.1 shows that application/x-force-download wants to run it in wine,
 			// whereas application/force-download wants to save it.
-			context.sendReplyHeaders(200, "OK", headers, "application/force-download", size);
+			context.sendReplyHeadersFProxy(200, "OK", headers, "application/force-download", size);
 			context.writeData(data);
 		} else {
 			// Send the data, intact
@@ -268,10 +268,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
 				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + size);
-				context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
+				context.sendReplyHeadersFProxy(206, "Partial content", retHdr, mimeType, tmpRange.size());
 				context.writeData(tmpRange);
 			} else {
-				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, size);
+				context.sendReplyHeadersFProxy(200, "OK", new MultiValueTable<String, String>(), mimeType, size);
 				context.writeData(data);
 			}
 		}
@@ -536,7 +536,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
 					return;
 				}
-				ctx.sendReplyHeaders(200, "OK", null, "image/x-icon", strm.available());
+				ctx.sendReplyHeadersFProxy(200, "OK", null, "image/x-icon", strm.available());
 
 				while ( (len = strm.read(buf)) > 0) {
 					ctx.writeData(buf, 0, len);
@@ -550,7 +550,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			String host = ctx.getHeaders().get("host");
 			String atom = ctx.getAlertManager().getAtom("http://" + host);
 			byte[] buf = atom.getBytes("UTF-8");
-			ctx.sendReplyHeaders(200, "OK", null, "application/atom+xml", buf.length);
+			ctx.sendReplyHeadersFProxy(200, "OK", null, "application/atom+xml", buf.length);
 			ctx.writeData(buf, 0, buf.length);
 			return;
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){

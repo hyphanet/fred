@@ -157,7 +157,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable<String,String>();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect);
+		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect, false, false, false);
 		os.write(messageBytes);
 	}
 	
@@ -174,14 +174,39 @@ public class ToadletContextImpl implements ToadletContext {
 		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
+
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = container.isFProxyJavascriptEnabled();
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, false, enableJavascript);
+	}
+
+	@Deprecated
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException {
+	    if(mTime != null)
+	        sendReplyHeadersStatic(code, desc, mvt, mimeType, length, mTime);
+	    else
+	        sendReplyHeaders(code, desc, mvt, mimeType, length);
+	}
 	
-	@Override
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-		sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null);
+	public void sendReplyHeadersStatic(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
+	    if(mTime == null) throw new IllegalArgumentException();
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, mTime, false, false, false);
 	}
 	
 	@Override
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
+	public void sendReplyHeadersFProxy(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = false;
+	    if(container.isFProxyWebPushingEnabled() && container.isFProxyJavascriptEnabled())
+	        enableJavascript = true;
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, false, true, enableJavascript);
+	}
+	
+	@Override
+    public void sendReplyHeadersOutlinkConfirmation(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
+	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, true, false, false);
+	}
+
+	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean isFProxyGeneratedContent, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		if(sentReplyHeaders) {
 			throw new IllegalStateException("Already sent headers!");
@@ -202,8 +227,7 @@ public class ToadletContextImpl implements ToadletContext {
 					Logger.minor(this, "set-cookie: " + cookieHeader);
 			}
 		}
-		
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, isOutlinkConfirmationPage, !isFProxyGeneratedContent);
 	}
 	
 	@Override
@@ -340,7 +364,7 @@ public class ToadletContextImpl implements ToadletContext {
 		replyCookies.add(newCookie);
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect, boolean allowScripts, boolean allowOutlinks, boolean allowFrames) throws IOException {
 		
 		// Construct headers
 		if(mvt == null)
@@ -382,6 +406,10 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt.put("connection", "close");
 		else
 			mvt.put("connection", "keep-alive");
+		String contentSecurityPolicy = generateCSP(allowScripts, allowOutlinks, allowFrames);
+		mvt.put("content-security-policy", contentSecurityPolicy);
+		mvt.put("x-content-security-policy", contentSecurityPolicy);
+		mvt.put("x-webkit-csp", contentSecurityPolicy);
 		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -404,7 +432,20 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
-	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+	private static String generateCSP(boolean allowScripts, boolean allowOutlinks,
+            boolean allowFrames) {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("default-src: '");
+	    sb.append(allowOutlinks ? "all" : "none");
+	    sb.append("'; script-src '");
+        sb.append(allowScripts ? "all" : "none");
+	    sb.append("'; frame-src '");
+        sb.append(allowFrames ? "all" : "none");
+        sb.append("'");
+        return sb.toString();
+    }
+
+    static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
 	
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
@@ -648,7 +689,7 @@ public class ToadletContextImpl implements ToadletContext {
 				pw.flush();
 				msg = msg + sw.toString() + "</pre></body></html>";
 				byte[] messageBytes = msg.getBytes("UTF-8");
-				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true);
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true, false, false, false);
 				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return

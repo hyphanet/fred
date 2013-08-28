@@ -20,26 +20,54 @@ import freenet.support.api.HTTPRequest;
  */
 public interface ToadletContext {
 
+    /**
+     * Write reply headers for generated content (web interface pages) and redirects etc.
+     * @param code HTTP code.
+     * @param desc HTTP code description.
+     * @param mvt Any extra headers. Can be null.
+     * @param mimeType The MIME type of the reply.
+     * @param length The length of the reply.
+     */
+    void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
+    
+    /**
+     * @deprecated
+     * Write reply headers for either generated content (web interface pages) or static content.
+     * Should use either sendReplyHeaders() or sendReplyHeadersStatic().
+     */
+    void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
+    
 	/**
-	 * Write reply headers, with a customised modification time, e.g. for fproxy content.
+	 * Write reply headers with a customised modification time for static content.
 	 * @param code HTTP code.
 	 * @param desc HTTP code description.
 	 * @param mvt Any extra headers. Can be null.
 	 * @param mimeType The MIME type of the reply.
 	 * @param length The length of the reply.
-	 * @param mTime The modification time of the data being sent or null for 'now' and disabling caching
+	 * @param mTime The modification time of the data being sent.
 	 */
-	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
+	void sendReplyHeadersStatic(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
 	
 	/**
-	 * Write reply headers.
+	 * Write reply headers for content downloaded from Freenet.
 	 * @param code HTTP code.
 	 * @param desc HTTP code description.
 	 * @param mvt Any extra headers. Can be null.
 	 * @param mimeType The MIME type of the reply.
 	 * @param length The length of the reply.
 	 */
-	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
+	void sendReplyHeadersFProxy(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
+
+    /**
+     * Write reply headers for the fproxy outlink confirmation page. This is the only case where
+     * fproxy can link to external links.
+     * @param code HTTP code.
+     * @param desc HTTP code description.
+     * @param mvt Any extra headers. Can be null.
+     * @param mimeType The MIME type of the reply.
+     * @param length The length of the reply.
+     */
+    void sendReplyHeadersOutlinkConfirmation(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
 	/**
 	 * Write data. Note you must send reply headers first.
