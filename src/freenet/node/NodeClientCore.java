@@ -66,6 +66,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.PluginStores;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
@@ -162,12 +163,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
+	private final PluginStores pluginStores;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
+		this.pluginStores = new PluginStores(node, installConfig);
 		killedDatabase = container == null;
 		if(killedDatabase)
 			System.err.println("Database corrupted (before entering NodeClientCore)!");
@@ -335,6 +338,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
+		if(container != null)
+		    migratePluginStores(container);
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
@@ -646,6 +651,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
 		initKeys(container);
+		migratePluginStores(container);
 		if(!killedDatabase)
 			fcpServer.load(container);
 		synchronized(this) {
@@ -692,7 +698,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return true;
 	}
 
-	private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
+	private void migratePluginStores(ObjectContainer container) {
+	    pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
+    }
+
+    private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
 		fecQueue = initFECQueue(nodeDBHandle, container, fecQueue);
 		clientContext.setFECQueue(fecQueue);
 	}
@@ -2104,5 +2114,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, origHTL, 0, true, realTime, r, false, System.currentTimeMillis(), node.enableNewLoadManagement(realTime));
 		return r.recentlyFailed();
 	}
+
+    public PluginStores getPluginStores() {
+        return pluginStores;
+    }
 
 }

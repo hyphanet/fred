@@ -29,7 +29,7 @@ public class MasterKeys {
 	// Currently we only encrypt the client cache
 
 	final byte[] clientCacheMasterKey;
-	final byte[] databaseKey;
+	private final byte[] databaseKey;
 	final long flags;
 
 	final static long FLAG_ENCRYPT_DATABASE = 2;
@@ -283,6 +283,10 @@ public class MasterKeys {
 
 	public void clearAllNotClientCacheKeyOrDatabaseKey() {
 		// Do nothing. For now.
+	}
+	
+	public DatabaseKey createDatabaseKey(RandomSource random) {
+	    return new DatabaseKey(databaseKey, random);
 	}
 
 }

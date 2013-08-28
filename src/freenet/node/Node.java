@@ -490,6 +490,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public long nodeDBHandle;
 
 	private boolean autoChangeDatabaseEncryption = true;
+	private DatabaseKey databaseKey;
 
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -2320,7 +2321,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean startedClientCache = false;
 
-		byte[] databaseKey = null;
+		DatabaseKey key = null;
 		MasterKeys keys = null;
 
 		for(int i=0;i<2 && !startedClientCache; i++) {
@@ -2337,7 +2338,10 @@ public class Node implements TimeSkewDetectorCallback {
 					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
 						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
 						securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
-						databaseKey = keys.databaseKey;
+						key = keys.createDatabaseKey(random);
+						synchronized(this) {
+						    databaseKey = key;
+						}
 						shouldWriteConfig = true;
 					} else {
 						keys.clearAllNotClientCacheKey();
@@ -2704,7 +2708,7 @@ public class Node implements TimeSkewDetectorCallback {
 	** Sets up a program directory using the config value defined by the given
 	** parameters.
 	*/
-	protected ProgramDirectory setupProgramDir(SubConfig installConfig,
+	public ProgramDirectory setupProgramDir(SubConfig installConfig,
 	  String cfgKey, String defaultValue, String shortdesc, String longdesc, String moveErrMsg,
 	  SubConfig oldConfig) throws NodeInitException {
 		ProgramDirectory dir = new ProgramDirectory(moveErrMsg);
@@ -2726,7 +2730,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return setupProgramDir(installConfig, cfgKey, defaultValue, shortdesc, longdesc, null, oldConfig);
 	}
 
-	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+	public void lateSetupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		if(db != null) return;
 		System.out.println("Starting late database initialisation");
 		setupDatabase(databaseKey);
@@ -2780,7 +2784,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
 	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
 	 */
-	private Configuration getNewDatabaseConfiguration(byte[] databaseKey) {
+	private Configuration getNewDatabaseConfiguration(DatabaseKey databaseKey) {
 		Configuration dbConfig = Db4o.newConfiguration();
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
@@ -2841,10 +2845,8 @@ public class Node implements TimeSkewDetectorCallback {
 		// The database is encrypted.
 		if(databaseKey != null) {
 			IoAdapter baseAdapter = dbConfig.io();
-			if(logDEBUG)
-				Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 			try {
-				dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+				dbConfig.io(databaseKey.createEncryptingDb4oAdapter(baseAdapter));
 			} catch (GlobalOnlyConfigException e) {
 				// Fouled up after encrypting/decrypting.
 				System.err.println("Caught "+e+" opening encrypted database.");
@@ -2857,7 +2859,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return dbConfig;
 	}
 
-	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+	private void setupDatabase(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		/* FIXME: Backup the database! */
 
 		ObjectContainer database;
@@ -2878,10 +2880,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-                databaseKey = new byte[32];
-                random.nextBytes(databaseKey);
-                FileUtil.secureDelete(dbFileCrypt);
-                FileUtil.secureDelete(dbFile);
+                databaseKey = DatabaseKey.createRandom(random);
+			    synchronized(this) {
+			        this.databaseKey = databaseKey;
+			    }
+				FileUtil.secureDelete(dbFileCrypt);
+				FileUtil.secureDelete(dbFile);
 				database = openCryptDatabase(databaseKey);
 				synchronized(this) {
 					databaseEncrypted = true;
@@ -2906,13 +2910,16 @@ public class Node implements TimeSkewDetectorCallback {
 						securityLevels.setThreatLevel(PHYSICAL_THREAT_LEVEL.HIGH);
 						throw e;
 					}
-					databaseKey = keys.databaseKey;
-					keys.clearAllNotDatabaseKey();
+					databaseKey = keys.createDatabaseKey(random);
+					synchronized(this) {
+					    this.databaseKey = databaseKey;
+					}
+					keys.clearAll();
 				}
 				System.err.println("Decrypting the old node.db4o.crypt ...");
 				IoAdapter baseAdapter = new RandomAccessFileAdapter();
 				EncryptingIoAdapter adapter =
-					new EncryptingIoAdapter(baseAdapter, databaseKey, random);
+				    databaseKey.createEncryptingDb4oAdapter(baseAdapter);
 				File tempFile = new File(dbFile.getPath()+".tmp");
 				tempFile.deleteOnExit();
 				FileOutputStream fos = new FileOutputStream(tempFile);
@@ -2959,13 +2966,15 @@ public class Node implements TimeSkewDetectorCallback {
 					// Try with no password
 					MasterKeys keys;
 					keys = MasterKeys.read(masterKeysFile, random, "");
-					databaseKey = keys.databaseKey;
-					keys.clearAllNotDatabaseKey();
+					databaseKey = keys.createDatabaseKey(random);
+					synchronized(this) {
+					    this.databaseKey = databaseKey;
+					}
+					keys.clearAll();
 				}
 				System.err.println("Encrypting the old node.db4o ...");
 				IoAdapter baseAdapter = new RandomAccessFileAdapter();
-				EncryptingIoAdapter adapter =
-					new EncryptingIoAdapter(baseAdapter, databaseKey, random);
+				EncryptingIoAdapter adapter = databaseKey.createEncryptingDb4oAdapter(baseAdapter);
 				File tempFile = new File(dbFileCrypt.getPath()+".tmp");
 				tempFile.delete();
 				tempFile.deleteOnExit();
@@ -3011,8 +3020,11 @@ public class Node implements TimeSkewDetectorCallback {
 					// Try with no password
 					MasterKeys keys;
 					keys = MasterKeys.read(masterKeysFile, random, "");
-					databaseKey = keys.databaseKey;
-					keys.clearAllNotDatabaseKey();
+					databaseKey = keys.createDatabaseKey(random);
+					synchronized(this) {
+					    this.databaseKey = databaseKey;
+					}
+					keys.clearAll();
 				}
 				database = openCryptDatabase(databaseKey);
 				synchronized(this) {
@@ -3152,7 +3164,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private ObjectContainer openCryptDatabase(byte[] databaseKey) throws IOException {
+	private ObjectContainer openCryptDatabase(DatabaseKey databaseKey) throws IOException {
 		maybeDefragmentDatabase(dbFileCrypt, databaseKey);
 
 		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
@@ -3163,7 +3175,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private void maybeDefragmentDatabase(File databaseFile, byte[] databaseKey) throws IOException {
+	private void maybeDefragmentDatabase(File databaseFile, final DatabaseKey databaseKey) throws IOException {
 
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
@@ -5152,7 +5164,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(wantClientCache)
 			activatePasswordedClientCache(keys);
 		if(wantDatabase)
-			lateSetupDatabase(keys.databaseKey);
+			lateSetupDatabase(keys.createDatabaseKey(random));
 	}
 
 
@@ -5430,5 +5442,17 @@ public class Node implements TimeSkewDetectorCallback {
 			return true;
 		return false;
 	}
+
+
+    public byte[] getPluginStoreKey(String storeIdentifier) {
+        DatabaseKey key;
+        synchronized(this) {
+            key = databaseKey;
+        }
+        if(key != null)
+            return key.getPluginStoreKey(storeIdentifier);
+        else
+            return null;
+    }
 
 }
