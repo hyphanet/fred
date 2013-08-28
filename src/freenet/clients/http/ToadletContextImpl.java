@@ -206,7 +206,7 @@ public class ToadletContextImpl implements ToadletContext {
 	    sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null, true, false, false);
 	}
 
-	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean isFProxyGeneratedContent, boolean enableJavascript) throws ToadletContextClosedException, IOException {
+	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		if(sentReplyHeaders) {
 			throw new IllegalStateException("Already sent headers!");
@@ -227,7 +227,7 @@ public class ToadletContextImpl implements ToadletContext {
 					Logger.minor(this, "set-cookie: " + cookieHeader);
 			}
 		}
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, isOutlinkConfirmationPage, !isFProxyGeneratedContent);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect, enableJavascript, isOutlinkConfirmationPage, allowFrames);
 	}
 	
 	@Override
