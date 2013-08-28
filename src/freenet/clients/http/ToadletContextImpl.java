@@ -435,12 +435,12 @@ public class ToadletContextImpl implements ToadletContext {
 	private static String generateCSP(boolean allowScripts, boolean allowOutlinks,
             boolean allowFrames) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("default-src: '");
-	    sb.append(allowOutlinks ? "all" : "none");
+	    sb.append("default-src '");
+	    sb.append(allowOutlinks ? "all" : "self");
 	    sb.append("'; script-src '");
-        sb.append(allowScripts ? "all" : "none");
+        sb.append(allowScripts ? "self" : "none");
 	    sb.append("'; frame-src '");
-        sb.append(allowFrames ? "all" : "none");
+        sb.append(allowFrames ? "self" : "none");
         sb.append("'");
         return sb.toString();
     }
