@@ -437,10 +437,11 @@ public class ToadletContextImpl implements ToadletContext {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("default-src ");
 	    sb.append(allowOutlinks ? "*" : "'self'");
-	    sb.append("; script-src ");
-        sb.append(allowScripts ? "'self'" : "'none'");
+	    sb.append("; image-src 'self'; script-src ");
+	    sb.append(allowScripts ? "'self'" : "'none'");
 	    sb.append("; frame-src ");
         sb.append(allowFrames ? "'self'" : "'none'");
+        sb.append("; object-src 'none'");
         return sb.toString();
     }
 
