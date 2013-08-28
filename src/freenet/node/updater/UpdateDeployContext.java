@@ -183,7 +183,10 @@ public class UpdateDeployContext {
 						// Is it on the list of dependencies?
 						Dependency dep = findDependencyByRHSFilename(new File(rhs));
 						if(dep != null) {
-							System.out.println("Found dependency "+dep.oldFilename());
+						    if(dep.oldFilename() != null)
+						        System.out.println("Found old dependency "+dep.oldFilename());
+						    else
+						        System.out.println("Found new dependency "+dep.newFilename());
 						} else { // dep == null
 						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
 							// If not, it's something the user has added, we just keep it.
