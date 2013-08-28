@@ -264,8 +264,8 @@ public class MasterKeys {
 		raf.close();
 	}
 
-	public static void killMasterKeys(File masterKeysFile, RandomSource random) throws IOException {
-		FileUtil.secureDelete(masterKeysFile, random);
+	public static void killMasterKeys(File masterKeysFile) throws IOException {
+		FileUtil.secureDelete(masterKeysFile);
 	}
 
 	public void clearAllNotClientCacheKey() {

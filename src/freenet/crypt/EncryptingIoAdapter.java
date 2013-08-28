@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import freenet.support.math.MersenneTwister;
-
 import com.db4o.ext.Db4oIOException;
 import com.db4o.io.IoAdapter;
 
@@ -67,7 +65,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 		byte[] seed = new byte[32];
 		random.nextBytes(seed);
 		try {
-			FileUtil.secureDelete(new File(arg0), new MersenneTwister(seed));
+			FileUtil.secureDelete(new File(arg0));
 		} catch (IOException e) {
 			// FIXME useralert?
 			// We shouldn't do this ever afaics though, with our usage of db4o...

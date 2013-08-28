@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.security.SecureRandom;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -17,7 +18,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
+import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.RandomSource;
+import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -644,6 +647,13 @@ public class TempBucketFactory implements BucketFactory {
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
-		return (reallyEncrypt ? new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, strongPRNG, weakPRNG) : fileBucket);
+		if(reallyEncrypt) {
+            fileBucket = new TrivialPaddedBucket(fileBucket);
+		    byte[] key = new byte[16];
+		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
+		    srng.nextBytes(key);
+		    fileBucket = new AEADCryptBucket(fileBucket, key);
+		}
+		return fileBucket;
 	}
 }
