@@ -1172,10 +1172,11 @@ public class SimpleFieldSet {
 	}
 
     public void putEncoded(String key, String[] strings) {
-        for(int i=0;i<strings.length;i++) {
-            strings[i] = Base64.encodeUTF8(strings[i]);
+        String[] copy = Arrays.copyOf(strings, strings.length);
+        for(int i=0;i<copy.length;i++) {
+            copy[i] = Base64.encodeUTF8(strings[i]);
         }
-        putSingle(key, unsplit(strings));
+        putSingle(key, unsplit(copy));
     }
 
 	public String getString(String key) throws FSParseException {
