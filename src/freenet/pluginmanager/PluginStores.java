@@ -67,10 +67,9 @@ public class PluginStores {
         try {
             if(psc.pluginStore == null) return;
             writePluginStore(psc.storeIdentifier, psc.pluginStore);
-            // FIXME reinstate deleting the stores!
-//            psc.pluginStore.removeFrom(container);
-//            container.delete(psc);
-//            container.commit();
+            psc.pluginStore.removeFrom(container);
+            container.delete(psc);
+            container.commit();
             System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
         } catch (IOException e) {
             System.err.println("Unable to migrate plugin store for "+psc.storeIdentifier+" from database to disk : "+e);
