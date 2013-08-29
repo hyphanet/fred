@@ -266,23 +266,32 @@ public class SimpleFieldSet {
         return ret;
     }
 
-    private static String[] split(String string) {
+    /** Split a set of String's delimeted by MULTI_VALUE_CHAR, accepting empty strings at both ends.
+     * E.g. ";blah;blah;blah;;" will give ["", "blah", "blah", "blah", "", ""].
+     * Java 7 split() would give ["blah","blah","blah"].
+     */
+    public static String[] split(String string) {
     	if(string == null) return EMPTY_STRING_ARRAY;
-    	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
-//    	int index = string.indexOf(';');
-//    	if(index == -1) return null;
-//    	Vector v=new Vector();
-//    	v.removeAllElements();
-//        while(index>0){
-//            // Mapping
-//            String before = string.substring(0, index);
-//            String after = string.substring(index+1);
-//            v.addElement(before);
-//            string=after;
-//            index = string.indexOf(';');
-//        }
-//
-//    	return (String[]) v.toArray();
+    	// Java 7 version of String.split() trims the extra delimeters at each end.
+    	int emptyAtStart = 0;
+    	for(;emptyAtStart<string.length() && string.charAt(emptyAtStart) == MULTI_VALUE_CHAR;emptyAtStart++);
+    	if(emptyAtStart == string.length()) {
+    	    String[] ret = new String[string.length()];
+    	    for(int i=0;i<ret.length;i++) ret[i] = "";
+    	    return ret;
+    	}
+    	int emptyAtEnd = 0;
+    	for(int i=string.length()-1; i>=0 && string.charAt(i) == MULTI_VALUE_CHAR;i--) emptyAtEnd++;
+    	string = string.substring(emptyAtStart, string.length() - emptyAtEnd);
+    	String[] split = string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
+    	if(emptyAtStart != 0 || emptyAtEnd != 0) {
+    	    String[] ret = new String[emptyAtStart+split.length+emptyAtEnd];
+    	    System.arraycopy(split, 0, ret, emptyAtStart, split.length);
+    	    split = ret;
+    	    for(int i=0;i<split.length;i++)
+    	        if(split[i] == null) split[i] = "";
+    	}
+    	return split;
 	}
 
     private static String unsplit(String[] strings) {

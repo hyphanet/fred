@@ -789,4 +789,15 @@ public class SimpleFieldSetTest extends TestCase {
 		sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
 		assertTrue(sfsCheck.get("foo.blah").equals(""));
 	}
+	
+	public void testSplit() {
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah"), new String[] { "blah" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah; blah"), new String[] { "blah", " blah" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2"), new String[] { "blah", "1", "2" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2;"), new String[] { "blah", "1", "2", "" }));
+	    assertTrue(Arrays.equals(SimpleFieldSet.split("blah;1;2;;"), new String[] { "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";blah;1;2;;"), new String[] { "", "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";;blah;1;2;;"), new String[] { "", "", "blah", "1", "2", "", "" }));
+        assertTrue(Arrays.equals(SimpleFieldSet.split(";;;"), new String[] { "", "", "" }));
+	}
 }
