@@ -101,6 +101,12 @@ public class PluginStore {
 	    for(Map.Entry<String, byte[]> entry : bytesArrays.entrySet()) {
 	        fs.put("bytes."+encode(entry.getKey()), entry.getValue());
 	    }
+        for(Map.Entry<String, Boolean> entry : booleans.entrySet()) {
+            fs.put("boolean."+encode(entry.getKey()), entry.getValue());
+        }
+        for(Map.Entry<String, boolean[]> entry : booleansArrays.entrySet()) {
+            fs.put("booleans."+encode(entry.getKey()), entry.getValue());
+        }
 	    for(Map.Entry<String, String> entry : strings.entrySet()) {
 	        fs.putSingle("string."+encode(entry.getKey()), entry.getValue());
 	    }
