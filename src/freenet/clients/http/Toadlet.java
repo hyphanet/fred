@@ -274,6 +274,10 @@ public abstract class Toadlet {
 	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply, true);
 	}
+
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
+	    writeReply(context, code, mimeType, desc, headers, reply, false);
+	}
 	
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
 	    byte[] buffer = reply.getBytes("UTF-8");
