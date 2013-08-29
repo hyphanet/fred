@@ -1,5 +1,6 @@
 package freenet.pluginmanager;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import freenet.node.FSParseException;
@@ -111,6 +112,16 @@ public class PluginStoreTest extends TestCase {
                 }
             }
         }
+    }
+    
+    public void testWriteStringArrays() throws IllegalBase64Exception, FSParseException {
+        String key = "test";
+        String[] value = new String[] { "tag1", "tag2" };
+        PluginStore store = new PluginStore();
+        store.stringsArrays.put(key, value);
+        SimpleFieldSet fs = store.exportStoreAsSFS();
+        PluginStore copy = new PluginStore(fs);
+        assertTrue(Arrays.equals(copy.stringsArrays.get(key), value));
     }
 
 }
