@@ -176,7 +176,11 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 
 	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException {
-	    boolean enableJavascript = container.isFProxyJavascriptEnabled();
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, false);
+	}
+	
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = (!forceDisableJavascript) && container.isFProxyJavascriptEnabled();
 	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, false, enableJavascript);
 	}
 
