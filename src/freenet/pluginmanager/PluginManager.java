@@ -1110,7 +1110,7 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", "index", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"), true, false, false);
 		addOfficialPlugin("XMLSpider", "index", false, 48, true, new FreenetURI("CHK@ne-aaLuzVZLcHj0YmrclaCXJqxsSb7q-J0eYEiL9V9o,v0EdgDGBhTE9k6GsB44UrQ4ADUq5LCUVknLaE4iSEBk,AAMC--8/XMLSpider.jar"), true, false, false);
 		addOfficialPlugin("Freereader", "index", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", "index", false, 34, true, new FreenetURI("CHK@q1NEAHGaa~kl2x-BhgaZMrExgEnFsxDfk588gjRNCI0,aeGkaVZlnaFfZMRNUlE10o0jlzFI6idfh~JMY3On0zU,AAMC--8/Library.jar"));
+		addOfficialPlugin("Library", "index", false, 35, true, new FreenetURI("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar"));
 		addOfficialPlugin("Spider", "index", false, 51, false, new FreenetURI("CHK@CcJfB~uOTgbzdpVr8htrhLXs0uNsVW6KFRpEvHGjXDU,BPr2fm9Cq9gj7BQeJdLbkCmcmXRx-e-b6aerDzSK4zk,AAMC--8/Spider.jar"), false, false, true);
 		addOfficialPlugin("WebOfTrust", "communication", false, 13, true, new FreenetURI("CHK@dSfeVmjFX15QVyFCTUQmZItrJi8XnoYpiapxLTxaQeg,wizfFOtkKSBEdjUYgjCUJczjl74r0CjRBfzvaRvKUMo,AAMC--8/WebOfTrust.jar"), false, false, false);
 		addOfficialPlugin("FlogHelper", "communication", false, 30, true, new FreenetURI("CHK@4Ey1hDbEPTTJ1AVKkrq3h0QaeMWFETzPaBYFkoauYvs,SNmqkFnxgOdy7Qu8vOoibQORJFIa8su1Hc3U9DRUa9E,AAMC--8/FlogHelper.jar"), false, false, false);
