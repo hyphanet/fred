@@ -176,7 +176,11 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 
 	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException {
-	    boolean enableJavascript = container.isFProxyJavascriptEnabled();
+	    sendReplyHeaders(code, desc, mvt, mimeType, length, false);
+	}
+	
+	public void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, boolean forceDisableJavascript) throws ToadletContextClosedException, IOException {
+	    boolean enableJavascript = (!forceDisableJavascript) && container.isFProxyJavascriptEnabled();
 	    sendReplyHeaders(code, desc, mvt, mimeType, length, null, false, false, enableJavascript);
 	}
 
@@ -430,10 +434,13 @@ public class ToadletContextImpl implements ToadletContext {
 	private static String generateCSP(boolean allowScripts, boolean allowFrames) {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("default-src 'self'; script-src ");
-	    sb.append(allowScripts ? "'self'" : "'none'");
+	    sb.append(allowScripts ? "'self' 'unsafe-inline'" : "'none'");
 	    sb.append("; frame-src ");
         sb.append(allowFrames ? "'self'" : "'none'");
         sb.append("; object-src 'none'");
+        // Always send unsafe-inline for CSS. This is safe given it can't use external stuff anyway.
+        // It's only strictly needed for fproxy.
+        sb.append("; style-src 'self' 'unsafe-inline'");
         return sb.toString();
     }
 
