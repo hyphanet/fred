@@ -246,7 +246,7 @@ public abstract class Toadlet {
      * @param reply The HTML page, as a String.
      */
     protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
-        writeHTMLReply(ctx, code, desc, headers, reply);
+        writeHTMLReply(ctx, code, desc, headers, reply, false);
     }
 	
 	/**
