@@ -522,10 +522,24 @@ public class SimpleFieldSet {
 	}
 
 	public void writeToOrdered(Writer w) throws IOException {
-		writeToOrdered(w, "", false);
+		writeToOrdered(w, "", false, false);
 	}
 
-    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+	/**
+	 * Write the SimpleFieldSet to a Writer, in order.
+	 * @param w The Writer to write the SFS to.
+	 * @param prefix The prefix ("" at the top level, e.g. "something." if we are inside a sub-SFS 
+	 * called "something").
+	 * @param noEndMarker If true, don't write the end marker (usually End). Again this is normally
+	 * set only in sub-SFS's.
+	 * @param allowOptionalBase64 If true, write fields as Base64 if they contain spaces etc. This
+	 * improves the robustness of e.g. node references, where the SFS can be written with or 
+	 * without Base64. However, for SFS's where the values can contain <b>anything</b>, the member
+	 * flag alwaysUseBase64 will be set and we will write lines that need to be Base64 as such 
+	 * regardless of this allowOptionalBase64.
+	 * @throws IOException If an error occurs writing to the Writer.
+	 */
+    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker, boolean allowOptionalBase64) throws IOException {
 		writeHeader(w);
     	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
@@ -535,7 +549,7 @@ public class SimpleFieldSet {
 
     	// Output
     	for(i=0; i < keys.length; i++) {
-    		writeValue(w, keys[i], get(keys[i]), prefix, false);
+    		writeValue(w, keys[i], get(keys[i]), prefix, allowOptionalBase64);
     	}
 
     	if(subsets != null) {
@@ -546,7 +560,7 @@ public class SimpleFieldSet {
         	for(i=0; i < orderedPrefixes.length; i++) {
     			SimpleFieldSet subset = subset(orderedPrefixes[i]);
     			if(subset == null) throw new NullPointerException();
-    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
+    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true, allowOptionalBase64);
     		}
     	}
 
