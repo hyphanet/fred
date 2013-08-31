@@ -10,6 +10,11 @@ import com.db4o.ObjectContainer;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 
+/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
+ * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 
+ * the end of the bucket is reached, which may be in read() or may be in close().
+ * @author toad
+ */
 public class AEADCryptBucket implements Bucket {
     
     private final Bucket underlying;
