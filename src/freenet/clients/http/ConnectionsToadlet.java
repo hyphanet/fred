@@ -193,20 +193,18 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	    String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
-			StringWriter sw = new StringWriter();
-			fs.writeTo(sw);
+			String noderefString = fs.toOrderedStringWithBase64();
 			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
 			// Force download to disk
 			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
-			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, sw.toString());
+			writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, noderefString);
 			return;
 		}
 
 		if(path.endsWith("myref.txt")) {
 			SimpleFieldSet fs = getNoderef();
-			StringWriter sw = new StringWriter();
-			fs.writeTo(sw);
-			this.writeTextReply(ctx, 200, "OK", sw.toString());
+            String noderefString = fs.toOrderedStringWithBase64();
+			writeTextReply(ctx, 200, "OK", noderefString);
 			return;
 		}
 		
@@ -873,7 +871,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 					new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
-			referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
+			referenceInfoboxContent.addChild("pre", "id", "reference", fs.toOrderedStringWithBase64() + '\n');
 		}
 	}
 

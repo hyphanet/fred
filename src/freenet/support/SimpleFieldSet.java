@@ -587,6 +587,16 @@ public class SimpleFieldSet {
         return sw.toString();
     }
 
+    public String toOrderedStringWithBase64() {
+        StringWriter sw = new StringWriter();
+        try {
+            writeToOrdered(sw, "", false, true);
+        } catch (IOException e) {
+            Logger.error(this, "WTF?!: "+e+" in toString()!", e);
+        }
+        return sw.toString();
+    }
+
     public String getEndMarker() {
     	return endMarker;
     }
