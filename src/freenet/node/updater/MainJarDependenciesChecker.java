@@ -1199,7 +1199,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             });
         }
         
-        private void deployMultiFileUpdate() {
+        protected void deployMultiFileUpdate() {
             if(!innerDeployMultiFileUpdate()) {
                 System.err.println("Failed to deploy multi-file update "+name);
             }
@@ -1259,7 +1259,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
             super(name);
         }
         
-        public void deployMultiFileUpdate() {
+        @Override
+        protected void deployMultiFileUpdate() {
             if(!WrapperManager.isControlledByNativeWrapper()) return;
             File restartScript;
             try {
