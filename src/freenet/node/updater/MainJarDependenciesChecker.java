@@ -1146,7 +1146,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 }
                 
             });
-            deploy();
         }
 
         public synchronized void add(AtomicDependency dependency) {
