@@ -946,6 +946,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    return true;
     }
 	
+	static final String UPDATER_BACKUP_SUFFIX = ".update.bak.tmp";
+	
 	/** A file to be replaced as part of a multi-file replace. */
 	private class AtomicDependency implements JarFetcherCallback {
 	    
@@ -971,10 +973,17 @@ outer:	for(String propName : props.stringPropertyNames()) {
             this.size = size;
             this.expectedHash = expectedHash;
             this.executable = executable;
-            this.tempFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
+            File parent = filename.getAbsoluteFile().getParentFile();
+            if(parent == null) parent = new File(".");
+            File[] list = parent.listFiles();
+            for(File f : list) {
+                String name = f.getName();
+                if(name.startsWith(filename.getName()) && name.endsWith(UPDATER_BACKUP_SUFFIX)) 
+                    f.delete();
+            }
+            this.tempFilename = File.createTempFile(filename.getName(), ".tmp", parent);
             tempFilename.deleteOnExit();
-            this.backupFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
-            backupFilename.deleteOnExit();
+            this.backupFilename = File.createTempFile(filename.getName(), UPDATER_BACKUP_SUFFIX, parent);
         }
         
         public boolean start(AtomicDeployer myDeployer) {
