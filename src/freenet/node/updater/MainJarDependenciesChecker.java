@@ -1278,6 +1278,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
             return null;
         }
 	    
+        static final String RESTART_SCRIPT_NAME = "tempRestartFreenet.sh";
+        
         private File createRestartScript() throws IOException {
             // FIXME use nodeDir
             File runsh = new File("run.sh");
@@ -1285,7 +1287,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 System.err.println("Cannot find run.sh so cannot deploy multi-file update for "+name);
                 return null;
             }
-            File restartFreenet = new File("tempRestartFreenet.sh");
+            File restartFreenet = new File(RESTART_SCRIPT_NAME);
             restartFreenet.delete();
             FileBucket fb = new FileBucket(restartFreenet, false, true, false, false, false);
             OutputStream os = null;
@@ -1295,6 +1297,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 osw.write("#!/bin/sh\n");
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+"; do sleep 1; done\n");
                 osw.write("./run.sh start\n");
+                osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
                 osw.close();
                 osw = null; 
                 os = null;
