@@ -972,7 +972,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
             tempFilename.deleteOnExit();
             this.backupFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
             backupFilename.deleteOnExit();
-            System.out.println("Fetching "+filename+" from "+key);
         }
         
         public boolean start(AtomicDeployer myDeployer) {
@@ -980,6 +979,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 if(this.myDeployer != null) return true; // Already running.
                 this.myDeployer = myDeployer;
             }
+            System.out.println("Fetching "+filename+" from "+key);
             try {
                 JarFetcher fetcher = deployer.fetch(key, tempFilename, size, expectedHash, this, build, false);
                 synchronized(this) {
