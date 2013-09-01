@@ -24,6 +24,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.updater.MainJarDependenciesChecker.AtomicDeployer;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
@@ -351,6 +352,23 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
     public void reannounce() {
         this.manager.broadcastUOMAnnouncesNew();
         this.manager.broadcastUOMAnnouncesOld();
+    }
+
+    @Override
+    public void multiFileReplaceReadyToDeploy(final MainJarDependenciesChecker.AtomicDeployer atomicDeployer) {
+        if(this.manager.isAutoUpdateAllowed()) {
+            this.manager.node.executor.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    atomicDeployer.deployMultiFileUpdate();
+                }
+                
+            });
+        } else {
+            System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
+            // FIXME ask the user.
+        }
     }
 
 }

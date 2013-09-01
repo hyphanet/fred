@@ -153,6 +153,12 @@ public class MainJarDependenciesChecker {
 		/** We have just downloaded a dependency needed for the current build. Reannounce to tell
 		 * our peers about it. */
         public void reannounce();
+        /** A multi-file update (e.g. wrapper update) is ready to deploy. It may need a restart.
+         * We may need the user's permission to deploy it, or we may be able to deploy it 
+         * immediately. The Deployer must call atomicDeployer.deployMultiFileUpdate() when ready.
+         * @param atomicDeployer
+         */
+        public void multiFileReplaceReadyToDeploy(AtomicDeployer atomicDeployer);
 	}
 	
 	interface JarFetcher {
@@ -1101,7 +1107,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	}
 	
 	/** Deploys a multi-file replace without a restart */
-	private class AtomicDeployer {
+	class AtomicDeployer {
 	    
 	    private final Set<AtomicDependency> dependencies = new HashSet<AtomicDependency>();
 	    private final Set<AtomicDependency> dependenciesWaiting = new HashSet<AtomicDependency>();
@@ -1137,15 +1143,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
 
         private void readyToDeploy() {
-            // FIXME tell the user, get confirmation etc.
-            executor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    deployMultiFileUpdate();
-                }
-                
-            });
+            deployer.multiFileReplaceReadyToDeploy(this);
         }
 
         public synchronized void add(AtomicDependency dependency) {
@@ -1182,7 +1180,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             return dependencies.toArray(new AtomicDependency[dependencies.size()]);
         }
         
-        protected void deployMultiFileUpdate() {
+        public void deployMultiFileUpdate() {
             if(!innerDeployMultiFileUpdate()) {
                 System.err.println("Failed to deploy multi-file update "+name);
             }
@@ -1242,7 +1240,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             super(name);
         }
         
-        protected void deployMultiFileUpdate() {
+        public void deployMultiFileUpdate() {
             if(!WrapperManager.isControlledByNativeWrapper()) return;
             File restartScript;
             try {
