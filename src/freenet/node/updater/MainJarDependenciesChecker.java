@@ -1254,7 +1254,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             File shell = findShell();
             if(shell == null) return;
             if(innerDeployMultiFileUpdate()) {
-                try {
+                try { // FIXME use nodeDir
                     if(Runtime.getRuntime().exec(new String[] { shell.toString(), restartScript.toString() }) == null) {
                         System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name);
                         return;
@@ -1287,6 +1287,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 System.err.println("Cannot find run.sh so cannot deploy multi-file update for "+name);
                 return null;
             }
+            if(!new File("/dev/null").exists()) {
+                System.err.println("Cannot deploy multi-file update for "+name+" without /dev/null");
+                return null;
+            }
             File restartFreenet = new File(RESTART_SCRIPT_NAME);
             restartFreenet.delete();
             FileBucket fb = new FileBucket(restartFreenet, false, true, false, false, false);
@@ -1295,8 +1299,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 os = new BufferedOutputStream(fb.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
                 osw.write("#!/bin/sh\n");
-                osw.write("while kill -0 "+WrapperManager.getWrapperPID()+"; do sleep 1; done\n");
-                osw.write("./run.sh start\n");
+                //osw.write("trap true PIPE\n"); - should not be necessary
+                osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
+                osw.write("./run.sh start > /dev/null 2>&1\n");
                 osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
                 osw.close();
                 osw = null; 
