@@ -339,7 +339,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		} finally {
 			Closer.close(is);
 		}
-		MainJarDependenciesChecker.cleanup(props, this, Version.buildNumber());
+		dependencies.cleanup(props, this, Version.buildNumber());
 	}
 
 	@Override

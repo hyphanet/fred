@@ -4,18 +4,22 @@
 package freenet.node.updater;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -26,6 +30,8 @@ import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -35,6 +41,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FileUtil.OperatingSystem;
 
@@ -322,7 +329,11 @@ public class MainJarDependenciesChecker {
 		 * filename. We do however check for 0 length files just in case. */
 		OPTIONAL_CLASSPATH_NO_UPDATE,
 		/** A file to download, which does not block the update. */
-		OPTIONAL_PRELOAD;
+		OPTIONAL_PRELOAD,
+		/** Deploy multiple files at once, all or nothing, then do a full restart on the wrapper. 
+		 * On Windows this needs an external EXE which waits for shutdown, replaces the files, then 
+		 * starts Freenet back up; on Linux and Mac we can just use a shell script. */
+		OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART;
 	}
 	
 	private synchronized MainJarDependencies innerHandle(Properties props, int build) {
@@ -359,6 +370,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			DEPENDENCY_TYPE type;
 			try {
 				type = DEPENDENCY_TYPE.valueOf(s);
+				if(type == DEPENDENCY_TYPE.OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART) {
+				    // Ignore. Handle in cleanup().
+				    continue;
+				}
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
 					// We don't understand it, but that's OK as it's optional.
@@ -389,6 +404,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			File filename = null;
 			s = props.getProperty(baseName+".filename");
+			// FIXME use nodeDir
 			if(s != null) filename = new File(s);
 			if(filename == null) {
 				Logger.error(this, "dependencies.properties broken? missing filename");
@@ -579,7 +595,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	 * @param props The dependencies.properties from the running version.
 	 * @return True unless something went wrong.
 	 */
-	public static boolean cleanup(Properties props, final Deployer deployer, int build) {
+	public boolean cleanup(Properties props, final Deployer deployer, int build) {
 		// This method should not change anything, but can call the callbacks.
 		HashSet<String> processed = new HashSet<String>();
 		final ArrayList<File> toDelete = new ArrayList<File>();
@@ -627,6 +643,21 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
 				continue;
 			}
+			
+	         // Check operating system restrictions.
+            s = props.getProperty(baseName+".os");
+            if(s != null) {
+                if(!matchesCurrentOS(s)) {
+                    Logger.normal(MainJarDependenciesChecker.class, "Ignoring "+baseName+" as not relevant to this operating system");
+                    continue;
+                }
+            }
+            
+            if(type == DEPENDENCY_TYPE.OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART) {
+                parseAtomicMultiFilesWithRestart(props, baseName);
+                continue;
+            }
+			
 			// Version is useful for checking for obsolete versions of files.
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
@@ -635,19 +666,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			File filename = null;
 			s = props.getProperty(baseName+".filename");
+			// FIXME use nodeDir
 			if(s != null) filename = new File(s);
 			if(filename == null) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing filename");
 				return false;
-			}
-			
-			// Check operating system restrictions.
-			s = props.getProperty(baseName+".os");
-			if(s != null) {
-				if(!matchesCurrentOS(s)) {
-					Logger.normal(MainJarDependenciesChecker.class, "Ignoring "+baseName+" as not relevant to this operating system");
-					continue;
-				}
 			}
 			
 			final FreenetURI key;
@@ -795,7 +818,496 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return true;
 	}
 	
-	public static String getDependencyVersion(File currentFile) {
+	enum MUST_EXIST {
+        /** File may or may not exist */
+        FALSE,
+	    /** File must exist but we don't care about its content (we're going to replace it) */
+	    TRUE,
+	    /** File must exist and have exactly the contents expected (it's a prerequisite) */
+	    EXACT
+	}
+	
+	/** Handle a request to atomically update a set of files and restart the wrapper properly, that 
+	 * is, using an external script (just telling it to restart is inadequate in this case). FORMAT:
+	 *  type=OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART
+	 *  os=ALL_UNIX // handled by caller
+	 *  files.1.mustExist=true // do not deploy if the file did not exist previously
+	 * OR files.1.mustExist=false // create the file if it's not there
+	 *  files.1.sha256=...
+	 *  files.1.filename=wrapper.jar
+	 *  files.1.chk=CHK@...
+	 *  files.2....
+	 * @return False if something broke.
+	 */
+	private boolean parseAtomicMultiFilesWithRestart(Properties props, String name) {
+	    AtomicDeployer atomicDeployer = createRestartingAtomicDeployer(name);
+	    boolean nothingToDo = true;
+	    for(String propName : props.stringPropertyNames()) {
+	        String[] split = propName.split("\\.");
+	        if(split.length != 4) continue;
+	        // namefordeploy.nameforfile.filename=...
+	        // nameforfile is not necessarily the filename, which might contain . / etc.
+	        if(!split[0].equals(name)) continue;
+	        if(!split[1].equals("files")) continue;
+	        if(!split[3].equals("filename")) continue;
+	        String fileBase = name+".files."+split[2];
+	        // Filename.
+	        File filename = null;
+	        String s = props.getProperty(fileBase+".filename");
+	        if(s == null) break;
+	        filename = new File(s);
+	        // Key.
+	        final FreenetURI key;
+	        s = props.getProperty(fileBase+".key");
+	        if(s == null) {
+	            Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+fileBase+".key in atomic multi-files list");
+	            return false;
+	        }
+	        try {
+	            key = new FreenetURI(s);
+	        } catch (MalformedURLException e) {
+	            Logger.error(MainJarDependencies.class, "Unable to parse CHK for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+	            return false;
+	        }
+	        // Size.
+	        s = props.getProperty(fileBase+".size");
+	        long size = -1;
+	        if(s != null) {
+	            try {
+	                size = Long.parseLong(s);
+	            } catch (NumberFormatException e) {
+	                Logger.error(MainJarDependencies.class, "Unable to parse size for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+	                return false;
+	            }
+	        }
+            // Must exist?
+	        MUST_EXIST mustExist;
+            s = props.getProperty(fileBase+".mustExist");
+            if(s == null) {
+                mustExist = MUST_EXIST.FALSE;
+            } else {
+                try {
+                    mustExist = MUST_EXIST.valueOf(s.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    Logger.error(MainJarDependencies.class, "Unable to past mustExist \""+s+"\" for "+fileBase);
+                    return false;
+                }
+            }
+	        // SHA256 hash
+            byte[] expectedHash = parseExpectedHash(props.getProperty(fileBase+".sha256"), fileBase);
+            if(expectedHash == null) {
+                System.err.println("dependencies.properties multi-file replace broken: No hash for "+fileBase);
+                return false;
+            }
+            // Executable?
+            boolean executable = false;
+            s = props.getProperty(fileBase+".executable");
+            if(s != null) {
+                executable = Boolean.parseBoolean(s);
+            }
+            if(!filename.exists()) {
+                if(mustExist != MUST_EXIST.FALSE) {
+                    System.out.println("Not running multi-file replace: File does not exist: "+filename);
+                    return false;
+                }
+                nothingToDo = false;
+                System.out.println("Multi-file replace: Must create "+filename);
+            } else if(!validFile(filename, expectedHash, size)) {
+                if(mustExist == MUST_EXIST.EXACT) {
+                    System.out.println("Not running multi-file replace: Not compatible with prerequisite "+filename);
+                    return false;
+                }
+                System.out.println("Multi-file replace: Must update "+filename);
+                nothingToDo = false;
+            }
+            AtomicDependency dependency;
+            try {
+                dependency = new AtomicDependency(filename, key, size, expectedHash, executable);
+            } catch (IOException e) {
+                System.err.println("Unable to start multi-file update for "+name+" : "+e);
+                return false;
+            }
+            atomicDeployer.add(dependency);
+	    }
+	    if(nothingToDo) {
+	        System.out.println("Multi-file replace: Nothing to do.");
+	        return false; // Valid no-op.
+	    }
+	    atomicDeployer.start();
+	    return true;
+    }
+	
+	/** A file to be replaced as part of a multi-file replace. */
+	private class AtomicDependency implements JarFetcherCallback {
+	    
+	    /** Temporary file to store the downloaded data in until it is ready to deploy */
+	    private final File tempFilename;
+	    /** Temporary file to store a copy of the old file in until the deploy has succeeded */
+	    private final File backupFilename;
+	    private final File filename;
+	    private final FreenetURI key;
+	    private final long size;
+	    private final byte[] expectedHash;
+	    private final boolean executable;
+	    private AtomicDeployer myDeployer;
+	    private JarFetcher fetcher;
+	    private boolean nothingToBackup;
+	    private boolean triedDeploy;
+	    private boolean succeededFetch;
+	    private boolean backedUp;
+
+        public AtomicDependency(File filename, FreenetURI key, long size, byte[] expectedHash, boolean executable) throws IOException {
+            this.filename = filename;
+            this.key = key;
+            this.size = size;
+            this.expectedHash = expectedHash;
+            this.executable = executable;
+            this.tempFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
+            this.backupFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
+            System.out.println("Fetching "+filename+" from "+key);
+        }
+        
+        public boolean start(AtomicDeployer myDeployer) {
+            synchronized(this) {
+                if(this.myDeployer != null) return true; // Already running.
+                this.myDeployer = myDeployer;
+            }
+            try {
+                JarFetcher fetcher = deployer.fetch(key, tempFilename, size, expectedHash, this, build, false);
+                synchronized(this) {
+                    this.fetcher = fetcher;
+                }
+                return true;
+            } catch (FetchException e) {
+                Logger.error(this, "Unable to start fetch for "+filename+" from "+key+" size "+size+" expected hash "+HexUtil.bytesToHex(expectedHash)+" : "+e, e);
+                System.err.println("Unable to start fetch for "+filename+" for multi-file replace");
+                return false;
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            AtomicDeployer d;
+            synchronized(this) {
+                succeededFetch = true;
+                d = myDeployer;
+            }
+            System.out.println("Fetched "+filename+" from "+key);
+            d.onSuccess(this);
+        }
+
+        @Override
+        public void onFailure(FetchException e) {
+            System.out.println("Failed to fetch "+filename+" from "+key);
+            getDeployer().onFailure(this, e);
+        }
+
+        private synchronized AtomicDeployer getDeployer() {
+            return myDeployer;
+        }
+
+        public void cancel() {
+            JarFetcher f;
+            synchronized(this) {
+                f = fetcher;
+                fetcher = null;
+            }
+            if(f == null) return;
+            f.cancel();
+        }
+        
+        boolean backupOriginal() {
+            System.out.println("Backing up "+filename+" to "+backupFilename);
+            if(!filename.exists()) {
+                synchronized(this) {
+                    nothingToBackup = true;
+                    backedUp = true;
+                }
+                return true;
+            }
+            if(FileUtil.copyFile(filename, backupFilename)) {
+                synchronized(this) {
+                    backedUp = true;
+                }
+                return true;
+            } else return false;
+        }
+        
+        boolean deploy() {
+            System.out.println("Deploying "+tempFilename+" to "+filename);
+            synchronized(this) {
+                assert(succeededFetch);
+                assert(backedUp);
+                triedDeploy = true;
+            }
+            if(!filename.exists()) {
+                if(tempFilename.renameTo(filename)) {
+                    if(executable) 
+                        return filename.setExecutable(true) || filename.canExecute();
+                    return true;
+                } else 
+                    return false;
+            } else {
+                if(tempFilename.renameTo(filename)) {
+                    if(executable) 
+                        return filename.setExecutable(true) || filename.canExecute();
+                    return true;
+                }
+                filename.delete();
+                if(tempFilename.renameTo(filename)) {
+                    if(executable) 
+                        return filename.setExecutable(true) || filename.canExecute();
+                    return true;
+                } else
+                    return false;
+            }
+        }
+        
+        boolean revertFromBackup() {
+            System.out.println("Reverting from backup "+backupFilename+" to "+filename);
+            synchronized(this) {
+                assert(succeededFetch);
+                assert(backedUp);
+                if(!triedDeploy) return true; // Valid no-op.
+            }
+            boolean nothingToBackup;
+            synchronized(this) {
+                nothingToBackup = this.nothingToBackup;
+            }
+            if(nothingToBackup) {
+                if(!filename.delete() && filename.exists()) {
+                    System.err.println("Unable to delete file while reverting multi-file deploy: "+filename);
+                    return true; // Usually this is OK.
+                } else return true;
+            } else {
+                return backupFilename.renameTo(filename);
+            }
+        }
+        
+	    
+	}
+	
+	private AtomicDeployer createRestartingAtomicDeployer(String name) {
+	    if(FileUtil.detectedOS.isUnix || FileUtil.detectedOS.isMac) {
+	        return new UnixRestartingAtomicDeployer(name);
+	    } else if(FileUtil.detectedOS.isWindows) {
+	        // FIXME implement Windows support using bug #5883.
+	        return null;
+	    } else {
+	        return null;
+	    }
+	}
+	
+	/** Deploys a multi-file replace without a restart */
+	private class AtomicDeployer {
+	    
+	    private final Set<AtomicDependency> dependencies = new HashSet<AtomicDependency>();
+	    private final Set<AtomicDependency> dependenciesWaiting = new HashSet<AtomicDependency>();
+	    private boolean failed;
+	    private boolean started;
+	    final String name;
+
+	    /** Create an AtomicDeployer, which will wait for the downloads and then deploy a 
+	     * multi-file replace atomically, that is all at once.
+	     * @param name The internal name of the deployment job. For UI purposes we will simply
+	     * feed this into the localisation code.
+	     */
+        public AtomicDeployer(String name) {
+            this.name = name;
+        }
+
+        public void onFailure(AtomicDependency dep, FetchException e) {
+            synchronized(this) {
+                failed = true;
+                dependenciesWaiting.remove(dep);
+            }
+            System.err.println("Unable to deploy multi-file update "+name+" because fetch failed for "+dep.filename);
+        }
+
+        public void onSuccess(AtomicDependency dep) {
+            synchronized(this) {
+                assert(dependencies.contains(dep));
+                dependenciesWaiting.remove(dep);
+                if(!dependenciesWaiting.isEmpty()) return;
+                if(failed) return;
+            }
+            readyToDeploy();
+        }
+
+        private void readyToDeploy() {
+            // FIXME tell the user, get confirmation etc.
+            executor.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    deployMultiFileUpdate();
+                }
+                
+            });
+            deploy();
+        }
+
+        public synchronized void add(AtomicDependency dependency) {
+            if(started) {
+                Logger.error(this, "Already started!");
+                failed = true;
+                return;
+            }
+            dependencies.add(dependency);
+            dependenciesWaiting.add(dependency);
+        }
+        
+        public void start() {
+            for(AtomicDependency dep : dependencies()) {
+                if(!dep.start(this)) {
+                    System.err.println("Unable to start fetch for "+this);
+                    AtomicDependency[] deps;
+                    synchronized(this) {
+                        failed = true;
+                        deps = dependencies();
+                    }
+                    for(AtomicDependency kill : deps) {
+                        kill.cancel();
+                    }
+                    return;
+                }
+            }
+            synchronized(this) {
+                started = true;
+            }
+        }
+        
+        private synchronized AtomicDependency[] dependencies() {
+            return dependencies.toArray(new AtomicDependency[dependencies.size()]);
+        }
+        
+        protected void deployMultiFileUpdate() {
+            if(!innerDeployMultiFileUpdate()) {
+                System.err.println("Failed to deploy multi-file update "+name);
+            }
+        }
+
+        /** Replace all the files or none of the files */
+        boolean innerDeployMultiFileUpdate() {
+            synchronized(this) {
+                if(failed || !started) {
+                    Logger.error(this, "Not deploying: failed="+failed+" started="+started, new Exception("error"));
+                    return false;
+                }
+            }
+            AtomicDependency[] deps = dependencies();
+            for(AtomicDependency dep : deps) {
+                if(!dep.backupOriginal()) {
+                    System.err.println("Unable to backup dependency "+dep.filename+" - aborting multi-file update deployment "+name);
+                    return false;
+                }
+            }
+            boolean failedDeploy = false;
+            for(AtomicDependency dep : deps) {
+                if(!dep.deploy()) {
+                    failedDeploy = true;
+                    System.err.println("Unable to update file "+dep.filename+" from "+dep.tempFilename+" - aborting multi-file update deployment "+name);
+                    break;
+                }
+            }
+            if(failedDeploy) {
+                System.err.println("Deploying multi-file update failed: "+name);
+                System.err.println("Restoring files from backups");
+                for(AtomicDependency dep : deps) {
+                    if(!dep.revertFromBackup()) {
+                        System.err.println("Restoring file from backup failed. Freenet may fail to start on next restart! You should move "+dep.backupFilename+" to "+dep.filename);
+                        // FIXME useralert???
+                    }
+                }
+            }
+            return !failedDeploy;
+        }
+	    
+	}
+	
+	/** Deploys a multi-file replace with a restart */
+	private abstract class RestartingAtomicDeployer extends AtomicDeployer {
+
+        public RestartingAtomicDeployer(String name) {
+            super(name);
+        }
+	    
+	}
+	
+	/** Deploys a multi-file replace on *nix with a restart, using a simple shell script */
+	private class UnixRestartingAtomicDeployer extends RestartingAtomicDeployer {
+
+        public UnixRestartingAtomicDeployer(String name) {
+            super(name);
+        }
+        
+        protected void deployMultiFileUpdate() {
+            if(!WrapperManager.isControlledByNativeWrapper()) return;
+            File restartScript;
+            try {
+                restartScript = createRestartScript();
+            } catch (IOException e) {
+                System.err.println("Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e);
+                Logger.error(this, "Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e, e);
+                return;
+            }
+            if(restartScript == null) return;
+            File shell = findShell();
+            if(shell == null) return;
+            if(innerDeployMultiFileUpdate()) {
+                try {
+                    if(Runtime.getRuntime().exec(new String[] { shell.toString(), restartScript.toString() }) == null) {
+                        System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name);
+                        return;
+                    }
+                } catch (IOException e) {
+                    System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e);
+                    Logger.error(this, "Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e, e);
+                    return;
+                }
+                System.out.println("Shutting down Freenet for hard restart after deploying multi-file update for "+name+". The script "+restartScript+" should start it back up.");
+                WrapperManager.stop(0);
+            }
+        }
+
+        private File findShell() {
+            File f = new File("/bin/sh");
+            if(f.exists() && f.canExecute()) return f;
+            f = new File("/bin/bash");
+            if(f.exists() && f.canExecute()) return f;
+            System.err.println("Unable to find system shell");
+            return null;
+        }
+	    
+        private File createRestartScript() throws IOException {
+            // FIXME use nodeDir
+            File runsh = new File("run.sh");
+            if(!(runsh.exists() && runsh.canExecute())) {
+                System.err.println("Cannot find run.sh so cannot deploy multi-file update for "+name);
+                return null;
+            }
+            File restartFreenet = new File("tempRestartFreenet.sh");
+            restartFreenet.delete();
+            FileBucket fb = new FileBucket(restartFreenet, false, true, false, false, false);
+            OutputStream os = null;
+            try {
+                os = new BufferedOutputStream(fb.getOutputStream());
+                OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
+                osw.write("#!/bin/sh\n");
+                osw.write("while kill -0 "+WrapperManager.getWrapperPID()+"; do sleep 1; done\n");
+                osw.write("./run.sh start\n");
+                osw.close();
+                osw = null; 
+                os = null;
+                return restartFreenet;
+            } finally {
+                Closer.close(os);
+            }
+        }
+
+	}
+
+    public static String getDependencyVersion(File currentFile) {
         // We can't use parseProperties because there are multiple sections.
     	InputStream is = null;
         try {
