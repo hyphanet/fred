@@ -359,14 +359,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
     @Override
     public void multiFileReplaceReadyToDeploy(final MainJarDependenciesChecker.AtomicDeployer atomicDeployer) {
         if(this.manager.isAutoUpdateAllowed()) {
-            this.manager.node.executor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    atomicDeployer.deployMultiFileUpdateOffThread();
-                }
-                
-            });
+            atomicDeployer.deployMultiFileUpdateOffThread();
         } else {
             final long now = System.currentTimeMillis();
             System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
