@@ -963,7 +963,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
             this.expectedHash = expectedHash;
             this.executable = executable;
             this.tempFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
+            tempFilename.deleteOnExit();
             this.backupFilename = File.createTempFile(filename.getName(), ".tmp", filename.getAbsoluteFile().getParentFile());
+            backupFilename.deleteOnExit();
             System.out.println("Fetching "+filename+" from "+key);
         }
         
