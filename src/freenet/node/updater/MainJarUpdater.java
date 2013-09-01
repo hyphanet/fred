@@ -363,7 +363,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
                 @Override
                 public void run() {
-                    atomicDeployer.deployMultiFileUpdate();
+                    atomicDeployer.deployMultiFileUpdateOffThread();
                 }
                 
             });
@@ -429,7 +429,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
                 @Override
                 public void onDismiss() {
-                    atomicDeployer.deployMultiFileUpdate();
+                    atomicDeployer.deployMultiFileUpdateOffThread();
                 }
 
                 @Override

@@ -35,6 +35,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.client.FetchException;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.PrioRunnable;
 import freenet.node.Version;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -44,6 +45,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FileUtil.OperatingSystem;
+import freenet.support.io.NativeThread;
 
 /**
  * Parses the dependencies.properties file and ensures we have all the 
@@ -155,7 +157,8 @@ public class MainJarDependenciesChecker {
         public void reannounce();
         /** A multi-file update (e.g. wrapper update) is ready to deploy. It may need a restart.
          * We may need the user's permission to deploy it, or we may be able to deploy it 
-         * immediately. The Deployer must call atomicDeployer.deployMultiFileUpdate() when ready.
+         * immediately. The Deployer must call atomicDeployer.deployMultiFileUpdateOffThread() 
+         * when ready.
          * @param atomicDeployer
          */
         public void multiFileReplaceReadyToDeploy(AtomicDeployer atomicDeployer);
@@ -1179,8 +1182,24 @@ outer:	for(String propName : props.stringPropertyNames()) {
         private synchronized AtomicDependency[] dependencies() {
             return dependencies.toArray(new AtomicDependency[dependencies.size()]);
         }
+
+        public void deployMultiFileUpdateOffThread() {
+            executor.execute(new PrioRunnable() {
+
+                @Override
+                public void run() {
+                    deployMultiFileUpdate();
+                }
+
+                @Override
+                public int getPriority() {
+                    return NativeThread.MAX_PRIORITY;
+                }
+                
+            });
+        }
         
-        public void deployMultiFileUpdate() {
+        private void deployMultiFileUpdate() {
             if(!innerDeployMultiFileUpdate()) {
                 System.err.println("Failed to deploy multi-file update "+name);
             }
@@ -1298,7 +1317,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 os = new BufferedOutputStream(fb.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
-                osw.write("#!/bin/sh\n");
+                osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
                 osw.write("./run.sh start > /dev/null 2>&1\n");
