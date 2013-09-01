@@ -24,6 +24,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.FCPMessage;
 import freenet.node.updater.MainJarDependenciesChecker.AtomicDeployer;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
 import freenet.node.updater.MainJarDependenciesChecker.JarFetcher;
@@ -31,6 +32,7 @@ import freenet.node.updater.MainJarDependenciesChecker.JarFetcherCallback;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
 import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcher;
 import freenet.node.updater.UpdateOverMandatoryManager.UOMDependencyFetcherCallback;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -366,8 +368,91 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 
             });
         } else {
+            final long now = System.currentTimeMillis();
             System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
-            // FIXME ask the user.
+            node.clientCore.alerts.register(new UserAlert() {
+
+                private String l10n(String key) {
+                    return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater."+key);
+                }
+                
+                @Override
+                public boolean userCanDismiss() {
+                    return true;
+                }
+
+                @Override
+                public String getTitle() {
+                    return l10n("title."+atomicDeployer.name);
+                }
+
+                @Override
+                public String getText() {
+                    return l10n("text."+atomicDeployer.name);
+                }
+
+                @Override
+                public HTMLNode getHTMLText() {
+                    return new HTMLNode("p", getText());
+                    // FIXME separate button, then the alert could be dismissable? Only useful if it's permanently dismissable though, which means a config setting as well...
+                }
+
+                @Override
+                public String getShortText() {
+                    return getTitle();
+                }
+
+                @Override
+                public short getPriorityClass() {
+                    return UserAlert.ERROR;
+                }
+
+                @Override
+                public boolean isValid() {
+                    return true;
+                }
+
+                @Override
+                public void isValid(boolean validity) {
+                    // Ignore
+                }
+
+                @Override
+                public String dismissButtonText() {
+                    return NodeL10n.getBase().getDefaultString("UpdatedVersionAvailableUserAlert.updateNowButton");
+                }
+
+                @Override
+                public boolean shouldUnregisterOnDismiss() {
+                    return true;
+                }
+
+                @Override
+                public void onDismiss() {
+                    atomicDeployer.deployMultiFileUpdate();
+                }
+
+                @Override
+                public String anchor() {
+                    return "multi-file-update-confirm-"+atomicDeployer.name;
+                }
+
+                @Override
+                public boolean isEventNotification() {
+                    return false;
+                }
+
+                @Override
+                public FCPMessage getFCPMessage() {
+                    return null;
+                }
+
+                @Override
+                public long getUpdatedTime() {
+                    return now;
+                }
+                
+            });
         }
     }
 
