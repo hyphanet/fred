@@ -185,6 +185,7 @@ public class SSL {
 		} catch(Exception e) {
 			Logger.error(SSL.class, "Cannot load keystore, ssl is disable", e);
 		}
+		sslConfig.finishedInitialization();
 
 	}
 
