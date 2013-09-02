@@ -59,13 +59,31 @@ final public class FileUtil {
 			this.isUnix = unix;
 		};
 	};
+	
+	public static enum CPUArchitecture {
+	    Unknown,
+	    X86,
+	    X86_64,
+	    PPC_32,
+	    PPC_64,
+	    ARM,
+	    SPARC,
+	    IA64
+	}
 
 	public static final OperatingSystem detectedOS;
+	
+	/** Caveat: Sometimes this may not be entirely accurate, e.g. we may not be able to distinguish
+	 * 32-bit from 64-bit, we may be using the wrong JVM for the platform, we may be using an x86 
+	 * wrapper or JVM on an IA64 system etc. This *should* be the version the JVM is running. */
+	public static final CPUArchitecture detectedArch;
 
 	private static final Charset fileNameCharset;
 
 	static {
 		detectedOS = detectOperatingSystem();
+		
+		detectedArch = detectCPUArchitecture();
 
 		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset.
 		// On Windows and Linux this is set based on the users configured system language which is probably equal to the filename charset.
@@ -121,6 +139,29 @@ final public class FileUtil {
 		}
 
 		return OperatingSystem.Unknown;
+	}
+	
+	private static CPUArchitecture detectCPUArchitecture() { // TODO Move to the proper class
+	    try {
+	        final String name = System.getProperty("os.arch").toLowerCase();
+	        if(name.equals("x86") || name.equals("i386") || name.matches("i[3-9]86"))
+	            return CPUArchitecture.X86;
+	        if(name.equals("amd64") || name.equals("x86-64") || name.equals("x86_64") ||
+	                name.equals("x86") || name.equals("em64t") || name.equals("x8664") ||
+	                name.equals("8664"))
+	            return CPUArchitecture.X86_64;
+	        if(name.startsWith("arm"))
+	            return CPUArchitecture.ARM; // FIXME arm64 support?
+	        if(name.equals("ppc") || name.equals("powerpc"))
+	            return CPUArchitecture.PPC_32;
+	        if(name.equals("ppc64"))
+	            return CPUArchitecture.PPC_64;
+	        if(name.startsWith("ia64"))
+	            return CPUArchitecture.IA64;
+	    } catch (Throwable t) {
+	        Logger.error(FileUtil.class, "CPU architecture detection failed", t);
+	    }
+	    return CPUArchitecture.Unknown;
 	}
 
 	/**
