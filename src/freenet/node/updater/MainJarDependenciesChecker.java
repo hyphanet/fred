@@ -933,7 +933,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 System.out.println("Multi-file replace: Must create "+filename);
             } else if(!validFile(filename, expectedHash, size)) {
                 if(mustExist == MUST_EXIST.EXACT) {
-                    System.out.println("Not running multi-file replace: Not compatible with prerequisite "+filename);
+                    System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite "+filename);
                     return false;
                 }
                 System.out.println("Multi-file replace: Must update "+filename);
