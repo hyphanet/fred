@@ -49,6 +49,7 @@ import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.FileUtil.CPUArchitecture;
 import freenet.support.io.FileUtil.OperatingSystem;
 import freenet.support.io.NativeThread;
 
@@ -408,7 +409,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					continue;
 				}
 			}
-			
+            // Check architecture restrictions.
+			s = props.getProperty(baseName+".arch");
+			if(s != null) {
+			    if(!matchesCurrentArch(s)) {
+                    Logger.normal(this, "Ignoring "+baseName+" as not relevant to this architecture");
+                    continue;
+			    }
+			}
 			// Version is used in cleanup().
 			String version = props.getProperty(baseName+".version");
 			if(version == null) {
@@ -603,6 +611,18 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return false;
 	}
 
+    private static boolean matchesCurrentArch(String s) {
+        CPUArchitecture myCPU = FileUtil.detectedArch;
+        String[] archList = s.split(",");
+        for(String arch : archList) {
+            arch = arch.trim();
+            if(myCPU.toString().equalsIgnoreCase(arch)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 	/** Should be called on startup, before any fetches have started. Will 
 	 * remove unnecessary files and start blob fetches for files we don't 
 	 * have blobs for.
@@ -663,6 +683,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
             if(s != null) {
                 if(!matchesCurrentOS(s)) {
                     Logger.normal(MainJarDependenciesChecker.class, "Ignoring "+baseName+" as not relevant to this operating system");
+                    continue;
+                }
+            }
+            // Check architecture restrictions.
+            s = props.getProperty(baseName+".arch");
+            if(s != null) {
+                if(!matchesCurrentArch(s)) {
+                    Logger.normal(this, "Ignoring "+baseName+" as not relevant to this architecture");
                     continue;
                 }
             }
