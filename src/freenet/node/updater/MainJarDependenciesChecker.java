@@ -959,6 +959,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    }
 	    if(nothingToDo) {
 	        System.out.println("Multi-file replace: Nothing to do.");
+	        atomicDeployer.cleanup();
 	        return false; // Valid no-op.
 	    }
 	    atomicDeployer.start();
@@ -1138,6 +1139,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
         }
         
+        void cleanup() {
+            tempFilename.delete();
+            backupFilename.delete();
+        }
 	    
 	}
 	
@@ -1170,6 +1175,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	     */
         public AtomicDeployer(String name) {
             this.name = name;
+        }
+
+        public void cleanup() {
+            for(AtomicDependency dep : dependencies())
+                dep.cleanup();
         }
 
         public void onFailure(AtomicDependency dep, FetchException e) {
