@@ -855,6 +855,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	 */
 	private boolean parseAtomicMultiFilesWithRestart(Properties props, String name) {
 	    AtomicDeployer atomicDeployer = createRestartingAtomicDeployer(name);
+	    if(atomicDeployer == null) return false; // Platform not supported?
 	    boolean nothingToDo = true;
 	    for(String propName : props.stringPropertyNames()) {
 	        String[] split = propName.split("\\.");
@@ -1129,9 +1130,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    if(FileUtil.detectedOS.isUnix || FileUtil.detectedOS.isMac) {
 	        return new UnixRestartingAtomicDeployer(name);
 	    } else if(FileUtil.detectedOS.isWindows) {
+	        System.out.println("Multi-file update for "+name+" not supported on Windows at present, see bug #5883");
 	        // FIXME implement Windows support using bug #5883.
 	        return null;
 	    } else {
+            System.out.println("Multi-file update for "+name+" not supported on unknown non-unix non-windows OS "+FileUtil.detectedOS);
 	        return null;
 	    }
 	}
