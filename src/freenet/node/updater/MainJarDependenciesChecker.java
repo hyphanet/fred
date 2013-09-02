@@ -1068,6 +1068,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 synchronized(this) {
                     backedUp = true;
                 }
+                if(executable)
+                    return backupFilename.setExecutable(true) || backupFilename.canExecute();
                 return true;
             } else return false;
         }
@@ -1103,12 +1105,12 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         boolean revertFromBackup() {
-            System.out.println("Reverting from backup "+backupFilename+" to "+filename);
             synchronized(this) {
                 assert(succeededFetch);
                 assert(backedUp);
                 if(!triedDeploy) return true; // Valid no-op.
             }
+            System.out.println("Reverting from backup "+backupFilename+" to "+filename);
             boolean nothingToBackup;
             synchronized(this) {
                 nothingToBackup = this.nothingToBackup;
@@ -1116,10 +1118,23 @@ outer:	for(String propName : props.stringPropertyNames()) {
             if(nothingToBackup) {
                 if(!filename.delete() && filename.exists()) {
                     System.err.println("Unable to delete file while reverting multi-file deploy: "+filename);
+                    tempFilename.delete();
                     return true; // Usually this is OK.
-                } else return true;
+                } else {
+                    tempFilename.delete();
+                    return true;
+                }
             } else {
-                return backupFilename.renameTo(filename);
+                if(!backupFilename.renameTo(filename)) return false;
+                if(executable) {
+                    if(filename.setExecutable(true) || filename.canExecute()) {
+                        tempFilename.delete();
+                        return true;
+                    } else return false;
+                } else {
+                    tempFilename.delete();
+                    return true;
+                }
             }
         }
         
