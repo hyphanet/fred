@@ -501,7 +501,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					}
 				}
 				
-				currentFile = getDependencyInUse(baseName, p);
+				currentFile = getDependencyInUse(p);
 			}
 			
 			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
@@ -752,7 +752,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			
 			File currentFile = null;
 			if(type == DEPENDENCY_TYPE.CLASSPATH)
-				currentFile = getDependencyInUse(baseName, p);
+				currentFile = getDependencyInUse(p);
 			
 			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
 			    if(filename.canRead() && filename.length() > 0) {
@@ -1454,7 +1454,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
      * However, even a non-existent filename may be useful when updating 
      * wrapper.conf.
      */
-	private static File getDependencyInUse(String baseName, Pattern p) {
+	private static File getDependencyInUse(Pattern p) {
 		if(p == null) return null; // Optional in some cases.
 		String classpath = System.getProperty("java.class.path");
 		String[] split = classpath.split(File.pathSeparator);
