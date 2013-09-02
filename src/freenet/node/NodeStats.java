@@ -500,7 +500,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 		});
 		enableNewLoadManagementRT = statsConfig.getBoolean("enableNewLoadManagementRT");
-
 		statsConfig.register("enableNewLoadManagementBulk", false, sortOrder++, true, false, "Node.enableNewLoadManagementBulk", "Node.enableNewLoadManagementBulkLong", new BooleanCallback() {
 
 			@Override
@@ -517,6 +516,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		});
 		enableNewLoadManagementBulk = statsConfig.getBoolean("enableNewLoadManagementBulk");
 		
+        if(node.lastVersion <= 1455 && (enableNewLoadManagementRT || enableNewLoadManagementBulk)) {
+            // FIXME remove
+            enableNewLoadManagementRT = false;
+            enableNewLoadManagementBulk = false;
+            System.err.println("Turning off NLM when upgrading from pre-1455. The load stats messages aren't being sent at the moment so it won't work anyway.");
+            statsConfig.config.store();
+        }
+
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
 
