@@ -1203,7 +1203,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
                 @Override
                 public void run() {
-                    deployMultiFileUpdate();
+                    synchronized(NodeUpdateManager.deployLock()) {
+                        if(deployMultiFileUpdate())
+                            NodeUpdateManager.waitForever();
+                    }
                 }
 
                 @Override
@@ -1214,10 +1217,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
             });
         }
         
-        protected void deployMultiFileUpdate() {
+        protected boolean deployMultiFileUpdate() {
             if(!innerDeployMultiFileUpdate()) {
                 System.err.println("Failed to deploy multi-file update "+name);
-            }
+                return false;
+            } else return true;
         }
 
         /** Replace all the files or none of the files */
@@ -1275,33 +1279,34 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         @Override
-        protected void deployMultiFileUpdate() {
-            if(!WrapperManager.isControlledByNativeWrapper()) return;
+        protected boolean deployMultiFileUpdate() {
+            if(!WrapperManager.isControlledByNativeWrapper()) return false;
             File restartScript;
             try {
                 restartScript = createRestartScript();
             } catch (IOException e) {
                 System.err.println("Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e);
                 Logger.error(this, "Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e, e);
-                return;
+                return false;
             }
-            if(restartScript == null) return;
+            if(restartScript == null) return false;
             File shell = findShell();
-            if(shell == null) return;
+            if(shell == null) return false;
             if(innerDeployMultiFileUpdate()) {
                 try { // FIXME use nodeDir
                     if(Runtime.getRuntime().exec(new String[] { shell.toString(), restartScript.toString() }) == null) {
                         System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name);
-                        return;
+                        return false;
                     }
                 } catch (IOException e) {
                     System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e);
                     Logger.error(this, "Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e, e);
-                    return;
+                    return false;
                 }
                 System.out.println("Shutting down Freenet for hard restart after deploying multi-file update for "+name+". The script "+restartScript+" should start it back up.");
                 WrapperManager.stop(0);
-            }
+                return true;
+            } else return false;
         }
 
         private File findShell() {

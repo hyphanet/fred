@@ -210,6 +210,8 @@ public class NodeUpdateManager {
 	 */
 	private Bucket maybeNextMainJarData;
 	
+	private static final Object deployLock = new Object();
+	
 	static final String TEMP_BLOB_SUFFIX = ".updater.fblob.tmp";
 	static final String TEMP_FILE_SUFFIX = ".updater.tmp";
 
@@ -1071,7 +1073,10 @@ public class NodeUpdateManager {
 				deps = latestMainJarDependencies;
 			}
 
-			success = innerDeployUpdate(deps);
+			synchronized(deployLock()) {
+			    success = innerDeployUpdate(deps);
+			    if(success) waitForever();
+			}
 			// isDeployingUpdate remains true as we are about to restart.
 		} catch (Throwable t) {
 			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
@@ -1101,6 +1106,27 @@ public class NodeUpdateManager {
 					toFree.free();
 			}
 		}
+	}
+	
+	/** Use this lock when deploying an update of any kind which will require us to restart. If the 
+	 * update succeeds, you should call waitForever() if you don't immediately exit. There could be
+	 * rather nasty race conditions if we deploy two updates at once. 
+	 * @return A mutex for serialising update deployments. */
+	static final Object deployLock() {
+	    return deployLock;
+	}
+	
+	/** Does not return. Should be called, inside the deployLock(), if you are in a situation 
+	 * where you've deployed an update but the exit hasn't actually happened yet. */
+	static void waitForever() {
+	    while(true) {
+	        System.err.println("Waiting for shutdown after deployed update...");
+	        try {
+                Thread.sleep(60*1000);
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
+	    }
 	}
 
 	/**
