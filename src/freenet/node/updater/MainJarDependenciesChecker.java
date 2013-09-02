@@ -876,12 +876,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	        s = props.getProperty(fileBase+".key");
 	        if(s == null) {
 	            Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+fileBase+".key in atomic multi-files list");
+                atomicDeployer.cleanup();
 	            return false;
 	        }
 	        try {
 	            key = new FreenetURI(s);
 	        } catch (MalformedURLException e) {
 	            Logger.error(MainJarDependencies.class, "Unable to parse CHK for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+                atomicDeployer.cleanup();
 	            return false;
 	        }
 	        // Size.
@@ -892,6 +894,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	                size = Long.parseLong(s);
 	            } catch (NumberFormatException e) {
 	                Logger.error(MainJarDependencies.class, "Unable to parse size for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+                    atomicDeployer.cleanup();
 	                return false;
 	            }
 	        }
@@ -905,6 +908,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                     mustExist = MUST_EXIST.valueOf(s.toUpperCase());
                 } catch (IllegalArgumentException e) {
                     Logger.error(MainJarDependencies.class, "Unable to past mustExist \""+s+"\" for "+fileBase);
+                    atomicDeployer.cleanup();
                     return false;
                 }
             }
@@ -917,6 +921,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             byte[] expectedHash = parseExpectedHash(props.getProperty(fileBase+".sha256"), fileBase);
             if(expectedHash == null) {
                 System.err.println("dependencies.properties multi-file replace broken: No hash for "+fileBase);
+                atomicDeployer.cleanup();
                 return false;
             }
             // Executable?
@@ -928,6 +933,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             if(!filename.exists()) {
                 if(mustExist != MUST_EXIST.FALSE) {
                     System.out.println("Not running multi-file replace: File does not exist: "+filename);
+                    atomicDeployer.cleanup();
                     return false;
                 }
                 nothingToDo = false;
@@ -935,6 +941,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             } else if(!validFile(filename, expectedHash, size)) {
                 if(mustExist == MUST_EXIST.EXACT) {
                     System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite "+filename);
+                    atomicDeployer.cleanup();
                     return false;
                 }
                 System.out.println("Multi-file replace: Must update "+filename);
@@ -945,6 +952,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 File f = getDependencyInUse(Pattern.compile(Pattern.quote(filename.getName())));
                 if(f == null) {
                     System.err.println("Not running multi-file replace: File must be on classpath: "+filename);
+                    atomicDeployer.cleanup();
                     return false;
                 }
             }
@@ -953,6 +961,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 dependency = new AtomicDependency(filename, key, size, expectedHash, executable);
             } catch (IOException e) {
                 System.err.println("Unable to start multi-file update for "+name+" : "+e);
+                atomicDeployer.cleanup();
                 return false;
             }
             atomicDeployer.add(dependency);
@@ -1178,8 +1187,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
 
         public void cleanup() {
-            for(AtomicDependency dep : dependencies())
+            for(AtomicDependency dep : dependencies()) {
+                dep.cancel();
                 dep.cleanup();
+            }
         }
 
         public void onFailure(AtomicDependency dep, FetchException e) {
@@ -1188,6 +1199,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 dependenciesWaiting.remove(dep);
             }
             System.err.println("Unable to deploy multi-file update "+name+" because fetch failed for "+dep.filename);
+            cleanup();
         }
 
         public void onSuccess(AtomicDependency dep) {
