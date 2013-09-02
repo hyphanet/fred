@@ -938,7 +938,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 }
                 System.out.println("Multi-file replace: Must update "+filename);
                 nothingToDo = false;
-            }
+            } else if(mustExist == MUST_EXIST.EXACT)
+                continue;
             if(mustBeOnClassPath) {
                 File f = getDependencyInUse(Pattern.compile(Pattern.quote(filename.getName())));
                 if(f == null) {
