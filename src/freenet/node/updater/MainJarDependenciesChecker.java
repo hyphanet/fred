@@ -907,6 +907,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
                     return false;
                 }
             }
+            boolean mustBeOnClassPath = false;
+            s = props.getProperty(fileBase+".mustBeOnClassPath");
+            if(s != null) {
+                mustBeOnClassPath = Boolean.parseBoolean(s);
+            }
 	        // SHA256 hash
             byte[] expectedHash = parseExpectedHash(props.getProperty(fileBase+".sha256"), fileBase);
             if(expectedHash == null) {
@@ -933,6 +938,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 }
                 System.out.println("Multi-file replace: Must update "+filename);
                 nothingToDo = false;
+            }
+            if(mustBeOnClassPath) {
+                File f = getDependencyInUse(Pattern.compile(Pattern.quote(filename.getName())));
+                if(f == null) {
+                    System.err.println("Not running multi-file replace: File must be on classpath: "+filename);
+                    return false;
+                }
             }
             AtomicDependency dependency;
             try {
