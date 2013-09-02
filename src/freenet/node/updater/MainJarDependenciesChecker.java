@@ -5,14 +5,20 @@ package freenet.node.updater;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -1312,8 +1318,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
         private File createRestartScript() throws IOException {
             // FIXME use nodeDir
             File runsh = new File("run.sh");
+            String runshNoNice = "run.nonice-for-update.sh";
             if(!(runsh.exists() && runsh.canExecute())) {
                 System.err.println("Cannot find run.sh so cannot deploy multi-file update for "+name);
+                return null;
+            }
+            // EVIL HACK
+            if(!createRunShNoNice(runsh, new File(runshNoNice))) {
                 return null;
             }
             if(!new File("/dev/null").exists()) {
@@ -1330,14 +1341,62 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
-                osw.write("./run.sh start > /dev/null 2>&1\n");
+                osw.write("./"+runshNoNice+" start > /dev/null 2>&1\n");
                 osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
+                osw.write("rm "+runshNoNice+"\n");
                 osw.close();
                 osw = null; 
                 os = null;
                 return restartFreenet;
             } finally {
                 Closer.close(os);
+            }
+        }
+
+        /** Evil hack: Rewrite run.sh so it has PRIORITY=0. 
+         * REDFLAG FIXME TODO Surely we can improve on this? This mechanism is only used for 
+         * updating very old wrapper installs - but we'll want to update the wrapper in the future
+         * too, and the ability to restart the wrapper fully is likely useful, so maybe we won't 
+         * just get rid of this - in which case maybe we want to improve on this.
+         * @throws IOException */ 
+        private boolean createRunShNoNice(File input, File output) throws IOException {
+            final String charset = "UTF-8";
+            InputStream is = null;
+            OutputStream os = null;
+            boolean failed = false;
+            try {
+                is = new FileInputStream(input);
+                BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), charset));
+                os = new FileOutputStream(output);
+                Writer w = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(os), charset));
+                boolean writtenPrio = false;
+                String line;
+                while((line = br.readLine()) != null) {
+                    if((!writtenPrio) && line.startsWith("PRIORITY=")) {
+                        writtenPrio = true;
+                        line = "PRIORITY="; // = don't use nice.
+                    }
+                    w.write(line+"\n");
+                }
+                // We want to see exceptions on close() here.
+                br.close();
+                is = new FileInputStream(input);
+                w.close();
+                os = null;
+                if(!(output.setExecutable(true) || output.canExecute())) {
+                    failed = true;
+                    return false;
+                }
+                return true;
+            } catch (UnsupportedEncodingException e) {
+                throw new Error(e);
+            } catch (IOException e) {
+                failed = true;
+                return false;
+            } finally {
+                Closer.close(is);
+                Closer.close(os);
+                if(failed) output.delete();
             }
         }
 
