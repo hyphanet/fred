@@ -204,6 +204,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
 				if(cb != null)
 				    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
+                tempFile.delete();
 				return;
 			}
 			if(cb != null) cb.onSuccess();
