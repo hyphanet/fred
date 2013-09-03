@@ -37,7 +37,9 @@ import freenet.support.io.NativeThread;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FECQueue {
 	
-	private transient LinkedList<FECJob>[] transientQueue;
+    /** Minimum amount of memory needed for FEC decodes */
+	public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024;
+    private transient LinkedList<FECJob>[] transientQueue;
 	private transient LinkedList<FECJob>[] persistentQueueCache;
 	private transient int maxPersistentQueueCacheSize;
 	private transient int priorities;
