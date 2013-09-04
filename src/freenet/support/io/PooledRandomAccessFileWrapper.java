@@ -14,7 +14,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     static int OPEN_FDS = 0;
     static final Deque<PooledRandomAccessFileWrapper> closables = new ArrayDeque<PooledRandomAccessFileWrapper>();
     
-    private final File file;
+    public final File file;
     private final String mode;
     /** >0 means locked. We will wait until we get the lock if necessary, this is always accurate. 
      * LOCKING: Synchronized on class. */
@@ -149,6 +149,17 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             if(lockLevel > 0) return;
             closables.addLast(this);
             PooledRandomAccessFileWrapper.class.notify();
+        }
+    }
+
+    @Override
+    public void free() {
+        close();
+        try {
+            FileUtil.secureDelete(file);
+        } catch (IOException e) {
+            Logger.error(this, "Unable to delete "+file+" : "+e, e);
+            System.err.println("Unable to delete temporary file "+file);
         }
     }
 
