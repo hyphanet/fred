@@ -13,25 +13,26 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
     /** Keep the RAF open. Does not prevent others from writing to it. */
 	public RAFLock lock() throws IOException;
 	
+	abstract class RAFLock {
+	    
+	    private boolean locked;
+	    
+	    RAFLock() {
+	        locked = true;
+	    }
+	    
+	    public final void unlock() {
+	        synchronized(this) {
+	            if(!locked)
+	                throw new IllegalStateException("Already unlocked");
+	            locked = false;
+	        }
+	        innerUnlock();
+	    }
+	    
+	    protected abstract void innerUnlock();
+	    
+	}
+	
 }
 
-abstract class RAFLock {
-    
-    private boolean locked;
-    
-    RAFLock() {
-        locked = true;
-    }
-    
-    public final void unlock() {
-        synchronized(this) {
-            if(!locked)
-                throw new IllegalStateException("Already unlocked");
-            locked = false;
-        }
-        innerUnlock();
-    }
-    
-    protected abstract void innerUnlock();
-    
-}
