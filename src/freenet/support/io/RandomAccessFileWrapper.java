@@ -58,13 +58,15 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	}
 
     @Override
-    public void lock() {
-        // Ignore. Always open.
-    }
+    public RAFLock lock() {
+        return new RAFLock() {
 
-    @Override
-    public void unlock() {
-        // Ignore. Always open.
+            @Override
+            protected void innerUnlock() {
+                // Do nothing. RAFW is always open.
+            }
+            
+        };
     }
 
 }
