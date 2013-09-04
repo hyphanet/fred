@@ -3,7 +3,7 @@ package freenet.support.io;
 import java.io.IOException;
 
 
-public class ByteArrayRandomAccessThing implements RandomAccessThing {
+public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 
 	private final byte[] data;
 	private boolean readOnly;
@@ -42,4 +42,17 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 	public void setReadOnly() {
 		readOnly = true;
 	}
+	
+    @Override
+    public RAFLock lock() {
+        return new RAFLock() {
+
+            @Override
+            protected void innerUnlock() {
+                // Do nothing. Always open.
+            }
+            
+        };
+    }
+
 }
