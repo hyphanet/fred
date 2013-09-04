@@ -8,7 +8,8 @@ import java.io.IOException;
 
 /**
  * Trivial random access file base interface. Guaranteed to be thread-safe - that is, either the 
- * implementation will serialise reads, or it will support parallel reads natively.
+ * implementation will serialise reads, or it will support parallel reads natively. The length of
+ * the file is constant.
  * @author toad
  */
 public interface RandomAccessThing extends Closeable {
