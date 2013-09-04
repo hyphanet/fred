@@ -272,4 +272,8 @@ public class ClientCHK extends ClientKey {
 			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
 		return true;
 	}
+
+    public byte getCryptoAlgorithm() {
+        return cryptoAlgorithm;
+    }
 }
