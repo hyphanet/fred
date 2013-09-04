@@ -7,13 +7,22 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Trivial random access file base interface.
+ * Trivial random access file base interface. Guaranteed to be thread-safe - that is, either the 
+ * implementation will serialise reads, or it will support parallel reads natively.
  * @author toad
  */
 public interface RandomAccessThing extends Closeable {
 
 	public long size() throws IOException;
 	
+	/** Read a block of data from a specific location in the file. Guaranteed to read the whole 
+	 * range or to throw, like DataInputStream.readFully().
+	 * @param fileOffset The offset within the file to read from.
+	 * @param buf The buffer to write to.
+	 * @param bufOffset The offset within the buffer to the first read byte.
+	 * @param length The length of data to read.
+	 * @throws IOException If we were unable to read the required number of bytes etc.
+	 */
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 	
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
