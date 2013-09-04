@@ -960,26 +960,26 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
             if(!filename.exists()) {
                 if(mustExist != MUST_EXIST.FALSE) {
-                    System.out.println("Not running multi-file replace: File does not exist: "+filename);
+                    System.out.println("Not running multi-file replace "+name+" : File does not exist: "+filename);
                     atomicDeployer.cleanup();
                     return false;
                 }
                 nothingToDo = false;
-                System.out.println("Multi-file replace: Must create "+filename);
+                System.out.println("Multi-file replace: Must create "+filename+" for "+name);
             } else if(!validFile(filename, expectedHash, size)) {
                 if(mustExist == MUST_EXIST.EXACT) {
                     System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite "+filename);
                     atomicDeployer.cleanup();
                     return false;
                 }
-                System.out.println("Multi-file replace: Must update "+filename);
+                System.out.println("Multi-file replace: Must update "+filename+" for "+name);
                 nothingToDo = false;
             } else if(mustExist == MUST_EXIST.EXACT)
                 continue;
             if(mustBeOnClassPath) {
                 File f = getDependencyInUse(Pattern.compile(Pattern.quote(filename.getName())));
                 if(f == null) {
-                    System.err.println("Not running multi-file replace: File must be on classpath: "+filename);
+                    System.err.println("Not running multi-file replace: File must be on classpath: "+filename+" for "+name);
                     atomicDeployer.cleanup();
                     return false;
                 }
@@ -995,7 +995,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             atomicDeployer.add(dependency);
 	    }
 	    if(nothingToDo) {
-	        System.out.println("Multi-file replace: Nothing to do.");
+	        System.out.println("Multi-file replace: Nothing to do for "+name+".");
 	        atomicDeployer.cleanup();
 	        return false; // Valid no-op.
 	    }
