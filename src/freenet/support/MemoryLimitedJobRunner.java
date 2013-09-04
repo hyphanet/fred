@@ -72,7 +72,7 @@ public class MemoryLimitedJobRunner {
      * added to.
      * @author toad
      */
-    final class MemoryLimitedChunk {
+    public final class MemoryLimitedChunk {
         private long used;
         private MemoryLimitedChunk(long used) {
             if(used < 0) throw new IllegalArgumentException();
@@ -100,7 +100,7 @@ public class MemoryLimitedJobRunner {
 
     }
     
-    public abstract class MemoryLimitedJob {
+    public static abstract class MemoryLimitedJob {
         
         final long initialAllocation;
         
