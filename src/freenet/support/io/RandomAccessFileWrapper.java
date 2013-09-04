@@ -12,13 +12,16 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
 	private boolean closed = false;
+	private final long length;
 	
-	public RandomAccessFileWrapper(RandomAccessFile raf) {
+	public RandomAccessFileWrapper(RandomAccessFile raf) throws IOException {
 		this.raf = raf;
+		length = raf.length();
 	}
 	
-	public RandomAccessFileWrapper(File filename, String mode) throws FileNotFoundException {
+	public RandomAccessFileWrapper(File filename, String mode) throws IOException {
 		raf = new RandomAccessFile(filename, mode);
+		length = raf.length();
 	}
 
 	@Override
@@ -33,6 +36,8 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	@Override
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
+	    if(fileOffset + length > this.length)
+	        throw new IOException("Length limit exceeded");
 		synchronized(this) {
 			raf.seek(fileOffset);
 			raf.write(buf, bufOffset, length);
@@ -41,7 +46,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 
 	@Override
 	public long size() throws IOException {
-		return raf.length();
+	    return length;
 	}
 
 	@Override
