@@ -7,7 +7,7 @@ import java.io.RandomAccessFile;
 
 import freenet.support.Logger;
 
-public class RandomAccessFileWrapper implements RandomAccessThing {
+public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 
 	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
@@ -56,5 +56,15 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 			Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
 		}
 	}
+
+    @Override
+    public void lock() {
+        // Ignore. Always open.
+    }
+
+    @Override
+    public void unlock() {
+        // Ignore. Always open.
+    }
 
 }
