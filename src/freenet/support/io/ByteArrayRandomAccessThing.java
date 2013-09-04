@@ -2,7 +2,6 @@ package freenet.support.io;
 
 import java.io.IOException;
 
-
 public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 
 	private final byte[] data;
@@ -53,6 +52,11 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
             }
             
         };
+    }
+
+    @Override
+    public void free() {
+        // Do nothing.
     }
 
 }

@@ -1,7 +1,6 @@
 package freenet.support.io;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -11,17 +10,20 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 
 	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
+	final File file;
 	private boolean closed = false;
 	private final long length;
 	
-	public RandomAccessFileWrapper(RandomAccessFile raf) throws IOException {
+	public RandomAccessFileWrapper(RandomAccessFile raf, File filename) throws IOException {
 		this.raf = raf;
+		this.file = filename;
 		length = raf.length();
 	}
 	
 	public RandomAccessFileWrapper(File filename, String mode) throws IOException {
 		raf = new RandomAccessFile(filename, mode);
 		length = raf.length();
+		this.file = filename;
 	}
 
 	@Override
@@ -74,6 +76,18 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
             }
             
         };
+    }
+
+    @Override
+    public void free() {
+        close();
+        try {
+            FileUtil.secureDelete(file);
+        } catch (IOException e) {
+            Logger.error(this, "Unable to delete "+file+" : "+e, e);
+            System.err.println("Unable to delete temporary file "+file);
+        }
+        //FIXME filename.delete(); ??
     }
 
 }

@@ -31,4 +31,8 @@ public interface RandomAccessThing extends Closeable {
 	@Override
 	public void close();
 	
+	/** Free the underlying resources. May do nothing in some implementations. You should make sure
+	 * the object can be GC'ed as well. */
+	public void free();
+	
 }
