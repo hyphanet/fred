@@ -24,14 +24,20 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     private final long length;
     private boolean closed;
     
-    public PooledRandomAccessFileWrapper(File file, String mode) throws IOException {
+    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength) throws IOException {
         this.file = file;
         this.mode = mode;
         lockLevel = 0;
         // Check the parameters and get the length.
         RAFLock lock = lock();
         try {
-            length = raf.length();
+            long currentLength = raf.length();
+            if(forceLength >= 0) {
+                // FIXME unix sparse files? We may need to preallocate space reliably, write errors mid file tend to break things badly as does out of disk space.
+                raf.setLength(forceLength); 
+                currentLength = forceLength;
+            }
+            this.length = currentLength;
             lock.unlock();
         } catch (IOException e) {
             synchronized(PooledRandomAccessFileWrapper.class) {
