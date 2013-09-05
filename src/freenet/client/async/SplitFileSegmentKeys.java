@@ -241,6 +241,16 @@ public class SplitFileSegmentKeys implements Cloneable {
 			}
 		}
 	}
+	
+    public static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey) {
+        // FIXME URGENT Implement a unit test for storedKeysLength() vs writeKeys() vs readKeys().
+        int blocks = dataBlocks + checkBlocks;
+        if(commonDecryptKey) {
+            return blocks * NodeCHK.KEY_LENGTH;
+        } else {
+            return blocks * (EXTRA_BYTES_LENGTH + NodeCHK.KEY_LENGTH*2);
+        }
+    }
 
 	public int getDataBlocks() {
 		return dataBlocks;
