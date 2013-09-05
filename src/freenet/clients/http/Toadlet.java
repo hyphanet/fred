@@ -435,7 +435,10 @@ public abstract class Toadlet {
 				"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
-		t.printStackTrace(pw);
+		while (t != null) {
+			t.printStackTrace(pw);
+			t = t.getCause();
+		}
 		pw.flush();
 		msg = msg + sw.toString() + "</pre></body></html>";
 		writeHTMLReply(ctx, 500, "Internal Error", msg);
