@@ -241,5 +241,16 @@ public abstract class BloomFilter {
 		container.delete(filter);
 		container.delete(this);
 	}
+	
+    public int copyTo(byte[] buf, int offset) {
+        lock.readLock().lock();
+        try {
+            int capacity = filter.capacity();
+            System.arraycopy(filter.array(), filter.arrayOffset(), buf, offset, capacity);
+            return capacity;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
 
 }
