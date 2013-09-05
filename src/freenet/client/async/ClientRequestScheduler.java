@@ -1210,4 +1210,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return node;
 	}
 
+    public ClientRequestSchedulerBase getScheduler(boolean persistent) {
+        if(persistent)
+            return schedCore;
+        else
+            return schedTransient;
+    }
+
 }
