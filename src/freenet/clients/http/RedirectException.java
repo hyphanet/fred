@@ -16,11 +16,7 @@ import java.net.URISyntaxException;
  */
 public class RedirectException extends Exception {
 	private static final long serialVersionUID = -1;
-	URI newuri;
-	
-	public RedirectException() {
-		super();
-	}
+	final URI newuri;
 
 	public RedirectException(String newURI) throws URISyntaxException {
 		this.newuri = new URI(newURI);
