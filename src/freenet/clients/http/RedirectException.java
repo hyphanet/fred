@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
  * and expect the other toadlet to deal with a POST. However if you want to dump the contents
  * of the POST, you need to actually write a redirect.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ * @author xor <xor@freenetproject.org>
  */
 public class RedirectException extends Exception {
 	private static final long serialVersionUID = -1;
@@ -28,4 +29,12 @@ public class RedirectException extends Exception {
 	public RedirectException(URI newURI) {
 		this.newuri = newURI;
 	}
+	
+	/**
+	 * @return The URI to which this Exception shall redirect.
+	 */
+	public URI getTarget() {
+	    return newuri;
+	}
+
 }
