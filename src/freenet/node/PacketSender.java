@@ -423,10 +423,15 @@ public class PacketSender implements Runnable {
 		
 		// All of these take into account whether the data can be sent already.
 		// So we can include them in nextActionTime.
+		// FIXME: WUT?? We estimated the next action time for each type, but then removed one of the corresponding events. So at least one is no longer relevant 
+		// FIX: Take the samples AFTER sending a packet 
 		nextActionTime = Math.min(nextActionTime, lowestUrgentSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestFullPacketSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestAckTime);
 		nextActionTime = Math.min(nextActionTime, lowestHandshakeTime);
+
+	        if (toSendPacket != null && toSendPacket.fullPacketQueued())
+			nextActionTime = now;
 
 		// FIXME: If we send something we will have to go around the loop again.
 		// OPTIMISATION: We could track the second best, and check how many are in the array.
