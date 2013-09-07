@@ -127,6 +127,8 @@ public class LinkStatistics {
 	/** Increased upon sending new data, reduced upon acknowledging */
 	protected long dataInFlight;
 	
+	protected long packetsInFlight = 0;
+	
 	
 	public void reset(){
 		lastUpdated = System.currentTimeMillis();
@@ -180,6 +182,9 @@ public class LinkStatistics {
 	public long getDataInFlight(){
 		return dataInFlight;
 	}
+	public long getPacketsInFlight(){
+		return packetsInFlight;
+	}
     
 	public void onDataSend(long amount){
 		long previousval;
@@ -188,6 +193,7 @@ public class LinkStatistics {
             previousval = dataSent;
             dataSent += amount;
             dataInFlight += amount;
+            ++packetsInFlight;
         }
         if (tracker != null)
         tracker.dataSentChanged(previousval, dataSent, lastUpdated);
@@ -199,6 +205,7 @@ public class LinkStatistics {
             previousval = dataLost;
             dataLost += amount;
             dataInFlight -= amount;
+            --packetsInFlight;
         }
         if (tracker != null)
         tracker.dataLostChanged(previousval, dataLost, lastUpdated);
@@ -225,6 +232,7 @@ public class LinkStatistics {
 			    lastUpdated = System.currentTimeMillis();
 	            dataAcked += amount;
 	            dataInFlight -= amount;
+	            --packetsInFlight;
             }
         }
         if (whenSent > lastReset && tracker != null)

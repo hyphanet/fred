@@ -83,6 +83,8 @@ public class LinkStatisticsToadlet extends Toadlet {
 	private LinkStatistics trackedStats = null;
 	private DarknetPeerNode testedNode = null;
 	
+	private long packetsInFlight = 0;
+	
 	static class SampleData {
 		public ArrayList<Long> times = new ArrayList<Long>();
 		public ArrayList<Double> values = new ArrayList<Double>();
@@ -94,6 +96,7 @@ public class LinkStatisticsToadlet extends Toadlet {
 	
 	SampleData cwndSamples = null;
 	SampleData dataInFlightSamples = null;
+	SampleData packetsInFlightSamples = null;
 	
 	public final static ByteCounter emptyByteCounter = new ByteCounter() {
 		// Just ignore all that, is already gathered by a stats tracker
@@ -108,19 +111,23 @@ public class LinkStatisticsToadlet extends Toadlet {
 		}
 
 	};
-	/* Will need this for plotting and bandwith measuring purposes */
+	
 	final LinkStatistics.StatsChangeTracker statsTracker = new LinkStatistics.StatsChangeTracker() {
 		@Override
 		public void dataSentChanged(long previousval, long newval, long time) {
 			synchronized (this) {
-				if (LinkStatisticsToadlet.this.transitionInProcess())
+				if (LinkStatisticsToadlet.this.transitionInProcess()) {
 					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+					packetsInFlightSamples.addPair(time - transitionStarted, ++packetsInFlight);
+				}
 			}
 		}
 		public void dataLostChanged(long previousval, long newval, long time) {
 			synchronized (this) {
-				if (LinkStatisticsToadlet.this.transitionInProcess())
+				if (LinkStatisticsToadlet.this.transitionInProcess()) {
 					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+					packetsInFlightSamples.addPair(time - transitionStarted, --packetsInFlight);
+				}
 			}
 		}
 		@Override
@@ -129,8 +136,10 @@ public class LinkStatisticsToadlet extends Toadlet {
 		@Override
 		public void dataAckedChanged(long previousval, long newval, long time) {
 			synchronized (this) {
-				if (LinkStatisticsToadlet.this.transitionInProcess())
+				if (LinkStatisticsToadlet.this.transitionInProcess()) {
 					dataInFlightSamples.addPair(time - transitionStarted, trackedStats.getDataInFlight() / Node.PACKET_SIZE);
+					packetsInFlightSamples.addPair(time - transitionStarted, --packetsInFlight);
+				}
 			}
 	    }
 		@Override
@@ -189,6 +198,8 @@ public class LinkStatisticsToadlet extends Toadlet {
 			testedNode = null;
 			cwndSamples = new SampleData();
 			dataInFlightSamples = new SampleData();
+			packetsInFlightSamples = new SampleData();
+			packetsInFlight = 0;
 			
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessage"), ctx);
 			HTMLNode pageNode = page.outer;
@@ -205,15 +216,39 @@ public class LinkStatisticsToadlet extends Toadlet {
 				testedNode = pn;
 			}
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-		} else if (request.isParameterSet("generate_plot")) {
+		} else if (request.isParameterSet("generate_dataplot")) {
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
 			OutputStream os = data.getOutputStream();
 			try {
 				XYSeriesCollection cwndToTimeDataset = new XYSeriesCollection();
-				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "CWND from Time", cwndSamples.times, cwndSamples.values);
+				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "CWND from Time", 
+						cwndSamples.times, cwndSamples.values);
 				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "DataInFlight from Time", 
 						dataInFlightSamples.times, dataInFlightSamples.values);
-				JFreeChart chart = createChart("Data amounts from time", "Time", "Full packets", cwndToTimeDataset);
+				JFreeChart chart = createChart("Data amounts from time", "Time", "Data_in_flight / Node.PACKET_SIZE", cwndToTimeDataset);
+				XYPlot plot = (XYPlot) chart.getPlot();
+				//XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+				//renderer.setBaseShapesVisible(true);
+				//renderer.setBaseShapesFilled(false);
+				chart.setBackgroundPaint(new Color(232, 232, 232));
+				plot.setBackgroundPaint(new Color(240, 240, 240));
+				ChartUtilities.writeChartAsPNG(os, chart, 500, 300);
+			} finally {
+				os.close();
+			}
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), null);
+			ctx.writeData(data);
+		} else if (request.isParameterSet("generate_packetplot")) {
+			Bucket data = ctx.getBucketFactory().makeBucket(-1);
+			OutputStream os = data.getOutputStream();
+			try {
+				XYSeriesCollection cwndToTimeDataset = new XYSeriesCollection();
+				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "CWND from Time", 
+						cwndSamples.times, cwndSamples.values);
+				cwndToTimeDataset = addSeriesToDataset(cwndToTimeDataset, "PacketsInFlight from Time", 
+						packetsInFlightSamples.times, packetsInFlightSamples.values);
+				JFreeChart chart = createChart("Packets in flight from time", "Time", "Full packets", cwndToTimeDataset);
 				XYPlot plot = (XYPlot) chart.getPlot();
 				//XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
 				//renderer.setBaseShapesVisible(true);
@@ -300,7 +335,12 @@ public class LinkStatisticsToadlet extends Toadlet {
 			}
 			
 			contentNode.addChild(ctx.getAlertManager().createSummary());
-			HTMLNode plotNode = contentNode.addChild("img", "src", path() + "?generate_plot");
+			HTMLNode plotNode = contentNode.addChild("img", "src", path() + "?generate_dataplot");
+			plotNode.addAttribute("border", "1");
+			plotNode.addAttribute("width", "500");
+			plotNode.addAttribute("height", "300");
+			
+			plotNode = contentNode.addChild("img", "src", path() + "?generate_packetplot");
 			plotNode.addAttribute("border", "1");
 			plotNode.addAttribute("width", "500");
 			plotNode.addAttribute("height", "300");
