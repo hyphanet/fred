@@ -32,7 +32,7 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
-	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
+	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -529,7 +529,7 @@ public class NewPacketFormat implements PacketFormat {
 		packet.onSent(data.length, pn);
 
 		if(packet.getFragments().size() > 0) {
-			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
+			keyContext.sent(packet.getSequenceNumber(), data.length);
 		}
 
 		now = System.currentTimeMillis();
@@ -1066,7 +1066,8 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				// Impose a minimum so that we don't lose the ability to send anything.
 				if(maxPackets < 1) maxPackets = 1;
 				NewPacketFormatKeyContext packets = tracker.packetContext;
-				if(maxPackets <= packets.countSentPackets()) {
+				int sentPackets = packets.countSentPackets();
+				if(maxPackets <= sentPackets) {
 					// FIXME some packets will be visible from the outside yet only contain acks.
 					// SECURITY/INVISIBILITY: They won't count here, this is bad.
 					// However, counting packets in flight, rather than bytes of messages, is the right solution:
@@ -1079,7 +1080,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
 					// whereas messages are supposed to not be visible.
 					// Arguably we should count bytes rather than packets.
-					if(logDEBUG) Logger.debug(this, "Cannot send because "+packets.countSentPackets()+" in flight of limit "+maxPackets+" on "+this);
+					if(logDEBUG) Logger.debug(this, "Cannot send because "+sentPackets+" in flight of limit "+maxPackets+" on "+this);
 					return false;
 				}
 			}
@@ -1191,7 +1192,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
 							}
 						}
-						if(!couldSend && npf.canSend(key)) {
+						if(npf.canSend(key)) {
 							//We aren't blocked anymore, notify packet sender
 							npf.pn.wakeUpSender();
 						}
