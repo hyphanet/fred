@@ -1299,4 +1299,9 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	public boolean fullPacketQueued(int maxPacketSize) {
 		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
 	}
+	
+	@Override
+	public int bytesQueued(int max) {
+		return pn.getMessageQueue().estimateMessageQueueLengthBytes(max);
+	}
 }

@@ -57,6 +57,8 @@ public interface PacketFormat {
 	/** Is there enough data queued to justify sending a packet immediately? Ideally
 	 * this should take into account transport level headers. */
 	boolean fullPacketQueued(int maxPacketSize);
+	/** How many bytes are available to send. Can be inaccurate if > max, e.g. it'd be definitely more than that, but don't rely on actual values */
+	int bytesQueued(int max);
 
 	void checkForLostPackets();
 

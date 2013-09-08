@@ -5751,6 +5751,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.fullPacketQueued(getMaxPacketSize());
 	}
+	
+	public int bytesQueued(int max) {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return 0;
+		}
+		return pf.bytesQueued(max);
+	}
 
 	public long timeSendAcks() {
 		PacketFormat pf;

@@ -735,6 +735,10 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
 		enqueuePrioritizedMessageItem(item);
+		return estimateMessageQueueLengthBytes(maxSize);
+	}
+	
+	public synchronized int estimateMessageQueueLengthBytes(int maxSize) {
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
 			if(pq.itemsNonUrgent != null) {
