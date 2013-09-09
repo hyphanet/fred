@@ -261,7 +261,7 @@ final public class FileUtil {
      * @throws FileNotFoundException if <code>file</code> cannot be opened
      * @throws IOException if an I/O error occurs
      */
-    public static String readUTF(File file) throws FileNotFoundException, IOException {
+    public static StringBuilder readUTF(File file) throws FileNotFoundException, IOException {
         return readUTF(file, 0);
     }
 
@@ -273,7 +273,7 @@ final public class FileUtil {
      * @throws FileNotFoundException if <code>file</code> cannot be opened
      * @throws IOException if an I/O error occurs
      */
-	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
+	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
@@ -297,7 +297,7 @@ final public class FileUtil {
 			Closer.close(bis);
 			Closer.close(fis);
 		}
-		return result.toString();
+		return result;
 	}
 	
 	/**
@@ -306,7 +306,7 @@ final public class FileUtil {
 	 * @return The content of <code>stream</code>
 	 * @throws IOException if an I/O error occurs
 	 */
-	public static String readUTF(InputStream stream) throws IOException {
+	public static StringBuilder readUTF(InputStream stream) throws IOException {
 	    return readUTF(stream, 0);
 	}
 	
@@ -317,7 +317,7 @@ final public class FileUtil {
 	 * @return The content of <code>stream</code>, starting at <code>offset</code>
 	 * @throws IOException if an I/O error occurs
 	 */
-	public static String readUTF(InputStream stream, long offset) throws IOException {
+	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
 	    StringBuilder result = new StringBuilder();
 	    skipFully(stream, offset);
 	    InputStreamReader reader = null;
@@ -331,7 +331,7 @@ final public class FileUtil {
 	    } finally {
 	        Closer.close(reader);
 	    }
-	    return result.toString();
+	    return result;
 	}
 
 	/**

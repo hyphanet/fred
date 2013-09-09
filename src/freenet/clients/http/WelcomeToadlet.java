@@ -573,7 +573,7 @@ public class WelcomeToadlet extends Toadlet {
         LineReadingInputStream stream = null;
         try {
             stream = getLogTailReader(logfile, byteLimit);
-            return FileUtil.readUTF(stream);
+            return FileUtil.readUTF(stream).toString();
         } finally {
             Closer.close(stream);
         }
