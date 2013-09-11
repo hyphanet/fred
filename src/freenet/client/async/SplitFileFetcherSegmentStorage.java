@@ -10,7 +10,9 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.zip.CRC32;
 
+import freenet.crypt.ChecksumOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -682,9 +684,33 @@ public class SplitFileFetcherSegmentStorage {
         throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
     }
 
-    public static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey) {
-        // FIXME add more for checksum.
-        return SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, commonDecryptKey);
+    static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey) {
+        return SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, commonDecryptKey) + 4;
+    }
+    
+    void writeKeysWithChecksum() throws IOException {
+        SplitFileSegmentKeys keys = getSegmentKeys();
+        assert(this.dataBlocks + this.crossSegmentCheckBlocks == keys.dataBlocks);
+        assert(this.checkBlocks == keys.checkBlocks);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ChecksumOutputStream cos = new ChecksumOutputStream(baos, new CRC32());
+        DataOutputStream dos = new DataOutputStream(cos);
+        try {
+            keys.writeKeys(dos, false);
+            keys.writeKeys(dos, true);
+            // Write the checksum, only including the keys.
+            dos.writeInt((int)cos.getValue());
+        } catch (IOException e) {
+            // Impossible!
+            throw new Error(e);
+        }
+        byte[] buf = baos.toByteArray();
+        RAFLock lock = parent.raf.lock();
+        try {
+            parent.raf.pwrite(segmentKeyListOffset, buf, 0, buf.length);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean definitelyWantKey(NodeCHK key) {

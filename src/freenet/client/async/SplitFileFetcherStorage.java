@@ -368,7 +368,8 @@ public class SplitFileFetcherStorage {
         try {
             
             // TODO write everything
-            // TODO write keys
+            for(SplitFileFetcherSegmentStorage segment : segments)
+                segment.writeKeysWithChecksum();
             for(SplitFileFetcherSegmentStorage segment : segments)
                 segment.writeMetadata();
             keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
