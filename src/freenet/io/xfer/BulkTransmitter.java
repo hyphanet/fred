@@ -246,7 +246,8 @@ public class BulkTransmitter {
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
 			max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, peer.getThrottleWindowSize()));
-			// FIXME Need the global limiter of [code]max[/code] for memory management. Or no? 
+			// FIXME Need to introduce the global limiter of [code]max[/code] for memory management instead of hard-code for each, no? 
+			max = Math.min(max, 100); 
 			if(max < 1) max = 1;
 			
 			if(prb.isAborted()) {
