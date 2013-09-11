@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -81,6 +82,8 @@ import freenet.support.math.MersenneTwister;
  * BASIC SETTINGS: Type of splitfile, length of file, overall decryption key, number of blocks and 
  * check blocks per segment, etc.
  * - Fixed and checksummed. Read as a block so we can check the checksum.
+ * 
+ * FOOTER:
  * Length of basic settings. (So we can seek back to get them)
  * Version number.
  * Magic value.
@@ -366,8 +369,6 @@ public class SplitFileFetcherStorage {
         this.raf = new PooledRandomAccessFileWrapper(f, "rw", totalLength);
         RAFLock lock = raf.lock();
         try {
-            
-            // TODO write everything
             for(SplitFileFetcherSegmentStorage segment : segments)
                 segment.writeKeysWithChecksum();
             for(SplitFileFetcherSegmentStorage segment : segments)
@@ -379,6 +380,14 @@ public class SplitFileFetcherStorage {
             metadataTemp.free();
             raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
             raf.pwrite(offsetBasicSettings, encodedBasicSettings, 0, encodedBasicSettings.length);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(baos);
+            dos.writeInt(encodedBasicSettings.length);
+            dos.writeInt(VERSION);
+            dos.writeLong(END_MAGIC);
+            byte[] buf = baos.toByteArray();
+            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, 
+                    buf, 0, buf.length);
         } finally {
             lock.unlock();
         }
