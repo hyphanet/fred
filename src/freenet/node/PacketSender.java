@@ -166,6 +166,8 @@ public class PacketSender implements Runnable {
 
 		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
 		long count = node.outputThrottle.getCount();
+		if(count > MAX_PACKET_SIZE)
+			canSendThrottled = true;
 		
 		/** The earliest time at which a peer needs to send a packet, which is before
 		 * now. Throttled if canSendThrottled, otherwise not throttled. */
@@ -240,9 +242,6 @@ public class PacketSender implements Runnable {
 				// The peer is connected.
 				
 				boolean fullPacketQueued = pn.fullPacketQueued();
-				int bytesAvailable = pn.bytesQueued(MAX_PACKET_SIZE);
-				
-				canSendThrottled = (count >= bytesAvailable);
 				
 				if(canSendThrottled || !shouldThrottle) {
 					// We can send to this peer.
@@ -271,7 +270,7 @@ public class PacketSender implements Runnable {
 								urgentFullPacketPeers.add(pn);
 						}
 					}
-				} else {
+				} else if(shouldThrottle && !canSendThrottled) {
 					long ackTime = pn.timeSendAcks();
 					if(ackTime != Long.MAX_VALUE) {
 						if(ackTime <= now) {
@@ -370,7 +369,7 @@ public class PacketSender implements Runnable {
 		 *  - A full packet available, bandwidth available  -->> now
 		 *	- A full packet available for non-throttled peer -->> now
 		 *	- A full packet available, no bandwidth -->> wait till bandwidth available
-		 *	- No packet -->> don't care, will wake up anyway when one arrives, goto Nothing
+		 *	- No packet -->> don't care, will wake up anyway when one arives, goto Nothing
 		 * UrgentMessages:
 		 *	- There's an urgent message, deadline(urgentMessage) > now -->> deadline(urgentMessage)	  \
 		 *																								Only applies when there's enough bandwidth,
@@ -382,7 +381,11 @@ public class PacketSender implements Runnable {
 		 *  -->> timeCheckForLostPackets 
 		 */
 		
+		// FIXME: BUG! canSendThrottled represents only the ability to send FULL packet, urgents can be of less size than full
+		
 		count = node.outputThrottle.getCount();
+		if(count > MAX_PACKET_SIZE)
+			canSendThrottled = true;
 		
 		for(PeerNode pn: nodes) {
 			now = System.currentTimeMillis();
@@ -390,19 +393,15 @@ public class PacketSender implements Runnable {
 			if(pn.isConnected()) {
 				boolean shouldThrottle = pn.shouldThrottle();
 				boolean fullPacketQueued = pn.fullPacketQueued();
-				long urgentTime = pn.getNextUrgentTime(now);
-				int bytesAvailable = pn.bytesQueued(MAX_PACKET_SIZE);
-				
-				if(count > bytesAvailable)
-					canSendThrottled = true;
 				
 				if(canSendThrottled || !shouldThrottle) {
-					if(urgentTime != Long.MAX_VALUE) {
-						if(urgentTime <= now) {
+					long sendTime = pn.getNextUrgentTime(now);
+					if(sendTime != Long.MAX_VALUE) {
+						if(sendTime <= now) {
 							// Message is urgent.
 							nextActionTime = now;
 						} else 
-							nextActionTime = Math.min(nextActionTime, urgentTime);
+							nextActionTime = Math.min(nextActionTime, sendTime);
 							
 						if(fullPacketQueued) {
 							// We have at least one full packet to send right now.
@@ -411,15 +410,9 @@ public class PacketSender implements Runnable {
 					}
 				} else {
 					if (fullPacketQueued) {
-						// Wait till bandwidth available
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
 						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-					} else if (urgentTime != Long.MAX_VALUE) {
-						// An urgent message does not fit into the throttle - wait
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (bytesAvailable - count);
-						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
-						nextActionTime = Math.min(nextActionTime, Math.max(now+canSendAt, urgentTime));
 					}
 				}
 				nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
@@ -469,7 +462,7 @@ public class PacketSender implements Runnable {
 		// Processing may have taken some time
 		now = System.currentTimeMillis();
 
-		if((startingNow - now) > (10 * 1000))
+		if((startingNow - oldNow) > (10 * 1000))
 			Logger.error(this, "now is more than 10 seconds past oldNow (" + (now - oldNow) + ") in PacketSender");
 
 		long sleepTime = nextActionTime - now;
