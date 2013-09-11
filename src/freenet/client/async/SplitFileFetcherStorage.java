@@ -117,7 +117,7 @@ public class SplitFileFetcherStorage {
     /** MIME type etc. Set on construction and passed to onSuccess(). */
     final ClientMetadata clientMetadata;
     /** Decompressors. Set on construction and passed to onSuccess(). */
-    final List<? extends Compressor> decompressors;
+    final List<COMPRESSOR_TYPE> decompressors;
     
     private boolean finishedFetcher;
     private boolean finishedEncoding;
@@ -394,8 +394,44 @@ public class SplitFileFetcherStorage {
     }
     
     private byte[] encodeBasicSettings() {
-        // TODO Auto-generated method stub
-        return null;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        try {
+            dos.writeShort(splitfileType);
+            dos.writeByte(this.splitfileSingleCryptoAlgorithm);
+            dos.writeBoolean(this.splitfileSingleCryptoKey != null);
+            if(this.splitfileSingleCryptoKey != null) {
+                assert(splitfileSingleCryptoKey.length == 32);
+                dos.write(splitfileSingleCryptoKey);
+            }
+            dos.writeLong(this.finalLength);
+            clientMetadata.writeTo(dos);
+            dos.writeInt(decompressors.size());
+            for(COMPRESSOR_TYPE c : decompressors)
+                dos.writeShort(c.metadataID);
+            dos.writeInt(segments.length);
+            for(SplitFileFetcherSegmentStorage segment : segments) {
+                segment.writeFixedMetadata(dos);
+            }
+            if(this.crossSegments == null)
+                dos.writeInt(0);
+            else {
+                dos.writeInt(crossSegments.length);
+                for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+                    segment.writeFixedMetadata(dos);
+                }
+            }
+            dos.writeLong(offsetKeyList);
+            dos.writeLong(offsetSegmentStatus);
+            dos.writeLong(offsetMainBloomFilter);
+            dos.writeLong(offsetSegmentBloomFilters);
+            dos.writeLong(offsetOriginalMetadata);
+            dos.writeLong(offsetOriginalURI);
+            dos.writeLong(offsetBasicSettings);
+        } catch (IOException e) {
+            throw new Error(e); // Impossible
+        }
+        return baos.toByteArray();
     }
 
     /** Should work even for null key */

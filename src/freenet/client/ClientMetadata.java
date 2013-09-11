@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 
 /**
@@ -81,4 +84,18 @@ public class ClientMetadata implements Cloneable {
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+
+    public void writeTo(DataOutputStream dos) throws IOException {
+        dos.writeShort(VERSION);
+        dos.writeInt(MAGIC);
+        if(mimeType == null)
+            dos.writeBoolean(false);
+        else {
+            dos.writeBoolean(true);
+            dos.writeUTF(mimeType);
+        }
+    }
+    
+    private static int VERSION = 1;
+    private static int MAGIC = 0x021441fe8;
 }

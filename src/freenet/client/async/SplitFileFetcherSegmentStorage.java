@@ -729,6 +729,19 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
+    /** Write minimal fixed metadata for the segment. This should include lengths rather than 
+     * offsets. Does not write cross-segment block assignments; these are handled by the 
+     * cross-segments. 
+     * @throws IOException */
+    public void writeFixedMetadata(DataOutputStream dos) throws IOException {
+        dos.writeShort(VERSION);
+        dos.writeInt(this.dataBlocks);
+        dos.writeInt(this.crossSegmentCheckBlocks);
+        dos.writeInt(this.checkBlocks);
+        dos.writeInt(segmentStatusPaddedLength);
+        dos.writeInt(segmentKeyListLength);
+    }
 
+    static final short VERSION = 1;
 
 }
