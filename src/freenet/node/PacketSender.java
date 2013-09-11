@@ -182,8 +182,7 @@ public class PacketSender implements Runnable {
 		ArrayList<PeerNode> urgentSendPeers = null;
 		/** The earliest time at which a peer needs to send a packet, which is after
 		 * now, where there is a full packet's worth of data to send. 
-		 * Throttled if canSendThrottled, otherwise not throttled. 
-		 * Note: we only use it to sort the full-packed peers by priority, don't rely on it when setting nextActionTime!*/
+		 * Throttled if canSendThrottled, otherwise not throttled. */
 		long lowestFullPacketSendTime = Long.MAX_VALUE;
 		/** The peer(s) which lowestFullPacketSendTime is referring to */
 		ArrayList<PeerNode> urgentFullPacketPeers = null;
@@ -195,10 +194,7 @@ public class PacketSender implements Runnable {
 		long lowestHandshakeTime = Long.MAX_VALUE;
 		/** The peer(s) which lowestHandshakeTime is referring to */
 		ArrayList<PeerNode> handshakePeers = null;
-		
-		long nodesWithFullPacketsAvailable = 0;
-		long fullNonThrottledPeers = 0;
-		
+
 		for(PeerNode pn: nodes) {
 			now = System.currentTimeMillis();
 			
@@ -250,8 +246,6 @@ public class PacketSender implements Runnable {
 
 				// The peer is connected.
 				
-				boolean fullPacketQueued = pn.fullPacketQueued();
-				
 				if(canSendThrottled || !shouldThrottle) {
 					// We can send to this peer.
 					long sendTime = pn.getNextUrgentTime(now);
@@ -267,7 +261,7 @@ public class PacketSender implements Runnable {
 							}
 							if(sendTime <= lowestUrgentSendTime)
 								urgentSendPeers.add(pn);
-						} else if(fullPacketQueued) {
+						} else if(pn.fullPacketQueued()) {
 							if(sendTime < lowestFullPacketSendTime) {
 								lowestFullPacketSendTime = sendTime;
 								if(urgentFullPacketPeers != null)
@@ -304,12 +298,6 @@ public class PacketSender implements Runnable {
 					nextActionTime = Math.min(nextActionTime, urgentTime);
 				} else {
 					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
-				}
-				
-				if (fullPacketQueued) {
-					nodesWithFullPacketsAvailable++;
-					if (!shouldThrottle)
-						fullNonThrottledPeers++;
 				}
 			} else
 				// Not connected
@@ -351,9 +339,6 @@ public class PacketSender implements Runnable {
 		} else if(lowestFullPacketSendTime < Long.MAX_VALUE) {
 			toSendPacket = urgentFullPacketPeers.get(localRandom.nextInt(urgentFullPacketPeers.size()));
 			t = lowestFullPacketSendTime;
-			--nodesWithFullPacketsAvailable;
-			if (!toSendPacket.shouldThrottle())
-				fullNonThrottledPeers--;
 		} else if(lowestAckTime <= now) {
 			// We need to send an ack
 			toSendAckOnly = ackPeers.get(localRandom.nextInt(ackPeers.size()));
@@ -370,7 +355,7 @@ public class PacketSender implements Runnable {
 			try {
 				if(toSendPacket.maybeSendPacket(now, false)) {
 					count = node.outputThrottle.getCount();
-					if(count >= MAX_PACKET_SIZE)
+					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
 					else {
 						canSendThrottled = false;
@@ -392,8 +377,6 @@ public class PacketSender implements Runnable {
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
 					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket);
 				nextActionTime = Math.min(nextActionTime, urgentTime);
-				if (toSendPacket.fullPacketQueued()) // We can send another full packet to this peer right now
-					nextActionTime = now;
 			} else {
 				nextActionTime = Math.min(nextActionTime, toSendPacket.timeCheckForLostPackets());
 			}
@@ -447,11 +430,8 @@ public class PacketSender implements Runnable {
 		nextActionTime = Math.min(nextActionTime, lowestAckTime);
 		nextActionTime = Math.min(nextActionTime, lowestHandshakeTime);
 
-		if (nodesWithFullPacketsAvailable > 0) {
-			if (count >= MAX_PACKET_SIZE || fullNonThrottledPeers > 0)
-				// After sending the packet there are nodes left to which we can send a full packet right now
-				nextActionTime = now;
-		}
+	        if (toSendPacket != null && toSendPacket.fullPacketQueued())
+			nextActionTime = now;
 
 		// FIXME: If we send something we will have to go around the loop again.
 		// OPTIMISATION: We could track the second best, and check how many are in the array.
