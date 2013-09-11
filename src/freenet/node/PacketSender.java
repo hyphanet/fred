@@ -435,9 +435,6 @@ public class PacketSender implements Runnable {
 		nextActionTime = Math.min(nextActionTime, lowestAckTime);
 		nextActionTime = Math.min(nextActionTime, lowestHandshakeTime);
 
-	        if (toSendPacket != null && toSendPacket.fullPacketQueued())
-			nextActionTime = now;
-
 		// FIXME: If we send something we will have to go around the loop again.
 		// OPTIMISATION: We could track the second best, and check how many are in the array.
 		
