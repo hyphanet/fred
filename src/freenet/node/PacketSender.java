@@ -176,7 +176,8 @@ public class PacketSender implements Runnable {
 		}
 		
 		/** The earliest time at which a peer needs to send a packet, which is before
-		 * now. Throttled if canSendThrottled, otherwise not throttled. */
+		 * now. Throttled if canSendThrottled, otherwise not throttled. 
+		 * Note: we only use it to sort the full-packed peers by priority, don't rely on it when setting nextActionTime!*/
 		long lowestUrgentSendTime = Long.MAX_VALUE;
 		/** The peer(s) which lowestUrgentSendTime is referring to */
 		ArrayList<PeerNode> urgentSendPeers = null;
@@ -354,17 +355,8 @@ public class PacketSender implements Runnable {
 		if(toSendPacket != null) {
 			try {
 				if(toSendPacket.maybeSendPacket(now, false)) {
-					count = node.outputThrottle.getCount();
-					if(count > MAX_PACKET_SIZE)
-						canSendThrottled = true;
-					else {
-						canSendThrottled = false;
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt + 1000*1000 - 1) / (1000*1000);
-						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-					}
+					// Round-robin over the loop to update nextActionTime appropriately
+					nextActionTime = now;
 				}
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
@@ -411,6 +403,21 @@ public class PacketSender implements Runnable {
 				nextActionTime = Math.min(nextActionTime, toSendAckOnly.timeCheckForLostPackets());
 			}
 		}
+		
+		/* Estimating of nextActionTime logic:
+		* FullPackets:
+		*  - A full packet available, bandwidth available  -->> now
+		*  - A full packet available for non-throttled peer -->> now
+		*  - A full packet available, no bandwidth -->> wait till bandwidth available
+		*  - No packet -->> don't care, will wake up anyway when one arrives, goto Nothing
+		* UrgentMessages: Only applies when there's enough bandwidth to send a full packet, Includes any urgent acks 
+		*  - There's an urgent message, deadline(urgentMessage) > now -->> deadline(urgentMessage)
+		*  - There's an urgent message, deadline(urgentMessage) <= now -->> now
+		*  - There's an urgent message, but there's not enough bandwidth for a full packet -->> wait till bandwidth available
+		*  - There's no urgent message -->> don't care, goto Nothing 
+		* Nothing:
+		*  -->> timeCheckForLostPackets 
+		*/
 		
 		if(toSendHandshake != null) {
 			// Send handshake if necessary
