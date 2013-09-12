@@ -39,6 +39,8 @@ class NPFPacket {
 	private final List<byte[]> lossyMessages = new LinkedList<byte[]>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
+	private int ackRangeCount = 0;
+	private int ackBlockByteSize = 0;
 
 	public static NPFPacket create(byte[] plaintext) {
 		return create(plaintext, null);
@@ -60,27 +62,35 @@ class NPFPacket {
 		offset += 4;
 
 		//Process received acks
-		int numAcks = plaintext[offset++] & 0xFF;
-		if(plaintext.length < (offset + numAcks + (numAcks > 0 ? 3 : 0))) {
+		int numAckRanges = plaintext[offset++] & 0xFF;
+		if(plaintext.length < (offset + (numAckRanges > 0 ? 4 + (numAckRanges-1)*2 : 0))) {
 			packet.error = true;
 			return packet;
 		}
-
-		int prevAck = 0;
-		for(int i = 0; i < numAcks; i++) {
-			int ack = 0;
-			if(i == 0) {
-				ack = ((plaintext[offset] & 0xFF) << 24)
-				                | ((plaintext[offset + 1] & 0xFF) << 16)
-				                | ((plaintext[offset + 2] & 0xFF) << 8)
-				                | (plaintext[offset + 3] & 0xFF);
-				offset += 4;
-			} else {
-				ack = prevAck + (plaintext[offset++] & 0xFF);
-			}
+		if (numAckRanges > 0) {
+			int ack = ((plaintext[offset] & 0xFF) << 24)
+	                | ((plaintext[offset + 1] & 0xFF) << 16)
+	                | ((plaintext[offset + 2] & 0xFF) << 8)
+	                | (plaintext[offset + 3] & 0xFF);
+			offset += 4;
+			
 			packet.acks.add(ack);
-			prevAck = ack;
+			int prevAck = ack;
+			
+			for(int i = 1; i < numAckRanges; i++) {
+				ack = prevAck;	
+				int rangeSize = (plaintext[offset++] & 0xFF);
+				for (int j = 1; j <= rangeSize; j++) {
+					ack = prevAck + j;
+					packet.acks.add(ack);
+				}
+
+				ack += (plaintext[offset++] & 0xFF);
+				packet.acks.add(ack);
+				prevAck = ack;
+			}
 		}
+		
 
 		//Handle received message fragments
 		int prevFragmentID = -1;
@@ -214,7 +224,7 @@ class NPFPacket {
 		offset += 4;
 
 		//Add acks
-		buf[offset++] = (byte) (acks.size());
+		buf[offset++] = (byte) (ackRangeCount);
 		int prevAck;
 		Iterator<Integer> acksIterator = acks.iterator();
 		if(acksIterator.hasNext()) {
@@ -224,14 +234,27 @@ class NPFPacket {
 			buf[offset + 2] = (byte) (prevAck >>> 8);
 			buf[offset + 3] = (byte) (prevAck);
 			offset += 4;
+			
+			byte rangeSize = 0;
 
 			while(acksIterator.hasNext()) {
-				int ack = acksIterator.next();
-				buf[offset++] = (byte) (ack - prevAck);
-				prevAck = ack;
+				
+				int nextAck = acksIterator.next();
+				while(nextAck - prevAck == 1 && acksIterator.hasNext() && (rangeSize < 255)) {
+					rangeSize++;
+					prevAck = nextAck;
+					nextAck = acksIterator.next();
+				}
+				buf[offset++] = rangeSize;
+				buf[offset++] = (byte) (nextAck - prevAck);
+				
+				rangeSize = 0;
+				prevAck = nextAck;
+				
+				// TODO: Add zero-cost dub-acks if any
 			}
 		}
-
+		
 		//Add fragments
 		int prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
@@ -305,18 +328,45 @@ class NPFPacket {
 	public boolean addAck(int ack) {
 		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
 		if(acks.contains(ack)) return true;
-		if(acks.size() >= 255) return false;
-
-		if(acks.size() == 0) {
-			length += 3;
-		} else if(ack < acks.first()) {
-			if((acks.first() - ack) > 255) return false;
-		} else if(ack > acks.last()) {
-			if((ack - acks.last()) > 255) return false;
-		}
+		
 		acks.add(ack);
-		length++;
+		
+		Iterator<Integer> acksIterator = acks.iterator();
+		int prevAck = acksIterator.next();
+		
+		byte rangeSize = 0;
+		byte rangeCount = 1;
 
+		while(acksIterator.hasNext()) {
+			int nextAck = acksIterator.next();
+			while (nextAck - prevAck == 1 && acksIterator.hasNext() && (rangeSize < 255)) {
+				rangeSize++;
+				prevAck = nextAck;
+				nextAck = acksIterator.next();
+			}
+			
+			if (nextAck - prevAck > 255) {
+				acks.remove(ack);
+				return false;
+			}
+			
+			rangeCount++;
+			rangeSize = 0;
+			prevAck = nextAck;
+			
+			// TODO: Add zero-cost dub-acks if any
+		}
+		
+		if (rangeCount > 255) {
+			acks.remove(ack);
+			return false;
+		}
+	
+		int blockSize = 4 + (rangeCount-1)*2;
+		length += blockSize - ackBlockByteSize;
+		ackBlockByteSize = blockSize;
+		ackRangeCount = rangeCount;
+		
 		return true;
 	}
 
