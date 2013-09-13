@@ -325,8 +325,8 @@ public class SplitFileFetcherStorage {
                     segLen--;
                 }
                 SplitFileFetcherCrossSegmentStorage seg = 
-                    new SplitFileFetcherCrossSegmentStorage(segLen, crossCheckBlocks, parent, this, 
-                            splitfileType);
+                    new SplitFileFetcherCrossSegmentStorage(i, segLen, crossCheckBlocks, parent, 
+                            this, splitfileType);
                 crossSegments[i] = seg;
                 for(int j=0;j<segLen;j++) {
                     // Allocate random data blocks
