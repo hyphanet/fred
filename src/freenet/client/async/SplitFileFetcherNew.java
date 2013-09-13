@@ -10,6 +10,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -67,7 +68,8 @@ public class SplitFileFetcherNew implements ClientGetState {
     SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
             ClientMetadata clientMetadata, long token, boolean topDontCompress, 
-            short topCompatibilityMode, boolean persistent, ObjectContainer container, ClientContext context) 
+            short topCompatibilityMode, boolean persistent, FreenetURI thisKey, 
+            ObjectContainer container, ClientContext context) 
             throws FetchException, MetadataParseException {
         this.cb = rcb;
         this.parent = parent;
@@ -80,7 +82,7 @@ public class SplitFileFetcherNew implements ClientGetState {
 
         storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                 topDontCompress, topCompatibilityMode, fetchContext, rcb, parent, realTimeFlag, 
-                persistent, scheduler, container, context);
+                persistent, scheduler, thisKey, container, context);
         long eventualLength = Math.max(storage.finalLength, metadata.uncompressedDataLength());
         boolean wasActive = true;
         if(persistent) {
