@@ -71,7 +71,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final UserAlertManager userAlertManager;
 	private final BookmarkManager bookmarkManager;
 	private final InetAddress remoteAddr;
-	private boolean sentReplyHeaders;
+	private Exception firstReplySendingException;
 	private volatile Toadlet activeToadlet;
 	
 	/** The unique id of the request*/
@@ -207,10 +207,10 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean isOutlinkConfirmationPage, boolean allowFrames, boolean enableJavascript) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		if(sentReplyHeaders) {
-			throw new IllegalStateException("Already sent headers!");
+		if(firstReplySendingException != null) {
+			throw new IllegalStateException("Already sent headers!", firstReplySendingException);
 		}
-		sentReplyHeaders = true;
+		firstReplySendingException = new Exception();
 		
 		if(replyCookies != null) {
 			if (mvt == null) {
