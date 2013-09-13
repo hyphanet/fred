@@ -7,6 +7,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -694,6 +695,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
                     continue;
                 }
             }
+
+            // For wrapper updates.
+            // 3.2 tolerates "java" being a script, 3.5 does not, so we must not upgrade in this case.
+            String mustBeOnPathNotAScript = props.getProperty(baseName+".mustBeOnPathNotAScript");
+            if(mustBeOnPathNotAScript != null && !isOnPathNotAScript(mustBeOnPathNotAScript)) {
+                Logger.normal(this, "Ignoring "+baseName+" because needs \""+mustBeOnPathNotAScript+"\" on the path and not a script");
+                System.out.println( "Ignoring "+baseName+" because needs \""+mustBeOnPathNotAScript+"\" on the path and not a script"); // FIXME remove when tested
+                continue;
+            }
             
             if(type == DEPENDENCY_TYPE.OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART) {
                 parseAtomicMultiFilesWithRestart(props, baseName);
@@ -860,7 +870,55 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		return true;
 	}
 	
-	enum MUST_EXIST {
+	static final byte[] SCRIPT_HEAD;
+	
+	static {
+	    try {
+	        SCRIPT_HEAD = "#!".getBytes("UTF-8");
+	    } catch(UnsupportedEncodingException e) {
+	        throw new Error(e);
+	    }
+	}
+	
+	private boolean isOnPathNotAScript(String toFind) {
+	    String path = System.getenv("PATH"); // Upper case should work on both linux and Windows
+	    if(path == null) return false;
+	    String[] split = path.split(File.pathSeparator);
+	    for(String s : split) {
+	        File f = new File(s);
+	        if(f.exists() && f.isDirectory()) {
+	            f = new File(f, toFind);
+	            if(f.exists() && f.canExecute()) {
+	                if(!f.canRead()) {
+	                    Logger.error(this, "On path and can execute but not read, so can't check whether it is a script?!: "+f);
+	                    return false;
+	                }
+	                if(f.length() < SCRIPT_HEAD.length) {
+	                    Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
+	                    return false; // Weird!
+	                }
+	                try {
+                        FileInputStream fis = new FileInputStream(f);
+                        byte[] buf = new byte[SCRIPT_HEAD.length];
+                        DataInputStream dis = new DataInputStream(fis);
+                        try {
+                            dis.read(buf);
+                            return !Arrays.equals(buf, SCRIPT_HEAD);
+                        } catch (IOException e) {
+                            Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
+                            return false;
+                        }
+                    } catch (FileNotFoundException e) {
+                        // Impossible.
+                    }
+	            }
+	        }
+	    }
+	    Logger.normal(this, "Could not find "+toFind+" on the path");
+	    return false; // Not found on the path.
+    }
+
+    enum MUST_EXIST {
         /** File may or may not exist */
         FALSE,
 	    /** File must exist but we don't care about its content (we're going to replace it) */
