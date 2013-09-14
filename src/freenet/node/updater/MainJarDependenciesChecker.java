@@ -867,7 +867,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 							Logger.error(this, "Failed to preload "+file+" from "+key+" : "+e, e);
 						}
 						
-					}, build, false, executable);
+					}, type.optional ? 0 : build, false, executable);
 				} catch (FetchException e) {
 					Logger.error(MainJarDependencies.class, "Failed to preload "+file+" from "+key+" : "+e, e);
 				}

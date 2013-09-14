@@ -286,7 +286,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential, boolean executable) throws FetchException {
 		if(essential)
 			System.out.println("Fetching "+downloadTo+" needed for new Freenet update "+build);
-		else if(build != 0) // build 0 when fetching for a multi-file update, will log separately
+		else if(build != 0) // build 0 means it's a preload or a multi-file update.
 			System.out.println("Preloading "+downloadTo+" needed for new Freenet update "+build);
 		if(logMINOR) Logger.minor(this, "Fetching "+uri+" to "+downloadTo+" for next update");
 		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb, essential, executable);
