@@ -336,6 +336,7 @@ public class MainJarDependenciesChecker {
 	}
 	
 	enum DEPENDENCY_TYPE {
+	    
 		/** A jar we want to put on the classpath. Normally we move to a new filename when there is
 		 * a new version of such a dependency; supports most features of dependencies.properties. */
 		CLASSPATH,
@@ -350,6 +351,13 @@ public class MainJarDependenciesChecker {
 		 * On Windows this needs an external EXE which waits for shutdown, replaces the files, then 
 		 * starts Freenet back up; on Linux and Mac we can just use a shell script. */
 		OPTIONAL_ATOMIC_MULTI_FILES_WITH_RESTART;
+
+        final boolean optional;
+        
+        DEPENDENCY_TYPE() {
+            this.optional = this.name().startsWith("OPTIONAL_");
+        }
+        
 	}
 	
 	private synchronized MainJarDependencies innerHandle(Properties props, int build) {
@@ -835,7 +843,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    } else {
 			        System.out.println("Have correct version of optional dependency "+currentFile);
 			    }
-			} else if(currentFile != null && type == DEPENDENCY_TYPE.CLASSPATH) {
+			} else if(currentFile != null && !type.optional) {
 			    // Will be dealt with during update. For now ignore it. Not safe to preload it, since it's on the classpath, whether it exists or not.
 			    System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
 			} else {
@@ -848,7 +856,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						@Override
 						public void onSuccess() {
 							System.out.println("Preloaded "+file+" which will be needed when we upgrade.");
-							if(type == DEPENDENCY_TYPE.CLASSPATH) {
+							if(!type.optional) {
 							    System.out.println("Will serve "+file+" for UOM");
 							    deployer.addDependency(expectedHash, file);
 							}
