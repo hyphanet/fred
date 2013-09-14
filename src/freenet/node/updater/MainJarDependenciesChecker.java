@@ -824,18 +824,22 @@ outer:	for(String propName : props.stringPropertyNames()) {
             
             if(type == DEPENDENCY_TYPE.OPTIONAL_PRELOAD && filename.exists())
                 currentFile = filename;
-            
+
 			// Serve the file if it meets the hash in the dependencies.properties.
-			if(currentFile != null && currentFile.exists()) {
-				if(validFile(currentFile, expectedHash, size, executable)) {
-					System.out.println("Will serve "+currentFile+" for UOM");
-					deployer.addDependency(expectedHash, currentFile);
-				} else {
-					System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
-				}
+			if(currentFile != null && currentFile.exists() && 
+			        validFile(currentFile, expectedHash, size, executable)) {
+			    // File is OK.
+			    if(type == DEPENDENCY_TYPE.CLASSPATH) {
+			        System.out.println("Will serve "+currentFile+" for UOM");
+			        deployer.addDependency(expectedHash, currentFile);
+			    } else {
+			        System.out.println("Have correct version of optional dependency "+currentFile);
+			    }
+			} else if(currentFile != null && type == DEPENDENCY_TYPE.CLASSPATH) {
+			    // Will be dealt with during update. For now ignore it. Not safe to preload it, since it's on the classpath, whether it exists or not.
+			    System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
 			} else {
-				// Not present even though it's required.
-				// This means we want to preload it before the next release.
+			    // Optional update, or not present in spite of being required.
 				final File file = filename;
 				try {
 					System.out.println("Preloading "+filename+" for the next update...");
