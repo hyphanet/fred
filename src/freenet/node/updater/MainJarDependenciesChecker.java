@@ -837,7 +837,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(currentFile != null && currentFile.exists() && 
 			        validFile(currentFile, expectedHash, size, executable)) {
 			    // File is OK.
-			    if(type == DEPENDENCY_TYPE.CLASSPATH) {
+			    if(!type.optional) {
 			        System.out.println("Will serve "+currentFile+" for UOM");
 			        deployer.addDependency(expectedHash, currentFile);
 			    } else {
