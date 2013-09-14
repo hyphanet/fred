@@ -822,6 +822,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 executable = Boolean.parseBoolean(s);
             }
             
+            if(type == DEPENDENCY_TYPE.OPTIONAL_PRELOAD && filename.exists())
+                currentFile = filename;
+            
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
 				if(validFile(currentFile, expectedHash, size, executable)) {
