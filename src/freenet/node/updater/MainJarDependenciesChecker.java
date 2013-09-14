@@ -850,7 +850,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    // Optional update, or not present in spite of being required.
 				final File file = filename;
 				try {
-					System.out.println("Preloading "+filename+" for the next update...");
+					System.out.println("Preloading "+filename+(type.optional ? "" : " for the next update..."));
 					deployer.fetch(key, filename, size, expectedHash, new JarFetcherCallback() {
 
 						@Override
