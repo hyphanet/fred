@@ -674,7 +674,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \""+baseName+"\"");
 				continue;
 			}
-			DEPENDENCY_TYPE type;
+			final DEPENDENCY_TYPE type;
 			try {
 				type = DEPENDENCY_TYPE.valueOf(s);
 			} catch (IllegalArgumentException e) {
@@ -848,8 +848,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						@Override
 						public void onSuccess() {
 							System.out.println("Preloaded "+file+" which will be needed when we upgrade.");
-							System.out.println("Will serve "+file+" for UOM");
-							deployer.addDependency(expectedHash, file);
+							if(type == DEPENDENCY_TYPE.CLASSPATH) {
+							    System.out.println("Will serve "+file+" for UOM");
+							    deployer.addDependency(expectedHash, file);
+							}
 						}
 
 						@Override
