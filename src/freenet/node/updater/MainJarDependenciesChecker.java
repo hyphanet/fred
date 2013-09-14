@@ -840,8 +840,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    if(!type.optional) {
 			        System.out.println("Will serve "+currentFile+" for UOM");
 			        deployer.addDependency(expectedHash, currentFile);
-			    } else {
-			        System.out.println("Have correct version of optional dependency "+currentFile);
 			    }
 			} else if(currentFile != null && !type.optional) {
 			    // Will be dealt with during update. For now ignore it. Not safe to preload it, since it's on the classpath, whether it exists or not.
@@ -1680,7 +1678,6 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			fis = null;
 			if(Arrays.equals(hash, expectedHash)) {
                 if(executable && !filename.canExecute()) {
-                    System.out.println("File is correct but must be executable: "+filename);
                     filename.setExecutable(true);
                 }
 			    return true;
