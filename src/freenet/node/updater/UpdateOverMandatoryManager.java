@@ -1780,9 +1780,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 * successful and the hash is correct.
 	 * @param uomDependencyFetchCallback Callback to call when done.
 	 */
-	public UOMDependencyFetcher fetchDependency(byte[] expectedHash, long size, File saveTo,
-			UOMDependencyFetcherCallback cb) {
-		final UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, cb);
+	public UOMDependencyFetcher fetchDependency(byte[] expectedHash, long size, File saveTo, 
+	        boolean executable, UOMDependencyFetcherCallback cb) {
+		final UOMDependencyFetcher f = new UOMDependencyFetcher(expectedHash, size, saveTo, executable, cb);
 		synchronized(this) {
 			dependencyFetchers.put(f.expectedHashBuffer, f);
 		}
@@ -1827,15 +1827,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final ShortBuffer expectedHashBuffer;
 		final long size;
 		final File saveTo;
+		final boolean executable;
 		private boolean completed;
 		private final UOMDependencyFetcherCallback cb;
 		private final WeakHashSet<PeerNode> peersFailed;
 		private final HashSet<PeerNode> peersFetching;
 		
-		private UOMDependencyFetcher(byte[] expectedHash, long size, File saveTo, UOMDependencyFetcherCallback callback) {
+		private UOMDependencyFetcher(byte[] expectedHash, long size, File saveTo, boolean executable, UOMDependencyFetcherCallback callback) {
 			this.expectedHash = expectedHash;
 			expectedHashBuffer = new ShortBuffer(expectedHash);
 			this.size = size;
+			this.executable = executable;
 			this.saveTo = saveTo;
 			cb = callback;
 			peersFailed = new WeakHashSet<PeerNode>();
@@ -1919,7 +1921,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						raf = null;
 						if(!failed) {
 							// Check the hash.
-							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size)) {
+							if(MainJarDependenciesChecker.validFile(tmp, expectedHash, size, executable)) {
 								if(FileUtil.renameTo(tmp, saveTo)) {
 									synchronized(UOMDependencyFetcher.this) {
 										if(completed) return;

@@ -122,8 +122,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private final boolean essential;
 		private final File tempFile;
 		private UOMDependencyFetcher uomFetcher;
+		private final boolean executable;
 		
-		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential) throws FetchException {
+		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential, boolean executable) throws FetchException {
 			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
 			File parent = filename.getParentFile();
 			if(parent == null) parent = new File(".");
@@ -141,6 +142,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			this.expectedHash = expectedHash;
 			this.expectedLength = expectedLength;
 			this.essential = essential;
+			this.executable = executable;
 		}
 		
 		@Override
@@ -191,7 +193,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				}
 				fetched = true;
 			}
-            if(!MainJarDependenciesChecker.validFile(tempFile, expectedHash, expectedLength)) {
+            if(!MainJarDependenciesChecker.validFile(tempFile, expectedHash, expectedLength, executable)) {
                 Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
                 System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
                 if(cb != null)
@@ -255,7 +257,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				if(fetched) return;
 				if(!essential) return;
 			}
-			UOMDependencyFetcher f = manager.uom.fetchDependency(expectedHash, expectedLength, filename,
+			UOMDependencyFetcher f = manager.uom.fetchDependency(expectedHash, expectedLength, filename, executable,
 					new UOMDependencyFetcherCallback() {
 
 						@Override
@@ -281,13 +283,13 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
 	@Override
 	public JarFetcher fetch(FreenetURI uri, File downloadTo,
-			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential) throws FetchException {
+			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential, boolean executable) throws FetchException {
 		if(essential)
 			System.out.println("Fetching "+downloadTo+" needed for new Freenet update "+build);
 		else if(build != 0) // build 0 when fetching for a multi-file update, will log separately
 			System.out.println("Preloading "+downloadTo+" needed for new Freenet update "+build);
 		if(logMINOR) Logger.minor(this, "Fetching "+uri+" to "+downloadTo+" for next update");
-		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb, essential);
+		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb, essential, executable);
 		synchronized(fetchers) {
 			fetchers.add(fetcher);
 			if(essential)

@@ -153,7 +153,7 @@ public class MainJarDependenciesChecker {
 	
 	interface Deployer {
 		public void deploy(MainJarDependencies deps);
-		public JarFetcher fetch(FreenetURI uri, File downloadTo, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential) throws FetchException;
+		public JarFetcher fetch(FreenetURI uri, File downloadTo, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential, boolean executable) throws FetchException;
 		/** Called by cleanup with the dependencies we can serve for the current version. 
 		 * @param expectedHash The hash of the file's contents, which is also
 		 * listed in the dependencies file.
@@ -262,8 +262,8 @@ public class MainJarDependenciesChecker {
 		final int forBuild;
 
 		/** Construct with a Dependency, so we can add it when we're done. */
-		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize, boolean essential, int forBuild) throws FetchException {
-			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build, essential);
+		Downloader(Dependency dep, FreenetURI uri, byte[] expectedHash, long expectedSize, boolean essential, boolean executable, int forBuild) throws FetchException {
+			fetcher = deployer.fetch(uri, dep.newFilename, expectedSize, expectedHash, this, build, essential, executable);
 			this.dep = dep;
 			this.essential = essential;
 			this.forBuild = forBuild;
@@ -512,6 +512,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				currentFile = getDependencyInUse(p);
 			}
 			
+            // Executable?
+            boolean executable = false;
+            s = props.getProperty(baseName+".executable");
+            if(s != null) {
+                executable = Boolean.parseBoolean(s);
+            }
+			
 			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
 			    if(filename.canRead() && filename.length() > 0) {
 			        System.out.println("Assuming non-updated dependency file is current: "+filename);
@@ -522,7 +529,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			        filename.delete();
 			    }
 			}
-			if(validFile(filename, expectedHash, size)) {
+			if(validFile(filename, expectedHash, size, executable)) {
 				// Nothing to do. Yay!
 				System.out.println("Found file required by the new Freenet version: "+filename);
 				// Use it.
@@ -531,7 +538,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				continue;
 			}
 			// Check the version currently in use.
-			if(currentFile != null && validFile(currentFile, expectedHash, size)) {
+			if(currentFile != null && validFile(currentFile, expectedHash, size, executable)) {
 				System.out.println("Existing version of "+currentFile+" is OK for update.");
 				// Use it.
 				if(type == DEPENDENCY_TYPE.CLASSPATH)
@@ -543,7 +550,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					// No way to check existing files.
 					if(maxCHK != null) {
 						try {
-							fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, true);
+							fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, true, executable);
 						} catch (FetchException fe) {
 							broken = true;
 							Logger.error(this, "Failed to start fetch: "+fe, fe);
@@ -560,7 +567,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				for(File f : list) {
 					String name = f.getName();
 					if(!p.matcher(name.toLowerCase()).matches()) continue;
-					if(validFile(f, expectedHash, size)) {
+					if(validFile(f, expectedHash, size, executable)) {
 						// Use it.
 						System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
 						dependencies.add(new Dependency(currentFile, f, p, order));
@@ -575,7 +582,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Otherwise we need to fetch it.
 			try {
-				fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD);
+				fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD, executable);
 			} catch (FetchException e) {
 				broken = true;
 				Logger.error(this, "Failed to start fetch: "+e, e);
@@ -808,9 +815,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    continue;
 			}
 			
+            // Executable?
+            boolean executable = false;
+            s = props.getProperty(baseName+".executable");
+            if(s != null) {
+                executable = Boolean.parseBoolean(s);
+            }
+            
 			// Serve the file if it meets the hash in the dependencies.properties.
 			if(currentFile != null && currentFile.exists()) {
-				if(validFile(currentFile, expectedHash, size)) {
+				if(validFile(currentFile, expectedHash, size, executable)) {
 					System.out.println("Will serve "+currentFile+" for UOM");
 					deployer.addDependency(expectedHash, currentFile);
 				} else {
@@ -836,7 +850,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 							Logger.error(this, "Failed to preload "+file+" from "+key+" : "+e, e);
 						}
 						
-					}, build, false);
+					}, build, false, executable);
 				} catch (FetchException e) {
 					Logger.error(MainJarDependencies.class, "Failed to preload "+file+" from "+key+" : "+e, e);
 				}
@@ -1024,7 +1038,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 }
                 nothingToDo = false;
                 System.out.println("Multi-file replace: Must create "+filename+" for "+name);
-            } else if(!validFile(filename, expectedHash, size)) {
+            } else if(!validFile(filename, expectedHash, size, executable)) {
                 if(mustExist == MUST_EXIST.EXACT) {
                     System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite "+filename);
                     atomicDeployer.cleanup();
@@ -1108,7 +1122,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
             System.out.println("Fetching "+filename+" from "+key);
             try {
-                JarFetcher fetcher = deployer.fetch(key, tempFilename, size, expectedHash, this, build, false);
+                JarFetcher fetcher = deployer.fetch(key, tempFilename, size, expectedHash, this, build, false, executable /* we use rename, so ideally we'd like the temp file to be executable if the target will be */);
                 synchronized(this) {
                     this.fetcher = fetcher;
                 }
@@ -1631,7 +1645,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		}
 	}
 
-	public static boolean validFile(File filename, byte[] expectedHash, long size) {
+	public static boolean validFile(File filename, byte[] expectedHash, long size, boolean executable) {
 		if(filename == null) return false;
 		if(!filename.exists()) return false;
 		if(filename.length() != size) {
@@ -1647,7 +1661,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			SHA256.returnMessageDigest(md);
 			fis.close();
 			fis = null;
-			return Arrays.equals(hash, expectedHash);
+			if(Arrays.equals(hash, expectedHash)) {
+                if(executable && !filename.canExecute()) {
+                    System.out.println("File is correct but must be executable: "+filename);
+                    filename.setExecutable(true);
+                }
+			    return true;
+			} else {
+			    return false;
+			}
 		} catch (FileNotFoundException e) {
 			Logger.error(MainJarDependencies.class, "File not found: "+filename);
 			return false;
@@ -1686,8 +1708,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
 
-	private synchronized void fetchDependency(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize, boolean essential) throws FetchException {
-		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize, essential, build);
+	private synchronized void fetchDependency(FreenetURI chk, Dependency dep, byte[] expectedHash, long expectedSize, boolean essential, boolean executable) throws FetchException {
+		Downloader d = new Downloader(dep, chk, expectedHash, expectedSize, essential, executable, build);
 		if(essential)
 			downloaders.add(d);
 	}
