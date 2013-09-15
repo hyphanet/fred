@@ -335,31 +335,9 @@ final public class FileUtil {
             		return false;
             	}
             }
-    		if(!orig.renameTo(dest)) {
-    			// Copy the data
-    			InputStream is = null;
-    			OutputStream os = null;
-    			try {
-    				is = new FileInputStream(orig);
-    				os = new FileOutputStream(dest);
-    				copy(is, os, orig.length());
-    				is.close();
-    				is = null;
-    				os.close();
-    				os = null;
-    				orig.delete();
-    				return true;
-    			} catch (IOException e) {
-    				dest.delete();
-    				Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
-    				System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
-    				e.printStackTrace();
-    				return false;
-    			} finally {
-    				Closer.close(is);
-    				Closer.close(os);
-    			}
-    		} else return true;
+    		if(!orig.renameTo(dest))
+    		    return copyFile(orig, dest);
+    		else return true;
     	}
 
     /**
