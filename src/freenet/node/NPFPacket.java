@@ -68,29 +68,28 @@ class NPFPacket {
 			return packet;
 		}
 		if (numAckRanges > 0) {
-			int ack = ((plaintext[offset] & 0xFF) << 24)
-	                | ((plaintext[offset + 1] & 0xFF) << 16)
-	                | ((plaintext[offset + 2] & 0xFF) << 8)
-	                | (plaintext[offset + 3] & 0xFF);
-			offset += 4;
+			int ack, prevAck = 0;
 			
-			packet.acks.add(ack);
-			int prevAck = ack;
-			
-			for(int i = 1; i < numAckRanges; i++) {
-				ack = prevAck;	
-				int rangeSize = (plaintext[offset++] & 0xFF);
-				for (int j = 1; j <= rangeSize; j++) {
-					ack = prevAck + j;
-					packet.acks.add(ack);
+			for(int i = 0; i < numAckRanges; i++) {
+				if (i == 0) {
+					 ack = ((plaintext[offset] & 0xFF) << 24)
+				                | ((plaintext[offset + 1] & 0xFF) << 16)
+				                | ((plaintext[offset + 2] & 0xFF) << 8)
+				                | (plaintext[offset + 3] & 0xFF);
+					 offset += 4;
+				} else {
+					ack = prevAck + (plaintext[offset++] & 0xFF);
 				}
-
-				ack += (plaintext[offset++] & 0xFF);
-				packet.acks.add(ack);
-				prevAck = ack;
+				
+				int rangeSize = (plaintext[offset++] & 0xFF);
+				
+				for (int j = 1; j <= rangeSize; j++) {
+					packet.acks.add(ack++);
+				}
+				
+				prevAck = ack-1;
 			}
 		}
-		
 
 		//Handle received message fragments
 		int prevFragmentID = -1;
@@ -225,33 +224,44 @@ class NPFPacket {
 
 		//Add acks
 		buf[offset++] = (byte) (ackRangeCount);
-		int prevAck;
 		Iterator<Integer> acksIterator = acks.iterator();
 		if(acksIterator.hasNext()) {
-			prevAck = acksIterator.next();
-			buf[offset] = (byte) (prevAck >>> 24);
-			buf[offset + 1] = (byte) (prevAck >>> 16);
-			buf[offset + 2] = (byte) (prevAck >>> 8);
-			buf[offset + 3] = (byte) (prevAck);
-			offset += 4;
-			
-			byte rangeSize = 0;
-
-			while(acksIterator.hasNext()) {
-				
-				int nextAck = acksIterator.next();
-				while(nextAck - prevAck == 1 && acksIterator.hasNext() && (rangeSize < 255)) {
-					rangeSize++;
-					prevAck = nextAck;
-					nextAck = acksIterator.next();
+			int startRange = 0, endRange = -1;
+			int nextAck = acksIterator.next();
+			for (int i = 0; acksIterator.hasNext(); i++) {
+				if (i == 0) {
+					buf[offset] = (byte) (nextAck >>> 24);
+					buf[offset + 1] = (byte) (nextAck >>> 16);
+					buf[offset + 2] = (byte) (nextAck >>> 8);
+					buf[offset + 3] = (byte) (nextAck);
+					offset += 4;
+				} else {
+					buf[offset++] = (byte) (nextAck - endRange);
 				}
-				buf[offset++] = rangeSize;
-				buf[offset++] = (byte) (nextAck - prevAck);
 				
-				rangeSize = 0;
-				prevAck = nextAck;
+				endRange = startRange = nextAck;
+				
+				while(acksIterator.hasNext() &&  ((nextAck = acksIterator.next()) - endRange == 1) &&  (endRange - startRange < 254)) {
+					endRange++;
+				}
+				
+				byte rangeSize = (byte) (endRange - startRange + 1);
+				buf[offset++] = rangeSize;
 				
 				// TODO: Add zero-cost dub-acks if any
+			}
+			if (nextAck != endRange) { // Edge-case when the last ack does not fit into previous range
+				if (ackRangeCount == 1) {
+					buf[offset] = (byte) (nextAck >>> 24);
+					buf[offset + 1] = (byte) (nextAck >>> 16);
+					buf[offset + 2] = (byte) (nextAck >>> 8);
+					buf[offset + 3] = (byte) (nextAck);
+					offset += 4;
+					buf[offset++] = (byte) 1;
+				} else {
+					buf[offset++] = (byte) (nextAck - endRange);
+					buf[offset++] = (byte) 1;
+				}
 			}
 		}
 		
@@ -330,39 +340,33 @@ class NPFPacket {
 		if(acks.contains(ack)) return true;
 		
 		acks.add(ack);
-		
-		Iterator<Integer> acksIterator = acks.iterator();
-		int prevAck = acksIterator.next();
-		
-		byte rangeSize = 0;
-		byte rangeCount = 1;
 
-		while(acksIterator.hasNext()) {
-			int nextAck = acksIterator.next();
-			while (nextAck - prevAck == 1 && acksIterator.hasNext() && (rangeSize < 255)) {
-				rangeSize++;
-				prevAck = nextAck;
-				nextAck = acksIterator.next();
+		int rangeCount = 0;
+
+		Iterator<Integer> acksIterator = acks.iterator();
+		int startRange = 0, endRange = -1;
+		int nextAck = acksIterator.next();
+		while (acksIterator.hasNext()) {
+			endRange = startRange = nextAck;
+			while(acksIterator.hasNext() &&  ((nextAck = acksIterator.next()) - endRange == 1) &&  (endRange - startRange < 254)) {
+				endRange++;
 			}
-			
-			if (nextAck - prevAck > 255) {
+			if (nextAck - endRange > 254) {
 				acks.remove(ack);
 				return false;
 			}
-			
-			rangeCount++;
-			rangeSize = 0;
-			prevAck = nextAck;
-			
+			++rangeCount;
 			// TODO: Add zero-cost dub-acks if any
 		}
-		
-		if (rangeCount > 255) {
+		if (nextAck != endRange) {
+			++rangeCount;
+		}
+		if (rangeCount > 254) {
 			acks.remove(ack);
 			return false;
 		}
-	
-		int blockSize = 4 + (rangeCount-1)*2;
+		//              (start + offset) + (rangeCount-1)*(deltaFromPrevios + offset)
+		int blockSize = 5                + (rangeCount-1)*2;
 		length += blockSize - ackBlockByteSize;
 		ackBlockByteSize = blockSize;
 		ackRangeCount = rangeCount;
@@ -470,7 +474,7 @@ class NPFPacket {
 		for(MessageFragment frag: fragments) {
 			// frag.wrapper is always non-null on sending.
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);
-		}			
+		}	
 	}
 	
 	String fragmentsAsString() {
