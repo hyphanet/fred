@@ -678,10 +678,17 @@ final public class FileUtil {
 
 	public static boolean copyFile(File copyFrom, File copyTo) {
 		copyTo.delete();
+		boolean executable = copyFrom.canExecute();
 		FileBucket outBucket = new FileBucket(copyTo, false, true, false, false, false);
 		FileBucket inBucket = new FileBucket(copyFrom, true, false, false, false, false);
 		try {
 			BucketTools.copy(inBucket, outBucket);
+			if(executable) {
+			    if(!(copyTo.setExecutable(true) || copyTo.canExecute())) {
+			        System.err.println("Unable to preserve executable bit when copying "+copyFrom+" to "+copyTo+" - you may need to make it executable!");
+			        // return false; ??? FIXME debatable.
+			    }
+			}
 			return true;
 		} catch (IOException e) {
 			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
