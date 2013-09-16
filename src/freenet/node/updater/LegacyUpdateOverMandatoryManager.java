@@ -88,6 +88,9 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
+            } catch(IOException e) {
+                Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but can't read the file on disk!: " + e, e);
+                return;
 			}
 			
 			final PartiallyReceivedBulk prb;

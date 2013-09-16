@@ -884,6 +884,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
 			return true;
+        } catch(IOException e) {
+            Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but now can't read the file due to a disk I/O error: " + e, e);
+            updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space or other disk I/O error, file disappeared "+temp+" : " + e, true);
+            return true;
 		}
 		
 		// It isn't starting, it's transferring.
@@ -1206,6 +1210,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
+            } catch(IOException e) {
+                Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but can't read the file due to a disk I/O error: " + e, e);
+                return;
 			}
 			
 			final PartiallyReceivedBulk prb;
@@ -1381,8 +1388,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		RandomAccessFileWrapper raf;
 		try {
 			raf = new RandomAccessFileWrapper(temp, "rw");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we lost the temp file " + temp + " : " + e, e);
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we " +
+					((e instanceof FileNotFoundException) ? "lost the temp file " : "cannot read the temp file ") + temp + " : " + e, e);
 			synchronized(this) {
 				this.nodesAskedSendMainJar.remove(source);
 			}
@@ -1670,8 +1678,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				fail = true;
 				raf = null;
 			}
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but " +
+			        (e instanceof FileNotFoundException ? "don't have the file" : "can't read the file")+
+			        " even though we did have it when we checked!: " + e, e);
 			raf = null;
 			fail = true;
 		}
