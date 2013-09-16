@@ -160,7 +160,7 @@ public class PacketSender implements Runnable {
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
 
-		boolean canSendThrottled = false;
+		final boolean canSendThrottled;
 
 		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
 		long count = node.outputThrottle.getCount();
@@ -172,6 +172,7 @@ public class PacketSender implements Runnable {
 			if(logMINOR)
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
+			canSendThrottled = false;
 		}
 		
 		/** The earliest time at which a peer needs to send a packet, which is before
