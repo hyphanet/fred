@@ -9,14 +9,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
-import freenet.clients.http.ExternalLinkToadlet;
-import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
-import freenet.node.useralerts.AbstractUserAlert;
-import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
