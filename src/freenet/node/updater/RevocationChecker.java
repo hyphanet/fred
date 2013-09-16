@@ -376,6 +376,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
 			return null;
+		} catch (IOException e) {
+            Logger.error(this, "Error reading downloaded revocation blob file: "+e, e);
+            return null;
 		}
 	}
 	
