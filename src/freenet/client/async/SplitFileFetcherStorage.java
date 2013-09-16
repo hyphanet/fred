@@ -13,34 +13,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import SevenZip.CRC;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.ChecksumOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
-import freenet.support.BinaryBloomFilter;
-import freenet.support.BloomFilter;
-import freenet.support.CountingBloomFilter;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileUtil;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.PooledRandomAccessFileWrapper;
-import freenet.support.math.MersenneTwister;
 
 /** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 
  * single random access file), but with most of the metadata in memory. The data, and the larger
@@ -154,14 +147,16 @@ public class SplitFileFetcherStorage {
      * @param cb This is only provided so we can create appropriate events when constructing, we do
      * not store it. 
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
-     * @throws MetadataParseException */
+     * @throws MetadataParseException 
+     * @throws IOException If we were unable to create the file to store the metadata and 
+     * downloaded blocks in. */
     public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherNew fetcher, 
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             GetCompletionCallback cb, ClientRequester parent, boolean persistent, boolean realTime,
             ClientRequestSchedulerBase scheduler, FreenetURI thisKey, ObjectContainer container, 
             ClientContext context) 
-    throws FetchException, MetadataParseException {
+    throws FetchException, MetadataParseException, IOException {
         this.context = context;
         this.fetcher = fetcher;
         this.finalLength = metadata.dataLength();
@@ -315,28 +310,30 @@ public class SplitFileFetcherStorage {
         int deductBlocksFromSegments = metadata.getDeductBlocksFromSegments();
         
         if(crossCheckBlocks != 0) {
-            Random random = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
-            // Cross segment redundancy: Allocate the blocks.
-            crossSegments = new SplitFileFetcherCrossSegmentStorage[segments.length];
-            int segLen = blocksPerSegment;
-            for(int i=0;i<crossSegments.length;i++) {
-                Logger.normal(this, "Allocating blocks (on fetch) for cross segment "+i);
-                if(segments.length - i == deductBlocksFromSegments) {
-                    segLen--;
-                }
-                SplitFileFetcherCrossSegmentStorage seg = 
-                    new SplitFileFetcherCrossSegmentStorage(i, segLen, crossCheckBlocks, parent, 
-                            this, splitfileType);
-                crossSegments[i] = seg;
-                for(int j=0;j<segLen;j++) {
-                    // Allocate random data blocks
-                    allocateCrossDataBlock(seg, random);
-                }
-                for(int j=0;j<crossCheckBlocks;j++) {
-                    // Allocate check blocks
-                    allocateCrossCheckBlock(seg, random);
-                }
-            }
+            // FIXME
+            throw new UnsupportedOperationException();
+//            Random random = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
+//            // Cross segment redundancy: Allocate the blocks.
+//            crossSegments = new SplitFileFetcherCrossSegmentStorage[segments.length];
+//            int segLen = blocksPerSegment;
+//            for(int i=0;i<crossSegments.length;i++) {
+//                Logger.normal(this, "Allocating blocks (on fetch) for cross segment "+i);
+//                if(segments.length - i == deductBlocksFromSegments) {
+//                    segLen--;
+//                }
+//                SplitFileFetcherCrossSegmentStorage seg = 
+//                    new SplitFileFetcherCrossSegmentStorage(i, segLen, crossCheckBlocks, parent, 
+//                            this, splitfileType);
+//                crossSegments[i] = seg;
+//                for(int j=0;j<segLen;j++) {
+//                    // Allocate random data blocks
+//                    allocateCrossDataBlock(seg, random);
+//                }
+//                for(int j=0;j<crossCheckBlocks;j++) {
+//                    // Allocate check blocks
+//                    allocateCrossCheckBlock(seg, random);
+//                }
+//            }
         } else {
             crossSegments = null;
         }
@@ -346,7 +343,11 @@ public class SplitFileFetcherStorage {
         OutputStream os = metadataTemp.getOutputStream();
         ChecksumOutputStream cos = new ChecksumOutputStream(os, new CRC32());
         BufferedOutputStream bos = new BufferedOutputStream(cos);
-        metadata.writeTo(new DataOutputStream(bos));
+        try {
+            metadata.writeTo(new DataOutputStream(bos));
+        } catch (MetadataUnresolvedException e) {
+            throw new FetchException(FetchException.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
+        }
         bos.close();
         long metadataLength = metadataTemp.size();
         offsetOriginalURI = offsetOriginalMetadata + metadataLength;
@@ -416,10 +417,11 @@ public class SplitFileFetcherStorage {
             if(this.crossSegments == null)
                 dos.writeInt(0);
             else {
-                dos.writeInt(crossSegments.length);
-                for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
-                    segment.writeFixedMetadata(dos);
-                }
+                // FIXME
+//                dos.writeInt(crossSegments.length);
+//                for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+//                    segment.writeFixedMetadata(dos);
+//                }
             }
             dos.writeLong(offsetKeyList);
             dos.writeLong(offsetSegmentStatus);
