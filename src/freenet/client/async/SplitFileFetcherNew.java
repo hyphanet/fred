@@ -80,9 +80,14 @@ public class SplitFileFetcherNew implements ClientGetState {
             throw new FetchException(FetchException.CANCELLED);
         ClientRequestSchedulerBase scheduler = context.getChkFetchScheduler(realTimeFlag).getScheduler(persistent);
 
-        storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
-                topDontCompress, topCompatibilityMode, fetchContext, rcb, parent, realTimeFlag, 
-                persistent, scheduler, thisKey, container, context);
+        try {
+            storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
+                    topDontCompress, topCompatibilityMode, fetchContext, rcb, parent, realTimeFlag, 
+                    persistent, scheduler, thisKey, container, context);
+        } catch (IOException e) {
+            Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
+            throw new FetchException(FetchException.BUCKET_ERROR, e);
+        }
         long eventualLength = Math.max(storage.finalLength, metadata.uncompressedDataLength());
         boolean wasActive = true;
         if(persistent) {
