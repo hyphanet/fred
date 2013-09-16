@@ -638,6 +638,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			rejectStatsUpdateInterval = SECONDS.toMillis(10);
 			rejectStatsFuzz = -1.0;
 		}
+		statsConfig.finishedInitialization();
 	}
 
 	protected String l10n(String key) {
