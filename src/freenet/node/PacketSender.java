@@ -361,17 +361,6 @@ public class PacketSender implements Runnable {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
 				toSendPacket.forceDisconnect();
 			}
-
-			if(canSendThrottled || !toSendPacket.shouldThrottle()) {
-				long urgentTime = toSendPacket.getNextUrgentTime(now);
-				// Should spam the logs, unless there is a deadlock
-				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket);
-				nextActionTime = Math.min(nextActionTime, urgentTime);
-			} else {
-				nextActionTime = Math.min(nextActionTime, toSendPacket.timeCheckForLostPackets());
-			}
-
 		} else if(toSendAckOnly != null) {
 			try {
 				if(toSendAckOnly.maybeSendPacket(now, true)) {
@@ -381,16 +370,6 @@ public class PacketSender implements Runnable {
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect();
-			}
-
-			if(canSendThrottled || !toSendAckOnly.shouldThrottle()) {
-				long urgentTime = toSendAckOnly.getNextUrgentTime(now);
-				// Should spam the logs, unless there is a deadlock
-				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly);
-				nextActionTime = Math.min(nextActionTime, urgentTime);
-			} else {
-				nextActionTime = Math.min(nextActionTime, toSendAckOnly.timeCheckForLostPackets());
 			}
 		}
 		
