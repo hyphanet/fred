@@ -1411,6 +1411,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					else {
 						Logger.error(this, "Failed to transfer main jar " + version + " from " + source);
 						System.err.println("Failed to transfer main jar " + version + " from " + source);
+						temp.delete();
 					}
 				} finally {
 					synchronized(UpdateOverMandatoryManager.class) {
