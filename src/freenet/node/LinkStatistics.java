@@ -133,7 +133,7 @@ public class LinkStatistics {
 	public void reset(){
 		lastUpdated = System.currentTimeMillis();
         lastReset = lastUpdated;
-		dataSent = dataLost = messagePayloadSent = dataAcked = dataRetransmitted = dataInFlight = 0;
+		dataSent = dataLost = messagePayloadSent = dataAcked = dataRetransmitted = dataInFlight = retransmitCount = 0;
         queueBacklog = windowSize = maxUsedWindow = RTO = averageRTT = 0.0;
 	}
 	
