@@ -375,17 +375,8 @@ public class PacketSender implements Runnable {
 		} else if(toSendAckOnly != null) {
 			try {
 				if(toSendAckOnly.maybeSendPacket(now, true)) {
-					count = node.outputThrottle.getCount();
-					if(count > MAX_PACKET_SIZE)
-						canSendThrottled = true;
-					else {
-						canSendThrottled = false;
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
-						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-					}
+                    // Round-robin over the loop to update nextActionTime appropriately
+                    nextActionTime = now;
 				}
 			} catch (BlockedTooLongException e) {
 				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
