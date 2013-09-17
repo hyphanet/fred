@@ -76,7 +76,7 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
 		}
 		
-		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
+		if(uri.getDocName() == null)
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
