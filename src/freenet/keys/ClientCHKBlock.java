@@ -202,7 +202,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 			if (sun != null) {
 				// SunJCE provider is faster (in some configurations)
 				try {
-					Mac sun_hmac = Mac.getInstance(algo, "HmacSHA256");
+					Mac sun_hmac = Mac.getInstance(algo, sun);
 					sun_hmac.init(dummyKey); // resolve provider
 					if (hmac.getProvider() != sun_hmac.getProvider()) {
 						long time_def = benchmark(hmac);
