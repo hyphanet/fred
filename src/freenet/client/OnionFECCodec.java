@@ -1,7 +1,11 @@
 package freenet.client;
 
+import java.lang.ref.SoftReference;
+
 import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
+
+import freenet.support.LRUMap;
 
 public class OnionFECCodec extends NewFECCodec {
 
@@ -35,10 +39,69 @@ public class OnionFECCodec extends NewFECCodec {
         // The data blocks are now decoded and in the correct locations.
     }
 
-    private PureCode getCodec(int k, int n) {
-        // TODO Auto-generated method stub
-        return null;
+    /** Cache of PureCode by {k,n}. The memory usage is relatively small so we account for it in 
+     * the FEC jobs, see maxMemoryOverheadDecode() etc. */
+    private synchronized static PureCode getCodec(int k, int n) {
+        MyKey key = new MyKey(k, n);
+        SoftReference<PureCode> codeRef;
+        while((codeRef = recentlyUsedCodecs.peekValue()) != null) {
+            // Remove oldest codecs if they have been GC'ed.
+            if(codeRef.get() == null) {
+                recentlyUsedCodecs.popKey();
+            } else {
+                break;
+            }
+        }
+        codeRef = recentlyUsedCodecs.get(key);
+        if(codeRef != null) {
+            PureCode code = codeRef.get();
+            if(code != null) {
+                recentlyUsedCodecs.push(key, codeRef);
+                return code;
+            }
+        }
+        PureCode code = new PureCode(k, n);
+        recentlyUsedCodecs.push(key, new SoftReference<PureCode>(code));
+        return code;
     }
+    
+    private static final LRUMap<MyKey, SoftReference<PureCode>> recentlyUsedCodecs = LRUMap.createSafeMap();
+
+    private static class MyKey implements Comparable<MyKey> {
+        /** Number of input blocks */
+        int k;
+        /** Number of output blocks, including input blocks */
+        int n;
+
+        public MyKey(int k, int n) {
+            this.n = n;
+            this.k = k;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(o instanceof MyKey) {
+                MyKey key = (MyKey)o;
+                return (key.n == n) && (key.k == k);
+            } else return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return (n << 16) + k;
+        }
+
+        @Override
+        public int compareTo(MyKey o) {
+            if(n > o.n) return 1;
+            if(n < o.n) return -1;
+            if(k > o.k) return 1;
+            if(k < o.k) return -1;
+            return 0;
+        }
+    }
+
+
 
     @Override
     public void encode(byte[][] dataBlocks, byte[][] checkBlocks) {
