@@ -188,7 +188,8 @@ public class SplitFileFetcherSegmentStorage {
             tryDecode = true;
         }
         long limit = totalBlocks() * CHKBlock.DATA_LENGTH + 
-        parent.fecCodec.maxMemoryOverhead(dataBlocks + crossSegmentCheckBlocks, checkBlocks);
+            Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlocks + crossSegmentCheckBlocks, checkBlocks),
+                    parent.fecCodec.maxMemoryOverheadEncode(dataBlocks + crossSegmentCheckBlocks, checkBlocks));
         parent.context.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override

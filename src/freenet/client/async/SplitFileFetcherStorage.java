@@ -104,7 +104,7 @@ public class SplitFileFetcherStorage {
     /** If the splitfile has a common encryption key, this is it. */
     final byte[] splitfileSingleCryptoKey;
     /** FEC codec for the splitfile, if needed. */
-    public NewFECCodec fecCodec;
+    public final NewFECCodec fecCodec;
     final long finalLength;
     final short splitfileType;
     /** MIME type etc. Set on construction and passed to onSuccess(). */
@@ -161,6 +161,7 @@ public class SplitFileFetcherStorage {
         this.fetcher = fetcher;
         this.finalLength = metadata.dataLength();
         this.splitfileType = metadata.getSplitfileType();
+        this.fecCodec = NewFECCodec.getInstance(splitfileType);
         this.decompressors = decompressors;
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
