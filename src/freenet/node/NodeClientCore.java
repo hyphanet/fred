@@ -699,7 +699,18 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	private void migratePluginStores(ObjectContainer container) {
-	    pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
+	    try {
+	        pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
+	    } catch (Db4oException e) {
+	        System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
+	        Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
+            killedDatabase = true;
+	    } catch (Throwable e) {
+	        // Yes this really is necessary. db4o corruption can throw all sorts of crap.
+            System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
+            Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
+            killedDatabase = true;
+	    }
     }
 
     private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
