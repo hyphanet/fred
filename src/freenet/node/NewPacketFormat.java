@@ -465,7 +465,7 @@ public class NewPacketFormat implements PacketFormat {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
-		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
+		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly, pn.isUseCumulativeAcksSet());
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + hmacLength;
@@ -552,7 +552,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly, boolean useCumulativeAcks) throws BlockedTooLongException {
 		
 		checkForLostPackets();
 		
@@ -564,7 +564,7 @@ public class NewPacketFormat implements PacketFormat {
 		
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		
-		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
+		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now, useCumulativeAcks);
 		if(moved != null && moved.anyUrgentAcks) {
 			if(logDEBUG) Logger.debug(this, "Must send because urgent acks");
 			mustSend = true;

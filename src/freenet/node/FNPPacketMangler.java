@@ -1377,6 +1377,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
 				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
+		// Set acknowledging method acording to negType
+		pn.setAcknowledgeType(negType);
+		
 		if(newTrackerID > 0) {
 
 			// Send reply
@@ -1601,6 +1604,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
+        
+		// Set acknowledging method acording to negType
+		pn.setAcknowledgeType(negType);
 
 		// We change the key
 		BlockCipher ivCipher = null;
