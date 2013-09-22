@@ -43,16 +43,22 @@ public class NPFPacketTest extends TestCase {
 	public void testPacketWithAcks() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
-		                (byte)0x02, //2 ack ranges
+		                (byte)0x03, //3 ack ranges
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x05, (byte)0x01, //Ack for packet 5
-		                (byte)0x05, (byte)0x02}; //Ack range for packets [10..11] of size 2
+		                (byte)0x05, (byte)0x02, //Ack range for packets [10..11] of size 2
+		                (byte)0x00 /*Far-range marker*/, (byte)0x00, (byte)0x0F, (byte)0x57, (byte)0xF3 /*Ack id (1005555)*/, (byte) 0x05 /*Range size*/}; 
 		NPFPacket r = NPFPacket.create(packet, pn);
 
 		assertEquals(0, r.getSequenceNumber());
-		assertEquals(3, r.getAcks().size());
+		assertEquals(8, r.getAcks().size());
 		assertTrue(r.getAcks().contains(Integer.valueOf(5)));
 		assertTrue(r.getAcks().contains(Integer.valueOf(10)));
 		assertTrue(r.getAcks().contains(Integer.valueOf(11)));
+		assertTrue(r.getAcks().contains(Integer.valueOf(1005555)));
+		assertTrue(r.getAcks().contains(Integer.valueOf(1005556)));
+		assertTrue(r.getAcks().contains(Integer.valueOf(1005557)));
+		assertTrue(r.getAcks().contains(Integer.valueOf(1005558)));
+		assertTrue(r.getAcks().contains(Integer.valueOf(1005559)));
 		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
@@ -276,11 +282,24 @@ public class NPFPacketTest extends TestCase {
 	public void testSendCompletePacket() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(2130706432);
+		// Range 1 [1000000..1000000]
 		p.addAck(1000000);
+		
+		//Range 2 [1000010..1000010]
 		p.addAck(1000010);
+		
+		//Range 3 [1000255..1000257]
 		p.addAck(1000255);
 		p.addAck(1000256);
 		p.addAck(1000257);
+		
+		//Range 4 [1005555..1005559]
+		p.addAck(1005555);
+		p.addAck(1005556);
+		p.addAck(1005557);
+		p.addAck(1005558);
+		p.addAck(1005559);
+		
 		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
 		                new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}, null));
 		p.addMessageFragment(new MessageFragment(false, true, false, 4095, 14, 1024, 256, new byte[] {
@@ -290,10 +309,11 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00, (byte)0x0d}, null));
 
 		byte[] correctData = new byte[] {(byte)0x7F, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number
-		                (byte)0x03, //Number of ack ranges
-		                (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, (byte) 0x01, //First ack + range length
-		                (byte)0x0A, (byte)0x01,
-		                (byte)0xF5, (byte)0x03, //Acks + range length
+		                (byte)0x04, //Number of ack ranges
+		                (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, (byte) 0x01, // First ack + range length
+		                (byte)0x0A, (byte)0x01, // 2nd Range + range length
+		                (byte)0xF5, (byte)0x03, // 3rd range + range length
+		                (byte)0x00 /*Far-range marker*/, (byte)0x00, (byte)0x0F, (byte)0x57, (byte)0xF3 /*Ack id*/, (byte) 0x05 /*Range size*/, 
 		                //First fragment
 		                (byte)0xB0, (byte)0x00, (byte)0x00, (byte)0x00, //Message id + flags
 		                (byte)0x08, //Fragment length
