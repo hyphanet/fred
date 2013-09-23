@@ -649,10 +649,10 @@ public class SimpleFieldSet {
 		return new KeyIterator(prefix);
 	}
 
-        public Iterator<String> toplevelKeyIterator() {
-            return values.keySet().iterator();
-        }
-
+	public Iterator<String> toplevelKeyIterator() {
+	    return values.keySet().iterator();
+	}
+	
     public class KeyIterator implements Iterator<String> {
     	final Iterator<String> valuesIterator;
     	final Iterator<String> subsetIterator;
