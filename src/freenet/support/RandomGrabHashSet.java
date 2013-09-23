@@ -18,12 +18,22 @@ import java.util.Random;
  */
 public final class RandomGrabHashSet<E> {
 
+    /**
+     * Random generator used as backend for {@link #getRandom()}.
+     */
     private final Random mRandom; 
     
-    private final HashMap<E, Integer> mIndex = new HashMap<E, Integer>();
-    
+    /**
+     * Stores all elements.
+     * Allows {@link #getRandom()} to execute in O(1).
+     */
     private final ArrayList<E> mArray = new ArrayList<E>();
     
+    /**
+     * Tells which slot each element resides in {{@link #mArray}}.
+     * This allows {@link #contains(Object)} and {@link #remove(Object)} to execute in amortised O(1).
+     */
+    private final HashMap<E, Integer> mIndex = new HashMap<E, Integer>();
     
     public RandomGrabHashSet(final Random random) {
         mRandom = random;
