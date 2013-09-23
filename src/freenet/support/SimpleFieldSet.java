@@ -969,7 +969,12 @@ public class SimpleFieldSet {
 
 	/** Read a SimpleFieldSet from a File. */
 	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
-		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
+	    FileInputStream fis = new FileInputStream(f);
+	    try {
+	        return readFrom(fis, allowMultiple, shortLived);
+	    } finally {
+	        fis.close();
+	    }
 	}
 
     /** Write to the given OutputStream (as UTF-8) and flush it. */
