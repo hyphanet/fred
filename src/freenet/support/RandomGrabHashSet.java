@@ -33,9 +33,8 @@ public final class RandomGrabHashSet<E> {
     /***
      * Debug function.
      * Add assert(indexIsValid()) to any functions which modify stuff.
-     * TODO: Write an unit test which uses this.
      */
-    private boolean indexIsValid() {
+    protected boolean indexIsValid() {
         if(mIndex.size() != mArray.size())
             return false;
         
@@ -84,6 +83,11 @@ public final class RandomGrabHashSet<E> {
         assert(mIndex.size() == mArray.size());
         assert(mIndex.get(toRemove) == null);
         assert(lastItem.equals(toRemove) || mArray.get(mIndex.get(lastItem)).equals(lastItem));
+    }
+    
+    public int size() {
+        assert(mArray.size() == mIndex.size());
+        return mArray.size();
     }
     
     public E getRandom() {
