@@ -250,6 +250,46 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+    public void testSendPacketWithAck() {
+        NPFPacket p = new NPFPacket();
+        p.setSequenceNumber(0);
+        p.addAck(0, MAX_PACKET_SIZE);
+
+        byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                        (byte)0x01,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01};
+
+        checkPacket(p, correctData);
+    }
+
+    public void testSendPacketWithTwoAcks() {
+        NPFPacket p = new NPFPacket();
+        p.setSequenceNumber(0);
+        p.addAck(0, MAX_PACKET_SIZE);
+        p.addAck(5, MAX_PACKET_SIZE);
+
+        byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                        (byte)0x02,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01,
+                (byte)0x05, (byte) 0x01};
+
+        checkPacket(p, correctData);
+    }
+
+    public void testSendPacketWithTwoAcksLong() {
+        NPFPacket p = new NPFPacket();
+        p.setSequenceNumber(0);
+        p.addAck(0, MAX_PACKET_SIZE);
+        p.addAck(1000000, MAX_PACKET_SIZE);
+
+        byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                        (byte)0x02,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01,
+                (byte)0x00 /* marker */, (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, (byte)0x01};
+
+        checkPacket(p, correctData);
+    }
+
 	public void testSendPacketWithAcks() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
