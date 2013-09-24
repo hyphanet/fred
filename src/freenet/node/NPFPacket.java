@@ -271,26 +271,17 @@ class NPFPacket {
 				int startRange = 0, endRange = -1;
 				int nextAck = acksIterator.next();
 				for (int i = 0; acksIterator.hasNext(); i++) {
-				    if (Math.abs(nextAck - endRange) >= 254 && i != 0) {
-				        buf[offset++] = (byte) 0; // Mark a far offset
-				    }
 					if (i == 0 || (Math.abs(nextAck - endRange) >= 254)) {
+					    if(i != 0)
+					        buf[offset++] = (byte) 0; // Mark a far offset
 						buf[offset] = (byte) (nextAck >>> 24);
 						buf[offset + 1] = (byte) (nextAck >>> 16);
 						buf[offset + 2] = (byte) (nextAck >>> 8);
 						buf[offset + 3] = (byte) (nextAck);
 						offset += 4;
 					} else {
-					    if (Math.abs(nextAck - endRange) < 254) {
-					        buf[offset++] = (byte) (nextAck - endRange);
-					    } else {
-					        buf[offset++] = (byte) 0;
-					        buf[offset] = (byte) (nextAck >>> 24);
-					        buf[offset + 1] = (byte) (nextAck >>> 16);
-					        buf[offset + 2] = (byte) (nextAck >>> 8);
-					        buf[offset + 3] = (byte) (nextAck);
-					        offset += 4;
-					    }
+						assert(Math.abs(nextAck - endRange) < 254);
+						buf[offset++] = (byte) (nextAck - endRange);
 					}
 					
 					endRange = startRange = nextAck;
