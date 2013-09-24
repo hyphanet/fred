@@ -257,6 +257,7 @@ class NPFPacket {
 	}
 
 	public int toBytes(byte[] buf, int offset, Random paddingGen) {
+	    int origOffset = offset;
 		buf[offset] = (byte) (sequenceNumber >>> 24);
 		buf[offset + 1] = (byte) (sequenceNumber >>> 16);
 		buf[offset + 2] = (byte) (sequenceNumber >>> 8);
@@ -392,7 +393,7 @@ class NPFPacket {
 			}
 		}
 
-        assert(offset == length);
+        assert(offset - origOffset == length);
 
 		if(offset < buf.length) {
 			//More room, so add padding
