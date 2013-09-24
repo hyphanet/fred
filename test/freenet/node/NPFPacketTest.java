@@ -262,6 +262,20 @@ public class NPFPacketTest extends TestCase {
         checkPacket(p, correctData);
     }
 
+    public void testSendPacketWithAckRange() {
+        NPFPacket p = new NPFPacket();
+        p.setSequenceNumber(0);
+        p.addAck(0, MAX_PACKET_SIZE);
+        p.addAck(1, MAX_PACKET_SIZE);
+        p.addAck(2, MAX_PACKET_SIZE);
+
+        byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                        (byte)0x01,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x03};
+
+        checkPacket(p, correctData);
+    }
+
     public void testSendPacketWithTwoAcks() {
         NPFPacket p = new NPFPacket();
         p.setSequenceNumber(0);
