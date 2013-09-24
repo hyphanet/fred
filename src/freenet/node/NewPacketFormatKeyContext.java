@@ -199,7 +199,7 @@ public class NewPacketFormatKeyContext {
 				int ack = entry.getKey();
 				// All acks must be sent within 200ms.
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
-				if(!packet.addAck(ack)) {
+				if(!packet.addAck(ack, maxPacketSize)) {
 					if(logDEBUG) Logger.debug(this, "Can't add ack "+ack);
 					break;
 				}

@@ -271,9 +271,9 @@ class NPFPacket {
 				int startRange = 0, endRange = -1;
 				int nextAck = acksIterator.next();
 				for (int i = 0; acksIterator.hasNext(); i++) {
-					if (Math.abs(nextAck - endRange) >= 254 && i != 0) {
-						buf[offset++] = (byte) 0; // Mark a far offset
-					}
+				    if (Math.abs(nextAck - endRange) >= 254 && i != 0) {
+				        buf[offset++] = (byte) 0; // Mark a far offset
+				    }
 					if (i == 0 || (Math.abs(nextAck - endRange) >= 254)) {
 						buf[offset] = (byte) (nextAck >>> 24);
 						buf[offset + 1] = (byte) (nextAck >>> 16);
@@ -281,16 +281,16 @@ class NPFPacket {
 						buf[offset + 3] = (byte) (nextAck);
 						offset += 4;
 					} else {
-						if (Math.abs(nextAck - endRange) < 254) {
-							buf[offset++] = (byte) (nextAck - endRange);
-						} else {
-							buf[offset++] = (byte) 0;
-							buf[offset] = (byte) (nextAck >>> 24);
-							buf[offset + 1] = (byte) (nextAck >>> 16);
-							buf[offset + 2] = (byte) (nextAck >>> 8);
-							buf[offset + 3] = (byte) (nextAck);
-							offset += 4;
-						}
+					    if (Math.abs(nextAck - endRange) < 254) {
+					        buf[offset++] = (byte) (nextAck - endRange);
+					    } else {
+					        buf[offset++] = (byte) 0;
+					        buf[offset] = (byte) (nextAck >>> 24);
+					        buf[offset + 1] = (byte) (nextAck >>> 16);
+					        buf[offset + 2] = (byte) (nextAck >>> 8);
+					        buf[offset + 3] = (byte) (nextAck);
+					        offset += 4;
+					    }
 					}
 					
 					endRange = startRange = nextAck;
@@ -408,11 +408,11 @@ class NPFPacket {
 				b = (byte)0x9F; // Make sure it doesn't match the pattern for lossy messages
 			buf[offset] = b;
 		}
-
+		
 		return offset;
 	}
 
-	public boolean addAck(int ack) {
+	public boolean addAck(int ack, int maxPacketSize) {
 		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
 		if(acks.contains(ack)) return true;
 		
@@ -448,7 +448,12 @@ class NPFPacket {
 			}
 			//              (start + offset) + (rangeCount-1)    *(1byte deltaFromPrevios + length) + farRangeCount*(flag + 4byte packetSequenceNumber + length)
 			int blockSize = 5                + (nearRangeCount-1)*2                                 + farRangeCount*6;
-			length += blockSize - ackBlockByteSize;
+			int finalLength = length + blockSize - ackBlockByteSize;
+			if(finalLength > maxPacketSize) {
+			    acks.remove(ack);
+			    return false;
+			}
+			length = finalLength;
 			ackBlockByteSize = blockSize;
 			ackRangeCount = farRangeCount + nearRangeCount;
 		} else {

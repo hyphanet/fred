@@ -11,6 +11,8 @@ import freenet.node.NullBasePeerNode;
 import junit.framework.TestCase;
 
 public class NPFPacketTest extends TestCase {
+    
+    static final int MAX_PACKET_SIZE = 1400;
 
 	public NullBasePeerNode pn = new NullBasePeerNode();
 	
@@ -251,9 +253,9 @@ public class NPFPacketTest extends TestCase {
 	public void testSendPacketWithAcks() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
-		p.addAck(0);
-		p.addAck(5);
-		p.addAck(10);
+		p.addAck(0, MAX_PACKET_SIZE);
+		p.addAck(5, MAX_PACKET_SIZE);
+		p.addAck(10, MAX_PACKET_SIZE);
 
 		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
 		                (byte)0x03,
@@ -283,22 +285,22 @@ public class NPFPacketTest extends TestCase {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(2130706432);
 		// Range 1 [1000000..1000000]
-		p.addAck(1000000);
+		p.addAck(1000000, MAX_PACKET_SIZE);
 		
 		//Range 2 [1000010..1000010]
-		p.addAck(1000010);
+		p.addAck(1000010, MAX_PACKET_SIZE);
 		
 		//Range 3 [1000255..1000257]
-		p.addAck(1000255);
-		p.addAck(1000256);
-		p.addAck(1000257);
+		p.addAck(1000255, MAX_PACKET_SIZE);
+		p.addAck(1000256, MAX_PACKET_SIZE);
+		p.addAck(1000257, MAX_PACKET_SIZE);
 		
 		//Range 4 [1005555..1005559]
-		p.addAck(1005555);
-		p.addAck(1005556);
-		p.addAck(1005557);
-		p.addAck(1005558);
-		p.addAck(1005559);
+		p.addAck(1005555, MAX_PACKET_SIZE);
+		p.addAck(1005556, MAX_PACKET_SIZE);
+		p.addAck(1005557, MAX_PACKET_SIZE);
+		p.addAck(1005558, MAX_PACKET_SIZE);
+		p.addAck(1005559, MAX_PACKET_SIZE);
 		
 		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
 		                new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}, null));
