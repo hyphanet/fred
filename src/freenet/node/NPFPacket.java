@@ -100,7 +100,7 @@ class NPFPacket {
 						
 						prevAck = ack-1;
 					}
-				} catch (Exception e) {
+				} catch (ArrayIndexOutOfBoundsException e) {
 					// The packet's length is not big enough
 					packet.error = true;
 					return packet;
