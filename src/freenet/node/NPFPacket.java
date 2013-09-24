@@ -390,6 +390,8 @@ class NPFPacket {
 			}
 		}
 
+        assert(offset == length);
+
 		if(offset < buf.length) {
 			//More room, so add padding
 			Util.randomBytes(paddingGen, buf, offset, buf.length - offset);
