@@ -271,7 +271,8 @@ class NPFPacket {
 				int startRange = 0, endRange = -1;
 				int nextAck = acksIterator.next();
 				for (int i = 0; acksIterator.hasNext(); i++) {
-					if (i == 0 || (Math.abs(nextAck - endRange) >= 254)) {
+				    assert(nextAck - endRange >= 0);
+					if (i == 0 || (nextAck - endRange >= 254)) {
 					    if(i != 0)
 					        buf[offset++] = (byte) 0; // Mark a far offset
 						buf[offset] = (byte) (nextAck >>> 24);
@@ -280,7 +281,7 @@ class NPFPacket {
 						buf[offset + 3] = (byte) (nextAck);
 						offset += 4;
 					} else {
-						assert(Math.abs(nextAck - endRange) < 254);
+						assert(nextAck - endRange < 254);
 						buf[offset++] = (byte) (nextAck - endRange);
 					}
 					
@@ -296,10 +297,11 @@ class NPFPacket {
 					// TODO: Add zero-cost dub-acks if any
 				}
 				if (nextAck != endRange) { // Edge-case when the last ack does not fit into previous range
-					if (Math.abs(nextAck - endRange) >= 254 && endRange != -1) {
+                    assert(nextAck - endRange >= 0);
+					if (nextAck - endRange >= 254 && endRange != -1) {
 						buf[offset++] = (byte) 0; // Mark a far offset
 					}
-					if (ackRangeCount == 1 || (Math.abs(nextAck - endRange) >= 254)) {
+					if (ackRangeCount == 1 || (nextAck - endRange >= 254)) {
 						buf[offset] = (byte) (nextAck >>> 24);
 						buf[offset + 1] = (byte) (nextAck >>> 16);
 						buf[offset + 2] = (byte) (nextAck >>> 8);
