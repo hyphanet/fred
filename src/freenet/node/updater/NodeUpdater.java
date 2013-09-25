@@ -361,6 +361,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	static final String DEPENDENCIES_FILE = "dependencies.properties";
 	
+	/** Read the jar file. Parse the Properties. 
+	 * @param is The InputStream for the jar file.
+	 * @param filename The filename of the manifest file containing the properties (normally 
+	 * META-INF/MANIFEST.MF). 
+	 * @throws IOException If there is a temporary files error or the jar is corrupted. */
 	static Properties parseProperties(InputStream is, String filename) throws IOException {
 		Properties props = new Properties();
 		ZipInputStream zis = new ZipInputStream(is);
