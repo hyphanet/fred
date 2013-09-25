@@ -17,6 +17,8 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.io.xfer.BulkReceiver;
+import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
@@ -30,6 +32,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.NativeThread;
 
 /**
@@ -184,6 +187,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
+		} else if(spec == DMT.FNPLinkTestInitiator) {
+			prepareLinkTest(m, source);
+			return true;
 		} else if(spec == DMT.FNPRoutingStatus) {
 			if(source instanceof DarknetPeerNode) {
 				boolean value = m.getBoolean(DMT.ROUTING_ENABLED);
@@ -292,7 +298,31 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		return false;
 	}
-
+	
+	private void prepareLinkTest(final Message m, final PeerNode initiator) {
+		node.executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				int sampleSize = m.getInt(DMT.SAMPLING_DATA_SIZE);
+				long uid = m.getLong(DMT.UID);
+				/* Send accept or decline */
+				try {
+					/* FIXME: perhaps we should not allow link sampling in the conditions of huge load */
+					initiator.sendAsync(DMT.createFNPAccepted(uid), null, node.nodeStats.nodeToNodeCounter);
+				} catch (NotConnectedException e) {
+					/* Too bad, failed to initiate sampling */
+					return;
+				}
+				/* Actually, no need to store it in memory, so 
+				 * FIXME: Add a VoidRandomAccessThing */
+				ByteArrayRandomAccessThing rat = new ByteArrayRandomAccessThing(new byte [sampleSize]);
+				PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.getUSM(), sampleSize, Node.PACKET_SIZE, rat, false);
+				BulkReceiver receiver = new BulkReceiver(prb, initiator, uid, null);
+				receiver.receive();
+			}
+		});
+	}
+	
 	private void rejectRequest(Message m, ByteCounter ctr) {
 		long uid = m.getLong(DMT.UID);
 		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);

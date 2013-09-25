@@ -23,6 +23,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -1012,6 +1013,9 @@ public class DarknetPeerNode extends PeerNode {
 							Logger.error(this, err);
 							System.err.println(err);
 						}
+					} catch (DisconnectedException e) {
+						Logger.error(this, "Disconnected while sending a file", e);
+						remove();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" sending file", t);
 						remove();
@@ -1454,6 +1458,13 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
+		String fnam = file.getFilename();
+		String mime = file.getContentType();
+		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
+		return sendFileOffer(fnam, mime, message, data);
+	}
+	
+	public int sendFileOffer(HTTPUploadedFile file, String message, AsyncMessageCallback cb) throws IOException {
 		String fnam = file.getFilename();
 		String mime = file.getContentType();
 		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));

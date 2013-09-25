@@ -74,6 +74,7 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.LinkStatistics;
 import freenet.support.Base64;
 import freenet.support.BooleanLastTrueTracker;
 import freenet.support.Fields;
@@ -401,6 +402,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public static final long BLACK_MAGIC_BACKOFF_PRUNING_TIME = MINUTES.toMillis(5);
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 
+	protected LinkStatistics linkStatsTotal;
+	/** Is reset upon each major failure - serious backoff, serious idle time, etc... */ 
+	protected LinkStatistics linkStatsShortRun;
+	
+	public LinkStatistics getTotalLinkStats(){
+		return linkStatsTotal;
+	}
+	
+	public LinkStatistics getShortRunLinkStats(){
+		return linkStatsShortRun;
+	}
+	
+	public boolean linkStatsAvailable(){
+		return true;
+	}
+	
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -451,6 +468,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	* @param node2 The running Node we are part of.
 	*/
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		this.linkStatsTotal = new LinkStatistics();
+		this.linkStatsShortRun = new LinkStatistics();
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
@@ -3002,6 +3021,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
 	public void enterMandatoryBackoff(String reason, boolean realTime) {
 		long now = System.currentTimeMillis();
+		/* FIXME: Should we need to report onSeriousBackoff here?
+		 * But congestion window still will not be fully utilized and will be decayed each RTO, so perhaps no. */
 		synchronized(this) {
 			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
 			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
@@ -4202,10 +4223,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// Clock generally has 20ms granularity or better, right?
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
-
+	
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
+		linkStatsTotal.onAverageRTTChange(averagePingTime());
+		linkStatsShortRun.onAverageRTTChange(averagePingTime());
 		synchronized(this) {
 			consecutiveRTOBackoffs = 0;
 			// Update RTT according to RFC 2988.
@@ -4246,6 +4269,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			}
 			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO+" SRTT is "+SRTT+" RTTVAR is "+RTTVAR+" for "+shortToString());
 		}
+		linkStatsTotal.onRTOChange(RTO);
+		linkStatsShortRun.onRTOChange(RTO);
 	}
 	
 	/**
@@ -4273,6 +4298,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			reportedRTT = false;
 		}
 		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString()+" consecutive RTO backoffs is "+consecutiveRTOBackoffs);
+		linkStatsShortRun.reset();
+		linkStatsTotal.onSeriousBackoff(1);
+		linkStatsShortRun.onRTOChange(RTO);
+		linkStatsTotal.onRTOChange(RTO);
 	}
 
 	private long resendBytesSent;
@@ -5512,6 +5541,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	@Override
 	public void resentBytes(int length) {
 		resendByteCounter.sentBytes(length);
+		linkStatsTotal.onDataRetransmit(length);
+		linkStatsShortRun.onDataRetransmit(length);
 	}
 	
 	// FIXME move this to PacketFormat eventually.
@@ -5771,7 +5802,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeSendAcks();
 	}
-
+	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {

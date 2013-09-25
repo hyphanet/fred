@@ -82,6 +82,12 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			cell.addChild("a", "href", path()+"friend-"+peerNodeStatus.hashCode()+".fref", l10n("noderefLink"));
 			cell.addChild("#", ")");
 		}
+		if(advanced) {
+			cell.addChild("#", " (");
+			/* FIXME: localize! */
+			cell.addChild("a", "href", "/test_connection/?peernode_hashcode=" + peerNodeStatus.hashCode(), "test_connection");
+			cell.addChild("#", ")");
+		}
 	}
 	
 	@Override

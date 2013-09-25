@@ -11,6 +11,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SentTimes;
 import freenet.support.Logger.LogLevel;
+import freenet.node.LinkStatistics;
 
 /** NewPacketFormat's context for each SessionKey. Specifically, packet numbers are unique
  * to a SessionKey, because the packet number is used in encrypting the packet. Hence this
@@ -103,7 +104,7 @@ public class NewPacketFormatKeyContext {
 			return seqNum;
 		}
 	}
-
+	
 	/** One of our outgoing packets has been acknowledged.
 	 * @return False if we have already acked the packet */
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
@@ -119,6 +120,10 @@ public class NewPacketFormatKeyContext {
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
 				validAck = true;
+				if (pn.linkStatsAvailable()) {
+					pn.getTotalLinkStats().onNewDataAck(sent.packetLength, sent.getSentTime());
+					pn.getShortRunLinkStats().onNewDataAck(sent.packetLength, sent.getSentTime());
+				}
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				lostBeforeAcked = true;
@@ -143,8 +148,14 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			if(!lostBeforeAcked)
+			if(!lostBeforeAcked){
 				throttle.notifyOfPacketAcknowledged(maxSize);
+				double ws = throttle.getWindowSize();
+				if (pn.linkStatsAvailable()) {
+					pn.getTotalLinkStats().onWindowSizeChange(ws);
+					pn.getShortRunLinkStats().onWindowSizeChange(ws);
+				}
+			}
 		}
 	}
 
@@ -238,12 +249,13 @@ public class NewPacketFormatKeyContext {
 			}
 		}
 	}
-
+	
 	public long timeCheckForLostPackets(double averageRTT) {
 		long timeCheck = Long.MAX_VALUE;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+			
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
@@ -273,9 +285,13 @@ public class NewPacketFormatKeyContext {
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
 						                + "threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 					}
-					s.lost();
+					int bytesLost = s.lost();
 					it.remove();
 					bigLostCount++;
+					if (pn.linkStatsAvailable()) {
+						pn.getTotalLinkStats().onDataLost(bytesLost);
+						pn.getShortRunLinkStats().onDataLost(bytesLost);
+					}
 				} else
 					count++;
 			}
@@ -288,6 +304,11 @@ public class NewPacketFormatKeyContext {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
 				}
+			}
+			if (pn.linkStatsAvailable()) {
+				double ws = throttle.getWindowSize();
+				pn.getTotalLinkStats().onWindowSizeChange(ws);
+				pn.getShortRunLinkStats().onWindowSizeChange(ws);
 			}
 			pn.backoffOnResend();
 		}
