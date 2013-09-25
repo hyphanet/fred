@@ -39,6 +39,8 @@ import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
+import freenet.support.io.NullOutputStream;
 
 public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
@@ -361,7 +363,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	static final String DEPENDENCIES_FILE = "dependencies.properties";
 	
-	/** Read the jar file. Parse the Properties. 
+	/** Read the jar file. Parse the Properties. Read every file in the ZIP; if it is corrupted,
+	 * we will get a CRC error and therefore an IOException, and so the update won't be deployed.
+	 * This is not entirely foolproof because ZipInputStream doesn't check the CRC for stored 
+	 * files, only for deflated files, and it's only a CRC32 anyway. But it should reduce the
+	 * chances of accidental corruption breaking an update.
 	 * @param is The InputStream for the jar file.
 	 * @param filename The filename of the manifest file containing the properties (normally 
 	 * META-INF/MANIFEST.MF). 
@@ -391,6 +397,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 					props.load(bais);
 				} else {
+				    // Read the file. Throw if there is a CRC error.
+				    // Note that java.util.zip.ZipInputStream only checks the CRC for compressed 
+				    // files, so this is not entirely foolproof.
+				    long size = ze.getSize();
+				    FileUtil.copy(zis, new NullOutputStream(), size);
 					zis.closeEntry();
 				}
 			}
