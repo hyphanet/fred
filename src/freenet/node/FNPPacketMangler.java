@@ -676,7 +676,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9) {
+		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10) {
+			// negType == 10 => Changes the method of ack encoding (from single-ack to cummulative range acks)
 		    // negType == 9 => Lots of changes:
 		    //      Security fixes:
 		    //      - send Ni' (a hash of Ni) in JFK1 to prevent a potential CPU DoS		    
@@ -1446,6 +1447,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
 				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
+		// Set acknowledging method acording to negType
+		pn.setAcknowledgeType(negType);
+		
 		if(newTrackerID > 0) {
 
 			// Send reply
@@ -1670,6 +1674,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.normal(this, "Rejecting connection because already have something with the same IP");
 			dontWant = true;
 		}
+		// Set acknowledging method acording to negType
+		pn.setAcknowledgeType(negType);
 
 		// We change the key
 		BlockCipher ivCipher = null;
@@ -2211,9 +2217,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
-			return new int[] { 6, 7, 8, 9 };
+			return new int[] { 6, 7, 8, 9, 10 };
 		else
-			return new int[] { 7, 8, 9 };
+			return new int[] { 7, 8, 9, 10 };
 	}
 
 	@Override

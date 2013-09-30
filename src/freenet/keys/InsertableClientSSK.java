@@ -76,7 +76,10 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
 		}
 		
-		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
+		// Allow docName="" for SSKs. E.g. GenerateSSK returns these; we want to be consistent. 
+		// However, we recommend that you not use this, especially not for a freesite, as 
+		// SSK@blah,blah,blah//filename is confusing for clients, browsers etc.
+		if(uri.getDocName() == null)
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getRoutingKey()), g);
