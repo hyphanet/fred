@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
@@ -38,4 +39,12 @@ public abstract class PluginReplySender {
 	
 	public abstract void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException;
 
+	/**
+	 * In opposite to send, this waits for the client to process the reply.
+	 * This allows it to throw {@link Throwable} if sending the reply to the client failed.
+	 * In case of {@link PluginReplySenderDirect}, the {@link Throwable} will even be the {@link Throwable} which the client's
+	 * {@link FredPluginTalker#onReply(String, String, SimpleFieldSet, Bucket) threw.
+	 * @throws FCPCallFailedException If the processing of the message failed at the client.
+	 */
+    public abstract void sendSynchronous(SimpleFieldSet params, Bucket bucket) throws FCPCallFailedException;
 }
