@@ -4,8 +4,12 @@
 package freenet.pluginmanager;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import freenet.node.Node;
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -63,7 +67,7 @@ public class PluginTalker {
 		}, "FCPPlugin talk runner for " + this);
 	}
 	
-	public void sendSyncInternalOnly(final SimpleFieldSet plugparams, final Bucket data2) {
+	private void sendSyncInternalOnly(final SimpleFieldSet plugparams, final Bucket data2) {
 		try {
 			FredPluginFCP plug = pluginRef.get();
 			if (plug==null) {
@@ -81,4 +85,49 @@ public class PluginTalker {
 			Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
 		}
 	}
+
+    public void sendSynchronous(final SimpleFieldSet params, final Bucket bucket) throws FCPCallFailedException {
+        final Lock lock = new ReentrantLock();
+        final Condition condition = lock.newCondition();
+
+        try {
+            lock.lock();
+            
+            class Runner implements Runnable {
+                volatile boolean finished = false;
+                Throwable throwable = null;
+                
+                @Override
+                public void run() {
+                    lock.lock();
+                    try {
+                        final FredPluginFCP plug = pluginRef.get();
+                        if(plug==null)
+                            throw new PluginNotFoundException();
+                        
+                        // FIXME: plug is effectively equal to "node.pluginManager.getFCPPlugin(pluginname2)"
+                        // Is the handle() function of something returned from that synchronous?
+                        plug.handle(replysender, params, bucket, access);
+                    } catch (Throwable t) {
+                        throwable = t; 
+                    } finally {
+                        finished = true;
+                        condition.signal();
+                        lock.unlock();
+                    }
+                }
+            };
+            
+            final Runner runner = new Runner();
+            node.executor.execute(runner, "PluginTalker.sendSynchronous() to " + pluginName);
+            while(!runner.finished)
+                condition.awaitUninterruptibly(); // May wake up spuriously, which is why we check the runne.finished boolean
+            
+            if(runner.throwable != null)
+              throw new FCPCallFailedException(runner.throwable);
+        } finally {
+            lock.unlock();
+        }
+    }
+	
 }
