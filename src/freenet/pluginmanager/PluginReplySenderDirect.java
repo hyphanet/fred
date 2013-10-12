@@ -51,9 +51,8 @@ public class PluginReplySenderDirect extends PluginReplySender {
         final Lock lock = new ReentrantLock();
         final Condition condition = lock.newCondition();
 
+        lock.lock();
         try {
-            lock.lock();
-            
             class Runner implements Runnable {
                 volatile boolean finished = false;
                 Throwable throwable = null;
