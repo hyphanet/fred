@@ -88,5 +88,16 @@ public class FreenetURITest extends TestCase {
 		} catch(MalformedURLException e) {
 			// Success
 		}
+		
+        final FreenetURI requestUriSSKPlain = new FreenetURI("SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/");
+        final FreenetURI insertUriSSKPlain = new FreenetURI("SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/");
+        assertEquals(requestUriSSKPlain, insertUriSSKPlain.deriveRequestURIFromInsertURI());
+        
+        try {
+            requestUriSSKPlain.deriveRequestURIFromInsertURI();
+            fail("requestUriSSKPlain.deriveRequestURIFromInsertURI() should fail because it IS a request URI already!");
+        } catch(MalformedURLException e) {
+            // Success
+        }
 	}
 }
