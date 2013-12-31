@@ -1,23 +1,23 @@
-== Building Freenet from source: Short version ==
+## Building Freenet from source: Short version
 
-Install junit 3.
-Install ant.
-Run ant.
-It will tell you what is missing and where to put it.
-In particular, you need freenet-ext.jar in lib/freenet/ and bcprov.jar in lib/
-You can get both of these jars from a node install, or from https://downloads.freenetproject.org/alpha/
+Install junit 3 and Apache ant. For Debian Wheezy these are `junit` and `ant`.
 
-== Building Freenet from source: Using Eclipse etc ==
+* `lib/bcprov.jar`: Download Bouncy Castle 1.49: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.49/bcprov-jdk15on-149.jar` (1.50 breaks something currently)
+* `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/alpha/freenet-ext.jar) for convenience.
+
+The dependencies could also be copied from an existing Freenet installation.
+
+## Building Freenet from source: Using Eclipse etc
 
 You may want to use the command line git client, as people have sometimes had problems with the egit plugin for Eclipse.
 
-You will need to manually download the two jars mentioned above, and install junit 3. You may need to add the two jars, and junit 3, to the build path for the project, although the .project might help with this.
+You may need to add the two jars, and junit 3, to the build path for the project, although the .project might help with this.
 
-== Building Freenet from source: Caveats ==
+### Building Freenet from source: Caveats
 
 Don't use build-clean.xml, or call "ant distclean". This will cause problems. In particular it may delete the GWT-generated javascript in src/freenet/clients/http/staticfiles/freenetjs/ . If this happens just checkout that folder again, or do "git reset --hard" to reset the whole project. Note that the generated javascript isn't actually used unless web-pushing is enabled in the config, but it is needed for building Freenet.
 
-== Building Freenet from source: Long version ==
+## Building Freenet from source: Long version
 
 These are instructions on how to rebuild Freenet completely from source.
 
@@ -29,7 +29,7 @@ For the paranoid, we offer the option of building these binaries yourself, so
 that this extra trust is not necessary[1]. Unfortunately, this involves more
 effort than the default build path; help in easing this would be appreciated.
 
-== Considerations ==
+### Considerations
 
 (Properties can be set in override.properties, similar to build.properties)
 
@@ -58,7 +58,7 @@ by our automatic build-scripts. You'll need to do this manually; they are: fec,
 NativeBigInteger, NativeThread, win_wrapper and wrapper. This is probably the
 most tedious step and needs to be done *before* the below command.
 
-== Clean-building ==
+### Clean-building
 
 The pre-compiled components are freenet-ext.jar (ext) and the GWT-generated
 javascript (gjs). The former is a separate package ("contrib"), whereas the
@@ -67,9 +67,9 @@ latter is strictly contained within this package.
 To use the build scripts, you need to install ant. To compile all of the above
 completely from source, the recommended method is to use build-clean.xml:
 
-$ ... # retrieve and build external packages (e.g. contrib)
-$ ... # set build properties
-$ ant -f build-clean.xml dist
+    $ ... # retrieve and build external packages (e.g. contrib)
+    $ ... # set build properties
+    $ ant -f build-clean.xml dist
 
 NOTE: the default checkout of this package contains some pre-built javascript;
 running `dist` will remove it and re-build it from source. You can also remove
@@ -79,7 +79,7 @@ it separately by running the `clean-gjs` target.
 Ken Thompson's "Reflections on Trusting Trust".
 [2] http://packages.debian.org/source/sid/gwt
 
-== Verify-build script ==
+## Verify-build script
 
 See README.md in the Maintenance scripts repository. The verify-build script 
 will check a pre-built binary against the source code, but needs some work to
@@ -87,4 +87,5 @@ configure, as you need e.g. to have the same version of javac as it was built
 with.
 
 Get it from the maintenance scripts repo:
-git clone git@github.com:freenet/scripts.git
+
+    git clone git@github.com:freenet/scripts.git
