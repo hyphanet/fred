@@ -271,6 +271,7 @@ maintainers may prefer to use this instead of build.xml.
 				<attribute name="Recommended-Ext-Version" value="29"/>
 				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<attribute name="Permissions" value="all-permissions" />
+				<attribute name="Application-Name" value="Freenet" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
