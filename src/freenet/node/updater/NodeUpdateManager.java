@@ -857,7 +857,18 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Set the URI freenet.jar should be updated from.
+	 * @return URI for the user-facing changelog.
+	 */
+	public synchronized FreenetURI getChangelogURI() {
+		return updateURI.setDocName("changelog");
+	}
+
+	public synchronized FreenetURI getDeveloperChangelogURI() {
+		return updateURI.setDocName("fullchangelog");
+	}
+
+	/**
+	 * Set the URI frenet.jar should be updated from.
 	 * 
 	 * @param uri
 	 *            The URI to set.

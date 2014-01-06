@@ -585,7 +585,13 @@ public class StatisticsToadlet extends Toadlet {
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }));
 		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
 				new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
-		
+
+		// TODO: Duplication between the links here and in the UpdatedVersionAvailableUserAlert
+		versionInfobox.addChild("a", "href", '/' + node.getNodeUpdater().getChangelogURI().toASCIIString() + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.changelog"));
+		versionInfobox.addChild("br");
+		versionInfobox.addChild("a", "href", '/' + node.getNodeUpdater().getDeveloperChangelogURI().toASCIIString() + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.devchangelog"));
 	}
 
 	private void drawJVMStatsBox(HTMLNode jvmStatsInfobox, boolean advancedModeEnabled) {

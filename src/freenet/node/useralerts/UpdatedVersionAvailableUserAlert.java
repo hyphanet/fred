@@ -5,6 +5,7 @@ package freenet.node.useralerts;
 
 import java.io.File;
 
+import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
@@ -90,6 +91,10 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.clientCore.formPassword });
 		}
+
+		alertNode.addChild("a", "href", '/' + updater.getChangelogURI().toASCIIString() + "?type=text/plain", l10n("changelog"));
+		alertNode.addChild("br");
+		alertNode.addChild("a", "href", '/' + updater.getDeveloperChangelogURI().toASCIIString() + "?type=text/plain", l10n("devchangelog"));
 		
 		updater.renderProgress(alertNode);
 		
