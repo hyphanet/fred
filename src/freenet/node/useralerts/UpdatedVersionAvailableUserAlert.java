@@ -11,6 +11,7 @@ import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
 public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
@@ -92,9 +93,17 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.clientCore.formPassword });
 		}
 
-		alertNode.addChild("a", "href", '/' + updater.getChangelogURI().toASCIIString() + "?type=text/plain", l10n("changelog"));
-		alertNode.addChild("br");
-		alertNode.addChild("a", "href", '/' + updater.getDeveloperChangelogURI().toASCIIString() + "?type=text/plain", l10n("devchangelog"));
+		int version;
+		if (updater.hasNewMainJar()) {
+			version = updater.newMainJarVersion();
+		} else if (updater.fetchingNewMainJar()) {
+			version = updater.fetchingNewMainJarVersion();
+		} else {
+			Logger.minor(this, "Showing version available notification but not fetching or fetched.");
+			// Fallback
+			version = updater.getMainVersion();
+		}
+		updater.addChangelogLinks(version, alertNode);
 		
 		updater.renderProgress(alertNode);
 		

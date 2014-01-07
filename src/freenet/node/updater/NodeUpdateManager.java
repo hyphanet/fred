@@ -868,7 +868,22 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Set the URI frenet.jar should be updated from.
+	 * Add links to the changelog for the given version to the given node.
+	 * @param version USK edition to point to
+	 * @param node to add links to
+	 */
+	public synchronized void addChangelogLinks(long version, HTMLNode node) {
+		String changelogUri = getChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		String developerDetailsUri = getDeveloperChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		node.addChild("a", "href", '/' + changelogUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.changelog"));
+		node.addChild("br");
+		node.addChild("a", "href", '/' + developerDetailsUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.devchangelog"));
+	}
+
+	/**
+	 * Set the URfrenet.jar should be updated from.
 	 * 
 	 * @param uri
 	 *            The URI to set.
