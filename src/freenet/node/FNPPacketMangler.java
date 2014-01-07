@@ -537,8 +537,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
-			if(negType > 8)
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10)) {
+			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
@@ -597,8 +597,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9)) {
-			if(negType > 8)
+		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10)) {
+			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
 				Logger.warning(this, "Received a setup packet with unsupported obsolete neg type: "+negType);
