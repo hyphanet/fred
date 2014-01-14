@@ -1466,6 +1466,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// Don't send the JFK(4). We have not successfully connected.
 		}
 
+		if (logMINOR) Logger.minor(this, "Seed client connected with negtype " + negType);
+
 		final long t2=System.currentTimeMillis();
 		if((t2-t1)>500) {
 			Logger.error(this,"Message3 Processing packet for "+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
