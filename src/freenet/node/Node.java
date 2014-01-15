@@ -1675,6 +1675,10 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
+		if(ibwLimit == -1) {
+			inputLimitDefault = true;
+			ibwLimit = obwLimit * 4;
+		}
 		inputBandwidthLimit = ibwLimit;
 		try {
 			checkInputBandwidthLimit(inputBandwidthLimit);
