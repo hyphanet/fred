@@ -1617,8 +1617,12 @@ public class Node implements TimeSkewDetectorCallback {
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
+						try {
 						outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
+						} catch (IllegalArgumentException e) {
+							throw new InvalidConfigValueException(e);
+						}
 					}
 		});
 
@@ -1638,7 +1642,11 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must have at least space for ONE PACKET.
 		// FIXME: make compatible with alternate transports.
 		bucketSize = Math.max(bucketSize, 2048);
+		try {
 		outputThrottle = new TokenBucket(bucketSize, SECONDS.toNanos(1) / obwLimit, obwLimit/2);
+		} catch (IllegalArgumentException e) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, e.getMessage());
+		}
 
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override
@@ -1658,7 +1666,11 @@ public class Node implements TimeSkewDetectorCallback {
 							}
 							inputBandwidthLimit = ibwLimit;
 						}
+						try {
 						nodeStats.setInputLimit(ibwLimit);
+						} catch (IllegalArgumentException e) {
+							throw new InvalidConfigValueException(e);
+						}
 					}
 		});
 
