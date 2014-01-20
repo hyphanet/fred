@@ -1606,24 +1606,24 @@ public class Node implements TimeSkewDetectorCallback {
 		// Bandwidth limit
 
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true, "Node.outBWLimit", "Node.outBWLimitLong", new IntCallback() {
-					@Override
-					public Integer get() {
-						//return BlockTransmitter.getHardBandwidthLimit();
-						return outputBandwidthLimit;
-					}
-					@Override
-					public void set(Integer obwLimit) throws InvalidConfigValueException {
-						checkOutputBandwidthLimit(obwLimit);
-						try {
-						outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
-						nodeStats.setOutputLimit(obwLimit);
-						} catch (IllegalArgumentException e) {
-							throw new InvalidConfigValueException(e);
-						}
-						synchronized(Node.this) {
-							outputBandwidthLimit = obwLimit;
-						}
-					}
+			@Override
+			public Integer get() {
+				//return BlockTransmitter.getHardBandwidthLimit();
+				return outputBandwidthLimit;
+			}
+			@Override
+			public void set(Integer obwLimit) throws InvalidConfigValueException {
+				checkOutputBandwidthLimit(obwLimit);
+				try {
+					outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
+					nodeStats.setOutputLimit(obwLimit);
+				} catch (IllegalArgumentException e) {
+					throw new InvalidConfigValueException(e);
+				}
+				synchronized(Node.this) {
+					outputBandwidthLimit = obwLimit;
+				}
+			}
 		});
 
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
@@ -1649,29 +1649,30 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
-					@Override
-					public Integer get() {
-						if(inputLimitDefault) return -1;
-						return inputBandwidthLimit;
-					}
-					@Override
-					public void set(Integer ibwLimit) throws InvalidConfigValueException {
-						synchronized(Node.this) {
-							checkInputBandwidthLimit(ibwLimit);
-						try {
+			@Override
+			public Integer get() {
+				if(inputLimitDefault) return -1;
+				return inputBandwidthLimit;
+			}
+			@Override
+			public void set(Integer ibwLimit) throws InvalidConfigValueException {
+				synchronized(Node.this) {
+					checkInputBandwidthLimit(ibwLimit);
+					try {
 						nodeStats.setInputLimit(ibwLimit);
-						} catch (IllegalArgumentException e) {
-							throw new InvalidConfigValueException(e);
-						}
-							if(ibwLimit == -1) {
-								inputLimitDefault = true;
-								ibwLimit = outputBandwidthLimit * 4;
-							} else {
-								inputLimitDefault = false;
-							}
-							inputBandwidthLimit = ibwLimit;
-						}
+					} catch (IllegalArgumentException e) {
+						throw new InvalidConfigValueException(e);
 					}
+
+					if(ibwLimit == -1) {
+						inputLimitDefault = true;
+						ibwLimit = outputBandwidthLimit * 4;
+					} else {
+						inputLimitDefault = false;
+					}
+					inputBandwidthLimit = ibwLimit;
+				}
+			}
 		});
 
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
