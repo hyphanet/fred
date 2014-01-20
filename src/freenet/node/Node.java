@@ -1614,14 +1614,14 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void set(Integer obwLimit) throws InvalidConfigValueException {
 						checkOutputBandwidthLimit(obwLimit);
-						synchronized(Node.this) {
-							outputBandwidthLimit = obwLimit;
-						}
 						try {
 						outputThrottle.changeNanosAndBucketSize(SECONDS.toNanos(1) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 						} catch (IllegalArgumentException e) {
 							throw new InvalidConfigValueException(e);
+						}
+						synchronized(Node.this) {
+							outputBandwidthLimit = obwLimit;
 						}
 					}
 		});
@@ -1658,6 +1658,11 @@ public class Node implements TimeSkewDetectorCallback {
 					public void set(Integer ibwLimit) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							checkInputBandwidthLimit(ibwLimit);
+						try {
+						nodeStats.setInputLimit(ibwLimit);
+						} catch (IllegalArgumentException e) {
+							throw new InvalidConfigValueException(e);
+						}
 							if(ibwLimit == -1) {
 								inputLimitDefault = true;
 								ibwLimit = outputBandwidthLimit * 4;
@@ -1665,11 +1670,6 @@ public class Node implements TimeSkewDetectorCallback {
 								inputLimitDefault = false;
 							}
 							inputBandwidthLimit = ibwLimit;
-						}
-						try {
-						nodeStats.setInputLimit(ibwLimit);
-						} catch (IllegalArgumentException e) {
-							throw new InvalidConfigValueException(e);
 						}
 					}
 		});
