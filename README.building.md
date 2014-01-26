@@ -2,7 +2,7 @@
 
 Install junit 3 and Apache ant. For Debian Wheezy these are `junit` and `ant`.
 
-* `lib/bcprov.jar`: Download Bouncy Castle 1.49: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.49/bcprov-jdk15on-149.jar` (1.50 breaks something currently)
+* `lib/bcprov.jar`: Download Bouncy Castle 1.49 (1.50 breaks something currently): `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.49/bcprov-jdk15on-149.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-149.jar`
 * `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/alpha/freenet-ext.jar) for convenience.
 
 The dependencies could also be copied from an existing Freenet installation.
@@ -10,6 +10,19 @@ The dependencies could also be copied from an existing Freenet installation.
 ## Building Freenet from source: Using Eclipse etc
 
 You may want to use the command line git client, as people have sometimes had problems with the egit plugin for Eclipse.
+
+#### Eclipse 4 ####
+
+Create a new project via the new _Java Project from Existing Ant Build File_, selecting the _build.xml_ in the local cloned repo. This will create a project _freenet-autodep_. Copy the _build-clean.xml_ to the Eclipse project folder.
+
+_Configure the Build Path_, removing the obsolete JRE_LIB link and 
+* _Add Library_ choosing a Java 7  _JRE System Library_
+* _Add Library_, choosing _JUnit_
+* _Add External Archive..._ lib/freenet/freenet-ext.jar
+* _Add External Archive..._ lib/bcprov.jar
+
+
+#### Older versions of Eclipse ####
 
 You may need to add the two jars, and junit 3, to the build path for the project, although the .project might help with this.
 
