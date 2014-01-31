@@ -16,16 +16,16 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to set bandwidth limits with an emphasis on limiting to certain download and upload rates.
  */
-public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
+public class BandwidthRate extends BandwidthManipulator implements Step {
 
 	private final BandwidthLimit[] limits;
 
-	public BANDWIDTH_RATE(NodeClientCore core, Config config) {
+	public BandwidthRate(NodeClientCore core, Config config) {
 		super(core, config);
 		final int KiB = 1024;
 		limits = new BandwidthLimit[] {
 				// FIXME feedback on typical real world ratios on slow connections would be helpful.
-				
+
 //				// Dial-up
 //				// 57.6/33.6; call it 4KB/sec each way
 //				new BandwidthLimit(4*KiB, 4*KiB, "bandwidthConnectionDialUp"),
@@ -59,7 +59,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
 		HTMLNode contentNode = helper.getPageContent(WizardL10n.l10n("bandwidthLimit"));
-		
+
 		HTMLNode formNode = helper.addFormChild(contentNode, ".", "limit");
 
 		if (request.isParameterSet("parseError")) {
@@ -69,7 +69,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		HTMLNode infoBox = helper.getInfobox("infobox-normal", WizardL10n.l10n("bandwidthLimitRateTitle"),
 		        formNode, null, false);
 		NodeL10n.getBase().addL10nSubstitution(infoBox, "FirstTimeWizardToadlet.bandwidthLimitRate",
-		        new String[] { "bold", "coreSettings" }, new HTMLNode[] { HTMLNode.STRONG, 
+		        new String[] { "bold", "coreSettings" }, new HTMLNode[] { HTMLNode.STRONG,
 		                new HTMLNode("#", NodeL10n.getBase().getString("ConfigToadlet.node"))});
 
 		//Table header
@@ -81,7 +81,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		headerRow.addChild("th", WizardL10n.l10n("bandwidthSelect"));
 
 		boolean addedDefault = false;
-		
+
 		BandwidthLimit detected = detectBandwidthLimits();
 		if (detected.downBytes > 0 && detected.upBytes > 0) {
 			//Detected limits reasonable; add half of both as recommended option.
@@ -95,7 +95,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			addLimitRow(table, helper, current, false, !addedDefault);
 			addedDefault = true;
 		}
-		
+
 		for (BandwidthLimit limit : limits) {
 			addLimitRow(table, helper, limit, false, !addedDefault);
 		}
@@ -165,7 +165,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 			Logger.error(this, "No bandwidth limit set!");
 			return WizardStep.BANDWIDTH_RATE.name();
 		}
-		
+
 		setWizardComplete();
 		return WizardStep.COMPLETE.name();
 	}
@@ -215,8 +215,8 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		row.addChild("td", SizeUtil.formatSize(limit.upBytes)+WizardL10n.l10n("bandwidthPerSecond"));
 
 		HTMLNode buttonCell = row.addChild("td");
-		
-		HTMLNode radio = 
+
+		HTMLNode radio =
 			buttonCell.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "radio", "bandwidth", limit.downBytes+"/"+limit.upBytes });

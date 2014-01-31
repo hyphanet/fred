@@ -8,7 +8,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step gives the user information about browser usage.
  */
-public class BROWSER_WARNING implements Step {
+public class BrowserWarning implements Step {
 
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
@@ -61,7 +61,7 @@ public class BROWSER_WARNING implements Step {
 		} else {
 			infoBoxHeader = WizardL10n.l10n("browserWarningShort");
 		}
-		
+
 		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", infoBoxHeader, contentNode, null, false);
 
 		if(isOldFirefox) {

@@ -22,7 +22,7 @@ import freenet.support.io.FileUtil.OperatingSystem;
 /**
  * Allows the user to set the physical security level.
  */
-public class SECURITY_PHYSICAL implements Step {
+public class PhysicalSecurity implements Step {
 
 	private final NodeClientCore core;
 
@@ -33,10 +33,10 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	/**
-	 * Constructs a new SECURITY_PHYSICAL GET handler.
+	 * Constructs a new PhysicalSecurity GET handler.
 	 * @param core used to check or set the current security level and password.
 	 */
-	public SECURITY_PHYSICAL(NodeClientCore core) {
+	public PhysicalSecurity(NodeClientCore core) {
 		this.core = core;
 	}
 

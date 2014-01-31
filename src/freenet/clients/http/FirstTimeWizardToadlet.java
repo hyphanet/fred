@@ -11,20 +11,20 @@ import java.net.URISyntaxException;
 import java.util.EnumMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.wizardsteps.BANDWIDTH;
-import freenet.clients.http.wizardsteps.BANDWIDTH_MONTHLY;
-import freenet.clients.http.wizardsteps.BANDWIDTH_RATE;
-import freenet.clients.http.wizardsteps.BROWSER_WARNING;
-import freenet.clients.http.wizardsteps.DATASTORE_SIZE;
-import freenet.clients.http.wizardsteps.MISC;
-import freenet.clients.http.wizardsteps.NAME_SELECTION;
-import freenet.clients.http.wizardsteps.OPENNET;
+import freenet.clients.http.wizardsteps.BandwidthRate;
+import freenet.clients.http.wizardsteps.BandwidthType;
+import freenet.clients.http.wizardsteps.Miscellaneous;
+import freenet.clients.http.wizardsteps.MonthlyBandwidth;
+import freenet.clients.http.wizardsteps.BrowserWarning;
+import freenet.clients.http.wizardsteps.DataStoreSize;
+import freenet.clients.http.wizardsteps.NameSelection;
+import freenet.clients.http.wizardsteps.NetworkSecurity;
+import freenet.clients.http.wizardsteps.Opennet;
 import freenet.clients.http.wizardsteps.PageHelper;
 import freenet.clients.http.wizardsteps.PersistFields;
-import freenet.clients.http.wizardsteps.SECURITY_NETWORK;
-import freenet.clients.http.wizardsteps.SECURITY_PHYSICAL;
+import freenet.clients.http.wizardsteps.PhysicalSecurity;
 import freenet.clients.http.wizardsteps.Step;
-import freenet.clients.http.wizardsteps.WELCOME;
+import freenet.clients.http.wizardsteps.Welcome;
 import freenet.config.Config;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
@@ -42,9 +42,9 @@ import freenet.support.api.HTTPRequest;
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
 	private final EnumMap<WizardStep, Step> steps;
-	private final MISC stepMISC;
-	private final SECURITY_NETWORK stepSECURITY_NETWORK;
-	private final SECURITY_PHYSICAL stepSECURITY_PHYSICAL;
+	private final Miscellaneous stepMiscellaneous;
+	private final NetworkSecurity stepNetworkSecurity;
+	private final PhysicalSecurity stepPhysicalSecurity;
 
         private static volatile boolean logMINOR;
 	static {
@@ -84,24 +84,24 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 		//Add step handlers that aren't set by presets
 		steps = new EnumMap<WizardStep, Step>(WizardStep.class);
-		steps.put(WizardStep.WELCOME, new WELCOME(config));
-		steps.put(WizardStep.BROWSER_WARNING, new BROWSER_WARNING());
-		steps.put(WizardStep.NAME_SELECTION, new NAME_SELECTION(config));
-		steps.put(WizardStep.DATASTORE_SIZE, new DATASTORE_SIZE(core, config));
-		steps.put(WizardStep.OPENNET, new OPENNET());
-		steps.put(WizardStep.BANDWIDTH, new BANDWIDTH());
-		steps.put(WizardStep.BANDWIDTH_MONTHLY, new BANDWIDTH_MONTHLY(core, config));
-		steps.put(WizardStep.BANDWIDTH_RATE, new BANDWIDTH_RATE(core, config));
+		steps.put(WizardStep.WELCOME, new Welcome(config));
+		steps.put(WizardStep.BROWSER_WARNING, new BrowserWarning());
+		steps.put(WizardStep.NAME_SELECTION, new NameSelection(config));
+		steps.put(WizardStep.DATASTORE_SIZE, new DataStoreSize(core, config));
+		steps.put(WizardStep.OPENNET, new Opennet());
+		steps.put(WizardStep.BANDWIDTH, new BandwidthType());
+		steps.put(WizardStep.BANDWIDTH_MONTHLY, new MonthlyBandwidth(core, config));
+		steps.put(WizardStep.BANDWIDTH_RATE, new BandwidthRate(core, config));
 
 		//Add step handlers that are set by presets
-		stepMISC = new MISC(core, config);
-		steps.put(WizardStep.MISC, stepMISC);
+		stepMiscellaneous = new Miscellaneous(core, config);
+		steps.put(WizardStep.MISC, stepMiscellaneous);
 
-		stepSECURITY_NETWORK = new SECURITY_NETWORK(core);
-		steps.put(WizardStep.SECURITY_NETWORK, stepSECURITY_NETWORK);
+		stepNetworkSecurity = new NetworkSecurity(core);
+		steps.put(WizardStep.SECURITY_NETWORK, stepNetworkSecurity);
 
-		stepSECURITY_PHYSICAL = new SECURITY_PHYSICAL(core);
-		steps.put(WizardStep.SECURITY_PHYSICAL, stepSECURITY_PHYSICAL);
+		stepPhysicalSecurity = new PhysicalSecurity(core);
+		steps.put(WizardStep.SECURITY_PHYSICAL, stepPhysicalSecurity);
 	}
 
 	public static final String TOADLET_URL = "/wizard/";
@@ -195,16 +195,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			//Translate button name to preset value on the query string.
 			if (request.isPartSet("presetLow")) {
 				//Low security preset
-				stepMISC.setUPnP(true);
-				stepMISC.setAutoUpdate(true);
+				stepMiscellaneous.setUPnP(true);
+				stepMiscellaneous.setAutoUpdate(true);
 				redirectTo.append("&preset=LOW&opennet=true");
-				stepSECURITY_NETWORK.setThreatLevel(NetworkThreatLevel.LOW);
-				stepSECURITY_PHYSICAL.setThreatLevel(PhysicalThreatLevel.NORMAL,
-				        stepSECURITY_PHYSICAL.getCurrentLevel());
+				stepNetworkSecurity.setThreatLevel(NetworkThreatLevel.LOW);
+				stepPhysicalSecurity.setThreatLevel(PhysicalThreatLevel.NORMAL,
+				        stepPhysicalSecurity.getCurrentLevel());
 			} else if (request.isPartSet("presetHigh")) {
 				//High security preset
-				stepMISC.setUPnP(true);
-				stepMISC.setAutoUpdate(true);
+				stepMiscellaneous.setUPnP(true);
+				stepMiscellaneous.setAutoUpdate(true);
 				redirectTo.append("&preset=HIGH&opennet=false");
 			}
 

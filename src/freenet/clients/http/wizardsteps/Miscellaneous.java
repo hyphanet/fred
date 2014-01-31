@@ -12,12 +12,12 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to choose whether to enable auto-updating, and what official utility plugins to install.
  */
-public class MISC implements Step {
+public class Miscellaneous implements Step {
 
 	private final Config config;
 	private final NodeClientCore core;
 
-	public MISC(NodeClientCore core, Config config) {
+	public Miscellaneous(NodeClientCore core, Config config) {
 		this.core = core;
 		this.config = config;
 	}

@@ -8,7 +8,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step allows the user to choose between darknet and opennet, explaining each briefly.
  */
-public class OPENNET implements Step {
+public class Opennet implements Step {
 
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {

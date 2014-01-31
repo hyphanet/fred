@@ -18,12 +18,12 @@ import freenet.support.io.FileUtil;
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
-public class DATASTORE_SIZE implements Step {
+public class DataStoreSize implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public DATASTORE_SIZE(NodeClientCore core, Config config) {
+	public DataStoreSize(NodeClientCore core, Config config) {
 		this.config = config;
 		this.core = core;
 	}

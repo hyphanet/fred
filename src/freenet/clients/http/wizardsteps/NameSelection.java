@@ -11,11 +11,11 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to choose a node name for Darknet.
  */
-public class NAME_SELECTION implements Step {
+public class NameSelection implements Step {
 
 	private final Config config;
 
-	public NAME_SELECTION(Config config) {
+	public NameSelection(Config config) {
 		this.config = config;
 	}
 

@@ -14,11 +14,11 @@ import freenet.support.api.HTTPRequest;
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
  * If opennet is enabled, only low and normal are shown.
  */
-public class SECURITY_NETWORK implements Step {
+public class NetworkSecurity implements Step {
 
 	private final NodeClientCore core;
 
-	public SECURITY_NETWORK(NodeClientCore core) {
+	public NetworkSecurity(NodeClientCore core) {
 		this.core = core;
 	}
 

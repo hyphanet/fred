@@ -12,7 +12,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to set bandwidth limits with an emphasis on capping to a monthly total.
  */
-public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
+public class MonthlyBandwidth extends BandwidthManipulator implements Step {
 
 	/**
 	 * 1 gigabyte in bytes.
@@ -29,7 +29,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 	private static final long[] caps = { (long)Math.ceil(minCap), 50, 100, 150 };
 
-	public BANDWIDTH_MONTHLY(NodeClientCore core, Config config) {
+	public MonthlyBandwidth(NodeClientCore core, Config config) {
 		super(core, config);
 	}
 
@@ -59,7 +59,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		HTMLNode infoBox = helper.getInfobox("infobox-normal", WizardL10n.l10n("bandwidthLimitMonthlyTitle"),
 		        contentNode, null, false);
 		NodeL10n.getBase().addL10nSubstitution(infoBox, "FirstTimeWizardToadlet.bandwidthLimitMonthly",
-		        new String[] { "bold", "coreSettings" }, new HTMLNode[] { HTMLNode.STRONG, 
+		        new String[] { "bold", "coreSettings" }, new HTMLNode[] { HTMLNode.STRONG,
 		                new HTMLNode("#", NodeL10n.getBase().getString("ConfigToadlet.node"))});
 
 		//TODO: Might want to detect bandwidth limit and hide those too high to reach.

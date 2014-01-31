@@ -12,15 +12,15 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step is the first, and provides a small welcome screen and an option to change the language.
  */
-public class WELCOME implements Step {
+public class Welcome implements Step {
 
 	private final Config config;
 
 	/**
-	 * Constructs a new WELCOME GET handler.
+	 * Constructs a new Welcome GET handler.
 	 * @param config Node config; cannot be null. Used to build language drop-down and change language.
 	 */
-	public WELCOME(Config config) {
+	public Welcome(Config config) {
 		this.config = config;
 	}
 	/**
