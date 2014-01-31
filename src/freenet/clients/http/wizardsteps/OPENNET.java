@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -76,11 +76,11 @@ public class OPENNET implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		if (request.isPartSet("opennet")) {
-			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK+"&opennet="+
+			return WizardStep.SECURITY_NETWORK+"&opennet="+
 			        request.getPartAsStringFailsafe("opennet", 5);
 		} else {
 			//Nothing selected when "next" clicked. Display choice again.
-			return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
+			return WizardStep.OPENNET.name();
 		}
 	}
 }

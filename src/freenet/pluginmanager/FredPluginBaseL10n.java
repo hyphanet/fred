@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n.Language;
 
 /**
  * Interface that has to be implemented for plugins that wants to use
@@ -20,7 +20,7 @@ public interface FredPluginBaseL10n {
 	 * Called when the plugin should change its language.
 	 * @param newLanguage New language to use.
 	 */
-	public void setLanguage(LANGUAGE newLanguage);
+	public void setLanguage(Language newLanguage);
 
 	public String getL10nFilesBasePath();
 

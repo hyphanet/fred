@@ -6,7 +6,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
@@ -14,7 +14,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
@@ -29,10 +29,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 	private final FreenetURI key;
 	private boolean forceRefetchArchive;
-	ARCHIVE_TYPE archiveType;
-	COMPRESSOR_TYPE compressorType;
+	ArchiveType archiveType;
+	CompressorType compressorType;
 
-	ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
+	ArchiveHandlerImpl(FreenetURI key, ArchiveType archiveType, CompressorType ctype, boolean forceRefetchArchive) {
 		this.key = key;
 		this.archiveType = archiveType;
 		this.compressorType = ctype;
@@ -77,11 +77,11 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 
 	@Override
-	public ARCHIVE_TYPE getArchiveType() {
+	public ArchiveType getArchiveType() {
 		return archiveType;
 	}
 
-	public COMPRESSOR_TYPE getCompressorType() {
+	public CompressorType getCompressorType() {
 		return compressorType;
 	}
 

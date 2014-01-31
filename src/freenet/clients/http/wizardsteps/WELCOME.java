@@ -1,6 +1,7 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.*;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.Option;
@@ -70,7 +71,7 @@ public class WELCOME implements Step {
 			//Doing so would be really annoying as the node would have to start up again
 			//which could be very slow.
 		}
-		return FirstTimeWizardToadlet.WIZARD_STEP.WELCOME.name();
+		return WizardStep.WELCOME.name();
 	}
 
 	/**

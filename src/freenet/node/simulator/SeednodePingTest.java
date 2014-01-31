@@ -31,7 +31,7 @@ import freenet.node.NodeStarter;
 import freenet.node.OpennetDisabledException;
 import freenet.node.SeedServerPeerNode;
 import freenet.node.SeedServerTestPeerNode;
-import freenet.node.SeedServerTestPeerNode.FATE;
+import freenet.node.SeedServerTestPeerNode.Fate;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -111,9 +111,9 @@ public class SeednodePingTest extends RealNodeTest {
 				System.out.println(seednode.getIdentityString() + " is not connected "+seednode.getHandshakeCount());
 			}
 		}
-		Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);
+		Map<Fate, Integer> totals = new EnumMap<Fate, Integer>(Fate.class);
 		for(SeedServerTestPeerNode seednode : seedNodes) {
-			FATE fate = seednode.getFate();
+			Fate fate = seednode.getFate();
 			Integer x = totals.get(fate);
 			if(x == null)
 				totals.put(fate, 1);
@@ -122,15 +122,15 @@ public class SeednodePingTest extends RealNodeTest {
 			System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
 		}
 		System.out.println("TOTALS:");
-		for(FATE fate : totals.keySet()) {
+		for(Fate fate : totals.keySet()) {
 			System.out.println(fate + " : "+totals.get(fate));
 		}
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
 		Thread.sleep(SECONDS.toMillis(5));
 	}
-	Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);
+	Map<Fate, Integer> totals = new EnumMap<Fate, Integer>(Fate.class);
 	for(SeedServerTestPeerNode seednode : seedNodes) {
-		FATE fate = seednode.getFate();
+		Fate fate = seednode.getFate();
 		Integer x = totals.get(fate);
 		if(x == null)
 			totals.put(fate, 1);
@@ -139,7 +139,7 @@ public class SeednodePingTest extends RealNodeTest {
 		System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
 	}
 	System.out.println("RESULT:TOTALS:");
-	for(FATE fate : totals.keySet()) {
+	for(Fate fate : totals.keySet()) {
 		System.out.println("RESULT:"+fate + " : "+totals.get(fate));
 	}
     System.out.println("Completed seednodes scan.");
@@ -172,9 +172,9 @@ public class SeednodePingTest extends RealNodeTest {
     			continue;
     		}
     		long time = Long.parseLong(results[0]);
-    		FATE fate = FATE.valueOf(results[2]);
+    		Fate fate = Fate.valueOf(results[2]);
     		if(firstSample == 0) firstSample = time;
-    		if(fate == FATE.CONNECTED_SUCCESS) {
+    		if(fate == Fate.CONNECTED_SUCCESS) {
     			if(time >= countSince)
     				successes++;
     			lastSuccess = time;

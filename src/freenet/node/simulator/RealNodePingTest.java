@@ -7,13 +7,13 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.DarknetPeerNode.FriendTrust;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -35,9 +35,9 @@ public class RealNodePingTest {
 	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
 	public static final int DARKNET_PORT_END = DARKNET_PORT2+1;
-	
-	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
-	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
+
+	static final FriendTrust trust = FriendTrust.LOW;
+	static final FriendVisibility visibility = FriendVisibility.NO;
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
         RandomSource random = NodeStarter.globalTestInit("pingtest", false, LogLevel.ERROR, "", true);

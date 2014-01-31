@@ -19,8 +19,8 @@ import freenet.support.api.HTTPRequest;
 /** Simple class to output standard heads and tail for web interface pages. 
 */
 public final class PageMaker {
-	
-	public enum THEME {
+
+	public enum Theme {
 		BOXED("boxed", "Boxed (Top menu)", "", false, false),
 		BOXED_CLASSIC("boxed-classic", "Boxed (Classic menu)", "", false, false),
 		BOXED_DROPDOWN("boxed-dropdown", "Boxed (Dropdown menu)", "", false, false),
@@ -85,12 +85,12 @@ public final class PageMaker {
 		 * infobox on the welcome page.
 		 */
 		public final boolean fetchKeyBoxAboveBookmarks;
-		
-		private THEME(String code, String name, String description) {
+
+		private Theme(String code, String name, String description) {
 			this(code, name, description, false, false);
 		}
 
-		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks) {
+		private Theme(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks) {
 			this.code = code;
 			this.name = name;
 			this.description = description;
@@ -98,8 +98,8 @@ public final class PageMaker {
 			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
 		}
 
-		public static THEME themeFromName(String cssName) {
-			for(THEME t : THEME.values()) {
+		public static Theme themeFromName(String cssName) {
+			for(Theme t : Theme.values()) {
 				if(t.code.equalsIgnoreCase(cssName) ||
 				   t.name.equalsIgnoreCase(cssName))
 				{
@@ -109,8 +109,8 @@ public final class PageMaker {
 			return getDefault();
 		}
 
-		public static THEME getDefault() {
-			return THEME.CLEAN;
+		public static Theme getDefault() {
+			return Theme.CLEAN;
 		}
 	}	
 	
@@ -120,7 +120,7 @@ public final class PageMaker {
 	/** Parameter for simple/advanced mode switch. */
 	private static final String MODE_SWITCH_PARAMETER = "fproxyAdvancedMode";
 
-	private THEME theme;
+	private Theme theme;
 	private String override;
 	private final Node node;
 	
@@ -174,8 +174,8 @@ public final class PageMaker {
 		}
 
 	}
-	
-	protected PageMaker(THEME t, Node n) {
+
+	protected PageMaker(Theme t, Node n) {
 		setTheme(t);
 		this.node = n;
 	}
@@ -183,14 +183,14 @@ public final class PageMaker {
 	void setOverride(String pointTo) {
 		this.override = pointTo;
 	}
-	
-	public void setTheme(THEME theme2) {
+
+	public void setTheme(Theme theme2) {
 		if (theme2 == null) {
-			this.theme = THEME.getDefault();
+			this.theme = Theme.getDefault();
 		} else {
 			URL themeurl = getClass().getResource("staticfiles/themes/" + theme2.code + "/theme.css");
 			if (themeurl == null)
-				this.theme = THEME.getDefault();
+				this.theme = Theme.getDefault();
 			else
 				this.theme = theme2;
 		}
@@ -331,7 +331,7 @@ public final class PageMaker {
 		boolean sendAllThemes =  ctx != null && ctx.getContainer().sendAllThemes();
 		
 		if(sendAllThemes) {
-			for (THEME t: THEME.values()) {
+			for (Theme t: Theme.values()) {
 				String themeName = t.code;
 				headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 			}
@@ -631,7 +631,7 @@ public final class PageMaker {
 		return input.replaceFirst("^-[^_a-zA-Z]", "-_").replaceAll("[^-_a-zA-Z0-9]", "_");
 	}
 
-	public THEME getTheme() {
+	public Theme getTheme() {
 		return this.theme;
 	}
 

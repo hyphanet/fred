@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
@@ -57,7 +57,7 @@ public class MISC implements Step {
 	public String postStep(HTTPRequest request) {
 		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		setUPnP(request.isPartSet("upnp"));
-		return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
+		return WizardStep.OPENNET.name();
 	}
 
 	/**

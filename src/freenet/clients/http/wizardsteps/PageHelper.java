@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.clients.http.PageMaker.RenderParameters;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.ToadletContext;
@@ -14,10 +14,10 @@ public class PageHelper {
 
 	private final ToadletContext toadletContext;
 	private final PersistFields persistFields;
-	private final FirstTimeWizardToadlet.WIZARD_STEP step;
+	private final WizardStep step;
 	private PageNode pageNode;
 
-	public PageHelper(ToadletContext ctx, PersistFields persistFields, FirstTimeWizardToadlet.WIZARD_STEP step) {
+	public PageHelper(ToadletContext ctx, PersistFields persistFields, WizardStep step) {
 		this.toadletContext = ctx;
 		this.persistFields = persistFields;
 		this.step = step;

@@ -9,7 +9,7 @@ package freenet.io.comm;
  */
 public interface IncomingPacketFilter {
 
-	public enum DECODED {
+	public enum Decoded {
 		DECODED,
 		NOT_DECODED,
 		DIDNT_WANT_OPENNET,
@@ -30,7 +30,7 @@ public interface IncomingPacketFilter {
      * @param now The exact time at which the packet was received.
      * @return 
      */
-	DECODED process(byte[] buf, int offset, int length, Peer peer, long now);
+	Decoded process(byte[] buf, int offset, int length, Peer peer, long now);
 
     // Outgoing packets are handled elsewhere...
     

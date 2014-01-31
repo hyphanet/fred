@@ -25,7 +25,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestTracker.CountedRequests;
 import freenet.node.RequestTracker.WaitingForSlots;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
 import freenet.store.CHKStore;
@@ -472,13 +472,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// This is a *network* level setting, because it affects the rate at which we initiate local
 		// requests, which could be seen by distant nodes.
 
-		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+			public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
+				if(newLevel == NetworkThreatLevel.MAXIMUM)
 					ignoreLocalVsRemoteBandwidthLiability = true;
-				if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+				if(oldLevel == NetworkThreatLevel.MAXIMUM)
 					ignoreLocalVsRemoteBandwidthLiability = false;
 				// Otherwise leave it as it was. It defaults to false.
 			}

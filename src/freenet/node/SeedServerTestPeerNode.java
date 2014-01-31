@@ -31,8 +31,8 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 	
 	@Override
 	protected void sendInitialMessages() {}
-	
-	public enum FATE {
+
+	public enum Fate {
 		// Never connected
 		NEVER_CONNECTED,
 		// Connected but no packets received yet
@@ -58,22 +58,22 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 			System.err.println(this.getIdentityString()+" : REMOVED: UNKNOWN CAUSE");
 		super.onRemove();
 	}
-	
-	public FATE getFate() {
+
+	public Fate getFate() {
 		long lastReceivedDataPacketTime = lastReceivedDataPacketTime();
 		if(isConnected()) {
 			if(lastReceivedDataPacketTime <= 0)
-				return FATE.CONNECTED_NO_PACKETS_RECEIVED;
+				return Fate.CONNECTED_NO_PACKETS_RECEIVED;
 			else if(this.isUnroutableOlderVersion())
-				return FATE.CONNECTED_TOO_OLD;
+				return Fate.CONNECTED_TOO_OLD;
 			else
-				return FATE.CONNECTED_SUCCESS;
+				return Fate.CONNECTED_SUCCESS;
 		}
 		long lastConnectionTime = timeLastConnectionCompleted();
 		if(lastConnectionTime <= 0)
-			return FATE.NEVER_CONNECTED;
+			return Fate.NEVER_CONNECTED;
 		if(lastReceivedDataPacketTime <= 0)
-			return FATE.CONNECTED_TIMEOUT_NO_PACKETS_RECEIVED;
-		return FATE.CONNECTED_DISCONNECTED_UNKNOWN;
+			return Fate.CONNECTED_TIMEOUT_NO_PACKETS_RECEIVED;
+		return Fate.CONNECTED_DISCONNECTED_UNKNOWN;
 	}
 }

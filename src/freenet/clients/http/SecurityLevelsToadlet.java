@@ -19,8 +19,8 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
 import freenet.node.Node.AlreadySetPasswordException;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -72,7 +72,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			String confirm = "security-levels.networkThreatLevel.confirm";
 			String tryConfirm = "security-levels.networkThreatLevel.tryConfirm";
 			String networkThreatLevel = request.getPartAsStringFailsafe(configName, 128);
-			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
+			NetworkThreatLevel newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 			if(newThreatLevel != null) {
 				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
 					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
@@ -108,11 +108,11 @@ public class SecurityLevelsToadlet extends Toadlet {
 			confirm = "security-levels.physicalThreatLevel.confirm";
 			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
 			String physicalThreatLevel = request.getPartAsStringFailsafe(configName, 128);
-			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
-			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
+			PhysicalThreatLevel newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+			PhysicalThreatLevel oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
-				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PhysicalThreatLevel.HIGH) {
 					String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
 					String oldPassword = request.getPartAsStringFailsafe("oldPassword", MAX_PASSWORD_LENGTH);
 					if(password != null && oldPassword != null && password.length() > 0 && oldPassword.length() > 0) {
@@ -141,12 +141,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 				}
 				if(newPhysicalLevel != oldPhysicalLevel) {
 					// No confirmation for changes to physical threat level.
-					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH && node.securityLevels.getPhysicalThreatLevel() != newPhysicalLevel) {
+					if(newPhysicalLevel == PhysicalThreatLevel.HIGH && node.securityLevels.getPhysicalThreatLevel() != newPhysicalLevel) {
 						// Check for password
 						String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
 						if(password != null && password.length() > 0) {
 							try {
-								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
+								if(oldPhysicalLevel == PhysicalThreatLevel.NORMAL || oldPhysicalLevel == PhysicalThreatLevel.LOW)
 									core.node.changeMasterPassword("", password, false);
 								else
 									core.node.setMasterPassword(password, false);
@@ -184,8 +184,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 							return;
 						}
 					}
-					if((newPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW || newPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL) &&
-							oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+					if((newPhysicalLevel == PhysicalThreatLevel.LOW || newPhysicalLevel == PhysicalThreatLevel.NORMAL) &&
+							oldPhysicalLevel == PhysicalThreatLevel.HIGH) {
 						// Check for password
 						String password = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 						if(password != null && password.length() > 0) {
@@ -266,7 +266,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						}
 
 					}
-					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+					if(newPhysicalLevel == PhysicalThreatLevel.MAXIMUM) {
 						try {
 							core.node.killMasterKeysFile();
 						} catch (IOException e) {
@@ -478,7 +478,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode seclevelGroup = ul.addChild("li");
 		seclevelGroup.addChild("#", l10nSec("networkThreatLevel.opennetIntro"));
 
-		NETWORK_THREAT_LEVEL networkLevel = node.securityLevels.getNetworkThreatLevel();
+		NetworkThreatLevel networkLevel = node.securityLevels.getNetworkThreatLevel();
 
 		HTMLNode p = seclevelGroup.addChild("p");
 		p.addChild("b", l10nSec("networkThreatLevel.opennetLabel"));
@@ -486,7 +486,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode div = seclevelGroup.addChild("div", "class", "opennetDiv");
 		
 		String controlName = "security-levels.networkThreatLevel";
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getOpennetValues()) {
+		for(NetworkThreatLevel level : NetworkThreatLevel.getOpennetValues()) {
 			HTMLNode input;
 			if(level == networkLevel) {
 				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
@@ -507,8 +507,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 		p.addChild("b", l10nSec("networkThreatLevel.darknetLabel"));
 		p.addChild("#", ": "+l10nSec("networkThreatLevel.darknetExplain"));
 		div = seclevelGroup.addChild("div", "class", "darknetDiv");
-		
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getDarknetValues()) {
+
+		for(NetworkThreatLevel level : NetworkThreatLevel.getDarknetValues()) {
 			HTMLNode input;
 			if(level == networkLevel) {
 				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
@@ -544,10 +544,10 @@ public class SecurityLevelsToadlet extends Toadlet {
 			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
 
-		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
+		PhysicalThreatLevel physicalLevel = node.securityLevels.getPhysicalThreatLevel();
 
 		controlName = "security-levels.physicalThreatLevel";
-		for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
+		for(PhysicalThreatLevel level : PhysicalThreatLevel.values()) {
 			HTMLNode input;
 			if(level == physicalLevel) {
 				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
@@ -561,21 +561,21 @@ public class SecurityLevelsToadlet extends Toadlet {
 			HTMLNode inner = input.addChild("p").addChild("i");
 			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
-			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
+			if(level != PhysicalThreatLevel.LOW && physicalLevel == PhysicalThreatLevel.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
 					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
 				else
 					inner.addChild("b", " "+l10nSec("warningWontEncrypt"));
-			} else if(level == PHYSICAL_THREAT_LEVEL.LOW && physicalLevel != PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && node.isDatabaseEncrypted()) {
+			} else if(level == PhysicalThreatLevel.LOW && physicalLevel != PhysicalThreatLevel.LOW && node.hasDatabase() && node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
 					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
 				else
 					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
 			}
-			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
+			if(level == PhysicalThreatLevel.MAXIMUM && node.hasDatabase()) {
 				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
 			}
-			if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
+			if(level == PhysicalThreatLevel.HIGH) {
 				if(physicalLevel == level) {
 					addPasswordChangeForm(inner);
 				} else {

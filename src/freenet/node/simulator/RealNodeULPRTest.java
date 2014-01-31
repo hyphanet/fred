@@ -21,13 +21,13 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
+import freenet.node.DarknetPeerNode.FriendTrust;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
@@ -37,8 +37,8 @@ import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 
@@ -76,13 +76,13 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
     static final boolean ENABLE_FOAF = true;
     static final boolean REAL_TIME_FLAG = false;
-    
-	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
-	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
+
+	static final FriendTrust trust = FriendTrust.LOW;
+	static final FriendVisibility visibility = FriendVisibility.NO;
 
     public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
-    
+
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException, InvalidCompressionCodecException {
         System.err.println("ULPR test");
         System.err.println();
@@ -169,10 +169,10 @@ public class RealNodeULPRTest extends RealNodeTest {
         	
         	insertKey = InsertableClientSSK.create(testKey);
         	fetchKey = ClientKSK.create(testKey);
-        	
-        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+
+        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, CompressorType.DEFAULT_COMPRESSORDESCRIPTOR, false);
         } else {
-        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, CompressorType.DEFAULT_COMPRESSORDESCRIPTOR, false);
         	insertKey = fetchKey = block.getClientKey();
         	testKey = insertKey.getURI();
         }

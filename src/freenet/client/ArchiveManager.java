@@ -34,8 +34,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
@@ -53,7 +52,7 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 
-	public enum ARCHIVE_TYPE {
+	public enum ArchiveType {
 		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
 		TAR((short)1, new String[] { "application/x-tar" });
@@ -62,15 +61,15 @@ public class ArchiveManager {
 		public final String[] mimeTypes;
 
 		/** cached values(). Never modify or pass this array to outside code! */
-		private static final ARCHIVE_TYPE[] values = values();
+		private static final ArchiveType[] values = values();
 
-		private ARCHIVE_TYPE(short metadataID, String[] mimeTypes) {
+		private ArchiveType(short metadataID, String[] mimeTypes) {
 			this.metadataID = metadataID;
 			this.mimeTypes = mimeTypes;
 		}
 
 		public static boolean isValidMetadataID(short id) {
-			for(ARCHIVE_TYPE current : values)
+			for(ArchiveType current : values)
 				if(id == current.metadataID)
 					return true;
 			return false;
@@ -80,7 +79,7 @@ public class ArchiveManager {
 		 * Is the given MIME type an archive type that we can deal with?
 		 */
 		public static boolean isUsableArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values)
+			for(ArchiveType current : values)
 				for(String ctype : current.mimeTypes)
 					if(ctype.equalsIgnoreCase(type))
 						return true;
@@ -90,22 +89,22 @@ public class ArchiveManager {
 		/** If the given MIME type is an archive type that we can deal with,
 		 * get its archive type number (see the ARCHIVE_ constants in Metadata).
 		 */
-		public static ARCHIVE_TYPE getArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values)
+		public static ArchiveType getArchiveType(String type) {
+			for(ArchiveType current : values)
 				for(String ctype : current.mimeTypes)
 					if(ctype.equalsIgnoreCase(type))
 						return current;
 			return null;
 		}
 
-		public static ARCHIVE_TYPE getArchiveType(short type) {
-			for(ARCHIVE_TYPE current : values)
+		public static ArchiveType getArchiveType(short type) {
+			for(ArchiveType current : values)
 				if(current.metadataID == type)
 					return current;
 			return null;
 		}
 
-		public static ARCHIVE_TYPE getDefault() {
+		public static ArchiveType getDefault() {
 			return TAR;
 		}
 	}
@@ -182,7 +181,7 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler.
 	 */
-	synchronized ArchiveStoreContext makeContext(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound) {
+	synchronized ArchiveStoreContext makeContext(FreenetURI key, ArchiveType archiveType, CompressorType ctype, boolean returnNullIfNotFound) {
 		ArchiveStoreContext handler = null;
 		handler = getCached(key);
 		if(handler != null) return handler;
@@ -201,7 +200,7 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler.
 	 */
-	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch, boolean persistent) {
+	public ArchiveHandler makeHandler(FreenetURI key, ArchiveType archiveType, CompressorType ctype, boolean forceRefetch, boolean persistent) {
 		return new ArchiveHandlerImpl(persistent ? key.clone() : key, archiveType, ctype, forceRefetch);
 	}
 
@@ -261,7 +260,7 @@ public class ArchiveManager {
 	 * present (check the call stack). Maybe we should get rid of the ObjectContainer?
 	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
-	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ArchiveType archiveType, CompressorType ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
@@ -301,19 +300,19 @@ public class ArchiveManager {
 		InputStream is = null;
 		try {
 			final ExceptionWrapper wrapper;
-			if((ctype == null) || (ARCHIVE_TYPE.ZIP == archiveType)) {
+			if((ctype == null) || (ArchiveType.ZIP == archiveType)) {
 				if(logMINOR) Logger.minor(this, "No compression");
 				is = data.getInputStream();
 				wrapper = null;
-			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
+			} else if(ctype == CompressorType.BZIP2) {
 				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
 				is = new BZip2CompressorInputStream(data.getInputStream());
 				wrapper = null;
-			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
+			} else if(ctype == CompressorType.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
 				is = new GZIPInputStream(data.getInputStream());
 				wrapper = null;
-			} else if(ctype == COMPRESSOR_TYPE.LZMA_NEW) {
+			} else if(ctype == CompressorType.LZMA_NEW) {
 				// LZMA internally uses pipe streams, so we may as well do it here.
 				// In fact we need to for LZMA_NEW, because of the properties bytes.
 				PipedInputStream pis = new PipedInputStream();
@@ -326,7 +325,7 @@ public class ArchiveManager {
 					public void run() {
 						InputStream is = null;
 						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), pos, data.size(), expectedSize);
+							CompressorType.LZMA_NEW.decompress(is = data.getInputStream(), pos, data.size(), expectedSize);
 						} catch (CompressionOutputSizeException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
@@ -345,7 +344,7 @@ public class ArchiveManager {
 					
 				});
 				is = pis;
-			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
+			} else if(ctype == CompressorType.LZMA) {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
 				wrapper = null;
@@ -353,9 +352,9 @@ public class ArchiveManager {
 				wrapper = null;
 			}
 
-			if(ARCHIVE_TYPE.ZIP == archiveType)
+			if(ArchiveType.ZIP == archiveType)
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
-			else if(ARCHIVE_TYPE.TAR == archiveType)
+			else if(ArchiveType.TAR == archiveType)
 				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
 		else
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
@@ -21,7 +22,7 @@ import freenet.support.Logger.LogLevel;
 class ArchiveStoreContext {
 
 	private FreenetURI key;
-	private final ArchiveManager.ARCHIVE_TYPE archiveType;
+	private final ArchiveType archiveType;
 	/** Archive size */
 	private long lastSize = -1;
 	/** Archive hash */
@@ -41,8 +42,8 @@ class ArchiveStoreContext {
 			}
 		});
 	}
-	
-	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType) {
+
+	ArchiveStoreContext(FreenetURI key, ArchiveType archiveType) {
 		this.key = key;
 		this.archiveType = archiveType;
 		myItems = new DoublyLinkedListImpl<ArchiveStoreItem>();

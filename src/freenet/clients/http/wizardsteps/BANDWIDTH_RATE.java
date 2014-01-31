@@ -2,7 +2,7 @@ package freenet.clients.http.wizardsteps;
 
 import java.text.DecimalFormat;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.l10n.NodeL10n;
@@ -143,7 +143,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 
 			//Success
 			setWizardComplete();
-			return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+			return WizardStep.COMPLETE.name();
 		}
 
 		if(!limitSelected.isEmpty()) {
@@ -157,17 +157,17 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 					//Error parsing predefined limit.
 					//This should not happen, as there are no units to confound the parser.
 					Logger.error(this, "Failed to parse pre-defined limit! Please report.");
-					return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE+"&parseError=true&parseTarget="+
+					return WizardStep.BANDWIDTH_RATE+"&parseError=true&parseTarget="+
 							URLEncoder.encode(preset, true);
 				}
 			}
 		} else {
 			Logger.error(this, "No bandwidth limit set!");
-			return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE.name();
+			return WizardStep.BANDWIDTH_RATE.name();
 		}
 		
 		setWizardComplete();
-		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+		return WizardStep.COMPLETE.name();
 	}
 
 	/**

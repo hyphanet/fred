@@ -19,6 +19,7 @@ import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.InsertTag.Start;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
@@ -187,7 +188,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             	// Both local and remote inserts can be forked here: If it has reached this HTL, it means it's already been routed to some nodes.
             	
             	uid = node.clientCore.makeUID();
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
+            	forkedRequestTag = new InsertTag(true, Start.REMOTE, source, realTimeFlag, uid, node);
             	forkedRequestTag.reassignToSelf();
             	forkedRequestTag.startedSender();
             	forkedRequestTag.unlockHandler();
@@ -251,21 +252,21 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         return mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected.or(mfSSKDataFoundHeaders))));
 	}
 
-	private DO handleMessage(Message msg, PeerNode next, InsertTag thisTag) {
+	private Do handleMessage(Message msg, PeerNode next, InsertTag thisTag) {
 		if (msg.getSpec() == DMT.FNPRejectedOverload) {
-			if(handleRejectedOverload(msg, next, thisTag)) return DO.NEXT_PEER;
-			else return DO.WAIT;
+			if(handleRejectedOverload(msg, next, thisTag)) return Do.NEXT_PEER;
+			else return Do.WAIT;
 		}
 
 		if (msg.getSpec() == DMT.FNPRouteNotFound) {
 			handleRouteNotFound(msg, next, thisTag);
 			// Finished as far as this node is concerned
-			return DO.NEXT_PEER;
+			return Do.NEXT_PEER;
 		}
 
 		if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 			handleDataInsertRejected(msg, next, thisTag);
-			return DO.NEXT_PEER; // What else can we do?
+			return Do.NEXT_PEER; // What else can we do?
 		}
 		
 		if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
@@ -275,17 +276,17 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		if (msg.getSpec() != DMT.FNPInsertReply) {
 			Logger.error(this, "Unknown reply: " + msg);
 			finish(INTERNAL_ERROR, next);
-			return DO.FINISHED;
+			return Do.FINISHED;
 		}
 				
 		// Our task is complete
 		next.successNotOverload(realTimeFlag);
 		finish(SUCCESS, next);
-		return DO.FINISHED;
+		return Do.FINISHED;
 
     }
 
-    private enum DO {
+    private enum Do {
     	FINISHED,
     	WAIT,
     	NEXT_PEER
@@ -434,8 +435,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	/** @return True if we got new data and are propagating it. False if something failed
      * and we need to try the next node. */
-	private DO handleSSKDataFoundHeaders(Message msg, PeerNode next, InsertTag thisTag) {
-		
+	private Do handleSSKDataFoundHeaders(Message msg, PeerNode next, InsertTag thisTag) {
+
 		/**
 		 * Data was already on node, and was NOT equal to what we sent. COLLISION!
 		 * 
@@ -468,12 +469,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
 			next.noLongerRoutingTo(thisTag, false);
-			return DO.NEXT_PEER;
+			return Do.NEXT_PEER;
 		}
 		if(dataMessage == null) {
 			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
 			next.noLongerRoutingTo(thisTag, false);
-			return DO.NEXT_PEER;
+			return Do.NEXT_PEER;
 		}
 		// collided, overwrite data with remote data
 		try {
@@ -487,11 +488,11 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			}
 			
 			// The node will now propagate the new data. There is no need to move to the next node yet.
-			return DO.WAIT;
+			return Do.WAIT;
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
 			finish(INTERNAL_ERROR, next);
-			return DO.FINISHED;
+			return Do.FINISHED;
 		}
 	}
 
@@ -832,12 +833,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 						next.fatalTimeout(thisTag, false);
 						return;
 					}
-					
-					DO action = handleMessage(msg, next, thisTag);
-					
-					if(action == DO.FINISHED)
+
+					Do action = handleMessage(msg, next, thisTag);
+
+					if(action == Do.FINISHED)
 						return;
-					else if(action == DO.NEXT_PEER) {
+					else if(action == Do.NEXT_PEER) {
 						next.noLongerRoutingTo(thisTag, false);
 						return; // Don't try others
 					}
@@ -845,12 +846,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 					
 				}
 			}
-			
-			DO action = handleMessage(msg, next, thisTag);
-			
-			if(action == DO.FINISHED)
+
+			Do action = handleMessage(msg, next, thisTag);
+
+			if(action == Do.FINISHED)
 				return;
-			else if(action == DO.NEXT_PEER)
+			else if(action == Do.NEXT_PEER)
 				break;
 			// else if(action == DO.WAIT) continue;
         }

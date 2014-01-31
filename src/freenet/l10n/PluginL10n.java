@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n.Language;
 import freenet.pluginmanager.FredPluginBaseL10n;
 
 /**
@@ -37,7 +37,7 @@ public class PluginL10n {
 	 * @param plugin Plugin to use.
 	 * @param lang Language to use.
 	 */
-	public PluginL10n(FredPluginBaseL10n plugin, final LANGUAGE lang) {
+	public PluginL10n(FredPluginBaseL10n plugin, final Language lang) {
 		this.b = new BaseL10n(plugin.getL10nFilesBasePath(),
 				plugin.getL10nFilesMask(), plugin.getL10nOverrideFilesMask()
 				, lang, plugin.getPluginClassLoader());

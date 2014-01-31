@@ -7,16 +7,16 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 
 public class StartedCompressionMessage extends FCPMessage {
 
 	final String identifier;
 	final boolean global;
-	
-	final COMPRESSOR_TYPE codec;
-	
-	public StartedCompressionMessage(String identifier, boolean global, COMPRESSOR_TYPE codec) {
+
+	final CompressorType codec;
+
+	public StartedCompressionMessage(String identifier, boolean global, CompressorType codec) {
 		this.identifier = identifier;
 		this.codec = codec;
 		this.global = global;

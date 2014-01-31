@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -107,6 +107,6 @@ public class BROWSER_WARNING implements Step {
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {
-		return FirstTimeWizardToadlet.WIZARD_STEP.MISC.name();
+		return WizardStep.MISC.name();
 	}
 }

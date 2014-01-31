@@ -102,14 +102,14 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.l10n.BaseL10n;
+import freenet.l10n.BaseL10n.Language;
 import freenet.l10n.NodeL10n;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.DarknetPeerNode.FriendTrust;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
 import freenet.node.probe.Listener;
@@ -120,7 +120,7 @@ import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateDeployContext;
-import freenet.node.updater.UpdateDeployContext.CHANGED;
+import freenet.node.updater.UpdateDeployContext.Changed;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -403,7 +403,7 @@ public class Node implements TimeSkewDetectorCallback {
 					if(key == null) {
 						MasterKeys keys = null;
 						try {
-							if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+							if(securityLevels.physicalThreatLevel == PhysicalThreatLevel.MAXIMUM) {
 								key = new byte[32];
 								random.nextBytes(key);
 							} else {
@@ -462,7 +462,7 @@ public class Node implements TimeSkewDetectorCallback {
 		public void set(String val) throws InvalidConfigValueException {
 			if(val == null || get().equalsIgnoreCase(val)) return;
 			try {
-				NodeL10n.getBase().setLanguage(BaseL10n.LANGUAGE.mapToLanguage(val));
+				NodeL10n.getBase().setLanguage(Language.mapToLanguage(val));
 			} catch (MissingResourceException e) {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
@@ -471,7 +471,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		@Override
 		public String[] getPossibleValues() {
-			return BaseL10n.LANGUAGE.valuesWithFullNames();
+			return Language.valuesWithFullNames();
 		}
 	}
 
@@ -1031,12 +1031,12 @@ public class Node implements TimeSkewDetectorCallback {
 				new L10nCallback());
 
 		try {
-			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")), getCfgDir());
+			new NodeL10n(Language.mapToLanguage(nodeConfig.getString("l10n")), getCfgDir());
 		} catch (MissingResourceException e) {
 			try {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()), getCfgDir());
+				new NodeL10n(Language.mapToLanguage(nodeConfig.getOption("l10n").getDefault()), getCfgDir());
 			} catch (MissingResourceException e1) {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode), getCfgDir());
+				new NodeL10n(Language.mapToLanguage(Language.getDefault().shortCode), getCfgDir());
 			}
 		}
 
@@ -1239,7 +1239,7 @@ public class Node implements TimeSkewDetectorCallback {
 				db.rollback();
 				System.err.println("Closing database...");
 				db.close();
-				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+				if(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.MAXIMUM) {
 					try {
 						FileUtil.secureDelete(dbFileCrypt);
 					} catch (IOException e) {
@@ -1849,12 +1849,12 @@ public class Node implements TimeSkewDetectorCallback {
 			opennet = null;
 		}
 
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.HIGH
-						|| newLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+			public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
+				if(newLevel == NetworkThreatLevel.HIGH
+						|| newLevel == NetworkThreatLevel.MAXIMUM) {
 					OpennetManager om;
 					synchronized(Node.this) {
 						om = opennet;
@@ -1865,8 +1865,8 @@ public class Node implements TimeSkewDetectorCallback {
 						om.stop(true);
 						ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 					}
-				} else if(newLevel == NETWORK_THREAT_LEVEL.NORMAL
-						|| newLevel == NETWORK_THREAT_LEVEL.LOW) {
+				} else if(newLevel == NetworkThreatLevel.NORMAL
+						|| newLevel == NetworkThreatLevel.LOW) {
 					OpennetManager o = null;
 					synchronized(Node.this) {
 						if(opennet == null) {
@@ -2132,12 +2132,12 @@ public class Node implements TimeSkewDetectorCallback {
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
 
 		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
-			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PhysicalThreatLevel>() {
 
 				@Override
-				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				public void onChange(PhysicalThreatLevel oldLevel, PhysicalThreatLevel newLevel) {
 					try {
-						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
+						if(newLevel == PhysicalThreatLevel.LOW)
 							nodeConfig.set("storePreallocate", false);
 						else
 							nodeConfig.set("storePreallocate", true);
@@ -2150,11 +2150,11 @@ public class Node implements TimeSkewDetectorCallback {
 			});
 		}
 
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PhysicalThreatLevel>() {
 
 			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+			public void onChange(PhysicalThreatLevel oldLevel, PhysicalThreatLevel newLevel) {
+					if(newLevel == PhysicalThreatLevel.MAXIMUM) {
 						synchronized(this) {
 							clientCacheAwaitingPassword = false;
 							databaseAwaitingPassword = false;
@@ -2172,7 +2172,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 			});
 
-		if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+		if(securityLevels.physicalThreatLevel == PhysicalThreatLevel.MAXIMUM) {
 			try {
 				killMasterKeysFile();
 			} catch (IOException e) {
@@ -2260,18 +2260,18 @@ public class Node implements TimeSkewDetectorCallback {
 				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
 				if(extraMemoryMB >= 10) {
 					System.out.println("Need "+extraMemoryMB+"MB extra space in heap for slot filters.");
-					UpdateDeployContext.CHANGED changed = 
+					Changed changed =
 						UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in "+(lastVersionWithBloom+1));
-					if(changed == CHANGED.SUCCESS) {
+					if(changed == Changed.SUCCESS) {
 						WrapperManager.restart();
 						System.err.println("Unable to restart after increasing memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Probably due to not running in the wrapper.");
 						System.err.println("If the node crashes due to out of memory, be it on your own head!");
 						System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
-					} else if(changed == CHANGED.FAIL) {
+					} else if(changed == Changed.FAIL) {
 						System.err.println("Unable to increase the memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Most likely due to being unable to write wrapper.conf or similar problem.");
 						System.err.println("If the node crashes due to out of memory, be it on your own head!");
 						System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
-					} else /*if(changed == CHANGED.ALREADY)*/ {
+					} else /*if(changed == Changed.ALREADY)*/ {
 						System.err.println("Memory limit has already been increased for slot filters, continuing startup.");
 					}
 				}
@@ -2342,15 +2342,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 			byte[] clientCacheKey = null;
 			try {
-				if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+				if(securityLevels.physicalThreatLevel == PhysicalThreatLevel.MAXIMUM) {
 					clientCacheKey = new byte[32];
 					random.nextBytes(clientCacheKey);
 				} else {
 					keys = MasterKeys.read(masterKeysFile, random, "");
 					clientCacheKey = keys.clientCacheMasterKey;
-					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
+					if(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.HIGH) {
 						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
-						securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+						securityLevels.resetPhysicalThreatLevel(PhysicalThreatLevel.NORMAL);
 						key = keys.createDatabaseKey(random);
 						synchronized(this) {
 						    databaseKey = key;
@@ -2436,11 +2436,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// LOW network *and* physical seclevel = writeLocalToDatastore
 
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
+			public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
+				if(newLevel == NetworkThreatLevel.LOW && securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.LOW)
 					writeLocalToDatastore = true;
 				else
 					writeLocalToDatastore = false;
@@ -2448,11 +2448,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
-		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PhysicalThreatLevel>() {
 
 			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
+			public void onChange(PhysicalThreatLevel oldLevel, PhysicalThreatLevel newLevel) {
+				if(newLevel == PhysicalThreatLevel.LOW && securityLevels.getNetworkThreatLevel() == NetworkThreatLevel.LOW)
 					writeLocalToDatastore = true;
 				else
 					writeLocalToDatastore = false;
@@ -2529,13 +2529,13 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// MAXIMUM seclevel = no slashdot cache.
 
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+			public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
+				if(newLevel == NetworkThreatLevel.MAXIMUM)
 					useSlashdotCache = false;
-				else if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+				else if(oldLevel == NetworkThreatLevel.MAXIMUM)
 					useSlashdotCache = true;
 			}
 
@@ -2892,7 +2892,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		try {
-			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+			if(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.MAXIMUM) {
                 databaseKey = DatabaseKey.createRandom(random);
 			    synchronized(this) {
 			        this.databaseKey = databaseKey;
@@ -2903,14 +2903,14 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.LOW) {
 				maybeDefragmentDatabase(dbFile, null);
 				// Just open it.
 				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 				synchronized(this) {
 					databaseEncrypted = false;
 				}
-			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
+			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
 				// Migrate the encrypted file to plaintext, if we have the key
 				if(databaseKey == null) {
 					// Try with no password
@@ -2920,7 +2920,7 @@ public class Node implements TimeSkewDetectorCallback {
 					} catch (MasterKeysWrongPasswordException e) {
 						// User probably changed it in the config file
 						System.err.println("Unable to decrypt the node.db4o. Please enter the correct password and set the physical security level to LOW via the GUI.");
-						securityLevels.setThreatLevel(PHYSICAL_THREAT_LEVEL.HIGH);
+						securityLevels.setThreatLevel(PhysicalThreatLevel.HIGH);
 						throw e;
 					}
 					databaseKey = keys.createDatabaseKey(random);
@@ -2971,7 +2971,7 @@ public class Node implements TimeSkewDetectorCallback {
 					// Still encrypted, but we can still open it.
 					database = openCryptDatabase(databaseKey);
 				}
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PhysicalThreatLevel.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
 				maybeDefragmentDatabase(dbFile, null);
@@ -3026,8 +3026,8 @@ public class Node implements TimeSkewDetectorCallback {
 					throw new IOException("Unable to encrypt the old node.db4o.crypt because cannot rename database file");
 				}
 			} else if((dbFileCrypt.exists() && !dbFile.exists()) ||
-					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
-					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
+					(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.NORMAL) ||
+					(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.HIGH && databaseKey != null)) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
 					// Try with no password
@@ -4850,7 +4850,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.addPeer(node,false,false);
 	}
-	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public void connect(Node node, FriendTrust trust, FriendVisibility visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);
 	}
 
@@ -4902,7 +4902,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public ProgramDirectory pluginDir() { return pluginDir; }
 
 
-	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FriendTrust trust, FriendVisibility visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler, trust, visibility);
 	}
 
@@ -5141,7 +5141,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(enteredPassword)
 				throw new AlreadySetPasswordException();
 		}
-		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+		if(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.MAXIMUM)
 			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
 		MasterKeys keys = MasterKeys.read(masterKeysFile, random, password);
 		try {
@@ -5211,7 +5211,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void changeMasterPassword(String oldPassword, String newPassword, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException, AlreadySetPasswordException {
-		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+		if(securityLevels.getPhysicalThreatLevel() == PhysicalThreatLevel.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
 			MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);

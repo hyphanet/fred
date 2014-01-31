@@ -55,7 +55,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	@Override
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public Decoded process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode opn = node.peers.getByPeer(peer, mangler);
@@ -63,21 +63,21 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		if(opn != null) {
 			if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {
 				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-				return DECODED.DECODED;
+				return Decoded.DECODED;
 			}
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
 		}
-		DECODED decoded = mangler.process(buf, offset, length, peer, opn, now);
-		if(decoded == DECODED.DECODED) {
+		Decoded decoded = mangler.process(buf, offset, length, peer, opn, now);
+		if(decoded == Decoded.DECODED) {
 			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-		} else if(decoded == DECODED.NOT_DECODED) {
-			
+		} else if(decoded == Decoded.NOT_DECODED) {
+
 			for(PeerNode pn : crypto.getPeerNodes()) {
 				if(pn == opn) continue;
 				if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return DECODED.DECODED;
+					return Decoded.DECODED;
 				}
 			}
 			

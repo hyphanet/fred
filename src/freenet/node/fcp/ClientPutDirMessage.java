@@ -13,7 +13,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HexUtil;
 import freenet.support.SimpleFieldSet;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
 
 /**
@@ -167,9 +167,9 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		earlyEncode = fs.getBoolean("EarlyEncode", false);
 		String codecs = fs.get("Codecs");
 		if (codecs != null) {
-			COMPRESSOR_TYPE[] ca;
+			CompressorType[] ca;
 			try {
-				ca = COMPRESSOR_TYPE.getCompressorsArrayNoDefault(codecs);
+				ca = CompressorType.getCompressorsArrayNoDefault(codecs);
 			} catch (InvalidCompressionCodecException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(), identifier, global);
 			}

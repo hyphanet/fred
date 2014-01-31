@@ -11,6 +11,7 @@ import java.util.Random;
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
@@ -27,8 +28,8 @@ public class NewLzmaCompressorTest extends TestCase {
 	 * test BZIP2 compressor's identity and functionality
 	 */
 	public void testNewLzmaCompressor() throws IOException {
-		Compressor.COMPRESSOR_TYPE lzcompressor = Compressor.COMPRESSOR_TYPE.LZMA_NEW;
-		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)3);
+		CompressorType lzcompressor = CompressorType.LZMA_NEW;
+		Compressor compressorZero = CompressorType.getCompressorByMetadataID((short) 3);
 
 		// check BZIP2 is the second compressor
 		assertEquals(lzcompressor, compressorZero);
@@ -75,7 +76,7 @@ public class NewLzmaCompressorTest extends TestCase {
 
 		int writtenBytes = 0;
 
-		writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+		writtenBytes = CompressorType.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 
 		assertEquals(writtenBytes, originalUncompressedData.length);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
@@ -103,7 +104,7 @@ public class NewLzmaCompressorTest extends TestCase {
 
 			int writtenBytes = 0;
 
-			writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+			writtenBytes = CompressorType.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 
 			assertEquals(writtenBytes, originalUncompressedData.length);
 			assertEquals(originalUncompressedData.length, outUncompressedData.length);
@@ -122,7 +123,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, 32, 32);
+			CompressorType.LZMA_NEW.compress(inBucket, factory, 32, 32);
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
@@ -149,7 +150,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		try {
 			decompressorInput = inBucket.getInputStream();
 			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
+			CompressorType.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
 			decompressorInput.close();
 			decompressorOutput.close();
 		} catch (CompressionOutputSizeException e) {
@@ -170,7 +171,7 @@ public class NewLzmaCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
-		outBucket = Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, uncompressedData.length, uncompressedData.length * 2 + 64);
+		outBucket = CompressorType.LZMA_NEW.compress(inBucket, factory, uncompressedData.length, uncompressedData.length * 2 + 64);
 
 		InputStream in = null;
 		in = outBucket.getInputStream();

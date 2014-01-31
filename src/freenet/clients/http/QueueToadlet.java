@@ -52,10 +52,10 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.ClientPut.CompressState;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientPutMessage;
 import freenet.node.fcp.ClientRequest;
@@ -1720,17 +1720,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return reasonCell;
 	}
 
-	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
+	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, CompressState compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
 			progressCell.addChild("#", l10n("starting"));
 			return progressCell;
 		}
-		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
+		if(compressing == CompressState.WAITING && advancedMode) {
 			progressCell.addChild("#", l10n("awaitingCompression"));
 			return progressCell;
 		}
-		if(compressing != COMPRESS_STATE.WORKING) {
+		if(compressing != CompressState.WORKING) {
 			progressCell.addChild("#", l10n("compressing"));
 			return progressCell;
 		}
@@ -1923,15 +1923,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		        new String[] { "id", "name", "cols", "rows" },
 		        new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
-		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		PhysicalThreatLevel threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		//Force downloading to encrypted space if high/maximum threat level or if the user has disabled
 		//downloading to disk.
-		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
+		if(threatLevel == PhysicalThreatLevel.HIGH || threatLevel == PhysicalThreatLevel.MAXIMUM ||
 		        core.isDownloadDisabled()) {
 			downloadForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "target", "direct" });
-		} else if(threatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+		} else if(threatLevel == PhysicalThreatLevel.LOW) {
 			downloadForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "target", "disk" });
@@ -2126,7 +2126,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									isUpload));
 						else
 							requestRow.addChild(createProgressCell(ctx.isAdvancedModeEnabled(),
-									clientRequest.isStarted(), COMPRESS_STATE.WORKING,
+									clientRequest.isStarted(), CompressState.WORKING,
 									clientRequest.getFetchedBlocks(), clientRequest.getFailedBlocks(),
 									clientRequest.getFatalyFailedBlocks(), clientRequest.getMinBlocks(),
 									clientRequest.getTotalBlocks(),

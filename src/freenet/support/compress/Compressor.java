@@ -21,7 +21,7 @@ public interface Compressor {
 	
 	public static final String DEFAULT_COMPRESSORDESCRIPTOR = null;
 
-	public enum COMPRESSOR_TYPE implements Compressor {
+	public enum CompressorType implements Compressor {
 		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
@@ -34,23 +34,23 @@ public interface Compressor {
 		public final short metadataID;
 
 		/** cached values(). Never modify or pass this array to outside code! */
-		private final static COMPRESSOR_TYPE[] values = values();
+		private final static CompressorType[] values = values();
 
-		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
+		CompressorType(String name, Compressor c, short metadataID) {
 			this.name = name;
 			this.compressor = c;
 			this.metadataID = metadataID;
 		}
 
-		public static COMPRESSOR_TYPE getCompressorByMetadataID(short id) {
-			for(COMPRESSOR_TYPE current : values)
+		public static CompressorType getCompressorByMetadataID(short id) {
+			for(CompressorType current : values)
 				if(current.metadataID == id)
 					return current;
 			return null;
 		}
 
-		public static COMPRESSOR_TYPE getCompressorByName(String name) {
-			for(COMPRESSOR_TYPE current : values)
+		public static CompressorType getCompressorByName(String name) {
+			for(CompressorType current : values)
 				if(current.name.equals(name))
 					return current;
 			return null;
@@ -72,7 +72,7 @@ public interface Compressor {
 
 		public static void getCompressorDescriptor(StringBuilder sb) {
 			boolean isfirst = true;
-			for(COMPRESSOR_TYPE current : values) {
+			for(CompressorType current : values) {
 				if (isfirst)
 					isfirst = false;
 				else
@@ -85,20 +85,20 @@ public interface Compressor {
 		}
 
 		/**
-		 * make a COMPRESSOR_TYPE[] from a descriptor string<BR>
+		 * make a CompressorType[] from a descriptor string<BR>
 		 * the descriptor string is a comma separated list of numbers or names(can be mixed)<BR>
 		 * it is better to store the string in db4o instead of the compressors?<BR>
-		 * if the string is null/empty, it returns COMPRESSOR_TYPE.values() as default
+		 * if the string is null/empty, it returns CompressorType.values() as default
 		 * @param compressordescriptor
 		 * @return
 		 * @throws InvalidCompressionCodecException 
 		 */
-		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
-			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
+		public static CompressorType[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
+			CompressorType[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
-				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
+				CompressorType[] ret = new CompressorType[values.length-1];
 				int x = 0;
-				for(COMPRESSOR_TYPE v: values) {
+				for(CompressorType v: values) {
 					if((v == LZMA) && !pre1254) continue;
 					if((v == LZMA_NEW) && pre1254) continue;
 					ret[x++] = v;
@@ -108,16 +108,16 @@ public interface Compressor {
 			return result;
 		}
 
-		public static COMPRESSOR_TYPE[] getCompressorsArrayNoDefault(String compressordescriptor) throws InvalidCompressionCodecException {
+		public static CompressorType[] getCompressorsArrayNoDefault(String compressordescriptor) throws InvalidCompressionCodecException {
 			if (compressordescriptor == null)
 				return null;
 			if (compressordescriptor.trim().length() == 0)
 				return null;
 			String[] codecs = compressordescriptor.split(",");
-			ArrayList<COMPRESSOR_TYPE> result = new ArrayList<COMPRESSOR_TYPE>(codecs.length);
+			ArrayList<CompressorType> result = new ArrayList<CompressorType>(codecs.length);
 			for (String codec : codecs) {
 				codec = codec.trim();
-				COMPRESSOR_TYPE ct = getCompressorByName(codec);
+				CompressorType ct = getCompressorByName(codec);
 				if (ct == null) {
 					try {
 						ct = getCompressorByMetadataID(Short.parseShort(codec));
@@ -132,7 +132,7 @@ public interface Compressor {
 				}
 				result.add(ct);
 			}
-			return result.toArray(new COMPRESSOR_TYPE[result.size()]);
+			return result.toArray(new CompressorType[result.size()]);
 		}
 
 		@Override

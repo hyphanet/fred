@@ -3,7 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n.Language;
+
 import java.io.File;
 
 /**
@@ -26,16 +27,16 @@ public class NodeL10n {
 	 * overrides in the working directory.
 	 */
 	public NodeL10n() {
-		this(LANGUAGE.getDefault(), new File("."));
+		this(Language.getDefault(), new File("."));
 	}
 
 	/**
 	 * Initialize the Node localization. You must also call that constructor
 	 * if you want to change the language.
 	 * @param lang Language to use.
-	 * @see LANGUAGE.mapToLanguage(String)
+	 * @see Language.mapToLanguage(String)
 	 */
-	public NodeL10n(final LANGUAGE lang, File overrideDir) {
+	public NodeL10n(final Language lang, File overrideDir) {
 		NodeL10n.b = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties",
 		  overrideDir.getPath()+File.separator+"freenet.l10n.${lang}.override.properties", lang);
 	}

@@ -42,7 +42,7 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.BulkTransmitter.AllSentCallback;
 import freenet.io.xfer.PartiallyReceivedBulk;
-import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.node.OpennetPeerNode.NotDropReason;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
@@ -695,8 +695,8 @@ public class OpennetManager {
 			return null;
 		}
 		synchronized(this) {
-			EnumMap<NOT_DROP_REASON, Integer> map = null;
-			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
+			EnumMap<NotDropReason, Integer> map = null;
+			if(addingNode) map = new EnumMap<NotDropReason, Integer>(NotDropReason.class);
 			// Do we want it?
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(OpennetPeerNode pn: peers) {
@@ -706,7 +706,7 @@ public class OpennetManager {
 					// Doesn't count towards the opennet peers limit, so no point dropping it.
 					continue;
 				}
-				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				NotDropReason reason = pn.isDroppableWithReason(false);
 				if(map != null) {
 					Integer x = map.get(reason);
 					if(x == null)
@@ -715,7 +715,7 @@ public class OpennetManager {
 						map.put(reason, x+1);
 				}
 				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
-				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
+				if((reason != NotDropReason.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				// LOCKING: Always take the OpennetManager lock first
@@ -730,7 +730,7 @@ public class OpennetManager {
 				if(addingNode && logMINOR) {
 					Logger.minor(this, "Not disconnecting");
 					if(map != null)
-						for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
+						for(Map.Entry<NotDropReason, Integer> entry : map.entrySet()) {
 							Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
 						}
 				}
@@ -744,7 +744,7 @@ public class OpennetManager {
 					// Doesn't count anyway.
 					continue;
 				}
-				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				NotDropReason reason = pn.isDroppableWithReason(false);
 				if(map != null) {
 					Integer x = map.get(reason);
 					if(x == null)
@@ -753,7 +753,7 @@ public class OpennetManager {
 						map.put(reason, x+1);
 				}
 				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
-				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
+				if((reason != NotDropReason.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				if(logMINOR)
@@ -765,7 +765,7 @@ public class OpennetManager {
 			if(addingNode && logMINOR) {
 				Logger.minor(this, "Nothing to drop");
 				if(map != null)
-					for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
+					for(Map.Entry<NotDropReason, Integer> entry : map.entrySet()) {
 						Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
 					}
 			}

@@ -3,7 +3,7 @@ package freenet.node.fcp;
 import java.io.File;
 
 import freenet.keys.FreenetURI;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.ClientPut.CompressState;
 
 /** Cached status of a file upload */
 public class UploadFileRequestStatus extends UploadRequestStatus {
@@ -12,16 +12,16 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 	private final String mimeType;
 	/** Null = from temp space */
 	private final File origFilename;
-	private COMPRESS_STATE compressing;
-	
-	UploadFileRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	private CompressState compressing;
+
+	UploadFileRequestStatus(String identifier, short persistence, boolean started, boolean finished,
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FreenetURI finalURI, FreenetURI targetURI, 
 			int failureCode, String failureReasonShort, String failureReasonLong,
-			long dataSize, String mimeType, File origFilename, COMPRESS_STATE compressing) {
-		super(identifier, persistence, started, finished, success, total, min, fetched, 
-				fatal, failed, totalFinalized, last, prio, finalURI, targetURI, 
+			long dataSize, String mimeType, File origFilename, CompressState compressing) {
+		super(identifier, persistence, started, finished, success, total, min, fetched,
+				fatal, failed, totalFinalized, last, prio, finalURI, targetURI,
 				failureCode, failureReasonShort, failureReasonLong);
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
@@ -43,11 +43,11 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 		return origFilename;
 	}
 
-	public COMPRESS_STATE isCompressing() {
+	public CompressState isCompressing() {
 		return compressing;
 	}
 
-	synchronized void updateCompressionStatus(COMPRESS_STATE status) {
+	synchronized void updateCompressionStatus(CompressState status) {
 		compressing = status;
 	}
 	

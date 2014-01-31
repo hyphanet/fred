@@ -9,7 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
-import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.PageMaker.Theme;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.BucketFactory;
@@ -104,8 +104,8 @@ public interface ToadletContainer {
 	/**
 	 * Get the name of the theme to be used by all the Toadlets
 	 */
-	public THEME getTheme();
-	
+	public Theme getTheme();
+
 	/**
 	 * Get the form password
 	 */

@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
@@ -44,7 +44,7 @@ public class NAME_SELECTION implements Step {
 
 		//Prompt again when provided with a blank node name.
 		if (selectedNName.isEmpty()) {
-			return FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION.name();
+			return WizardStep.NAME_SELECTION.name();
 		}
 
 		try {
@@ -53,6 +53,6 @@ public class NAME_SELECTION implements Step {
 		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
-		return FirstTimeWizardToadlet.WIZARD_STEP.DATASTORE_SIZE.name();
+		return WizardStep.DATASTORE_SIZE.name();
 	}
 }

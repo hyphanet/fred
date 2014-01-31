@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.l10n.NodeL10n;
@@ -111,7 +111,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		// capTo is specified as floating point GB.
 		String capTo = request.getPartAsStringFailsafe("capTo", 4096);
 		// Target for an error page.
-		StringBuilder target = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_MONTHLY.name()).append("&parseTarget=");
+		StringBuilder target = new StringBuilder(WizardStep.BANDWIDTH_MONTHLY.name()).append("&parseTarget=");
 		try {
 			GBPerMonth = Double.valueOf(capTo);
 			bytesPerMonth = Math.round(GBPerMonth * GB);
@@ -151,6 +151,6 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 
 		setWizardComplete();
 
-		return FirstTimeWizardToadlet.WIZARD_STEP.COMPLETE.name();
+		return WizardStep.COMPLETE.name();
 	}
 }

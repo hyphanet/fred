@@ -25,6 +25,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.node.InsertTag.Start;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
@@ -487,7 +488,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
             	// Both local and remote inserts can be forked here: If it has reached this HTL, it means it's already been routed to some nodes.
             	
             	uid = node.clientCore.makeUID();
-				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
+				forkedRequestTag = new InsertTag(false, Start.REMOTE, source, realTimeFlag, uid, node);
 				forkedRequestTag.reassignToSelf();
 				forkedRequestTag.startedSender();
 				forkedRequestTag.unlockHandler();

@@ -55,7 +55,7 @@ public class OpennetPeerNode extends PeerNode {
 		return false;
 	}
 
-	enum NOT_DROP_REASON {
+	enum NotDropReason {
 		DROPPABLE,
 		TOO_NEW_PEER,
 		TOO_LOW_UPTIME,
@@ -63,13 +63,13 @@ public class OpennetPeerNode extends PeerNode {
 	}
 	
 	public boolean isDroppable(boolean ignoreDisconnect) {
-		return isDroppableWithReason(ignoreDisconnect) == NOT_DROP_REASON.DROPPABLE;
+		return isDroppableWithReason(ignoreDisconnect) == NotDropReason.DROPPABLE;
 	}
 		
 	/** Is the peer droppable? 
 	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. 
 	 * Note that the caller must check separately whether the node is TOO OLD and connected. */ 
-	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
+	public NotDropReason isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		int status = getPeerNodeStatus();
 		long age = now - getPeerAddedTime();
@@ -78,11 +78,11 @@ public class OpennetPeerNode extends PeerNode {
 				// New peer, never connected.
 				// Allow it 1 minute to connect.
 				if(age < OpennetManager.DROP_MIN_AGE_DISCONNECTED)
-					return NOT_DROP_REASON.TOO_NEW_PEER;
+					return NotDropReason.TOO_NEW_PEER;
 			} else if(status != PeerManager.PEER_NODE_STATUS_DISCONNECTED) {
 				// Based on the time added, *not* the last connected time.
 				// This prevents various dubious ways of staying connected while not delivering anything useful.
-				return NOT_DROP_REASON.TOO_NEW_PEER; // New node
+				return NotDropReason.TOO_NEW_PEER; // New node
 			}
 		} else {
 			synchronized(this) {
@@ -91,7 +91,7 @@ public class OpennetPeerNode extends PeerNode {
 			}
 		}
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
-			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
+			return NotDropReason.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		if(!ignoreDisconnect) {
 		synchronized(this) {
 			// This only applies after it has connected, and only if !ignoreDisconnect.
@@ -100,11 +100,11 @@ public class OpennetPeerNode extends PeerNode {
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
 					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
 				// Grace period for node restarting
-				return NOT_DROP_REASON.RECONNECT_GRACE_PERIOD;
+				return NotDropReason.RECONNECT_GRACE_PERIOD;
 			}
 		}
 		}
-		return NOT_DROP_REASON.DROPPABLE;
+		return NotDropReason.DROPPABLE;
 	}
 	
 	@Override

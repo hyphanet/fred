@@ -19,13 +19,13 @@ import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.SplitFileSegmentKeys;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
@@ -36,7 +36,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.BucketTools;
 
 /** Metadata parser/writer class. */
@@ -100,14 +100,14 @@ public class Metadata implements Cloneable {
 	static final short FLAGS_HASH_THIS_LAYER = 2048;
 
 	/** Container archive type
-	 * @see ARCHIVE_TYPE
+	 * @see ArchiveType
 	 */
-	ARCHIVE_TYPE archiveType;
+	ArchiveType archiveType;
 
 	/** Compressed splitfile codec
-	 * @see COMPRESSOR_TYPE
+	 * @see CompressorType
 	 */
-	COMPRESSOR_TYPE compressionCodec;
+	CompressorType compressionCodec;
 
 	/** The length of the splitfile */
 	long dataLength;
@@ -334,7 +334,7 @@ public class Metadata implements Cloneable {
 
 		if(documentType == ARCHIVE_MANIFEST) {
 			if(logMINOR) Logger.minor(this, "Archive manifest");
-			archiveType = ARCHIVE_TYPE.getArchiveType(dis.readShort());
+			archiveType = ArchiveType.getArchiveType(dis.readShort());
 			if(archiveType == null)
 				throw new MetadataParseException("Unrecognized archive type "+archiveType);
 		}
@@ -370,7 +370,7 @@ public class Metadata implements Cloneable {
 		}
 
 		if(compressed) {
-			compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(dis.readShort());
+			compressionCodec = CompressorType.getCompressorByMetadataID(dis.readShort());
 			if(compressionCodec == null)
 				throw new MetadataParseException("Unrecognized splitfile compression codec "+compressionCodec);
 
@@ -878,7 +878,7 @@ public class Metadata implements Cloneable {
 	 * @param arg The argument; in the case of ARCHIVE_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
+	public Metadata(byte docType, ArchiveType archiveType, CompressorType compressionCodec, String arg, ClientMetadata cm) {
 		hashCode = super.hashCode();
 		if((docType == ARCHIVE_INTERNAL_REDIRECT) || (docType == SYMBOLIC_SHORTLINK)) {
 			documentType = docType;
@@ -938,7 +938,7 @@ public class Metadata implements Cloneable {
 		topCompatibilityMode = 0;
 	}
 
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
+	public Metadata(byte docType, ArchiveType archiveType, CompressorType compressionCodec, FreenetURI uri, ClientMetadata cm) {
 		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, false, (short)0, null);
 	}
 	
@@ -948,7 +948,7 @@ public class Metadata implements Cloneable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
+	public Metadata(byte docType, ArchiveType archiveType, CompressorType compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
 		hashCode = super.hashCode();
 		if(hashes != null && hashes.length == 0) {
 			throw new IllegalArgumentException();
@@ -1036,7 +1036,7 @@ public class Metadata implements Cloneable {
 	 * cross-segment redundancy. This greatly improves reliability on files over 80MB, see bug #3370.
 	 */
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
+			ClientMetadata cm, long dataLength, ArchiveType archiveType, CompressorType compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		this.hashThisLayerOnly = hashThisLayerOnly;
@@ -1322,7 +1322,7 @@ public class Metadata implements Cloneable {
 	}
 
 	/** What kind of archive is it? */
-	public ARCHIVE_TYPE getArchiveType() {
+	public ArchiveType getArchiveType() {
 		return archiveType;
 	}
 
@@ -1562,7 +1562,7 @@ public class Metadata implements Cloneable {
 		return compressionCodec != null;
 	}
 
-	public COMPRESSOR_TYPE getCompressionCodec() {
+	public CompressorType getCompressionCodec() {
 		return compressionCodec;
 	}
 
@@ -1600,7 +1600,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public void setArchiveManifest() {
-		ARCHIVE_TYPE type = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType());
+		ArchiveType type = ArchiveType.getArchiveType(clientMetadata.getMIMEType());
 		archiveType = type;
 		clientMetadata.clear();
 		documentType = ARCHIVE_MANIFEST;

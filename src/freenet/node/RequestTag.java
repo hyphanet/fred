@@ -18,14 +18,14 @@ public class RequestTag extends UIDTag {
     static {
     	Logger.registerClass(RequestTag.class);
     }
-	
-	enum START {
+
+	enum Start {
 		ASYNC_GET,
 		LOCAL,
 		REMOTE
 	}
-	
-	final START start;
+
+	final Start start;
 	final boolean isSSK;
 	private boolean servedFromDatastore;
 	private WeakReference<RequestSender> sender;
@@ -43,7 +43,7 @@ public class RequestTag extends UIDTag {
 	/** Set if transferring */
 	private NodeCHK key;
 
-	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+	public RequestTag(boolean isSSK, Start start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.isSSK = isSSK;

@@ -19,8 +19,8 @@ import com.db4o.ObjectContainer;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.DarknetPeerNode.FriendTrust;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.OpennetDisabledException;
@@ -35,15 +35,15 @@ public class AddPeer extends FCPMessage {
 	
 	SimpleFieldSet fs;
 	final String identifier;
-	final FRIEND_TRUST trust;
-	final FRIEND_VISIBILITY visibility;
-	
+	final FriendTrust trust;
+	final FriendVisibility visibility;
+
 	public AddPeer(SimpleFieldSet fs) throws MessageInvalidException {
 		this.fs = fs;
 		this.identifier = fs.get("Identifier");
 		fs.removeValue("Identifier");
 		try {
-			this.trust = FRIEND_TRUST.valueOf(fs.get("Trust"));
+			this.trust = FriendTrust.valueOf(fs.get("Trust"));
 			fs.removeValue("Trust");
 		} catch (NullPointerException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "AddPeer requires Trust", identifier, false);
@@ -51,7 +51,7 @@ public class AddPeer extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid Trust value on AddPeer", identifier, false);
 		}
 		try {
-			this.visibility = FRIEND_VISIBILITY.valueOf(fs.get("Visibility"));
+			this.visibility = FriendVisibility.valueOf(fs.get("Visibility"));
 			fs.removeValue("Visibility");
 		} catch (NullPointerException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "AddPeer requires Visibility", identifier, false);
