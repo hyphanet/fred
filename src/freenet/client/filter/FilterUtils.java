@@ -703,6 +703,32 @@ public class FilterUtils {
 		}
 		return true;
 	}
+	public static boolean isNth(String value)
+	{
+		if(value.equals("odd") || value.equals("even") || isInteger(value))
+		{
+			return true;
+		}
+		else
+		{
+			// Check if value has the form "an+b" - where a and b can be any integer.
+			int nIndex=value.indexOf("n");
+			if(nIndex!=-1)
+			{
+				int aLength=nIndex;
+				if(aLength==0 || (aLength==1 && value.charAt(0)=='-') || isInteger(value.substring(0,aLength)))
+				{
+					int bIndex=nIndex+1;
+					int bLength=value.length()-bIndex;
+					if(bLength==0 || ((value.charAt(bIndex)=='+' || value.charAt(bIndex)=='-') && isInteger(value.substring(bIndex,value.length()))))
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
 //	public static HTMLNode getHTMLNodeFromElement(Element node)
 //	{
 //		String[] propertyName=new String[node.getAttributes().size()];
