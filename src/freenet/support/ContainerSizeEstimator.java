@@ -6,7 +6,7 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Map;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.async.ManifestElement;
 
 /**
@@ -16,7 +16,7 @@ import freenet.client.async.ManifestElement;
  */
 public final class ContainerSizeEstimator {
 
-	public static final ARCHIVE_TYPE DEFAULT_ARCHIVE_TYPE = ARCHIVE_TYPE.TAR;
+	public static final ArchiveType DEFAULT_ARCHIVE_TYPE = ArchiveType.TAR;
 
 	public final static class ContainerSize {
 
@@ -116,8 +116,8 @@ public final class ContainerSizeEstimator {
 		return getContainerItemSize(DEFAULT_ARCHIVE_TYPE, size);
 	}
 
-	private static long getContainerItemSize(ARCHIVE_TYPE archiveType, long size) {
-		if (archiveType == ARCHIVE_TYPE.TAR)
+	private static long getContainerItemSize(ArchiveType archiveType, long size) {
+		if (archiveType == ArchiveType.TAR)
 			return tarItemSize(size);
 		throw new UnsupportedOperationException("TODO, only TAR supportet atm.");
 	}

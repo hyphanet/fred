@@ -21,6 +21,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.InsertTag.Start;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
 import freenet.node.probe.Probe;
@@ -496,7 +497,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(htl <= 0) htl = 1;
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
-        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.Start.REMOTE, source, realTimeFlag, id, node);
 		if(!tracker.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -562,7 +563,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
-		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
+		InsertTag tag = new InsertTag(isSSK, Start.REMOTE, source, realTimeFlag, id, node);
 		if(!tracker.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);

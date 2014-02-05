@@ -9,7 +9,7 @@ import freenet.client.InsertContext;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.ClientPut.CompressState;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
@@ -126,7 +126,7 @@ public class RequestStatusCache {
 	}
 
 	public void updateCompressionStatus(String identifier,
-			COMPRESS_STATE compressing) {
+			CompressState compressing) {
 		UploadFileRequestStatus status = (UploadFileRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
 		status.updateCompressionStatus(compressing);

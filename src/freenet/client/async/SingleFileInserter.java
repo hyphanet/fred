@@ -12,7 +12,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.ExpectedHashesEvent;
@@ -29,7 +29,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NotPersistentBucket;
 import freenet.support.io.NullOutputStream;
@@ -65,7 +65,7 @@ class SingleFileInserter implements ClientPutState {
 	final boolean metadata;
 	final PutCompletionCallback cb;
 	final boolean getCHKOnly;
-	final ARCHIVE_TYPE archiveType;
+	final ArchiveType archiveType;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
 	private final boolean reportMetadataOnly;
@@ -115,9 +115,9 @@ class SingleFileInserter implements ClientPutState {
 	 * @param metadataThreshold 
 	 * @throws InsertException
 	 */
-	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
-			boolean metadata, InsertContext ctx, boolean realTimeFlag, boolean dontCompress, 
-			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
+	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block,
+			boolean metadata, InsertContext ctx, boolean realTimeFlag, boolean dontCompress,
+			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ArchiveType archiveType,
 			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes, byte cryptoAlgorithm, byte[] forceCryptoKey, long metadataThreshold) {
 		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
@@ -228,8 +228,8 @@ class SingleFileInserter implements ClientPutState {
 		Bucket bestCompressedData = output.data;
 		long bestCompressedDataSize = bestCompressedData.size();
 		Bucket data = bestCompressedData;
-		COMPRESSOR_TYPE bestCodec = output.bestCodec;
-		
+		CompressorType bestCodec = output.bestCodec;
+
 		boolean shouldFreeData = freeData;
 		if(bestCodec != null) {
 			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained"+ (100-(bestCompressedDataSize*100/origSize)) +"% ! ("+origSize+'/'+bestCompressedDataSize+')');
@@ -532,8 +532,8 @@ class SingleFileInserter implements ClientPutState {
 			onCompressed(output, container, context);
 		}
 	}
-	
-	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, FreenetURI uri, HashResult[] hashes, ObjectContainer container) {
+
+	private Metadata makeMetadata(ArchiveType archiveType, FreenetURI uri, HashResult[] hashes, ObjectContainer container) {
 		Metadata meta = null;
 		boolean allowTopBlocks = origDataLength != 0;
 		int req = 0;
@@ -1217,7 +1217,7 @@ class SingleFileInserter implements ClientPutState {
 		return token;
 	}
 
-	public void onStartCompression(COMPRESSOR_TYPE ctype, ObjectContainer container, ClientContext context) {
+	public void onStartCompression(CompressorType ctype, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(ctx, 2);
 		}

@@ -3,16 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 
 /**
  * Event indicating that we are attempting to compress the file.
  */
 public class StartedCompressionEvent implements ClientEvent {
 
-	public final COMPRESSOR_TYPE codec;
-	
-	public StartedCompressionEvent(COMPRESSOR_TYPE codec) {
+	public final CompressorType codec;
+
+	public StartedCompressionEvent(CompressorType codec) {
 		this.codec = codec;
 	}
 	

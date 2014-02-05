@@ -5,14 +5,14 @@ package freenet.node.simulator;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
+import freenet.node.DarknetPeerNode.FriendTrust;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.FSParseException;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStats;
 import freenet.node.PeerNode;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -31,9 +31,9 @@ public class RealNodeTest {
 	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
 	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
 	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
-	
-	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
-	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
+
+	static final FriendTrust trust = FriendTrust.LOW;
+	static final FriendVisibility visibility = FriendVisibility.NO;
 
         private static volatile boolean logMINOR;
 	static {

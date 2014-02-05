@@ -15,6 +15,7 @@ import freenet.config.SubConfig;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.BaseL10n;
+import freenet.l10n.BaseL10n.Language;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -66,7 +67,7 @@ public class DiagnosticToadlet extends Toadlet {
 		stats = node.nodeStats;
 		peers = node.peers;
 		/* copied from NodeL10n constructor. */
-		baseL10n = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties", new File(".").getPath()+File.separator+"freenet.l10n.${lang}.override.properties", BaseL10n.LANGUAGE.ENGLISH);
+		baseL10n = new BaseL10n("freenet/l10n/", "freenet.l10n.${lang}.properties", new File(".").getPath()+File.separator+"freenet.l10n.${lang}.override.properties", Language.ENGLISH);
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {

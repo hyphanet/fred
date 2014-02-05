@@ -22,6 +22,7 @@ import freenet.client.ArchiveExtractCallback;
 import freenet.client.ArchiveFailureException;
 import freenet.client.ArchiveHandler;
 import freenet.client.ArchiveManager;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -45,8 +46,8 @@ import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.DecompressorThreadManager;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
@@ -80,7 +81,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private int recursionLevel;
 	/** The URI of the currently-being-processed data, for archives etc. */
 	private FreenetURI thisKey;
-	private final LinkedList<COMPRESSOR_TYPE> decompressors;
+	private final LinkedList<CompressorType> decompressors;
 	private final boolean dontTellClientGet;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
 	private final boolean isFinal;
@@ -128,7 +129,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
-		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
+		this.decompressors = new LinkedList<CompressorType>();
 		this.topDontCompress = topDontCompress;
 		this.topCompatibilityMode = topCompatibilityMode;
 		if(parent instanceof ClientGetter) {
@@ -166,7 +167,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Do not copy the decompressors. Whether the metadata/container is compressed
 		// is independant of whether the final data is; when we find the data we will
 		// call back into the original fetcher.
-		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
+		this.decompressors = new LinkedList<CompressorType>();
 		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
 		this.metaSnoop = fetcher.metaSnoop;
@@ -795,7 +796,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveType.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					if(persistent) container.store(metadata);
@@ -858,7 +859,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							container, context);
 				}
 				if(metadata.isCompressed()) {
-					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
+					CompressorType codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f, container);
@@ -879,7 +880,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) container.store(clientMetadata);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveType.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -906,7 +907,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Splitfile (possibly compressed)
 				
 				if(metadata.isCompressed()) {
-					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
+					CompressorType codec = metadata.getCompressionCodec();
 					addDecompressor(codec);
 					if(persistent)
 						container.store(decompressors);
@@ -987,7 +988,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		return name;
 	}
 
-	private void addDecompressor(COMPRESSOR_TYPE codec) {
+	private void addDecompressor(CompressorType codec) {
 		if(logMINOR)
 			Logger.minor(this, "Adding decompressor: "+codec+" on "+this, new Exception("debug"));
 		decompressors.add(codec);

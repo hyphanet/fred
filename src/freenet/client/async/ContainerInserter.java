@@ -17,6 +17,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
@@ -24,7 +25,6 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -69,7 +69,7 @@ public class ContainerInserter implements ClientPutState {
 	private boolean finished;
 	private final boolean persistent;
 	private final HashMap<String, Object> origMetadata;
-	private final ARCHIVE_TYPE archiveType;
+	private final ArchiveType archiveType;
 	private final FreenetURI targetURI;
 	private final Object token;
 	private final boolean getCHKOnly;
@@ -104,7 +104,7 @@ public class ContainerInserter implements ClientPutState {
 			boolean getCHKOnly2,
 			boolean reportMetadataOnly2,
 			Object token2,
-			ARCHIVE_TYPE archiveType2,
+			ArchiveType archiveType2,
 			boolean freeData,
 			boolean earlyEncode2,
 			byte[] forceCryptoKey,
@@ -179,7 +179,7 @@ public class ContainerInserter implements ClientPutState {
 		try {
 			Bucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
 			os = new BufferedOutputStream(outputBucket.getOutputStream());
-			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
+			String mimeType = (archiveType == ArchiveType.TAR ?
 				createTarBucket(os, container) :
 				createZipBucket(os, container));
 			os = null; // create*Bucket closes os
@@ -203,7 +203,7 @@ public class ContainerInserter implements ClientPutState {
 		
 		boolean dc = dontCompress;
 		if (!dontCompress) {
-			dc = (archiveType == ARCHIVE_TYPE.ZIP);
+			dc = (archiveType == ArchiveType.ZIP);
 		}
 		
 		// Treat it as a splitfile for purposes of determining reinsert count.
@@ -318,8 +318,8 @@ public class ContainerInserter implements ClientPutState {
 		}
 		
 		tarOS.close();
-		
-		return ARCHIVE_TYPE.TAR.mimeTypes[0];
+
+		return ArchiveType.TAR.mimeTypes[0];
 	}
 	
 	private String createZipBucket(OutputStream os, ObjectContainer container) throws IOException {
@@ -337,8 +337,8 @@ public class ContainerInserter implements ClientPutState {
 		}
 		
 		zos.close();
-		
-		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
+
+		return ArchiveType.ZIP.mimeTypes[0];
 	}
 
 	private Metadata makeManifest(HashMap<String, Object> manifestElements, String archivePrefix) {

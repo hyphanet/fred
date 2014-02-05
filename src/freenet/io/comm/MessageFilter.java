@@ -193,55 +193,55 @@ public final class MessageFilter {
 		_ctr = ctr;
 		return this;
 	}
-	
-	enum MATCHED {
+
+	enum Matched {
 		MATCHED,
 		TIMED_OUT,
 		TIMED_OUT_AND_MATCHED,
 		NONE
 	}
-	
-	public MATCHED match(Message m, long now) {
+
+	public Matched match(Message m, long now) {
 		return match(m, false, now);
 	}
-	
-	public MATCHED match(Message m, boolean noTimeout, long now) {
+
+	public Matched match(Message m, boolean noTimeout, long now) {
 		if(_or != null) {
-			MATCHED matched = _or.match(m, noTimeout, now);
-			if(matched != MATCHED.NONE)
+			Matched matched = _or.match(m, noTimeout, now);
+			if(matched != Matched.NONE)
 				return matched; // Filter is matched once only. That includes timeouts.
 		}
 		
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
 			// Timeout immediately, but don't check the callback, so we still need the periodic check.
 			if(_timeout < now)
-				return MATCHED.TIMED_OUT;
-			return MATCHED.NONE;
+				return Matched.TIMED_OUT;
+			return Matched.NONE;
 		}
 		if ((_source != null) && (!_source.equals(m.getSource()))) {
 			if(_timeout < now)
-				return MATCHED.TIMED_OUT;
-			return MATCHED.NONE;
+				return Matched.TIMED_OUT;
+			return Matched.NONE;
 		}
 		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
 					if(_timeout < now)
-						return MATCHED.TIMED_OUT;
-					return MATCHED.NONE;
+						return Matched.TIMED_OUT;
+					return Matched.NONE;
 				}
 				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
 					if(_timeout < now)
-						return MATCHED.TIMED_OUT;
-					return MATCHED.NONE;
+						return Matched.TIMED_OUT;
+					return Matched.NONE;
 				}
 			}
 		}
 		if((!noTimeout) && reallyTimedOut(now)) {
 			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
-			return MATCHED.TIMED_OUT_AND_MATCHED;
+			return Matched.TIMED_OUT_AND_MATCHED;
 		}
-		return MATCHED.MATCHED;
+		return Matched.MATCHED;
 	}
 
 	public boolean matched() {

@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -8,7 +8,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * Asks the user whether their connection has a monthly cap to inform how to prompt for bandwidth limits.
  */
-public class BANDWIDTH implements Step {
+public class BandwidthType implements Step {
 
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
@@ -34,10 +34,10 @@ public class BANDWIDTH implements Step {
 	public String postStep(HTTPRequest request)  {
 
 		//Yes: Set for monthly data limit.
-		if (request.isPartSet("yes")) return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_MONTHLY.name();
+		if (request.isPartSet("yes")) return WizardStep.BANDWIDTH_MONTHLY.name();
 
-		//No: Set for data rate limit. 
-		/*else if (request.isPartSet("no"))*/ return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH_RATE.name();
+		//No: Set for data rate limit.
+		/*else if (request.isPartSet("no"))*/ return WizardStep.BANDWIDTH_RATE.name();
 
 		//Back: FirstTimeWizardToadlet handles that.
 	}

@@ -49,8 +49,8 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.NodeL10n;
 import freenet.node.*;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -281,23 +281,23 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType,
 	        boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
-		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
-		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW &&
-		        netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
+		PhysicalThreatLevel threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		NetworkThreatLevel netLevel = core.node.securityLevels.getNetworkThreatLevel();
+		boolean filterChecked = !(((threatLevel == PhysicalThreatLevel.LOW &&
+		        netLevel == NetworkThreatLevel.LOW)) || disableFiltration);
 		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") &&
 			!mimeType.equals("")) {
 			FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 			if((type == null || (!(type.safeToRead || type.readFilter != null))) &&
-				        !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH ||
-				        threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM ||
-				        netLevel == NETWORK_THREAT_LEVEL.HIGH ||
-				        netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
+				        !(threatLevel == PhysicalThreatLevel.HIGH ||
+				        threatLevel == PhysicalThreatLevel.MAXIMUM ||
+				        netLevel == NetworkThreatLevel.HIGH ||
+				        netLevel == NetworkThreatLevel.MAXIMUM))
 				filterChecked = false;
 		}
 		//Display FProxy option to download to disk if the user isn't at maximum physical threat level
 		//and hasn't disabled downloading to disk.
-		if (threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM && !core.isDownloadDisabled()) {
+		if (threatLevel != PhysicalThreatLevel.MAXIMUM && !core.isDownloadDisabled()) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",
@@ -346,7 +346,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(filterChecked) f.addAttribute("checked", "checked");
 				filterControl.addChild("div", l10n("filterDataMessage"));
 			}
-			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+			if (threatLevel == PhysicalThreatLevel.HIGH) {
 				optionForm.addChild("br");
 				NodeL10n.getBase().addL10nSubstitution(optionForm,
 				        "FProxyToadlet.downloadToDiskSecurityWarning",
@@ -356,7 +356,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 
 		//Display fetch option if not at low physical security or the user has disabled downloading to disk.
-		if (threatLevel != PHYSICAL_THREAT_LEVEL.LOW || core.isDownloadDisabled()) {
+		if (threatLevel != PhysicalThreatLevel.LOW || core.isDownloadDisabled()) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input",

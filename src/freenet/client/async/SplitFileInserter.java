@@ -9,7 +9,7 @@ import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
@@ -26,7 +26,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.BucketTools;
 import freenet.support.math.MersenneTwister;
 
@@ -50,7 +50,7 @@ public class SplitFileInserter implements ClientPutState {
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
 	final long dataLength;
-	final COMPRESSOR_TYPE compressionCodec;
+	final CompressorType compressionCodec;
 	final short splitfileAlgorithm;
 	/** The number of data blocks in a typical segment. Does not include cross-check blocks. */
 	final int segmentSize;
@@ -68,7 +68,7 @@ public class SplitFileInserter implements ClientPutState {
 	private volatile boolean finished;
 	private boolean fetchable;
 	public final Object token;
-	final ARCHIVE_TYPE archiveType;
+	final ArchiveType archiveType;
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
@@ -131,7 +131,7 @@ public class SplitFileInserter implements ClientPutState {
 		realTimeFlag = false;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, boolean realTimeFlag, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte cryptoAlgorithm, byte[] splitfileKey) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, CompressorType bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ArchiveType archiveType, boolean freeData, boolean persistent, boolean realTimeFlag, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte cryptoAlgorithm, byte[] splitfileKey) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;

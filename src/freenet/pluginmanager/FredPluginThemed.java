@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.PageMaker.Theme;
 
 /**
  * Interface that has to be implemented for plugins that wants to use
@@ -16,6 +16,6 @@ import freenet.clients.http.PageMaker.THEME;
  */
 public interface FredPluginThemed {
 
-	public void setTheme(THEME theme);
+	public void setTheme(Theme theme);
 
 }

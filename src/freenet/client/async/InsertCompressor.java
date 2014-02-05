@@ -20,8 +20,8 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressJob;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -115,7 +115,7 @@ public class InsertCompressor implements CompressJob {
 	@Override
 	public void tryCompress(final ClientContext context) throws InsertException {
 		long origSize = origData.size();
-		COMPRESSOR_TYPE bestCodec = null;
+		CompressorType bestCodec = null;
 		Bucket bestCompressedData = origData;
 		long bestCompressedDataSize = origSize;
 		
@@ -127,9 +127,9 @@ public class InsertCompressor implements CompressJob {
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
 			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, CHKBlock.DATA_LENGTH, persistent ? context.jobRunner : null, 1024, true);
-			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
+			CompressorType[] comps = CompressorType.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
-			for (final COMPRESSOR_TYPE comp : comps) {
+			for (final CompressorType comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;
 				try {

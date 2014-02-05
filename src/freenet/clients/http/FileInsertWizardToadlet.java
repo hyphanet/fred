@@ -10,7 +10,7 @@ import freenet.client.filter.FilterOperation;
 import freenet.clients.http.ContentFilterToadlet.ResultHandling;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -85,13 +85,13 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode insertBox = infobox.outer;
 		HTMLNode insertContent = infobox.content;
 		insertContent.addChild("p", l10n("insertIntro"));
-		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
+		NetworkThreatLevel seclevel = core.node.securityLevels.getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
 		HTMLNode input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "keytype", "CHK" });
-		if ((!rememberedLastTime && seclevel == NETWORK_THREAT_LEVEL.LOW) ||
-		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NETWORK_THREAT_LEVEL.MAXIMUM)) {
+		if ((!rememberedLastTime && seclevel == NetworkThreatLevel.LOW) ||
+		        (rememberedLastTime && wasCanonicalLastTime && seclevel != NetworkThreatLevel.MAXIMUM)) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
@@ -102,7 +102,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "keytype", "SSK" });
-		if (seclevel == NETWORK_THREAT_LEVEL.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
+		if (seclevel == NetworkThreatLevel.MAXIMUM || (rememberedLastTime && !wasCanonicalLastTime)) {
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("b", l10n("insertRandomTitle"));

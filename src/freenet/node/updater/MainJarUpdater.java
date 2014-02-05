@@ -23,7 +23,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.ClientPut.CompressState;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.updater.MainJarDependenciesChecker.AtomicDeployer;
 import freenet.node.updater.MainJarDependenciesChecker.Deployer;
@@ -245,10 +245,10 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			if(uomFetcher != null)
 				row.addChild("td").addChild("#", l10n("fetchingFromUOM"));
 			else if(lastProgress == null)
-				row.addChild(QueueToadlet.createProgressCell(false, true, COMPRESS_STATE.WORKING, 0, 0, 0, 0, 0, false, false));
+				row.addChild(QueueToadlet.createProgressCell(false, true, CompressState.WORKING, 0, 0, 0, 0, 0, false, false));
 			else
 				row.addChild(QueueToadlet.createProgressCell(false, 
-						true, COMPRESS_STATE.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
+						true, CompressState.WORKING, lastProgress.succeedBlocks, lastProgress.failedBlocks, lastProgress.fatallyFailedBlocks, lastProgress.minSuccessfulBlocks, lastProgress.totalBlocks, lastProgress.finalizedTotal, false));
 			return row;
 		}
 

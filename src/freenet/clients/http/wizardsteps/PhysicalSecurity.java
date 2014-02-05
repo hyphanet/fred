@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import freenet.clients.http.ExternalLinkToadlet;
 import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileSizeException;
@@ -11,6 +12,7 @@ import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -20,7 +22,7 @@ import freenet.support.io.FileUtil.OperatingSystem;
 /**
  * Allows the user to set the physical security level.
  */
-public class SECURITY_PHYSICAL implements Step {
+public class PhysicalSecurity implements Step {
 
 	private final NodeClientCore core;
 
@@ -31,10 +33,10 @@ public class SECURITY_PHYSICAL implements Step {
 	}
 
 	/**
-	 * Constructs a new SECURITY_PHYSICAL GET handler.
+	 * Constructs a new PhysicalSecurity GET handler.
 	 * @param core used to check or set the current security level and password.
 	 */
-	public SECURITY_PHYSICAL(NodeClientCore core) {
+	public PhysicalSecurity(NodeClientCore core) {
 		this.core = core;
 	}
 
@@ -69,7 +71,7 @@ public class SECURITY_PHYSICAL implements Step {
 		if(os == FileUtil.OperatingSystem.Windows) {
 			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
-		for(SecurityLevels.PHYSICAL_THREAT_LEVEL level : SecurityLevels.PHYSICAL_THREAT_LEVEL.values()) {
+		for(PhysicalThreatLevel level : PhysicalThreatLevel.values()) {
 			HTMLNode input;
 			input = div.addChild("p").addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -77,7 +79,7 @@ public class SECURITY_PHYSICAL implements Step {
 			input.addChild("b", WizardL10n.l10nSec("physicalThreatLevel.name." + level));
 			input.addChild("#", ": ");
 			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-			if(level == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH &&
+			if(level == PhysicalThreatLevel.HIGH &&
 			        core.node.securityLevels.getPhysicalThreatLevel() != level) {
 				// Add password form on high security if not already at high security.
 				HTMLNode p = div.addChild("p");
@@ -102,7 +104,7 @@ public class SECURITY_PHYSICAL implements Step {
 	 */
 	private boolean errorHandler(HTTPRequest request, PageHelper helper) {
 		String physicalThreatLevel = request.getParam("newThreatLevel");
-		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+		PhysicalThreatLevel newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");
 
 		if (error.equals("pass")) {
@@ -174,19 +176,19 @@ public class SECURITY_PHYSICAL implements Step {
 		return false;
 	}
 
-	public SecurityLevels.PHYSICAL_THREAT_LEVEL getCurrentLevel() {
+	public PhysicalThreatLevel getCurrentLevel() {
 		return core.node.securityLevels.getPhysicalThreatLevel();
 	}
 
 	@Override
 	public String postStep(HTTPRequest request) throws IOException {
-		final String errorCorrupt = FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+"&error=corrupt";
+		final String errorCorrupt = WizardStep.SECURITY_PHYSICAL+"&error=corrupt";
 		String pass = request.getPartAsStringFailsafe("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 		final boolean passwordIsBlank = pass != null && pass.length() == 0;
 
 		String physicalThreatLevel = request.getPartAsStringFailsafe("security-levels.physicalThreatLevel", 128);
-		SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+		PhysicalThreatLevel oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		PhysicalThreatLevel newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		if (FirstTimeWizardToadlet.shouldLogMinor()) {
 			Logger.minor(this, "Old threat level: " + oldThreatLevel + " new threat level: " + newThreatLevel);
 		}
@@ -195,17 +197,17 @@ public class SECURITY_PHYSICAL implements Step {
 		* security level could not be determined, clicked back from a password error page, redirect to the main page.*/
 		if (newThreatLevel == null || !request.isPartSet("security-levels.physicalThreatLevel") ||
 		        request.isPartSet("backToMain")) {
-			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL.name();
+			return WizardStep.SECURITY_PHYSICAL.name();
 		}
 		//Changing to high physical threat level: set password.
-		if (newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
+		if (newThreatLevel == PhysicalThreatLevel.HIGH && oldThreatLevel != newThreatLevel) {
 			if (passwordIsBlank) {
 				// Must set the password to something non-blank.
 				return promptPassword(newThreatLevel, PASSWORD_PROMPT.SET_BLANK);
 			} else {
 				try {
-					if(oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL ||
-					        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW) {
+					if(oldThreatLevel == PhysicalThreatLevel.NORMAL ||
+					        oldThreatLevel == PhysicalThreatLevel.LOW) {
 						core.node.changeMasterPassword("", pass, true);
 					} else {
 						core.node.setMasterPassword(pass, true);
@@ -220,8 +222,8 @@ public class SECURITY_PHYSICAL implements Step {
 			}
 		}
 		//Decreasing to low or normal from high: remove password.
-		if ((newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.LOW || newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.NORMAL) &&
-			        oldThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.HIGH) {
+		if ((newThreatLevel == PhysicalThreatLevel.LOW || newThreatLevel == PhysicalThreatLevel.NORMAL) &&
+			        oldThreatLevel == PhysicalThreatLevel.HIGH) {
 			if (passwordIsBlank) {
 				//Prompt for the old password, which is needed to decrypt
 				return promptPassword(newThreatLevel, PASSWORD_PROMPT.DECRYPT_BLANK);
@@ -249,16 +251,16 @@ public class SECURITY_PHYSICAL implements Step {
 
 		}
 		//Maximum threat level: remove master keys file.
-		if (newThreatLevel == SecurityLevels.PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+		if (newThreatLevel == PhysicalThreatLevel.MAXIMUM) {
 			try {
 				core.node.killMasterKeysFile();
 			} catch (IOException e) {
-				return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+
+				return WizardStep.SECURITY_PHYSICAL+
 				        "&error=delete&newThreatLevel="+newThreatLevel.name();
 			}
 		}
 		setThreatLevel(newThreatLevel, oldThreatLevel);
-		return FirstTimeWizardToadlet.WIZARD_STEP.NAME_SELECTION.name();
+		return WizardStep.NAME_SELECTION.name();
 	}
 
 	/**
@@ -267,16 +269,16 @@ public class SECURITY_PHYSICAL implements Step {
 	 * @param type what type of prompt needed
 	 * @return URL to display the requested page
 	 */
-	private String promptPassword(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, PASSWORD_PROMPT type) {
+	private String promptPassword(PhysicalThreatLevel newThreatLevel, PASSWORD_PROMPT type) {
 		if (type == PASSWORD_PROMPT.DECRYPT_WRONG) {
 			System.err.println("Wrong password!");
 		}
-		StringBuilder destination = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL+
+		StringBuilder destination = new StringBuilder(WizardStep.SECURITY_PHYSICAL+
 		        "&error=pass&newThreatLevel=").append(newThreatLevel.name()).append("&type=").append(type.name());
 		return destination.toString();
 	}
 
-	public void setThreatLevel(SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel, SecurityLevels.PHYSICAL_THREAT_LEVEL oldThreatLevel) throws IOException {
+	public void setThreatLevel(PhysicalThreatLevel newThreatLevel, PhysicalThreatLevel oldThreatLevel) throws IOException {
 		core.node.securityLevels.setThreatLevel(newThreatLevel);
 		core.storeConfig();
 		try {

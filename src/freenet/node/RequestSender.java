@@ -430,12 +430,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		public void onMatched(Message msg) {
 			
 			assert(waitingFor == msg.getSource());
-			
-        	DO action = handleMessage(msg, noReroute, waitingFor, this);
-        	
-        	if(action == DO.FINISHED)
+
+        	Do action = handleMessage(msg, noReroute, waitingFor, this);
+
+        	if(action == Do.FINISHED)
         		return;
-        	else if(action == DO.NEXT_PEER) {
+        	else if(action == Do.NEXT_PEER) {
         		if(!noReroute) {
         			// Try another peer
         			routeRequests();
@@ -504,12 +504,12 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					waitingFor.fatalTimeout(origTag, false);
 					return;
 				}
-				
-				DO action = handleMessage(msg, noReroute, waitingFor, this);
-				
-				if(action == DO.FINISHED)
+
+				Do action = handleMessage(msg, noReroute, waitingFor, this);
+
+				if(action == Do.FINISHED)
 					return;
-				else if(action == DO.NEXT_PEER) {
+				else if(action == Do.NEXT_PEER) {
 					waitingFor.noLongerRoutingTo(origTag, false);
 					return; // Don't try others
 				}
@@ -542,8 +542,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		}
     	
     };
-    
-    enum OFFER_STATUS {
+
+    enum OfferStatus {
     	FETCHING, // Fetching asynchronously or already fetched.
     	TWO_STAGE_TIMEOUT, // Waiting asynchronously for two stage timeout; remove the offer, but don't unlock the tag.
     	FATAL, // Fatal error, fail the whole request.
@@ -556,7 +556,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	 * have run out of offers without succeeding, so chain to startRequests(). 
 	 * @param pn If this and status are non-null, we have just tried an offer, and these
 	 * two contain its status. This should be handled before we try to do any more. */
-    private void tryOffers(final OfferList offers, PeerNode pn, OFFER_STATUS status) {
+    private void tryOffers(final OfferList offers, PeerNode pn, OfferStatus status) {
         while(true) {
         	if(pn == null) {
         		// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
@@ -594,9 +594,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         }
     }
 
-    private OFFER_STATUS tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
-    	if(pn == null) return OFFER_STATUS.TRY_ANOTHER;
-    	if(pn.getBootID() != offer.bootID) return OFFER_STATUS.TRY_ANOTHER;
+    private OfferStatus tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
+    	if(pn == null) return OfferStatus.TRY_ANOTHER;
+    	if(pn.getBootID() != offer.bootID) return OfferStatus.TRY_ANOTHER;
     	origTag.addRoutedTo(pn, true);
     	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
     	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
@@ -605,11 +605,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		} catch (NotConnectedException e2) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-    		return OFFER_STATUS.TRY_ANOTHER;
+    		return OfferStatus.TRY_ANOTHER;
 		} catch (SyncSendWaitedTooLongException e) {
 			if(logMINOR)
 				Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
-    		return OFFER_STATUS.TRY_ANOTHER;
+    		return OfferStatus.TRY_ANOTHER;
 		}
     	// Wait asynchronously for a response.
 		synchronized(this) {
@@ -620,7 +620,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				
 				@Override
 				public void onMatched(Message m) {
-					OFFER_STATUS status =
+					OfferStatus status =
 						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, offers);
 					tryOffers(offers, pn, status);
@@ -635,7 +635,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				public void onTimeout() {
 					Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
 					// Two stage timeout.
-					OFFER_STATUS status = handleOfferTimeout(offer, pn, offers);
+					OfferStatus status = handleOfferTimeout(offer, pn, offers);
 					tryOffers(offers, pn, status);
 				}
 				
@@ -643,14 +643,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				public void onDisconnect(PeerContext ctx) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+					tryOffers(offers, pn, OfferStatus.TRY_ANOTHER);
 				}
 				
 				@Override
 				public void onRestarted(PeerContext ctx) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+					tryOffers(offers, pn, OfferStatus.TRY_ANOTHER);
 				}
 				
 				@Override
@@ -659,11 +659,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				}
 				
 			}, this);
-			return OFFER_STATUS.FETCHING;
+			return OfferStatus.FETCHING;
 		} catch (DisconnectedException e) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-			return OFFER_STATUS.TRY_ANOTHER;
+			return OfferStatus.TRY_ANOTHER;
 		}
 	}
 
@@ -679,17 +679,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	}
 	}
 
-	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
+	private OfferStatus handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
 			OfferList offers) {
 		try {
 			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
 				
 				@Override
 				public void onMatched(Message m) {
-					OFFER_STATUS status = 
+					OfferStatus status =
 						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, null);
-						if(status != OFFER_STATUS.FETCHING)
+						if(status != OfferStatus.FETCHING)
 							pn.noLongerRoutingTo(origTag, true);
 						// If FETCHING, the block transfer will unlock it.
 						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
@@ -724,27 +724,27 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				}
 				
 			}, this);
-			return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+			return OfferStatus.TWO_STAGE_TIMEOUT;
 		} catch (DisconnectedException e) {
 			// Okay.
 			if(logMINOR)
 				Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
-    		return OFFER_STATUS.TRY_ANOTHER;
+    		return OfferStatus.TRY_ANOTHER;
 		}
 	}
 
-	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
+	private OfferStatus handleSSKOfferReply(Message reply, PeerNode pn,
 			BlockOffer offer) {
     	if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			return OFFER_STATUS.KEEP;
+			return OfferStatus.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			return OFFER_STATUS.TRY_ANOTHER;
+			return OfferStatus.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
@@ -755,11 +755,11 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
-				return OFFER_STATUS.TRY_ANOTHER;
+				return OfferStatus.TRY_ANOTHER;
 			}
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key+" on "+this);
-				return OFFER_STATUS.TRY_ANOTHER;
+				return OfferStatus.TRY_ANOTHER;
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
@@ -770,37 +770,37 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-					return OFFER_STATUS.TRY_ANOTHER;
+					return OfferStatus.TRY_ANOTHER;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key+" on "+this);
-					return OFFER_STATUS.TRY_ANOTHER;
+					return OfferStatus.TRY_ANOTHER;
 				}
 				try {
 					pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-					return OFFER_STATUS.TRY_ANOTHER;
+					return OfferStatus.TRY_ANOTHER;
 				}
 				
 				try {
 					((NodeSSK)key).setPubKey(pubKey);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-					return OFFER_STATUS.TRY_ANOTHER;
+					return OfferStatus.TRY_ANOTHER;
 				}
 			}
 			
 			if(finishSSKFromGetOffer(pn, headers, sskData)) {
 				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
-				return OFFER_STATUS.FETCHING;
+				return OfferStatus.FETCHING;
 			} else {
-				return OFFER_STATUS.TRY_ANOTHER;
+				return OfferStatus.TRY_ANOTHER;
 			}
 		} else {
 			// Impossible???
 			Logger.error(this, "Unexpected reply to get offered key: "+reply);
-			return OFFER_STATUS.TRY_ANOTHER;
+			return OfferStatus.TRY_ANOTHER;
 		}
 	}
 
@@ -811,17 +811,17 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 	 * @param offers The list of offered keys. Only used if we complete asynchronously.
 	 * Null indicates this is a fork due to two stage timeout. 
 	 * */
-	private OFFER_STATUS handleCHKOfferReply(Message reply, final PeerNode pn, final BlockOffer offer, final OfferList offers) {
+	private OfferStatus handleCHKOfferReply(Message reply, final PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			return OFFER_STATUS.KEEP;
+			return OfferStatus.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			return OFFER_STATUS.TRY_ANOTHER;
+			return OfferStatus.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
 			finalHeaders = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Receive the data
@@ -913,14 +913,14 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 					}
         				
         		});
-        		return OFFER_STATUS.FETCHING;
+        		return OfferStatus.FETCHING;
         	} finally {
         		origTag.senderTransferEnds((NodeCHK)key, this);
         	}
 		} else {
 			// Impossible.
 			Logger.error(this, "Unexpected reply to get offered key: "+reply);
-			return OFFER_STATUS.TRY_ANOTHER;
+			return OfferStatus.TRY_ANOTHER;
 		}
 	}
 
@@ -964,7 +964,7 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
 		return mf;
 	}
 
-	private DO handleMessage(Message msg, boolean wasFork, PeerNode source, MainLoopCallback waiter) {
+	private Do handleMessage(Message msg, boolean wasFork, PeerNode source, MainLoopCallback waiter) {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
@@ -972,38 +972,38 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
     		handleDataNotFound(msg, wasFork, source);
-    		return DO.FINISHED;
+    		return Do.FINISHED;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
     		handleRecentlyFailed(msg, wasFork, source);
     		// We will resolve finish() in routeRequests(), after recomputing.
-    		return DO.NEXT_PEER;
+    		return Do.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
     		handleRouteNotFound(msg, source);
-    		return DO.NEXT_PEER;
+    		return Do.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-    		if(handleRejectedOverload(msg, wasFork, source)) return DO.WAIT;
-    		else return DO.FINISHED;
+    		if(handleRejectedOverload(msg, wasFork, source)) return Do.WAIT;
+    		else return Do.FINISHED;
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
     		handleCHKDataFound(msg, wasFork, source, waiter);
-    		return DO.FINISHED;
+    		return Do.FINISHED;
     	}
     	
     	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
-    		
-    		if(!handleSSKPubKey(msg, source)) return DO.NEXT_PEER;
+
+    		if(!handleSSKPubKey(msg, source)) return Do.NEXT_PEER;
 			if(waiter.sskData != null && waiter.headers != null) {
 				finishSSK(source, wasFork, waiter.headers, waiter.sskData);
-				return DO.FINISHED;
+				return Do.FINISHED;
 			}
-			return DO.WAIT;
+			return Do.WAIT;
     	}
     	            	
     	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundData) {
@@ -1014,9 +1014,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
         	
         	if(pubKey != null && waiter.headers != null) {
         		finishSSK(source, wasFork, waiter.headers, waiter.sskData);
-        		return DO.FINISHED;
+        		return Do.FINISHED;
         	}
-        	return DO.WAIT;
+        	return Do.WAIT;
 
     	}
     	
@@ -1028,9 +1028,9 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
     		
         	if(pubKey != null && waiter.sskData != null) {
         		finishSSK(source, wasFork, waiter.headers, waiter.sskData);
-        		return DO.FINISHED;
+        		return Do.FINISHED;
         	}
-        	return DO.WAIT;
+        	return Do.WAIT;
 
     	}
     	
@@ -1038,8 +1038,8 @@ public final class RequestSender extends BaseSender implements PrioRunnable {
    		int t = timeSinceSent();
    		node.failureTable.onFailed(key, source, htl, t, t);
    		source.noLongerRoutingTo(origTag, false);
-   		return DO.NEXT_PEER;
-    	
+   		return Do.NEXT_PEER;
+
 	}
     
     /** @return True unless the pubkey is broken and we should try another node */

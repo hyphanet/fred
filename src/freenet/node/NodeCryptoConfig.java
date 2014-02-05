@@ -9,7 +9,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -156,16 +156,16 @@ public class NodeCryptoConfig {
 		oneConnectionPerAddress = config.getBoolean("oneConnectionPerIP");
 		
 		if(isOpennet) {
-			securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+			securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 				@Override
-				public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
 					// Might be useful for nodes on the same NAT etc, so turn it off for LOW. Otherwise is sensible.
 					// It's always off on darknet, since we can reasonably expect to know our peers, even if we are paranoid
 					// about them!
-					if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					if(newLevel == NetworkThreatLevel.LOW)
 						oneConnectionPerAddress = false;
-					if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
+					if(oldLevel == NetworkThreatLevel.LOW)
 						oneConnectionPerAddress = true;
 				}
 				
@@ -240,15 +240,15 @@ public class NodeCryptoConfig {
 		});
 		
 		paddDataPackets = config.getBoolean("paddDataPackets");
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+			public void onChange(NetworkThreatLevel oldLevel, NetworkThreatLevel newLevel) {
 				// Might be useful for nodes which are running with a tight bandwidth quota to minimize the overhead,
 				// so turn it off for LOW. Otherwise is sensible.
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+				if(newLevel == NetworkThreatLevel.LOW)
 					paddDataPackets = false;
-				if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
+				if(oldLevel == NetworkThreatLevel.LOW)
 					paddDataPackets = true;
 			}
 		});

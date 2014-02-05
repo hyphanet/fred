@@ -1,9 +1,11 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -12,11 +14,11 @@ import freenet.support.api.HTTPRequest;
  * This step allows the user to choose between security levels. If opennet is disabled, only high and maximum are shown.
  * If opennet is enabled, only low and normal are shown.
  */
-public class SECURITY_NETWORK implements Step {
+public class NetworkSecurity implements Step {
 
 	private final NodeClientCore core;
 
-	public SECURITY_NETWORK(NodeClientCore core) {
+	public NetworkSecurity(NodeClientCore core) {
 		this.core = core;
 	}
 
@@ -28,7 +30,7 @@ public class SECURITY_NETWORK implements Step {
 
 		if (request.isParameterSet("confirm")) {
 			String networkThreatLevel = request.getParam("security-levels.networkThreatLevel");
-			SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
+			NetworkThreatLevel newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
 			HTMLNode infoboxContent = helper.getInfobox("infobox-information",
 			        WizardL10n.l10n("networkThreatLevelConfirmTitle."+newThreatLevel), contentNode, null, false);
@@ -37,7 +39,7 @@ public class SECURITY_NETWORK implements Step {
 			formNode.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
-			if(newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM) {
+			if(newThreatLevel == NetworkThreatLevel.MAXIMUM) {
 				HTMLNode p = formNode.addChild("p");
 				NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning",
 				        new String[] { "bold" },
@@ -50,7 +52,7 @@ public class SECURITY_NETWORK implements Step {
 				        new String[] { "type", "name", "value" },
 				        new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" },
 				        WizardL10n.l10nSec("maximumNetworkThreatLevelCheckbox"));
-			} else /*if(newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)*/ {
+			} else /*if(newThreatLevel == NetworkThreatLevel.HIGH)*/ {
 				HTMLNode p = formNode.addChild("p");
 				NodeL10n.getBase().addL10nSubstitution(p, "FirstTimeWizardToadlet.highNetworkThreatLevelWarning",
 				        new String[] { "bold", "addAFriend", "friends" },
@@ -87,7 +89,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getOpennetValues()) {
+			for(NetworkThreatLevel level : NetworkThreatLevel.getOpennetValues()) {
 				securityLevelChoice(div, level);
 			}
 		} else {
@@ -97,7 +99,7 @@ public class SECURITY_NETWORK implements Step {
 
 			form = helper.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "darknetDiv");
-			for(SecurityLevels.NETWORK_THREAT_LEVEL level : SecurityLevels.NETWORK_THREAT_LEVEL.getDarknetValues()) {
+			for(NetworkThreatLevel level : NetworkThreatLevel.getDarknetValues()) {
 				securityLevelChoice(div, level);
 			}
 			form.addChild("p").addChild("b", WizardL10n.l10nSec("networkThreatLevel.opennetFriendsWarning"));
@@ -115,7 +117,7 @@ public class SECURITY_NETWORK implements Step {
 	 * @param parent to add content to.
 	 * @param level to add content about.
 	 */
-	private void securityLevelChoice(HTMLNode parent, SecurityLevels.NETWORK_THREAT_LEVEL level) {
+	private void securityLevelChoice(HTMLNode parent, NetworkThreatLevel level) {
 		HTMLNode input = parent.addChild("p").addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "security-levels.networkThreatLevel", level.name() });
@@ -133,10 +135,10 @@ public class SECURITY_NETWORK implements Step {
 	@Override
 	public String postStep(HTTPRequest request) {
 		String networkThreatLevel = request.getPartAsStringFailsafe("security-levels.networkThreatLevel", 128);
-		SecurityLevels.NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
+		NetworkThreatLevel newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 
 		//Used in case of redirect either for retry or confirmation.
-		StringBuilder redirectTo = new StringBuilder(FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name());
+		StringBuilder redirectTo = new StringBuilder(WizardStep.SECURITY_NETWORK.name());
 
 		/*If the user didn't select a network security level before clicking continue or the selected
 		* security level could not be determined, redirect to the same page.*/
@@ -151,13 +153,13 @@ public class SECURITY_NETWORK implements Step {
 			if (isInPreset) {
 				//In a preset, go back a step
 				return FirstTimeWizardToadlet.getPreviousStep(
-				        FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK, persistFields.preset).name();
+				        WizardStep.SECURITY_NETWORK, persistFields.preset).name();
 			}
 
 			//Not in a preset, redisplay level choice.
-			return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_NETWORK.name();
+			return WizardStep.SECURITY_NETWORK.name();
 		}
-		if((newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == SecurityLevels.NETWORK_THREAT_LEVEL.HIGH)) {
+		if((newThreatLevel == NetworkThreatLevel.MAXIMUM || newThreatLevel == NetworkThreatLevel.HIGH)) {
 			//Make the user aware of the effects of high or maximum network threat if selected.
 			//They must check a box acknowledging its affects to proceed.
 			if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
@@ -174,14 +176,14 @@ public class SECURITY_NETWORK implements Step {
 		//The user selected low or normal security, or confirmed high or maximum. Set the configuration
 		//and continue to the physical security step.
 		setThreatLevel(newThreatLevel);
-		return FirstTimeWizardToadlet.WIZARD_STEP.SECURITY_PHYSICAL.name();
+		return WizardStep.SECURITY_PHYSICAL.name();
 	}
 
 	private void displayConfirmationBox(StringBuilder redirectTo, String networkThreatLevel) {
 		redirectTo.append("&confirm=true&security-levels.networkThreatLevel=").append(networkThreatLevel);
 	}
 
-	public void setThreatLevel(SecurityLevels.NETWORK_THREAT_LEVEL level) {
+	public void setThreatLevel(NetworkThreatLevel level) {
 		core.node.securityLevels.setThreatLevel(level);
 		core.storeConfig();
 	}

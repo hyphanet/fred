@@ -1,6 +1,7 @@
 package freenet.clients.http.wizardsteps;
 
 import freenet.clients.http.*;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.Option;
@@ -11,15 +12,15 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step is the first, and provides a small welcome screen and an option to change the language.
  */
-public class WELCOME implements Step {
+public class Welcome implements Step {
 
 	private final Config config;
 
 	/**
-	 * Constructs a new WELCOME GET handler.
+	 * Constructs a new Welcome GET handler.
 	 * @param config Node config; cannot be null. Used to build language drop-down and change language.
 	 */
-	public WELCOME(Config config) {
+	public Welcome(Config config) {
 		this.config = config;
 	}
 	/**
@@ -70,7 +71,7 @@ public class WELCOME implements Step {
 			//Doing so would be really annoying as the node would have to start up again
 			//which could be very slow.
 		}
-		return FirstTimeWizardToadlet.WIZARD_STEP.WELCOME.name();
+		return WizardStep.WELCOME.name();
 	}
 
 	/**

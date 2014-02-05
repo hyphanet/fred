@@ -40,7 +40,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
-import freenet.io.comm.IncomingPacketFilter.DECODED;
+import freenet.io.comm.IncomingPacketFilter.Decoded;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
@@ -203,7 +203,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 *
 	 */
 
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public Decoded process(byte[] buf, int offset, int length, Peer peer, long now) {
 		/**
 		 * Look up the Peer.
 		 * If we know it, check the packet with that key.
@@ -220,7 +220,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * Packets generated should have a PeerNode on them.
 	 * Note that the buffer can be modified by this method.
 	 */
-	public DECODED process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
+	public Decoded process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
 
 		if(opn != null && opn.getOutgoingMangler() != this) {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
@@ -233,17 +233,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
 				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
-					return DECODED.DECODED;
+					return Decoded.DECODED;
 				}
 				// Might be a reply to us sending an anon auth packet.
 				// I.e. we are not the seednode, they are.
 				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
-					return DECODED.DECODED;
+					return Decoded.DECODED;
 				}
 			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
-		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
+		if(node.isStopping()) return Decoded.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
 			for(PeerNode pn: peers) {
@@ -251,13 +251,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				if(logDEBUG)
 					Logger.debug(this, "Trying auth with "+pn);
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
-					return DECODED.DECODED;
+					return Decoded.DECODED;
 				}
 				if(pn.handshakeUnknownInitiator()) {
 					// Might be a reply to us sending an anon auth packet.
 					// I.e. we are not the seednode, they are.
 					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
-						return DECODED.DECODED;
+						return Decoded.DECODED;
 					}
 				}
 			}
@@ -266,7 +266,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		boolean wantAnonAuthChangeIP = wantAnonAuth && crypto.wantAnonAuthChangeIP();
 		
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
-			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return DECODED.DECODED;
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return Decoded.DECODED;
 		}
 
 		boolean didntTryOldOpennetPeers;
@@ -277,7 +277,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				// We want a peer.
 				// Try old connections.
 				for(PeerNode oldPeer: opennet.getOldPeers()) {
-					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true, now)) return DECODED.DECODED;
+					if(tryProcessAuth(buf, offset, length, oldPeer, peer, true, now)) return Decoded.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
@@ -286,14 +286,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			didntTryOldOpennetPeers = false;
 		if(wantAnonAuth) {
 			if(tryProcessAuthAnon(buf, offset, length, peer))
-				return DECODED.DECODED;
+				return Decoded.DECODED;
 		}
 		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
 				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
 				//Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
-				return DECODED.DECODED;
+				return Decoded.DECODED;
 			}
 		}
 
@@ -305,9 +305,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
                     Logger.normal(this,"Unmatchable packet from "+peer);
                 
                 if(!didntTryOldOpennetPeers)
-                	return DECODED.NOT_DECODED;
+                	return Decoded.NOT_DECODED;
                 else
-                	return DECODED.DIDNT_WANT_OPENNET;
+                	return Decoded.DIDNT_WANT_OPENNET;
 	}
 	
 	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
@@ -813,7 +813,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		    try {
 		    	sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
 		    } catch (NoContextsException e) {
-		    	handleNoContextsException(e, NoContextsException.CONTEXT.REPLYING);
+		    	handleNoContextsException(e, Context.REPLYING);
 		    	return;
 		    }
 		} else {
@@ -830,7 +830,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private static long LOG_NO_CONTEXTS_INTERVAL = MINUTES.toMillis(1);
 
 	private void handleNoContextsException(NoContextsException e,
-			freenet.node.FNPPacketMangler.NoContextsException.CONTEXT context) {
+			Context context) {
 		if(node.getUptime() < SECONDS.toMillis(30)) {
 			Logger.warning(this, "No contexts available, unable to handle or send packet ("+context+") on "+this);
 			return;
@@ -2197,7 +2197,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		try {
 			sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		} catch (NoContextsException e) {
-			handleNoContextsException(e, NoContextsException.CONTEXT.SENDING);
+			handleNoContextsException(e, Context.SENDING);
 			return;
 		}
 		if(logMINOR)
@@ -2386,16 +2386,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         if(logMINOR) Logger.minor(this, "getECDHLightContext() is serving "+result.hashCode());
         return result;
     }
-    
+
+	private enum Context {
+		SENDING,
+		REPLYING
+	};
+
     @SuppressWarnings("serial")
 	private static class NoContextsException extends Exception {
-    	
-    	private enum CONTEXT {
-    		SENDING,
-    		REPLYING
-    	};
     }
-	
+
 
 	/**
 	 * Used in processJFK[3|4]

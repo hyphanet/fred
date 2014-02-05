@@ -38,8 +38,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.ObjectContainer;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.PageMaker.Theme;
 import freenet.clients.http.QueueToadlet;
-import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -47,17 +47,16 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.l10n.BaseL10n.Language;
 import freenet.l10n.NodeL10n;
-import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.SecurityLevelListener;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.fcp.ClientPut;
+import freenet.node.fcp.ClientPut.CompressState;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.PluginManager.PluginProgress.ProgressState;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
@@ -98,7 +97,7 @@ public class PluginManager {
 
 	private static PluginManager selfinstance = null;
 
-	private THEME fproxyTheme;
+	private Theme fproxyTheme;
 
 	private final SerialExecutor executor;
 
@@ -220,7 +219,7 @@ public class PluginManager {
 
 		pmconfig.finishedInitialization();
 
-		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
+		fproxyTheme = Theme.themeFromName(node.config.get("fproxy").getString("css"));
 		selfinstance = this;
 	}
 
@@ -391,7 +390,7 @@ public class PluginManager {
 			plug = loadPlugin(pdl, filename, pluginProgress, ignoreOld);
 			if (plug == null)
 				return null; // Already loaded
-			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
+			pluginProgress.setProgress(ProgressState.STARTING);
 			pi = new PluginInfoWrapper(node, plug, filename, pdl.isOfficialPluginLoader());
 			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
@@ -1565,7 +1564,7 @@ public class PluginManager {
 	 */
 	public static class PluginProgress {
 
-		enum PROGRESS_STATE {
+		enum ProgressState {
 			DOWNLOADING,
 			STARTING
 		}
@@ -1573,7 +1572,7 @@ public class PluginManager {
 		/** The starting time. */
 		private long startingTime = System.currentTimeMillis();
 		/** The current state. */
-		private PROGRESS_STATE pluginProgress;
+		private ProgressState pluginProgress;
 		/** The name by which the plugin is loaded. */
 		private String name;
 		/** Total. Might be bytes, might be blocks. */
@@ -1597,7 +1596,7 @@ public class PluginManager {
 		 */
 		PluginProgress(String name, PluginDownLoader<?> pdl) {
 			this.name = name;
-			pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			pluginProgress = ProgressState.DOWNLOADING;
 			loader = pdl;
 		}
 
@@ -1630,7 +1629,7 @@ public class PluginManager {
 		 *
 		 * @return The current state of the plugin
 		 */
-		public PROGRESS_STATE getProgress() {
+		public ProgressState getProgress() {
 			return pluginProgress;
 		}
 
@@ -1640,7 +1639,7 @@ public class PluginManager {
 		 * @param pluginProgress
 		 *            The current state
 		 */
-		void setProgress(PROGRESS_STATE state) {
+		void setProgress(ProgressState state) {
 			this.pluginProgress = state;
 		}
 
@@ -1658,29 +1657,29 @@ public class PluginManager {
 		}
 
 		public String toLocalisedString() {
-			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0)
+			if(pluginProgress == ProgressState.DOWNLOADING && total > 0)
 				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+"%";
-			else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
+			else if(pluginProgress == ProgressState.DOWNLOADING)
 				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading");
-			else if(pluginProgress == PROGRESS_STATE.STARTING)
+			else if(pluginProgress == ProgressState.STARTING)
 				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting");
 			else
 				return toString();
 		}
 
 		public HTMLNode toLocalisedHTML() {
-			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0) {
-				return QueueToadlet.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
-			} else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
+			if(pluginProgress == ProgressState.DOWNLOADING && total > 0) {
+				return QueueToadlet.createProgressCell(false, true, CompressState.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
+			} else if(pluginProgress == ProgressState.DOWNLOADING)
 				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading"));
-			else if(pluginProgress == PROGRESS_STATE.STARTING)
+			else if(pluginProgress == ProgressState.STARTING)
 				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting"));
 			else
 				return new HTMLNode("td", toString());
 		}
 
 		public void setDownloadProgress(int minSuccess, int current, int total, int failed, int fatallyFailed, boolean finalised) {
-			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			this.pluginProgress = ProgressState.DOWNLOADING;
 			this.total = total;
 			this.current = current;
 			this.minSuccessful = minSuccess;
@@ -1690,7 +1689,7 @@ public class PluginManager {
 		}
 
 		public void setDownloading() {
-			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			this.pluginProgress = ProgressState.DOWNLOADING;
 		}
 		
 		public boolean isOfficialPlugin() {
@@ -1709,7 +1708,7 @@ public class PluginManager {
 		return l10n("pluginName."+pluginName);
 	}
 
-	public void setFProxyTheme(final THEME cssName) {
+	public void setFProxyTheme(final Theme cssName) {
 		//if (fproxyTheme.equals(cssName)) return;
 		fproxyTheme = cssName;
 		synchronized(pluginWrappers) {
@@ -1731,12 +1730,12 @@ public class PluginManager {
 		}
 	}
 
-	public static void setLanguage(LANGUAGE lang) {
+	public static void setLanguage(Language lang) {
 		if (selfinstance == null) return;
 		selfinstance.setPluginLanguage(lang);
 	}
 
-	private void setPluginLanguage(final LANGUAGE lang) {
+	private void setPluginLanguage(final Language lang) {
 		synchronized(pluginWrappers) {
 			for(PluginInfoWrapper pi: pluginWrappers) {
 				if(pi.isL10nPlugin()) {
@@ -1766,7 +1765,7 @@ public class PluginManager {
 		}
 	}
 
-	public THEME getFProxyTheme() {
+	public Theme getFProxyTheme() {
 		return fproxyTheme;
 	}
 

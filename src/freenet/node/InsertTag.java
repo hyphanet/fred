@@ -10,18 +10,18 @@ import freenet.support.TimeUtil;
 public class InsertTag extends UIDTag {
 	
 	final boolean ssk;
-	
-	enum START {
+
+	enum Start {
 		LOCAL,
 		REMOTE
 	}
-	
-	final START start;
+
+	final Start start;
 	private Throwable handlerThrew;
 	private boolean senderStarted;
 	private boolean senderFinished;
-	
-	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+
+	InsertTag(boolean ssk, Start start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.ssk = ssk;

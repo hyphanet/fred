@@ -25,8 +25,8 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -185,7 +185,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             		(input[3] & 0xff);
             if(len > maxLength)
                 throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
-            COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
+            CompressorType decompressor = CompressorType.getCompressorByMetadataID(compressionAlgorithm);
             if (decompressor==null)
             	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
             InputStream inputStream = null;
@@ -256,8 +256,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
-        			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressordescriptor, pre1254);
-					for (COMPRESSOR_TYPE comp : comps) {
+        			CompressorType[] comps = CompressorType.getCompressorsArray(compressordescriptor, pre1254);
+					for (CompressorType comp : comps) {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(

@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
@@ -18,12 +18,12 @@ import freenet.support.io.FileUtil;
 /**
  * Allows the user to select datastore size, considering available storage space when offering options.
  */
-public class DATASTORE_SIZE implements Step {
+public class DataStoreSize implements Step {
 
 	private final NodeClientCore core;
 	private final Config config;
 
-	public DATASTORE_SIZE(NodeClientCore core, Config config) {
+	public DataStoreSize(NodeClientCore core, Config config) {
 		this.config = config;
 		this.core = core;
 	}
@@ -94,7 +94,7 @@ public class DATASTORE_SIZE implements Step {
 	public String postStep(HTTPRequest request) {
 		// drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 		_setDatastoreSize(request.getPartAsStringFailsafe("ds", 20));
-		return FirstTimeWizardToadlet.WIZARD_STEP.BANDWIDTH.name();
+		return WizardStep.BANDWIDTH.name();
 	}
 
 	private void _setDatastoreSize(String selectedStoreSize) {

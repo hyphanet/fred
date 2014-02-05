@@ -20,7 +20,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
-import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.PageMaker.Theme;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.config.EnumerableOptionCallback;
@@ -37,8 +37,8 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
 import freenet.node.SecurityLevelListener;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NetworkThreatLevel;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
@@ -89,9 +89,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private final AllowedHosts allowedFullAccess;
 	private boolean publicGatewayMode;
 	private final boolean wasPublicGatewayMode;
-	
-	// Theme 
-	private THEME cssTheme;
+
+	// Theme
+	private Theme cssTheme;
 	private File cssOverride;
 	private boolean sendAllThemes;
 	private boolean advancedModeEnabled;
@@ -255,7 +255,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		public void set(String CSSName) throws InvalidConfigValueException {
 			if((CSSName.indexOf(':') != -1) || (CSSName.indexOf('/') != -1))
 				throw new InvalidConfigValueException(l10n("illegalCSSName"));
-			cssTheme = THEME.themeFromName(CSSName);
+			cssTheme = Theme.themeFromName(CSSName);
 			pageMaker.setTheme(cssTheme);
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if (core.node.pluginManager != null)
@@ -264,7 +264,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		@Override
 		public String[] getPossibleValues() {
-			return THEME.possibleValues;
+			return Theme.possibleValues;
 		}
 	}
 	private class FProxyCSSOverrideCallback extends StringCallback  {
@@ -761,7 +761,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		String cssName = fproxyConfig.getString("css");
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
-		cssTheme = THEME.themeFromName(cssName);
+		cssTheme = Theme.themeFromName(cssName);
 		pageMaker = new PageMaker(cssTheme, node);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
@@ -844,27 +844,27 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	public void finishStart() {
-		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NetworkThreatLevel>() {
 
 			@Override
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
-					NETWORK_THREAT_LEVEL newLevel) {
+			public void onChange(NetworkThreatLevel oldLevel,
+					NetworkThreatLevel newLevel) {
 				// At LOW, we do ACCEPT_OLD.
 				// Otherwise we do RE_FILTER.
 				// But we don't change it unless it changes from LOW to not LOW.
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+				if(newLevel == NetworkThreatLevel.LOW && newLevel != oldLevel) {
 					refilterPolicy = REFILTER_POLICY.ACCEPT_OLD;
-				} else if(oldLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+				} else if(oldLevel == NetworkThreatLevel.LOW && newLevel != oldLevel) {
 					refilterPolicy = REFILTER_POLICY.RE_FILTER;
 				}
 			}
 			
 		});
-		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PhysicalThreatLevel> () {
 
 			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel != oldLevel && newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+			public void onChange(PhysicalThreatLevel oldLevel, PhysicalThreatLevel newLevel) {
+				if(newLevel != oldLevel && newLevel == PhysicalThreatLevel.LOW) {
 					isPanicButtonToBeShown = false;
 				} else if(newLevel != oldLevel) {
 					isPanicButtonToBeShown = true;
@@ -1055,7 +1055,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 
 	@Override
-	public THEME getTheme() {
+	public Theme getTheme() {
 		return this.cssTheme;
 	}
 
@@ -1065,7 +1065,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return core.alerts;
 	}
 
-	public void setCSSName(THEME theme) {
+	public void setCSSName(Theme theme) {
 		this.cssTheme = theme;
 	}
 

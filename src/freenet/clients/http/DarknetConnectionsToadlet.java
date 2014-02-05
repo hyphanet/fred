@@ -8,8 +8,8 @@ import java.util.HashMap;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.DarknetPeerNode.FriendTrust;
+import freenet.node.DarknetPeerNode.FriendVisibility;
 import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -175,13 +175,13 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		peerForm.addChild("br");
 		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doChangeTrust", l10n("changeTrustButton") });
 		HTMLNode changeTrustLevelSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "changeTrust", "changeTrust" });
-		for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) {
+		for(FriendTrust trust : FriendTrust.valuesBackwards()) {
 			changeTrustLevelSelect.addChild("option", "value", trust.name(), l10n("peerTrust."+trust.name()));
 		}
 		peerForm.addChild("br");
 		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doChangeVisibility", l10n("changeVisibilityButton") });
 		HTMLNode changeVisibilitySelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "changeVisibility", "changeVisibility" });
-		for(FRIEND_VISIBILITY trust : FRIEND_VISIBILITY.values()) {
+		for(FriendVisibility trust : FriendVisibility.values()) {
 			changeVisibilitySelect.addChild("option", "value", trust.name(), l10n("peerVisibility."+trust.name()));
 		}
 	}
@@ -369,7 +369,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("changeTrust") && request.isPartSet("doChangeTrust")) {
-			FRIEND_TRUST trust = FRIEND_TRUST.valueOf(request.getPartAsStringFailsafe("changeTrust", 10));
+			FriendTrust trust = FriendTrust.valueOf(request.getPartAsStringFailsafe("changeTrust", 10));
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			for(DarknetPeerNode pn: peerNodes) {
 				if (request.isPartSet("node_"+pn.hashCode())) {	
@@ -379,7 +379,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("changeVisibility") && request.isPartSet("doChangeVisibility")) {
-			FRIEND_VISIBILITY trust = FRIEND_VISIBILITY.valueOf(request.getPartAsStringFailsafe("changeVisibility", 10));
+			FriendVisibility trust = FriendVisibility.valueOf(request.getPartAsStringFailsafe("changeVisibility", 10));
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			for(DarknetPeerNode pn: peerNodes) {
 				if (request.isPartSet("node_"+pn.hashCode())) {	

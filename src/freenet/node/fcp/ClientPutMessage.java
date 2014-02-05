@@ -20,7 +20,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.FileBucket;
 
@@ -258,9 +258,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 		earlyEncode = fs.getBoolean("EarlyEncode", false);
 		String codecs = fs.get("Codecs");
 		if (codecs != null) {
-			COMPRESSOR_TYPE[] ca;
+			CompressorType[] ca;
 			try {
-				ca = COMPRESSOR_TYPE.getCompressorsArrayNoDefault(codecs);
+				ca = CompressorType.getCompressorsArrayNoDefault(codecs);
 			} catch (InvalidCompressionCodecException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(), identifier, global);
 			}

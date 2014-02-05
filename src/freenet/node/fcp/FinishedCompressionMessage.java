@@ -8,7 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.CompressorType;
 
 public class FinishedCompressionMessage extends FCPMessage {
 
@@ -44,7 +44,7 @@ public class FinishedCompressionMessage extends FCPMessage {
 		fs.putSingle("Identifier", identifier);
 		fs.put("Codec", codec);
 		if(codec != -1)
-			fs.putSingle("Codec.Name", Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)codec).name());
+			fs.putSingle("Codec.Name", CompressorType.getCompressorByMetadataID((short) codec).name());
 		else
 			fs.putSingle("Codec.Name", "NONE");
 		fs.put("OriginalSize", origSize);

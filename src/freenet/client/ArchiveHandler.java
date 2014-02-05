@@ -5,7 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
@@ -52,7 +52,7 @@ public interface ArchiveHandler {
 	/**
 	 * Get the archive type.
 	 */
-	public abstract ARCHIVE_TYPE getArchiveType();
+	public abstract ArchiveType getArchiveType();
 
 	/**
 	 * Get the key.

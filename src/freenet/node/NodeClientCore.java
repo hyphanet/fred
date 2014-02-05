@@ -60,8 +60,9 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
+import freenet.node.InsertTag.Start;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.SecurityLevels.PhysicalThreatLevel;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -341,11 +342,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(container != null)
 		    migratePluginStores(container);
 
-		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PhysicalThreatLevel>() {
 
 			@Override
-			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+			public void onChange(PhysicalThreatLevel oldLevel, PhysicalThreatLevel newLevel) {
+				if(newLevel == PhysicalThreatLevel.LOW) {
 					if(tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(false);
 					}
@@ -354,7 +355,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						persistentTempBucketFactory.setEncryption(false);
 					}
 					}
-				} else { // newLevel >= PHYSICAL_THREAT_LEVEL.NORMAL
+				} else { // newLevel >= PhysicalThreatLevel.NORMAL
 					if(!tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(true);
 					}
@@ -897,7 +898,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public void asyncGet(final Key key, boolean offersOnly, final RequestCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag, boolean localOnly, boolean ignoreStore) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
-		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
+		final RequestTag tag = new RequestTag(isSSK, RequestTag.Start.ASYNC_GET, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Could not lock random UID - serious PRNG problem???"));
@@ -1138,7 +1139,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
+		RequestTag tag = new RequestTag(false, RequestTag.Start.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1263,7 +1264,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
+		RequestTag tag = new RequestTag(true, RequestTag.Start.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1398,7 +1399,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
+		InsertTag tag = new InsertTag(false, Start.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
@@ -1518,7 +1519,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
+		InsertTag tag = new InsertTag(true, Start.LOCAL, null, realTimeFlag, uid, node);
 		if(!tracker.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
@@ -1777,8 +1778,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public boolean allowDownloadTo(File filename) {
-		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
-		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) return false;
+		PhysicalThreatLevel physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
+		if(physicalThreatLevel == PhysicalThreatLevel.MAXIMUM) return false;
 		synchronized(this) {
 			if(downloadAllowedEverywhere) return true;
 			if(includeDownloadDir && FileUtil.isParent(getDownloadsDir(), filename)) return true;

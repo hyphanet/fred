@@ -495,8 +495,8 @@ public class ClientPut extends ClientPutBase {
 		}
 		super.requestWasRemoved(container, context);
 	}
-	
-	public enum COMPRESS_STATE {
+
+	public enum CompressState {
 		/** Waiting for a slot on the compression scheduler */
 		WAITING,
 		/** Compressing the data */
@@ -506,15 +506,15 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	/** Probably not meaningful for ClientPutDir's */
-	public COMPRESS_STATE isCompressing(ObjectContainer container) {
+	public CompressState isCompressing(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) container.activate(ctx, 1);
-		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
+		if(ctx.dontCompress) return CompressState.WORKING;
 		synchronized(this) {
-			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
+			if(progressMessage == null) return CompressState.WAITING; // An insert starts at compressing
 			// The progress message persists... so we need to know whether we have
 			// started compressing *SINCE RESTART*.
-			if(compressing) return COMPRESS_STATE.COMPRESSING;
-			return COMPRESS_STATE.WORKING;
+			if(compressing) return CompressState.COMPRESSING;
+			return CompressState.WORKING;
 		}
 	}
 
@@ -526,7 +526,7 @@ public class ClientPut extends ClientPutBase {
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				cache.updateCompressionStatus(identifier, COMPRESS_STATE.COMPRESSING);
+				cache.updateCompressionStatus(identifier, CompressState.COMPRESSING);
 			}
 		}
 	}
@@ -539,7 +539,7 @@ public class ClientPut extends ClientPutBase {
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				cache.updateCompressionStatus(identifier, COMPRESS_STATE.WORKING);
+				cache.updateCompressionStatus(identifier, CompressState.WORKING);
 			}
 		}
 	}

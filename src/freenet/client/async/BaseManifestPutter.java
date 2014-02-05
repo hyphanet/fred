@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
@@ -21,7 +22,6 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
@@ -103,7 +103,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
 			super(bmp, parent, name, null, containerPutHandlers, null);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ArchiveType.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -172,7 +172,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap, null);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ArchiveType.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override

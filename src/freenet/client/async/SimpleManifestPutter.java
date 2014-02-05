@@ -23,7 +23,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.ArchiveManager.ArchiveType;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
@@ -1002,7 +1002,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 		InsertBlock block;
 		boolean isMetadata = true;
-		ARCHIVE_TYPE archiveType = null;
+		ArchiveType archiveType = null;
 		byte[] ckey = null;
 		if(!(elementsToPutInArchive.isEmpty())) {
 			// If it's just metadata don't random-encrypt it.
@@ -1015,9 +1015,9 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			try {
 				Bucket outputBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
-				archiveType = ARCHIVE_TYPE.getDefault();
+				archiveType = ArchiveType.getDefault();
 				os = new BufferedOutputStream(outputBucket.getOutputStream());
-				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
+				String mimeType = (archiveType == ArchiveType.TAR ?
 					createTarBucket(bucket, os, container) :
 					createZipBucket(bucket, os, container));
 				if(logMINOR)
@@ -1051,7 +1051,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ArchiveType.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1117,7 +1117,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		tarOS.closeArchiveEntry();
 		tarOS.close();
 
-		return ARCHIVE_TYPE.TAR.mimeTypes[0];
+		return ArchiveType.TAR.mimeTypes[0];
 	}
 
 	private String createZipBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
@@ -1148,7 +1148,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		// Both finish() and close() are necessary.
 		zos.finish();
 
-		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
+		return ArchiveType.ZIP.mimeTypes[0];
 	}
 
 	/**

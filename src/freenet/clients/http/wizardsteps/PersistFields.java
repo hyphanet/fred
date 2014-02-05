@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardPreset;
 import freenet.support.Fields;
 import freenet.support.api.HTTPRequest;
 
@@ -10,7 +10,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class PersistFields {
 
-	public final FirstTimeWizardToadlet.WIZARD_PRESET preset;
+	public final WizardPreset preset;
 	public final boolean opennet;
 
 	/**
@@ -34,14 +34,14 @@ public class PersistFields {
 	 * @param preset Set manually
 	 * @param request Parsed for remaining fields. (opennet)
 	 */
-	public PersistFields(FirstTimeWizardToadlet.WIZARD_PRESET preset, HTTPRequest request) {
+	public PersistFields(WizardPreset preset, HTTPRequest request) {
 		this.preset = preset;
 		this.opennet = parseOpennet(request);
 	}
 
-	private FirstTimeWizardToadlet.WIZARD_PRESET parsePreset(HTTPRequest request) {
+	private WizardPreset parsePreset(HTTPRequest request) {
 		String presetRaw;
-		FirstTimeWizardToadlet.WIZARD_PRESET preset;
+		WizardPreset preset;
 
 		if (request.hasParameters()) {
 			presetRaw = request.getParam("preset");
@@ -50,7 +50,7 @@ public class PersistFields {
 		}
 
 		try {
-			preset = FirstTimeWizardToadlet.WIZARD_PRESET.valueOf(presetRaw);
+			preset = WizardPreset.valueOf(presetRaw);
 		} catch (IllegalArgumentException e) {
 			preset = null;
 		}

@@ -190,12 +190,12 @@ public abstract class BaseSender implements ByteCounter {
         
 loadWaiterLoop:
         while(true) {
-        	DO action = waitForAccepted(null, next, origTag);
+        	Do action = waitForAccepted(null, next, origTag);
         	// Here FINISHED means accepted, WAIT means try again (soft reject).
-        	if(action == DO.WAIT) {
+        	if(action == Do.WAIT) {
 				//retriedForLoadManagement = true;
         		continue loadWaiterLoop;
-        	} else if(action == DO.NEXT_PEER) {
+        	} else if(action == Do.NEXT_PEER) {
             	routeRequests();
             	return;
         	} else { // FINISHED => accepted
@@ -521,13 +521,13 @@ loadWaiterLoop:
     		}
         	
     		if(logMINOR) Logger.minor(this, "Waiting for accepted");
-        	DO action = waitForAccepted(expectedAcceptState, next, origTag);
+        	Do action = waitForAccepted(expectedAcceptState, next, origTag);
         	// Here FINISHED means accepted, WAIT means try again (soft reject).
-        	if(action == DO.WAIT) {
+        	if(action == Do.WAIT) {
 				retriedForLoadManagement = true;
 				if(logMINOR) Logger.minor(this, "Retrying");
         		continue loadWaiterLoop;
-        	} else if(action == DO.NEXT_PEER) {
+        	} else if(action == Do.NEXT_PEER) {
 				if(logMINOR) Logger.minor(this, "Trying next peer");
 	        	routeRequests();
 	        	return;
@@ -599,7 +599,7 @@ loadWaiterLoop:
 	private int rejectedLoops;
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
-    private DO waitForAccepted(RequestLikelyAcceptedState expectedAcceptState, PeerNode next, UIDTag origTag) {
+    private Do waitForAccepted(RequestLikelyAcceptedState expectedAcceptState, PeerNode next, UIDTag origTag) {
     	while(true) {
     		
     		Message msg;
@@ -612,7 +612,7 @@ loadWaiterLoop:
     		} catch (DisconnectedException e) {
     			Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
     			next.noLongerRoutingTo(origTag, false);
-    			return DO.NEXT_PEER;
+    			return Do.NEXT_PEER;
     		}
     		
     		if(msg == null) {
@@ -627,7 +627,7 @@ loadWaiterLoop:
     			}
     			// Try next node
     			handleAcceptedRejectedTimeout(next, origTag);
-    			return DO.NEXT_PEER;
+    			return Do.NEXT_PEER;
     		}
     		
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
@@ -637,7 +637,7 @@ loadWaiterLoop:
     			node.failureTable.onFailed(key, next, htl, t, t);
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
-    			return DO.NEXT_PEER;
+    			return Do.NEXT_PEER;
     		}
     		
     		if(msg.getSpec() == DMT.FNPRejectedOverload) {
@@ -667,7 +667,7 @@ loadWaiterLoop:
     							next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
     						}
     					}
-    					return DO.WAIT;
+    					return Do.WAIT;
     				}
     				
         			forwardRejectedOverload();
@@ -677,7 +677,7 @@ loadWaiterLoop:
     				if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     				// Give up on this one, try another
     				next.noLongerRoutingTo(origTag, false);
-    				return DO.NEXT_PEER;
+    				return Do.NEXT_PEER;
     			} else {
         			forwardRejectedOverload();
     			}
@@ -687,13 +687,13 @@ loadWaiterLoop:
     		
     		if(!isAccepted(msg)) {
     			Logger.error(this, "Unrecognized message: "+msg);
-    			return DO.NEXT_PEER;
+    			return Do.NEXT_PEER;
     		}
     		
     		next.resetMandatoryBackoff(realTimeFlag);
     		next.outputLoadTracker(realTimeFlag).clearDontSendUnlessGuaranteed();
-    		return DO.FINISHED;
-    		
+    		return Do.FINISHED;
+
     	}
 	}
 
@@ -714,8 +714,8 @@ loadWaiterLoop:
 	protected abstract void timedOutWhileWaiting(double load);
 	
 	protected abstract void onAccepted(PeerNode next);
-	
-	protected static enum DO {
+
+	protected static enum Do {
     	FINISHED,
     	WAIT,
     	NEXT_PEER

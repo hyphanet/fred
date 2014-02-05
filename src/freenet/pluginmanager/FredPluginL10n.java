@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n.Language;
 
 /**
  * Interface that has to be implemented for plugins that wants to use
@@ -14,6 +14,6 @@ import freenet.l10n.BaseL10n.LANGUAGE;
 public interface FredPluginL10n {
 
 	public String getString(String key);
-	
-	public void setLanguage(LANGUAGE newLanguage);
+
+	public void setLanguage(Language newLanguage);
 }

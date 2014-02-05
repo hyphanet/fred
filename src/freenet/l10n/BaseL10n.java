@@ -35,7 +35,7 @@ import freenet.support.io.FileUtil;
 public class BaseL10n {
 
 	/** @see "http://www.omniglot.com/language/names.htm" */
-	public enum LANGUAGE {
+	public enum Language {
 
 		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
 		// See http://www.autohotkey.com/docs/misc/Languages.htm
@@ -66,25 +66,25 @@ public class BaseL10n {
 		public final String isoCode;
 		public final String[] aliases;
 
-		private LANGUAGE(String shortCode, String fullName, String isoCode, String[] aliases) {
+		private Language(String shortCode, String fullName, String isoCode, String[] aliases) {
 			this.shortCode = shortCode;
 			this.fullName = fullName;
 			this.isoCode = isoCode;
 			this.aliases = aliases;
 		}
 
-		LANGUAGE(LANGUAGE l) {
+		Language(Language l) {
 			this(l.shortCode, l.fullName, l.isoCode, l.aliases);
 		}
 
 		/**
-		 * Create a new LANGUAGE object from either its short code, its full
+		 * Create a new Language object from either its short code, its full
 		 * name or its ISO code.
 		 * @param whatever Short code, full name or ISO code.
-		 * @return LANGUAGE
+		 * @return Language
 		 */
-		public static LANGUAGE mapToLanguage(String whatever) {
-			for (LANGUAGE currentLanguage : LANGUAGE.values()) {
+		public static Language mapToLanguage(String whatever) {
+			for (Language currentLanguage : Language.values()) {
 				if (currentLanguage.shortCode.equalsIgnoreCase(whatever) ||
 						currentLanguage.fullName.equalsIgnoreCase(whatever) ||
 						currentLanguage.isoCode.equalsIgnoreCase(whatever) ||
@@ -100,7 +100,7 @@ public class BaseL10n {
 		}
 
 		public static String[] valuesWithFullNames() {
-			LANGUAGE[] allValues = values();
+			Language[] allValues = values();
 			String[] result = new String[allValues.length];
 			for (int i = 0; i < allValues.length; i++) {
 				result[i] = allValues[i].fullName;
@@ -109,12 +109,12 @@ public class BaseL10n {
 			return result;
 		}
 
-		public static LANGUAGE getDefault() {
+		public static Language getDefault() {
 			return ENGLISH;
 		}
 	}
-	
-	private LANGUAGE lang;
+
+	private Language lang;
 	private String l10nFilesBasePath;
 	private String l10nFilesMask;
 	private String l10nOverrideFilesMask;
@@ -134,10 +134,10 @@ public class BaseL10n {
 	}
 
 	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask) {
-		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, LANGUAGE.getDefault());
+		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, Language.getDefault());
 	}
 
-	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final LANGUAGE lang) {
+	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final Language lang) {
 		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, lang, getClassLoaderFallback());
 	}
 
@@ -151,7 +151,7 @@ public class BaseL10n {
 	 * @param lang Language to use.
 	 * @param cl ClassLoader to use.
 	 */
-	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final LANGUAGE lang, final ClassLoader cl) {
+	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final Language lang, final ClassLoader cl) {
 		if (!l10nFilesBasePath.endsWith("/")) {
 			l10nFilesBasePath += "/";
 		}
@@ -167,7 +167,7 @@ public class BaseL10n {
 	 * Get the full base name of the L10n file used by the current language.
 	 * @return String
 	 */
-	public String getL10nFileName(LANGUAGE lang) {
+	public String getL10nFileName(Language lang) {
 		return this.l10nFilesBasePath + this.l10nFilesMask.replace("${lang}", lang.shortCode);
 	}
 
@@ -175,7 +175,7 @@ public class BaseL10n {
 	 * Get the full base name of the L10n override file used by the current language.
 	 * @return String
 	 */
-	public String getL10nOverrideFileName(LANGUAGE lang) {
+	public String getL10nOverrideFileName(Language lang) {
 		return this.l10nOverrideFilesMask.replace("${lang}", lang.shortCode);
 	}
 
@@ -184,7 +184,7 @@ public class BaseL10n {
 	 * @param selectedLanguage New language to use.
 	 * @throws MissingResourceException If the l10n file could not be found.
 	 */
-	public void setLanguage(final LANGUAGE selectedLanguage) throws MissingResourceException {
+	public void setLanguage(final Language selectedLanguage) throws MissingResourceException {
 		if (selectedLanguage == null) {
 			throw new MissingResourceException("LANGUAGE given is null !", this.getClass().getName(), "");
 		}
@@ -234,7 +234,7 @@ public class BaseL10n {
 	 * @param lang Language to use.
 	 * @return SimpleFieldSet
 	 */
-	private SimpleFieldSet loadTranslation(LANGUAGE lang) {
+	private SimpleFieldSet loadTranslation(Language lang) {
 		SimpleFieldSet result = null;
 		InputStream in = null;
 
@@ -262,7 +262,7 @@ public class BaseL10n {
 	 */
 	private synchronized void loadFallback() {
 		if (this.fallbackTranslation == null) {
-			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
+			this.fallbackTranslation = loadTranslation(Language.getDefault());
 			if(fallbackTranslation == null)
 				fallbackTranslation = new SimpleFieldSet(true);
 		}
@@ -270,9 +270,9 @@ public class BaseL10n {
 
 	/**
 	 * Get the language currently used by this BaseL10n.
-	 * @return LANGUAGE
+	 * @return Language
 	 */
-	public LANGUAGE getSelectedLanguage() {
+	public Language getSelectedLanguage() {
 		return this.lang;
 	}
 

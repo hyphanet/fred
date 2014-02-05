@@ -15,7 +15,7 @@ import com.db4o.ObjectContainer;
 import freenet.support.Base64;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 
 /**
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
@@ -170,7 +170,7 @@ public class ClientCHK extends ClientKey {
 	static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
 	static {
 		for(byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256; cryptoAlgorithm <= Key.ALGO_AES_CTR_256_SHA256; cryptoAlgorithm++) {
-			for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(COMPRESSOR_TYPE.countCompressors()); compressionAlgorithm++) {
+			for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(CompressorType.countCompressors()); compressionAlgorithm++) {
 				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, true)));
 				standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, false)));
 			}

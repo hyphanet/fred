@@ -34,7 +34,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
@@ -188,10 +188,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	
         	insertKey = InsertableClientSSK.create(testKey);
         	fetchKey = ClientKSK.create(testKey);
-        	
-        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+
+        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, CompressorType.DEFAULT_COMPRESSORDESCRIPTOR, false);
         } else {
-        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
+        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, CompressorType.DEFAULT_COMPRESSORDESCRIPTOR, false);
         	insertKey = fetchKey = block.getClientKey();
         	testKey = insertKey.getURI();
         }

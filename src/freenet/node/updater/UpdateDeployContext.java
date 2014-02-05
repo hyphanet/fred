@@ -287,13 +287,13 @@ public class UpdateDeployContext {
 		return null;
 	}
 
-	public enum CHANGED {
+	public enum Changed {
 		ALREADY, // Found the comment, so it has already been changed
 		SUCCESS, // Succeeded
 		FAIL // Failed e.g. due to unable to write wrapper.conf.
 	}
 
-	public static CHANGED tryIncreaseMemoryLimit(int extraMemoryMB,
+	public static Changed tryIncreaseMemoryLimit(int extraMemoryMB,
 			String markerComment) {
 		// Rewrite wrapper.conf
 		// Don't just write it out from properties; we want to keep it as close to what it was as possible.
@@ -338,8 +338,8 @@ public class UpdateDeployContext {
 		while((line = br.readLine()) != null) {
 			
 			if(line.equals("#" + markerComment))
-				return CHANGED.ALREADY;
-			
+				return Changed.ALREADY;
+
 			if(line.startsWith("wrapper.java.maxmemory=")) {
 				try {
 					int memoryLimit = Integer.parseInt(line.substring("wrapper.java.maxmemory=".length()));
@@ -362,7 +362,7 @@ public class UpdateDeployContext {
 		} catch (IOException e) {
 			newConfig.delete();
 			System.err.println("Unable to rewrite wrapper.conf with new memory limit.");
-			return CHANGED.FAIL;
+			return Changed.FAIL;
 		} finally {
 			Closer.close(br);
 			Closer.close(isr);
@@ -377,7 +377,7 @@ public class UpdateDeployContext {
 			if(!newConfig.renameTo(oldConfig)) {
 				if(!oldConfig.delete()) {
 					System.err.println("Unable to move rewritten wrapper.conf with new memory limit "+newConfig+" over old config "+oldConfig+" : unable to delete old config");
-					return CHANGED.FAIL;
+					return Changed.FAIL;
 				}
 				if(!newConfig.renameTo(oldConfig)) {
 					System.err.println("Old wrapper.conf deleted but new wrapper.conf cannot be renamed!");
@@ -386,10 +386,10 @@ public class UpdateDeployContext {
 				}
 			}
 			System.err.println("Rewritten wrapper.conf for new memory limit");
-			return CHANGED.SUCCESS;
+			return Changed.SUCCESS;
 		} else {
 			newConfig.delete();
-			return CHANGED.FAIL;
+			return Changed.FAIL;
 		}
 	}
 

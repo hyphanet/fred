@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor.CompressorType;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
@@ -41,8 +42,8 @@ public class Bzip2CompressorTest extends TestCase {
 	 * test BZIP2 compressor's identity and functionality
 	 */
 	public void testBzip2Compressor() throws IOException {
-		Compressor.COMPRESSOR_TYPE bz2compressor = Compressor.COMPRESSOR_TYPE.BZIP2;
-		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)1);
+		CompressorType bz2compressor = CompressorType.BZIP2;
+		Compressor compressorZero = CompressorType.getCompressorByMetadataID((short) 1);
 
 		// check BZIP2 is the second compressor
 		assertEquals(bz2compressor, compressorZero);
@@ -87,7 +88,7 @@ public class Bzip2CompressorTest extends TestCase {
 
 		int writtenBytes = 0;
 
-		writtenBytes = Compressor.COMPRESSOR_TYPE.BZIP2.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+		writtenBytes = CompressorType.BZIP2.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 
 		assertEquals(originalUncompressedData.length, writtenBytes);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
@@ -105,7 +106,7 @@ public class Bzip2CompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32, 32);
+			CompressorType.BZIP2.compress(inBucket, factory, 32, 32);
 		} catch (CompressionOutputSizeException e) {
 			// expect this
 			return;
@@ -132,7 +133,7 @@ public class Bzip2CompressorTest extends TestCase {
 		try {
 			decompressorInput = inBucket.getInputStream();
 			decompressorOutput = outBucket.getOutputStream();
-			Compressor.COMPRESSOR_TYPE.BZIP2.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
+			CompressorType.BZIP2.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
 			decompressorInput.close();
 			decompressorOutput.close();
 		} catch (CompressionOutputSizeException e) {
@@ -152,7 +153,7 @@ public class Bzip2CompressorTest extends TestCase {
 		ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
 		ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
 
-		Compressor.COMPRESSOR_TYPE.BZIP2.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
+		CompressorType.BZIP2.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
 
 		byte[] outBuf = decompressorOutput.toByteArray();
 		try {
@@ -171,7 +172,7 @@ public class Bzip2CompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
-		outBucket = Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32768, 32768);
+		outBucket = CompressorType.BZIP2.compress(inBucket, factory, 32768, 32768);
 
 		InputStream in = null;
 		in = outBucket.getInputStream();

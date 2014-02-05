@@ -10,7 +10,7 @@ import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.SimpleFieldSet;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.CompressorType;
 
 /**
  * NodeHello
@@ -42,7 +42,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.put("Testnet", Node.isTestnetEnabled());
-		sfs.putSingle("CompressionCodecs", Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor());
+		sfs.putSingle("CompressionCodecs", CompressorType.getHelloCompressorDescriptor());
 		sfs.putSingle("ConnectionIdentifier", id);
 		sfs.putSingle("NodeLanguage", NodeL10n.getBase().getSelectedLanguage().toString());
 		return sfs;

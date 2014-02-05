@@ -27,8 +27,8 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
-import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
-import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FriendVisibility;
+import freenet.node.DarknetPeerNode.FriendTrust;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -637,15 +637,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				privateComment = request.getPartAsStringFailsafe("peerPrivateNote", 250).trim();
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
-			FRIEND_TRUST trust = null;
+			FriendTrust trust = null;
 			if(trustS != null && !trustS.equals(""))
-				trust = FRIEND_TRUST.valueOf(trustS);
-			
+				trust = FriendTrust.valueOf(trustS);
+
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
-			FRIEND_VISIBILITY visibility = null;
+			FriendVisibility visibility = null;
 			if(visibilityS != null && !visibilityS.equals(""))
-				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
-			
+				visibility = FriendVisibility.valueOf(visibilityS);
+
 			if(trust == null && !isOpennet()) {
 				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
 				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
@@ -761,7 +761,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param trust 
 	 * @param request To pull any extra fields from
 	 * @return The result of the addition*/
-	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
+	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FriendTrust trust, FriendVisibility visibility){
 		SimpleFieldSet fs;
 		
 		try {
@@ -903,7 +903,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("b", l10n("peerTrustTitle"));
 			peerAdditionForm.addChild("#", " ");
 			peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
-			for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
+			for(FriendTrust trust : FriendTrust.valuesBackwards()) { // FIXME reverse order
 				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
 				input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
 				input.addChild("#", ": ");
@@ -914,7 +914,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("b", l10n("peerVisibilityTitle"));
 			peerAdditionForm.addChild("#", " ");
 			peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
-			for(FRIEND_VISIBILITY trust : FRIEND_VISIBILITY.values()) { // FIXME reverse order
+			for(FriendVisibility trust : FriendVisibility.values()) { // FIXME reverse order
 				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", trust.name() });
 				input.addChild("b", l10n("peerVisibility."+trust.name())); // FIXME l10n
 				input.addChild("#", ": ");

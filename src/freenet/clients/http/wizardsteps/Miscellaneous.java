@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.l10n.NodeL10n;
@@ -12,12 +12,12 @@ import freenet.support.api.HTTPRequest;
 /**
  * Allows the user to choose whether to enable auto-updating, and what official utility plugins to install.
  */
-public class MISC implements Step {
+public class Miscellaneous implements Step {
 
 	private final Config config;
 	private final NodeClientCore core;
 
-	public MISC(NodeClientCore core, Config config) {
+	public Miscellaneous(NodeClientCore core, Config config) {
 		this.core = core;
 		this.config = config;
 	}
@@ -57,7 +57,7 @@ public class MISC implements Step {
 	public String postStep(HTTPRequest request) {
 		setAutoUpdate(Boolean.parseBoolean(request.getPartAsStringFailsafe("autodeploy", 10)));
 		setUPnP(request.isPartSet("upnp"));
-		return FirstTimeWizardToadlet.WIZARD_STEP.OPENNET.name();
+		return WizardStep.OPENNET.name();
 	}
 
 	/**

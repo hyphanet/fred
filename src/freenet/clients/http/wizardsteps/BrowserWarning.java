@@ -1,6 +1,6 @@
 package freenet.clients.http.wizardsteps;
 
-import freenet.clients.http.FirstTimeWizardToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet.WizardStep;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -8,7 +8,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * This step gives the user information about browser usage.
  */
-public class BROWSER_WARNING implements Step {
+public class BrowserWarning implements Step {
 
 	@Override
 	public void getStep(HTTPRequest request, PageHelper helper) {
@@ -61,7 +61,7 @@ public class BROWSER_WARNING implements Step {
 		} else {
 			infoBoxHeader = WizardL10n.l10n("browserWarningShort");
 		}
-		
+
 		HTMLNode infoboxContent = helper.getInfobox("infobox-normal", infoBoxHeader, contentNode, null, false);
 
 		if(isOldFirefox) {
@@ -107,6 +107,6 @@ public class BROWSER_WARNING implements Step {
 	 */
 	@Override
 	public String postStep(HTTPRequest request) {
-		return FirstTimeWizardToadlet.WIZARD_STEP.MISC.name();
+		return WizardStep.MISC.name();
 	}
 }
