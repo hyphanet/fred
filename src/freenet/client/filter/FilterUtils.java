@@ -10,6 +10,8 @@ public class FilterUtils {
 	static {
 	    Logger.registerClass(FilterUtils.class);
 	}
+	
+	private final static int MAX_NTH = 999999;  // Limit range of numbers allowed in isNth, due to incorrect behavior found in webkit based browsers.
 
 	//Basic Data types
 	public static boolean isInteger(String strValue)
@@ -703,24 +705,36 @@ public class FilterUtils {
 		}
 		return true;
 	}
+	public static boolean isIntegerInRange(String strValue, int min, int max)
+	{
+		try
+		{
+			int value = Integer.parseInt(strValue);
+			return (value>=min && value<=max);
+		}
+		catch(Exception e)
+		{
+			return false;
+		}
+	}
 	public static boolean isNth(String value)
 	{
-		if(value.equals("odd") || value.equals("even") || isInteger(value))
+		if(value.equals("odd") || value.equals("even") || isIntegerInRange(value, -MAX_NTH, MAX_NTH))
 		{
 			return true;
 		}
 		else
 		{
-			// Check if value has the form "an+b" - where a and b can be any integer.
+			// Check if value has the form "an+b" - where a and b can be any in range integer.
 			int nIndex=value.indexOf("n");
 			if(nIndex!=-1)
 			{
 				int aLength=nIndex;
-				if(aLength==0 || (aLength==1 && value.charAt(0)=='-') || isInteger(value.substring(0,aLength)))
+				if(aLength==0 || (aLength==1 && value.charAt(0)=='-') || isIntegerInRange(value.substring(0,aLength), -MAX_NTH, MAX_NTH))
 				{
 					int bIndex=nIndex+1;
 					int bLength=value.length()-bIndex;
-					if(bLength==0 || ((value.charAt(bIndex)=='+' || value.charAt(bIndex)=='-') && isInteger(value.substring(bIndex,value.length()))))
+					if(bLength==0 || ((value.charAt(bIndex)=='+' || value.charAt(bIndex)=='-') && isIntegerInRange(value.substring(bIndex,value.length()), -MAX_NTH, MAX_NTH)))
 					{
 						return true;
 					}

@@ -176,8 +176,8 @@ public class CSSParserTest extends TestCase {
 		CSS3_SELECTOR.put("tr:nth-child(n+10) {}","tr:nth-child(n+10)");
 		CSS3_SELECTOR.put("tr:nth-child(2n+1) {}","tr:nth-child(2n+1)");
 		CSS3_SELECTOR.put("tr:nth-child(2n-1) {}","tr:nth-child(2n-1)");
-		CSS3_SELECTOR.put("tr:nth-child(2147483647) {}","tr:nth-child(2147483647)");  // Integer.MAX_VALUE
-		CSS3_SELECTOR.put("tr:nth-child(-2147483648) {}","tr:nth-child(-2147483648)");  // Integer.MIN_VALUE
+		CSS3_SELECTOR.put("tr:nth-child(999999) {}","tr:nth-child(999999)");  // FilterUtils.MAX_NTH
+		CSS3_SELECTOR.put("tr:nth-child(-999999) {}","tr:nth-child(-999999)");  // -FilterUtils.MAX_NTH
 		CSS3_SELECTOR.put("tr:nth-last-child(1) {}","tr:nth-last-child(1)");
 		CSS3_SELECTOR.put("tr:nth-last-child(odd) {}","tr:nth-last-child(odd)");
 		CSS3_SELECTOR.put("tr:nth-last-child(even) {}","tr:nth-last-child(even)");
@@ -207,8 +207,8 @@ public class CSSParserTest extends TestCase {
 		CSS3_BAD_SELECTOR.add("tr:nth-child(2n-+1) {}");
 		// Out of Integer range.
 		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999) {}");
-		CSS3_BAD_SELECTOR.add("tr:nth-child(2147483648) {}");  // Integer.MAX_VALUE + 1
-		CSS3_BAD_SELECTOR.add("tr:nth-child(-2147483649) {}");  // Integer.MIN_VALUE - 1
+		CSS3_BAD_SELECTOR.add("tr:nth-child(1000000) {}");  // FilterUtils.MAX_NTH + 1
+		CSS3_BAD_SELECTOR.add("tr:nth-child(-1000000) {}");  // -FilterUtils.MAX_NTH - 1
 		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999n) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(n+999999999999999) {}");
 		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999n+999999999999999) {}");
