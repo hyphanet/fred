@@ -834,7 +834,7 @@ public class CSSParserTest extends TestCase {
 			String key=itr.next().toString();
 			String value=CSS2_SELECTOR.get(key);
 			System.err.println("Test "+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value="+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
 		i=0;
@@ -854,7 +854,7 @@ public class CSSParserTest extends TestCase {
 			String key=itr.next().toString();
 			String value=CSS3_SELECTOR.get(key);
 			System.err.println("CSS3 test"+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value="+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
 		i=0;
