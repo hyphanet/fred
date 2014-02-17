@@ -197,6 +197,7 @@ public class JPEGFilter implements ContentDataFilter {
 					int extensionCode = dis.readUnsignedByte();
 					if(extensionCode == 0x10 || extensionCode == 0x11 || extensionCode == 0x13) {
 						// Alternate thumbnail, perfectly valid
+						dos.write(extensionCode);
 						skipRest(blockLength, countAtStart, cis, dis, dos, "thumbnail frame");
 						Logger.minor(this, "Thumbnail frame");
 					} else
