@@ -709,6 +709,12 @@ public class FilterUtils {
 	{
 		try
 		{
+			// Strip any leading '+' character, because Integer.parseInt handles it differently between Java 6 (fails) and 7 (succeeds).
+			if(strValue.length()>1 && strValue.charAt(0)=='+' && Character.isDigit(strValue.charAt(1)))
+			{
+				strValue = strValue.substring(1,strValue.length());
+			}
+			
 			int value = Integer.parseInt(strValue);
 			return (value>=min && value<=max);
 		}
