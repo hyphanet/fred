@@ -254,11 +254,26 @@ final public class FileUtil {
 		return result;
 	}
 
-        public static String readUTF(File file) throws FileNotFoundException, IOException {
-            return readUTF(file, 0);
-        }
+    /**
+     * Reads the entire content of a file as UTF-8 and returns it.
+     * @param file The file to read
+     * @return The content of <code>file</code>
+     * @throws FileNotFoundException if <code>file</code> cannot be opened
+     * @throws IOException if an I/O error occurs
+     */
+    public static StringBuilder readUTF(File file) throws FileNotFoundException, IOException {
+        return readUTF(file, 0);
+    }
 
-	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
+    /**
+     * Reads the content of a file as UTF-8, starting at a specified offset, and returns it.
+     * @param file The file to read
+     * @param offset The point in <code>file</code> at which to start reading
+     * @return The content of <code>file</code>, starting at <code>offset</code>
+     * @throws FileNotFoundException if <code>file</code> cannot be opened
+     * @throws IOException if an I/O error occurs
+     */
+	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
@@ -282,7 +297,41 @@ final public class FileUtil {
 			Closer.close(bis);
 			Closer.close(fis);
 		}
-		return result.toString();
+		return result;
+	}
+	
+	/**
+	 * Reads the entire content of a stream as UTF-8 and returns it.
+	 * @param stream The stream to read
+	 * @return The content of <code>stream</code>
+	 * @throws IOException if an I/O error occurs
+	 */
+	public static StringBuilder readUTF(InputStream stream) throws IOException {
+	    return readUTF(stream, 0);
+	}
+	
+	/**
+	 * Reads the content of a stream as UTF-8, starting at a specified offset, and returns it.
+	 * @param stream The stream to read
+	 * @param offset The point in <code>stream</code> at which to start reading
+	 * @return The content of <code>stream</code>, starting at <code>offset</code>
+	 * @throws IOException if an I/O error occurs
+	 */
+	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
+	    StringBuilder result = new StringBuilder();
+	    skipFully(stream, offset);
+	    InputStreamReader reader = null;
+	    try {
+	        reader = new InputStreamReader(stream, "UTF-8");
+	        char[] buf = new char[4096];
+	        int length = 0;
+	        while((length = reader.read(buf)) > 0) {
+	            result.append(buf, 0, length);
+	        }
+	    } finally {
+	        Closer.close(reader);
+	    }
+	    return result;
 	}
 
 	/**
