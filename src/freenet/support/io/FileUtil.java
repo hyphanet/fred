@@ -42,6 +42,41 @@ final public class FileUtil {
 
 	private static final int BUFFER_SIZE = 32*1024;
 
+	/**
+	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
+	 * contain at most <code>byteLimit</code> bytes. If <code>byteLimit</code> is less than the
+	 * size of <code>logfile</code>, the first part of the file will be skipped. If this leaves a
+	 * partial line at the beginning of the content to read, that partial line will also be
+	 * skipped.
+	 * @param logfile The file to open
+	 * @param byteLimit The maximum number of bytes to read
+	 * @return A line reader for the trailing portion of the file
+	 * @throws java.io.IOException if an I/O error occurs
+	 */
+	public static LineReadingInputStream getLogTailReader(File logfile, long byteLimit) throws IOException {
+	    long length = logfile.length();
+	    long skip = 0;
+	    if (length > byteLimit) {
+	        skip = length - byteLimit;
+	    }
+
+	    FileInputStream fis = null;
+	    LineReadingInputStream lis = null;
+	    try {
+	        fis = new FileInputStream(logfile);
+	        lis = new LineReadingInputStream(fis);
+	        if (skip > 0) {
+	            lis.skip(skip);
+	            lis.readLine(100000, 200, true);
+	        }
+	    } catch (IOException e) {
+	        Closer.close(lis);
+	        Closer.close(fis);
+	        throw e;
+	    }
+	    return lis;
+	}
+
 	public static enum OperatingSystem {
 		Unknown(false, false, false), // Special-cased in filename sanitising code.
 		MacOS(false, true, true), // OS/X in that it can run scripts.
