@@ -45,7 +45,6 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
@@ -1030,10 +1029,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker, getUserAlertManager(), bookmarkManager);
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("SimpleToadletServer request above failed.");
-				Logger.error(this, "OOM in SocketHandler");
 			} catch (Throwable t) {
 				System.err.println("Caught in SimpleToadletServer: "+t);
 				t.printStackTrace();

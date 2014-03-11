@@ -14,7 +14,6 @@ import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.IPUtil;
 
@@ -137,9 +136,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		while (_active) {
 			try {
 				realRun(packet);
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
 			} catch (Throwable t) {
 				System.err.println("Caught "+t);
 				t.printStackTrace(System.err);

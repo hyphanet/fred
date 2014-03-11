@@ -150,7 +150,6 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
 import freenet.support.ShortBuffer;
@@ -4270,8 +4269,6 @@ public class Node implements TimeSkewDetectorCallback {
 				failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
 			System.err.println(t);
 			t.printStackTrace();
@@ -4320,8 +4317,6 @@ public class Node implements TimeSkewDetectorCallback {
 				failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
 		} catch (KeyCollisionException e) {
 			throw e;
 		} catch (Throwable t) {

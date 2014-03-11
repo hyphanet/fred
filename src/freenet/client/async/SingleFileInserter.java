@@ -26,7 +26,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -171,11 +170,6 @@ class SingleFileInserter implements ClientPutState {
 			onCompressedInner(output, container, context);
 		} catch (InsertException e) {
 			cb.onFailure(e, SingleFileInserter.this, container, context);
-        } catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("OffThreadCompressor thread above failed.");
-			// Might not be heap, so try anyway
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, e, null), SingleFileInserter.this, container, context);
         } catch (Throwable t) {
             Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
             System.err.println("Caught in OffThreadCompressor: "+t);
