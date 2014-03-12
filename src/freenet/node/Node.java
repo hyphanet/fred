@@ -4201,9 +4201,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
-		store(block, false, canWriteClientCache, canWriteDatastore, forULPR);
+		store(block, canWriteClientCache, canWriteDatastore, forULPR);
 	}
-
+        
 	/**
 	 * Store a datum.
 	 * @param block
@@ -4214,15 +4214,20 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public void store(KeyBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) throws KeyCollisionException {
 		if(block instanceof CHKBlock)
-			store((CHKBlock)block, deep, canWriteClientCache, canWriteDatastore, forULPR);
+			store((CHKBlock)block, canWriteClientCache, canWriteDatastore, forULPR);
 		else if(block instanceof SSKBlock)
 			store((SSKBlock)block, deep, false, canWriteClientCache, canWriteDatastore, forULPR);
 		else throw new IllegalArgumentException("Unknown keytype ");
 	}
-
-	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+        
+        private boolean shouldStore(double loc) {
+            if (this.chkDatastore.keyCount() < this.chkDatastore.getMaxKeys()) return true;
+            return (2 * Location.distance(loc, this.lm.getLocation())) < Math.random();
+        }
+        
+	private void store(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
-			double loc = block.getKey().toNormalizedDouble();
+			final double loc = block.getKey().toNormalizedDouble();
 			if (canWriteClientCache) {
 				chkClientcache.put(block, false);
 				nodeStats.avgClientCacheCHKLocation.report(loc);
@@ -4234,11 +4239,10 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			if (canWriteDatastore || writeLocalToDatastore) {
 
-				if (deep) {
-					chkDatastore.put(block, !canWriteDatastore);
-					nodeStats.avgStoreCHKLocation.report(loc);
-
-				}
+                            if (shouldStore(loc)) {
+                                chkDatastore.put(block, !canWriteDatastore);
+                                nodeStats.avgStoreCHKLocation.report(loc);
+                            }
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
