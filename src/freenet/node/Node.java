@@ -4222,6 +4222,8 @@ public class Node implements TimeSkewDetectorCallback {
         
         private boolean shouldStore(double loc) {
             if (this.chkDatastore.keyCount() < this.chkDatastore.getMaxKeys()) return true;
+            final double WIDTH = 0.05;
+            final double p = Math.random() * Math.random();
             return (2 * Location.distance(loc, this.lm.getLocation())) < Math.random();
         }
         
