@@ -190,7 +190,6 @@ public class Node implements TimeSkewDetectorCallback {
 				oldCHK = chkDatastore;
 				oldPK = pubKeyDatastore;
 				oldSSK = sskDatastore;
-				oldCHKCache = chkDatastore;
 				oldPKCache = pubKeyDatastore;
 				oldSSKCache = sskDatastore;
 			}
@@ -226,8 +225,6 @@ public class Node implements TimeSkewDetectorCallback {
 				oldPK = null;
 				migrateOldStore(oldSSK, sskDatastore, false);
 				oldSSK = null;
-				migrateOldStore(oldCHKCache, chkDatacache, false);
-				oldCHKCache = null;
 				migrateOldStore(oldPKCache, pubKeyDatacache, false);
 				oldPKCache = null;
 				migrateOldStore(oldSSKCache, sskDatacache, false);
@@ -241,8 +238,7 @@ public class Node implements TimeSkewDetectorCallback {
 	volatile CHKStore oldCHK;
 	volatile PubkeyStore oldPK;
 	volatile SSKStore oldSSK;
-
-	volatile CHKStore oldCHKCache;
+        
 	volatile PubkeyStore oldPKCache;
 	volatile SSKStore oldSSKCache;
 
@@ -589,9 +585,6 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Cached client cache key if the user is in the first-time wizard */
 	private byte[] cachedClientCacheKey;
 
-	/** The CHK datacache. Short term cache which stores everything that passes
-	 * through this node. */
-	private CHKStore chkDatacache;
 	/** The SSK datacache. Short term cache which stores everything that passes
 	 * through this node. */
 	private SSKStore sskDatacache;
@@ -1994,8 +1987,7 @@ public class Node implements TimeSkewDetectorCallback {
 							maxCacheKeys = maxTotalKeys - maxStoreKeys;
 						}
 						try {
-							chkDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
-							chkDatacache.setMaxKeys(maxCacheKeys, storeForceBigShrinks);
+							chkDatastore.setMaxKeys(maxTotalKeys, storeForceBigShrinks);
 							pubKeyDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
 							pubKeyDatacache.setMaxKeys(maxCacheKeys, storeForceBigShrinks);
 							sskDatastore.setMaxKeys(maxStoreKeys, storeForceBigShrinks);
@@ -2113,7 +2105,6 @@ public class Node implements TimeSkewDetectorCallback {
 						storePreallocate = val;
 						if (storeType.equals("salt-hash")) {
 							setPreallocate(chkDatastore, val);
-							setPreallocate(chkDatacache, val);
 							setPreallocate(pubKeyDatastore, val);
 							setPreallocate(pubKeyDatacache, val);
 							setPreallocate(sskDatastore, val);
@@ -3417,7 +3408,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
 		if(clientCore.alerts == null) throw new NullPointerException();
 		chkDatastore.getStore().setUserAlertManager(clientCore.alerts);
-		chkDatacache.getStore().setUserAlertManager(clientCore.alerts);
 		pubKeyDatastore.getStore().setUserAlertManager(clientCore.alerts);
 		pubKeyDatacache.getStore().setUserAlertManager(clientCore.alerts);
 		sskDatastore.getStore().setUserAlertManager(clientCore.alerts);
@@ -3427,8 +3417,6 @@ public class Node implements TimeSkewDetectorCallback {
 	private void initRAMFS() {
 		chkDatastore = new CHKStore();
 		new RAMFreenetStore<CHKBlock>(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-		chkDatacache = new CHKStore();
-		new RAMFreenetStore<CHKBlock>(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 		pubKeyDatastore = new PubkeyStore();
 		new RAMFreenetStore<DSAPublicKey>(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
 		pubKeyDatacache = new PubkeyStore();
@@ -3497,7 +3485,6 @@ public class Node implements TimeSkewDetectorCallback {
 						}
 
 						Node.this.chkDatastore = chkDatastore;
-						Node.this.chkDatacache = chkDatacache;
 						Node.this.pubKeyDatastore = pubKeyDatastore;
 						Node.this.pubKeyDatacache = pubKeyDatacache;
 						getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
@@ -3515,7 +3502,6 @@ public class Node implements TimeSkewDetectorCallback {
 			} else {
 
 				Node.this.chkDatastore = chkDatastore;
-				Node.this.chkDatacache = chkDatacache;
 				Node.this.pubKeyDatastore = pubKeyDatastore;
 				Node.this.pubKeyDatacache = pubKeyDatacache;
 				getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
@@ -3527,7 +3513,6 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
 					public void run() {
 						Node.this.chkDatastore = chkDatastore;
-						Node.this.chkDatacache = chkDatacache;
 						Node.this.pubKeyDatastore = pubKeyDatastore;
 						Node.this.pubKeyDatacache = pubKeyDatacache;
 						getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
@@ -4134,13 +4119,8 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.furthestStoreCHKSuccess=dist;
 				return block;
 			}
-			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
-			if(block == null) {
-				CHKStore store = oldCHKCache;
-				if(store != null)
-					block = store.fetch(key, dontPromote || !canWriteDatastore, ignoreOldBlocks, meta);
-			}
-			if (block != null) {
+			
+                        if (block != null) {
 				nodeStats.avgCacheCHKSuccess.report(loc);
 				if (dist > nodeStats.furthestCacheCHKSuccess)
 					nodeStats.furthestCacheCHKSuccess=dist;
@@ -4151,10 +4131,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 	}
-
-	CHKStore getChkDatacache() {
-		return chkDatacache;
-	}
+        
 	CHKStore getChkDatastore() {
 		return chkDatastore;
 	}
@@ -4190,7 +4167,6 @@ public class Node implements TimeSkewDetectorCallback {
 		Map<DataStoreInstanceType, DataStoreStats> map = new LinkedHashMap<DataStoreInstanceType, DataStoreStats>();
 
 		map.put(new DataStoreInstanceType(CHK, STORE), new StoreCallbackStats(chkDatastore, nodeStats.chkStoreStats()));
-		map.put(new DataStoreInstanceType(CHK, CACHE), new StoreCallbackStats(chkDatacache, nodeStats.chkCacheStats()));
 		map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache,nodeStats.chkSlashDotCacheStats()));
 		map.put(new DataStoreInstanceType(CHK, CLIENT), new StoreCallbackStats(chkClientcache, nodeStats.chkClientCacheStats()));
 
@@ -4220,7 +4196,6 @@ public class Node implements TimeSkewDetectorCallback {
 		} else return;
 		Logger.minor(this, "Distribution of hits and misses over stores:\n"+
 				"CHK Datastore: "+chkDatastore.hits()+ '/' +(chkDatastore.hits()+chkDatastore.misses())+ '/' +chkDatastore.keyCount()+
-				"\nCHK Datacache: "+chkDatacache.hits()+ '/' +(chkDatacache.hits()+chkDatacache.misses())+ '/' +chkDatacache.keyCount()+
 				"\nSSK Datastore: "+sskDatastore.hits()+ '/' +(sskDatastore.hits()+sskDatastore.misses())+ '/' +sskDatastore.keyCount()+
 				"\nSSK Datacache: "+sskDatacache.hits()+ '/' +(sskDatacache.hits()+sskDatacache.misses())+ '/' +sskDatacache.keyCount());
 	}
@@ -4264,8 +4239,6 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.avgStoreCHKLocation.report(loc);
 
 				}
-				chkDatacache.put(block, !canWriteDatastore);
-				nodeStats.avgCacheCHKLocation.report(loc);
 			}
 			if (canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);

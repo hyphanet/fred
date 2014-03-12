@@ -2197,35 +2197,25 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
 		fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
 		long fix32kb = 32 * 1024;
-		long cachedKeys = node.getChkDatacache().keyCount();
-		long cachedSize = cachedKeys * fix32kb;
 		long storeKeys = node.getChkDatastore().keyCount();
 		long storeSize = storeKeys * fix32kb;
-		long overallKeys = cachedKeys + storeKeys;
-		long overallSize = cachedSize + storeSize;
+		long overallKeys = storeKeys;
+		long overallSize = storeSize;
 
 		long maxOverallKeys = node.getMaxTotalKeys();
 		long maxOverallSize = maxOverallKeys * fix32kb;
 
 		double percentOverallKeysOfMax = (double)(overallKeys*100)/(double)maxOverallKeys;
 
-		long cachedStoreHits = node.getChkDatacache().hits();
-		long cachedStoreMisses = node.getChkDatacache().misses();
-		long cachedStoreWrites = node.getChkDatacache().writes();
-		long cacheAccesses = cachedStoreHits + cachedStoreMisses;
-		long cachedStoreFalsePositives = node.getChkDatacache().getBloomFalsePositive();
-		double percentCachedStoreHitsOfAccesses = (double)(cachedStoreHits*100) / (double)cacheAccesses;
 		long storeHits = node.getChkDatastore().hits();
 		long storeMisses = node.getChkDatastore().misses();
 		long storeWrites = node.getChkDatastore().writes();
 		long storeFalsePositives = node.getChkDatastore().getBloomFalsePositive();
 		long storeAccesses = storeHits + storeMisses;
 		double percentStoreHitsOfAccesses = (double)(storeHits*100) / (double)storeAccesses;
-		long overallAccesses = storeAccesses + cacheAccesses;
+		long overallAccesses = storeAccesses;
 		double avgStoreAccessRate = (double)overallAccesses/(double)nodeUptimeSeconds;
 
-		fs.put("cachedKeys", cachedKeys);
-		fs.put("cachedSize", cachedSize);
 		fs.put("storeKeys", storeKeys);
 		fs.put("storeSize", storeSize);
 		fs.put("overallKeys", overallKeys);
@@ -2233,12 +2223,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("maxOverallKeys", maxOverallKeys);
 		fs.put("maxOverallSize", maxOverallSize);
 		fs.put("percentOverallKeysOfMax", percentOverallKeysOfMax);
-		fs.put("cachedStoreHits", cachedStoreHits);
-		fs.put("cachedStoreMisses", cachedStoreMisses);
-		fs.put("cachedStoreWrites", cachedStoreWrites);
-		fs.put("cacheAccesses", cacheAccesses);
-		fs.put("cachedStoreFalsePositives", cachedStoreFalsePositives);
-		fs.put("percentCachedStoreHitsOfAccesses", percentCachedStoreHitsOfAccesses);
 		fs.put("storeHits", storeHits);
 		fs.put("storeMisses", storeMisses);
 		fs.put("storeAccesses", storeAccesses);
@@ -3286,40 +3270,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
 				return cappedDistance(avgStoreCHKLocation, node.getChkDatastore());
-			}
-		};
-	}
-
-	/**
-	 * View of stats for CHK Cache
-	 *
-	 * @return CHK cache stats
-	 */
-	public StoreLocationStats chkCacheStats() {
-		return new StoreLocationStats() {
-			@Override
-			public double avgLocation() {
-				return avgCacheCHKLocation.currentValue();
-			}
-
-			@Override
-			public double avgSuccess() {
-				return avgCacheCHKSuccess.currentValue();
-			}
-
-			@Override
-			public double furthestSuccess() throws StatsNotAvailableException {
-				return furthestCacheCHKSuccess;
-			}
-
-			@Override
-			public double avgDist() throws StatsNotAvailableException {
-				return Location.distance(nodeLoc, avgLocation());
-			}
-
-			@Override
-			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgCacheCHKLocation, node.getChkDatacache());
 			}
 		};
 	}
