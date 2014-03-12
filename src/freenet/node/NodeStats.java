@@ -28,7 +28,6 @@ import freenet.node.RequestTracker.WaitingForSlots;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
-import freenet.store.CHKStore;
 import freenet.store.StoreCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Histogram2;
