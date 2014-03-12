@@ -4152,19 +4152,34 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public CHKStore getChkDatacache() {
+	CHKStore getChkDatacache() {
 		return chkDatacache;
 	}
-	public CHKStore getChkDatastore() {
+	CHKStore getChkDatastore() {
 		return chkDatastore;
 	}
-	public SSKStore getSskDatacache() {
+	SSKStore getSskDatacache() {
 		return sskDatacache;
 	}
-	public SSKStore getSskDatastore() {
+	SSKStore getSskDatastore() {
 		return sskDatastore;
 	}
 
+        CHKStore getChkSlashdotCache() {
+            return this.chkSlashdotcache;
+        }
+
+        CHKStore getChkClientCache() {
+            return this.chkClientcache;
+        }
+
+        SSKStore getSskSlashdotCache() {
+            return this.sskSlashdotcache;
+        }
+
+        SSKStore getSskClientCache() {
+            return this.sskClientcache;
+        }
 
 	/**
 	 * This method returns all statistics info for our data store stats table
