@@ -4221,10 +4221,18 @@ public class Node implements TimeSkewDetectorCallback {
 	}
         
         private boolean shouldStore(double loc) {
-            if (this.chkDatastore.keyCount() < this.chkDatastore.getMaxKeys()) return true;
-            final double WIDTH = 0.05;
+            if (this.chkDatastore.keyCount() < this.chkDatastore.getMaxKeys()){
+                System.out.println("store not full");
+                return true;
+            }
+            
             final double p = Math.random() * Math.random();
-            return (2 * Location.distance(loc, this.lm.getLocation())) < Math.random();
+            final double twoDist = 2 * Location.distance(loc, this.lm.getLocation());
+            final boolean result = twoDist < p;
+            
+            System.out.println("2d=" + twoDist + ", p=" + p + " r=" + result);
+            
+            return result;
         }
         
 	private void store(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
