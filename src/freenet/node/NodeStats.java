@@ -28,7 +28,7 @@ import freenet.node.RequestTracker.WaitingForSlots;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.node.stats.StoreLocationStats;
-import freenet.store.CHKStore;
+import freenet.store.StoreCallback;
 import freenet.support.HTMLNode;
 import freenet.support.Histogram2;
 import freenet.support.LogThresholdCallback;
@@ -3352,7 +3352,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkDatacache());
+				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkSlashdotCache());
 			}
 		};
 	}
@@ -3386,7 +3386,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgClientCacheCHKLocation, node.getChkDatacache());
+				return cappedDistance(avgClientCacheCHKLocation, node.getChkClientCache());
 			}
 		};
 	}
@@ -3420,7 +3420,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgStoreSSKLocation, node.getChkDatastore());
+				return cappedDistance(avgStoreSSKLocation, node.getSskDatastore());
 			}
 		};
 	}
@@ -3454,7 +3454,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgCacheSSKLocation, node.getSskDatacache());
 			}
 		};
 	}
@@ -3488,7 +3488,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgSlashdotCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgSlashdotCacheSSKLocation, node.getSskSlashdotCache());
 			}
 		};
 	}
@@ -3522,13 +3522,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 			@Override
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgClientCacheSSKLocation, node.getChkDatacache());
+				return cappedDistance(avgClientCacheSSKLocation, node.getSskClientCache());
 			}
 		};
 	}
 
 
-	private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
+	private double cappedDistance(DecayingKeyspaceAverage avgLocation, StoreCallback<?> store) {
 		double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
 		//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
 		if (cachePercent > 1.0) {
