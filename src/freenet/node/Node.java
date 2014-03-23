@@ -4166,19 +4166,19 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
         CHKStore getChkSlashdotCache() {
-            return this.chkSlashdotcache;
+            return chkSlashdotcache;
         }
 
         CHKStore getChkClientCache() {
-            return this.chkClientcache;
+            return chkClientcache;
         }
 
         SSKStore getSskSlashdotCache() {
-            return this.sskSlashdotcache;
+            return sskSlashdotcache;
         }
 
         SSKStore getSskClientCache() {
-            return this.sskClientcache;
+            return sskClientcache;
         }
 
 	/**
