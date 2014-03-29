@@ -1097,7 +1097,7 @@ public class PluginManager {
 	static {
 		try {
 		addOfficialPlugin("Freemail", "communication", false, 15, true, new FreenetURI("CHK@6dfMgGf7YEfJhF0W~K0HUv0fnbuRwYH6iMqrLIbTI7k,huYBf8oBevwW6lRQnz-0jDP1dl5ej7FKeyVZ3CnH0Ec,AAMC--8/Freemail.jar"), true, false, false);
-		addOfficialPlugin("Freemail_wot", "communication", false, 23, false, new FreenetURI("CHK@RL2twhvr2E7snE~rB0pSRzs178d4AF4Js2C6finxw8Y,dOfAtMTqkxdR2yC8l0bp4B-PzwHWj-9hdXmhcFOgm8M,AAMC--8/Freemail_wot.jar"));
+		addOfficialPlugin("Freemail_wot", "communication", false, 24, false, new FreenetURI("CHK@3quK1QnUrXS1KqVrc87lAy87boNiNUt83RIza0eAfLQ,J4tzwpdDuJKZJV22r6nBPgO5CGAwCWP~p7Xt~kzCDKY,AAMC--8/Freemail_wot.jar"));
 		addOfficialPlugin("HelloWorld", "example", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", "example", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
