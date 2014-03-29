@@ -46,6 +46,12 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="${pmd.dir}" erroronmissingdir="false" includes="lib/*.jar"/>
 	</path>
 
+	<property environment="env"/>
+	<property name="keystore" value="${env.jarsignerStoreLocation}"/>
+	<property name="keystore_alias" value="${env.jarsignerAlias}"/>
+	<property name="keystore_pass" value="${env.jarsignerStorePassword}"/>
+	<property name="key_pass" value="${env.jarsignerCodeSigningKeyPassword}"/>
+
 	<assertions><enable/></assertions>
 
 	<!-- set version string based on git-describe -->
@@ -68,6 +74,12 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- =================================================================== -->
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
+
+	<target name="sign" description="Sign the distribution" depends="dist">
+		<echo message="Signing the distribution"/>
+		<signjar jar="${dest}" strict="false" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
+		<!-- TODO: Should have strict="true", but it was introduced in Java 7, which we cannot yet require. -->
+	</target>
 
 	<target name="all" depends="package, doc, findbugs, pmd, cpd" description="build everything, incl. docs, GWT js"/>
 
