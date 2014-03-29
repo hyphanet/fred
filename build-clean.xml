@@ -81,6 +81,7 @@ maintainers may prefer to use this instead of build.xml.
 		<echo message="Signing the distribution"/>
 		<signjar jar="${jar.dst}" strict="false" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
 		<!-- TODO: Should have strict="true", but it was introduced in Java 7, which we cannot yet require. -->
+		<verifyjar jar="${jar.dst}" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}"/>
 	</target>
 
 	<target name="all" depends="package, doc, findbugs, pmd, cpd" description="build everything, incl. docs, GWT js"/>
