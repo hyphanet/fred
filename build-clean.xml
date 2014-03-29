@@ -77,7 +77,7 @@ maintainers may prefer to use this instead of build.xml.
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="sign" description="Sign the distribution" depends="dist">
+	<target name="sign" description="Sign the distribution" depends="package">
 		<echo message="Signing the distribution"/>
 		<signjar jar="${jar.dst}" strict="false" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
 		<!-- TODO: Should have strict="true", but it was introduced in Java 7, which we cannot yet require. -->
