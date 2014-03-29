@@ -1100,7 +1100,12 @@ public class PluginManager {
 		addOfficialPlugin("Freemail_wot", "communication", false, 24, false, new FreenetURI("CHK@3quK1QnUrXS1KqVrc87lAy87boNiNUt83RIza0eAfLQ,J4tzwpdDuJKZJV22r6nBPgO5CGAwCWP~p7Xt~kzCDKY,AAMC--8/Freemail_wot.jar"));
 		addOfficialPlugin("HelloWorld", "example", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", "example", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
-		addOfficialPlugin("JSTUN", "connectivity", true, 4, false, new FreenetURI("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar"));
+		/*
+		 * TODO: Updating plugins required for connectivity is currently poorly defined. If the node refuses
+		 * to load the old version that is now below the minimum and cannot connect without the plugin then
+		 * it cannot download the new one and connectivity will remain broken. See https://bugs.freenetproject.org/view.php?id=4490
+		 */
+		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar"));
 		addOfficialPlugin("KeyUtils", "technical", false, 5021, false, new FreenetURI("CHK@AJ4MTxURy0ouvGeVaHoCGh59K7rUHpH7EvKD4Yqy7sY,TwT~eA4MwSTniZXuSBps4VECy2y9fHtHEA~zT-KQKSk,AAMC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", "connectivity", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", "connectivity", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
