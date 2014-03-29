@@ -1105,7 +1105,7 @@ public class PluginManager {
 		 * to load the old version that is now below the minimum and cannot connect without the plugin then
 		 * it cannot download the new one and connectivity will remain broken. See https://bugs.freenetproject.org/view.php?id=4490
 		 */
-		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar"));
+		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@USIujVBZaukbHyabPiPu7I6BtK4neW-Ky9J1hTBrcmY,FU9HCD5F4RZBwZLLUPKvS2U2Ts2dGiyoEiH-SGDQ9~U,AAMC--8/JSTUN.jar"));
 		addOfficialPlugin("KeyUtils", "technical", false, 5021, false, new FreenetURI("CHK@AJ4MTxURy0ouvGeVaHoCGh59K7rUHpH7EvKD4Yqy7sY,TwT~eA4MwSTniZXuSBps4VECy2y9fHtHEA~zT-KQKSk,AAMC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", "connectivity", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", "connectivity", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
