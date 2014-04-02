@@ -115,6 +115,13 @@ public class DarknetPeerNode extends PeerNode {
 		public static FRIEND_TRUST[] valuesBackwards() {
 			return valuesBackwards.clone();
 		}
+		
+		public boolean isDefaultValue() {
+			if(this.equals(FRIEND_TRUST.NORMAL))
+				return true;
+			else
+				return false;
+		}
 
 	}
 
@@ -142,6 +149,13 @@ public class DarknetPeerNode extends PeerNode {
 				if(f.code == code) return f;
 			}
 			return null;
+		}
+
+		public boolean isDefaultValue() {
+			if(this.equals(FRIEND_VISIBILITY.YES))
+				return true;
+			else
+				return false;
 		}
 	}
 
