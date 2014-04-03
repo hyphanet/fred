@@ -905,7 +905,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
 			for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
 				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
-				if(trust.isDefaultValue())
+				if(trust.equals(FRIEND_TRUST.NORMAL))
 					input.addAttribute("checked","checked");
 				input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
 				input.addChild("#", ": ");
@@ -918,7 +918,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
 			for(FRIEND_VISIBILITY visibility : FRIEND_VISIBILITY.values()) { // FIXME reverse order
 				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", visibility.name() });
-				if(visibility.isDefaultValue())
+				if(visibility.equals(FRIEND_VISIBILITY.YES))
 					input.addAttribute("checked", "checked");
 				input.addChild("b", l10n("peerVisibility."+visibility.name())); // FIXME l10n
 				input.addChild("#", ": ");
