@@ -116,6 +116,10 @@ public class DarknetPeerNode extends PeerNode {
 			return valuesBackwards.clone();
 		}
 
+		public boolean isDefaultValue() {
+			return this.equals(FRIEND_TRUST.NORMAL);
+		}
+
 	}
 
 	public enum FRIEND_VISIBILITY {
@@ -142,6 +146,10 @@ public class DarknetPeerNode extends PeerNode {
 				if(f.code == code) return f;
 			}
 			return null;
+		}
+
+		public boolean isDefaultValue() {
+			return this.equals(FRIEND_VISIBILITY.YES);
 		}
 	}
 
