@@ -107,7 +107,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.minimumVersion(31)
 					.usesXml()
-					.loadedFrom("CHK@HHay15aKpO2W7zpLYeh7lYIyG56MPEIsnugwJNGVJ9s,krPxNuxG9~9grOm9y4V2gAo3dbhiW0EKIKeMLsk5ntY,AAMC--8/FlogHelper.jar");
+					.loadedFrom("CHK@LF5EYfrrUtRJPxAYGO1EjGETtDEDTLSjMYXvy-0J1xo,4UySA~Rnsw~Obm1J1VQqgUM-9TeBLO4~evU91BuONmI,AAMC--8/FlogHelper.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
