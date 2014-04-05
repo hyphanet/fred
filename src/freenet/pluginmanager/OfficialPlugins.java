@@ -28,8 +28,8 @@ public class OfficialPlugins {
 					.deprecated();
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
-					.minimumVersion(23)
-					.loadedFrom("CHK@RL2twhvr2E7snE~rB0pSRzs178d4AF4Js2C6finxw8Y,dOfAtMTqkxdR2yC8l0bp4B-PzwHWj-9hdXmhcFOgm8M,AAMC--8/Freemail_wot.jar");
+					.minimumVersion(24)
+					.loadedFrom("CHK@3quK1QnUrXS1KqVrc87lAy87boNiNUt83RIza0eAfLQ,J4tzwpdDuJKZJV22r6nBPgO5CGAwCWP~p7Xt~kzCDKY,AAMC--8/Freemail_wot.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
@@ -42,11 +42,11 @@ public class OfficialPlugins {
 					.inGroup("connectivity")
 					.essential()
 					.minimumVersion(2)
-					.loadedFrom("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar");
+					.loadedFrom("CHK@Zgib8xrGxcEuix7AVB4eajton1FpNHbIJeQZgEbHMNU,BQekU261VLSDUBQPOHSMKUF5qxY1v0zjXa33RyoEbYk,AAMC--8/JSTUN.jar");
 			addPlugin("KeyUtils")
 					.inGroup("technical")
-					.minimumVersion(5020)
-					.loadedFrom("CHK@llroMhtxumQZG1~3g3YEE8sK7ceJUIZ8Jl6Gqg~5RXk,CKf~Qxcf1ouLOIs3yjT7Re2DZ9GqGNC3HB-TiVEXgQ4,AAMC--8/KeyUtils.jar")
+					.minimumVersion(5021)
+					.loadedFrom("CHK@AJ4MTxURy0ouvGeVaHoCGh59K7rUHpH7EvKD4Yqy7sY,TwT~eA4MwSTniZXuSBps4VECy2y9fHtHEA~zT-KQKSk,AAMC--8/KeyUtils.jar\"")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
@@ -105,9 +105,9 @@ public class OfficialPlugins {
 					.loadedFrom("CHK@dSfeVmjFX15QVyFCTUQmZItrJi8XnoYpiapxLTxaQeg,wizfFOtkKSBEdjUYgjCUJczjl74r0CjRBfzvaRvKUMo,AAMC--8/WebOfTrust.jar");
 			addPlugin("FlogHelper")
 					.inGroup("communication")
-					.minimumVersion(30)
+					.minimumVersion(31)
 					.usesXml()
-					.loadedFrom("CHK@4Ey1hDbEPTTJ1AVKkrq3h0QaeMWFETzPaBYFkoauYvs,SNmqkFnxgOdy7Qu8vOoibQORJFIa8su1Hc3U9DRUa9E,AAMC--8/FlogHelper.jar");
+					.loadedFrom("CHK@HHay15aKpO2W7zpLYeh7lYIyG56MPEIsnugwJNGVJ9s,krPxNuxG9~9grOm9y4V2gAo3dbhiW0EKIKeMLsk5ntY,AAMC--8/FlogHelper.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}
