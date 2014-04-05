@@ -572,29 +572,39 @@ public class PproxyToadlet extends Toadlet {
 		
 		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		for (Entry<String, List<OfficialPluginDescription>> groupPlugins : availablePlugins.entrySet()) {
+			List<OfficialPluginDescription> notLoadedPlugins = getNotLoadedPlugins(pm, groupPlugins.getValue());
+			if (notLoadedPlugins.isEmpty()) {
+				continue;
+			}
 			HTMLNode pluginGroupNode = addOfficialForm.addChild("div", "class", "plugin-group");
 			pluginGroupNode.addChild("div", "class", "plugin-group-title", l10n("pluginGroupTitle", "pluginGroup", groupPlugins.getKey()));
-			for (OfficialPluginDescription pluginDescription : groupPlugins.getValue()) {
+			for (OfficialPluginDescription pluginDescription : notLoadedPlugins) {
 				HTMLNode pluginNode = pluginGroupNode.addChild("div", "class", "plugin");
-				String pluginName = pluginDescription.name;
-				if(!pm.isPluginLoaded(pluginName)) {
-					HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" },
-							new String[] { "radio", "plugin-name", pluginName });
-					option.addChild("i", pluginDescription.getLocalisedPluginName());
-					if(pluginDescription.deprecated)
-						option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
-					if(pluginDescription.experimental)
-						option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
-					if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-						option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
-					}
-					option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
+				HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "plugin-name", pluginDescription.name });
+				option.addChild("i", pluginDescription.getLocalisedPluginName());
+				if(pluginDescription.deprecated)
+					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
+				if(pluginDescription.experimental)
+					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
+					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
 				}
+				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 			}
 		}
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 	}
-	
+
+	private List<OfficialPluginDescription> getNotLoadedPlugins(PluginManager pluginManager, List<OfficialPluginDescription> plugins) {
+		List<OfficialPluginDescription> notLoadedPlugins = new ArrayList<OfficialPluginDescription>();
+		for (OfficialPluginDescription plugin : plugins) {
+			if (!pluginManager.isPluginLoaded(plugin.name)) {
+				notLoadedPlugins.add(plugin);
+			}
+		}
+		return notLoadedPlugins;
+	}
+
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
 		/* box for unofficial plugins. */
 		HTMLNode addOtherPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
