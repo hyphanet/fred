@@ -5496,4 +5496,9 @@ public class Node implements TimeSkewDetectorCallback {
 		if(ibwLimit <= 1) throw new InvalidConfigValueException(l10n("bandwidthLimitMustBePositiveOrMinusOne"));
 		if (ibwLimit < minimumBandwidth) throw lowBandwidthLimit(ibwLimit);
 	}
+
+	public PluginManager getPluginManager() {
+		return pluginManager;
+	}
+
 }
