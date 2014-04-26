@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import com.db4o.ObjectContainer;
 
@@ -78,7 +79,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
-import freenet.support.MutableBoolean;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.Bucket;
@@ -577,7 +577,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				/* copy bucket data */
 				final Bucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
-				final MutableBoolean done = new MutableBoolean();
+				final CountDownLatch done = new CountDownLatch(1);
 				try {
 					core.queue(new DBJob() {
 
@@ -624,10 +624,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writeInternalError(t, ctx);
 								return false;
 							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
-								}
+								done.countDown();
 							}
 							} catch (IOException e) {
 								// Ignore
@@ -643,13 +640,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					sendPersistenceDisabledError(ctx);
 					return;
 				}
-				synchronized(done) {
-					while(!done.value)
-						try {
-							done.wait();
-						} catch (InterruptedException e) {
-							// Ignore
-						}
+				while (done.getCount() > 0) {
+					try {
+						done.await();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
 				return;
 			} else if (request.isPartSet(LocalFileBrowserToadlet.selectFile)) {
@@ -688,7 +684,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					target = null;
 				else
 					target = file.getName();
-				final MutableBoolean done = new MutableBoolean();
+				final CountDownLatch done = new CountDownLatch(1);
 				try {
 					core.queue(new DBJob() {
 
@@ -735,10 +731,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								return false;
 								// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
-								}
+								done.countDown();
 							}
 							} catch (IOException e) {
 								// Ignore
@@ -754,13 +747,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					sendPersistenceDisabledError(ctx);
 					return;
 				}
-				synchronized(done) {
-					while(!done.value)
-						try {
-							done.wait();
-						} catch (InterruptedException e) {
-							// Ignore
-						}
+				while (done.getCount() > 0) {
+					try {
+						done.await();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
 				return;
 			} else if (request.isPartSet(LocalFileBrowserToadlet.selectDir)) {
@@ -787,7 +779,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} else {
 					furi = new FreenetURI("CHK@");
 				}
-				final MutableBoolean done = new MutableBoolean();
+				final CountDownLatch done = new CountDownLatch(1);
 				try {
 					core.queue(new DBJob() {
 
@@ -830,10 +822,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writeError(l10n("tooManyFilesInOneFolder"), l10n("tooManyFilesInOneFolder"), ctx);
 								return false;
 							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
-								}
+								done.countDown();
 							}
 							} catch (IOException e) {
 								// Ignore
@@ -849,13 +838,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					sendPersistenceDisabledError(ctx);
 					return;
 				}
-				synchronized(done) {
-					while(!done.value)
-						try {
-							done.wait();
-						} catch (InterruptedException e) {
-							// Ignore
-						}
+				while (done.getCount() > 0) {
+					try {
+						done.await();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
 				return;
 			} else if (request.isPartSet("recommend_request")) {
