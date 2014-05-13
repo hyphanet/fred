@@ -49,7 +49,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
 		mNode = myNode;
 		mClient = myClient;
-		mClientContext = mNode.clientCore.clientContext;;
+		mClientContext = mNode.clientCore.clientContext;
 		mTBF = mNode.clientCore.tempBucketFactory;
 		mName = myName;
 		

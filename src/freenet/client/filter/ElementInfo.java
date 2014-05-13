@@ -265,7 +265,7 @@ public class ElementInfo {
 					if(escapeNewline) {
 						escapeNewline = false;
 						escape = false;
-						if(c == '\n') continue;;
+						if(c == '\n') continue;
 					}
 					escapeNewline = false;
 					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {
@@ -381,7 +381,7 @@ public class ElementInfo {
 					if(escapeNewline) {
 						escapeNewline = false;
 						escape = false;
-						if(c == '\n') continue;;
+						if(c == '\n') continue;
 					}
 					escapeNewline = false;
 					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {

@@ -16,7 +16,7 @@ public class UnknownCharsetException extends DataFilterException {
 	public static UnknownCharsetException create(UnsupportedEncodingException e, String charset) {
 		String explTitle = l10nDF("unknownCharsetTitle");
 		String expl = l10nDF("unknownCharset");
-;
+
 		String warning = l10nDF("warningUnknownCharsetTitle", "charset", charset);
 		return new UnknownCharsetException(warning, warning, explTitle + " " + expl, charset);
 	}
