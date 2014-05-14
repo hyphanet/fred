@@ -818,8 +818,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public Map<String,String> getAttributesAsMap(){
 			Map<String,String> map=new HashMap<String, String>();
 			for(String attr: unparsedAttrs) {
-				String name=attr.substring(0,attr.indexOf("="));
-				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
+				String name=attr.substring(0,attr.indexOf('='));
+				String value=attr.substring(attr.indexOf('=')+2,attr.length()-1);
 				map.put(name, value);
 			}
 			return map;

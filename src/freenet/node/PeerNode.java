@@ -3083,7 +3083,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Local rejected overload (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3165,7 +3165,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	@Override
 	public void transferFailed(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());

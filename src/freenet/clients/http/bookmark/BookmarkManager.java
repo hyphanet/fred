@@ -175,7 +175,7 @@ public class BookmarkManager implements RequestClient {
 		if(path.equals("/"))
 			return "/";
 
-		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf("/")) + "/";
+		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf('/')) + "/";
 	}
 
 	public Bookmark getBookmarkByPath(String path) {

@@ -87,7 +87,7 @@ public class PproxyToadlet extends Toadlet {
 			{
 				String plugin = null;
 				// split path into plugin class name and 'daa' path for plugin
-				int to = path.indexOf("/");
+				int to = path.indexOf('/');
 				if(to == -1)
 				{
 					plugin = path;
@@ -405,7 +405,7 @@ public class PproxyToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
 				// split path into plugin class name and 'data' path for plugin
-				int to = path.indexOf("/");
+				int to = path.indexOf('/');
 				String plugin;
 				if (to == -1) {
 					plugin = path;
