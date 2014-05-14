@@ -28,7 +28,7 @@ public class URIPreEncoder {
 			if(allowedChars.indexOf(c) >= 0) {
 				output.append(c);
 			} else {
-				String tmp = ""+c;
+				String tmp = String.valueOf(c);
 				try {
 					for(byte u: tmp.getBytes("UTF-8")) {
 						int x = u & 0xff;

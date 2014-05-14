@@ -3816,7 +3816,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public String userToString() {
-		return "" + getPeer();
+		return  getPeer().toString();
 	}
 
 	public void setTimeDelta(long delta) {

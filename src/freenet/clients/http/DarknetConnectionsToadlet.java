@@ -218,7 +218,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			for(DarknetPeerNode pn : peerNodes) {
 				if (request.isPartSet("node_"+pn.hashCode())) {
 					String peer_name = pn.getName();
-					String peer_hash = "" + pn.hashCode();
+					String peer_hash =  String.valueOf(pn.hashCode());
 					if(!peers.containsKey(peer_hash)) {
 						peers.put(peer_hash, peer_name);
 					}

@@ -529,7 +529,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	
 	static {
 		try {
-			BOM = (""+(char)0xFEFF).getBytes(ENCODING);
+			BOM = (String.valueOf((char)0xFEFF)).getBytes(ENCODING);
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e);
 		}

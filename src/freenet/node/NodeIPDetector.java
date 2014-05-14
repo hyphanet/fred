@@ -524,7 +524,7 @@ public class NodeIPDetector {
 			} catch (UnknownHostException e) {
 				String msg = "Unknown host: "+ipHintString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
-				System.err.println(msg+"");
+				System.err.println(msg.toString());
 				oldIPAddress = null;
 			}
 		}
