@@ -41,7 +41,7 @@ public class URLEncoder {
 				
 			} else {
 				try {
-					for (byte b: ( String.valueOf(c)).getBytes("UTF-8")) {
+					for (byte b: String.valueOf(c).getBytes("UTF-8")) {
 						int x = b & 0xFF;
 						if (x < 16)
 							enc.append("%0");

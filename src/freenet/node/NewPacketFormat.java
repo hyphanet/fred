@@ -515,7 +515,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(logMINOR) {
 				String fragments = null;
 				for(MessageFragment frag : packet.getFragments()) {
-					if(fragments == null) fragments =  String.valueOf(frag.messageID);
+					if(fragments == null) fragments = String.valueOf(frag.messageID);
 					else fragments = fragments + ", " + frag.messageID;
 					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+")";
 				}
