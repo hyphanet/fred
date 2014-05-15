@@ -1609,8 +1609,8 @@ class CSSTokenizerFilter {
 						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,attSelection.length());
 					} else if(attSelection.indexOf('=') != -1){
 						attSelectionParts=new String[2];
-						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("="));
-						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("=")+1,attSelection.length());
+						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf('='));
+						attSelectionParts[1]=attSelection.substring(attSelection.indexOf('=')+1,attSelection.length());
 					} else {
 						attSelectionParts=new String[] { attSelection };
 					}

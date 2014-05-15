@@ -1863,9 +1863,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(killedDatabase) throw new DatabaseDisabledException();
 		}
 		if(checkDupes)
-			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
+			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, job.toString());
 		else
-			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, ""+job);
+			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, job.toString());
 	}
 
 	private boolean killedDatabase = false;

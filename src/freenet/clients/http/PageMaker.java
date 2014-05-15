@@ -478,7 +478,7 @@ public final class PageMaker {
 							sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
 							isSelected = true;
 						} else {
-							sublistItem = subnavlist.addChild("li", "class", "submenuitem-not-selected");;
+							sublistItem = subnavlist.addChild("li", "class", "submenuitem-not-selected");
 						}
 						
 						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);

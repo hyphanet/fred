@@ -329,7 +329,7 @@ public class FilterUtils {
 	}
 	public static boolean isValidCSSShape(String value)
 	{
-		if(value.indexOf("rect(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rect(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] shapeParts=value.substring(5,value.length()-1).split(",");
 			if(shapeParts.length==4)
@@ -390,7 +390,7 @@ public class FilterUtils {
 				}
 			}
 		}
-		if(value.indexOf("rgb(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rgb(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts=value.substring(4,value.length()-1).split(",");
 			if(colorParts.length!=3)
@@ -404,7 +404,7 @@ public class FilterUtils {
 			if(isValidColorParts)
 				return true;
 		}
-		if(value.indexOf("rgba(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("rgba(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts=value.substring(5,value.length()-1).split(",");
 			if(colorParts.length!=4)
@@ -419,7 +419,7 @@ public class FilterUtils {
 				return true;
 		}
 
-		if(value.indexOf("hsl(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("hsl(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts = value.substring(4, value.length() - 1).split(",");
 			if (colorParts.length != 3) {
@@ -430,7 +430,7 @@ public class FilterUtils {
 			    return true;
 		}
 
-		if(value.indexOf("hsla(")==0 && value.indexOf(")")==value.length()-1)
+		if(value.indexOf("hsla(")==0 && value.indexOf(')')==value.length()-1)
 		{
 			String[] colorParts = value.substring(5, value.length() - 1).split(",");
 			if (colorParts.length != 4) {
@@ -448,7 +448,7 @@ public class FilterUtils {
 	    value = value.trim();
 	    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform(\""+value+"\")");
 	    
-	    if(value.indexOf("matrix(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("matrix(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(7, value.length() - 1).split(",");
 		if (parts.length != 6) {
@@ -467,7 +467,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translateX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translateX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(11, value.length() - 1);
 		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
@@ -476,7 +476,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translateY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translateY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(11, value.length() - 1);
 		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
@@ -485,7 +485,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("translate(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("translate(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(10, value.length() - 1).split(",");
 		if (parts.length == 1 && (isPercentage(parts[0].trim()) || isLength(parts[0].trim(), false))) {
@@ -497,7 +497,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("scale(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scale(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(6, value.length() - 1).split(",");
 		if (parts.length == 1 && isNumber(parts[0].trim())) {
@@ -509,7 +509,7 @@ public class FilterUtils {
 		}
 	    }
 	    
-	    if(value.indexOf("scaleX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scaleX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isNumber(part.trim())) {
@@ -518,7 +518,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("scaleY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("scaleY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isNumber(part.trim())) {
@@ -527,7 +527,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("rotate(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("rotate(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(7, value.length() - 1);
 		if (isAngle(part.trim())) {
@@ -536,7 +536,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skewX(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skewX(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(6, value.length() - 1);
 		if (isNumber(part.trim()) || isAngle(part.trim())) {
@@ -545,7 +545,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skewY(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skewY(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String part = value.substring(6, value.length() - 1);
 		if (isNumber(part.trim()) || isAngle(part.trim())) {
@@ -554,7 +554,7 @@ public class FilterUtils {
 		}
 	    }
 
-	    if(value.indexOf("skew(")==0 && value.indexOf(")")==value.length()-1)
+	    if(value.indexOf("skew(")==0 && value.indexOf(')')==value.length()-1)
 	    {
 		String[] parts = value.substring(5, value.length() - 1).split(",");
 		if (parts.length == 1 && (isNumber(parts[0].trim()) || isAngle(parts[0].trim()))) {
@@ -616,7 +616,7 @@ public class FilterUtils {
 		String intValue;
 		if(value.indexOf("ms")>-1 && value.length()>2)
 			intValue=value.substring(0,value.length()-2);
-		else if(value.indexOf("s")>-1 && value.length()>1)
+		else if(value.indexOf('s')>-1 && value.length()>1)
 			intValue=value.substring(0,value.length()-1);
 		else
 			return false;
@@ -732,7 +732,7 @@ public class FilterUtils {
 		else
 		{
 			// Check if value has the form "an+b" - where a and b can be any in range integer.
-			int nIndex=value.indexOf("n");
+			int nIndex=value.indexOf('n');
 			if(nIndex!=-1)
 			{
 				int aLength=nIndex;

@@ -196,7 +196,7 @@ public class SeednodePingTest extends RealNodeTest {
     	try {
     		if(node != null)
     		node.park();
-    	} catch (Throwable t1) {};
+    	} catch (Throwable t1) {}
     	System.exit(1);
     }
     }

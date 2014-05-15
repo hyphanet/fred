@@ -1856,13 +1856,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortResizeProgress", //
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress" + (slotFilter.isNew() ? "New" : ""), 
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 		}
 
 		@Override
@@ -1870,13 +1870,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longResizeProgress", //
 				        new String[] { "name", "processed", "total" },//
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress" + (slotFilter.isNew() ? "New" : ""),
 				        new String[] { "name", "processed", "total" },
-				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
-				                cleaner.entriesTotal + "" });
+				        new String[] { name, String.valueOf(cleaner.entriesTotal - cleaner.entriesLeft) ,
+				                String.valueOf(cleaner.entriesTotal)  });
 		}
 
 		@Override

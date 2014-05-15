@@ -265,7 +265,7 @@ public class ElementInfo {
 					if(escapeNewline) {
 						escapeNewline = false;
 						escape = false;
-						if(c == '\n') continue;;
+						if(c == '\n') continue;
 					}
 					escapeNewline = false;
 					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {
@@ -357,8 +357,8 @@ public class ElementInfo {
 		public static String getPseudoClassArg(String cname, String cname_sans_arg) {
 			String arg="";
 			int cnameIndex=cname.indexOf(cname_sans_arg);
-			int firstIndex=cname.indexOf("(");
-			int secondIndex=cname.lastIndexOf(")");
+			int firstIndex=cname.indexOf('(');
+			int secondIndex=cname.lastIndexOf(')');
 			if(cname.substring(cnameIndex+cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
 			{
 				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());
@@ -381,7 +381,7 @@ public class ElementInfo {
 					if(escapeNewline) {
 						escapeNewline = false;
 						escape = false;
-						if(c == '\n') continue;;
+						if(c == '\n') continue;
 					}
 					escapeNewline = false;
 					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {

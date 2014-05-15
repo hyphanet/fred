@@ -78,7 +78,7 @@ public class URLDecoder
 				}
 			} else {
 				try {
-					byte[] encoded = (""+c).getBytes("UTF-8");
+					byte[] encoded = String.valueOf(c).getBytes("UTF-8");
 					decodedBytes.write(encoded, 0, encoded.length);
 				} catch (UnsupportedEncodingException e) {
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);

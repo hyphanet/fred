@@ -44,7 +44,7 @@ public class FProxyFetchWaiter {
 						wait(5000);
 					} catch (InterruptedException e) { 
 						// Not likely
-					};
+					}
 					hasWaited = true;
 				}
 			}

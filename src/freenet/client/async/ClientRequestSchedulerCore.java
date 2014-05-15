@@ -308,7 +308,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 							toString = reg.nonGetRequest.toString();
 						} catch (Throwable t) {
 							// It throws :|
-						};
+						}
 						Logger.error(this, "Stored SingleBlockInserter is broken, maybe leftover from database leakage?: "+toString);
 					} else if(reg.nonGetRequest.isCancelled(container)) {
 						Logger.normal(this, "RegisterMe: request cancelled: "+reg.nonGetRequest);

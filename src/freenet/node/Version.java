@@ -146,13 +146,13 @@ public class Version {
 	 */
 	public static String[] getVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
 		return ret;
 	}
 
 	public static String[] getLastGoodVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
 		return ret;
 	}
 
