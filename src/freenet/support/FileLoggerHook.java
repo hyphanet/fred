@@ -220,7 +220,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
 		if (digit > 0) {
-			buf.append("-");
+			buf.append('-');
 			buf.append(digit);
 		}
 		buf.append(".log");

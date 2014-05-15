@@ -691,11 +691,11 @@ public final class PageMaker {
 
 		StringBuffer classes = new StringBuffer("infobox");
 		if(category != null) {
-			classes.append(" ");
+			classes.append(' ');
 			classes.append(category);
 		}
 		if(title != null && !isUnique) {
-			classes.append(" ");
+			classes.append(' ');
 			classes.append(title);
 		}
 

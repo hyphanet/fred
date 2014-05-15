@@ -611,18 +611,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownConnected.length > 0) {
 				sb.append(l10n("connectedSayBlownLabel")).append("\n\n");
 				for(PeerNode pn: nodesSayBlownConnected) {
-					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			if(nodesSayBlownDisconnected.length > 0) {
 				sb.append(l10n("disconnectedSayBlownLabel"));
 
 				for(PeerNode pn: nodesSayBlownDisconnected) {
-					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			if(nodesSayBlownFailedTransfer.length > 0) {
@@ -631,7 +631,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				for(PeerNode pn: nodesSayBlownFailedTransfer) {
 					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			return sb.toString();

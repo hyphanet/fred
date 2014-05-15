@@ -1754,7 +1754,7 @@ public class Metadata implements Cloneable {
 	private void dumpline(int indent, StringBuffer sb, String string) {
 		for(int i=0;i<indent;i++) sb.append(' ');
 		sb.append(string);
-		sb.append("\n");
+		sb.append('\n');
 	}
 
 	/**

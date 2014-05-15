@@ -309,7 +309,7 @@ public class Cookie {
 		StringBuilder sb = new StringBuilder(512); // TODO: As soon as something else besides Freetalk uses cookies, adjust this value.
 		
 		// RFC2965: Name MUST be first.
-		sb.append(name); sb.append("="); sb.append(value); sb.append(';');
+		sb.append(name); sb.append('='); sb.append(value); sb.append(';');
 		
 		sb.append("version="); sb.append(version); sb.append(';');
 		

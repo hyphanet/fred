@@ -1187,7 +1187,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				DownloadRequestStatus get = (DownloadRequestStatus)req;
 				FreenetURI uri = get.getURI();
 				sb.append(uri.toString());
-				sb.append("\n");
+				sb.append('\n');
 			}
 		}
 		return sb.toString();

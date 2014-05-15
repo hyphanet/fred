@@ -1053,7 +1053,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force,
 			boolean forceDownload, int maxRetries, boolean appendMaxSize) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("/");
+		sb.append('/');
 		sb.append(uri.toASCIIString());
 		char c = '?';
 		if(requestedMimeType != null && requestedMimeType.length() != 0) {

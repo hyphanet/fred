@@ -342,7 +342,7 @@ public class Util {
 			writeMPI(new BigInteger("1234567890123456789"), System.out);
 			writeMPI(new BigInteger("100200300400500600700800900"), System.out);
 		} else if (args[0].equals("read")) {
-			System.out.println("9");
+			System.out.println('9');
 			System.out.println(readMPI(System.in));
 			System.out.println("1234567890123456789");
 			System.out.println(readMPI(System.in));

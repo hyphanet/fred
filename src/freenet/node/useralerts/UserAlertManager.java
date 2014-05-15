@@ -401,7 +401,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 		sb.append("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
-		sb.append("\n");
+		sb.append('\n');
 		sb.append("  <title>").append(l10n("feedTitle")).append("</title>\n");
 		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
 		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
@@ -412,10 +412,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		for(int i = alerts.length - 1; i >= 0; i--) {
 			UserAlert alert = alerts[i];
 			if (alert.isValid()) {
-				sb.append("\n");
+				sb.append('\n');
 				sb.append("  <entry>\n");
 				sb.append("    <title>").append(alert.getTitle()).append("</title>\n");
-				sb.append("    <link href=\"").append(messagesURI).append("#").append(alert.anchor()).append("\"/>\n");
+				sb.append("    <link href=\"").append(messagesURI).append('#').append(alert.anchor()).append("\"/>\n");
 				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
 				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
 				sb.append("    <id>urn:feed:").append(alert.anchor()).append("</id>\n");

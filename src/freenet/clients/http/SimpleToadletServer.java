@@ -1240,9 +1240,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if(host == null)
 			host = "127.0.0.1";
 		sb.append(host);
-		sb.append(":");
+		sb.append(':');
 		sb.append(this.port);
-		sb.append("/");
+		sb.append('/');
 		return sb.toString();
 	}
 

@@ -54,10 +54,10 @@ public class USKDateHint {
 			sb.append(cal.get(Calendar.WEEK_OF_YEAR));
 			return sb.toString();
 		}
-		sb.append("-");
+		sb.append('-');
 		sb.append(cal.get(Calendar.MONTH));
 		if(t == Type.MONTH) return sb.toString();
-		sb.append("-");
+		sb.append('-');
 		sb.append(cal.get(Calendar.DAY_OF_MONTH));
 		return sb.toString();
 	}

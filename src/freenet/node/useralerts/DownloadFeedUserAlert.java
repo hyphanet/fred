@@ -41,9 +41,9 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	@Override
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(l10n("fileURI")).append(" ").append(uri).append("\n");
+		sb.append(l10n("fileURI")).append(' ').append(uri).append('\n');
 		if(description != null && description.length() != 0)
-			sb.append(l10n("fileDescription")).append(" ").append(description);
+			sb.append(l10n("fileDescription")).append(' ').append(description);
 		return sb.toString();
 	}
 

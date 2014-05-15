@@ -52,7 +52,7 @@ public class StringArrOption extends Option<String[]> {
 		for (int i = 0 ; i < arr.length ; i++) {
 			String val = arr[i];
 			if(val.length() == 0)
-				sb.append(":").append(delimiter);
+				sb.append(':').append(delimiter);
 			else
 				sb.append(URLEncoder.encode(arr[i],false)).append(delimiter);
 		}

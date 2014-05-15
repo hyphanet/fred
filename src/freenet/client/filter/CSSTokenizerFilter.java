@@ -1977,7 +1977,7 @@ class CSSTokenizerFilter {
 								filteredTokens.append(media);
 							}
 							filteredTokens.append(postSpace);
-							filteredTokens.append("{");
+							filteredTokens.append('{');
 							valid = true;
 							currentMedia = medias.toArray(new String[medias.size()]);
 						}
@@ -2006,7 +2006,7 @@ class CSSTokenizerFilter {
 							filteredTokens.append(braceSpace);
 							filteredTokens.append(orig);
 							filteredTokens.append(postSpace);
-							filteredTokens.append("{");
+							filteredTokens.append('{');
 						}
 					}
 					} // else valid = false
@@ -2108,7 +2108,7 @@ class CSSTokenizerFilter {
 												output.append(media);
 											}
 										}
-										output.append(";");
+										output.append(';');
 										w.write(output.toString());
 									} catch (CommentException e) {
 										// Don't write anything
@@ -2250,7 +2250,7 @@ class CSSTokenizerFilter {
 						{
 							if(s2Comma)
 							{
-								filteredTokens.append(",");
+								filteredTokens.append(',');
 								s2Comma=false;
 							}
 							filteredTokens.append(ws);
@@ -2323,7 +2323,7 @@ class CSSTokenizerFilter {
 					if(filtered!=null)
 					{
 						if(s2Comma)
-							filteredTokens.append(",");
+							filteredTokens.append(',');
 						else
 							s2Comma=true;
 						filteredTokens.append(ws);
@@ -2585,7 +2585,7 @@ class CSSTokenizerFilter {
 					ignoreElementsS3 = false;
 					if((!ignoreElementsS2) || closeIgnoredS2) {
 						filteredTokens.append(postSpace);
-						filteredTokens.append("}");
+						filteredTokens.append('}');
 						closeIgnoredS2 = false;
 						ignoreElementsS2 = false;
 					} else
@@ -2736,7 +2736,7 @@ class CSSTokenizerFilter {
 			if(lastWord != null && lastWord.postComma)
 				sb.append(',');
 			lastWord = word;
-			if(!first) sb.append(" ");
+			if(!first) sb.append(' ');
 			if(!word.changed) {
 				sb.append(word.original);
 				if(logDEBUG) Logger.debug(this, "Adding word (original): \""+word.original+"\"");
@@ -3169,7 +3169,7 @@ class CSSTokenizerFilter {
 						origToken.append(escape);
 						decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
 						// Convert it to standard whitespace to avoid any complications.
-						origToken.append(" ");
+						origToken.append(' ');
 						escape.setLength(0);
 						escaping = false;
 						// \r terminates the escape but might be followed by a \n
@@ -4038,7 +4038,7 @@ class CSSTokenizerFilter {
 			StringBuilder sb = new StringBuilder();
 			boolean first = true;
 			for(ParsedWord word : words) {
-				if(!first) sb.append(",");
+				if(!first) sb.append(',');
 				first = false;
 				sb.append(word);
 			}
