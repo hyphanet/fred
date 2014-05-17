@@ -364,12 +364,12 @@ public class Version {
 		String[] v = Fields.commaList(version);
 
 		if ((v.length < 3) || !goodProtocol(v[2])) {
-			throw new VersionParseException("not long enough or bad protocol: "+version);
+			throw new VersionParseException("not long enough or bad protocol: " + version);
 		}
 		try {
 			return Integer.parseInt(v[3]);
 		} catch (NumberFormatException e) {
-			throw (VersionParseException)new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version).initCause(e);
+			throw (VersionParseException)new VersionParseException("Got NumberFormatException on " + v[3] + " : " + e + " for " + version).initCause(e);
 		}
 	}
 

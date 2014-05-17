@@ -134,8 +134,8 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		case LowLevelGetException.CANCELLED:
 			return new FetchException(FetchException.CANCELLED);
 		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
+			Logger.error(this, "Unknown LowLevelGetException code: " + e.code);
+			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: " + e.code);
 		}
 	}
 
@@ -143,7 +143,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	public void onFailure(LowLevelGetException e, Object token,
 			ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
+			Logger.minor(this, "onFailure(" + e + " , " + token + " on " + this);
 		onFailure(translateException(e), token, container, context);
 	}
 	
@@ -213,14 +213,14 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 
 	void reschedule(ObjectContainer container, ClientContext context) {
 		if(this.getParentGrabArray() != null) {
-			if(logMINOR) Logger.minor(this, "Not rescheduling as already scheduled on "+getParentGrabArray());
+			if(logMINOR) Logger.minor(this, "Not rescheduling as already scheduled on " + getParentGrabArray());
 			return;
 		}
 		if(isCancelled(container)) return;
 		try {
 			getScheduler(container, context).register(null, new SendableGet[] { this }, persistent, container, getContextBlocks(container), true);
 		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
+			Logger.error(this, "Impossible: " + e + " on " + this, e);
 		}
 	}
 
@@ -341,7 +341,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 			ObjectContainer container, ClientContext context) {
         FetchException[] fetchExceptions = new FetchException[items.length];
         int countFatal = 0;
-        for(int i=0;i<items.length;i++) {
+        for(int i=0;i < items.length;i++) {
         	fetchExceptions[i] = translateException(items[i].e);
         	if(fetchExceptions[i].isFatal()) countFatal++;
         }
@@ -358,7 +358,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
                 // FIXME do we need to free the keyNum's??? Or will that happen later anyway?
                 return;
         }
-        for(int i=0;i<fetchExceptions.length;i++)
+        for(int i=0;i < fetchExceptions.length;i++)
         	segment.errors.inc(fetchExceptions[i].getMode());
         if(persistent)
         	segment.errors.storeTo(container);
@@ -368,7 +368,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
         	FetchException[] newFetchExceptions = new FetchException[items.length - countFatal];
         	// Call the fatal callbacks directly.
         	int x = 0;
-        	for(int i=0;i<items.length;i++) {
+        	for(int i=0;i < items.length;i++) {
         		int blockNum = ((SplitFileFetcherSegmentSendableRequestItem)items[i].token).blockNum;
         		if(fetchExceptions[i].isFatal()) {
         			segment.onFatalFailure(fetchExceptions[i], blockNum, container, context);
@@ -380,10 +380,10 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
         	}
         	fetchExceptions = newFetchExceptions;
         } else {
-        	for(int i=0;i<blockNumbers.length;i++)
+        	for(int i=0;i < blockNumbers.length;i++)
         		blockNumbers[i] = ((SplitFileFetcherSegmentSendableRequestItem)items[i].token).blockNum;
         }
-        if(logMINOR) Logger.minor(this, "Calling segment.onNonFatalFailure with "+blockNumbers.length+" failed fetches");
+        if(logMINOR) Logger.minor(this, "Calling segment.onNonFatalFailure with " + blockNumbers.length + " failed fetches");
         segment.onNonFatalFailure(fetchExceptions, blockNumbers, container, context);
 
         if(persistent) {

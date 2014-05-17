@@ -14,8 +14,8 @@ public class StringArrOption extends Option<String[]> {
 	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.STRING_ARRAY);
-		this.defaultValue = (defaultValue==null)?new String[0]:defaultValue;
-		this.currentValue = (defaultValue==null)?new String[0]:defaultValue;
+		this.defaultValue = (defaultValue == null)?new String[0]:defaultValue;
+		this.currentValue = (defaultValue == null)?new String[0]:defaultValue;
 	}
 		
 	@Override
@@ -41,7 +41,7 @@ public class StringArrOption extends Option<String[]> {
 	}
 	
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("StringArrOption."+key, pattern, value);
+		return NodeL10n.getBase().getString("StringArrOption." + key, pattern, value);
 	}
 
 	@Override
@@ -56,7 +56,7 @@ public class StringArrOption extends Option<String[]> {
 			else
 				sb.append(URLEncoder.encode(arr[i],false)).append(delimiter);
 		}
-		if(sb.length() > 0) sb.setLength(sb.length()-1); // drop surplus delimiter
+		if(sb.length() > 0) sb.setLength(sb.length() - 1); // drop surplus delimiter
 		return sb.toString();
 	}
 	

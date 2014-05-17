@@ -152,7 +152,7 @@ public class IPConverter {
 		
 		/** Doesn't check whether it exists. Relative to the top of staticfiles. */
 		private String flagIconPath() {
-			return "icon/flags/"+toString().toLowerCase()+".png";
+			return "icon/flags/" + toString().toLowerCase() + ".png";
 		}
 		
 		/** Relative to top of static files */
@@ -182,12 +182,12 @@ public class IPConverter {
 			'?' };
 	private final static int base = base85.length;
 	// XXX this is actually base86, not base85!
-	private final static byte[] base85inv = new byte [128-32];
+	private final static byte[] base85inv = new byte [128 - 32];
 	static {
 		Arrays.fill(base85inv, (byte)-1);
 		for(int i = 0; i < base85.length; i++) {
 			assert(base85[i] >= (char)32 && base85[i] < (char)128);
-			base85inv[(int)base85[i]-32] = (byte)i;
+			base85inv[(int)base85[i] - 32] = (byte)i;
 		}
 	}
 
@@ -250,7 +250,7 @@ public class IPConverter {
 					codes[i] = (short) country.ordinal();
 				} catch (IllegalArgumentException e) {
 					// Does not invalidate the whole file, just means the country list is out of date.
-					Logger.error(this, "Country not in list: "+code);
+					Logger.error(this, "Country not in list: " + code);
 					codes[i] = (short)-1;
 				}
 				ips[i] = (int)ip;
@@ -263,7 +263,7 @@ public class IPConverter {
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage());
 		} catch (IPConverterParseException e) {
-			Logger.error(this, "IP to country datbase file is corrupt: "+e, e);
+			Logger.error(this, "IP to country datbase file is corrupt: " + e, e);
 			// Don't try again until next restart.
 			// FIXME add a callback to clear the flag when we download a new copy.
 			dbFileCorrupt = true;

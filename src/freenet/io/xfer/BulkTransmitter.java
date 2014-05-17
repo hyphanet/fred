@@ -147,7 +147,7 @@ public class BulkTransmitter {
 						public boolean shouldTimeout() {
 							synchronized(BulkTransmitter.this) {
 								   if (cancelled) return true;
-								   if (finished)  return (System.currentTimeMillis()-finishTime > FINAL_ACK_TIMEOUT);
+								   if (finished)  return (System.currentTimeMillis() - finishTime > FINAL_ACK_TIMEOUT);
 							}
 							if(BulkTransmitter.this.prb.isAborted()) return true;
 							return false;
@@ -205,7 +205,7 @@ public class BulkTransmitter {
 
 	public void cancel(String reason) {
 		if(logMINOR)
-			Logger.minor(this, "Cancelling "+this);
+			Logger.minor(this, "Cancelling " + this);
 		sendAbortedMessage();
 		synchronized(this) {
 			if(cancelled || finished) return;
@@ -236,7 +236,7 @@ public class BulkTransmitter {
 			transfersCompleted++;
 			transfersSucceeded++;
 		}
-		if(logMINOR) Logger.minor(this, "Completed transfer successfully "+this);
+		if(logMINOR) Logger.minor(this, "Completed transfer successfully " + this);
 	}
 	
 	/**
@@ -255,7 +255,7 @@ outer:	while(true) {
 			
 			if(prb.isAborted()) {
 				if(logMINOR)
-					Logger.minor(this, "Aborted "+this);
+					Logger.minor(this, "Aborted " + this);
 				return false;
 			}
 			int blockNo;
@@ -266,7 +266,7 @@ outer:	while(true) {
 				}
 				prb.remove(BulkTransmitter.this);
 				if(logMINOR)
-					Logger.minor(this, "Failed to send "+uid+": peer restarted: "+peer);
+					Logger.minor(this, "Failed to send " + uid + ": peer restarted: " + peer);
 				throw new DisconnectedException();
 			}
 			synchronized(this) {
@@ -288,7 +288,7 @@ outer:	while(true) {
 							return false;
 						}
 						if(logMINOR)
-							Logger.minor(this, "Waiting for packets: remaining: "+inFlightPackets);
+							Logger.minor(this, "Waiting for packets: remaining: " + inFlightPackets);
 						if(inFlightPackets == 0) break;
 						try {
 							wait();
@@ -313,7 +313,7 @@ outer:	while(true) {
 				}
 				long end = System.currentTimeMillis();
 				if(end - lastSentPacket > TIMEOUT) {
-					Logger.error(this, "Send timed out on "+this);
+					Logger.error(this, "Send timed out on " + this);
 					cancel("Timeout awaiting BulkReceivedAll");
 					return false;
 				}
@@ -323,14 +323,14 @@ outer:	while(true) {
 			byte[] buf = prb.getBlockData(blockNo);
 			if(buf == null) {
 				if(logMINOR)
-					Logger.minor(this, "Block "+blockNo+" is null, presumably the send is cancelled: "+this);
+					Logger.minor(this, "Block " + blockNo + " is null, presumably the send is cancelled: " + this);
 				// Already cancelled, quit
 				return false;
 			}
 			
 			// Congestion control and bandwidth limiting
 			try {
-				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
+				if(logMINOR) Logger.minor(this, "Sending packet " + blockNo);
 				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf, realTime);
 				UnsentPacketTag tag = new UnsentPacketTag();
 				peer.sendAsync(msg, tag, ctr);
@@ -349,7 +349,7 @@ outer:	while(true) {
 			} catch (NotConnectedException e) {
 				cancel("Disconnected");
 				if(logMINOR)
-					Logger.minor(this, "Cancelled: not connected "+this);
+					Logger.minor(this, "Cancelled: not connected " + this);
 				throw new DisconnectedException();
 			}
 		}
@@ -362,12 +362,12 @@ outer:	while(true) {
 			synchronized(this) {
 				allQueued = true;
 				if(unsentPackets == 0 && !calledAllSent) {
-					if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
+					if(logMINOR) Logger.minor(this, "Calling all sent callback on " + this);
 					callAllSent = true;
 					calledAllSent = true;
 					anyFailed = failedPacket;
 				} else if(!calledAllSent) {
-					if(logMINOR) Logger.minor(this, "Still waiting for "+unsentPackets);
+					if(logMINOR) Logger.minor(this, "Still waiting for " + unsentPackets);
 				}
 			}
 			if(callAllSent) {
@@ -426,11 +426,11 @@ outer:	while(true) {
 				if(failed) {
 					failedPacket = true;
 					BulkTransmitter.this.notifyAll();
-					if(logMINOR) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
+					if(logMINOR) Logger.minor(this, "Packet failed for " + BulkTransmitter.this);
 				} else {
 					inFlightPackets--;
 					BulkTransmitter.this.notifyAll();
-					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
+					if(logMINOR) Logger.minor(this, "Packet sent " + BulkTransmitter.this + " remaining in flight: " + inFlightPackets);
 				}
 			}
 			sent(true);
@@ -468,7 +468,7 @@ outer:	while(true) {
 				calledAllSent = true;
 				anyFailed = failedPacket;
 			}
-			if(logMINOR) Logger.minor(this, "Calling all sent callback on "+this);
+			if(logMINOR) Logger.minor(this, "Calling all sent callback on " + this);
 			callAllSentCallbackInner(anyFailed);
 		}
 		
@@ -476,7 +476,7 @@ outer:	while(true) {
 	
 	@Override
 	public String toString() {
-		return "BulkTransmitter:"+uid+":"+peer.shortToString();
+		return "BulkTransmitter:" + uid + ":" + peer.shortToString();
 	}
 	
 	public String getCancelReason() {

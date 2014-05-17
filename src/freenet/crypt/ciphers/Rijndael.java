@@ -37,7 +37,7 @@ public class Rijndael implements BlockCipher {
 	{
 		long times = Long.MAX_VALUE;
 		byte[] input = new byte[1024];
-		byte[] output = new byte[input.length*32];
+		byte[] output = new byte[input.length * 32];
 		cipher.init(Cipher.ENCRYPT_MODE, key, IV);
 		// warm-up
 		for (int i = 0; i < 32; i++) {
@@ -109,8 +109,8 @@ public class Rijndael implements BlockCipher {
 			c = Cipher.getInstance(algo, provider);
 			c.init(Cipher.ENCRYPT_MODE, k, IV);
 			c.doFinal(plaintext);
-			Logger.normal(Rijndael.class, "Using JCA: provider "+provider);
-			System.out.println("Using JCA cipher provider: "+provider);
+			Logger.normal(Rijndael.class, "Using JCA: provider " + provider);
+			System.out.println("Using JCA cipher provider: " + provider);
 			return provider;
 		} catch (GeneralSecurityException e) {
 			Logger.warning(Rijndael.class, "Not using JCA as it is crippled (can't use 256-bit keys). Will use built-in encryption. ", e);
@@ -155,9 +155,9 @@ public class Rijndael implements BlockCipher {
 	@Override
 	public final void initialize(byte[] key) {
 		try {
-			byte[] nkey=new byte[keysize>>3];
+			byte[] nkey=new byte[keysize >> 3];
 			System.arraycopy(key, 0, nkey, 0, nkey.length);
-			sessionKey=Rijndael_Algorithm.makeKey(nkey, blocksize/8);
+			sessionKey=Rijndael_Algorithm.makeKey(nkey, blocksize / 8);
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 			Logger.error(this,"Invalid key");
@@ -166,15 +166,15 @@ public class Rijndael implements BlockCipher {
 
 	@Override
 	public synchronized final void encipher(byte[] block, byte[] result) {
-		if(block.length != blocksize/8)
+		if(block.length != blocksize / 8)
 			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize/8);
+		Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey, blocksize / 8);
 	}
 
 	@Override
 	public synchronized final void decipher(byte[] block, byte[] result) {
-		if(block.length != blocksize/8)
+		if(block.length != blocksize / 8)
 			throw new IllegalArgumentException();
-		Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, blocksize/8);
+		Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, blocksize / 8);
 	}
 }

@@ -48,7 +48,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 	
     @Override
 	public String toString() {
-        return super.toString()+",key="+key;
+        return super.toString() + ",key=" + key;
     }
     
     /**
@@ -78,7 +78,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 	@Override
 	public byte[] memoryDecode() throws CHKDecodeException {
 		try {
-			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, false);
+			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32 * 1024, false);
 			return BucketTools.toByteArray(a); // FIXME
 		} catch (IOException e) {
 			throw new Error(e);
@@ -152,7 +152,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Checks complete
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
         if((size > 32768) || (size < 0)) {
-            throw new CHKDecodeException("Invalid size: "+size);
+            throw new CHKDecodeException("Invalid size: " + size);
         }
         return Key.decompress(dontCompress ? false : key.isCompressed(), dbuf, size, bf, 
         		Math.min(maxLength, CHKBlock.MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
@@ -171,7 +171,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 		for (int i = 0; i < 32; i++) {
 			hmac.update(input, 0, input.length);
 			hmac.doFinal(output, 0);
-			System.arraycopy(output, 0, input, (i*output.length)%(input.length-output.length), output.length);
+			System.arraycopy(output, 0, input, (i * output.length) % (input.length - output.length), output.length);
 		}
 		System.arraycopy(output, 0, key, 0, Math.min(key.length, output.length));
 		for (int i = 0; i < 1024; i++) {
@@ -245,7 +245,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 			throw new UnsupportedOperationException();
         byte[] headers = block.headers;
         byte[] data = block.data;
-    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2 + 32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -254,10 +254,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cryptoKey, "AES"), new IvParameterSpec(hash, 0, 16));
         byte[] plaintext = new byte[data.length + 2];
 		int moved = cipher.update(data, 0, data.length, plaintext);
-		cipher.doFinal(headers, hash.length+2, 2, plaintext, moved);
+		cipher.doFinal(headers, hash.length + 2, 2, plaintext, moved);
         int size = ((plaintext[data.length] & 0xff) << 8) + (plaintext[data.length + 1] & 0xff);
         if((size > 32768) || (size < 0)) {
-            throw new CHKDecodeException("Invalid size: "+size);
+            throw new CHKDecodeException("Invalid size: " + size);
         }
         // Check the hash.
         Mac hmac = Mac.getInstance("HmacSHA256", hmacProvider);
@@ -286,7 +286,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
 			throw new UnsupportedOperationException();
         byte[] headers = block.headers;
         byte[] data = block.data;
-    	byte[] hash = Arrays.copyOfRange(headers, 2, 2+32);
+    	byte[] hash = Arrays.copyOfRange(headers, 2, 2 + 32);
         byte[] cryptoKey = key.cryptoKey;
         if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
             throw new CHKDecodeException("Crypto key too short");
@@ -303,10 +303,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         byte[] plaintext = new byte[data.length];
         cipher.processBytes(data, 0, data.length, plaintext, 0);
         byte[] lengthBytes = new byte[2];
-        cipher.processBytes(headers, hash.length+2, 2, lengthBytes, 0);
+        cipher.processBytes(headers, hash.length + 2, 2, lengthBytes, 0);
         int size = ((lengthBytes[0] & 0xff) << 8) + (lengthBytes[1] & 0xff);
         if((size > 32768) || (size < 0)) {
-            throw new CHKDecodeException("Invalid size: "+size);
+            throw new CHKDecodeException("Invalid size: " + size);
         }
 		try {
         // Check the hash.
@@ -342,7 +342,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         	if(cryptoAlgorithm == Key.ALGO_AES_PCFB_256_SHA256)
         		return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
         	else if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
-        		throw new IllegalArgumentException("Unknown crypto algorithm: "+cryptoAlgorithm);
+        		throw new IllegalArgumentException("Unknown crypto algorithm: " + cryptoAlgorithm);
         	if(Rijndael.AesCtrProvider == null) {
         		return encodeNewNoJCA(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm, KeyBlock.HASH_SHA256);
         	} else {
@@ -394,7 +394,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
 			data = Arrays.copyOf(finalData, 32768);
-			Util.randomBytes(mt, data, finalData.length, 32768-finalData.length);
+			Util.randomBytes(mt, data, finalData.length, 32768 - finalData.length);
         } else {
         	data = finalData;
         }
@@ -440,7 +440,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
      */
     public static ClientCHKBlock encodeNew(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws CHKEncodeException {
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
-    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+    		throw new IllegalArgumentException("Unsupported crypto algorithm " + cryptoAlgorithm);
 		try {
     	// IV = HMAC<cryptokey>(plaintext).
         // It's okay that this is the same for 2 blocks with the same key and the same content.
@@ -454,10 +454,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         hmac.update(data);
         hmac.update(tmpLen);
         byte[] hash = hmac.doFinal();
-        byte[] header = new byte[hash.length+2+2];
+        byte[] header = new byte[hash.length + 2 + 2];
     	if(blockHashAlgorithm == 0) cryptoAlgorithm = KeyBlock.HASH_SHA256;
     	if(blockHashAlgorithm != KeyBlock.HASH_SHA256)
-    		throw new IllegalArgumentException("Unsupported block hash algorithm "+cryptoAlgorithm);
+    		throw new IllegalArgumentException("Unsupported block hash algorithm " + cryptoAlgorithm);
         header[0] = (byte)(blockHashAlgorithm >> 8);
         header[1] = (byte)(blockHashAlgorithm & 0xff);
         System.arraycopy(hash, 0, header, 2, hash.length);
@@ -469,12 +469,12 @@ public class ClientCHKBlock implements ClientKeyBlock {
         byte[] cdata = new byte[data.length];
 		int moved = cipher.update(data, 0, data.length, cdata);
 		if (moved == data.length) {
-			cipher.doFinal(tmpLen, 0, 2, header, hash.length+2);
+			cipher.doFinal(tmpLen, 0, 2, header, hash.length + 2);
 		} else {
 			// FIXME inefficient
 			byte[] tmp = cipher.doFinal(tmpLen, 0, 2);
-			System.arraycopy(tmp, 0, cdata, moved, tmp.length-2);
-			System.arraycopy(tmp, tmp.length-2,	header, hash.length+2, 2);
+			System.arraycopy(tmp, 0, cdata, moved, tmp.length - 2);
+			System.arraycopy(tmp, tmp.length - 2,	header, hash.length + 2, 2);
 		}
         
         // Now calculate the final hash
@@ -514,7 +514,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
      */
     public static ClientCHKBlock encodeNewNoJCA(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm, int blockHashAlgorithm) throws CHKEncodeException {
     	if(cryptoAlgorithm != Key.ALGO_AES_CTR_256_SHA256)
-    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+    		throw new IllegalArgumentException("Unsupported crypto algorithm " + cryptoAlgorithm);
 		try {
     	// IV = HMAC<cryptokey>(plaintext).
         // It's okay that this is the same for 2 blocks with the same key and the same content.
@@ -528,10 +528,10 @@ public class ClientCHKBlock implements ClientKeyBlock {
         hmac.update(data);
         hmac.update(tmpLen);
         byte[] hash = hmac.doFinal();
-        byte[] header = new byte[hash.length+2+2];
+        byte[] header = new byte[hash.length + 2 + 2];
     	if(blockHashAlgorithm == 0) cryptoAlgorithm = KeyBlock.HASH_SHA256;
     	if(blockHashAlgorithm != KeyBlock.HASH_SHA256)
-    		throw new IllegalArgumentException("Unsupported block hash algorithm "+cryptoAlgorithm);
+    		throw new IllegalArgumentException("Unsupported block hash algorithm " + cryptoAlgorithm);
         header[0] = (byte)(blockHashAlgorithm >> 8);
         header[1] = (byte)(blockHashAlgorithm & 0xff);
         Rijndael aes;
@@ -549,7 +549,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         System.arraycopy(hash, 0, header, 2, hash.length);
         byte[] cdata = new byte[data.length];
         ctr.processBytes(data, 0, data.length, cdata, 0);
-        ctr.processBytes(tmpLen, 0, 2, header, hash.length+2);
+        ctr.processBytes(tmpLen, 0, 2, header, hash.length + 2);
         
         // Now calculate the final hash
         md256.update(header);
@@ -574,17 +574,17 @@ public class ClientCHKBlock implements ClientKeyBlock {
     @SuppressWarnings("deprecation") // FIXME Back compatibility, using dubious ciphers; remove eventually.
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
-    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+    		throw new IllegalArgumentException("Unsupported crypto algorithm " + cryptoAlgorithm);
         byte[] header;
         ClientCHK key;
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
-        header = new byte[plainIV.length+2+2];
+        header = new byte[plainIV.length + 2 + 2];
         header[0] = (byte)(KeyBlock.HASH_SHA256 >> 8);
         header[1] = (byte)(KeyBlock.HASH_SHA256 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
-        header[plainIV.length+2] = (byte)(dataLength >> 8);
-        header[plainIV.length+3] = (byte)(dataLength & 0xff);
+        header[plainIV.length + 2] = (byte)(dataLength >> 8);
+        header[plainIV.length + 3] = (byte)(dataLength & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
         
@@ -593,7 +593,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         try {
             cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
-        	Logger.error(ClientCHKBlock.class, "Impossible: "+e, e);
+        	Logger.error(ClientCHKBlock.class, "Impossible: " + e, e);
             throw new Error(e);
         }
         cipher.initialize(encKey);
@@ -608,7 +608,7 @@ public class ClientCHKBlock implements ClientKeyBlock {
         // Those bytes being 2 bytes for the length, followed by the first 30 bytes of the data.
         
         PCFBMode pcfb = PCFBMode.create(cipher);
-        pcfb.blockEncipher(header, 2, header.length-2);
+        pcfb.blockEncipher(header, 2, header.length - 2);
         pcfb.blockEncipher(data, 0, data.length);
         
         // Now calculate the final hash

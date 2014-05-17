@@ -85,7 +85,7 @@ public class RequestTag extends UIDTag {
 			handlerTransferring = false;
 			senderFinished = this.senderTransferring;
 			if(senderFinished) {
-				Logger.error(this, "Nobody called senderTransferEnds() for "+this, new Exception("debug"));
+				Logger.error(this, "Nobody called senderTransferEnds() for " + this, new Exception("debug"));
 				k = key;
 				s = sender.get();
 			}
@@ -213,7 +213,7 @@ public class RequestTag extends UIDTag {
 
 	public synchronized void waitingForOpennet(PeerNode next) {
 		if(waitingForOpennet != null)
-			Logger.error(this, "Have already waited for opennet: "+waitingForOpennet.get()+" on "+this, new Exception("error"));
+			Logger.error(this, "Have already waited for opennet: " + waitingForOpennet.get() + " on " + this, new Exception("error"));
 		this.waitingForOpennet = next.myRef;
 	}
 
@@ -226,7 +226,7 @@ public class RequestTag extends UIDTag {
 			}
 			PeerNode got = waitingForOpennet.get();
 			if(got != next) {
-				Logger.error(this, "Finished waiting for opennet on "+next+" but was waiting for "+got);
+				Logger.error(this, "Finished waiting for opennet on " + next + " but was waiting for " + got);
 			}
 			waitingForOpennet = null;
 			if(!mustUnlock()) return;

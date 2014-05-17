@@ -116,7 +116,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
+			Logger.minor(this, "Removing from database: " + this);
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);
 	}
@@ -125,7 +125,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 	public Bucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
-		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: " + getFile());
 		return ret;
 	}
 }

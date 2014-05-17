@@ -57,11 +57,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	}
 
 	// the 'physical' limit for container size
-	public static final long DEFAULT_MAX_CONTAINERSIZE = 2048*1024;  
-	public static final long DEFAULT_MAX_CONTAINERITEMSIZE = 1024*1024;
+	public static final long DEFAULT_MAX_CONTAINERSIZE = 2048 * 1024;  
+	public static final long DEFAULT_MAX_CONTAINERITEMSIZE = 1024 * 1024;
 	// a container > (MAX_CONTAINERSIZE-CONTAINERSIZE_SPARE) is treated as 'full'
 	// this should prevent to big containers
-	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196*1024;
+	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196 * 1024;
 
 	public DefaultManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
 			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
@@ -99,7 +99,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			if (o instanceof ManifestElement) {
 				continue;
 			}
-			throw new IllegalArgumentException("FATAL: unknown manifest element: "+o);
+			throw new IllegalArgumentException("FATAL: unknown manifest element: " + o);
 		}
 	}
 
@@ -116,7 +116,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix, long maxSize, String parentName) throws TooManyFilesInsertException {
 	//(HashMap<String, Object> md, PluginReplySender replysender, String identifier, long maxSize, boolean doInsert, String parentName) throws InsertException {
 		if(logMINOR)
-			Logger.minor(this, "STAT: handling "+((parentName==null)?"<root>?": parentName));
+			Logger.minor(this, "STAT: handling " + ((parentName == null)?"<root>?": parentName));
 		//if (doInsert && (parentName == null)) throw new IllegalStateException("Parent name cant be null for insert!");
 		//if (doInsert) containercounter += 1;
 		if (maxSize == DEFAULT_MAX_CONTAINERSIZE)
@@ -159,7 +159,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					Object o = entry.getValue();
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
-						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+						containerBuilder.addItem(name, prefix + name, me, name.equals(defaultName));
 					} else {
 						tmpSize += 512;
 					}
@@ -174,7 +174,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 						if (me.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
 							containerBuilder.addExternal(name, me.getData(), me.getMimeTypeOverride(), name.equals(defaultName));
 						else
-							containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+							containerBuilder.addItem(name, prefix + name, me, name.equals(defaultName));
 					} else {
 						tmpSize += 512;
 					}
@@ -194,7 +194,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 						// FIXME do we need 512 bytes for the dir entry here?
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
-						tmpSize += makePutHandlers(containerBuilder, hm, defaultName, "", maxSize-tmpSize, name);
+						tmpSize += makePutHandlers(containerBuilder, hm, defaultName, "", maxSize - tmpSize, name);
 						containerBuilder.popCurrentDir();
 					} else {
 						// We definitely need the 512 bytes for the dir entry here.
@@ -222,7 +222,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					ManifestElement me = (ManifestElement) o;
 					if(me.getTargetURI() != null) {
 						tmpSize += 512;
-						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+						containerBuilder.addItem(name, prefix + name, me, name.equals(defaultName));
 						iter.remove();
 					} else {
 						minUsageForFiles += 512;
@@ -293,8 +293,8 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				ManifestElement me = (ManifestElement)o;
 				long size = ContainerSizeEstimator.tarItemSize(me.getSize());
 				if ((me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && 
-						(size < (maxSize-(tmpSize+minUsageForFiles-512 /* this one */)))) {
-					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
+						(size < (maxSize - (tmpSize + minUsageForFiles - 512 /* this one */)))) {
+					containerBuilder.addItem(name, prefix + name, me, name.equals(defaultName));
 					tmpSize += size;
 					minUsageForFiles -= 512;
 				} else {
@@ -312,7 +312,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		// group files left into external archives ('CHK@.../name' redirects)
 		while (!itemsLeft.isEmpty()) {
 			if(logMINOR)
-				Logger.minor(this, "ItemsLeft checker: "+itemsLeft.size());
+				Logger.minor(this, "ItemsLeft checker: " + itemsLeft.size());
 
 			if (itemsLeft.size() == 1) {
 				// one item left, make it external
@@ -343,7 +343,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 
 			// getSizeFiles() includes 512 bytes for each file over the size limit
-			if (((leftSize.getSizeFiles() - (512*itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
+			if (((leftSize.getSizeFiles() - (512 * itemsLeft.size())) == 0) && (leftSize.getSizeFilesNoLimit() > 0)) {
 				// all items left are to big (or redirect), make all external
 				for(Map.Entry<String, Object> entry:itemsLeft.entrySet()) {
 					String lname = entry.getKey();
@@ -363,7 +363,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				Map.Entry<String, Object> entry = iter.next();
 				String lname = entry.getKey();
 				ManifestElement me = (ManifestElement)entry.getValue();
-				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (DEFAULT_MAX_CONTAINERSIZE-archiveLimit))) {
+				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (DEFAULT_MAX_CONTAINERSIZE - archiveLimit))) {
 					containerBuilder.addArchiveItem(archive, lname, me, lname.equals(defaultName));
 					tmpSize += 512;
 					archiveLimit += ContainerSizeEstimator.tarItemSize(me.getSize());
@@ -381,7 +381,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			Object o = entry.getValue();
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
-				containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
+				containerBuilder.addItem(name, prefix + name, element, name.equals(defaultName));
 			} else {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String,Object>)o;
@@ -402,7 +402,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				if (element.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
 					containerBuilder.addExternal(name, element.getData(), element.getMimeTypeOverride(), name.equals(defaultName));
 				else
-					containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
+					containerBuilder.addItem(name, prefix + name, element, name.equals(defaultName));
 				continue;
 			} else {
 				@SuppressWarnings("unchecked")

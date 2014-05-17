@@ -88,7 +88,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			realRun();
 			node.nodeStats.reportAnnounceForwarded(forwardedRefs, source);
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
+			Logger.error(this, "Caught " + t + " announcing " + uid + " from " + source, t);
 		} finally {
 			if(source != null) {
 				source.completedAnnounce(uid);
@@ -116,7 +116,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 		PeerNode next = null;
 		while(true) {
-			if(logMINOR) Logger.minor(this, "htl="+htl);
+			if(logMINOR) Logger.minor(this, "htl=" + htl);
 			/*
 			 * If we haven't routed to any node yet, decrement according to the source.
 			 * If we have, decrement according to the node which just failed.
@@ -157,7 +157,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				rnf(next);
 				return;
 			}
-			if(logMINOR) Logger.minor(this, "Routing request to "+next);
+			if(logMINOR) Logger.minor(this, "Routing request to " + next);
 			if(onlyNode == null)
 				next.reportRoutedTo(target, source == null, false, source, nodesRoutedTo);
 			nodesRoutedTo.add(next);
@@ -190,9 +190,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 				try {
 					msg = node.usm.waitFor(mf, this);
-					if(logMINOR) Logger.minor(this, "first part got "+msg);
+					if(logMINOR) Logger.minor(this, "first part got " + msg);
 				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+					Logger.normal(this, "Disconnected from " + next + " while waiting for Accepted on " + uid);
 					break;
 				}
 
@@ -224,7 +224,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				}
 
 				if(msg.getSpec() != DMT.FNPAccepted) {
-					Logger.error(this, "Unrecognized message: "+msg);
+					Logger.error(this, "Unrecognized message: " + msg);
 					continue;
 				}
 
@@ -247,7 +247,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				sendRest(next, xferUID);
 			} catch (NotConnectedException e1) {
 				if(logMINOR)
-					Logger.minor(this, "Not connected while sending noderef on "+next);
+					Logger.minor(this, "Not connected while sending noderef on " + next);
 				continue;
 			}
 
@@ -269,11 +269,11 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				try {
 					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from "+next+" while waiting for announcement");
+					Logger.normal(this, "Disconnected from " + next + " while waiting for announcement");
 					break;
 				}
 
-				if(logMINOR) Logger.minor(this, "second part got "+msg);
+				if(logMINOR) Logger.minor(this, "second part got " + msg);
 
 				if(msg == null) {
 					// Fatal timeout, must be terminal (IS_LOCAL==true)
@@ -283,7 +283,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 				if(msg.getSpec() == DMT.FNPOpennetNoderefRejected) {
 					int reason = msg.getInt(DMT.REJECT_CODE);
-					Logger.normal(this, "Announce rejected by "+next+" : "+DMT.getOpennetRejectedCode(reason));
+					Logger.normal(this, "Announce rejected by " + next + " : " + DMT.getOpennetRejectedCode(reason));
 					msg = null;
 					break;
 				}
@@ -361,7 +361,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 					continue; // This message is propagated, they will send a Completed or RNF
 				}
 
-				Logger.error(this, "Unexpected message: "+msg);
+				Logger.error(this, "Unexpected message: " + msg);
 			}
 		}
 	}
@@ -417,14 +417,14 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 									cb.nodeNotAdded();
 							}
 						} catch (FSParseException e) {
-							Logger.normal(this, "Failed to parse reply: "+e, e);
-							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+							Logger.normal(this, "Failed to parse reply: " + e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: " + e);
 						} catch (PeerParseException e) {
-							Logger.normal(this, "Failed to parse reply: "+e, e);
-							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+							Logger.normal(this, "Failed to parse reply: " + e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: " + e);
 						} catch (ReferenceSignatureVerificationException e) {
-							Logger.normal(this, "Failed to parse reply: "+e, e);
-							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+							Logger.normal(this, "Failed to parse reply: " + e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: " + e);
 						}
 					}
 					return;
@@ -542,15 +542,15 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				// Okay, just route it.
 			}
 		} catch (FSParseException e) {
-			Logger.warning(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: " + e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (PeerParseException e) {
-			Logger.warning(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: " + e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (ReferenceSignatureVerificationException e) {
-			Logger.warning(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: " + e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (NotConnectedException e) {

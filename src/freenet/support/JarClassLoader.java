@@ -161,7 +161,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 			name = name.substring(1);
 		}
 		try {
-			if(tempJarFile.getJarEntry(name)==null) {
+			if(tempJarFile.getJarEntry(name) == null) {
 				return null;
 			}
 

@@ -69,7 +69,7 @@ public class EncryptingIoAdapter extends IoAdapter {
 		} catch (IOException e) {
 			// FIXME useralert?
 			// We shouldn't do this ever afaics though, with our usage of db4o...
-			System.err.println("Unable to secure delete "+arg0+" for db4o, passing on to underlying adapter "+baseAdapter+" to attempt a normal deletion.");
+			System.err.println("Unable to secure delete " + arg0 + " for db4o, passing on to underlying adapter " + baseAdapter + " to attempt a normal deletion.");
 			baseAdapter.delete(arg0);
 		}
 	}
@@ -99,13 +99,13 @@ public class EncryptingIoAdapter extends IoAdapter {
 		try {
 			readBytes = baseAdapter.read(buffer, length);
 		} catch (Db4oIOException e) {
-			System.err.println("Unable to read: "+e);
+			System.err.println("Unable to read: " + e);
 			e.printStackTrace();
 			try {
 				// Position may have changed.
 				baseAdapter.seek(position);
 			} catch (Db4oIOException e1) {
-				System.err.println("Unable to seek, closing database file: "+e1);
+				System.err.println("Unable to seek, closing database file: " + e1);
 				e1.printStackTrace();
 				// Must close because don't know position accurately now.
 				close();
@@ -125,13 +125,13 @@ public class EncryptingIoAdapter extends IoAdapter {
 				// Encrypt key + position
 				byte[] input = key.clone();
 				byte[] counter = Fields.longToBytes(thisBlockPosition);
-				for(int i=0;i<counter.length;i++)
+				for(int i=0;i < counter.length;i++)
 					input[key.length - 8 + i] ^= counter[i];
 				cipher.encipher(input, blockOutput);
 				blockPosition = thisBlockPosition;
 			}
-			for(int i=0;i<decrypt;i++)
-				buffer[i+totalDecrypted] ^= blockOutput[i + blockOffset];
+			for(int i=0;i < decrypt;i++)
+				buffer[i + totalDecrypted] ^= blockOutput[i + blockOffset];
 			position += decrypt;
 			totalDecrypted += decrypt;
 			toDecrypt -= decrypt;
@@ -169,13 +169,13 @@ public class EncryptingIoAdapter extends IoAdapter {
 				// Encrypt key + position
 				byte[] input = key.clone();
 				byte[] counter = Fields.longToBytes(thisBlockPosition);
-				for(int i=0;i<counter.length;i++)
+				for(int i=0;i < counter.length;i++)
 					input[key.length - 8 + i] ^= counter[i];
 				cipher.encipher(input, blockOutput);
 				blockPosition = thisBlockPosition;
 			}
-			for(int i=0;i<decrypt;i++)
-				buffer[i+totalDecrypted] ^= blockOutput[i + blockOffset];
+			for(int i=0;i < decrypt;i++)
+				buffer[i + totalDecrypted] ^= blockOutput[i + blockOffset];
 			position += decrypt;
 			totalDecrypted += decrypt;
 			toDecrypt -= decrypt;
@@ -185,12 +185,12 @@ public class EncryptingIoAdapter extends IoAdapter {
 		try {
 			baseAdapter.write(buffer, length);
 		} catch (Db4oIOException e) {
-			System.err.println("Unable to write: "+e);
+			System.err.println("Unable to write: " + e);
 			e.printStackTrace();
 			try {
 				baseAdapter.seek(position);
 			} catch (Db4oIOException e1) {
-				System.err.println("Unable to seek, closing database file: "+e1);
+				System.err.println("Unable to seek, closing database file: " + e1);
 				e1.printStackTrace();
 				// Must close because don't know position accurately now.
 				close();

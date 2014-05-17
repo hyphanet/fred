@@ -63,7 +63,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		byte[] ckey = null;
 		byte[] extra = null;
 		int x = 0;
-		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i < (dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
@@ -95,7 +95,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 	public int getBlockNumber(NodeCHK key, boolean[] ignoreSlots) {
 		byte[] rkey = key.getRoutingKey();
 		int x = 0;
-		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i < (dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
@@ -112,7 +112,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		ArrayList<Integer> results = null;
 		byte[] rkey = key.getRoutingKey();
 		int x = 0;
-		for(int i=0;i<(dataBlocks + checkBlocks);i++) {
+		for(int i=0;i < (dataBlocks + checkBlocks);i++) {
 			int oldX = x;
 			x += NodeCHK.KEY_LENGTH;
 			if(ignoreSlots != null && ignoreSlots[i]) {
@@ -125,7 +125,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		}
 		if(results == null) return new int[0];
 		int[] ret = new int[results.size()];
-		for(int i=0;i<ret.length;i++) ret[i] = results.get(i);
+		for(int i=0;i < ret.length;i++) ret[i] = results.get(i);
 		return ret;
 	}
 	
@@ -171,7 +171,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		try {
 			return new ClientCHK(routingKey, decryptKey, extra);
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Impossible: "+e);
+			Logger.error(this, "Impossible: " + e);
 			throw new IllegalStateException(e);
 		}
 	}
@@ -197,7 +197,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		int offset = check ? dataBlocks : 0;
 		if(commonDecryptKey != null) {
 			int rkOffset = offset * NodeCHK.KEY_LENGTH;
-			for(int i=0;i<count;i++) {
+			for(int i=0;i < count;i++) {
 				dis.readFully(routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
 				rkOffset += NodeCHK.KEY_LENGTH;
 			}
@@ -205,7 +205,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 			int rkOffset = offset * NodeCHK.KEY_LENGTH;
 			int extraOffset = offset * EXTRA_BYTES_LENGTH;
 			assert(NodeCHK.KEY_LENGTH == ClientCHK.CRYPTO_KEY_LENGTH);
-			for(int i=0;i<count;i++) {
+			for(int i=0;i < count;i++) {
 				ClientCHK key = ClientCHK.readRawBinaryKey(dis);
 				byte[] r = key.getRoutingKey();
 				System.arraycopy(r, 0, routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
@@ -224,7 +224,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 		int offset = check ? dataBlocks : 0;
 		if(commonDecryptKey != null) {
 			int rkOffset = offset * NodeCHK.KEY_LENGTH;
-			for(int i=0;i<count;i++) {
+			for(int i=0;i < count;i++) {
 				dos.write(routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
 				rkOffset += NodeCHK.KEY_LENGTH;
 			}
@@ -232,7 +232,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 			int rkOffset = offset * NodeCHK.KEY_LENGTH;
 			int extraOffset = offset * EXTRA_BYTES_LENGTH;
 			assert(NodeCHK.KEY_LENGTH == ClientCHK.CRYPTO_KEY_LENGTH);
-			for(int i=0;i<count;i++) {
+			for(int i=0;i < count;i++) {
 				dos.write(extraBytesForKeys, extraOffset, EXTRA_BYTES_LENGTH);
 				extraOffset += EXTRA_BYTES_LENGTH;
 				dos.write(routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
@@ -269,7 +269,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 
 	public NodeCHK[] listNodeKeys(boolean[] foundKeys, boolean copy) {
 		ArrayList<NodeCHK> list = new ArrayList<NodeCHK>();
-		for(int i=0;i<dataBlocks+checkBlocks;i++) {
+		for(int i=0;i < dataBlocks + checkBlocks;i++) {
 			NodeCHK k = getNodeKey(i, foundKeys, copy);
 			if(k == null) continue;
 			list.add(k);

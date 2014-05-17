@@ -66,7 +66,7 @@ public class URLDecoder
 					// Not encoded?
 					if(tolerant && !hasDecodedSomething) {
 						try {
-							byte[] buf = ('%'+hexval).getBytes("UTF-8");
+							byte[] buf = ('%' + hexval).getBytes("UTF-8");
 							decodedBytes.write(buf, 0, buf.length);
 							continue;
 						} catch (UnsupportedEncodingException e) {
@@ -74,7 +74,7 @@ public class URLDecoder
 						}
 					}
 					
-					throw new URLEncodedFormatException("Not a two character hex % escape: "+hexval+" in "+s);
+					throw new URLEncodedFormatException("Not a two character hex % escape: " + hexval + " in " + s);
 				}
 			} else {
 				try {

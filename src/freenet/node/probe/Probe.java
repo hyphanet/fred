@@ -602,7 +602,7 @@ public class Probe implements ByteCounter {
 			 * of 1 KiB. 1 KiB / 20 KiB = 0.05 sigma.
 			 * 1,024 (2^10) bytes per KiB.
 			 */
-			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit()/(1 << 10), 0.05));
+			listener.onOutputBandwidth((float)randomNoise((double)node.getOutputBandwidthLimit() / (1 << 10), 0.05));
 			break;
 		case BUILD:
 			listener.onBuild(node.nodeUpdater.getMainVersion());
@@ -619,7 +619,7 @@ public class Probe implements ByteCounter {
 			 * difficult to get useful information out of any given result because it is included with an
 			 * identifier,
 			 */
-			long percent = Math.round(randomNoise(100*node.uptime.getUptimeWeek(), 0.05));
+			long percent = Math.round(randomNoise(100 * node.uptime.getUptimeWeek(), 0.05));
 			//Clamp to byte.
 			if (percent > Byte.MAX_VALUE) percent = Byte.MAX_VALUE;
 			else if (percent < Byte.MIN_VALUE) percent = Byte.MIN_VALUE;
@@ -652,7 +652,7 @@ public class Probe implements ByteCounter {
 			 * 1 GiB / 20 GiB = 0.05 sigma.
 			 * 1,073,741,824 bytes (2^30) per GiB.
 			 */
-			listener.onStoreSize((float)randomNoise((double)node.getStoreSize()/(1 << 30), 0.05));
+			listener.onStoreSize((float)randomNoise((double)node.getStoreSize() / (1 << 30), 0.05));
 			break;
 		case UPTIME_48H:
 			/*
@@ -661,7 +661,7 @@ public class Probe implements ByteCounter {
 			 * for 6 hours per day, 12 hours per 48 hours, or 25%. A half-hour seems a sufficient amount of
 			 * ambiguity, so 0.5 hours / 48 hours ~= 1%, and 1% / 25% = 0.04 sigma.
 			 */
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptime(), 0.04));
+			listener.onUptime((float)randomNoise(100 * node.uptime.getUptime(), 0.04));
 			break;
 		case UPTIME_7D:
 			/*
@@ -669,7 +669,7 @@ public class Probe implements ByteCounter {
 			 * As a 168-hour uptime covers a longer period 1 hour of ambiguity seems sufficient.
 			 * 1 hour / 168 hours ~= 0.6%, and 0.6% / 20% = 0.03 sigma.
 			 */
-			listener.onUptime((float)randomNoise(100*node.uptime.getUptimeWeek(), 0.03));
+			listener.onUptime((float)randomNoise(100 * node.uptime.getUptimeWeek(), 0.03));
 			break;
 		case REJECT_STATS:
 			byte[] stats = node.nodeStats.getNoisyRejectStats();
@@ -874,7 +874,7 @@ public class Probe implements ByteCounter {
 		@Override
 		public void onRejectStats(byte[] stats) {
 			if(stats.length < 4) {
-				Logger.warning(this, "Unknown length for stats: "+stats.length);
+				Logger.warning(this, "Unknown length for stats: " + stats.length);
 				onError(Error.UNKNOWN, Error.UNKNOWN.code, true);
 			} else {
 				if(stats.length > 4)

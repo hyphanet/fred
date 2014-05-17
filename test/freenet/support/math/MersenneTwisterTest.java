@@ -17,8 +17,8 @@ public class MersenneTwisterTest extends TestCase {
 	private static final byte[] BYTE_SEED;
 
 	static {
-		ByteBuffer bb = ByteBuffer.allocate(INT_SEED.length*4);
-		for(int i=0; i<INT_SEED.length; i++){
+		ByteBuffer bb = ByteBuffer.allocate(INT_SEED.length * 4);
+		for(int i=0; i < INT_SEED.length; i++){
 			INT_SEED[i] = i;
 			bb.putInt(i);
 		}
@@ -67,7 +67,7 @@ public class MersenneTwisterTest extends TestCase {
 		int[] output = Fields.bytesToInts(OUTPUT_1, 0, OUTPUT_1.length);
 
 		assertEquals(INPUT_1.length, output.length);
-		for(int i=0; i<INPUT_1.length; i++)
+		for(int i=0; i < INPUT_1.length; i++)
 			assertEquals(INPUT_1[i], output[i]);
 	}
 

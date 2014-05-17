@@ -48,7 +48,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			return "/";
 		}
 		if (result.endsWith("/")) {
-			result = result.substring(0, result.length()-1);
+			result = result.substring(0, result.length() - 1);
 		}
 		return result;
 	}

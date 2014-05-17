@@ -51,11 +51,11 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 	public void onRemove() {
 		long lastReceivedDataPacketTime = lastReceivedDataPacketTime();
 		if(lastReceivedDataPacketTime <= 0 && timeLastConnectionCompleted() > 0)
-			System.err.println(this.getIdentityString()+" : REMOVED: TIMEOUT: NO PACKETS RECEIVED AFTER SUCCESSFUL CONNECTION SETUP");
+			System.err.println(this.getIdentityString() + " : REMOVED: TIMEOUT: NO PACKETS RECEIVED AFTER SUCCESSFUL CONNECTION SETUP");
 		else if(timeLastConnectionCompleted() <= 0)
-			System.err.println(this.getIdentityString()+" : REMOVED: NEVER CONNECTED");
+			System.err.println(this.getIdentityString() + " : REMOVED: NEVER CONNECTED");
 		else
-			System.err.println(this.getIdentityString()+" : REMOVED: UNKNOWN CAUSE");
+			System.err.println(this.getIdentityString() + " : REMOVED: UNKNOWN CAUSE");
 		super.onRemove();
 	}
 	

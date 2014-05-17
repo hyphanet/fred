@@ -81,7 +81,7 @@ public class SymlinkerToadlet extends Toadlet {
 		boolean ret;
 		synchronized (linkMap) {
 			Object o;
-			if ((o = linkMap.remove(alias))!= null)
+			if ((o = linkMap.remove(alias)) != null)
 				ret = true;
 			else 
 				ret = false;

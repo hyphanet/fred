@@ -57,7 +57,7 @@ public class InsertException extends Exception implements Cloneable {
 	}
 
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
-		super(getMessage(m)+": "+msg);
+		super(getMessage(m) + ": " + msg);
 		if(m == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = msg;
@@ -65,9 +65,9 @@ public class InsertException extends Exception implements Cloneable {
 		errorCodes = null;
 		this.uri = expectedURI;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode) + ": " + msg, this);
 	}
 	
 	public InsertException(int m, FreenetURI expectedURI) {
@@ -79,13 +79,13 @@ public class InsertException extends Exception implements Cloneable {
 		errorCodes = null;
 		this.uri = expectedURI;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode), this);
 	}
 
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
-		super(getMessage(mode)+": "+e.getMessage());
+		super(getMessage(mode) + ": " + e.getMessage());
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
@@ -94,13 +94,13 @@ public class InsertException extends Exception implements Cloneable {
 		initCause(e);
 		this.uri = expectedURI;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode) + ": " + e, this);
 	}
 
 	public InsertException(int mode, String message, Throwable e, FreenetURI expectedURI) {
-		super(getMessage(mode)+": "+message+": "+e.getMessage());
+		super(getMessage(mode) + ": " + message + ": " + e.getMessage());
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
@@ -109,9 +109,9 @@ public class InsertException extends Exception implements Cloneable {
 		initCause(e);
 		this.uri = expectedURI;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode) + ": " + e, this);
 	}
 
 	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
@@ -123,9 +123,9 @@ public class InsertException extends Exception implements Cloneable {
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode), this);
 	}
 
 	public InsertException(int mode) {
@@ -137,9 +137,9 @@ public class InsertException extends Exception implements Cloneable {
 		this.errorCodes = null;
 		this.uri = null;
 		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
+			Logger.error(this, "Internal error: " + this);
 		else if(logMINOR) 
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
+			Logger.minor(this, "Creating InsertException: " + getMessage(mode), this);
 	}
 
 	public InsertException(InsertException e) {
@@ -188,17 +188,17 @@ public class InsertException extends Exception implements Cloneable {
 	
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
-		String ret = NodeL10n.getBase().getString("InsertException.longError."+mode);
+		String ret = NodeL10n.getBase().getString("InsertException.longError." + mode);
 		if(ret == null)
-			return "Unknown error "+mode;
+			return "Unknown error " + mode;
 		else return ret;
 	}
 
 	/** Get the (localised) long explanation for this failure mode. */
 	public static String getShortMessage(int mode) {
-		String ret = NodeL10n.getBase().getString("InsertException.shortError."+mode);
+		String ret = NodeL10n.getBase().getString("InsertException.shortError." + mode);
 		if(ret == null)
-			return "Unknown error "+mode;
+			return "Unknown error " + mode;
 		else return ret;
 	}
 	
@@ -226,7 +226,7 @@ public class InsertException extends Exception implements Cloneable {
 		case ROUTE_REALLY_NOT_FOUND:
 			return false;
 		default:
-			Logger.error(InsertException.class, "Error unknown to isFatal(): "+getMessage(mode));
+			Logger.error(InsertException.class, "Error unknown to isFatal(): " + getMessage(mode));
 			return false;
 		}
 	}

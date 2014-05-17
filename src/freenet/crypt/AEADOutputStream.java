@@ -68,14 +68,14 @@ public class AEADOutputStream extends FilterOutputStream {
             cipher.doFinal(output, 0);
         } catch (InvalidCipherTextException e) {
             // Impossible???
-            throw new RuntimeException("Impossible: "+e);
+            throw new RuntimeException("Impossible: " + e);
         }
         out.write(output);
         out.close();
     }
     
     static final int MAC_SIZE_BITS = 128;
-    static final int MAC_SIZE_BYTES = MAC_SIZE_BITS/8;
+    static final int MAC_SIZE_BYTES = MAC_SIZE_BITS / 8;
     static final int AES_BLOCK_SIZE = 16;
     public static final int AES_OVERHEAD = AES_BLOCK_SIZE + MAC_SIZE_BYTES;
     
@@ -95,7 +95,7 @@ public class AEADOutputStream extends FilterOutputStream {
     
     @Override
     public String toString() {
-        return "AEADOutputStream:"+out.toString();
+        return "AEADOutputStream:" + out.toString();
     }
     
 }

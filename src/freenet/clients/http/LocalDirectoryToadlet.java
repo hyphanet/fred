@@ -16,7 +16,7 @@ public abstract class LocalDirectoryToadlet extends LocalFileBrowserToadlet {
 
 	@Override
 	public String path() {
-		return basePath+postTo;
+		return basePath + postTo;
 	}
 
 	public static String basePath() {

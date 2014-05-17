@@ -29,7 +29,7 @@ public class NodeCHK extends Key {
     public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
     	super(routingKey2);
         if(routingKey2.length != KEY_LENGTH)
-            throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
+            throw new IllegalArgumentException("Wrong length: " + routingKey2.length + " should be " + KEY_LENGTH);
         this.cryptoAlgorithm = cryptoAlgorithm;
     }
     
@@ -57,7 +57,7 @@ public class NodeCHK extends Key {
 
     @Override
 	public String toString() {
-        return super.toString() + '@' +Base64.encode(routingKey)+ ':' +Integer.toHexString(hash);
+        return super.toString() + '@' + Base64.encode(routingKey) + ':' + Integer.toHexString(hash);
     }
 
     @Override
@@ -114,11 +114,11 @@ public class NodeCHK extends Key {
 	public static byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		if(keyBuf.length == KEY_LENGTH) return keyBuf;
 		if(keyBuf.length != FULL_KEY_LENGTH) {
-			Logger.error(NodeCHK.class, "routingKeyFromFullKey() on "+keyBuf.length+" bytes");
+			Logger.error(NodeCHK.class, "routingKeyFromFullKey() on " + keyBuf.length + " bytes");
 			return null;
 		}
 		if(keyBuf[0] != 1 || (keyBuf[1] != Key.ALGO_AES_PCFB_256_SHA256 && keyBuf[1] != Key.ALGO_AES_CTR_256_SHA256)) {
-			if(keyBuf[keyBuf.length-1] == 0 && keyBuf[keyBuf.length-2] == 0) {
+			if(keyBuf[keyBuf.length - 1] == 0 && keyBuf[keyBuf.length - 2] == 0) {
 				// We are certain it's a routing-key
 				Logger.minor(NodeCHK.class, "Recovering routing-key stored wrong as full-key (two nulls at end)");
 			} else {

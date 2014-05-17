@@ -72,12 +72,12 @@ public class ProgressBarElement extends BaseUpdateableElement {
 				
 				NumberFormat nf = NumberFormat.getInstance();
 				nf.setMaximumFractionDigits(1);
-				String prefix = '('+Integer.toString(fr.fetchedBlocks) + "/ " + Integer.toString(total)+"): ";
+				String prefix = '(' + Integer.toString(fr.fetchedBlocks) + "/ " + Integer.toString(total) + "): ";
 				if (fr.finalizedBlocks) {
 					progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + NodeL10n.getBase().getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%');
 				} else {
-					String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0)+ '%';
-					text = "" + fr.fetchedBlocks + " ("+text+"??)";
+					String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%';
+					text = "" + fr.fetchedBlocks + " (" + text + "??)";
 					progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + NodeL10n.getBase().getString("QueueToadlet.progressbarNotAccurate") }, text);
 				}
 			}

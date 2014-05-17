@@ -51,7 +51,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 		// Fetch from cache
 		if(logMINOR)
-			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
+			Logger.minor(this, "Checking cache: " + key + ' ' + internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}
@@ -118,7 +118,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		final ProxyCallback proxyCallback = new ProxyCallback();
 
 		if(logMINOR)
-			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback, new Exception("debug"));
+			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: " + tag.data + " for " + tag.handler.key + " element " + tag.element + " for " + tag.callback, new Exception("debug"));
 
 		context.mainExecutor.execute(new Runnable() {
 
@@ -126,7 +126,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			public void run() {
 				try {
 					if(logMINOR)
-						Logger.minor(this, "Extracting off-thread: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
+						Logger.minor(this, "Extracting off-thread: " + tag.data + " for " + tag.handler.key + " element " + tag.element + " for " + tag.callback);
 					tag.handler.extractToCache(tag.data, tag.actx, tag.element, proxyCallback, manager, null, context);
 					if(logMINOR)
 						Logger.minor(this, "Extracted");
@@ -151,7 +151,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 						@Override
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(logMINOR)
-								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
+								Logger.minor(this, "Calling callback for " + tag.data + " for " + tag.handler.key + " element " + tag.element + " for " + tag.callback);
 							container.activate(tag.callback, 1);
 							if(proxyCallback.data == null)
 								tag.callback.notInArchive(container, context);
@@ -287,7 +287,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(key == null) {
-			Logger.error(this, "removeFrom() : key = null for "+this+" I exist = "+container.ext().isStored(this)+" I am active: "+container.ext().isActive(this), new Exception("error"));
+			Logger.error(this, "removeFrom() : key = null for " + this + " I exist = " + container.ext().isStored(this) + " I am active: " + container.ext().isActive(this), new Exception("error"));
 		} else
 			key.removeFrom(container);
 		container.delete(this);

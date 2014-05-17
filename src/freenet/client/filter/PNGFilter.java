@@ -131,7 +131,7 @@ public class PNGFilter implements ContentDataFilter {
 				int length = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16)
 				        + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
 				if (logMINOR)
-					Logger.minor(this, "length " + length+ "(offset=0x"+Long.toHexString(offset)+") ");
+					Logger.minor(this, "length " + length + "(offset=0x" + Long.toHexString(offset) + ") ");
 				if (dos != null)
 					dos.write(lengthBytes);
 
@@ -163,7 +163,7 @@ public class PNGFilter implements ContentDataFilter {
 					offset+=length;
 					if (logMINOR)
 						if (logDEBUG)
-							Logger.minor(this, "data (offset=0x"+Long.toHexString(offset)+") "+ (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
+							Logger.minor(this, "data (offset=0x" + Long.toHexString(offset) + ") " + (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
 						else
 							Logger.minor(this, "data " + chunkData.length);
 					if (dos != null)
@@ -174,7 +174,7 @@ public class PNGFilter implements ContentDataFilter {
 				byte[] crcLengthBytes = new byte[4];
 				dis.readFully(crcLengthBytes);
 				offset+=4;
-				if(logMINOR) Logger.minor(this, "CRC offset=0x"+Long.toHexString(offset));
+				if(logMINOR) Logger.minor(this, "CRC offset=0x" + Long.toHexString(offset));
 				if (dos != null)
 					dos.write(crcLengthBytes);
 
@@ -215,32 +215,32 @@ public class PNGFilter implements ContentDataFilter {
 					case 4:
 						if(colourType != 0 && colourType != 3)
 							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+									"Invalid colourType/bitDepth combination! (" + colourType + '|' + bitDepth + ')');
 						break;
 					case 16:
 						if(colourType == 3)
 							throwError("Invalid colourType/bitDepth combination!",
-									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+									"Invalid colourType/bitDepth combination! (" + colourType + '|' + bitDepth + ')');
 					case 8:
-						if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
+						if(colourType == 0 || colourType == 2 || colourType == 3 || colourType == 4 || colourType == 6)
 							break;
 					default: throwError("Invalid colourType/bitDepth combination!",
-							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+							"Invalid colourType/bitDepth combination! (" + colourType + '|' + bitDepth + ')');
 					}
 					int compressionMethod = chunkData[10];
 					if(compressionMethod != 0)
-						throwError("Invalid CompressionMethod", "Invalid CompressionMethod! "+compressionMethod);
+						throwError("Invalid CompressionMethod", "Invalid CompressionMethod! " + compressionMethod);
 					int filterMethod = chunkData[11];
 					if(filterMethod != 0)
-						throwError("Invalid FilterMethod", "Invalid FilterMethod! "+filterMethod);
+						throwError("Invalid FilterMethod", "Invalid FilterMethod! " + filterMethod);
 					int interlaceMethod = chunkData[12];
-					if(interlaceMethod < 0 || interlaceMethod >1)
-						throwError("Invalid InterlaceMethod", "Invalid InterlaceMethod! "+interlaceMethod);
+					if(interlaceMethod < 0 || interlaceMethod > 1)
+						throwError("Invalid InterlaceMethod", "Invalid InterlaceMethod! " + interlaceMethod);
 					
 					if(logMINOR)
-						Logger.minor(this, "Info from IHDR: width="+width+"px height="+height+"px bitDepth="+bitDepth+
-								" colourType="+colourType+" compressionMethod="+compressionMethod+" filterMethod="+
-								filterMethod+" interlaceMethod="+interlaceMethod);
+						Logger.minor(this, "Info from IHDR: width=" + width + "px height=" + height + "px bitDepth=" + bitDepth +
+								" colourType=" + colourType + " compressionMethod=" + compressionMethod + " filterMethod=" +
+								filterMethod + " interlaceMethod=" + interlaceMethod);
 					hasSeenIHDR = true;
 					validChunkType = true;
 				}

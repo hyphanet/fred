@@ -103,13 +103,13 @@ public class PersistentBlobTempBucketFactory {
 		File oldFile = FileUtil.getCanonicalFile(new File(storageFile.getPath())); // db4o argh
 		File newFile = FileUtil.getCanonicalFile(new File(storageFile2.getPath()));
 		if(blockSize != blockSize2)
-			throw new IllegalStateException("My block size is "+blockSize2+
-					" but stored block size is "+blockSize+
-					" for same file "+storageFile);
+			throw new IllegalStateException("My block size is " + blockSize2 +
+					" but stored block size is " + blockSize +
+					" for same file " + storageFile);
 		if(!(oldFile.equals(newFile) || 
 				(File.separatorChar == '\\' ? oldFile.getPath().toLowerCase().equals(newFile.getPath().toLowerCase()) : oldFile.getPath().equals(newFile.getPath())))) {
 			if(storageFile.exists() && !FileUtil.moveTo(storageFile, storageFile2, false))
-				throw new IOException("Unable to move temp blob file from "+storageFile+" to "+storageFile2);
+				throw new IOException("Unable to move temp blob file from " + storageFile + " to " + storageFile2);
 			this.storageFile = storageFile2;
 			container.store(this);
 		}
@@ -145,7 +145,7 @@ public class PersistentBlobTempBucketFactory {
 		try {
 			size = channel.size();
 		} catch (IOException e1) {
-			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+			Logger.error(this, "Unable to find size of temp blob storage file: " + e1, e1);
 			throw e1;
 		}
 		size -= size % blockSize;
@@ -168,7 +168,7 @@ public class PersistentBlobTempBucketFactory {
 		
 		while(tags.hasNext()) {
 			if(counter % 1024 == 0)
-				System.out.println("Creating free blocks cache: "+counter+" / "+blocks);
+				System.out.println("Creating free blocks cache: " + counter + " / " + blocks);
 			PersistentBlobTempBucketTag tag = tags.next();
 			counter++;
 			if(tag.factory != this) continue;
@@ -176,18 +176,18 @@ public class PersistentBlobTempBucketFactory {
 				if(tag.bucket != null) {
 					container.activate(tag.bucket, 1);
 					if(!tag.bucket.freed())
-						Logger.error(this, "Bucket "+tag.bucket+" for index "+tag.index+" is not free even though tag is!");
+						Logger.error(this, "Bucket " + tag.bucket + " for index " + tag.index + " is not free even though tag is!");
 				}
 				continue;
 			}
 			if(tag.bucket == null) {
-				Logger.error(this, "Tag for index "+tag.index+" has no bucket yet is not free?!");
+				Logger.error(this, "Tag for index " + tag.index + " has no bucket yet is not free?!");
 				tag.isFree = true;
 				container.store(tag);
 			}
 			buckets++;
 			if(tag.index > Integer.MAX_VALUE) {
-				Logger.error(this, "Tag for index "+tag.index+" is over MAXINT yet the file length is not?!");
+				Logger.error(this, "Tag for index " + tag.index + " is over MAXINT yet the file length is not?!");
 				continue;
 			}
 			if(tag.index >= freeBlocksCache.getSize()) {
@@ -206,7 +206,7 @@ public class PersistentBlobTempBucketFactory {
 					container.delete(tag);
 					continue;
 				}
-				Logger.error(this, "Block is occupied *AND IN USE* yet beyond the length of the file: "+tag.index);
+				Logger.error(this, "Block is occupied *AND IN USE* yet beyond the length of the file: " + tag.index);
 				Logger.error(this, "Freeing the block, expect internal errors and similar problems!");
 				System.err.println("Your downloads database is corrupt. A persistent temp bucket is in use yet is beyond the length of the persistent-blob.tmp file.");
 				System.err.println("We will free the bucket, but this may cause internal errors and similar problems later on. This was probably caused by a bug at some point but that bug may have already been fixed. Sorry...");
@@ -218,7 +218,7 @@ public class PersistentBlobTempBucketFactory {
 			}
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
-		System.out.println("Created free blocks cache: "+buckets+" used of "+counter);
+		System.out.println("Created free blocks cache: " + buckets + " used of " + counter);
 		return freeBlocksCache;
 	}
 
@@ -229,7 +229,7 @@ public class PersistentBlobTempBucketFactory {
 		try {
 			size = channel.size();
 		} catch (IOException e1) {
-			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+			Logger.error(this, "Unable to find size of temp blob storage file: " + e1, e1);
 			return;
 		}
 		size -= size % blockSize;
@@ -254,9 +254,9 @@ public class PersistentBlobTempBucketFactory {
 				if(!tag.isFree)
 					used++;
 				if(tag.bucket == null && !tag.isFree)
-					Logger.error(this, "No bucket but flagged as not free: index "+l+" "+tag.bucket);
+					Logger.error(this, "No bucket but flagged as not free: index " + l + " " + tag.bucket);
 				if(tag.bucket != null && tag.isFree)
-					Logger.error(this, "Has bucket but flagged as free: index "+l+" "+tag.bucket);
+					Logger.error(this, "Has bucket but flagged as free: index " + l + " " + tag.bucket);
 				if(!tag.isFree) {
 					if(rangeStart == Long.MIN_VALUE) {
 						rangeStart = l;
@@ -264,21 +264,21 @@ public class PersistentBlobTempBucketFactory {
 					}
 				} else {
 					if(rangeStart != Long.MIN_VALUE) {
-						System.out.println("Range: "+rangeStart+" to "+(l-1)+" first is "+firstInRange);
+						System.out.println("Range: " + rangeStart + " to " + (l - 1) + " first is " + firstInRange);
 						rangeStart = Long.MIN_VALUE;
 						firstInRange = null;
 					}
 				}
 				continue;
 			}
-			Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
+			Logger.error(this, "FOUND EMPTY SLOT: " + l + " when scanning the blob file because tags in database < length of file");
 			PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
 			container.store(tag);
 		}
 		if(rangeStart != Long.MIN_VALUE) {
-			System.out.println("Range: "+rangeStart+" to "+(ptr-1));
+			System.out.println("Range: " + rangeStart + " to " + (ptr - 1));
 		}
-		System.err.println("Persistent blobs: Blocks: "+blocks+" used "+used);
+		System.err.println("Persistent blobs: Blocks: " + blocks + " used " + used);
 	}
 
 	public String getName() {
@@ -309,9 +309,9 @@ public class PersistentBlobTempBucketFactory {
 			
 			int first = -1;
 outer:		while(true) {
-				if(logMINOR) Logger.minor(this, "Maybe found free slot from bitmap "+first);
+				if(logMINOR) Logger.minor(this, "Maybe found free slot from bitmap " + first);
 				synchronized(PersistentBlobTempBucketFactory.this) {
-					first = freeBlocksCache.firstZero(first+1);
+					first = freeBlocksCache.firstZero(first + 1);
 					if(first == -1) break;
 					if(first > ptr) break;
 					if(freeSlots.containsKey((long)first)) continue;
@@ -328,7 +328,7 @@ outer:		while(true) {
 					if(tag.factory != PersistentBlobTempBucketFactory.this) continue;
 					if(!tag.isFree) continue outer;
 					if(tag.bucket != null) {
-						Logger.error(this, "Index "+first+" has bucket despite free?!");
+						Logger.error(this, "Index " + first + " has bucket despite free?!");
 						container.activate(tag.bucket, 2);
 						if(!tag.bucket.freed()) {
 							Logger.error(this, "And the bucket is not free either!");
@@ -340,19 +340,19 @@ outer:		while(true) {
 					}
 					added++;
 					changedTags = true;
-					if(logMINOR) Logger.minor(this, "Found free slot from bitmap "+first);
+					if(logMINOR) Logger.minor(this, "Found free slot from bitmap " + first);
 					if(added > MAX_FREE) return true;
 					continue outer;
 				}
 				
 				// Not found
-				Logger.error(PersistentBlobTempBucketFactory.this, "No tag for index "+first);
+				Logger.error(PersistentBlobTempBucketFactory.this, "No tag for index " + first);
 				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, first);
 				container.store(tag);
 				synchronized(PersistentBlobTempBucketFactory.this) {
 					freeSlots.put(ptr, tag);
 				}
-				Logger.normal(this, "Found free slot (missing) from bitmap "+first);
+				Logger.normal(this, "Found free slot (missing) from bitmap " + first);
 				added++;
 				changedTags = true;
 				if(added > MAX_FREE) return true;
@@ -367,9 +367,9 @@ outer:		while(true) {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();
 					if(!tag.isFree) {
-						Logger.error(this, "Tag not free! "+tag.index);
+						Logger.error(this, "Tag not free! " + tag.index);
 						if(tag.bucket == null) {
-							Logger.error(this, "Tag flagged non-free yet has no bucket for index "+tag.index);
+							Logger.error(this, "Tag flagged non-free yet has no bucket for index " + tag.index);
 							tag.isFree = true;
 							container.store(tag);
 							changedTags = true;
@@ -384,15 +384,15 @@ outer:		while(true) {
 					if(almostFreeSlots.containsKey(tag.index)) continue;
 					if(freeSlots.containsKey(tag.index)) continue;
 					if(tag.bucket != null) {
-						Logger.error(this, "Bucket is occupied but not in notCommittedBlobs?!: "+tag+" : "+tag.bucket);
+						Logger.error(this, "Bucket is occupied but not in notCommittedBlobs?!: " + tag + " : " + tag.bucket);
 						continue;
 					}
 					if(tag.index > ptr) {
-						if(logMINOR) Logger.minor(this, "Not adding slot "+tag.index+" to freeSlots because it is past the end of the file (but it is free)");
+						if(logMINOR) Logger.minor(this, "Not adding slot " + tag.index + " to freeSlots because it is past the end of the file (but it is free)");
 						container.delete(tag);
 						continue;
 					}
-					if(logMINOR) Logger.minor(this, "Adding slot "+tag.index+" to freeSlots (has a free tag and no taken tag)");
+					if(logMINOR) Logger.minor(this, "Adding slot " + tag.index + " to freeSlots (has a free tag and no taken tag)");
 					freeSlots.put(tag.index, tag);
 					added++;
 					if(added > MAX_FREE) return changedTags;
@@ -416,9 +416,9 @@ outer:		while(true) {
 			if(logMINOR) Logger.minor(this, "Checked size.");
 			tags = null;
 			if(inDB < ptr) {
-				Logger.error(this, "Tags in database: "+inDB+" but size of file allows: "+ptr);
+				Logger.error(this, "Tags in database: " + inDB + " but size of file allows: " + ptr);
 				// Recover: exhaustive index search. This can cause very long pauses, but should only happen if there is a bug.
-				for(long l = ptr-1; l >= 0; l--) {
+				for(long l = ptr - 1; l >= 0; l--) {
 					synchronized(PersistentBlobTempBucketFactory.this) {
 						if(freeSlots.containsKey(l)) continue;
 						if(notCommittedBlobs.containsKey(l)) continue;
@@ -429,7 +429,7 @@ outer:		while(true) {
 					query.descend("index").constrain(l);
 					tags = query.execute();
 					if(tags.hasNext()) continue;
-					Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
+					Logger.error(this, "FOUND EMPTY SLOT: " + l + " when scanning the blob file because tags in database < length of file");
 					PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
 					container.store(tag);
 					synchronized(PersistentBlobTempBucketFactory.this) {
@@ -451,8 +451,8 @@ outer:		while(true) {
 			}
 			if(freeJob != null) {
 				container.activate(freeJob, 1);
-				System.err.println("Freeing some space by running "+freeJob);
-				if(logMINOR) Logger.minor(this, "Freeing some space by running "+freeJob);
+				System.err.println("Freeing some space by running " + freeJob);
+				if(logMINOR) Logger.minor(this, "Freeing some space by running " + freeJob);
 				freeJob.run(container, context);
 				continue;
 			}
@@ -494,19 +494,19 @@ outer:		while(true) {
 			}
 			query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
-			query.descend("index").constrain(blocks-1).greater().and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
+			query.descend("index").constrain(blocks - 1).greater().and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
 			HashSet<Long> taken = null;
 			ObjectSet<PersistentBlobTempBucketTag> results = query.execute();
 			while(results.hasNext()) {
 				PersistentBlobTempBucketTag tag = results.next();
 				if(!tag.isFree) {
-					Logger.error(this, "Block already exists beyond the end of the file ("+blocks+"), yet is occupied: block "+tag.index);
+					Logger.error(this, "Block already exists beyond the end of the file (" + blocks + "), yet is occupied: block " + tag.index);
 				}
 				if(taken == null) taken = new HashSet<Long>();
 				taken.add(tag.index);
 			}
 			
-			for(int i=0;i<addBlocks;i++) {
+			for(int i=0;i < addBlocks;i++) {
 				ptr = blocks + i;
 				if(taken != null && taken.contains(ptr)) continue;
 				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, ptr);
@@ -514,7 +514,7 @@ outer:		while(true) {
 				changedTags = true;
 				synchronized(PersistentBlobTempBucketFactory.this) {
 					if(logMINOR)
-						Logger.minor(this, "Adding slot "+ptr+" to freeSlots while extending storage file");
+						Logger.minor(this, "Adding slot " + ptr + " to freeSlots while extending storage file");
 					freeSlots.put(ptr, tag);
 				}
 			}
@@ -542,7 +542,7 @@ outer:		while(true) {
 				if(logMINOR) {
 					try {
 						if(slot * blockSize > channel.size()) {
-							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							Logger.error(this, "Free slot " + slot + " but file length is " + channel.size() + " = " + (channel.size() / blockSize) + " blocks");
 							freeSlots.remove(slot);
 							return null;
 						}
@@ -552,13 +552,13 @@ outer:		while(true) {
 				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
-					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					Logger.error(this, "Slot " + slot + " already occupied by a not committed blob despite being in freeSlots!!");
 					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
-				if(logMINOR) Logger.minor(this, "Using slot "+slot+" for "+bucket);
+				if(logMINOR) Logger.minor(this, "Using slot " + slot + " for " + bucket);
 				return bucket;
 			}
 		}
@@ -569,7 +569,7 @@ outer:		while(true) {
 				if(logMINOR) {
 					try {
 						if(slot * blockSize > channel.size()) {
-							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							Logger.error(this, "Free slot " + slot + " but file length is " + channel.size() + " = " + (channel.size() / blockSize) + " blocks");
 							freeSlots.remove(slot);
 							return null;
 						}
@@ -579,13 +579,13 @@ outer:		while(true) {
 				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
-					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					Logger.error(this, "Slot " + slot + " already occupied by a not committed blob despite being in freeSlots!!");
 					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
-				if(logMINOR) Logger.minor(this, "Using slot "+slot+" for "+bucket+" (after waiting)");
+				if(logMINOR) Logger.minor(this, "Using slot " + slot + " for " + bucket + " (after waiting)");
 				return bucket;
 			}
 		}
@@ -594,12 +594,12 @@ outer:		while(true) {
 	}
 
 	public synchronized void freeBucket(long index, PersistentBlobTempBucket bucket) {
-		if(logMINOR) Logger.minor(this, "Freeing index "+index+" for "+bucket, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Freeing index " + index + " for " + bucket, new Exception("debug"));
 		notCommittedBlobs.remove(index);
 		bucket.onFree();
 		if(!bucket.persisted()) {
 			if(bucket.getTag() == null) {
-				Logger.error(this, "freeBucket but tag is null for "+bucket+" - not activated???", new Exception("error"));
+				Logger.error(this, "freeBucket but tag is null for " + bucket + " - not activated???", new Exception("error"));
 			} else {
 				// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
 				freeSlots.put(index, bucket.getTag());
@@ -617,33 +617,33 @@ outer:		while(true) {
 	@SuppressWarnings("unchecked")
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.getIndex()+" from database", new Exception("debug"));
+			Logger.minor(this, "Removing bucket " + bucket + " for slot " + bucket.getIndex() + " from database", new Exception("debug"));
 		long index = bucket.getIndex();
 		PersistentBlobTempBucketTag tag = bucket.getTag();
 		if(tag == null) {
 			if(!container.ext().isActive(bucket)) {
-				Logger.error(this, "BUCKET NOT ACTIVE IN REMOVE: "+bucket, new Exception("error"));
+				Logger.error(this, "BUCKET NOT ACTIVE IN REMOVE: " + bucket, new Exception("error"));
 				container.activate(bucket, 1);
 				tag = bucket.getTag();
 				index = bucket.getIndex();
 			} else {
 				// THIS IS IMPOSSIBLE, yet saces has seen it in practice ... lets get some detail...
-				Logger.error(this, "NO TAG ON BUCKET REMOVING: "+bucket+" index "+index, new Exception("error"));
+				Logger.error(this, "NO TAG ON BUCKET REMOVING: " + bucket + " index " + index, new Exception("error"));
 				Query query = container.query();
 				query.constrain(PersistentBlobTempBucketTag.class);
 				query.descend("index").constrain(index);
 				ObjectSet<PersistentBlobTempBucketTag> results = query.execute();
 				if(!results.hasNext()) {
-					Logger.error(this, "TAG DOES NOT EXIST FOR INDEX "+index);
+					Logger.error(this, "TAG DOES NOT EXIST FOR INDEX " + index);
 				} else {
 					tag = results.next();
 					if(tag.index != index)
 						// Crazy things are happening, may as well check the impossible!
-						Logger.error(this, "INVALID INDEX: should be "+index+" but is "+tag.index);
+						Logger.error(this, "INVALID INDEX: should be " + index + " but is " + tag.index);
 					if(tag.isFree)
-						Logger.error(this, "FOUND TAG BUT IS FREE: "+tag);
+						Logger.error(this, "FOUND TAG BUT IS FREE: " + tag);
 					if(tag.bucket == null) {
-						Logger.error(this, "FOUND TAG BUT NO BUCKET: "+tag);
+						Logger.error(this, "FOUND TAG BUT NO BUCKET: " + tag);
 					} else if(tag.bucket == bucket) {
 						Logger.error(this, "TAG LINKS TO BUCKET BUT BUCKET DOESN'T LINK TO TAG");
 					} else { // tag.bucket != bucket
@@ -656,7 +656,7 @@ outer:		while(true) {
 			container.activate(tag, 1);
 			// Probably best to store the tag even if the bucket was never persisted.
 			if(!bucket.freed()) {
-				Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
+				Logger.error(this, "Removing bucket " + bucket + " for slot " + index + " but not freed!", new Exception("debug"));
 				notCommittedBlobs.put(index, bucket);
 			} else {
 				almostFreeSlots.put(index, tag);
@@ -666,9 +666,9 @@ outer:		while(true) {
 			tag.isFree = true;
 			container.store(tag);
 		} else {
-			Logger.error(this, "Tag still null for "+bucket, new Exception("error"));
+			Logger.error(this, "Tag still null for " + bucket, new Exception("error"));
 			if(!bucket.freed()) {
-				Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
+				Logger.error(this, "Removing bucket " + bucket + " for slot " + index + " but not freed!", new Exception("debug"));
 				notCommittedBlobs.put(index, bucket);
 			}
 		}
@@ -710,12 +710,12 @@ outer:		while(true) {
 				long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
 				long lastAlmostFreed = almostFreeSlots.isEmpty() ? 0 : almostFreeSlots.lastKey();
 				if(lastNotCommitted < lastAlmostFreed) {
-					if(logMINOR) Logger.minor(this, "Last almost freed: "+lastAlmostFreed+" replacing last not committed: "+lastNotCommitted);
+					if(logMINOR) Logger.minor(this, "Last almost freed: " + lastAlmostFreed + " replacing last not committed: " + lastNotCommitted);
 					lastNotCommitted = lastAlmostFreed;
 				}
 				double full = (double)lastNotCommitted / (double)blocks;
 				if((full > 0.8 && !DISABLE_SANITY_CHECKS_DEFRAG) || lastNotCommitted == blocks) {
-					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
+					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at " + full * 100 + "% (" + lastNotCommitted + " of " + blocks + ")");
 					lastCheckedEnd = now;
 					queueMaybeShrink();
 					return false;
@@ -734,7 +734,7 @@ findloop:		while(true) {
 					int last = (int) blocks;
 outer:				while(true) {
 						synchronized(this) {
-							last = freeBlocksCache.lastOne(last-1);
+							last = freeBlocksCache.lastOne(last - 1);
 							if(last == -1) break;
 							if(notCommittedBlobs.containsKey((long)last)) continue;
 						}
@@ -747,7 +747,7 @@ outer:				while(true) {
 							if(lastTag.factory != this) continue;
 							if(lastTag.isFree) continue outer;
 							if(lastTag.bucket == null) {
-								Logger.error(this, "Last tag has no bucket! index "+last);
+								Logger.error(this, "Last tag has no bucket! index " + last);
 								lastTag.isFree = true;
 								container.store(lastTag);
 								continue outer;
@@ -756,7 +756,7 @@ outer:				while(true) {
 							lastBucket = lastTag.bucket;
 							break outer;
 						}
-						Logger.error(this, "Last slot has no tag! index "+last);
+						Logger.error(this, "Last slot has no tag! index " + last);
 						PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, last);
 						container.store(tag);
 						synchronized(this) {
@@ -767,14 +767,14 @@ outer:				while(true) {
 				if(lastCommitted == -1) {
 					// No used slots at all?!
 					// There may be some not committed though
-					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+					Logger.normal(this, "No used slots in persistent temp file (but last not committed = " + lastNotCommitted + ")");
 					lastCommitted = 0;
 					query = null;
 				}
 				full = (double) lastCommitted / (double) blocks;
 				if(full > 0.8 || DISABLE_SANITY_CHECKS_DEFRAG) {
 					if(full > 0.8) {
-						if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
+						if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at " + full * 100 + "%");
 						lastCheckedEnd = now;
 						queueMaybeShrink();
 					}
@@ -819,7 +819,7 @@ outer:				while(true) {
 								}
 							}
 						} else {
-							if(logMINOR) Logger.minor(this, "First available slot "+firstSlot+" is after slot to move "+lastCommitted);
+							if(logMINOR) Logger.minor(this, "First available slot " + firstSlot + " is after slot to move " + lastCommitted);
 							break;
 						}
 						if(deactivateLastBucket)
@@ -832,12 +832,12 @@ outer:				while(true) {
 					if(blocksMoved > 0) {
 						try {
 							raf.getFD().sync();
-							Logger.normal(this, "Moved "+blocksMoved+" in defrag and synced to disk");
+							Logger.normal(this, "Moved " + blocksMoved + " in defrag and synced to disk");
 						} catch (SyncFailedException e) {
-							System.err.println("Failed to sync to disk after defragging: "+e);
+							System.err.println("Failed to sync to disk after defragging: " + e);
 							e.printStackTrace();
 						} catch (IOException e) {
-							System.err.println("Failed to sync to disk after defragging: "+e);
+							System.err.println("Failed to sync to disk after defragging: " + e);
 							e.printStackTrace();
 						}
 						jobRunner.setCommitThisTransaction();
@@ -856,22 +856,22 @@ outer:				while(true) {
 					newBlocks++;
 				}
 				if(newBlocks >= blocks) {
-					if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
+					if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from " + blocks + " to " + newBlocks);
 					lastCheckedEnd = now;
 					queueMaybeShrink();
 					return false;
 				}
-				Logger.normal(this, "Shrinking blob file from "+blocks+" to "+newBlocks);
+				Logger.normal(this, "Shrinking blob file from " + blocks + " to " + newBlocks);
 				// Not safe to remove from almostFreeSlots here.
 				for(long l = newBlocks; l <= blocks; l++) {
 					freeSlots.remove(l);
 				}
 				for(Long l : freeSlots.keySet()) {
 					if(l > newBlocks) {
-						Logger.error(this, "Removing free slot "+l+" over the current block limit");
+						Logger.error(this, "Removing free slot " + l + " over the current block limit");
 					}
 				}
-				freeSlots.tailMap(newBlocks+1).clear();
+				freeSlots.tailMap(newBlocks + 1).clear();
 				lastCheckedEnd = now;
 				queueMaybeShrink();
 			} else return false;
@@ -886,7 +886,7 @@ outer:				while(true) {
 			System.err.println("Shrinking blob file failed!");
 			System.err.println(e);
 			e.printStackTrace();
-			Logger.error(this, "Shrinking blob file failed!: "+e, e);
+			Logger.error(this, "Shrinking blob file failed!: " + e, e);
 		}
 		Query query = container.query();
 		query.constrain(PersistentBlobTempBucketTag.class);
@@ -895,7 +895,7 @@ outer:				while(true) {
 		long deleted = 0;
 		while(tags.hasNext()) {
 			PersistentBlobTempBucketTag tag = tags.next();
-			if(logMINOR) Logger.minor(this, "Deleting tag "+tag+" for index "+tag.index);
+			if(logMINOR) Logger.minor(this, "Deleting tag " + tag + " for index " + tag.index);
 			container.delete(tag);
 			deleted++;
 			if(deleted > 1024) break;
@@ -910,7 +910,7 @@ outer:				while(true) {
 						try {
 							size = channel.size();
 						} catch (IOException e1) {
-							Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+							Logger.error(this, "Unable to find size of temp blob storage file: " + e1, e1);
 							return false;
 						}
 						size -= size % blockSize;
@@ -923,10 +923,10 @@ outer:				while(true) {
 						while(tags.hasNext()) {
 							PersistentBlobTempBucketTag tag = tags.next();
 							if(tag.bucket != null) {
-								Logger.error(this, "Tag with bucket beyond end of file! index="+tag.index+" bucket="+tag.bucket);
+								Logger.error(this, "Tag with bucket beyond end of file! index=" + tag.index + " bucket=" + tag.bucket);
 								continue;
 							}
-							if(logMINOR) Logger.minor(this, "Deleting tag "+tag+" for index "+tag.index);
+							if(logMINOR) Logger.minor(this, "Deleting tag " + tag + " for index " + tag.index);
 							container.delete(tag);
 							deleted++;
 							if(deleted > 1024) break;
@@ -958,14 +958,14 @@ outer:				while(true) {
 
 	private boolean innerDefrag(PersistentBlobTempBucket lastBucket, PersistentBlobTempBucket shadow, PersistentBlobTempBucketTag lastTag, PersistentBlobTempBucketTag newTag, ObjectContainer container) {
 		// Do the move.
-		Logger.minor(this, "Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+		Logger.minor(this, "Attempting to defragment: moving " + lastTag.index + " to " + newTag.index);
 		try {
 			byte[] blob = readSlot(lastTag.index);
 			writeSlot(newTag.index, blob);
 		} catch (IOException e) {
-			System.err.println("Failed to move bucket in defrag: "+e);
+			System.err.println("Failed to move bucket in defrag: " + e);
 			e.printStackTrace();
-			Logger.error(this, "Failed to move bucket in defrag: "+e, e);
+			Logger.error(this, "Failed to move bucket in defrag: " + e, e);
 			queueMaybeShrink();
 			return false;
 		}
@@ -1009,7 +1009,7 @@ outer:				while(true) {
 							return "PersistentBlobTempBucketFactory.MaybeShrink";
 						}
 						
-					}, NativeThread.NORM_PRIORITY-1, true);
+					}, NativeThread.NORM_PRIORITY - 1, true);
 				} catch (DatabaseDisabledException e) {
 					// Not much we can do
 				}
@@ -1020,13 +1020,13 @@ outer:				while(true) {
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.getIndex()+" to database");
+			Logger.minor(this, "Storing bucket " + bucket + " for slot " + bucket.getIndex() + " to database");
 		long index = bucket.getIndex();
 		PersistentBlobTempBucketTag tag = bucket.getTag();
 		container.activate(tag, 1);
 		if(tag.bucket != null && tag.bucket != bucket) {
-			Logger.error(this, "Slot "+index+" already occupied!: "+tag.bucket+" for "+tag.index);
-			throw new IllegalStateException("Slot "+index+" already occupied!");
+			Logger.error(this, "Slot " + index + " already occupied!: " + tag.bucket + " for " + tag.index);
+			throw new IllegalStateException("Slot " + index + " already occupied!");
 		}
 		tag.bucket = bucket;
 		tag.isFree = false;
@@ -1065,7 +1065,7 @@ outer:				while(true) {
 		try {
 			size = channel.size();
 		} catch (IOException e1) {
-			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+			Logger.error(this, "Unable to find size of temp blob storage file: " + e1, e1);
 			return Long.MAX_VALUE;
 		}
 		size -= size % blockSize;
@@ -1087,7 +1087,7 @@ outer:				while(true) {
 	public synchronized void freeShadow(long index, PersistentBlobTempBucket bucket) {
 		PersistentBlobTempBucket temp = shadows.remove(index);
 		if(temp != bucket) {
-			Logger.error(this, "Freed wrong shadow: "+temp+" should be "+bucket);
+			Logger.error(this, "Freed wrong shadow: " + temp + " should be " + bucket);
 			shadows.put(index, temp);
 		}
 	}

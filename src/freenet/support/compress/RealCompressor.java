@@ -51,7 +51,7 @@ public class RealCompressor implements PrioRunnable {
 	public synchronized void enqueueNewJob(CompressJob j) {
 		_awaitingJobs.add(j);
 		if(logMINOR)
-			Logger.minor(this, "Enqueueing compression job: "+j);
+			Logger.minor(this, "Enqueueing compression job: " + j);
 		notifyAll();
 	}
 
@@ -70,7 +70,7 @@ public class RealCompressor implements PrioRunnable {
 				}
 				compressorSemaphore.acquire(); 
 			} catch(InterruptedException e) {
-				Logger.error(this, "caught: "+e.getMessage(), e);
+				Logger.error(this, "caught: " + e.getMessage(), e);
 				continue;
 			}
 			

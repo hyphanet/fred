@@ -18,7 +18,7 @@ public class FSParseException extends Exception {
     }
 
     public FSParseException(String msg, NumberFormatException e) {
-        super(msg+" : "+e);
+        super(msg + " : " + e);
         initCause(e);
     }
 

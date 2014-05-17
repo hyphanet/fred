@@ -44,7 +44,7 @@ public class Serializer {
 	/**
 	 * Maximum bit array size in bits.
 	 */
-	public static final int MAX_BITARRAY_SIZE = 2048*8;
+	public static final int MAX_BITARRAY_SIZE = 2048 * 8;
 	/**
 	 * Maximum incoming array length in bytes.
 	 */
@@ -125,7 +125,7 @@ public class Serializer {
 			return array;
 		} else if (type.equals(float[].class)) {
 			final short length = dis.readShort();
-			if (length < 0 || length > MAX_ARRAY_LENGTH/4) {
+			if (length < 0 || length > MAX_ARRAY_LENGTH / 4) {
 				throw new IOException("Invalid flat array length: " + length);
 			}
 			float[] array = new float[length];
@@ -198,7 +198,7 @@ public class Serializer {
 		} else if (type.equals(Double.class)) {
 			return 8;
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
-			throw new IllegalArgumentException("Unknown length for "+type);
+			throw new IllegalArgumentException("Unknown length for " + type);
 		} else if (type.equals(String.class)) {
 			return 4 + maxStringLength * 2; // Written as chars
 		} else if (type.equals(LinkedList.class)) {

@@ -43,7 +43,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	void start() {
 		if (handler.sock == null)
 			return;
-		handler.server.node.executor.execute(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+ ':' +handler.sock.getPort());
+		handler.server.node.executor.execute(this, "FCP output handler for " + handler.sock.getRemoteSocketAddress() + ':' + handler.sock.getPort());
 	}
 	
 	@Override
@@ -53,11 +53,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 			realRun();
 		} catch (IOException e) {
 			if(logMINOR)
-				Logger.minor(this, "Caught "+e, e);
+				Logger.minor(this, "Caught " + e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 		} finally {
 			// Set the closed flag so that onClosed(), both on this thread and the input thread, doesn't wait forever.
 			// This happens in realRun() on a healthy exit, but we must do it here too to handle an exceptional exit.
@@ -116,7 +116,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 					return;
 				}
 			} else {
-				if(logMINOR) Logger.minor(this, "Sending "+msg);
+				if(logMINOR) Logger.minor(this, "Sending " + msg);
 				msg.send(os);
 				flushed = false;
 			}
@@ -125,21 +125,21 @@ public class FCPConnectionOutputHandler implements Runnable {
 
 	public void queue(FCPMessage msg) {
 		if(logDEBUG)
-			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
+			Logger.debug(this, "Queueing " + msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
 		boolean neverDropAMessage = handler.server.neverDropAMessage();
 		int MAX_QUEUE_LENGTH = handler.server.maxMessageQueueLength();
 		synchronized(outQueue) {
 			if(closedOutputQueue) {
-				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
+				Logger.error(this, "Closed already: " + this + " queueing message " + msg);
 				// FIXME throw something???
 				return;
 			}
 			if(outQueue.size() >= MAX_QUEUE_LENGTH) {
 				if(neverDropAMessage) {
-					Logger.error(this, "FCP message queue length is "+outQueue.size()+" for "+handler+" - not dropping message as configured...");
+					Logger.error(this, "FCP message queue length is " + outQueue.size() + " for " + handler + " - not dropping message as configured...");
 				} else {
-					Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?", new Exception("debug"));
+					Logger.error(this, "Dropping FCP message to " + handler + " : " + outQueue.size() + " messages queued - maybe client died?", new Exception("debug"));
 					return;
 				}
 			}

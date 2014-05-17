@@ -63,7 +63,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
 			try {
 				dataLength = Long.parseLong(dataLengthString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: " + e.getMessage(), identifier, false);
 			}
 		} else {
 			dataLength = -1;

@@ -83,10 +83,10 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
+        for(int i=0;i < NUMBER_OF_NODES;i++) {
             nodes[i] =
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500 * NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH) * 100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
+            Logger.normal(RealNodeRoutingTest.class, "Created node " + i);
         }
 
         // Now link them up
@@ -94,9 +94,9 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
 
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
+        for(int i=0;i < NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
-            System.err.println("Started node "+i+"/"+nodes.length);
+            System.err.println("Started node " + i + "/" + nodes.length);
         }
 
         waitForAllConnected(nodes);
@@ -108,7 +108,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         System.out.println();
 
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
-        for(int i=0;i<clients.length;i++) {
+        for(int i=0;i < clients.length;i++) {
         	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, false);
         }
 
@@ -117,8 +117,8 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         ClientCHK[] keys = new ClientCHK[INSERT_KEYS];
 
         String baseString = System.currentTimeMillis() + " ";
-        for(int i=0;i<INSERT_KEYS;i++) {
-        	System.err.println("Inserting "+i+" of "+INSERT_KEYS);
+        for(int i=0;i < INSERT_KEYS;i++) {
+        	System.err.println("Inserting " + i + " of " + INSERT_KEYS);
             int node1 = random.nextInt(NUMBER_OF_NODES);
             Node randomNode = nodes[node1];
             String dataString = baseString + i;
@@ -131,43 +131,43 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             byte[] encHeaders = block.getHeaders();
             ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
             keys[i] = chk;
-            Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(), "UTF-8"));
-            Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
-            Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
+            Logger.minor(RealNodeRequestInsertTest.class, "Decoded: " + new String(newBlock.memoryDecode(), "UTF-8"));
+            Logger.normal(RealNodeRequestInsertTest.class,"CHK: " + chk.getURI());
+            Logger.minor(RealNodeRequestInsertTest.class,"Headers: " + HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
 				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
-				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
+				Logger.error(RealNodeRequestInsertTest.class, "Inserted to " + node1);
+				Logger.minor(RealNodeRequestInsertTest.class, "Data: " + Fields.hashCode(encData) + ", Headers: " + Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {
-				Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
-				System.err.println("Insert failed: "+ putEx);
+				Logger.error(RealNodeRequestInsertTest.class, "Insert failed: " + putEx);
+				System.err.println("Insert failed: " + putEx);
 				System.exit(EXIT_INSERT_FAILED);
 			}
         }
 
         // Now queue requests for each key on every node.
-        for(int i=0;i<INSERT_KEYS;i++) {
+        for(int i=0;i < INSERT_KEYS;i++) {
         	ClientCHK key = keys[i];
-        	System.err.println("Queueing requests for "+i+" of "+INSERT_KEYS);
-        	for(int j=0;j<nodes.length;j++) {
+        	System.err.println("Queueing requests for " + i + " of " + INSERT_KEYS);
+        	for(int j=0;j < nodes.length;j++) {
         		clients[j].prefetch(key.getURI(), DAYS.toMillis(1), 32768, null);
         	}
         	long totalRunningRequests = 0;
-        	for(int j=0;j<nodes.length;j++) {
+        	for(int j=0;j < nodes.length;j++) {
         		totalRunningRequests += nodes[j].clientCore.countTransientQueuedRequests();
         	}
-        	System.err.println("Running requests: "+totalRunningRequests);
+        	System.err.println("Running requests: " + totalRunningRequests);
         }
 
         // Now wait until finished. How???
 
         while(true) {
         	long totalRunningRequests = 0;
-        	for(int i=0;i<nodes.length;i++) {
+        	for(int i=0;i < nodes.length;i++) {
         		totalRunningRequests += nodes[i].clientCore.countTransientQueuedRequests();
         	}
-        	System.err.println("Running requests: "+totalRunningRequests);
+        	System.err.println("Running requests: " + totalRunningRequests);
         	if(totalRunningRequests == 0) break;
         	Thread.sleep(1000);
         }

@@ -38,7 +38,7 @@ public class DatabaseKey {
     public byte[] getPluginStoreKey(String storeIdentifier) {
         try {
             byte[] id = storeIdentifier.getBytes("UTF-8");
-            byte[] full = new byte[databaseKey.length+PLUGIN.length+id.length];
+            byte[] full = new byte[databaseKey.length + PLUGIN.length + id.length];
             int x = 0;
             System.arraycopy(databaseKey, 0, full, 0, databaseKey.length);
             x += databaseKey.length;

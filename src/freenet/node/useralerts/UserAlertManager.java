@@ -192,7 +192,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				try {
 					alertsNode.addChild(renderAlert(alert));
 				} catch (Throwable t) {
-					Logger.error(this, "FAILED TO RENDER ALERT: "+alert+" : "+t, t);
+					Logger.error(this, "FAILED TO RENDER ALERT: " + alert + " : " + t, t);
 				}
 			} else {
 				// Alerts toadlet itself can error, that's OK.
@@ -215,7 +215,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	public HTMLNode renderAlert(UserAlert userAlert) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
-		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));
+		userAlertNode = new HTMLNode("div", "class", "infobox infobox-" + getAlertLevelName(level));
 
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
@@ -239,7 +239,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		else if (level <= UserAlert.MINOR)
 			return "minor";
 		else {
-			Logger.error(this, "Unknown alert level: "+level, new Exception("debug"));
+			Logger.error(this, "Unknown alert level: " + level, new Exception("debug"));
 			return "error";
 		}
 	}
@@ -354,7 +354,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("UserAlertManager."+key);
+		return NodeL10n.getBase().getString("UserAlertManager." + key);
 	}
 
 	public void dumpEvents(HashSet<String> toDump) {

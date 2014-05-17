@@ -241,7 +241,7 @@ public class FetchContext implements Cloneable {
 		if(cooldownRetries < 0)
 			throw new IllegalArgumentException("Bogus negative retries");
 		if(cooldownRetries > RequestScheduler.COOLDOWN_RETRIES)
-			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
+			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= " + RequestScheduler.COOLDOWN_RETRIES + " since the network will not tolerate more than that");
 		this.cooldownRetries = cooldownRetries;
 	}
 	
@@ -249,7 +249,7 @@ public class FetchContext implements Cloneable {
 		if(cooldownTime < 0)
 			throw new IllegalArgumentException("Bogus negative cooldown time");
 		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD)
-			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
+			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= " + RequestScheduler.COOLDOWN_PERIOD + " since ULPRs will ensure fast response at that level");
 		this.cooldownTime = cooldownTime;
 	}
 	

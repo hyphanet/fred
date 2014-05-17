@@ -14,7 +14,7 @@ public class TrivialPaddedBucketTest extends TestCase {
     public void testSimple() throws IOException {
         checkSimple(4000, 4096);
         checkSimple(1, 1024);
-        checkSimple((1<<17)-1, 1<<17);
+        checkSimple((1 << 17) - 1, 1 << 17);
     }
     
     public void checkSimple(int length, int expectedLength) throws IOException {

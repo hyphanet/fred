@@ -93,8 +93,8 @@ public class PartiallyReceivedBulk {
 		if(transmitters == null)
 			transmitters = new BulkTransmitter[] { bt };
 		else {
-			transmitters = Arrays.copyOf(transmitters, transmitters.length+1);
-			transmitters[transmitters.length-1] = bt;
+			transmitters = Arrays.copyOf(transmitters, transmitters.length + 1);
+			transmitters[transmitters.length - 1] = bt;
 		}
 	}
 	
@@ -106,17 +106,17 @@ public class PartiallyReceivedBulk {
 	 */
 	void received(int blockNum, byte[] data, int offset, int length) {
 		if(blockNum > blocks) {
-			Logger.error(this, "Received block "+blockNum+" of "+blocks+" !");
+			Logger.error(this, "Received block " + blockNum + " of " + blocks + " !");
 			return;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Received block "+blockNum);
+			Logger.minor(this, "Received block " + blockNum);
 		BulkTransmitter[] notifyBTs;
 		long fileOffset = (long)blockNum * (long)blockSize;
 		int bs = (int) Math.min(blockSize, size - fileOffset);
 		if(length < bs) {
-			String err = "Data too short! Should be "+bs+" actually "+length;
-			Logger.error(this, err+" for "+this);
+			String err = "Data too short! Should be " + bs + " actually " + length;
+			Logger.error(this, err + " for " + this);
 			abort(RetrievalException.PREMATURE_EOF, err);
 			return;
 		}
@@ -129,7 +129,7 @@ public class PartiallyReceivedBulk {
 		try {
 			raf.pwrite(fileOffset, data, offset, bs);
 		} catch (Throwable t) {
-			Logger.error(this, "Failed to store received block "+blockNum+" on "+this+" : "+t, t);
+			Logger.error(this, "Failed to store received block " + blockNum + " on " + this + " : " + t, t);
 			abort(RetrievalException.IO_ERROR, t.toString());
 		}
 		if(notifyBTs == null) return;
@@ -141,7 +141,7 @@ public class PartiallyReceivedBulk {
 
 	public void abort(int errCode, String why) {
 		if(logMINOR)
-			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why+" first missing is "+blocksReceived.firstZero(0), new Exception("debug"));
+			Logger.normal(this, "Aborting " + this + ": " + errCode + " : " + why + " first missing is " + blocksReceived.firstZero(0), new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;
 		synchronized(this) {
@@ -176,7 +176,7 @@ public class PartiallyReceivedBulk {
 		try {
 			raf.pread(fileOffset, data, 0, bs);
 		} catch (IOException e) {
-			Logger.error(this, "Failed to read stored block "+blockNum+" on "+this+" : "+e, e);
+			Logger.error(this, "Failed to read stored block " + blockNum + " on " + this + " : " + e, e);
 			abort(RetrievalException.IO_ERROR, e.toString());
 			return null;
 		}
@@ -189,7 +189,7 @@ public class PartiallyReceivedBulk {
 			if(t == remove) found = true;
 		}
 		if(!found) return;
-		BulkTransmitter[] newTrans = new BulkTransmitter[transmitters.length-1];
+		BulkTransmitter[] newTrans = new BulkTransmitter[transmitters.length - 1];
 		int j = 0;
 		for(BulkTransmitter t: transmitters) {
 			if(t == remove) continue;

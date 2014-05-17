@@ -25,7 +25,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 	/*
 	 * Bandwidth used if both the upload and download limit are at the minimum. In GB. Assumes 24/7 uptime.
 	 */
-	private static final Double minCap = 2*Node.getMinimumBandwidth()*secondsPerMonth/GB;
+	private static final Double minCap = 2 * Node.getMinimumBandwidth() * secondsPerMonth / GB;
 
 	private static final long[] caps = { (long)Math.ceil(minCap), 50, 100, 150 };
 
@@ -76,7 +76,7 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		for (long cap : caps) {
 			HTMLNode row = table.addChild("tr");
 			//ISPs are likely to list limits in GB instead of GiB, so display GB here.
-			row.addChild("td", String.valueOf(cap) +" GB");
+			row.addChild("td", String.valueOf(cap) + " GB");
 			HTMLNode selectForm = helper.addFormChild(row.addChild("td"), ".", "limit");
 			selectForm.addChild("input",
 			        new String[] { "type", "name", "value" },
@@ -133,12 +133,12 @@ public class BANDWIDTH_MONTHLY extends BandwidthManipulator implements Step {
 		final double maxFraction = 0.8;
 		final double maxScaleCap = 100;
 		assert minCap < maxScaleCap;
-		double downloadFraction = ((maxFraction-minFraction)/(maxScaleCap - 2*minCap))*(GBPerMonth - minCap) + minFraction;
+		double downloadFraction = ((maxFraction - minFraction) / (maxScaleCap - 2 * minCap)) * (GBPerMonth - minCap) + minFraction;
 		// No minimum fraction clamp: caps less than the minimum get redirected to a warning instead.
 		if (downloadFraction > maxFraction) downloadFraction = maxFraction;
-		double bytesPerSecondTotal = bytesPerMonth/secondsPerMonth;
-		String downloadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*downloadFraction));
-		String uploadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal*(1-downloadFraction)));
+		double bytesPerSecondTotal = bytesPerMonth / secondsPerMonth;
+		String downloadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal * downloadFraction));
+		String uploadLimit = String.valueOf(Math.ceil(bytesPerSecondTotal * (1 - downloadFraction)));
 
 		try {
 			setBandwidthLimit(downloadLimit, false);

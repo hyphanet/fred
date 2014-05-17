@@ -106,7 +106,7 @@ public class HTMLNodeTest extends TestCase {
 		int size = 100;
 		String[] methodAttributesName = new String[size];
 		String[] methodAttributesValue = new String[size];
-		for (int i=0;i<size;i++) {
+		for (int i=0;i < size;i++) {
 			methodAttributesName[i] = "AttributeName" + i;
 			methodAttributesValue[i] = "Value " + i;
 		}
@@ -114,7 +114,7 @@ public class HTMLNodeTest extends TestCase {
 				methodAttributesName,methodAttributesValue,
 				SAMPLE_NODE_CONTENT);
 		//checks presence
-		for(int i=0;i<size;i++)
+		for(int i=0;i < size;i++)
 			assertEquals(methodAttributesValue[i],
 					methodHTMLNode.getAttribute(methodAttributesName[i]));
 		//checks size
@@ -158,7 +158,7 @@ public class HTMLNodeTest extends TestCase {
 	public void testAddChildrenUsingTheNodeItselfAsChild() {
 		HTMLNode[] methodHTMLNodesArray = {new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY),
 										   exampleNodeNonEmpty,
-										   new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY+"1")};
+										   new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY + "1")};
 		try {
 			exampleNodeNonEmpty.addChildren(methodHTMLNodesArray);
 			fail("Expected Exception Error Not Thrown!"); } 
@@ -174,7 +174,7 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testAddChildSameName() {
 		int times = 100;
-		for (int i = 1; i<=times; i++) {
+		for (int i = 1; i <= times; i++) {
 			exampleNodeNonEmpty.addChild(SAMPLE_OKAY_NODE_NAME_NON_EMPTY);
 			assertEquals(exampleNodeNonEmpty.children.size(),i);
 		}
@@ -288,7 +288,7 @@ public class HTMLNodeTest extends TestCase {
 		assertEquals(1,childrenList.size());
 		HTMLNode childHTMLNode = childrenList.get(0);
 		assertEquals(attibutesNames.length,childHTMLNode.getAttributes().size());
-		for(int i = 0 ; i<attibutesNames.length;i++)
+		for(int i = 0 ; i < attibutesNames.length;i++)
 			assertEquals(attributesValues[i],
 					childHTMLNode.getAttribute(attibutesNames[i]));
 	}
@@ -344,7 +344,7 @@ public class HTMLNodeTest extends TestCase {
 		String methodAttributeName = "";
 		String counterString = "";
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY);
-		for (int i=0; i<attributesNumber; i++) {
+		for (int i=0; i < attributesNumber; i++) {
 			counterString = String.valueOf(i);
 			methodAttributeName = "attribute " + counterString; 
 			assertEquals(i,methodHTMLNode.getAttributes().size());
@@ -507,7 +507,7 @@ public class HTMLNodeTest extends TestCase {
 	public void testGenerate_fromHTMLNode_textareaDivA() {
 		HTMLNode methodHTMLNode;
 		String[] nodeNamesArray = {"textarea","div","a"};
-		for(int i=0;i<nodeNamesArray.length;i++) {
+		for(int i=0;i < nodeNamesArray.length;i++) {
 			boolean newlines = new HTMLNode("a").newlineOpen(nodeNamesArray[i]);
 			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
 					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE);
@@ -530,25 +530,25 @@ public class HTMLNodeTest extends TestCase {
 		HTMLNode methodChildNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
 				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		for(int i=0;i<nodeNamesArray.length;i++) {
+		for(int i=0;i < nodeNamesArray.length;i++) {
 			methodHTMLNode = new HTMLNode(nodeNamesArray[i],
 					SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE,
 					SAMPLE_NODE_CONTENT);
 			methodHTMLNode.addChild(methodChildNode);
 			
-			assertEquals(("<"+nodeNamesArray[i]+" ").toLowerCase() + 
+			assertEquals(("<" + nodeNamesArray[i] + " ").toLowerCase() + 
 					SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
-					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">\n" +
+					 "\"" + SAMPLE_ATTRIBUTE_VALUE + "\">\n" +
 					 // FIXME why is this using 2 tabs? I don't understand ...
-					 "\t\t"+SAMPLE_NODE_CONTENT +
+					 "\t\t" + SAMPLE_NODE_CONTENT +
 					 
 					 //child
 					 generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,
 							 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 								SAMPLE_NODE_CONTENT) +
-					 "\n\t"+
-					 ("</"+nodeNamesArray[i]+">\n").toLowerCase()
-					 +"\t",
+					 "\n\t" +
+					 ("</" + nodeNamesArray[i] + ">\n").toLowerCase()
+					 + "\t",
 					 
 					 methodHTMLNode.generate());
 		}
@@ -562,7 +562,7 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testGenerate_fromHTMLNode_String() {
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_EMPTY);
-		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME_EMPTY+" />").toLowerCase(),
+		assertEquals(("<" + SAMPLE_OKAY_NODE_NAME_EMPTY + " />").toLowerCase(),
 					methodHTMLNode.generate());
 	}
 	
@@ -574,9 +574,9 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	public void testGenerate_fromHTMLNode_StringString() {
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME_NON_EMPTY,SAMPLE_NODE_CONTENT);
-		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME_NON_EMPTY+">").toLowerCase() + 
+		assertEquals(("<" + SAMPLE_OKAY_NODE_NAME_NON_EMPTY + ">").toLowerCase() + 
 					 SAMPLE_NODE_CONTENT +
-					 ("</"+SAMPLE_OKAY_NODE_NAME_NON_EMPTY+">").toLowerCase(),
+					 ("</" + SAMPLE_OKAY_NODE_NAME_NON_EMPTY + ">").toLowerCase(),
 					methodHTMLNode.generate());
 	}
 	
@@ -620,9 +620,9 @@ public class HTMLNodeTest extends TestCase {
 	 * @return the correct output expected by HTMLNode.generate() method
 	 */
 	private String generateNoContentNodeOutput(String aName, String aAttributeName, String aAttributeValue) {
-		return ("<"+aName+" ").toLowerCase() + 
+		return ("<" + aName + " ").toLowerCase() + 
 		aAttributeName + "=" +
-		 "\""+aAttributeValue+"\""+
+		 "\"" + aAttributeValue + "\"" +
 		 " />";
 	}
 
@@ -641,13 +641,13 @@ public class HTMLNodeTest extends TestCase {
 	 */
 	private String generateFullNodeOutput(String aName, String aAttributeName, String aAttributeValue, String aContent, boolean indent) {
 		StringBuffer sb = new StringBuffer();
-		sb.append("<"+aName.toLowerCase()+" ");
+		sb.append("<" + aName.toLowerCase() + " ");
 		sb.append(aAttributeName + "=");
-		sb.append("\""+aAttributeValue+"\">");
+		sb.append("\"" + aAttributeValue + "\">");
 		String indenting = indent ? "\n\t" : "";
 		if(!aContent.equals(""))
 			sb.append(indenting + aContent);
-		sb.append(indenting + ("</"+aName+">").toLowerCase());
+		sb.append(indenting + ("</" + aName + ">").toLowerCase());
 		if(indent) sb.append(indenting);
 		return sb.toString();
 	}
@@ -669,9 +669,9 @@ public class HTMLNodeTest extends TestCase {
 		
 		methodHTMLNode.addChild(methodHTMLNodeChild);
 		
-		assertEquals(("<"+SAMPLE_OKAY_NODE_NAME_NON_EMPTY+" ").toLowerCase() + 
+		assertEquals(("<" + SAMPLE_OKAY_NODE_NAME_NON_EMPTY + " ").toLowerCase() + 
 				SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
-				 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" +
+				 "\"" + SAMPLE_ATTRIBUTE_VALUE + "\">" +
 				 SAMPLE_NODE_CONTENT +
 				 
 				 //child
@@ -679,7 +679,7 @@ public class HTMLNodeTest extends TestCase {
 						 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 							SAMPLE_NODE_CONTENT) +
 				 
-				 ("</"+SAMPLE_OKAY_NODE_NAME_NON_EMPTY+">").toLowerCase(),
+				 ("</" + SAMPLE_OKAY_NODE_NAME_NON_EMPTY + ">").toLowerCase(),
 				 methodHTMLNode.generate());
 	}
 	
@@ -708,7 +708,7 @@ public class HTMLNodeTest extends TestCase {
 		methodHTMLNodeDoc.addChild(SAMPLE_OKAY_NODE_NAME_EMPTY);
 		String generatedString = methodHTMLNodeDoc.generate();
 		//consider only the HTMLDocType generated text
-		assertEquals("<!DOCTYPE "+sampleDocType+" PUBLIC \""+sampleSystemUri+"\">", 	
+		assertEquals("<!DOCTYPE " + sampleDocType + " PUBLIC \"" + sampleSystemUri + "\">", 	
 				readFirstLine(generatedString));
 		
 	}

@@ -33,8 +33,8 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 public class RealNodePingTest {
 	
 	public static final int DARKNET_PORT1 = RealNodeBusyNetworkTest.DARKNET_PORT_END;
-	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END+1;
-	public static final int DARKNET_PORT_END = DARKNET_PORT2+1;
+	public static final int DARKNET_PORT2 = RealNodeBusyNetworkTest.DARKNET_PORT_END + 1;
+	public static final int DARKNET_PORT_END = DARKNET_PORT2 + 1;
 	
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
@@ -57,7 +57,7 @@ public class RealNodePingTest {
         Thread.sleep(20000);
         //node1.usm.setDropProbability(4);
         while(true) {
-            Logger.error(RealNodePingTest.class, "Sending PING "+pingID);
+            Logger.error(RealNodePingTest.class, "Sending PING " + pingID);
             boolean success;
             try {
                 success = pn.ping(pingID);
@@ -66,9 +66,9 @@ public class RealNodePingTest {
                 continue;
             }
             if(success)
-                Logger.error(RealNodePingTest.class, "PING "+pingID+" successful");
+                Logger.error(RealNodePingTest.class, "PING " + pingID + " successful");
             else
-                Logger.error(RealNodePingTest.class, "PING FAILED: "+pingID);
+                Logger.error(RealNodePingTest.class, "PING FAILED: " + pingID);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {

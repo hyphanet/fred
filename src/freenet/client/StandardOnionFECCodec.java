@@ -56,7 +56,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		if(checkBlocks == 0 || dataBlocks == 0)
-			throw new IllegalArgumentException("data blocks "+dataBlocks+" check blocks "+checkBlocks);
+			throw new IllegalArgumentException("data blocks " + dataBlocks + " check blocks " + checkBlocks);
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
 		if(codec != null) {
@@ -83,8 +83,8 @@ public class StandardOnionFECCodec extends FECCodec {
 			if(fec != null) return;
 		}
 		FECCode fec2 = null;
-		if(k >= n) throw new IllegalArgumentException("n must be >k: n = "+n+" k = "+k);
-		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = "+k+" n = "+n);
+		if(k >= n) throw new IllegalArgumentException("n must be >k: n = " + n + " k = " + k);
+		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = " + k + " n = " + n);
 		// native code segfaults if k < 256 and n > 256
 		// native code segfaults if n > k*2 i.e. if we have extra blocks beyond 100% redundancy
 		// FIXME: NATIVE FEC DISABLED PENDING FIXING THE SEGFAULT BUG (easily reproduced with check blocks > data blocks)
@@ -128,12 +128,12 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	@Override
 	public int countCheckBlocks() {
-		return n-k;
+		return n - k;
 	}
 
 	@Override
 	public String toString() {
-		return super.toString()+":n="+n+",k="+k;
+		return super.toString() + ":n=" + n + ",k=" + k;
 	}
 
 	@Override

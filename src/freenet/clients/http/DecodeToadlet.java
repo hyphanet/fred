@@ -39,7 +39,7 @@ public class DecodeToadlet extends Toadlet {
 		ctx.getPageMaker().getInfobox("infobox-warning", "Decode Link", contentNode, "decode-not-redirected", true).
 		    addChild("a", "href", keyToFetch, "Click Here to be re-directed");
 
-		this.writeHTMLReply(ctx, 301, "Moved Permanently\nLocation: "+ keyToFetch, pageNode.generate());
+		this.writeHTMLReply(ctx, 301, "Moved Permanently\nLocation: " + keyToFetch, pageNode.generate());
 	}
 
 	@Override

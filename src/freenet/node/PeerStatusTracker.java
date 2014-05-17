@@ -64,7 +64,7 @@ class PeerStatusTracker<K extends Object> {
 	
 	public synchronized void changePeerNodeStatus(PeerNode peerNode, K oldPeerNodeStatus,
 			K peerNodeStatus, boolean noLog) {
-		if(logMINOR) Logger.minor(this, "Peer status change: "+oldPeerNodeStatus+" -> "+peerNodeStatus+" on "+peerNode);
+		if(logMINOR) Logger.minor(this, "Peer status change: " + oldPeerNodeStatus + " -> " + peerNodeStatus + " on " + peerNode);
 		removeStatus(oldPeerNodeStatus, peerNode, noLog);
 		addStatus(peerNodeStatus, peerNode, noLog);
 	}

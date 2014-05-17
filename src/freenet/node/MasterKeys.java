@@ -221,7 +221,7 @@ public class MasterKeys {
 		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
 		offset += databaseKey.length;
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, hashedStart, offset-hashedStart);
+		md.update(data, hashedStart, offset - hashedStart);
 		byte[] hash = md.digest();
 		System.arraycopy(hash, 0, data, offset, HASH_LENGTH);
 		offset += HASH_LENGTH;

@@ -67,8 +67,8 @@ public class PluginHandler {
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {
-					Logger.normal(this, "Caught Throwable while running plugin: "+t, t);
-					System.err.println("Caught Throwable while running plugin: "+t);
+					Logger.normal(this, "Caught Throwable while running plugin: " + t, t);
+					System.err.println("Caught Throwable while running plugin: " + t);
 					t.printStackTrace();
 				}
 				pi.unregister(pm, false); // If not already unregistered

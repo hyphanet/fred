@@ -26,7 +26,7 @@ public class CryptUtilTest extends TestCase {
 				byte[] b2 = new byte[len + off];
 				mt1.nextBytes(b1);
 				Util.randomBytes(mt2, b2, off, len);
-				assertTrue("Random offset="+off+" length="+len,
+				assertTrue("Random offset=" + off + " length=" + len,
 						Fields.byteArrayEqual(b1, b2, 0, off, len));
 			}
 		}
@@ -39,7 +39,7 @@ public class CryptUtilTest extends TestCase {
 			r1 = SecureRandom.getInstance("SHA1PRNG");
 			r2 = SecureRandom.getInstance("SHA1PRNG");
 		} catch(NoSuchAlgorithmException e) {
-			System.err.println("Cannot acquire SHA1PRNG, skipping test: "+e);
+			System.err.println("Cannot acquire SHA1PRNG, skipping test: " + e);
 			e.printStackTrace();
 			return;
 		}
@@ -68,7 +68,7 @@ public class CryptUtilTest extends TestCase {
 				byte[] b2 = new byte[len + off];
 				r1.nextBytes(b1);
 				Util.randomBytes(r2, b2, off, len);
-				assertTrue("SecureRandom offset="+off+" length="+len,
+				assertTrue("SecureRandom offset=" + off + " length=" + len,
 						Fields.byteArrayEqual(b1, b2, 0, off, len));
 			}
 		}

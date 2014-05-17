@@ -17,7 +17,7 @@ public class ExpectedMIMEEvent implements ClientEvent {
 
 	@Override
 	public String getDescription() {
-		return "Expected MIME type: "+expectedMIMEType;
+		return "Expected MIME type: " + expectedMIMEType;
 	}
 
 }

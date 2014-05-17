@@ -27,7 +27,7 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 			File[] roots = File.listRoots();
 			for(File f : roots) {
 				if(source.startsWith(f.getName()) && !new File(source).exists()) {
-					throw new PluginNotFoundException("File not found: "+source);
+					throw new PluginNotFoundException("File not found: " + source);
 				}
 			}
 

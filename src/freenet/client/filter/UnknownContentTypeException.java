@@ -37,7 +37,7 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("UnknownContentTypeException."+key, pattern, value);
+		return NodeL10n.getBase().getString("UnknownContentTypeException." + key, pattern, value);
 	}
 
 	@Override

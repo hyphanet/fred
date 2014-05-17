@@ -36,7 +36,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 
 	@Override
 	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) {
-		if(logDEBUG) Logger.debug(this, "Root map : "+manifestElements.size()+" elements");
+		if(logDEBUG) Logger.debug(this, "Root map : " + manifestElements.size() + " elements");
 		makePutHandlers(getRootBuilder(), manifestElements, defaultName);
 	}
 	
@@ -51,7 +51,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 				builder.makeSubDirCD(name);
 				makePutHandlers(builder, subMap, defaultName);
 				builder.popCurrentDir();
-				if(logDEBUG) Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements");
+				if(logDEBUG) Logger.debug(this, "Sub map for " + name + " : " + subMap.size() + " elements");
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				builder.addElement(name, element, name.equals(defaultName));

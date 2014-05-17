@@ -137,7 +137,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	private String indentString(int indentDepth) {
 		StringBuffer indentLine = new StringBuffer();
 
-		for (int indentIndex = 0, indentCount = indentDepth+1; indentIndex < indentCount; indentIndex++) {
+		for (int indentIndex = 0, indentCount = indentDepth + 1; indentIndex < indentCount; indentIndex++) {
 			indentLine.append('\t');
 		}
 		return indentLine.toString();
@@ -184,7 +184,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		c = str.charAt(0);
 		if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
 			boolean simpleMatch = true;
-			for(int i=1;i<str.length();i++) {
+			for(int i=1;i < str.length();i++) {
 				c = str.charAt(i);
 				if(!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
 					simpleMatch = false;
@@ -215,7 +215,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			}
 		}
 		this.name = name.toLowerCase(Locale.ENGLISH);
-		if (content != null && !("#").equals(name)&& !("%").equals(name)) {
+		if (content != null && !("#").equals(name) && !("%").equals(name)) {
 			addChild(new HTMLNode("#", content));
 			this.content = null;
 		} else
@@ -407,18 +407,18 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 
 		/*insert the contents*/
 		if (children.size() == 0) {
-			if(content==null) {
+			if(content == null) {
 			} else {
 				HTMLEncoder.encodeToBuffer(content, tagBuffer);
 			}
 		} else {
 			if (newlineOpen(name)) {
 				tagBuffer.append('\n');
-				tagBuffer.append(indentString(indentDepth+1));
+				tagBuffer.append(indentString(indentDepth + 1));
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
-				childNode.generate(tagBuffer,indentDepth+1);
+				childNode.generate(tagBuffer,indentDepth + 1);
 			}
 		}
 		/* add a closing tag */
@@ -435,7 +435,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 	
 	public String generateChildren(){
-		if(content!=null){
+		if(content != null){
 			return content;
 		}
 		StringBuilder tagBuffer=new StringBuilder();

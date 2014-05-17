@@ -94,7 +94,7 @@ public class NodeCryptoConfig {
 			portNumber = config.getInt("listenPort");
 		}catch (Exception e){
 			// FIXME is this really necessary?
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			System.err.println(e);
 			e.printStackTrace();
 			portNumber = -1;
@@ -106,7 +106,7 @@ public class NodeCryptoConfig {
 			bindTo = new FreenetInetAddress(config.getString("bindTo"), false);
 			
 		} catch (UnknownHostException e) {
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Invalid bindTo: "+config.getString("bindTo"));
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Invalid bindTo: " + config.getString("bindTo"));
 		}
 		
 		config.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
@@ -258,12 +258,12 @@ public class NodeCryptoConfig {
 	public static final int OPTION_COUNT = 3;
 	
 	synchronized void starting(NodeCrypto crypto2) {
-		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
+		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto " + crypto + " with " + crypto2);
 		crypto = crypto2;
 	}
 	
 	synchronized void started(NodeCrypto crypto2) {
-		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
+		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto " + crypto + " with " + crypto2);
 	}
 	
 	synchronized void maybeStarted(NodeCrypto crypto2) {

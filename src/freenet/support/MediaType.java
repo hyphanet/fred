@@ -88,7 +88,7 @@ public class MediaType {
 			String name = parameter.substring(0, equals).trim().toLowerCase();
 			String value = parameter.substring(equals + 1).trim();
 			if(value.startsWith("\"") && value.endsWith("\""))
-			    value = value.substring(1, value.length()-1).trim();
+			    value = value.substring(1, value.length() - 1).trim();
 			this.parameters.put(name, value);
 		}
 	}

@@ -39,7 +39,7 @@ public class DNSRequester implements Runnable {
     void start() {
     	Logger.normal(this, "Starting DNSRequester");
     	System.out.println("Starting DNSRequester");
-    	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
+    	node.executor.execute(this, "DNSRequester thread for " + node.getDarknetPortNumber());
     }
 
     @Override
@@ -52,7 +52,7 @@ public class DNSRequester implements Runnable {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
             } catch (Throwable t) {
-                Logger.error(this, "Caught in DNSRequester: "+t, t);
+                Logger.error(this, "Caught in DNSRequester: " + t, t);
             }
         }
     }

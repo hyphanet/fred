@@ -98,7 +98,7 @@ class NPFPacket {
 							packet.acks.add(ack++);
 						}
 						
-						prevAck = ack-1;
+						prevAck = ack - 1;
 					}
 				} catch (ArrayIndexOutOfBoundsException e) {
 					// The packet's length is not big enough
@@ -215,7 +215,7 @@ class NPFPacket {
 				messageLength = fragmentLength;
 			}
 			if((offset + fragmentLength) > plaintext.length) {
-				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet: offset is "+offset+" fragment length is "+fragmentLength+" plaintext length is "+plaintext.length+" message length "+messageLength+" message ID "+messageID+(pn == null ? "" : (" from "+pn.shortToString())));
+				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet: offset is " + offset + " fragment length is " + fragmentLength + " plaintext length is " + plaintext.length + " message length " + messageLength + " message ID " + messageID + (pn == null ? "" : (" from " + pn.shortToString())));
 				packet.error = true;
 				break;
 			}
@@ -443,7 +443,7 @@ class NPFPacket {
 				return false;
 			}
 			//              (start + offset) + (rangeCount-1)    *(1byte deltaFromPrevios + length) + farRangeCount*(flag + 4byte packetSequenceNumber + length)
-			int blockSize = 5                + (nearRangeCount-1)*2                                 + farRangeCount*6;
+			int blockSize = 5                + (nearRangeCount - 1) * 2                                 + farRangeCount * 6;
 			int finalLength = length + blockSize - ackBlockByteSize;
 			if(finalLength > maxPacketSize) {
 			    acks.remove(ack);
@@ -566,7 +566,7 @@ class NPFPacket {
 			if(biggest < frag.messageLength) biggest = frag.messageLength;
 		}
 		int overhead = totalPacketLength - totalMessageData;
-		if(logDEBUG) Logger.debug(this, "Total packet overhead: "+overhead+" for "+size+" messages total message length "+totalMessageData+" total packet length "+totalPacketLength+" biggest message "+biggest);
+		if(logDEBUG) Logger.debug(this, "Total packet overhead: " + overhead + " for " + size + " messages total message length " + totalMessageData + " total packet length " + totalPacketLength + " biggest message " + biggest);
 		for(MessageFragment frag: fragments) {
 			// frag.wrapper is always non-null on sending.
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);

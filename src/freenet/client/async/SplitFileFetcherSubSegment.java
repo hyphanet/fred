@@ -126,17 +126,17 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		synchronized(segment) {
 			int initSize = blockNums.size();
 			Integer prev = null;
-			for(int i=0;i<blockNums.size();i++) {
+			for(int i=0;i < blockNums.size();i++) {
 				Integer x = blockNums.get(i);
 				if(x == prev || x.equals(prev)) {
 					blockNums.remove(i);
-					if(logMINOR) Logger.minor(this, "Removing "+x+" (index "+i+") in cleanBlockNums on "+this);
+					if(logMINOR) Logger.minor(this, "Removing " + x + " (index " + i + ") in cleanBlockNums on " + this);
 					i--;
 					if(persistent) container.delete(x);
 				} else prev = x;
 			}
 			if(blockNums.size() < initSize) {
-				Logger.error(this, "Cleaned block number list duplicates: was "+initSize+" now "+blockNums.size());
+				Logger.error(this, "Cleaned block number list duplicates: was " + initSize + " now " + blockNums.size());
 			}
 		}
 	}
@@ -198,7 +198,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		synchronized(segment) {
 			if(blockNums.isEmpty() && (!cancelled) && logMINOR)
-				Logger.minor(this, "Subsegment is empty, removing: "+this);
+				Logger.minor(this, "Subsegment is empty, removing: " + this);
 			return cancelled || blockNums.isEmpty();
 		}
 	}
@@ -223,7 +223,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(blockNums, 1);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Killing "+this);
+			Logger.minor(this, "Killing " + this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
 		unregister(container, context, getPriorityClass(container));
 		Integer[] oldNums = null;
@@ -250,11 +250,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		container.activate(blockNums, 1);
 		synchronized(segment) {
 			if(!cancelled) {
-				Logger.error(this, "Removing when not cancelled! on "+this, new Exception("error"));
+				Logger.error(this, "Removing when not cancelled! on " + this, new Exception("error"));
 				cancelled = true;
 			}
 			if(!blockNums.isEmpty()) {
-				Logger.error(this, "Removing when blockNums not empty! on "+this, new Exception("error"));
+				Logger.error(this, "Removing when blockNums not empty! on " + this, new Exception("error"));
 				for(Integer i : blockNums) container.delete(i);
 				blockNums.clear();
 			}
@@ -313,7 +313,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		assert(container != null);
 		assert(persistent);
 		if(!container.ext().isStored(this)) return;
-		if(logMINOR) Logger.minor(this, "Queueing migrate to segment fetcher for "+this);
+		if(logMINOR) Logger.minor(this, "Queueing migrate to segment fetcher for " + this);
 		try {
 			context.jobRunner.queue(new DBJob() {
 				
@@ -335,7 +335,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	private void migrateToSegmentFetcher(ObjectContainer container,
 			ClientContext context) {
 		if(segment == null) {
-			Logger.error(this, "Migrating to segment fetcher on "+this+" but segment is null!");
+			Logger.error(this, "Migrating to segment fetcher on " + this + " but segment is null!");
 			if(container.ext().isStored(this))
 				Logger.error(this, "... and this is stored!");
 			if(container.ext().isActive(this))
@@ -379,9 +379,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(blockNums == null)
-			throw new NullPointerException("Storing "+this+" but blockNums == null!");
+			throw new NullPointerException("Storing " + this + " but blockNums == null!");
 		if(segment == null)
-			throw new NullPointerException("Storing "+this+" but segment == null!");
+			throw new NullPointerException("Storing " + this + " but segment == null!");
 		return true;
 	}
 	
@@ -391,10 +391,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Logger.error(this, "Not active and blockNums == null but trying to store", new Exception("error"));
 				return false;
 			}
-			throw new NullPointerException("Storing "+this+" but blockNums == null!");
+			throw new NullPointerException("Storing " + this + " but blockNums == null!");
 		}
 		if(segment == null)
-			throw new NullPointerException("Storing "+this+" but segment == null!");
+			throw new NullPointerException("Storing " + this + " but segment == null!");
 		return true;
 	}
 	

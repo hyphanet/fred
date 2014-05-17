@@ -64,7 +64,7 @@ public class USKDateHint {
 	
 	/** Return the data to insert to each hint slot. */
 	public String getData(long edition) {
-		return "HINT\n"+Long.toString(edition)+"\n"+get(Type.DAY)+"\n";
+		return "HINT\n" + Long.toString(edition) + "\n" + get(Type.DAY) + "\n";
 	}
 	
 	static final String PREFIX = "-DATEHINT-";
@@ -74,7 +74,7 @@ public class USKDateHint {
 		FreenetURI[] uris = new FreenetURI[Type.values.length];
 		int x = 0;
 		for(Type t : Type.values)
-			uris[x++] = key.getInsertableSSK(key.siteName+PREFIX+get(t)).getInsertURI();
+			uris[x++] = key.getInsertableSSK(key.siteName + PREFIX + get(t)).getInsertURI();
 		return uris;
 	}
 
@@ -83,7 +83,7 @@ public class USKDateHint {
 		ClientSSK[] uris = new ClientSSK[Type.values.length];
 		int x = 0;
 		for(Type t : Type.values)
-			uris[x++] = key.getSSK(key.siteName+PREFIX+get(t));
+			uris[x++] = key.getSSK(key.siteName + PREFIX + get(t));
 		return uris;
 	}
 

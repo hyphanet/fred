@@ -95,18 +95,18 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks, short priority) {
-    	if(logMINOR) Logger.minor(this, toString()+" add "+index);
+    	if(logMINOR) Logger.minor(this, toString() + " add " + index);
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;
         }
         if(index > maxValue) {
-            if(index-minValue >= maxRange)
+            if(index - minValue >= maxRange)
                 return false;
             maxValue = index;
         }
         if(index < minValue) {
-            if(maxValue-index >= maxRange)
+            if(maxValue - index >= maxRange)
                 return false;
             minValue = index;
         }
@@ -139,7 +139,7 @@ public class LimitedRangeIntByteArrayMap {
         boolean oldFlag = flag;
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        if(logMINOR) Logger.minor(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        if(logMINOR) Logger.minor(this, toString() + " lock(" + index + ") - minValue = " + minValue + ", maxValue = " + maxValue + ", maxRange=" + maxRange);
         while(true) {
             wait();
             if(flag != oldFlag) {
@@ -147,7 +147,7 @@ public class LimitedRangeIntByteArrayMap {
             	throw new InterruptedException();
             }
             if((index - minValue < maxRange) || (minValue == -1)) {
-            	if(logMINOR) Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
+            	if(logMINOR) Logger.minor(this, "index=" + index + ", minValue=" + minValue + ", maxRange=" + maxRange + " - returning");
             	return;
             }
         }
@@ -166,14 +166,14 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized void lockNeverBlock(int index) throws WouldBlockException {
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        throw new WouldBlockException(toString()+ " WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        throw new WouldBlockException(toString() + " WOULD BLOCK: lockNeverBlock(" + index + ") - minValue = " + minValue + ", maxValue = " + maxValue + ", maxRange=" + maxRange);
     }
     
     /**
      * @return true if we removed something.
      */
     public synchronized boolean remove(int index) {
-    	if(logMINOR) Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
+    	if(logMINOR) Logger.minor(this, "Removing " + index + " - min=" + minValue + " max=" + maxValue);
         if (contents.remove(index) != null) {
             if((index > minValue) && (index < maxValue)) return true;
             if(contents.size() == 0) {
@@ -182,7 +182,7 @@ public class LimitedRangeIntByteArrayMap {
                 return true;
             }
             if(index == maxValue) {
-                for(int i=maxValue;i>=minValue;i--) {
+                for(int i=maxValue;i >= minValue;i--) {
                     Integer ii = Integer.valueOf(i);
                     if(contents.containsKey(ii)) {
                         maxValue = i;
@@ -195,7 +195,7 @@ public class LimitedRangeIntByteArrayMap {
                 throw new IllegalStateException("Still here! (a)");
             }
             if(index == minValue) {
-                for(int i=minValue;i<=maxValue;i++) {
+                for(int i=minValue;i <= maxValue;i++) {
                     Integer ii = Integer.valueOf(i);
                     if(contents.containsKey(ii)) {
                         minValue = i;

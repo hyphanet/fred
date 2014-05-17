@@ -65,7 +65,7 @@ public class DSAGroup extends CryptoKey {
         	if(group.equals(Global.DSAgroupBigA)) return Global.DSAgroupBigA;
         	else return group;
         } catch (IllegalArgumentException e) {
-        	throw (CryptFormatException)new CryptFormatException("Invalid group: "+e).initCause(e);
+        	throw (CryptFormatException)new CryptFormatException("Invalid group: " + e).initCause(e);
         }
     }
 
@@ -158,7 +158,7 @@ public class DSAGroup extends CryptoKey {
 	public String toLongString() {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";
-		return "p="+HexUtil.biToHex(p)+", q="+HexUtil.biToHex(q)+", g="+HexUtil.biToHex(g);
+		return "p=" + HexUtil.biToHex(p) + ", q=" + HexUtil.biToHex(q) + ", g=" + HexUtil.biToHex(g);
 	}
 
 	public DSAGroup cloneKey() {

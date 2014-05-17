@@ -74,7 +74,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 		if(keys.remove(key)) {
 			ListUtils.removeBySwapLast(keysList, key);
-			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it "+" for "+this+" size now "+keysList.size());
+			if(logMINOR) Logger.minor(this, "Found " + key + " , removing it " + " for " + this + " size now " + keysList.size());
 		}
 		assert(keysList.size() == keys.size());
 	}
@@ -122,7 +122,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			keysList.setSize(0);
 			return new MySendableRequestItem(k);
 		}
-		for(int i=0;i<10;i++) {
+		for(int i=0;i < 10;i++) {
 			// Pick a random key
 			if(keysList.isEmpty()) return null;
 			int ptr = random.nextInt(keysList.size());
@@ -156,7 +156,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
-		Logger.error(this, "Internal error: "+t, t);
+		Logger.error(this, "Internal error: " + t, t);
 	}
 	
 	@Override
@@ -210,7 +210,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 		if(keys.add(key)) {
 			keysList.add(key);
-			if(logMINOR) Logger.minor(this, "Queued key "+key+" on "+this);
+			if(logMINOR) Logger.minor(this, "Queued key " + key + " on " + this);
 		}
 		assert(keysList.size() == keys.size());
 	}

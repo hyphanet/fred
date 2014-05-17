@@ -104,15 +104,15 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert." + key, pattern, value);
 	}
 
 	private String l10n(String key, String[] pattern, String[] value) {
-		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert." + key, pattern, value);
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert." + key);
 	}
 
 	@Override
@@ -173,8 +173,8 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	static public String replaceCareful(String text, String find, String replace) {
 		String[] split = text.split(find, -1);
-		StringBuilder sb = new StringBuilder(text.length() + (split.length-1)*(replace.length() - find.length()));
-		for(int i=0;i<split.length;i++) {
+		StringBuilder sb = new StringBuilder(text.length() + (split.length - 1) * (replace.length() - find.length()));
+		for(int i=0;i < split.length;i++) {
 			sb.append(split[i]);
 			if(i < split.length - 1)
 				sb.append(replace);

@@ -31,6 +31,6 @@ public class ArchiveKey {
 	
 	@Override
 	public String toString() {
-		return key+":"+filename;
+		return key + ":" + filename;
 	}
 }

@@ -176,10 +176,10 @@ public abstract class ClientRequest {
 			}
 			lowLevelClient = client.lowLevelClient(realTime);
 			if(lowLevelClient == null)
-				throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
+				throw new NullPointerException("No lowLevelClient from client: " + client + " global = " + global + " persistence = " + persistenceType);
 		}
 		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
-			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
+			throw new IllegalStateException("Low level client.persistent=" + lowLevelClient.persistent() + " but persistence type = " + persistenceType);
 		if(client != null)
 			assert(client.persistenceType == persistenceType);
 		this.startupTime = System.currentTimeMillis();
@@ -227,7 +227,7 @@ public abstract class ClientRequest {
 		// It might have been finished on startup.
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(cr, 1);
-		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
+		if(logMINOR) Logger.minor(this, "Cancelling " + cr + " for " + this + " persistenceType = " + persistenceType);
 		if(cr != null) cr.cancel(container, context);
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER)

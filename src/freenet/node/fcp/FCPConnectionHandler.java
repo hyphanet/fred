@@ -249,7 +249,7 @@ public class FCPConnectionHandler implements Closeable {
 		rebootClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, null, server.core.clientContext);
 		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
-			Logger.minor(this, "Set client name: "+name);
+			Logger.minor(this, "Set client name: " + name);
 	}
 	
 	protected FCPClient createForeverClient(String name, ObjectContainer container) {
@@ -304,7 +304,7 @@ public class FCPConnectionHandler implements Closeable {
 									try {
 										getter = new ClientGet(FCPConnectionHandler.this, message, server, container);
 									} catch (IdentifierCollisionException e1) {
-										Logger.normal(this, "Identifier collision on "+this);
+										Logger.normal(this, "Identifier collision on " + this);
 										FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 										outputHandler.queue(msg);
 										return false;
@@ -316,7 +316,7 @@ public class FCPConnectionHandler implements Closeable {
 										getter.register(container, false);
 										container.store(getter);
 									} catch (IdentifierCollisionException e) {
-										Logger.normal(this, "Identifier collision on "+this);
+										Logger.normal(this, "Identifier collision on " + this);
 										FCPMessage msg = new IdentifierCollisionMessage(id, global);
 										outputHandler.queue(msg);
 										return false;
@@ -326,7 +326,7 @@ public class FCPConnectionHandler implements Closeable {
 									return true;
 								}
 								
-							}, NativeThread.HIGH_PRIORITY-1, false);
+							}, NativeThread.HIGH_PRIORITY - 1, false);
 						} catch (DatabaseDisabledException e) {
 							outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
 							return;
@@ -350,7 +350,7 @@ public class FCPConnectionHandler implements Closeable {
 				success = false;
 			}
 		if(!success) {
-			Logger.normal(this, "Identifier collision on "+this);
+			Logger.normal(this, "Identifier collision on " + this);
 			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 			outputHandler.queue(msg);
 			return;
@@ -361,7 +361,7 @@ public class FCPConnectionHandler implements Closeable {
 
 	public void startClientPut(final ClientPutMessage message) {
 		if(logMINOR)
-			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
+			Logger.minor(this, "Starting insert ID=\"" + message.identifier + '"');
 		final String id = message.identifier;
 		final boolean global = message.global;
 		ClientPut cp = null;
@@ -401,7 +401,7 @@ public class FCPConnectionHandler implements Closeable {
 								try {
 									putter = new ClientPut(FCPConnectionHandler.this, message, server, container);
 								} catch (IdentifierCollisionException e) {
-									Logger.normal(this, "Identifier collision on "+this);
+									Logger.normal(this, "Identifier collision on " + this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 									outputHandler.queue(msg);
 									return false;
@@ -416,7 +416,7 @@ public class FCPConnectionHandler implements Closeable {
 									putter.register(container, false);
 									container.store(putter);
 								} catch (IdentifierCollisionException e) {
-									Logger.normal(this, "Identifier collision on "+this);
+									Logger.normal(this, "Identifier collision on " + this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, global);
 									outputHandler.queue(msg);
 									return false;
@@ -426,7 +426,7 @@ public class FCPConnectionHandler implements Closeable {
 								return true;
 							}
 							
-						}, NativeThread.HIGH_PRIORITY-1, false);
+						}, NativeThread.HIGH_PRIORITY - 1, false);
 					} catch (DatabaseDisabledException e) {
 						outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
 					} // user wants a response soon... but doesn't want it to block the queue page etc
@@ -445,7 +445,7 @@ public class FCPConnectionHandler implements Closeable {
 				}
 			}
 			if(!success) {
-				Logger.normal(this, "Identifier collision on "+this);
+				Logger.normal(this, "Identifier collision on " + this);
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
@@ -456,7 +456,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		if(failedMessage != null) {
-			if(logMINOR) Logger.minor(this, "Failed: "+failedMessage);
+			if(logMINOR) Logger.minor(this, "Failed: " + failedMessage);
 			outputHandler.queue(failedMessage);
 			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPut c = cp;
@@ -473,9 +473,9 @@ public class FCPConnectionHandler implements Closeable {
 							return true;
 						}
 						
-					}, NativeThread.HIGH_PRIORITY-1, false);
+					}, NativeThread.HIGH_PRIORITY - 1, false);
 				} catch (DatabaseDisabledException e) {
-					Logger.error(this, "Unable to free data for insert because database disabled: "+e, e);
+					Logger.error(this, "Unable to free data for insert because database disabled: " + e, e);
 				}
 			} else {
 				if(cp != null)
@@ -485,7 +485,7 @@ public class FCPConnectionHandler implements Closeable {
 			}
 			return;
 		} else {
-			Logger.minor(this, "Starting "+cp);
+			Logger.minor(this, "Starting " + cp);
 			cp.start(null, server.core.clientContext);
 		}
 	}
@@ -532,7 +532,7 @@ public class FCPConnectionHandler implements Closeable {
 							try {
 								putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server, container);
 							} catch (IdentifierCollisionException e) {
-								Logger.normal(this, "Identifier collision on "+this);
+								Logger.normal(this, "Identifier collision on " + this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 								outputHandler.queue(msg);
 								return false;
@@ -547,7 +547,7 @@ public class FCPConnectionHandler implements Closeable {
 								putter.register(container, false);
 								container.store(putter);
 							} catch (IdentifierCollisionException e) {
-								Logger.normal(this, "Identifier collision on "+this);
+								Logger.normal(this, "Identifier collision on " + this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, global);
 								outputHandler.queue(msg);
 								return false;
@@ -557,7 +557,7 @@ public class FCPConnectionHandler implements Closeable {
 							return true;
 						}
 						
-					}, NativeThread.HIGH_PRIORITY-1, false);
+					}, NativeThread.HIGH_PRIORITY - 1, false);
 				} catch (DatabaseDisabledException e) {
 					outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
 				} // user wants a response soon... but doesn't want it to block the queue page etc
@@ -575,7 +575,7 @@ public class FCPConnectionHandler implements Closeable {
 				}
 			}
 			if(!success) {
-				Logger.normal(this, "Identifier collision on "+this);
+				Logger.normal(this, "Identifier collision on " + this);
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
@@ -594,7 +594,7 @@ public class FCPConnectionHandler implements Closeable {
 			return;
 		} else {
 			if(logMINOR)
-				Logger.minor(this, "Starting "+cp);
+				Logger.minor(this, "Starting " + cp);
 			cp.start(null, server.core.clientContext);
 		}
 	}
@@ -643,7 +643,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		
 		if(logMINOR)
-			Logger.minor(this, "Checking DDA: "+da+" for "+parentDirectory);
+			Logger.minor(this, "Checking DDA: " + da + " for " + parentDirectory);
 		
 		if(writeRequest)
 			return (da == null ? server.isDownloadDDAAlwaysAllowed() : da.canWrite);
@@ -665,7 +665,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		
 		if(logMINOR)
-			Logger.minor(this, "DDA: read="+read+" write="+write+" for "+path);
+			Logger.minor(this, "DDA: read=" + read + " write=" + write + " for " + path);
 	}
 	
 	/**

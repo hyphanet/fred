@@ -46,7 +46,7 @@ public class DefaultMIMETypes {
 	protected static synchronized void addMIMEType(short number, String type) {
 		if(mimeTypesByNumber.size() > number) {
 			String s = mimeTypesByNumber.get(number);
-			if(s != null) throw new IllegalArgumentException("Already used: "+number);
+			if(s != null) throw new IllegalArgumentException("Already used: " + number);
 		} else {
 			mimeTypesByNumber.add(number, null);
 		}
@@ -72,7 +72,7 @@ public class DefaultMIMETypes {
 				Short s = mimeTypesByExtension.get(ext);
 				if(s != null) {
 					// No big deal
-					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
+					Logger.normal(DefaultMIMETypes.class, "Extension " + ext + " assigned to " + byNumber(s.shortValue()) + " in preference to " + number + ':' + type);
 				} else {
 					// If only one, make it primary
 					if((outExtension == null) && (extensions.length == 1))
@@ -761,9 +761,9 @@ public class DefaultMIMETypes {
 	 * Otherwise if we don't recognize the extension we return DEFAULT_MIME_TYPE. */
 	public synchronized static String guessMIMEType(String arg, boolean noDefault) {
 		int x = arg.lastIndexOf('.');
-		if((x == -1) || (x == arg.length()-1))
+		if((x == -1) || (x == arg.length() - 1))
 			return noDefault ? null : DEFAULT_MIME_TYPE;
-		String ext = arg.substring(x+1).toLowerCase();
+		String ext = arg.substring(x + 1).toLowerCase();
 		Short mimeIndexOb = mimeTypesByExtension.get(ext);
 		if(mimeIndexOb != null) {
 			return mimeTypesByNumber.get(mimeIndexOb.intValue());
@@ -793,8 +793,8 @@ public class DefaultMIMETypes {
 	
 	private static final String TOP_LEVEL = "(?>[a-zA-Z-]+)";
 	private static final String CHARS = "(?>[a-zA-Z0-9+_\\-\\.]+)";
-	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
-	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
+	private static final String PARAM = "(?>;\\s*" + CHARS + "=" + "((" + CHARS + ")|(\".*\")))";
+	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL + "/" + CHARS + "\\s*" + PARAM + "*");
 
 	private static Pattern INFOCALYPSE_DIRTY_HACK = Pattern.compile("application/mercurial-bundle;[0-9]{1,6}");
 	
@@ -819,7 +819,7 @@ public class DefaultMIMETypes {
 			return s;
 		}
 		if(dotIdx != -1) {
-			String oldExt = s.substring(dotIdx+1);
+			String oldExt = s.substring(dotIdx + 1);
 			if(DefaultMIMETypes.isValidExt(expectedMimeType, oldExt))
 				return s;
 			return s + '.' + ext;

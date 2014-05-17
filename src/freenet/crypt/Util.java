@@ -173,7 +173,7 @@ public class Util {
 			randomBytesSlowNextInt(r, buf, from, len);
 			return;
 		}
-		assert(Integer.SIZE/Byte.SIZE == 4);
+		assert(Integer.SIZE / Byte.SIZE == 4);
 		final int to = from + len;
 		while(from + 4 <= to) {
 			int rnd = r.nextInt();
@@ -183,7 +183,7 @@ public class Util {
 			buf[from++] = (byte)rnd; rnd >>= 8;
 		}
 		if(to > from) {
-			assert(to - from < Integer.SIZE/Byte.SIZE);
+			assert(to - from < Integer.SIZE / Byte.SIZE);
 			for (int rnd = r.nextInt(); from < to; rnd >>= 8)
 				buf[from++] = (byte)rnd;
 		}
@@ -208,7 +208,7 @@ public class Util {
 		for (int i = 0; i < 32; i++) {
 			md.update(input, 0, input.length);
 			md.digest(output, 0, output.length);
-			System.arraycopy(output, 0, input, (i*output.length)%(input.length-output.length), output.length);
+			System.arraycopy(output, 0, input, (i * output.length) % (input.length - output.length), output.length);
 		}
 		for (int i = 0; i < 128; i++) {
 			long startTime = System.nanoTime();

@@ -62,28 +62,28 @@ public class RealNodeTest {
 			// First set the locations up so we don't spend a long time swapping just to stabilise each network.
 			double div = 1.0 / nodes.length;
 			double loc = 0.0;
-			for (int i=0; i<nodes.length; i++) {
+			for (int i=0; i < nodes.length; i++) {
 				nodes[i].setLocation(loc);
 				loc += div;
 			}
 		}
 		if(forceNeighbourConnections) {
-			for(int i=0;i<nodes.length;i++) {
-				int next = (i+1) % nodes.length;
+			for(int i=0;i < nodes.length;i++) {
+				int next = (i + 1) % nodes.length;
 				connect(nodes[i], nodes[next]);
 			}
 		}
-		for (int i=0; i<nodes.length; i++) {
+		for (int i=0; i < nodes.length; i++) {
 			Node a = nodes[i];
 			// Normalise the probabilities
 			double norm = 0.0;
-			for (int j=0; j<nodes.length; j++) {
+			for (int j=0; j < nodes.length; j++) {
 				Node b = nodes[j];
 				if (a.getLocation() == b.getLocation()) continue;
 				norm += 1.0 / distance (a, b);
 			}
 			// Create degree/2 outgoing connections
-			for (int k=0; k<nodes.length; k++) {
+			for (int k=0; k < nodes.length; k++) {
 				Node b = nodes[k];
 				if (a.getLocation() == b.getLocation()) continue;
 				double p = 1.0 / distance (a, b) / norm;
@@ -141,7 +141,7 @@ public class RealNodeTest {
 			double totalPingTime = 0.0;
 			double maxPingTime = 0.0;
 			double minPingTime = Double.MAX_VALUE;
-			for(int i=0;i<nodes.length;i++) {
+			for(int i=0;i < nodes.length;i++) {
 				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
 				int countAlmostConnected = nodes[i].peers.countAlmostConnectedDarknetPeers();
 				int countTotal = nodes[i].peers.countValidPeers();
@@ -161,11 +161,11 @@ public class RealNodeTest {
 					if(countBackedOff == 0) countReallyConnected++;
 				} else {
 					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
+						Logger.minor(RealNodeTest.class, "Connection count for " + nodes[i] + " : " + countConnected + " partial " + countAlmostConnected);
 				}
 				if(countBackedOff > 0) {
 					if(logMINOR)
-						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
+						Logger.minor(RealNodeTest.class, "Backed off: " + nodes[i] + " : " + countBackedOff);
 				}
 			}
 			double avgPingTime = totalPingTime / nodes.length;
@@ -176,9 +176,9 @@ public class RealNodeTest {
 				System.err.println();
 				return;
 			} else {
-				long tDelta = (System.currentTimeMillis() - tStart)/1000;
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				long tDelta = (System.currentTimeMillis() - tStart) / 1000;
+				System.err.println("Waiting for nodes to be fully connected: " + countFullyConnected + " / " + nodes.length + " (" + totalConnections + " / " + totalPeers + " connections total partial " + totalPartialConnections + " compatible " + totalCompatibleConnections + ") - backed off " + totalBackedOff + " ping min/avg/max " + (int)minPingTime + "/" + (int)avgPingTime + "/" + (int)maxPingTime + " at " + tDelta + 's');
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: " + countFullyConnected + " / " + nodes.length + " (" + totalConnections + " / " + totalPeers + " connections total partial " + totalPartialConnections + " compatible " + totalCompatibleConnections + ") - backed off " + totalBackedOff + " ping min/avg/max " + (int)minPingTime + "/" + (int)avgPingTime + "/" + (int)maxPingTime + " at " + tDelta + 's');
 				Thread.sleep(1000);
 			}
 		}

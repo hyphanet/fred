@@ -54,7 +54,7 @@ public class MultiReaderBucket {
 				readers = new ArrayList<Bucket>(1);
 			readers.add(d);
 			if(logMINOR)
-				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
+				Logger.minor(this, "getReaderBucket() returning " + d + " for " + this + " for " + bucket);
 			return d;
 		}
 	}
@@ -66,7 +66,7 @@ public class MultiReaderBucket {
 		@Override
 		public void free() {
 			if(logMINOR)
-				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
+				Logger.minor(this, "ReaderBucket " + this + " for " + MultiReaderBucket.this + " free()ing for " + bucket);
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;
 				freed = true;

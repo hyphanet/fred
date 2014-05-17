@@ -45,7 +45,7 @@ public class Metadata implements Cloneable {
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
-	static final int MAX_SPLITFILE_BLOCKS = 1000*1000;
+	static final int MAX_SPLITFILE_BLOCKS = 1000 * 1000;
 
 	public static final short SPLITFILE_PARAMS_SIMPLE_SEGMENT = 0;
 	public static final short SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS = 1;
@@ -205,13 +205,13 @@ public class Metadata implements Cloneable {
 	private void finishClone(Metadata orig) {
 		if(orig.segments != null) {
 			segments = new SplitFileSegmentKeys[orig.segments.length];
-			for(int i=0;i<segments.length;i++) {
+			for(int i=0;i < segments.length;i++) {
 				segments[i] = orig.segments[i].clone();
 			}
 		}
 		if(hashes != null) {
 			hashes = new HashResult[orig.hashes.length];
-			for(int i=0;i<hashes.length;i++)
+			for(int i=0;i < hashes.length;i++)
 				hashes[i] = orig.hashes[i].clone();
 		}
 		if(manifestEntries != null) {
@@ -236,7 +236,7 @@ public class Metadata implements Cloneable {
 		try {
 			return new Metadata(data);
 		} catch (IOException e) {
-			throw (MetadataParseException)new MetadataParseException("Caught "+e).initCause(e);
+			throw (MetadataParseException)new MetadataParseException("Caught " + e).initCause(e);
 		}
 	}
 
@@ -276,15 +276,15 @@ public class Metadata implements Cloneable {
 		hashCode = super.hashCode();
 		long magic = dis.readLong();
 		if(magic != FREENET_METADATA_MAGIC)
-			throw new MetadataParseException("Invalid magic "+magic);
+			throw new MetadataParseException("Invalid magic " + magic);
 		short version = dis.readShort();
 		if(version < 0 || version > 1)
-			throw new MetadataParseException("Unsupported version "+version);
+			throw new MetadataParseException("Unsupported version " + version);
 		parsedVersion = version;
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 6))
-			throw new MetadataParseException("Unsupported document type: "+documentType);
-		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
+			throw new MetadataParseException("Unsupported document type: " + documentType);
+		if(logMINOR) Logger.minor(this, "Document type: " + documentType);
 
 		boolean compressed = false;
 		boolean hasTopBlocks = false;
@@ -336,7 +336,7 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "Archive manifest");
 			archiveType = ARCHIVE_TYPE.getArchiveType(dis.readShort());
 			if(archiveType == null)
-				throw new MetadataParseException("Unrecognized archive type "+archiveType);
+				throw new MetadataParseException("Unrecognized archive type " + archiveType);
 		}
 
 		if(splitfile) {
@@ -361,7 +361,7 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "Splitfile");
 			dataLength = dis.readLong();
 			if(dataLength < -1)
-				throw new MetadataParseException("Invalid real content length "+dataLength);
+				throw new MetadataParseException("Invalid real content length " + dataLength);
 
 			if(dataLength == -1) {
 				if(splitfile)
@@ -372,7 +372,7 @@ public class Metadata implements Cloneable {
 		if(compressed) {
 			compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(dis.readShort());
 			if(compressionCodec == null)
-				throw new MetadataParseException("Unrecognized splitfile compression codec "+compressionCodec);
+				throw new MetadataParseException("Unrecognized splitfile compression codec " + compressionCodec);
 
 			decompressedLength = dis.readLong();
 		}
@@ -403,9 +403,9 @@ public class Metadata implements Cloneable {
 				mimeType = new String(toRead, "UTF-8");
 				if(logMINOR) Logger.minor(this, "Raw MIME");
 				if(!DefaultMIMETypes.isPlausibleMIMEType(mimeType))
-					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+"\"");
+					throw new MetadataParseException("Does not look like a MIME type: \"" + mimeType + "\"");
 			}
-			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
+			if(logMINOR) Logger.minor(this, "MIME = " + mimeType);
 		}
 
 		if(dbr) {
@@ -414,12 +414,12 @@ public class Metadata implements Cloneable {
 
 		if(extraMetadata) {
 			int numberOfExtraFields = (dis.readShort()) & 0xffff;
-			for(int i=0;i<numberOfExtraFields;i++) {
+			for(int i=0;i < numberOfExtraFields;i++) {
 				short type = dis.readShort();
 				int len = (dis.readByte() & 0xff);
 				byte[] buf = new byte[len];
 				dis.readFully(buf);
-				Logger.normal(this, "Ignoring type "+type+" extra-client-metadata field of "+len+" bytes");
+				Logger.normal(this, "Ignoring type " + type + " extra-client-metadata field of " + len + " bytes");
 			}
 			extraMetadata = false; // can't parse, can't write
 		}
@@ -446,32 +446,32 @@ public class Metadata implements Cloneable {
 			splitfileAlgorithm = dis.readShort();
 			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
 					(splitfileAlgorithm == SPLITFILE_ONION_STANDARD)))
-				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
+				throw new MetadataParseException("Unknown splitfile algorithm " + splitfileAlgorithm);
 
 			if(splitfileAlgorithm == SPLITFILE_NONREDUNDANT)
 				throw new MetadataParseException("Non-redundant splitfile invalid");
 
 			int paramsLength = dis.readInt();
 			if(paramsLength > MAX_SPLITFILE_PARAMS_LENGTH)
-				throw new MetadataParseException("Too many bytes of splitfile parameters: "+paramsLength);
+				throw new MetadataParseException("Too many bytes of splitfile parameters: " + paramsLength);
 
 			if(paramsLength > 0) {
 				splitfileParams = new byte[paramsLength];
 				dis.readFully(splitfileParams);
 			} else if(paramsLength < 0) {
-				throw new MetadataParseException("Invalid splitfile params length: "+paramsLength);
+				throw new MetadataParseException("Invalid splitfile params length: " + paramsLength);
 			}
 
 			splitfileBlocks = dis.readInt(); // 64TB file size limit :)
 			if(splitfileBlocks < 0)
-				throw new MetadataParseException("Invalid number of blocks: "+splitfileBlocks);
+				throw new MetadataParseException("Invalid number of blocks: " + splitfileBlocks);
 			if(splitfileBlocks > MAX_SPLITFILE_BLOCKS)
-				throw new MetadataParseException("Too many splitfile blocks (soft limit to prevent memory DoS): "+splitfileBlocks);
+				throw new MetadataParseException("Too many splitfile blocks (soft limit to prevent memory DoS): " + splitfileBlocks);
 			splitfileCheckBlocks = dis.readInt();
 			if(splitfileCheckBlocks < 0)
-				throw new MetadataParseException("Invalid number of check blocks: "+splitfileCheckBlocks);
+				throw new MetadataParseException("Invalid number of check blocks: " + splitfileCheckBlocks);
 			if(splitfileCheckBlocks > MAX_SPLITFILE_BLOCKS)
-				throw new MetadataParseException("Too many splitfile check-blocks (soft limit to prevent memory DoS): "+splitfileCheckBlocks);
+				throw new MetadataParseException("Too many splitfile check-blocks (soft limit to prevent memory DoS): " + splitfileCheckBlocks);
 			
 			// PARSE SPLITFILE PARAMETERS
 			
@@ -485,8 +485,8 @@ public class Metadata implements Cloneable {
 				segmentCount = 1;
 				deductBlocksFromSegments = 0;
 				if(splitfileCheckBlocks > 0) {
-					Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
-					throw new MetadataParseException("Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
+					Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet " + splitfileCheckBlocks + " check blocks found!! : " + this);
+					throw new MetadataParseException("Splitfile type is non-redundant yet have " + splitfileCheckBlocks + " check blocks");
 				}
 			} else if(splitfileAlgorithm == Metadata.SPLITFILE_ONION_STANDARD) {
 				byte[] params = splitfileParams();
@@ -539,7 +539,7 @@ public class Metadata implements Cloneable {
 						blocksPerSegment = Fields.bytesToInt(params, 2);
 						checkBlocks = Fields.bytesToInt(params, 6);
 					} else
-						throw new MetadataParseException("Unknown splitfile params type "+paramsType);
+						throw new MetadataParseException("Unknown splitfile params type " + paramsType);
 					if(paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
 						deductBlocksFromSegments = Fields.bytesToInt(params, 10);
 						if(paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
@@ -564,7 +564,7 @@ public class Metadata implements Cloneable {
 				// Detect this.
 				if(checkBlocks == 64 && blocksPerSegment == 128 &&
 						splitfileCheckBlocks == splitfileBlocks - (splitfileBlocks / 128)) {
-					Logger.normal(this, "Activating 1135 wrong check blocks per segment workaround for "+this);
+					Logger.normal(this, "Activating 1135 wrong check blocks per segment workaround for " + this);
 					checkBlocks = 127;
 				}
 				checkBlocksPerSegment = checkBlocks;
@@ -573,7 +573,7 @@ public class Metadata implements Cloneable {
 					
 				// Onion, 128/192.
 				// Will be segmented.
-			} else throw new MetadataParseException("Unknown splitfile format: "+splitfileAlgorithm);
+			} else throw new MetadataParseException("Unknown splitfile format: " + splitfileAlgorithm);
 			
 			segments = new SplitFileSegmentKeys[segmentCount];
 			
@@ -584,7 +584,7 @@ public class Metadata implements Cloneable {
 			} else {
 				int dataBlocksPtr = 0;
 				int checkBlocksPtr = 0;
-				for(int i=0;i<segments.length;i++) {
+				for(int i=0;i < segments.length;i++) {
 					// Create a segment. Give it its keys.
 					int copyDataBlocks = blocksPerSegment + crossCheckBlocks;
 					int copyCheckBlocks = checkBlocksPerSegment;
@@ -598,7 +598,7 @@ public class Metadata implements Cloneable {
 						copyDataBlocks = splitfileBlocks - dataBlocksPtr;
 						copyCheckBlocks = splitfileCheckBlocks - checkBlocksPtr;
 						if(copyCheckBlocks <= 0 || copyDataBlocks <= 0)
-							throw new MetadataParseException("Last segment has bogus block count: total data blocks "+splitfileBlocks+" total check blocks "+splitfileCheckBlocks+" segment size "+blocksPerSegment+" data "+checkBlocksPerSegment+" check "+crossCheckBlocks+" cross check blocks, deduct "+deductBlocksFromSegments+", segments "+segments.length);
+							throw new MetadataParseException("Last segment has bogus block count: total data blocks " + splitfileBlocks + " total check blocks " + splitfileCheckBlocks + " segment size " + blocksPerSegment + " data " + checkBlocksPerSegment + " check " + crossCheckBlocks + " cross check blocks, deduct " + deductBlocksFromSegments + ", segments " + segments.length);
 					} else if(segments.length - i <= deductBlocksFromSegments) {
 						// Deduct one data block from each of the last deductBlocksFromSegments segments.
 						// This ensures no segment is more than 1 block larger than any other.
@@ -606,7 +606,7 @@ public class Metadata implements Cloneable {
 						copyDataBlocks--;
 					}
 					segments[i] = new SplitFileSegmentKeys(copyDataBlocks, copyCheckBlocks, splitfileSingleCryptoKey, splitfileSingleCryptoAlgorithm);
-					if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
+					if(logMINOR) Logger.minor(this, "REQUESTING: Segment " + i + " of " + segments.length + " : " + copyDataBlocks + " data blocks " + copyCheckBlocks + " check blocks");
 					dataBlocksPtr += copyDataBlocks;
 					checkBlocksPtr += copyCheckBlocks;
 				}
@@ -616,10 +616,10 @@ public class Metadata implements Cloneable {
 					throw new MetadataParseException("Unable to allocate all check blocks to segments - buggy or malicious inserter");
 			}
 			
-			for(int i=0;i<segmentCount;i++) {
+			for(int i=0;i < segmentCount;i++) {
 				segments[i].readKeys(dis, false);
 			}
-			for(int i=0;i<segmentCount;i++) {
+			for(int i=0;i < segmentCount;i++) {
 				segments[i].readKeys(dis, true);
 			}
 		
@@ -628,25 +628,25 @@ public class Metadata implements Cloneable {
 		if(documentType == SIMPLE_MANIFEST) {
 			int manifestEntryCount = dis.readInt();
 			if(manifestEntryCount < 0)
-				throw new MetadataParseException("Invalid manifest entry count: "+manifestEntryCount);
+				throw new MetadataParseException("Invalid manifest entry count: " + manifestEntryCount);
 
 			manifestEntries = new HashMap<String, Metadata>();
 
 			// Parse the sub-Manifest.
 
-			if(logMINOR)Logger.minor(this, "Simple manifest, "+manifestEntryCount+" entries");
+			if(logMINOR)Logger.minor(this, "Simple manifest, " + manifestEntryCount + " entries");
 
-			for(int i=0;i<manifestEntryCount;i++) {
+			for(int i=0;i < manifestEntryCount;i++) {
 				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
 				String name = new String(buf, "UTF-8").intern();
-				if(logMINOR) Logger.minor(this, "Entry "+i+" name "+name);
+				if(logMINOR) Logger.minor(this, "Entry " + i + " name " + name);
 				short len = dis.readShort();
 				if(len < 0)
-					throw new MetadataParseException("Invalid manifest entry size: "+len);
+					throw new MetadataParseException("Invalid manifest entry size: " + len);
 				if(len > length)
-					throw new MetadataParseException("Impossibly long manifest entry: "+len+" - metadata size "+length);
+					throw new MetadataParseException("Impossibly long manifest entry: " + len + " - metadata size " + length);
 				byte[] data = new byte[len];
 				dis.readFully(data);
 				Metadata m = Metadata.construct(data);
@@ -657,18 +657,18 @@ public class Metadata implements Cloneable {
 
 		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK)) {
 			int len = dis.readShort();
-			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
+			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length " + len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			targetName = new String(buf, "UTF-8");
 			while(true) {
-				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+"\"");
+				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \"" + new String(buf, "UTF-8") + "\"");
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
 					continue;
 				} else break;
 			}
-			if(logMINOR) Logger.minor(this, "Archive and/or internal redirect: "+targetName+" ("+len+ ')');
+			if(logMINOR) Logger.minor(this, "Archive and/or internal redirect: " + targetName + " (" + len + ')');
 		}
 	}
 
@@ -770,7 +770,7 @@ public class Metadata implements Cloneable {
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
 				target.addRedirectionManifest(Metadata.forceMap(o));
-			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+			} else throw new IllegalArgumentException("Not String nor HashMap: " + o);
 			manifestEntries.put(key, target);
 		}
 	}
@@ -810,14 +810,14 @@ public class Metadata implements Cloneable {
 		for (Map.Entry<String, Object> entry: dir.entrySet()) {
 			String key = entry.getKey().intern();
 			if(key.indexOf('/') != -1)
-				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
+				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): " + key);
 			Object o = entry.getValue();
 			if(o instanceof Metadata) {
 				Metadata data = (Metadata) o;
 				if(data == null)
 					throw new NullPointerException();
 				if(logDEBUG)
-					Logger.debug(this, "Putting metadata for "+key);
+					Logger.debug(this, "Putting metadata for " + key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
 				if(key.equals("")) {
@@ -825,11 +825,11 @@ public class Metadata implements Cloneable {
 				}
 				HashMap<String, Object> hm = Metadata.forceMap(o);
 				if(logDEBUG)
-					Logger.debug(this, "Making metadata map for "+key);
+					Logger.debug(this, "Making metadata map for " + key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
 				manifestEntries.put(key, subMap);
 				if(logDEBUG)
-					Logger.debug(this, "Putting metadata map for "+key);
+					Logger.debug(this, "Putting metadata map for " + key);
 			}
 		}
 	}
@@ -856,11 +856,11 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Archive internal redirect
-				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
+				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix + key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata(Metadata.forceMap(o), prefix+key+"/");
-			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+				target = new Metadata(Metadata.forceMap(o), prefix + key + "/");
+			} else throw new IllegalArgumentException("Not String nor HashMap: " + o);
 			manifestEntries.put(key, target);
 		}
 		topSize = 0;
@@ -890,10 +890,10 @@ public class Metadata implements Cloneable {
 				this.setMIMEType(cm.getMIMEType());
 			targetName = arg;
 			while(true) {
-				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+arg+"\"");
+				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \"" + arg + "\"");
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
-					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+arg+"\"", new Exception("debug"));
+					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \"" + arg + "\"", new Exception("debug"));
 					continue;
 				} else break;
 			}
@@ -920,10 +920,10 @@ public class Metadata implements Cloneable {
 			documentType = docType;
 			targetName = name;
 			while(true) {
-				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+name+"\"");
+				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \"" + name + "\"");
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
-					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+name+"\"", new Exception("debug"));
+					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \"" + name + "\"", new Exception("debug"));
 					continue;
 				} else break;
 			}
@@ -1142,7 +1142,7 @@ public class Metadata implements Cloneable {
 		try {
 			writeTo(dos);
 		} catch (IOException e) {
-			throw new Error("Could not write to byte array: "+e, e);
+			throw new Error("Could not write to byte array: " + e, e);
 		}
 		return baos.toByteArray();
 	}
@@ -1236,7 +1236,7 @@ public class Metadata implements Cloneable {
     	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
 		for (Map.Entry<String, Metadata> entry: manifestEntries.entrySet()) {
         	String st = entry.getKey();
-        	if (st.length()>0)
+        	if (st.length() > 0)
         		docs.put(st, entry.getValue());
         }
         return docs;
@@ -1433,7 +1433,7 @@ public class Metadata implements Cloneable {
 					dos.writeShort(compressedMIMEParams);
 			} else {
 				byte[] data = mimeType.getBytes("UTF-8");
-				if(data.length > 255) throw new Error("MIME type too long: "+data.length+" bytes: "+mimeType);
+				if(data.length > 255) throw new Error("MIME type too long: " + data.length + " bytes: " + mimeType);
 				dos.writeByte((byte)data.length);
 				dos.write(data);
 			}
@@ -1458,22 +1458,22 @@ public class Metadata implements Cloneable {
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
 			if(segments != null) {
-				for(int i=0;i<segmentCount;i++) {
+				for(int i=0;i < segmentCount;i++) {
 					segments[i].writeKeys(dos, false);
 				}
-				for(int i=0;i<segmentCount;i++) {
+				for(int i=0;i < segmentCount;i++) {
 					segments[i].writeKeys(dos, true);
 				}
 			} else {
 				if(splitfileSingleCryptoKey == null) {
-					for(int i=0;i<splitfileBlocks;i++)
+					for(int i=0;i < splitfileBlocks;i++)
 						writeCHK(dos, splitfileDataKeys[i]);
-					for(int i=0;i<splitfileCheckBlocks;i++)
+					for(int i=0;i < splitfileCheckBlocks;i++)
 						writeCHK(dos, splitfileCheckKeys[i]);
 				} else {
-					for(int i=0;i<splitfileBlocks;i++)
+					for(int i=0;i < splitfileBlocks;i++)
 						dos.write(splitfileDataKeys[i].getRoutingKey());
-					for(int i=0;i<splitfileCheckBlocks;i++)
+					for(int i=0;i < splitfileCheckBlocks;i++)
 						dos.write(splitfileCheckKeys[i].getRoutingKey());
 				}
 			}
@@ -1648,7 +1648,7 @@ public class Metadata implements Cloneable {
 			clientMetadata.removeFrom(container);
 		}
 		if(segments != null) {
-			for(int i=0;i<segments.length;i++)
+			for(int i=0;i < segments.length;i++)
 				segments[i].removeFrom(container);
 		}
 		container.delete(this);
@@ -1703,7 +1703,7 @@ public class Metadata implements Cloneable {
 		public void addItem(String name, Metadata item) {
 			if (name == null || item == null) throw new NullPointerException();
 			if (m == null) throw new IllegalStateException("You can't call it after getMetadata()");
-			if (m.manifestEntries.containsKey(name)) throw new IllegalStateException("You can't add a item twice: '"+name+"'");
+			if (m.manifestEntries.containsKey(name)) throw new IllegalStateException("You can't add a item twice: '" + name + "'");
 			m.manifestEntries.put(name, item);
 		}
 
@@ -1727,32 +1727,32 @@ public class Metadata implements Cloneable {
 
 	public void dump(int indent, StringBuffer sb) {
 		dumpline(indent, sb, "");
-		dumpline(indent, sb, "Document type: "+documentType);
-		dumpline(indent, sb, "Flags: sf="+splitfile+" dbr="+dbr+" noMIME="+noMIME+" cmime="+compressedMIME+" extra="+extraMetadata+" fullkeys="+fullKeys);
+		dumpline(indent, sb, "Document type: " + documentType);
+		dumpline(indent, sb, "Flags: sf=" + splitfile + " dbr=" + dbr + " noMIME=" + noMIME + " cmime=" + compressedMIME + " extra=" + extraMetadata + " fullkeys=" + fullKeys);
 		if(archiveType != null)
-			dumpline(indent, sb, "Archive type: "+archiveType);
+			dumpline(indent, sb, "Archive type: " + archiveType);
 		if(compressionCodec != null)
-			dumpline(indent, sb, "Compression codec: "+compressionCodec);
+			dumpline(indent, sb, "Compression codec: " + compressionCodec);
 		if(simpleRedirectKey != null)
-			dumpline(indent, sb, "Simple redirect: "+simpleRedirectKey);
+			dumpline(indent, sb, "Simple redirect: " + simpleRedirectKey);
 		if(splitfile) {
-			dumpline(indent, sb, "Splitfile algorithm: "+splitfileAlgorithm);
-			dumpline(indent, sb, "Splitfile blocks: "+splitfileBlocks);
-			dumpline(indent, sb, "Splitfile blocks: "+splitfileCheckBlocks);
+			dumpline(indent, sb, "Splitfile algorithm: " + splitfileAlgorithm);
+			dumpline(indent, sb, "Splitfile blocks: " + splitfileBlocks);
+			dumpline(indent, sb, "Splitfile blocks: " + splitfileCheckBlocks);
 		}
 		if(targetName != null)
-			dumpline(indent, sb, "Target name: "+targetName);
+			dumpline(indent, sb, "Target name: " + targetName);
 
 		if(manifestEntries != null) {
 			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
-				dumpline(indent, sb, "Entry: "+entry.getKey()+":");
+				dumpline(indent, sb, "Entry: " + entry.getKey() + ":");
 				entry.getValue().dump(indent + 1, sb);
 			}
 		}
 	}
 
 	private void dumpline(int indent, StringBuffer sb, String string) {
-		for(int i=0;i<indent;i++) sb.append(' ');
+		for(int i=0;i < indent;i++) sb.append(' ');
 		sb.append(string);
 		sb.append('\n');
 	}

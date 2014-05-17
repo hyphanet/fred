@@ -174,7 +174,7 @@ public class LRUQueue<T> {
 		array = toArray(array);
 		int listSize = list.size();
 		if(array.length != listSize)
-			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
+			throw new IllegalStateException("array.length=" + array.length + " but list.size=" + listSize);
 		int x = 0;
 		for (Enumeration<QItem<T>> e = list.reverseElements(); e.hasMoreElements();) {
 			array[x++] = (E) e.nextElement().obj;

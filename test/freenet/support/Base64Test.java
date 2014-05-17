@@ -125,13 +125,13 @@ public class Base64Test extends TestCase {
 				{4}};
 		String encoded;
 
-		for (int i = 0; i<methodBytesArray.length; i++) {
+		for (int i = 0; i < methodBytesArray.length; i++) {
 			encoded = Base64.encode(methodBytesArray[i],true);
 			if (i == 0)
 				//no occurrences expected
 				assertEquals(encoded.indexOf('='),-1);
 			else
-				assertEquals(encoded.indexOf('='),encoded.length()-i);
+				assertEquals(encoded.indexOf('='),encoded.length() - i);
 		}
 	}
 

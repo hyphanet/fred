@@ -146,7 +146,7 @@ public class ElementInfo {
 				if(s.equals(font)) return true;
 			return false;
 		} else if(disallowNonAlnumFonts) {
-			for(int i=0;i<font.length();i++) {
+			for(int i=0;i < font.length();i++) {
 				char c = font.charAt(i);
 				if(!(Character.isLetterOrDigit(c) || c == ' ' || c == '.' || c == '_' || c == '-' || c == ',' || c == '+' || c == '~')) return false;
 			}
@@ -163,7 +163,7 @@ public class ElementInfo {
 //			return false;
 		//} else 
 		if(disallowNonAlnumFonts) {
-			for(int i=0;i<font.length();i++) {
+			for(int i=0;i < font.length();i++) {
 				char c = font.charAt(i);
 				if(!(Character.isLetterOrDigit(c) || c == ' ' || c == '.' || c == '_' || c == '-' || c == ',' || c == '+' || c == '~')) return false;
 			}
@@ -208,7 +208,7 @@ public class ElementInfo {
 	
 	public static boolean isValidHTMLTag(String tag)
 	{
-		return (HTML_ELEMENTS.contains(tag.toLowerCase())||VOID_ELEMENTS.contains(tag.toLowerCase()));
+		return (HTML_ELEMENTS.contains(tag.toLowerCase()) || VOID_ELEMENTS.contains(tag.toLowerCase()));
 	}
 	
 	/**
@@ -220,22 +220,22 @@ public class ElementInfo {
 	 */
 	public static boolean isValidName(String name)
 	{
-		if(name.length()==0)
+		if(name.length() == 0)
 		{
 			return false;
 		}
 		else
 		{
-			if(!((name.charAt(0)>='a' && name.charAt(0)<='z') || (name.charAt(0)>='A' && name.charAt(0)<='Z')))
+			if(!((name.charAt(0) >= 'a' && name.charAt(0) <= 'z') || (name.charAt(0) >= 'A' && name.charAt(0) <= 'Z')))
 			{
 				return false;
 			}
 			else
 			{
 				
-				for(int i=1;i<name.length();i++)
+				for(int i=1;i < name.length();i++)
 				{
-					if(!((name.charAt(i)>='a' && name.charAt(i)<='z') || (name.charAt(i)>='A' && name.charAt(i)<='Z') || (name.charAt(i)>='0' && name.charAt(i)<='9') || name.charAt(i)=='_' || name.charAt(i)==':'  || name.charAt(i)=='.' || name.charAt(i)=='-'))
+					if(!((name.charAt(i) >= 'a' && name.charAt(i) <= 'z') || (name.charAt(i) >= 'A' && name.charAt(i) <= 'Z') || (name.charAt(i) >= '0' && name.charAt(i) <= '9') || name.charAt(i) == '_' || name.charAt(i) == ':'  || name.charAt(i) == '.' || name.charAt(i) == '-'))
 					{
 						return false;
 					}
@@ -248,7 +248,7 @@ public class ElementInfo {
 	
 	public static boolean isValidIdentifier(String name)
 	{
-		if(name.length()==0)
+		if(name.length() == 0)
 		{
 			return false;
 		}
@@ -258,7 +258,7 @@ public class ElementInfo {
 			boolean escapeNewline = false;
 			boolean digitsAllowed = false;
 			int unicodeChars = 0;
-			for(int i=0;i<name.length();i++) {
+			for(int i=0;i < name.length();i++) {
 				char c = name.charAt(i);
 				if(escape) {
 					// Whitespace after an escape can be \r\n
@@ -296,7 +296,7 @@ public class ElementInfo {
 					escape = false;
 					continue;
 				}
-				if(digitsAllowed && c>='0' && c<='9') {
+				if(digitsAllowed && c >= '0' && c <= '9') {
 					continue;
 				}
 				if(c == '-') continue;
@@ -306,8 +306,8 @@ public class ElementInfo {
 					escape = true;
 					continue;
 				}
-				if(c>='a' && c<='z') continue;
-				if(c>='A' && c<='Z') continue;
+				if(c >= 'a' && c <= 'z') continue;
+				if(c >= 'A' && c <= 'Z') continue;
 				// Spec strictly speaking allows control chars, but let's disallow them here as a paranoid precaution.
 				if(c >= 0xA1 && !Character.isISOControl(c)) continue;
 				return false;
@@ -337,19 +337,19 @@ public class ElementInfo {
 				return true;
 
 			
-			else if(cname.indexOf("lang")!=-1 && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
+			else if(cname.indexOf("lang") != -1 && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
 			{
 				// FIXME accept unknown languages as long as they are [a-z-]
 				return true;
 			}
 			
-			else if(cname.indexOf("nth-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
+			else if(cname.indexOf("nth-child") != -1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
 				return true;
-			else if(cname.indexOf("nth-last-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
+			else if(cname.indexOf("nth-last-child") != -1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
 				return true;
-			else if(cname.indexOf("nth-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
+			else if(cname.indexOf("nth-of-type") != -1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
 				return true;
-			else if(cname.indexOf("nth-last-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
+			else if(cname.indexOf("nth-last-of-type") != -1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
 				return true;
 			
 			return false;
@@ -359,9 +359,9 @@ public class ElementInfo {
 			int cnameIndex=cname.indexOf(cname_sans_arg);
 			int firstIndex=cname.indexOf('(');
 			int secondIndex=cname.lastIndexOf(')');
-			if(cname.substring(cnameIndex+cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
+			if(cname.substring(cnameIndex + cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex + 1,cname.length()).trim().equals(""))
 			{
-				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());
+				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex + 1,secondIndex).trim());
 			}
 			return arg;
 		}
@@ -374,7 +374,7 @@ public class ElementInfo {
 			boolean escape = false;
 			boolean escapeNewline = false;
 			int unicodeChars = 0;
-			for(int i=0;i<name.length();i++) {
+			for(int i=0;i < name.length();i++) {
 			char c = name.charAt(i);
 				if(escape) {
 					// Whitespace after an escape can be \r\n
@@ -456,9 +456,9 @@ public class ElementInfo {
 
 		public static boolean isValidStringWithQuotes(String string) {
 			if(string.length() < 2) return false;
-			if((string.charAt(0) == '\'' && string.charAt(string.length()-1) == '\'') ||
-					(string.charAt(0) == '\"' && string.charAt(string.length()-1) == '\"')) {
-				string = string.substring(1, string.length()-1);
+			if((string.charAt(0) == '\'' && string.charAt(string.length() - 1) == '\'') ||
+					(string.charAt(0) == '\"' && string.charAt(string.length() - 1) == '\"')) {
+				string = string.substring(1, string.length() - 1);
 				return isValidString(string);
 			} else return false;
 		}

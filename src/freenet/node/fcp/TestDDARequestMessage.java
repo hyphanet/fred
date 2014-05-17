@@ -40,7 +40,7 @@ public class TestDDARequestMessage extends FCPMessage {
 		wantRead = fs.getBoolean(WANT_READ, false);
 		wantWrite = fs.getBoolean(WANT_WRITE, false);
 		if((wantRead == false) && (wantWrite == false))
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Both "+ WANT_READ + " and " + WANT_WRITE + " are set to false: what's the point of sending a message?", identifier, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Both " + WANT_READ + " and " + WANT_WRITE + " are set to false: what's the point of sending a message?", identifier, false);
 	}
 
 	@Override

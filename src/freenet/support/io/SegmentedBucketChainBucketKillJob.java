@@ -20,7 +20,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	@Override
 	public boolean run(ObjectContainer container, ClientContext context) {
 		container.activate(bcb, 2);
-		Logger.normal(this, "Freeing unfinished unstored bucket "+this);
+		Logger.normal(this, "Freeing unfinished unstored bucket " + this);
 		// Restart jobs runner will remove us from the queue.
 		// This may take more than one transaction ...
 		if(bcb.removeContents(container)) {

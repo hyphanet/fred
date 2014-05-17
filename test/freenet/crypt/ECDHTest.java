@@ -56,13 +56,13 @@ public class ECDHTest extends TestCase {
         PublicKey bobP = bob.getPublicKey();
         PublicKey aliceP = alice.getPublicKey();
         
-        System.out.println("Alice C: "+alice.curve);
-        System.out.println("Bob   C: "+bob.curve);
-        System.out.println("Alice P: "+toHex(aliceP.getEncoded()));
-        System.out.println("Bob   P: "+toHex(bobP.getEncoded()));
+        System.out.println("Alice C: " + alice.curve);
+        System.out.println("Bob   C: " + bob.curve);
+        System.out.println("Alice P: " + toHex(aliceP.getEncoded()));
+        System.out.println("Bob   P: " + toHex(bobP.getEncoded()));
         
-        System.out.println("Alice S: "+toHex(alice.getAgreedSecret(bob.getPublicKey())));
-        System.out.println("Bob   S: "+toHex(bob.getAgreedSecret(alice.getPublicKey())));
+        System.out.println("Alice S: " + toHex(alice.getAgreedSecret(bob.getPublicKey())));
+        System.out.println("Bob   S: " + toHex(bob.getAgreedSecret(alice.getPublicKey())));
     }
     
     public static String toHex(byte[] arg) {

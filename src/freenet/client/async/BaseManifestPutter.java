@@ -257,7 +257,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 			//debugDecompose("ExternPutHandler.onEncode Begin");
 			if(metadata != null) {
-				Logger.error(this, "Reassigning metadata: "+metadata, new Exception("debug"));
+				Logger.error(this, "Reassigning metadata: " + metadata, new Exception("debug"));
 				//throw new IllegalStateException("Metadata set but we got a uri?!");
 			}
 			// The file was too small to have its own metadata, we get this instead.
@@ -278,7 +278,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			//new Error("DEBUGME").printStackTrace();
 			//debugDecompose("ExternPutHandler.onMetadata Begin");
-			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for '"+this.itemName+"' "+this+" from "+state+" persistent="+persistent);
+			if(logMINOR) Logger.minor(this, "Assigning metadata: " + m + " for '" + this.itemName + "' " + this + " from " + state + " persistent=" + persistent);
 			if(metadata != null) {
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
 				return;
@@ -301,7 +301,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					allMetadatas = putHandlersWaitingForMetadata.isEmpty();
 					if(!allMetadatas) {
 						if(logMINOR)
-							Logger.minor(this, "Still waiting for metadata: "+putHandlersWaitingForMetadata.size());
+							Logger.minor(this, "Still waiting for metadata: " + putHandlersWaitingForMetadata.size());
 					}
 				}
 				if(allMetadatas) {
@@ -368,7 +368,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			super(smp, parent, null, null, null, container);
 			// Treat as splitfile for purposes of determining number of reinserts.
 			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
-			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
+			if(logMINOR) Logger.minor(this, "Inserting root metadata: " + origSFI);
 		}
 
 		// resolver
@@ -379,7 +379,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
-			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
+			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: " + origSFI + " for " + toResolve);
 		}
 
 		@Override
@@ -458,7 +458,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (runningMap != null) {
 				synchronized (runningMap) {
 					if (runningMap.contains(this)) {
-						Logger.error(this, "PutHandler already in 'runningMap': "+runningMap, new Error("error"));
+						Logger.error(this, "PutHandler already in 'runningMap': " + runningMap, new Error("error"));
 					} else {
 						runningMap.add(this);
 						if (container != null) {
@@ -515,7 +515,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			//new Error("trace start "+this).printStackTrace();
 			if (logDEBUG)
-				Logger.debug(this, "Starting a PutHandler for '"+this.itemName+"' "+ this);
+				Logger.debug(this, "Starting a PutHandler for '" + this.itemName + "' " + this);
 
 			if (origSFI == null) {
 				fail(new IllegalStateException("origSFI is null on start(), impossible"), container, context);
@@ -532,7 +532,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 						ok = containerPutHandlers.contains(this);
 					}
 					if (!ok) {
-						throw new IllegalStateException("Starting a PutHandler thats not in 'containerPutHandlers'! "+this);
+						throw new IllegalStateException("Starting a PutHandler thats not in 'containerPutHandlers'! " + this);
 					}
 				}
 			} else {
@@ -541,13 +541,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 						ok = runningPutHandlers.contains(this);
 					}
 					if (!ok) {
-						throw new IllegalStateException("Starting a PutHandler thats not in 'runningPutHandlers'! "+this);
+						throw new IllegalStateException("Starting a PutHandler thats not in 'runningPutHandlers'! " + this);
 					}
 				}
 			}
 
 			if (persistent && !container.ext().isActive(putHandlerWaitingForBlockSets)) {
-				new Error("why deactivated? putHandlerWaitingForBlockSets "+this+" ["+BaseManifestPutter.this+"]").printStackTrace();
+				new Error("why deactivated? putHandlerWaitingForBlockSets " + this + " [" + BaseManifestPutter.this + "]").printStackTrace();
 				container.activate(putHandlerWaitingForBlockSets, 2);
 			}
 
@@ -555,7 +555,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				ok = putHandlerWaitingForBlockSets.contains(this);
 			}
 			if (!ok) {
-				Logger.error(this, "Starting a PutHandler thats not in 'waitingForBlockSets'! "+this, new Error("error"));
+				Logger.error(this, "Starting a PutHandler thats not in 'waitingForBlockSets'! " + this, new Error("error"));
 				//throw new IllegalStateException("Starting a PutHandler thats not in 'waitingForBlockSets'! "+this);
 			}
 
@@ -577,7 +577,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Cancelling " + this, new Exception("debug"));
 			ClientPutState oldState = null;
 			synchronized(this) {
 				if(cancelled) return;
@@ -600,7 +600,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public boolean isFinished() {
-			if(logMINOR) Logger.minor(this, "Finished "+this, new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Finished " + this, new Exception("debug"));
 			return BaseManifestPutter.this.finished || cancelled || BaseManifestPutter.this.cancelled;
 		}
 
@@ -641,7 +641,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForMetadata, 2);
 					}
-					Logger.error(this, "PutHandler '"+this.itemName+"' was in waitingForMetadata in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
+					Logger.error(this, "PutHandler '" + this.itemName + "' was in waitingForMetadata in onSuccess() on " + this + " for " + BaseManifestPutter.this, new Error("debug"));
 				}
 
 				if(persistent) {
@@ -652,7 +652,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					if(persistent) {
 						container.ext().store(putHandlerWaitingForBlockSets, 2);
 					}
-					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
+					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on " + this + " for " + BaseManifestPutter.this, new Error("debug"));
 				}
 				if(persistent) {
 					container.deactivate(putHandlerWaitingForBlockSets, 1);
@@ -663,21 +663,21 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					if (persistent) {
 						container.ext().store(putHandlersWaitingForFetchable, 2);
 					}
-					Logger.error(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
+					Logger.error(this, "PutHandler was in waitingForFetchable in onSuccess() on " + this + " for " + BaseManifestPutter.this, new Error("debug"));
 				}
 				if(persistent)
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 
 				if(!runningPutHandlers.isEmpty()) {
 					if(logMINOR) {
-						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
+						Logger.minor(this, "Running put handlers: " + runningPutHandlers.size());
 						for(Object o : runningPutHandlers) {
 							boolean activated = true;
 							if(persistent) {
 								activated = container.ext().isActive(o);
 								if(!activated) container.activate(o, 1);
 							}
-							Logger.minor(this, "Still running: "+o);
+							Logger.minor(this, "Still running: " + o);
 							if(!activated)
 								container.deactivate(o, 1);
 						}
@@ -714,7 +714,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			} else if(state != null && persistent) {
 				state.removeFrom(container, context);
 			}
-			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
+			if(logMINOR) Logger.minor(this, "Failed: " + this + " - " + e, e);
 			if(persistent)
 				container.activate(BaseManifestPutter.this, 1);
 			fail(e, container, context);
@@ -743,10 +743,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					if(persistent())
 						container.store(this);
 					if(logMINOR)
-						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
+						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState + " for " + this);
 					return;
 				}
-				Logger.error(this, "Ignoring onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
+				Logger.error(this, "Ignoring onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState + " for " + this);
 			}
 		}
 
@@ -909,7 +909,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Removing "+this);
+			if(logMINOR) Logger.minor(this, "Removing " + this);
 			ClientPutState oldSFI;
 			ClientPutState oldState;
 			synchronized(this) {
@@ -919,14 +919,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentState = null;
 			}
 			if(oldSFI != null) {
-				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+BaseManifestPutter.this, new Exception("debug"));
+				Logger.error(this, "origSFI is set in removeFrom() on " + this + " for " + BaseManifestPutter.this, new Exception("debug"));
 				container.activate(oldSFI, 1);
 				oldSFI.cancel(container, context);
 				oldSFI.removeFrom(container, context);
 				if(oldState == oldSFI) oldState = null;
 			}
 			if(oldState != null) {
-				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+BaseManifestPutter.this, new Exception("debug"));
+				Logger.error(this, "currentState is set in removeFrom() on " + this + " for " + BaseManifestPutter.this, new Exception("debug"));
 				container.activate(oldState, 1);
 				oldState.cancel(container, context);
 				oldState.removeFrom(container, context);
@@ -937,7 +937,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			if(metadata != null) {
 				// Possible if cancelled
-				Logger.normal(this, "Metadata is set in removeFrom() on "+this+" for "+BaseManifestPutter.this);
+				Logger.normal(this, "Metadata is set in removeFrom() on " + this + " for " + BaseManifestPutter.this);
 				container.activate(metadata, 1);
 				metadata.removeFrom(container);
 			}
@@ -948,16 +948,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
-				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
+				Logger.error(this, "Storing " + this + " when already cancelled!", new Exception("error"));
 				return false;
 			}
-			if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+			if(logDEBUG) Logger.debug(this, "Storing " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 			return true;
 		}
 
 		@Override
 		public String toString() {
-			if (logDEBUG) return super.toString() + " {"+this.itemName+'}';
+			if (logDEBUG) return super.toString() + " {" + this.itemName + '}';
 			return super.toString();
 		}
 
@@ -1090,7 +1090,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		if (logMINOR)
-			Logger.minor(this, "Starting " + this+" persistence="+persistent()+ " containermode="+containerMode);
+			Logger.minor(this, "Starting " + this + " persistence=" + persistent() + " containermode=" + containerMode);
 		PutHandler[] running;
 		PutHandler[] containers;
 
@@ -1272,7 +1272,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.activate(item, 2);
 				}
 				m = ((PutHandler)item).metadata;
-				if (m == null) throw new NullPointerException("HERE!!" +item);
+				if (m == null) throw new NullPointerException("HERE!!" + item);
 				if (persistent()) {
 					container.deactivate(item, 1);
 				}
@@ -1302,7 +1302,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					container.activate(baseMetadata, Integer.MAX_VALUE);
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				if(logMINOR)
-					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
+					Logger.minor(this, "Metadata bucket is " + bucket.size() + " bytes long");
 				break;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
@@ -1311,7 +1311,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				try {
 					// Start the insert for the sub-Metadata.
 					// Eventually it will generate a URI and call onEncode(), which will call back here.
-					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: "+e);
+					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: " + e);
 					resolve(e, container, context);
 					if(persistent())
 						container.deactivate(baseMetadata, 1);
@@ -1342,7 +1342,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		try {
 			rootMetaPutHandler = new MetaPutHandler(this, null, block, getCHKOnly, container);
 
-			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+rootMetaPutHandler+" for "+baseMetadata);
+			if(logMINOR) Logger.minor(this, "Inserting main metadata: " + rootMetaPutHandler + " for " + baseMetadata);
 			if(persistent()) {
 				container.deactivate(baseMetadata, 1);
 			}
@@ -1371,9 +1371,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		Metadata[] metas = e.mustResolve;
 		for(Metadata m: metas) {
 			if(persistent()) container.activate(m, 100);
-			if(logMINOR) Logger.minor(this, "Resolving "+m);
+			if(logMINOR) Logger.minor(this, "Resolving " + m);
 			if(m.isResolved()) {
-				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
+				Logger.error(this, "Already resolved: " + m + " in resolve() - race condition???");
 				if(persistent()) container.deactivate(m, 1);
 				continue;
 			}
@@ -1398,7 +1398,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		if(logDEBUG) Logger.debug(this, "try complete", new Error("trace tryComplete()"));
 		synchronized(this) {
 			if(finished || cancelled) {
-				if(logMINOR) Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
+				if(logMINOR) Logger.minor(this, "Already " + (finished?"finished":"cancelled"));
 				if(persistent())
 					container.store(this);
 				return;
@@ -1471,44 +1471,44 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		container.activate(putHandlersWaitingForFetchable, 2);
 
 		if(!runningPutHandlers.isEmpty()) {
-			Logger.error(this, "Running put handlers not part of putHandlersByName: "+runningPutHandlers.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Running put handlers not part of putHandlersByName: " + runningPutHandlers.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still running, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still running, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			runningPutHandlers.clear();
 		}
 		if(!putHandlersWaitingForMetadata.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: "+putHandlersWaitingForMetadata.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: " + putHandlersWaitingForMetadata.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForMetadata.toArray(new PutHandler[putHandlersWaitingForMetadata.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			putHandlersWaitingForMetadata.clear();
 		}
 		if(!putHandlerWaitingForBlockSets.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: "+putHandlerWaitingForBlockSets.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: " + putHandlerWaitingForBlockSets.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = putHandlerWaitingForBlockSets.toArray(new PutHandler[putHandlerWaitingForBlockSets.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			putHandlerWaitingForBlockSets.clear();
 		}
 		if(!putHandlersWaitingForFetchable.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: "+putHandlersWaitingForFetchable.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: " + putHandlersWaitingForFetchable.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForFetchable.toArray(new PutHandler[putHandlersWaitingForFetchable.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
@@ -1538,7 +1538,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
 
-		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
+		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: " + running.length);
 		for(PutHandler putter : running) {
 			boolean active = true;
 			if(persistent) {
@@ -1684,7 +1684,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private synchronized boolean checkFetchable(PutHandler handler) {
 		//new Error("RefactorME").printStackTrace();
 		if (!putHandlersWaitingForFetchable.remove(handler)) {
-			throw new IllegalStateException("was not in putHandlersWaitingForFetchable! : "+handler);
+			throw new IllegalStateException("was not in putHandlersWaitingForFetchable! : " + handler);
 		}
 		if(fetchable) return false;
 		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
@@ -1729,17 +1729,17 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	public void objectOnUpdate(ObjectContainer container) {
-		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Updating " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 		//Logger.error(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
 	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
-			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
+			Logger.error(this, "Storing " + this + " when already finished!", new Exception("error"));
 			return false;
 		}
-		if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Storing " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 		return true;
 	}
 
@@ -1756,7 +1756,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		} else {
 			//System.out.println(" waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size()+" F:"+perContainerPutHandlersWaitingForFetchable.get(containerHandle2).size() + " for "+containerHandle2);
 			if(logMINOR)
-				Logger.minor(this, "(spc) waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size() + " for "+containerHandle2);
+				Logger.minor(this, "(spc) waiting m:" + perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size() + " for " + containerHandle2);
 		}
 	}
 
@@ -1846,7 +1846,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		private HashMap<String, Object> makeSubDir(HashMap<String, Object> parentDir, String name) {
 			if (parentDir.containsKey(name)) {
-				throw new IllegalStateException("Item '"+name+"' already exist!");
+				throw new IllegalStateException("Item '" + name + "' already exist!");
 			}
 			HashMap<String, Object> newDir = new HashMap<String, Object>();
 			parentDir.put(name , newDir);
@@ -1870,7 +1870,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				addRedirect(name, element.targetURI, cm, isDefaultDoc);
 				return;
 			}
-			throw new IllegalStateException("ME is neither a redirect nor dircet data. "+element);
+			throw new IllegalStateException("ME is neither a redirect nor dircet data. " + element);
 		}
 
 		/** Add a file as an external. It will be inserted separately and we will add a redirect to the
@@ -1908,7 +1908,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			ph = new ExternPutHandler(BaseManifestPutter.this, null, name, data, cm, getCHKOnly);
 //			putHandlersWaitingForMetadata.add(ph);
 //			putHandlersWaitingForFetchable.add(ph);
-			if(logMINOR) Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent());
+			if(logMINOR) Logger.minor(this, "Inserting separately as PutHandler: " + name + " : " + ph + " persistent=" + ph.persistent());
 			numberOfFiles++;
 			totalSize += data.size();
 			currentDir.put(name, ph);

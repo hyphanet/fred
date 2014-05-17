@@ -32,7 +32,7 @@ public class DownloadRequestStatus extends RequestStatus {
 			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		setFinished(success);
 		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
-			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+getIdentifier()+" : "+uri, new Exception("error"));
+			Logger.error(this, "MIME type is null but failure code is " + FetchException.getMessage(failureCode) + " for " + getIdentifier() + " : " + uri, new Exception("error"));
 		}
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
@@ -51,7 +51,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
 		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
-			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+identifier+" : "+uri, new Exception("error"));
+			Logger.error(this, "MIME type is null but failure code is " + FetchException.getMessage(failureCode) + " for " + identifier + " : " + uri, new Exception("error"));
 		}
 		this.overriddenDataType = overriddenDataType;
 		this.failureCode = failureCode;

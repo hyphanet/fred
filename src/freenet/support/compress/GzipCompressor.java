@@ -93,7 +93,7 @@ public class GzipCompressor implements Compressor {
 			// FIXME there is probably a better way to do this!
 			int bytesRead = gis.read(buffer, 0, buffer.length);
 			if(expectedBytesRead < bytesRead) {
-				Logger.normal(this, "expectedBytesRead="+expectedBytesRead+", bytesRead="+bytesRead+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
+				Logger.normal(this, "expectedBytesRead=" + expectedBytesRead + ", bytesRead=" + bytesRead + ", written=" + written + ", maxLength=" + maxLength + " throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
 					written += bytesRead;
 					while(true) {

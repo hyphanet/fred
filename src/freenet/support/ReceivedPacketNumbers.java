@@ -39,7 +39,7 @@ public class ReceivedPacketNumbers {
         
         @Override
 		public String toString() {
-            return "Range:"+start+"->"+end;
+            return "Range:" + start + "->" + end;
         }
     }
     
@@ -67,11 +67,11 @@ public class ReceivedPacketNumbers {
                 lowestSeqNumber = r.start;
             }
             while(true) {
-                if(seqNumber == r.start-1) {
+                if(seqNumber == r.start - 1) {
                     r.start--;
                     if(li.hasPrevious()) {
                         Range r1 = li.previous();
-                        if(r1.end == seqNumber-1) {
+                        if(r1.end == seqNumber - 1) {
                             r.start = r1.start;
                             li.remove();
                         }
@@ -80,7 +80,7 @@ public class ReceivedPacketNumbers {
                     }
                     return true;
                 }
-                if(seqNumber < r.start-1) {
+                if(seqNumber < r.start - 1) {
                     if(highestSeqNumber - seqNumber > horizon) {
                         // Out of window, don't store
                         return false;
@@ -97,11 +97,11 @@ public class ReceivedPacketNumbers {
                     // Duh
                     return true;
                 }
-                if(seqNumber == r.end+1) {
+                if(seqNumber == r.end + 1) {
                     r.end++;
                     if(li.hasNext()) {
                         Range r1 = li.next();
-                        if(r1.start == seqNumber+1) {
+                        if(r1.start == seqNumber + 1) {
                             r.end = r1.end;
                             li.remove();
                         }
@@ -110,7 +110,7 @@ public class ReceivedPacketNumbers {
                     }
                     return true;
                 }
-                if(seqNumber > r.end+1) {
+                if(seqNumber > r.end + 1) {
                     if(!li.hasNext()) {
                         // This is the end of the list
                         Range r1 = new Range();
@@ -141,10 +141,10 @@ public class ReceivedPacketNumbers {
         Range last = null;
         for(Range r: ranges) {
             if(r.start > r.end) {
-                Logger.error(this, "Bad Range: "+r);
+                Logger.error(this, "Bad Range: " + r);
             }
             if((last != null) && (r.start < last.end)) {
-                Logger.error(this, "This range: "+r+" but last was: "+last);
+                Logger.error(this, "This range: " + r + " but last was: " + last);
             }
             if((r.start <= seqNumber) && (r.end >= seqNumber))
                 return true;

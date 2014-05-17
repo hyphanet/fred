@@ -52,7 +52,7 @@ public class LoggerHookChain extends LoggerHook {
      * Add a hook which will be called every time a message is logged
      */
     public synchronized void addHook(LoggerHook lh) {
-        LoggerHook[] newHooks = Arrays.copyOf(hooks, hooks.length+1);
+        LoggerHook[] newHooks = Arrays.copyOf(hooks, hooks.length + 1);
         newHooks[hooks.length] = lh;
         hooks = newHooks;
     }
@@ -63,9 +63,9 @@ public class LoggerHookChain extends LoggerHook {
     public synchronized void removeHook(LoggerHook lh) {
         final int hooksLength = hooks.length;
         if(hooksLength == 0) return;
-        LoggerHook[] newHooks = new LoggerHook[hooksLength-1];
+        LoggerHook[] newHooks = new LoggerHook[hooksLength - 1];
         int x=0;
-        for(int i=0;i<hooksLength;i++) {
+        for(int i=0;i < hooksLength;i++) {
             if(hooks[i] == lh) continue;
             if(x == newHooks.length) return; // nothing matched
             newHooks[x++] = hooks[i];

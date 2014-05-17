@@ -64,16 +64,16 @@ public class ClientSSK extends ClientKey {
 		if(extras == null)
 			throw new MalformedURLException("No extra bytes in SSK - maybe a 0.5 key?");
 		if(extras.length < 5)
-			throw new MalformedURLException("Extra bytes too short: "+extras.length+" bytes");
+			throw new MalformedURLException("Extra bytes too short: " + extras.length + " bytes");
 		this.cryptoAlgorithm = extras[2];
 		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
-			throw new MalformedURLException("Unknown encryption algorithm "+cryptoAlgorithm);
+			throw new MalformedURLException("Unknown encryption algorithm " + cryptoAlgorithm);
 		if(!Arrays.equals(extras, getExtraBytes()))
 			throw new MalformedURLException("Wrong extra bytes");
 		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
-			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
+			throw new MalformedURLException("Pubkey hash wrong length: " + pubKeyHash.length + " should be " + NodeSSK.PUBKEY_HASH_SIZE);
 		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
-			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
+			throw new MalformedURLException("Decryption key wrong length: " + cryptoKey.length + " should be " + CRYPTO_KEY_LENGTH);
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
 			if (pubKey != null) {
@@ -114,10 +114,10 @@ public class ClientSSK extends ClientKey {
 	
 	public synchronized void setPublicKey(DSAPublicKey pubKey) {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
-			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
+			throw new IllegalArgumentException("Cannot reassign: was " + this.pubKey + " now " + pubKey);
 		byte[] newKeyHash = pubKey.asBytesHash();
 		if(!Arrays.equals(newKeyHash, pubKeyHash))
-			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: "+HexUtil.bytesToHex(newKeyHash)+" ( "+HexUtil.bytesToHex(pubKey.asBytesHash())+" != "+HexUtil.bytesToHex(pubKeyHash)+" for "+pubKey);
+			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: " + HexUtil.bytesToHex(newKeyHash) + " ( " + HexUtil.bytesToHex(pubKey.asBytesHash()) + " != " + HexUtil.bytesToHex(pubKeyHash) + " for " + pubKey);
 		this.pubKey = pubKey;
 		this.cachedNodeKey = null;
 	}
@@ -167,7 +167,7 @@ public class ClientSSK extends ClientKey {
 			}
 			return cloneKey ? nodeKey.cloneKey() : nodeKey;
 		} catch (SSKVerifyException e) {
-			Logger.error(this, "Have already verified and yet it fails!: "+e);
+			Logger.error(this, "Have already verified and yet it fails!: " + e);
 			throw (AssertionError)new AssertionError("Have already verified and yet it fails!").initCause(e);
 		}
 	}
@@ -178,7 +178,7 @@ public class ClientSSK extends ClientKey {
 
 	@Override
 	public String toString() {
-		return "ClientSSK:"+getURI().toString();
+		return "ClientSSK:" + getURI().toString();
 	}
 
 	@Override

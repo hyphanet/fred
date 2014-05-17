@@ -43,7 +43,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 		try {
 			tempBucket = createBucket(bf, len, server);
 		} catch (IOException e) {
-			Logger.error(this, "Bucket error: "+e, e);
+			Logger.error(this, "Bucket error: " + e, e);
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier(), isGlobal());
 		}
 		BucketTools.copyFrom(tempBucket, is, len);

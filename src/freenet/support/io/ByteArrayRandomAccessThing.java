@@ -21,7 +21,7 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) throw new IOException("Cannot read before zero");
-		if(fileOffset + length > data.length) throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
+		if(fileOffset + length > data.length) throw new IOException("Cannot read after end: trying to read from " + fileOffset + " to " + (fileOffset + length) + " on block length " + data.length);
 		System.arraycopy(data, (int)fileOffset, buf, bufOffset, length);
 	}
 
@@ -29,7 +29,7 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) throw new IOException("Cannot write before zero");
-		if(fileOffset + length > data.length) throw new IOException("Cannot write after end: trying to write from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
+		if(fileOffset + length > data.length) throw new IOException("Cannot write after end: trying to write from " + fileOffset + " to " + (fileOffset + length) + " on block length " + data.length);
 		if(readOnly) throw new IOException("Read-only");
 		System.arraycopy(buf, bufOffset, data, (int)fileOffset, length);
 	}

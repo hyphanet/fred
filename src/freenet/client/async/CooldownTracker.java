@@ -85,7 +85,7 @@ public class CooldownTracker {
 			return -1;
 		}
 		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!: "+toCheck);
+			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!: " + toCheck);
 			long uid = container.ext().getID(toCheck);
 			CooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return -1;
@@ -111,7 +111,7 @@ public class CooldownTracker {
 	
 	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, ClientContext context, boolean dontLogOnClearingParents) {
 		synchronized(this) {
-		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
+		if(logMINOR) Logger.minor(this, "Wakeup time " + wakeupTime + " set for " + toCheck + " parent is " + parent);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
@@ -133,10 +133,10 @@ public class CooldownTracker {
 					if(checkParent.timeValid < item.timeValid) break;
 					else if(checkParent.timeValid > item.timeValid) {
 						if(!dontLogOnClearingParents)
-							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
+							Logger.error(this, "Corrected parent timeValid from " + checkParent.timeValid + " to " + item.timeValid, new Exception("debug"));
 						else {
 							if(logMINOR) 
-								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
+								Logger.minor(this, "Corrected parent timeValid from " + checkParent.timeValid + " to " + item.timeValid);
 						}
 						checkParent.timeValid = item.timeValid;
 					}
@@ -166,10 +166,10 @@ public class CooldownTracker {
 					if(checkParent.timeValid < item.timeValid) break;
 					else if(checkParent.timeValid > item.timeValid) {
 						if(!dontLogOnClearingParents)
-							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
+							Logger.error(this, "Corrected parent timeValid from " + checkParent.timeValid + " to " + item.timeValid, new Exception("debug"));
 						else {
 							if(logMINOR) 
-								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
+								Logger.minor(this, "Corrected parent timeValid from " + checkParent.timeValid + " to " + item.timeValid);
 						}
 						checkParent.timeValid = item.timeValid;
 					}
@@ -227,7 +227,7 @@ public class CooldownTracker {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for "+toCheck);
+		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for " + toCheck);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
@@ -249,12 +249,12 @@ public class CooldownTracker {
 				while(true) {
 					TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 					if(item == null) break;
-					if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
+					if(logMINOR) Logger.minor(this, "Clearing " + toCheck);
 					ret = true;
 					cacheItemsTransient.remove(toCheck);
 					toCheck = item.parent.get();
 					if(toCheck == null) break;
-					if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
+					if(logMINOR) Logger.minor(this, "Parent is " + toCheck);
 				}
 			}
 			if(toCheck instanceof RemoveRandomWithObject) {
@@ -273,12 +273,12 @@ public class CooldownTracker {
 		while(true) {
 			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return ret;
-			if(logMINOR) Logger.minor(this, "Clearing "+uid);
+			if(logMINOR) Logger.minor(this, "Clearing " + uid);
 			ret = true;
 			cacheItemsPersistent.remove(uid);
 			uid = item.parentID;
 			if(uid == -1) return ret;
-			if(logMINOR) Logger.minor(this, "Parent is "+uid);
+			if(logMINOR) Logger.minor(this, "Parent is " + uid);
 		}
 	}
 
@@ -307,7 +307,7 @@ public class CooldownTracker {
 				it2.remove();
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Removed "+removedPersistent+" persistent cooldown cache items and "+removedTransient+" transient cooldown cache items");
+		if(logMINOR) Logger.minor(this, "Removed " + removedPersistent + " persistent cooldown cache items and " + removedTransient + " transient cooldown cache items");
 	}
 	
 	private static final long MAINTENANCE_PERIOD = MINUTES.toMillis(10);

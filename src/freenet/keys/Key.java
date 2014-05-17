@@ -94,7 +94,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         } else if(type == NodeSSK.BASE_TYPE)
         	return NodeSSK.readSSK(raf, subtype);
 
-        throw new IOException("Unrecognized format: "+type);
+        throw new IOException("Unrecognized format: " + type);
     }
 
 	public static KeyBlock createBlock(short keyType, byte[] keyBytes, byte[] headersBytes, byte[] dataBytes, byte[] pubkeyBytes) throws KeyVerifyException {
@@ -108,14 +108,14 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 			try {
 				pubKey = new DSAPublicKey(pubkeyBytes);
 			} catch (IOException e) {
-				throw new KeyVerifyException("Failed to construct pubkey: "+e, e);
+				throw new KeyVerifyException("Failed to construct pubkey: " + e, e);
 			} catch (CryptFormatException e) {
-				throw new KeyVerifyException("Failed to construct pubkey: "+e, e);
+				throw new KeyVerifyException("Failed to construct pubkey: " + e, e);
 			}
 			NodeSSK key = new NodeSSK(pubKey.asBytesHash(), keyBytes, pubKey, subtype);
 			return new SSKBlock(dataBytes, headersBytes, key, false);
 		} else {
-			throw new KeyVerifyException("No such key type "+Integer.toHexString(type));
+			throw new KeyVerifyException("No such key type " + Integer.toHexString(type));
 		}
 	}
 
@@ -138,7 +138,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         // Math.abs can actually return negative...
         if(asLong == Long.MIN_VALUE)
             asLong = Long.MAX_VALUE;
-        cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
+        cachedNormalizedDouble = ((double)asLong) / ((double)Long.MAX_VALUE);
         return cachedNormalizedDouble;
     }
 
@@ -167,12 +167,12 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 
     static Bucket decompress(boolean isCompressed, byte[] input, int inputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
 	    if(maxLength < 0)
-		    throw new IllegalArgumentException("maxlength="+maxLength);
+		    throw new IllegalArgumentException("maxlength=" + maxLength);
 		if(input.length < inputLength)
-			throw new IndexOutOfBoundsException(""+input.length+"<"+inputLength);
+			throw new IndexOutOfBoundsException("" + input.length + "<" + inputLength);
         if(isCompressed) {
         	if(logMINOR)
-        		Logger.minor(Key.class, "Decompressing "+inputLength+" bytes in decode with codec "+compressionAlgorithm);
+        		Logger.minor(Key.class, "Decompressing " + inputLength + " bytes in decode with codec " + compressionAlgorithm);
 			final int inputOffset = (shortLength ? 2 : 4);
             if(inputLength < inputOffset + 1) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
@@ -184,13 +184,13 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             	len = ((((((input[0] & 0xff) << 8) + (input[1] & 0xff)) << 8) + (input[2] & 0xff)) << 8) +
             		(input[3] & 0xff);
             if(len > maxLength)
-                throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
+                throw new TooBigException("Invalid precompressed size: " + len + " maxlength=" + maxLength);
             COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
-            if (decompressor==null)
-            	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
+            if (decompressor == null)
+            	throw new CHKDecodeException("Unknown compression algorithm: " + compressionAlgorithm);
             InputStream inputStream = null;
             OutputStream outputStream = null;
-            Bucket inputBucket = new SimpleReadOnlyArrayBucket(input, inputOffset, inputLength-inputOffset);
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(input, inputOffset, inputLength - inputOffset);
             Bucket outputBucket = bf.makeBucket(maxLength);
             outputStream = outputBucket.getOutputStream();
             inputStream = inputBucket.getInputStream();
@@ -283,7 +283,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         	if(cbuf != null) {
     			// Use it
     			int compressedLength = cbuf.length;
-                finalData = new byte[compressedLength+(shortLength?2:4)];
+                finalData = new byte[compressedLength + (shortLength?2:4)];
                 System.arraycopy(cbuf, 0, finalData, shortLength?2:4, compressedLength);
                 if(!shortLength) {
                 	finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
@@ -299,7 +299,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
         if(finalData == null) {
         	// Not compressed or not compressible; no size bytes to be added.
             if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
-                throw new CHKEncodeException("Too big: "+sourceData.size()+" should be "+MAX_COMPRESSED_DATA_LENGTH);
+                throw new CHKEncodeException("Too big: " + sourceData.size() + " should be " + MAX_COMPRESSED_DATA_LENGTH);
             }
         	finalData = BucketTools.toByteArray(sourceData);
         }

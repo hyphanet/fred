@@ -74,7 +74,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			return context.getChkInsertScheduler(realTimeFlag);
 		else if(block instanceof SSKBlock)
 			return context.getSskInsertScheduler(realTimeFlag);
-		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
+		else throw new IllegalArgumentException("Unknown block type " + block.getClass() + " : " + block);
 	}
 
 	@Override
@@ -155,20 +155,20 @@ public class BinaryBlobInserter implements ClientPutState {
 				errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
 				break;
 			default:
-				Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
+				Logger.error(this, "Unknown LowLevelPutException code: " + e.code);
 				errors.inc(InsertException.INTERNAL_ERROR);
 			}
 			if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
 				consecutiveRNFs++;
-				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
+				if(logMINOR) Logger.minor(this, "Consecutive RNFs: " + consecutiveRNFs + " / " + consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
-					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
+					if(logMINOR) Logger.minor(this, "Consecutive RNFs: " + consecutiveRNFs + " - counting as success");
 					onSuccess(keyNum, container, context);
 					return;
 				}
 			} else
 				consecutiveRNFs = 0;
-			if(logMINOR) Logger.minor(this, "Failed: "+e);
+			if(logMINOR) Logger.minor(this, "Failed: " + e);
 			retries++;
 			if((retries > maxRetries) && (maxRetries != -1)) {
 				fail(InsertException.construct(errors), false, container, context);

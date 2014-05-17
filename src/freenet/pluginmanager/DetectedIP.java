@@ -63,6 +63,6 @@ public class DetectedIP {
 	
 	@Override
 	public String toString() {
-		return publicAddress.toString()+":"+natType+":"+mtu;
+		return publicAddress.toString() + ":" + natType + ":" + mtu;
 	}
 }

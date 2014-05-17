@@ -131,7 +131,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			try {
 				tempFile = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, parent);
 			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
+				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for " + filename + " in " + parent + " - disk full? permissions problem?");
 			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
@@ -194,18 +194,18 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				fetched = true;
 			}
             if(!MainJarDependenciesChecker.validFile(tempFile, expectedHash, expectedLength, executable)) {
-                Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
-                System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
+                Logger.error(this, "Unable to download dependency " + filename + " : not the expected size or hash!");
+                System.err.println("Download of " + filename + " for update failed because temp file appears to be corrupted!");
                 if(cb != null)
-                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
+                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: " + tempFile + " length " + tempFile.length() + " "));
                 tempFile.delete();
                 return;
             }
 			if(!FileUtil.renameTo(tempFile, filename)) {
-				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
-				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
+				Logger.error(this, "Unable to rename temp file " + tempFile + " to " + filename);
+				System.err.println("Download of " + filename + " for update failed because cannot rename from " + tempFile);
 				if(cb != null)
-				    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
+				    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file " + tempFile + " to " + filename));
                 tempFile.delete();
 				return;
 			}
@@ -272,7 +272,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			});
 			synchronized(this) {
 				if(uomFetcher != null) {
-					Logger.error(this, "Started UOMFetcher twice for "+filename, new Exception("error"));
+					Logger.error(this, "Started UOMFetcher twice for " + filename, new Exception("error"));
 					return;
 				}
 				uomFetcher = f;
@@ -285,10 +285,10 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	public JarFetcher fetch(FreenetURI uri, File downloadTo,
 			long expectedLength, byte[] expectedHash, JarFetcherCallback cb, int build, boolean essential, boolean executable) throws FetchException {
 		if(essential)
-			System.out.println("Fetching "+downloadTo+" needed for new Freenet update "+build);
+			System.out.println("Fetching " + downloadTo + " needed for new Freenet update " + build);
 		else if(build != 0) // build 0 means it's a preload or a multi-file update.
-			System.out.println("Preloading "+downloadTo+" needed for new Freenet update "+build);
-		if(logMINOR) Logger.minor(this, "Fetching "+uri+" to "+downloadTo+" for next update");
+			System.out.println("Preloading " + downloadTo + " needed for new Freenet update " + build);
+		if(logMINOR) Logger.minor(this, "Fetching " + uri + " to " + downloadTo + " for next update");
 		DependencyJarFetcher fetcher = new DependencyJarFetcher(downloadTo, uri, expectedLength, expectedHash, cb, essential, executable);
 		synchronized(fetchers) {
 			fetchers.add(fetcher);
@@ -315,7 +315,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	public void renderProperties(HTMLNode alertNode) {
 		synchronized(fetchers) {
 			if(!fetchers.isEmpty()) {
-				alertNode.addChild("p", l10n("fetchingDependencies")+":");
+				alertNode.addChild("p", l10n("fetchingDependencies") + ":");
 				HTMLNode table = alertNode.addChild("table");
 				for(DependencyJarFetcher f : fetchers) {
 					table.addChild(f.renderRow());
@@ -325,7 +325,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("MainJarUpdater."+key);
+		return NodeL10n.getBase().getString("MainJarUpdater." + key);
 	}
 
 	public boolean brokenDependencies() {
@@ -333,7 +333,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	public void cleanupDependencies() {
-		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
+		InputStream is = getClass().getResourceAsStream("/" + DEPENDENCIES_FILE);
 		if(is == null) {
 			System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
 			return;
@@ -367,11 +367,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
             atomicDeployer.deployMultiFileUpdateOffThread();
         } else {
             final long now = System.currentTimeMillis();
-            System.err.println("Not deploying multi-file update for "+atomicDeployer.name+" because auto-update is not enabled.");
+            System.err.println("Not deploying multi-file update for " + atomicDeployer.name + " because auto-update is not enabled.");
             node.clientCore.alerts.register(new UserAlert() {
 
                 private String l10n(String key) {
-                    return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater."+key);
+                    return NodeL10n.getBase().getString("MainJarUpdater.ConfirmMultiFileUpdater." + key);
                 }
                 
                 @Override
@@ -381,12 +381,12 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
                 @Override
                 public String getTitle() {
-                    return l10n("title."+atomicDeployer.name);
+                    return l10n("title." + atomicDeployer.name);
                 }
 
                 @Override
                 public String getText() {
-                    return l10n("text."+atomicDeployer.name);
+                    return l10n("text." + atomicDeployer.name);
                 }
 
                 @Override
@@ -432,7 +432,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
                 @Override
                 public String anchor() {
-                    return "multi-file-update-confirm-"+atomicDeployer.name;
+                    return "multi-file-update-confirm-" + atomicDeployer.name;
                 }
 
                 @Override

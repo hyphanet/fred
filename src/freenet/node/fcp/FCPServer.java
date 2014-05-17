@@ -115,7 +115,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	private void maybeGetNetworkInterface() {
-		if (this.networkInterface!=null) return;
+		if (this.networkInterface != null) return;
 
 		NetworkInterface tempNetworkInterface = null;
 		try {
@@ -125,8 +125,8 @@ public class FCPServer implements Runnable, DownloadCache {
 				tempNetworkInterface = NetworkInterface.create(port, bindTo, allowedHosts, node.executor, true);
 			}
 		} catch (IOException be) {
-			Logger.error(this, "Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.", be);
-			System.out.println("Couldn't bind to FCP Port "+bindTo+ ':' +port+". FCP Server not started.");
+			Logger.error(this, "Couldn't bind to FCP Port " + bindTo + ':' + port + ". FCP Server not started.", be);
+			System.out.println("Couldn't bind to FCP Port " + bindTo + ':' + port + ". FCP Server not started.");
 		}
 
 		this.networkInterface = tempNetworkInterface;
@@ -137,8 +137,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		if (this.enabled) {
 			maybeGetNetworkInterface();
 
-			Logger.normal(this, "Starting FCP server on "+bindTo+ ':' +port+ '.');
-			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
+			Logger.normal(this, "Starting FCP server on " + bindTo + ':' + port + '.');
+			System.out.println("Starting FCP server on " + bindTo + ':' + port + '.');
 
 			if (this.networkInterface != null) {
 				Thread t = new Thread(this, "FCP server");
@@ -160,11 +160,11 @@ public class FCPServer implements Runnable, DownloadCache {
 				networkInterface.waitBound();
 				realRun();
 			} catch (IOException e) {
-				if(logMINOR) Logger.minor(this, "Caught "+e, e);
+				if(logMINOR) Logger.minor(this, "Caught " + e, e);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 			}
 			if (WrapperManager.hasShutdownHookBeenTriggered())
 				return;
@@ -461,11 +461,11 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("FcpServer."+key);
+		return NodeL10n.getBase().getString("FcpServer." + key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("FcpServer."+key, pattern, value);
+		return NodeL10n.getBase().getString("FcpServer." + key, pattern, value);
 	}
 
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
@@ -538,7 +538,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					try {
 						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container, core.clientContext);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
+						Logger.error(this, "Caught removing identifier " + identifier + ": " + t, t);
 					} finally {
 						success.set(succeeded);
 						done.countDown();
@@ -576,8 +576,8 @@ public class FCPServer implements Runnable, DownloadCache {
 					globalForeverClient.removeAll(container, core.clientContext);
 					succeeded = true;
 				} catch (Throwable t) {
-					Logger.error(this, "Caught while processing panic: "+t, t);
-					System.err.println("PANIC INCOMPLETE: CAUGHT "+t);
+					Logger.error(this, "Caught while processing panic: " + t, t);
+					System.err.println("PANIC INCOMPLETE: CAUGHT " + t);
 					t.printStackTrace();
 					System.err.println("Your requests have not been deleted!");
 				} finally {
@@ -633,7 +633,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					return false;
 				} catch (Throwable t) {
 					// Unexpected and severe, might even be OOM, just log it.
-					Logger.error(this, "Failed to make persistent request: "+t, t);
+					Logger.error(this, "Failed to make persistent request: " + t, t);
 					return false;
 				} finally {
 					synchronized(ow) {
@@ -747,27 +747,27 @@ public class FCPServer implements Runnable, DownloadCache {
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
 
 		try {
-			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag, container);
+			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:" + fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag, container);
 			return;
 		} catch (IdentifierCollisionException ee) {
 			try {
-				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag, container);
+				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:" + fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag, container);
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag, container);
+					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:" + fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag, container);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, realTimeFlag, container);
+						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy (" + System.currentTimeMillis() + ')', returnFilename, returnTempFilename, realTimeFlag, container);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
 							byte[] buf = new byte[8];
 							try {
 								core.random.nextBytes(buf);
-								String id = "FProxy:"+Base64.encode(buf);
+								String id = "FProxy:" + Base64.encode(buf);
 								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, realTimeFlag, container);
 								return;
 							} catch (IdentifierCollisionException e3) {}
@@ -1083,7 +1083,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			return new CacheFetchResult(new ClientMetadata(mime), newData, filtered);
 		} catch (IOException e) {
 			// Maybe it was freed?
-			Logger.normal(this, "Unable to copy data: "+e, e);
+			Logger.normal(this, "Unable to copy data: " + e, e);
 			return null;
 		}
 
@@ -1110,7 +1110,7 @@ public class FCPServer implements Runnable, DownloadCache {
 						newData = core.tempBucketFactory.makeBucket(origData.size());
 					BucketTools.copy(origData, newData);
 				} catch (IOException e) {
-					Logger.error(this, "Unable to copy data: "+e, e);
+					Logger.error(this, "Unable to copy data: " + e, e);
 					return null;
 				}
 			}

@@ -57,7 +57,7 @@ public class DSAPrivateKey extends CryptoKey {
     
     @Override
     public String toLongString() {
-        return "x="+HexUtil.biToHex(x);
+        return "x=" + HexUtil.biToHex(x);
     }
     
     // what?  why is DSAGroup passed in?

@@ -66,7 +66,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
-			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, OUTPUT_BANDWIDTH_LIMIT, ENABLE_FOAF, false, true, false, null, i == 0);
+			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 256 * 1024, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, OUTPUT_BANDWIDTH_LIMIT, ENABLE_FOAF, false, true, false, null, i == 0);
 			Logger.normal(RealNodeProbeTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeProbeTest.class, "Created " + NUMBER_OF_NODES + " nodes");
@@ -97,10 +97,10 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
             		waitForAllConnected(nodes);
             		int status = tester.insertRequestTest();
             		if(status == -1) continue;
-            		System.out.println("Insert test completed with status "+status);
+            		System.out.println("Insert test completed with status " + status);
             		break;
             	} catch (Throwable t) {
-            		Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
+            		Logger.error(RealNodeRequestInsertTest.class, "Caught " + t, t);
             	}
             }
         }
@@ -160,17 +160,17 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			@Override
 			public void onRejectStats(byte[] stats) {
 				System.out.println("Probe got reject stats:");
-				System.out.println("CHK request: "+stats[0]);
-				System.out.println("SSK request: "+stats[1]);
-				System.out.println("CHK insert: "+stats[2]);
-				System.out.println("SSK insert: "+stats[3]);
+				System.out.println("CHK request: " + stats[0]);
+				System.out.println("SSK request: " + stats[1]);
+				System.out.println("CHK insert: " + stats[2]);
+				System.out.println("SSK insert: " + stats[3]);
 			}
 
 			@Override
 			public void onOverallBulkOutputCapacity(
 					byte bandwidthClassForCapacityUsage, float outputBulkCapacityUsed) {
-				System.out.println("Probe got output capacity "+nf.format(outputBulkCapacityUsed)+
-						"% (bandwidth class "+bandwidthClassForCapacityUsage+")");
+				System.out.println("Probe got output capacity " + nf.format(outputBulkCapacityUsed) +
+						"% (bandwidth class " + bandwidthClassForCapacityUsage + ")");
 			}
 		};
 
@@ -219,10 +219,10 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 					System.err.print("Enter new node index ([0-" + (NUMBER_OF_NODES - 1) + "]):");
 					index = Integer.valueOf(r.readLine());
 				}
-				else if (selection == types.length+1) {
+				else if (selection == types.length + 1) {
 					System.err.print("Enter new HTL: ");
 					htl = Byte.valueOf(r.readLine());
-				} else if (selection == types.length+2) {
+				} else if (selection == types.length + 2) {
 					SubConfig nodeConfig = nodes[index].config.get("node");
 					String[] options = { "probeBandwidth", "probeBuild", "probeIdentifier", "probeLinkLengths", "probeLinkLengths", "probeUptime" };
 					for (String option : options) {

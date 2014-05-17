@@ -62,9 +62,9 @@ public class SubConfig implements Comparable<SubConfig> {
 	public void register(Option<?> o) {
 		synchronized(this) {
 			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
-				throw new IllegalArgumentException("Option names must not contain "+SimpleFieldSet.MULTI_LEVEL_CHAR);
+				throw new IllegalArgumentException("Option names must not contain " + SimpleFieldSet.MULTI_LEVEL_CHAR);
 			if(map.containsKey(o.name))
-				throw new IllegalArgumentException("Already registered: "+o.name+" on "+this);
+				throw new IllegalArgumentException("Already registered: " + o.name + " on " + this);
 			map.put(o.name, o);
 		}
 		config.onRegister(this, o);
@@ -207,7 +207,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	public void finishedInitialization() {
 		hasInitialized = true;
 		if(logMINOR)
-			Logger.minor(this, "Finished initialization on "+this+" ("+prefix+')');
+			Logger.minor(this, "Finished initialization on " + this + " (" + prefix + ')');
 	}
 
 	/**
@@ -222,7 +222,7 @@ public class SubConfig implements Comparable<SubConfig> {
 				try {
 					o.setValue(val);
 				} catch (InvalidConfigValueException e) {
-					String msg = "Invalid config value: "+prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+key+" = "+val+" : error: "+e;
+					String msg = "Invalid config value: " + prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + key + " = " + val + " : error: " + e;
 					Logger.error(this, msg, e);
 					System.err.println(msg); // might be about logging?
 				} catch (NodeNeedRestartException e) {
@@ -252,16 +252,16 @@ public class SubConfig implements Comparable<SubConfig> {
 			entries = map.entrySet().toArray(entries);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Prefix="+prefix);
+			Logger.minor(this, "Prefix=" + prefix);
 		for(Map.Entry<String, Option<?>> entry: entries) {
 			String key = entry.getKey();
 			Option<?> o = entry.getValue();
 			if(logMINOR)
-				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
+				Logger.minor(this, "Key=" + key + " value=" + o.getValueString() + " default=" + o.isDefault());
 			if (configRequestType == Config.RequestType.CURRENT_SETTINGS && (!withDefaults) && o.isDefault()
 			        && (!o.forceWrite)) {
 				if(logMINOR)
-					Logger.minor(this, "Skipping "+key+" - "+o.isDefault());
+					Logger.minor(this, "Skipping " + key + " - " + o.isDefault());
 				continue;
 			}
 			switch (configRequestType) {
@@ -290,11 +290,11 @@ public class SubConfig implements Comparable<SubConfig> {
 					fs.putSingle(key, o.getDataTypeStr());
 					break;
 				default:
-					Logger.error(this, "Unknown config request type value: "+configRequestType);
+					Logger.error(this, "Unknown config request type value: " + configRequestType);
 					break;
 			}
 			if(logMINOR)
-				Logger.minor(this, "Key="+prefix+'.'+key+" value="+o.getValueString());
+				Logger.minor(this, "Key=" + prefix + '.' + key + " value=" + o.getValueString());
 		}
 		return fs;
 	}
@@ -362,7 +362,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		if(config instanceof PersistentConfig) {
 			PersistentConfig pc = (PersistentConfig) config;
 			if(pc.finishedInit)
-				throw new IllegalStateException("getRawOption("+name+") on "+this+" but persistent config has been finishedInit() already!");
+				throw new IllegalStateException("getRawOption(" + name + ") on " + this + " but persistent config has been finishedInit() already!");
 			SimpleFieldSet fs = pc.origConfigFileContents;
 			if(fs == null) return null;
 			return fs.get(prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + name);

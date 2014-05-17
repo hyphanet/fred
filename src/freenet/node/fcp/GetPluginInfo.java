@@ -50,7 +50,7 @@ public class GetPluginInfo extends FCPMessage {
 
 		PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 		if (pi == null) {
-			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '" + plugname + "' does not exist or is not a FCP plugin", identifier, false));
 		} else {
 			handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, detailed));
 		}

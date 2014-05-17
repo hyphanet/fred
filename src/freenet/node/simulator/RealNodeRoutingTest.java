@@ -167,14 +167,14 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					Logger.error(RealNodeRoutingTest.class, "Caught " + t, t);
 				}
 			}
-			System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
+			System.err.println("Average path length for successful requests: " + totalHopsTaken / successes);
 			if(pings > 10 && avg.currentValue() > accuracy && ((double) successes / ((double) (failures + successes)) > accuracy)) {
 				System.err.println();
 				System.err.println("Reached " + (accuracy * 100) + "% accuracy.");
 				System.err.println();
 				System.err.println("Network size: " + nodes.length);
 				System.err.println("Maximum HTL: " + MAX_HTL);
-				System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
+				System.err.println("Average path length for successful requests: " + totalHopsTaken / successes);
 				System.err.println("Total started swaps: " + LocationManager.startedSwaps);
 				System.err.println("Total rejected swaps (already locked): " + LocationManager.swapsRejectedAlreadyLocked);
 				System.err.println("Total swaps rejected (nowhere to go): " + LocationManager.swapsRejectedNowhereToGo);

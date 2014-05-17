@@ -39,7 +39,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			SoftReference<Encodeable> ref = new SoftReference<Encodeable>(sbi);
 			synchronized(this) {
 				queue.add(ref);
-				Logger.minor(this, "Queueing encode of "+sbi);
+				Logger.minor(this, "Queueing encode of " + sbi);
 				notifyAll();
 			}
 		}
@@ -52,7 +52,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				if(inserter.isCancelled(container)) continue;
 				if(inserter.resultingURI != null) continue;
 				if(inserter.persistent()) continue;
-				Logger.minor(this, "Queueing encode of "+inserter);
+				Logger.minor(this, "Queueing encode of " + inserter);
 				SoftReference<Encodeable> ref = new SoftReference<Encodeable>(inserter);
 				queue.add(ref);
 			}
@@ -98,12 +98,12 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					}
 				}
 				while(!queue.isEmpty()) {
-					SoftReference<Encodeable> ref = queue.remove(queue.size()-1);
+					SoftReference<Encodeable> ref = queue.remove(queue.size() - 1);
 					sbi = ref.get();
 					if(sbi != null) break;
 				}
 			}
-			Logger.minor(this, "Encoding "+sbi);
+			Logger.minor(this, "Encoding " + sbi);
 			sbi.tryEncode(null, context);
 		}
 	}
@@ -134,7 +134,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					sbi.tryEncode(container, context);
 					container.deactivate(sbi, 1);
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
+					Logger.error(this, "Caught " + t, t);
 				} finally {
 					container.delete(tag);
 				}

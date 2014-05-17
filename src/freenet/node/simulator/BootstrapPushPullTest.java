@@ -26,7 +26,7 @@ import freenet.support.io.FileUtil;
 
 public class BootstrapPushPullTest {
 
-	public static int TEST_SIZE = 1024*1024;
+	public static int TEST_SIZE = 1024 * 1024;
 	
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
@@ -61,7 +61,7 @@ public class BootstrapPushPullTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);
+        node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5 * 1024 * 1024, true, true, true, true, true, true, true, 12 * 1024, false, true, false, false, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(LogLevel.ERROR); // kill logging
@@ -71,7 +71,7 @@ public class BootstrapPushPullTest {
 			node.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}
-        System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
+        System.err.println("Creating test data: " + TEST_SIZE + " bytes.");
         Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
 		try {
@@ -93,13 +93,13 @@ public class BootstrapPushPullTest {
         try {
 			uri = client.insert(block, false, null);
 		} catch (InsertException e) {
-			System.err.println("INSERT FAILED: "+e);
+			System.err.println("INSERT FAILED: " + e);
 			e.printStackTrace();
 			System.exit(EXIT_INSERT_FAILED);
 			return;
 		}
         long endInsertTime = System.currentTimeMillis();
-        System.err.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");
+        System.err.println("RESULT: Insert took " + (endInsertTime - startInsertTime) + "ms (" + TimeUtil.formatTime(endInsertTime - startInsertTime) + ") to " + uri + " .");
         node.park();
 		
         // Bootstrap a second node.
@@ -109,7 +109,7 @@ public class BootstrapPushPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         executor = new PooledExecutor();
-        secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);        
+        secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5 * 1024 * 1024, true, true, true, true, true, true, true, 12 * 1024, false, true, false, false, ipOverride);        
         secondNode.start(true);
 		if (!TestUtil.waitForNodes(secondNode)) {
 			secondNode.park();
@@ -122,17 +122,17 @@ public class BootstrapPushPullTest {
         try {
 			client.fetch(uri);
 		} catch (FetchException e) {
-			System.err.println("FETCH FAILED: "+e);
+			System.err.println("FETCH FAILED: " + e);
 			e.printStackTrace();
 			System.exit(EXIT_FETCH_FAILED);
 			return;
 		}
 		long endFetchTime = System.currentTimeMillis();
-		System.err.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
+		System.err.println("RESULT: Fetch took " + (endFetchTime - startFetchTime) + "ms (" + TimeUtil.formatTime(endFetchTime - startFetchTime) + ") of " + uri + " .");
 		secondNode.park();
 		System.exit(0);
 	    } catch (Throwable t) {
-	    	System.err.println("CAUGHT: "+t);
+	    	System.err.println("CAUGHT: " + t);
 	    	t.printStackTrace();
 	    	try {
 	    		if(node != null)

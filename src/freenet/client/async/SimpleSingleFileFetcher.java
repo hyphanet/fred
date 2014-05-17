@@ -88,7 +88,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
+			Logger.error(this, "Unknown LowLevelGetException code: " + e.code);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
 			return;
 		}
@@ -100,7 +100,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
 		}
-		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
+		if(logMINOR) Logger.minor(this, "onFailure( " + e + " , " + forceFatal + ")", e);
 		if(parent.isCancelled() || cancelled) {
 			if(logMINOR) Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
@@ -167,14 +167,14 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			data = block.decode(context.getBucketFactory(parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(logMINOR)
-				Logger.minor(this, "Decode failure: "+e1, e1);
+				Logger.minor(this, "Decode failure: " + e1, e1);
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, container, context);
 			return null;
 		} catch (TooBigException e) {
 			onFailure(new FetchException(FetchException.TOO_BIG, e), false, container, context);
 			return null;
 		} catch (IOException e) {
-			Logger.error(this, "Could not capture data - disk full?: "+e, e);
+			Logger.error(this, "Could not capture data - disk full?: " + e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 			return null;
 		}

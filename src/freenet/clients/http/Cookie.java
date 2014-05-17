@@ -216,7 +216,7 @@ public class Cookie {
 	}
 	
 	private static boolean isUSASCII(String name) {
-		for(int i=0;i<name.length();i++) {
+		for(int i=0;i < name.length();i++) {
 			char c = name.charAt(i);
 			// Java chars are unicode. Unicode is a superset of US-ASCII.
 			if(c < 32 || c > 126)

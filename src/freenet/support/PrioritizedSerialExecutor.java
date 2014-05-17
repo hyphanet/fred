@@ -53,7 +53,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			synchronized(jobs) {
 				if(current != null) {
 					if(current.isAlive()) {
-						Logger.error(this, "Already running a thread for "+this+" !!", new Exception("error"));
+						Logger.error(this, "Already running a thread for " + this + " !!", new Exception("error"));
 						return;
 					}
 				}
@@ -88,7 +88,7 @@ public class PrioritizedSerialExecutor implements Executor {
 					try {
 						callback.onIdle();
 					} catch (Throwable t) {
-						Logger.error(this, "Idle callback failed: "+t, t);
+						Logger.error(this, "Idle callback failed: " + t, t);
 					}
 					calledIdleCallback = true;
 					continue;
@@ -96,20 +96,20 @@ public class PrioritizedSerialExecutor implements Executor {
 				calledIdleCallback = false;
 				try {
 					if(logMINOR)
-						Logger.minor(this, "Running job "+job);
+						Logger.minor(this, "Running job " + job);
 					long start = System.currentTimeMillis();
 					job.run();
 					long end = System.currentTimeMillis();
 					if(logMINOR) {
-						Logger.minor(this, "Job "+job+" took "+(end-start)+"ms");
+						Logger.minor(this, "Job " + job + " took " + (end - start) + "ms");
 					}
 				
 					if(statistics != null) {
-						statistics.reportDatabaseJob(job.toString(), end-start);
+						statistics.reportDatabaseJob(job.toString(), end - start);
 					}
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-					Logger.error(this, "While running "+job+" on "+this);
+					Logger.error(this, "Caught " + t, t);
+					Logger.error(this, "While running " + job + " on " + this);
 				}
 			}
 			} finally {
@@ -122,18 +122,18 @@ public class PrioritizedSerialExecutor implements Executor {
 
 		private Runnable checkQueue() {
 			if(!invertOrder) {
-				for(int i=0;i<jobs.length;i++) {
+				for(int i=0;i < jobs.length;i++) {
 					if(!jobs[i].isEmpty()) {
 						if(logMINOR)
-							Logger.minor(this, "Chosen job at priority "+i);
+							Logger.minor(this, "Chosen job at priority " + i);
 						return jobs[i].removeFirst();
 					}
 				}
 			} else {
-				for(int i=jobs.length-1;i>=0;i--) {
+				for(int i=jobs.length - 1;i >= 0;i--) {
 					if(!jobs[i].isEmpty()) {
 						if(logMINOR)
-							Logger.minor(this, "Chosen job at priority "+i);
+							Logger.minor(this, "Chosen job at priority " + i);
 						return jobs[i].removeFirst();
 					}
 				}
@@ -152,7 +152,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, long jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
 		@SuppressWarnings("unchecked") ArrayDeque<Runnable>[] jobs = new ArrayDeque[internalPriorityCount];
-		for (int i=0;i<jobs.length;i++) {
+		for (int i=0;i < jobs.length;i++) {
 			jobs[i] = new ArrayDeque<Runnable>();
 		}
 		this.jobs = jobs;
@@ -191,7 +191,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				return;
 			}
 			running=true;
-			if(logMINOR) Logger.minor(this, "Starting thread... "+name+" : "+runner, new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Starting thread... " + name + " : " + runner, new Exception("debug"));
 			realExecutor.execute(runner, name);
 		}
 	}
@@ -212,7 +212,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public void execute(Runnable job, int prio, String jobName) {
 		synchronized(jobs) {
 			if(logMINOR)
-				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+", executor state: running="+running+" waiting="+waiting);
+				Logger.minor(this, "Queueing " + jobName + " : " + job + " priority " + prio + ", executor state: running=" + running + " waiting=" + waiting);
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
@@ -225,12 +225,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		synchronized(jobs) {
 			if(jobs[prio].contains(job)) {
 				if(logMINOR)
-					Logger.minor(this, "Not queueing job: Job already queued: "+job);
+					Logger.minor(this, "Not queueing job: Job already queued: " + job);
 				return;
 			}
 
 			if(logMINOR)
-				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+", executor state: running="+running+" waiting="+waiting);
+				Logger.minor(this, "Queueing " + jobName + " : " + job + " priority " + prio + ", executor state: running=" + running + " waiting=" + waiting);
 
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
@@ -247,7 +247,7 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	@Override
 	public int[] runningThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 		if (running)
 			retval[priority] = 1;
 		return retval;
@@ -255,7 +255,7 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	@Override
 	public int[] waitingThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 		synchronized(jobs) {
 			if(waiting)
 				retval[priority] = 1;
@@ -274,7 +274,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public int[] getQueuedJobsCountByPriority() {
 		int[] retval = new int[jobs.length];
 		synchronized(jobs) {
-			for(int i=0;i<retval.length;i++)
+			for(int i=0;i < retval.length;i++)
 				retval[i] = jobs[i].size();
 		}
 		return retval;
@@ -307,7 +307,7 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	public boolean anyQueued() {
 		synchronized(jobs) {
-			for(int i=0;i<jobs.length;i++)
+			for(int i=0;i < jobs.length;i++)
 				if(jobs[i].size() > 0) return true;
 		}
 		return false;

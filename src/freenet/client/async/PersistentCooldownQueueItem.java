@@ -34,7 +34,7 @@ public class PersistentCooldownQueueItem {
 		if(key != null)
 			key.removeFrom(container);
 		else
-			Logger.error(this, "No key to delete on "+this+" keyAsBytes="+keyAsBytes);
+			Logger.error(this, "No key to delete on " + this + " keyAsBytes=" + keyAsBytes);
 		container.delete(this);
 	}
 }

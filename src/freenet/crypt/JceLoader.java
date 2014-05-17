@@ -26,7 +26,7 @@ public class JceLoader {
 	}
 	static private boolean checkUse(String prop, String def)
 	{
-		return "true".equalsIgnoreCase(System.getProperty("freenet.jce."+prop, def));
+		return "true".equalsIgnoreCase(System.getProperty("freenet.jce." + prop, def));
 	}
 	static {
 		Provider p;
@@ -130,9 +130,9 @@ public class JceLoader {
 	}
 	
 	static public void dumpLoaded() {
-		System.out.println("BouncyCastle: "+BouncyCastle);
-		System.out.println("SunPKCS11-NSS: "+NSS);
-		System.out.println("SUN: "+SUN);
-		System.out.println("SunJCE: "+SunJCE);
+		System.out.println("BouncyCastle: " + BouncyCastle);
+		System.out.println("SunPKCS11-NSS: " + NSS);
+		System.out.println("SUN: " + SUN);
+		System.out.println("SunJCE: " + SunJCE);
 	}
 }

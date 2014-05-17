@@ -19,7 +19,7 @@ public class AEADStreamsTest extends TestCase {
     
     public void testSuccessfulRoundTrip() throws IOException {
         Random random = new Random(0x96231307);
-        for(int i=0;i<10;i++) {
+        for(int i=0;i < 10;i++) {
             ArrayBucket input = new ArrayBucket();
             BucketTools.fill(input, random, 65536);
             checkSuccessfulRoundTrip(16, random, input, new ArrayBucket(), new ArrayBucket());
@@ -30,7 +30,7 @@ public class AEADStreamsTest extends TestCase {
     
     public void testCorruptedRoundTrip() throws IOException {
         Random random = new Random(0x96231307); // Same seed as first test, intentionally.
-        for(int i=0;i<10;i++) {
+        for(int i=0;i < 10;i++) {
             ArrayBucket input = new ArrayBucket();
             BucketTools.fill(input, random, 65536);
             checkFailedCorruptedRoundTrip(16, random, input, new ArrayBucket(), new ArrayBucket());
@@ -42,7 +42,7 @@ public class AEADStreamsTest extends TestCase {
     public void testTruncatedReadsWritesRoundTrip() throws IOException {
         Random random = new Random(0x49ee92f5);
         ArrayBucket input = new ArrayBucket();
-        BucketTools.fill(input, random, 512*1024);
+        BucketTools.fill(input, random, 512 * 1024);
         checkSuccessfulRoundTripRandomSplits(16, random, input, new ArrayBucket(), new ArrayBucket());
         checkSuccessfulRoundTripRandomSplits(24, random, input, new ArrayBucket(), new ArrayBucket());
         checkSuccessfulRoundTripRandomSplits(32, random, input, new ArrayBucket(), new ArrayBucket());

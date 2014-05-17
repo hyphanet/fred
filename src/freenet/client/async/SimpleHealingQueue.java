@@ -67,7 +67,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 							FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, this, false,
 							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0, cryptoAlgorithm, cryptoKey);
 			} catch (Throwable e) {
-				Logger.error(this, "Caught trying to insert healing block: "+e, e);
+				Logger.error(this, "Caught trying to insert healing block: " + e, e);
 				return false;
 			}
 			runningInserters.put(data, sbi);
@@ -75,10 +75,10 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		try {
 			sbi.schedule(null, context);
 			if(logMINOR)
-				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
+				Logger.minor(this, "Started healing insert " + ctr + " for " + data);
 			return true;
 		} catch (Throwable e) {
-			Logger.error(this, "Caught trying to insert healing block: "+e, e);
+			Logger.error(this, "Caught trying to insert healing block: " + e, e);
 			return false;
 		}
 	}
@@ -117,7 +117,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.remove(data);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Successfully inserted healing block: "+sbi.getURINoEncode()+" for "+data+" ("+sbi.token+ ')');
+			Logger.minor(this, "Successfully inserted healing block: " + sbi.getURINoEncode() + " for " + data + " (" + sbi.token + ')');
 		data.free();
 	}
 
@@ -129,7 +129,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.remove(data);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Failed to insert healing block: "+sbi.getURINoEncode()+" : "+e+" for "+data+" ("+sbi.token+ ')', e);
+			Logger.minor(this, "Failed to insert healing block: " + sbi.getURINoEncode() + " : " + e + " for " + data + " (" + sbi.token + ')', e);
 		data.free();
 	}
 
@@ -141,13 +141,13 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	@Override
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Should never happen
-		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from "+oldState+" to "+newState, new Exception("debug"));
+		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from " + oldState + " to " + newState, new Exception("debug"));
 	}
 
 	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Should never happen
-		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
+		Logger.error(this, "Got metadata on SimpleHealingQueue from " + state + ": " + m, new Exception("debug"));
 	}
 
 	@Override

@@ -104,21 +104,21 @@ public class SSKBlock implements KeyBlock {
 	 */
 	public SSKBlock(byte[] data, byte[] headers, NodeSSK nodeKey, boolean dontVerify) throws SSKVerifyException {
 		if(headers.length != TOTAL_HEADERS_LENGTH)
-			throw new IllegalArgumentException("Headers.length="+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
+			throw new IllegalArgumentException("Headers.length=" + headers.length + " should be " + TOTAL_HEADERS_LENGTH);
 		this.data = data;
 		this.headers = headers;
 		this.nodeKey = nodeKey;
 		if(data.length != DATA_LENGTH)
-			throw new SSKVerifyException("Data length wrong: "+data.length+" should be "+DATA_LENGTH);
+			throw new SSKVerifyException("Data length wrong: " + data.length + " should be " + DATA_LENGTH);
 		this.pubKey = nodeKey.getPubKey();
 		if(pubKey == null)
-			throw new SSKVerifyException("PubKey was null from "+nodeKey);
+			throw new SSKVerifyException("PubKey was null from " + nodeKey);
         // Now verify it
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
         if(hashIdentifier != HASH_SHA256)
             throw new SSKVerifyException("Hash not SHA-256");
         int x = 2;
-		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x+1] & 0xff));
+		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x + 1] & 0xff));
 		x+=2;
 		// Then E(H(docname))
 		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];
@@ -127,8 +127,8 @@ public class SSKBlock implements KeyBlock {
 		headersOffset = x; // is index to start of encrypted headers
 		x += ENCRYPTED_HEADERS_LENGTH;
 		// Extract the signature
-		if(x+SIG_R_LENGTH+SIG_S_LENGTH > headers.length)
-			throw new SSKVerifyException("Headers too short: "+headers.length+" should be at least "+x+SIG_R_LENGTH+SIG_S_LENGTH);
+		if(x + SIG_R_LENGTH + SIG_S_LENGTH > headers.length)
+			throw new SSKVerifyException("Headers too short: " + headers.length + " should be at least " + x + SIG_R_LENGTH + SIG_S_LENGTH);
 		// Compute the hash on the data
 		if(!dontVerify || logMINOR) {	// force verify on log minor
 			byte[] bufR = new byte[SIG_R_LENGTH];
@@ -161,7 +161,7 @@ public class SSKBlock implements KeyBlock {
 			}
 		} // x isn't verified otherwise so no need to += SIG_R_LENGTH + SIG_S_LENGTH
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
-			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
+			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: " + HexUtil.bytesToHex(ehDocname) + "\nfrom key:     " + HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
 		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 

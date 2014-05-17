@@ -78,7 +78,7 @@ public class InsertContext implements Cloneable {
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.
 		public static CompatibilityMode latest() {
-			return values[values.length-1];
+			return values[values.length - 1];
 		}
 	}
 	
@@ -152,7 +152,7 @@ public class InsertContext implements Cloneable {
 
 	public void removeFrom(ObjectContainer container) {
 		if(eventProducer == null) {
-			Logger.error(this, "No EventProducer on InsertContext! activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
+			Logger.error(this, "No EventProducer on InsertContext! activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("error"));
 		} else {
 			container.activate(eventProducer, 1);
 			eventProducer.removeFrom(container);

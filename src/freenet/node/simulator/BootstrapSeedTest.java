@@ -53,7 +53,7 @@ public class BootstrapSeedTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "bootstrap-test", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);
+        node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "bootstrap-test", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5 * 1024 * 1024, true, true, true, true, true, true, true, 12 * 1024, false, true, false, false, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(LogLevel.ERROR); // kill logging
@@ -69,21 +69,21 @@ public class BootstrapSeedTest {
         	int seedConns = node.peers.getConnectedSeedServerPeersVector(null).size();
         	int opennetPeers = node.peers.countValidPeers();
         	int opennetConns = node.peers.countConnectedOpennetPeers();
-        	System.err.println(""+seconds+" : seeds: "+seeds+", connected: "+seedConns
-        			+" opennet: peers: "+opennetPeers+", connected: "+opennetConns);
+        	System.err.println("" + seconds + " : seeds: " + seeds + ", connected: " + seedConns
+        			+ " opennet: peers: " + opennetPeers + ", connected: " + opennetConns);
         	seconds++;
         	if(opennetConns >= targetPeers) {
-        		long timeTaken = System.currentTimeMillis()-startTime;
-        		System.out.println("Completed bootstrap ("+targetPeers+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+")");
+        		long timeTaken = System.currentTimeMillis() - startTime;
+        		System.out.println("Completed bootstrap (" + targetPeers + " peers) in " + timeTaken + "ms (" + TimeUtil.formatTime(timeTaken) + ")");
         		node.park();
         		System.exit(0);
         	}
         }
-        System.err.println("Failed to reach target peers count "+targetPeers+" in 5 minutes.");
+        System.err.println("Failed to reach target peers count " + targetPeers + " in 5 minutes.");
 		node.park();
         System.exit(EXIT_FAILED_TARGET);
 	    } catch (Throwable t) {
-	    	System.err.println("CAUGHT: "+t);
+	    	System.err.println("CAUGHT: " + t);
 	    	t.printStackTrace();
 	    	try {
 	    		if(node != null)

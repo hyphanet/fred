@@ -45,7 +45,7 @@ public class LoggingConfigHandler {
 		@Override
 		public String[] getPossibleValues() {
 			LogLevel[] priorities = LogLevel.values();
-			ArrayList<String> values = new ArrayList<String>(priorities.length+1);
+			ArrayList<String> values = new ArrayList<String>(priorities.length + 1);
 			for(LogLevel p : priorities)
 				values.add(p.name());
 			
@@ -106,7 +106,7 @@ public class LoggingConfigHandler {
 							logDir = f;
 						} else {
 							// Discard old data
-							fileLoggerHook.switchBaseFilename(f.getPath()+File.separator+LOG_PREFIX);
+							fileLoggerHook.switchBaseFilename(f.getPath() + File.separator + LOG_PREFIX);
 							logDir = f;
 							new Deleter(logDir).start();
 						}
@@ -270,7 +270,7 @@ public class LoggingConfigHandler {
 		try {
 			preSetLogDir(logDir);
 		} catch (InvalidConfigValueException e3) {
-			System.err.println("Cannot set log dir: "+logDir+": "+e3);
+			System.err.println("Cannot set log dir: " + logDir + ": " + e3);
 			e3.printStackTrace();
 		}
 		synchronized(enableLoggerLock) {
@@ -280,7 +280,7 @@ public class LoggingConfigHandler {
 				config.forceUpdate("priority");
 				config.forceUpdate("priorityDetail");
 			} catch (InvalidConfigValueException e2) {
-				System.err.println("Invalid config value for logger.priority in config file: "+config.getString("priority"));
+				System.err.println("Invalid config value for logger.priority in config file: " + config.getString("priority"));
 				// Leave it at the default.
 			} catch (NodeNeedRestartException e) {
 				// impossible
@@ -294,10 +294,10 @@ public class LoggingConfigHandler {
 				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", logRotateInterval, LogLevel.DEBUG /* filtered by chain */, false, true, 
 				    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 			} catch (IOException e) {
-				System.err.println("CANNOT START LOGGER: "+e.getMessage());
+				System.err.println("CANNOT START LOGGER: " + e.getMessage());
 				return;
 			} catch (IntervalParseException e) {
-				System.err.println("INVALID LOGGING INTERVAL: "+e.getMessage());
+				System.err.println("INVALID LOGGING INTERVAL: " + e.getMessage());
 				logRotateInterval = "5MINUTE";
 				try {
 					hook = 
@@ -305,10 +305,10 @@ public class LoggingConfigHandler {
 					    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", logRotateInterval, LogLevel.DEBUG /* filtered by chain */, false, true, 
 					    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 				} catch (IntervalParseException e1) {
-					System.err.println("CANNOT START LOGGER: IMPOSSIBLE: "+e1.getMessage());
+					System.err.println("CANNOT START LOGGER: IMPOSSIBLE: " + e1.getMessage());
 					return;
 				} catch (IOException e1) {
-					System.err.println("CANNOT START LOGGER: "+e1.getMessage());
+					System.err.println("CANNOT START LOGGER: " + e1.getMessage());
 					return;
 				}
 			}
@@ -352,7 +352,7 @@ public class LoggingConfigHandler {
 		}
 
 		void start() {
-			executor.execute(this, "Old log directory "+logDir+" deleter");
+			executor.execute(this, "Old log directory " + logDir + " deleter");
 		}
 		
 		@Override

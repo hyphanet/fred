@@ -35,10 +35,10 @@ public class RedirectDirPutFile extends DirPutFile {
 		try {
 			targetURI = new FreenetURI(target);
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: " + e, identifier, global);
 		}
         if(logMINOR)
-        	Logger.minor(RedirectDirPutFile.class, "targetURI = "+targetURI);
+        	Logger.minor(RedirectDirPutFile.class, "targetURI = " + targetURI);
         String mimeType;
         if(contentTypeOverride != null)
         	mimeType = contentTypeOverride;

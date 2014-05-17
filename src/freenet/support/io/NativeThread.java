@@ -66,15 +66,15 @@ public class NativeThread extends Thread {
 		Logger.minor(NativeThread.class, "Running init()");
 		// Loading the NativeThread library isn't useful on macos
 		boolean maybeLoadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name")));
-		Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
+		Logger.debug(NativeThread.class, "Run init(): should loadNative=" + maybeLoadNative);
 		if(maybeLoadNative && LibraryLoader.loadNative("/freenet/support/io/", "NativeThread")) {
 			NATIVE_PRIORITY_BASE = getLinuxPriority();
 			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
-			System.out.println("Using the NativeThread implementation (base nice level is "+NATIVE_PRIORITY_BASE+')');
+			System.out.println("Using the NativeThread implementation (base nice level is " + NATIVE_PRIORITY_BASE + ')');
 			// they are 3 main prio levels
 			HAS_THREE_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= 3;
 			HAS_ENOUGH_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= ENOUGH_NICE_LEVELS;
-			HAS_PLENTY_NICE_LEVELS = NATIVE_PRIORITY_RANGE >=JAVA_PRIORITY_RANGE;
+			HAS_PLENTY_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= JAVA_PRIORITY_RANGE;
 			if(!(HAS_ENOUGH_NICE_LEVELS && HAS_THREE_NICE_LEVELS))
 				System.err.println("WARNING!!! The JVM has been niced down to a level which won't allow it to schedule threads properly! LOWER THE NICE LEVEL!!");
 			_loadNative = true;
@@ -87,7 +87,7 @@ public class NativeThread extends Thread {
 			HAS_PLENTY_NICE_LEVELS = true;
 			_loadNative = false;
 		}
-		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
+		Logger.minor(NativeThread.class, "Run init(): _loadNative = " + _loadNative);
 	}
 	
 
@@ -124,7 +124,7 @@ public class NativeThread extends Thread {
 	@Override
 	public final void run() {
 		if(!setNativePriority(currentPriority))
-			System.err.println("setNativePriority("+currentPriority+") has failed!");
+			System.err.println("setNativePriority(" + currentPriority + ") has failed!");
 		super.run();
 		realRun();
 	}
@@ -137,7 +137,7 @@ public class NativeThread extends Thread {
 	 * Rescale java priority and set linux priority.
 	 */
 	private boolean setNativePriority(int prio) {
-		Logger.minor(this, "setNativePriority("+prio+")");
+		Logger.minor(this, "setNativePriority(" + prio + ")");
 		setPriority(prio);
 		if(!_loadNative) {
 			Logger.minor(this, "_loadNative is false");
@@ -155,8 +155,8 @@ public class NativeThread extends Thread {
 			 * Let's disable the renicing as we can't rely on it anymore.
 			 */
 			_disabled = true;
-			Logger.error(this, "Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: "+NATIVE_PRIORITY_BASE+" actual nice level: "+realPrio+" on "+this);
-			System.err.println("Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: "+NATIVE_PRIORITY_BASE+" actual nice level: "+realPrio+" on "+this);
+			Logger.error(this, "Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: " + NATIVE_PRIORITY_BASE + " actual nice level: " + realPrio + " on " + this);
+			System.err.println("Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: " + NATIVE_PRIORITY_BASE + " actual nice level: " + realPrio + " on " + this);
 			new NullPointerException().printStackTrace();
 			return false;
 		}
@@ -166,9 +166,9 @@ public class NativeThread extends Thread {
 		if(prio < currentPriority)
 			throw new IllegalStateException("You're trying to set a thread priority" +
 				" above the current value!! It's not possible if you aren't root" +
-				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
-				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
-		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
+				" and shouldn't ever occur in our code. (asked=" + prio + ':' + linuxPriority + " currentMax=" +
+				+currentPriority + ':' + NATIVE_PRIORITY_BASE + ") SHOUDLN'T HAPPEN, please report!");
+		Logger.minor(this, "Setting native priority to " + linuxPriority + " (base=" + NATIVE_PRIORITY_BASE + ") for " + this);
 		return setLinuxPriority(linuxPriority);
 	}
 	

@@ -18,7 +18,7 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	
 	@Override
 	public String toString() {
-		return super.toString()+":"+object;
+		return super.toString() + ":" + object;
 	}
 
 	@Override

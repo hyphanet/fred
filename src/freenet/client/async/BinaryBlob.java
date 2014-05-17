@@ -25,7 +25,7 @@ public abstract class BinaryBlob {
 		byte[] data = block.getRawData();
 		byte[] pubkey = block.getPubkeyBytes();
 		writeBlobHeader(binaryBlobStream, BLOB_BLOCK, BLOB_BLOCK_VERSION, 
-				9+keyData.length+headers.length+data.length+(pubkey==null?0:pubkey.length));
+				9 + keyData.length + headers.length + data.length + (pubkey == null?0:pubkey.length));
 		binaryBlobStream.writeShort(block.getKey().getType());
 		binaryBlobStream.writeByte(keyData.length);
 		binaryBlobStream.writeShort(headers.length);
@@ -87,7 +87,7 @@ public abstract class BinaryBlob {
 				int pubkeyLen = dis.readUnsignedShort();
 				int total = 9 + keyLen + headersLen + dataLen + pubkeyLen;
 				if(blobLength != total)
-					throw new BinaryBlobFormatException("Binary blob not same length as data: blobLength="+blobLength+" total="+total);
+					throw new BinaryBlobFormatException("Binary blob not same length as data: blobLength=" + blobLength + " total=" + total);
 				byte[] keyBytes = new byte[keyLen];
 				byte[] headersBytes = new byte[headersLen];
 				byte[] dataBytes = new byte[dataLen];
@@ -100,7 +100,7 @@ public abstract class BinaryBlob {
 				try {
 					block = Key.createBlock(keyType, keyBytes, headersBytes, dataBytes, pubkeyBytes);
 				} catch (KeyVerifyException e) {
-					throw new BinaryBlobFormatException("Invalid key: "+e.getMessage(), e);
+					throw new BinaryBlobFormatException("Invalid key: " + e.getMessage(), e);
 				}
 				
 				blocks.add(block);
@@ -109,7 +109,7 @@ public abstract class BinaryBlob {
 				if(tolerant) {
 					FileUtil.skipFully(dis, blobLength);
 				} else {
-					throw new BinaryBlobFormatException("Unknown blob type: "+blobType);
+					throw new BinaryBlobFormatException("Unknown blob type: " + blobType);
 				}
 			}
 		}

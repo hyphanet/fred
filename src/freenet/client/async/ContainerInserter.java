@@ -184,9 +184,9 @@ public class ContainerInserter implements ClientPutState {
 				createZipBucket(os, container));
 			os = null; // create*Bucket closes os
 			if(logMINOR)
-				Logger.minor(this, "Archive size is "+outputBucket.size());
+				Logger.minor(this, "Archive size is " + outputBucket.size());
 			
-			if(logMINOR) Logger.minor(this, "We are using "+archiveType);
+			if(logMINOR) Logger.minor(this, "We are using " + archiveType);
 			
 			// Now we have to insert the Archive we have generated.
 			
@@ -209,7 +209,7 @@ public class ContainerInserter implements ClientPutState {
 		// Treat it as a splitfile for purposes of determining reinsert count.
 		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		if(logMINOR)
-			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
+			Logger.minor(this, "Inserting container: " + sfi + " for " + this);
 		cb.onTransition(this, sfi, container);
 		try {
 			sfi.schedule(container, context);
@@ -251,7 +251,7 @@ public class ContainerInserter implements ClientPutState {
 		for(Metadata m: metas) {
 			try {
 				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m.writeToByteArray());
-				String nameInArchive = ".metadata-"+(x++);
+				String nameInArchive = ".metadata-" + (x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
 				m.resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
@@ -284,13 +284,13 @@ public class ContainerInserter implements ClientPutState {
 	
 	public boolean objectCanUpdate(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+			Logger.minor(this, "objectCanUpdate() on " + this, new Exception("debug"));
 		return true;
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+			Logger.minor(this, "objectCanNew() on " + this, new Exception("debug"));
 		return true;
 	}
 	
@@ -307,7 +307,7 @@ public class ContainerInserter implements ClientPutState {
 
 		for(ContainerElement ph : containerItems) {
 			if(logMINOR)
-				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
+				Logger.minor(this, "Putting into tar: " + ph + " data length " + ph.data.size() + " name " + ph.targetInArchive);
 			ze = new TarArchiveEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
@@ -351,9 +351,9 @@ public class ContainerInserter implements ClientPutState {
 				HashMap<String,Object> hm = (HashMap<String, Object>) o;
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				//System.out.println("Decompose: "+name+" (SubDir)");
-				smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
+				smc.addItem(name, makeManifest(hm, archivePrefix + name + '/'));
 				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
+					Logger.debug(this, "Sub map for " + name + " : " + subMap.size() + " elements from " + hm.size());
 			} else if (o instanceof Metadata) {
 				//already Metadata, take it as is
 				//System.out.println("Decompose: "+name+" (Metadata)");
@@ -372,8 +372,8 @@ public class ContainerInserter implements ClientPutState {
 					m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
 				} else {
 					//System.out.println("Decompose: "+name+" (ManifestElement, Data)");
-					containerItems.add(new ContainerElement(element.data, archivePrefix+name));
-					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
+					containerItems.add(new ContainerElement(element.data, archivePrefix + name));
+					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix + element.fullName, cm);
 				}
 				smc.addItem(name, m);
 			}

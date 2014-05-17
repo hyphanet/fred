@@ -35,7 +35,7 @@ public class SSLNetworkInterface extends NetworkInterface {
 		NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
 		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
 		if(failedBind != null) {
-			System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
+			System.err.println("Could not bind to some of the interfaces specified for port " + port + " : " + Arrays.toString(failedBind));
 		}
 		return iface;
 	}

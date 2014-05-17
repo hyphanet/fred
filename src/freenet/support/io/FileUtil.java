@@ -40,7 +40,7 @@ import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
 
-	private static final int BUFFER_SIZE = 32*1024;
+	private static final int BUFFER_SIZE = 32 * 1024;
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
@@ -216,8 +216,8 @@ final public class FileUtil {
 
 	/** Round up a value to the next multiple of a power of 2 */
 	private static long roundup_2n (long val, int blocksize) {
-		int mask=blocksize-1;
-		return (val+mask)&~mask;
+		int mask=blocksize - 1;
+		return (val + mask) & ~mask;
 	}
 
 	/**
@@ -376,7 +376,7 @@ final public class FileUtil {
 		long skipped = 0;
 		while(skipped < skip) {
 			long x = is.skip(skip - skipped);
-			if(x <= 0) throw new IOException("Unable to skip "+(skip - skipped)+" bytes");
+			if(x <= 0) throw new IOException("Unable to skip " + (skip - skipped) + " bytes");
 			skipped += x;
 		}
 	}
@@ -386,7 +386,7 @@ final public class FileUtil {
 		FileOutputStream fos = null;
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
 		if(logMINOR)
-			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
+			Logger.minor(FileUtil.class, "Writing to " + file + " to be renamed to " + target);
 
 		try {
 			dis = new DataInputStream(input);
@@ -456,7 +456,7 @@ final public class FileUtil {
             	if(overwrite)
             		dest.delete();
             	else {
-            		System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
+            		System.err.println("Not overwriting " + dest + " - already exists moving " + orig);
             		return false;
             	}
             }
@@ -640,11 +640,11 @@ final public class FileUtil {
 	
 	public static boolean secureDeleteAll(File wd) throws IOException {
 		if(!wd.isDirectory()) {
-			System.err.println("DELETING FILE "+wd);
+			System.err.println("DELETING FILE " + wd);
 			try {
 				secureDelete(wd);
 			} catch (IOException e) {
-				Logger.error(FileUtil.class, "Could not delete file: "+wd, e);
+				Logger.error(FileUtil.class, "Could not delete file: " + wd, e);
 				return false;
 			}
 		} else {
@@ -652,7 +652,7 @@ final public class FileUtil {
 				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
-				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+				Logger.error(FileUtil.class, "Could not delete directory: " + wd);
 			}
 		}
 		return true;
@@ -663,9 +663,9 @@ final public class FileUtil {
 	 * important data below it! */
 	public static boolean removeAll(File wd) {
 		if(!wd.isDirectory()) {
-			System.err.println("DELETING FILE "+wd);
+			System.err.println("DELETING FILE " + wd);
 			if(!wd.delete() && wd.exists()) {
-				Logger.error(FileUtil.class, "Could not delete file: "+wd);
+				Logger.error(FileUtil.class, "Could not delete file: " + wd);
 				return false;
 			}
 		} else {
@@ -673,7 +673,7 @@ final public class FileUtil {
 				if(!removeAll(subfile)) return false;
 			}
 			if(!wd.delete()) {
-				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+				Logger.error(FileUtil.class, "Could not delete directory: " + wd);
 			}
 		}
 		return true;
@@ -686,7 +686,7 @@ final public class FileUtil {
 		if(size > 0) {
 			RandomAccessFile raf = null;
 			try {
-				System.out.println("Securely deleting "+file+" which is of length "+size+" bytes...");
+				System.out.println("Securely deleting " + file + " which is of length " + size + " bytes...");
 				raf = new RandomAccessFile(file, "rw");
 				long count;
 				// Random data first.
@@ -700,7 +700,7 @@ final public class FileUtil {
 			}
 		}
 		if((!file.delete()) && file.exists())
-			throw new IOException("Unable to delete file "+file);
+			throw new IOException("Unable to delete file " + file);
 	}
 
 	/** @Deprecated */
@@ -765,7 +765,7 @@ final public class FileUtil {
 			String[] methods = {"setReadable", "setWritable", "setExecutable"};
 			boolean[] perms = {r, w, x};
 
-			for (int i=0; i<methods.length; ++i) {
+			for (int i=0; i < methods.length; ++i) {
 				Method m = File.class.getDeclaredMethod(methods[i], boolean.class, boolean.class);
 				if (m != null) {
 					success &= (Boolean)m.invoke(f, false, false);
@@ -810,13 +810,13 @@ final public class FileUtil {
 			BucketTools.copy(inBucket, outBucket);
 			if(executable) {
 			    if(!(copyTo.setExecutable(true) || copyTo.canExecute())) {
-			        System.err.println("Unable to preserve executable bit when copying "+copyFrom+" to "+copyTo+" - you may need to make it executable!");
+			        System.err.println("Unable to preserve executable bit when copying " + copyFrom + " to " + copyTo + " - you may need to make it executable!");
 			        // return false; ??? FIXME debatable.
 			    }
 			}
 			return true;
 		} catch (IOException e) {
-			System.err.println("Unable to copy from "+copyFrom+" to "+copyTo);
+			System.err.println("Unable to copy from " + copyFrom + " to " + copyTo);
 			return false;
 		}
 	}
@@ -837,7 +837,7 @@ final public class FileUtil {
 	    int read = 0;
 	    while ((remaining == -1) || (remaining > 0)) {
 	        synchronized(FileUtil.class) {
-	            if(cis == null || cisCounter > Long.MAX_VALUE/2) {
+	            if(cis == null || cisCounter > Long.MAX_VALUE / 2) {
 	                // Reset it well before the birthday paradox (note this is actually counting bytes).
 	                byte[] key = new byte[16];
 	                byte[] iv = new byte[16];

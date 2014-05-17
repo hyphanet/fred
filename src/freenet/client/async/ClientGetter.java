@@ -172,7 +172,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this+" persistent="+persistent()+" for "+uri);
+			Logger.minor(this, "Starting " + this + " persistent=" + persistent() + " for " + uri);
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
@@ -253,7 +253,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Succeeded from "+state+" on "+this);
+			Logger.minor(this, "Succeeded from " + state + " on " + this);
 		// Fetching the container is essentially a full success, we should update the latest known good.
 		context.uskManager.checkUSK(uri, persistent(), container, false);
 		if(persistent()) {
@@ -263,10 +263,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		try {
 			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: " + ioe), null, container, context);
 			return;
 		} catch (BinaryBlobAlreadyClosedException e) {
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: " + e, e), null, container, context);
 			return;
 		}
 		String mimeType = clientMetadata == null ? null : clientMetadata.getMIMEType();
@@ -276,7 +276,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		
 		if(forceCompatibleExtension != null && ctx.filterData) {
 		    if(mimeType == null) {
-		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+"\""), null, container, context);
+		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \"" + forceCompatibleExtension + "\""), null, container, context);
 		        return;
 		    }
 			try {
@@ -326,7 +326,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		try {
 			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else finalResult = returnBucket;
-			if(logMINOR) Logger.minor(this, "Writing final data to "+finalResult+" return bucket is "+returnBucket);
+			if(logMINOR) Logger.minor(this, "Writing final data to " + finalResult + " return bucket is " + returnBucket);
 			dataOutput .connect(dataInput);
 			result = new FetchResult(clientMetadata, finalResult);
 
@@ -375,20 +375,20 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			/*Not really the state's fault*/
 		} catch(URISyntaxException e) {
 			//Impossible
-			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
+			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: " + e, e);
 			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
 			/*Not really the state's fault*/
 		} catch(CompressionOutputSizeException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			ex = new FetchException(FetchException.TOO_BIG, e);
 		} catch(IOException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			ex = new FetchException(FetchException.BUCKET_ERROR, e);
 		} catch(FetchException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			ex = e;
 		} catch(Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 			ex = new FetchException(FetchException.INTERNAL_ERROR, t);
 		} finally {
 			Closer.close(dataInput);
@@ -434,7 +434,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 */
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context, boolean force) {
 		if(logMINOR)
-			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
+			Logger.minor(this, "Failed from " + state + " : " + e + " on " + this, e);
 		if(persistent()) {
 			container.activate(uri, 5);
 			container.activate(ctx, 1);
@@ -468,7 +468,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					ar = archiveRestarts;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Archive restart on "+this+" ar="+ar);
+					Logger.minor(this, "Archive restart on " + this + " ar=" + ar);
 				if(ar > ctx.maxArchiveRestarts)
 					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
 				else {
@@ -485,7 +485,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			synchronized(this) {
 				if(finished && !force) {
 					if(!cancelled)
-						Logger.error(this, "Already finished - not calling callbacks on "+this, new Exception("error"));
+						Logger.error(this, "Already finished - not calling callbacks on " + this, new Exception("error"));
 					alreadyFinished = true;
 				}
 				finished = true;
@@ -499,17 +499,17 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					// the request is already failed but fblob creation failed too
 					// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
 					if(e.mode != FetchException.CANCELLED && !force)
-						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: " + ioe);
 				} catch (BinaryBlobAlreadyClosedException ee) {
 					if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
-						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
+						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: " + ee, ee);
 				}
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode());
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
-			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
+			if(logMINOR) Logger.minor(this, "onFailure(" + e + ", " + state + ") on " + this + " for " + uri, e);
 			final FetchException e1 = e;
 			if(persistent())
 				container.store(this);
@@ -538,11 +538,11 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 */
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Cancelling " + this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
 			if(super.cancel()) {
-				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
+				if(logMINOR) Logger.minor(this, "Already cancelled " + this);
 				return;
 			}
 			s = currentState;
@@ -552,7 +552,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(s != null) {
 			if(persistent())
 				container.activate(s, 1);
-			if(logMINOR) Logger.minor(this, "Cancelling "+s+" for "+this+" instance "+super.toString());
+			if(logMINOR) Logger.minor(this, "Cancelling " + s + " for " + this + " instance " + super.toString());
 			s.cancel(container, context);
 			if(persistent())
 				container.deactivate(s, 1);
@@ -564,7 +564,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			state = currentState;
 		}
 		if(state == null) return;
-		Logger.error(this, "Cancelling "+currentState+" did not call onFailure(), so did not removeFrom() or call callback");
+		Logger.error(this, "Cancelling " + currentState + " did not call onFailure(), so did not removeFrom() or call callback");
 		this.onFailure(new FetchException(FetchException.CANCELLED), state, container, context);
 	}
 
@@ -636,9 +636,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent()+" instance = "+super.toString(), new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Transition: " + oldState + " -> " + newState + " on " + this + " persistent = " + persistent() + " instance = " + super.toString(), new Exception("debug"));
 			} else {
-				if(logMINOR) Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Ignoring transition: " + oldState + " -> " + newState + " because current = " + currentState + " on " + this + " persistent = " + persistent(), new Exception("debug"));
 				return;
 			}
 		}
@@ -661,7 +661,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 */
 	public boolean canRestart() {
 		if(currentState != null && !finished) {
-			if(logMINOR) Logger.minor(this, "Cannot restart because not finished for "+uri);
+			if(logMINOR) Logger.minor(this, "Cannot restart because not finished for " + uri);
 			return false;
 		}
 		return true;
@@ -702,15 +702,15 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(binaryBlobWriter, 1);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
+			Logger.minor(this, "Adding key " + block.getClientKey().getURI() + " to " + this, new Exception("debug"));
 		try {
 			binaryBlobWriter.addKey(block, context, container);
 		} catch (IOException e) {
-			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
+			Logger.error(this, "Failed to write key to binary blob stream: " + e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: " + e), null, container, context);
 		} catch (BinaryBlobAlreadyClosedException e) {
-			Logger.error(this, "Failed to write key to binary blob stream (already closed??): "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): "+e), null, container, context);
+			Logger.error(this, "Failed to write key to binary blob stream (already closed??): " + e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): " + e), null, container, context);
 		}
 	}
 
@@ -851,7 +851,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	@Override
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
-		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size " + size + " (compressed " + compressed + ") blocks " + blocksReq + " / " + blocksTotal);
 		onExpectedSize(size, container, context);
 		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;

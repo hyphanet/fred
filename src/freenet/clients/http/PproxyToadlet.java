@@ -76,11 +76,11 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
-		if(logMINOR) Logger.minor(this, "Pproxy received POST on "+path);
+		if(logMINOR) Logger.minor(this, "Pproxy received POST on " + path);
 
 		final PluginManager pm = node.pluginManager;
 
-		if(path.length()>0)
+		if(path.length() > 0)
 		{
 			// Plugins handle their own formPassword checking.
 			try
@@ -313,11 +313,11 @@ public class PproxyToadlet extends Toadlet {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("PproxyToadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("PproxyToadlet." + key, new String[] { pattern }, new String[] { value });
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("PproxyToadlet."+key);
+		return NodeL10n.getBase().getString("PproxyToadlet." + key);
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
@@ -333,7 +333,7 @@ public class PproxyToadlet extends Toadlet {
 		PluginManager pm = node.pluginManager;
 
 		if(logMINOR)
-			Logger.minor(this, "Pproxy fetching "+path);
+			Logger.minor(this, "Pproxy fetching " + path);
 		try {
 			if (path.equals("")) {
 		        if(!ctx.checkFullAccess(this))
@@ -439,7 +439,7 @@ public class PproxyToadlet extends Toadlet {
 			ctx.forceDisconnect();
 		} catch (Throwable t) {
 			ctx.forceDisconnect();
-			Logger.error(this, "Caught: "+t, t);
+			Logger.error(this, "Caught: " + t, t);
 			writeInternalError(t, ctx);
 		}
 	}
@@ -503,7 +503,7 @@ public class PproxyToadlet extends Toadlet {
 					pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
 				if(ver != -1)
-					pluginRow.addChild("td", pi.getPluginVersion()+" ("+ver+")");
+					pluginRow.addChild("td", pi.getPluginVersion() + " (" + ver + ")");
 				else
 					pluginRow.addChild("td", pi.getPluginVersion());
 				if(advancedMode) {
@@ -583,13 +583,13 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "plugin-name", pluginDescription.name });
 				option.addChild("i", pluginDescription.getLocalisedPluginName());
 				if(pluginDescription.deprecated)
-					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
+					option.addChild("b", " (" + l10n("loadLabelDeprecated") + ")");
 				if(pluginDescription.experimental)
-					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+					option.addChild("b", " (" + l10n("loadLabelExperimental") + ")");
 				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
+					option.addChild("#", " (" + l10n("pluginVersion") + " " + pluginDescription.minimumVersion + ")");
 				}
-				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
+				option.addChild("#", " - " + pluginDescription.getLocalisedPluginDescription());
 			}
 		}
 		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });

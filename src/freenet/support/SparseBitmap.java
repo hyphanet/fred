@@ -158,7 +158,7 @@ public class SparseBitmap implements Iterable<int[]> {
 
 		@Override
 		public String toString() {
-			return "Range:"+start+"->"+end;
+			return "Range:" + start + "->" + end;
 		}
 	}
 
@@ -173,7 +173,7 @@ public class SparseBitmap implements Iterable<int[]> {
 	public int notOverlapping(int start, int end) {
 		// FIXME OPTIMIZE: this is an incredibly stupid and inefficient but demonstrably correct way to evaluate this. Implement something better!
 		int total = 0;
-		for(int i=start;i<=end;i++) {
+		for(int i=start;i <= end;i++) {
 			if(!contains(i, i))
 				total++;
 		}

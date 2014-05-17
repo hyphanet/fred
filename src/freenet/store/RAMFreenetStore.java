@@ -180,7 +180,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			try {
 				ret = callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, false, null, null);
 			} catch (KeyVerifyException e) {
-				Logger.error(this, "Caught while migrating: "+e, e);
+				Logger.error(this, "Caught while migrating: " + e, e);
 				continue;
 			}
 			try {

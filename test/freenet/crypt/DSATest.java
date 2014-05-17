@@ -31,20 +31,20 @@ public class DSATest extends TestCase{
      * "Example of the DSA" of FIPS PUB 186-2.
      * We can consider them sure examples */
     private static final BigInteger FIPS_P = new NativeBigInteger(
-                                "8df2a494492276aa3d25759bb06869cbeac0d83afb8d0cf7"+
-                                "cbb8324f0d7882e5d0762fc5b7210eafc2e9adac32ab7aac"+
+                                "8df2a494492276aa3d25759bb06869cbeac0d83afb8d0cf7" +
+                                "cbb8324f0d7882e5d0762fc5b7210eafc2e9adac32ab7aac" +
                                 "49693dfbf83724c2ec0736ee31c80291",16);
     private static final BigInteger FIPS_Q = new NativeBigInteger(
                                 "c773218c737ec8ee993b4f2ded30f48edace915f",16);
     private static final BigInteger FIPS_G = new NativeBigInteger(
-                                "626d027839ea0a13413163a55b4cb500299d5522956cefcb"+
-                                "3bff10f399ce2c2e71cb9de5fa24babf58e5b79521925c9c"+
+                                "626d027839ea0a13413163a55b4cb500299d5522956cefcb" +
+                                "3bff10f399ce2c2e71cb9de5fa24babf58e5b79521925c9c" +
                                 "c42e9f6f464b088cc572af53e6d78802",16);
     private static final BigInteger FIPS_X = new NativeBigInteger(
                                 "2070b3223dba372fde1c0ffc7b2e3b498b260614",16);
     private static final BigInteger FIPS_Y = new NativeBigInteger(
-                                "19131871d75b1612a819f29d78d1b0d7346f7aa77bb62a85"+
-                                "9bfd6c5675da9d212d3a36ef1672ef660b8c7c255cc0ec74"+
+                                "19131871d75b1612a819f29d78d1b0d7346f7aa77bb62a85" +
+                                "9bfd6c5675da9d212d3a36ef1672ef660b8c7c255cc0ec74" +
                                 "858fba33f44c06699630a76b030ee333",16);
     private static final BigInteger FIPS_K = new NativeBigInteger(
                                 "358dad571462710f50e254cf1a376b2bdeaadfbf",16);

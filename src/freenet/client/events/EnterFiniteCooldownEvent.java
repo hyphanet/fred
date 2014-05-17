@@ -14,7 +14,7 @@ public class EnterFiniteCooldownEvent implements ClientEvent {
 
 	@Override
 	public String getDescription() {
-		return "Wake up in "+TimeUtil.formatTime(wakeupTime - System.currentTimeMillis(), 2, true);
+		return "Wake up in " + TimeUtil.formatTime(wakeupTime - System.currentTimeMillis(), 2, true);
 	}
 
 	@Override

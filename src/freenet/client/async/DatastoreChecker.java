@@ -106,10 +106,10 @@ public class DatastoreChecker implements PrioRunnable {
 		this.node = node;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
 		persistentQueue = new ArrayDeque[priorities];
-		for(int i=0;i<priorities;i++)
+		for(int i=0;i < priorities;i++)
 			persistentQueue[i] = new ArrayDeque<PersistentItem>();
 		transientQueue = new ArrayDeque[priorities];
-		for(int i=0;i<priorities;i++)
+		for(int i=0;i < priorities;i++)
 			transientQueue[i] = new ArrayDeque<TransientItem>();
 	}
 
@@ -161,7 +161,7 @@ public class DatastoreChecker implements PrioRunnable {
 					BlockSet blocks = item.blocks;
 					container.activate(getter, 1);
 					if(getter.isStorageBroken(container)) {
-						Logger.error(this, "Getter is broken as stored: "+getter);
+						Logger.error(this, "Getter is broken as stored: " + getter);
 						container.delete(getter);
 						container.delete(item);
 						continue;
@@ -196,9 +196,9 @@ public class DatastoreChecker implements PrioRunnable {
 					}
 					container.deactivate(getter, 1);
 				} catch (NullPointerException e) {
-					Logger.error(this, "NPE for getter in DatastoreChecker: "+e+" - probably leftover data from an incomplete deletion", e);
+					Logger.error(this, "NPE for getter in DatastoreChecker: " + e + " - probably leftover data from an incomplete deletion", e);
 					try {
-						Logger.error(this, "Getter: "+getter);
+						Logger.error(this, "Getter: " + getter);
 					} catch (Throwable t) {
 						// Ignore
 					}
@@ -215,14 +215,14 @@ public class DatastoreChecker implements PrioRunnable {
 	private boolean trimPersistentQueue(short prio, ObjectContainer container) {
 		synchronized(this) {
 			int preQueueSize = 0;
-			for(int i=0;i<prio;i++) {
+			for(int i=0;i < prio;i++) {
 				for(PersistentItem item: persistentQueue[i]) {
 					preQueueSize += item.keys.length;
 				}
 			}
 			if(preQueueSize > MAX_PERSISTENT_KEYS) {
 				// Dump everything
-				for(int i=prio+1;i<persistentQueue.length;i++) {
+				for(int i=prio + 1;i < persistentQueue.length;i++) {
 					for(PersistentItem item : persistentQueue[i]) {
 						item.checkerItem.chosenBy = 0;
 						container.store(item.checkerItem);
@@ -232,7 +232,7 @@ public class DatastoreChecker implements PrioRunnable {
 				return true;
 			} else {
 				int postQueueSize = 0;
-				for(int i=prio+1;i<persistentQueue.length;i++) {
+				for(int i=prio + 1;i < persistentQueue.length;i++) {
 					for(PersistentItem item: persistentQueue[i]) {
 						postQueueSize += item.keys.length;
 					}
@@ -240,7 +240,7 @@ public class DatastoreChecker implements PrioRunnable {
 				if(postQueueSize + preQueueSize < MAX_PERSISTENT_KEYS)
 					return false;
 				// Need to dump some stuff.
-				for(int i=persistentQueue.length-1;i>prio;i--) {
+				for(int i=persistentQueue.length - 1;i > prio;i--) {
 					PersistentItem item;
 					while((item = persistentQueue[i].pollLast()) != null) {
 						item.checkerItem.chosenBy = 0;
@@ -260,7 +260,7 @@ public class DatastoreChecker implements PrioRunnable {
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
 		Key[] checkKeys = getter.listKeys(null);
 		short prio = getter.getPriorityClass(null);
-		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
+		if(logMINOR) Logger.minor(this, "Queueing transient request " + getter + " priority " + prio + " keys " + checkKeys.length);
 		// FIXME check using store.probablyInStore
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);
 		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
@@ -274,7 +274,7 @@ public class DatastoreChecker implements PrioRunnable {
 					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
 					getter, blocks);
 			if(logMINOR && transientQueue[prio].contains(queueItem)) {
-				Logger.error(this, "Transient request "+getter+" is already queued!");
+				Logger.error(this, "Transient request " + getter + " is already queued!");
 				return;
 			}
 			transientQueue[prio].add(queueItem);
@@ -291,7 +291,7 @@ public class DatastoreChecker implements PrioRunnable {
 	 */
 	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container, ClientContext context) {
 		if(getter.isCancelled(container)) { // We do not care about cooldowns here; we will check all keys regardless, so only ask isCancelled().
-			if(logMINOR) Logger.minor(this, "Request is empty, not checking store: "+getter);
+			if(logMINOR) Logger.minor(this, "Request is empty, not checking store: " + getter);
 			return;
 		}
 		Key[] checkKeys = getter.listKeys(container);
@@ -308,7 +308,7 @@ public class DatastoreChecker implements PrioRunnable {
 			// FIXME only add if queue not full.
 			int queueSize = 0;
 			// Only count queued keys at no higher priority than this request.
-			for(short p = 0;p<=prio;p++) {
+			for(short p = 0;p <= prio;p++) {
 				for(PersistentItem persist: persistentQueue[p]) {
 					queueSize += persist.keys.length;
 				}
@@ -327,7 +327,7 @@ public class DatastoreChecker implements PrioRunnable {
 					getter,	sched, item, blocks);
 			// Paranoid check on heavy logging.
 			if(logMINOR && persistentQueue[prio].contains(queueItem)) {
-				Logger.error(this, "Persistent request "+getter+" is already queued!");
+				Logger.error(this, "Persistent request " + getter + " is already queued!");
 				return;
 			}
 			persistentQueue[prio].add(queueItem);
@@ -342,7 +342,7 @@ public class DatastoreChecker implements PrioRunnable {
 			try {
 				realRun();
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in datastore checker thread", t);
+				Logger.error(this, "Caught " + t + " in datastore checker thread", t);
 			}
 		}
 	}
@@ -373,7 +373,7 @@ public class DatastoreChecker implements PrioRunnable {
 		boolean waited = false;
 		synchronized(this) {
 			while(true) {
-				for(short prio = 0;prio<transientQueue.length;prio++) {
+				for(short prio = 0;prio < transientQueue.length;prio++) {
 					TransientItem trans;
 					PersistentItem persist;
 					if((trans = transientQueue[prio].pollFirst()) != null) {
@@ -384,7 +384,7 @@ public class DatastoreChecker implements PrioRunnable {
 						item = null;
 						blocks = trans.blockSet;
 						if(logMINOR)
-							Logger.minor(this, "Checking transient request "+getter+" prio "+prio+" of "+transientQueue[prio].size());
+							Logger.minor(this, "Checking transient request " + getter + " prio " + prio + " of " + transientQueue[prio].size());
 						break;
 					} else if((!notPersistent) && (persist = persistentQueue[prio].pollFirst()) != null) {
 						keys = persist.keys;
@@ -394,7 +394,7 @@ public class DatastoreChecker implements PrioRunnable {
 						item = persist.checkerItem;
 						blocks = persist.blockSet;
 						if(logMINOR)
-							Logger.minor(this, "Checking persistent request at prio "+prio);
+							Logger.minor(this, "Checking persistent request at prio " + prio);
 						break;
 					}
 				}
@@ -449,7 +449,7 @@ public class DatastoreChecker implements PrioRunnable {
 //				keysToCheck[priority].remove(key);
 //			}
 		}
-		if(logMINOR) Logger.minor(this, "Checked "+keys.length+" keys");
+		if(logMINOR) Logger.minor(this, "Checked " + keys.length + " keys");
 		if(persistent)
 			try {
 				context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
@@ -467,7 +467,7 @@ public class DatastoreChecker implements PrioRunnable {
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get)) {
-							Logger.warning(this, "ALREADY ACTIVATED: "+get);
+							Logger.warning(this, "ALREADY ACTIVATED: " + get);
 						}
 						if(!container.ext().isStored(get)) {
 							// Completed and deleted already.
@@ -480,11 +480,11 @@ public class DatastoreChecker implements PrioRunnable {
 						try {
 							scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
 						} catch (Throwable t) {
-							Logger.error(this, "Failed to register "+get+": "+t, t);
+							Logger.error(this, "Failed to register " + get + ": " + t, t);
 							try {
-								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, container, context);
+								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: " + t, t), null, container, context);
 							} catch (Throwable t1) {
-								Logger.error(this, "Failed to fail: "+t, t);
+								Logger.error(this, "Failed to fail: " + t, t);
 							}
 						}
 						container.deactivate(get, 1);
@@ -512,7 +512,7 @@ public class DatastoreChecker implements PrioRunnable {
 
 	public void start(Executor executor, String name) {
 		try {
-			context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY-1, true);
+			context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY - 1, true);
 		} catch (DatabaseDisabledException e) {
 			// Ignore
 		}
@@ -531,7 +531,7 @@ public class DatastoreChecker implements PrioRunnable {
 
 	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context, short prio) {
-		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "Removing request prio=" + prio + " persistent=" + persistent);
 		QueueItem requestMatcher = new QueueItem(request);
 		if(!persistent) {
 			synchronized(this) {
@@ -553,7 +553,7 @@ public class DatastoreChecker implements PrioRunnable {
 				if(item.nodeDBHandle != context.nodeDBHandle) continue;
 				if(deleted == 1) {
 					try {
-						Logger.error(this, "Multiple DatastoreCheckerItem's for "+request);
+						Logger.error(this, "Multiple DatastoreCheckerItem's for " + request);
 					} catch (Throwable e) {
 						// Ignore, toString() error
 						Logger.error(this, "Multiple DatastoreCheckerItem's for request");

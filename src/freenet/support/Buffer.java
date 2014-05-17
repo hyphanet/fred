@@ -51,7 +51,7 @@ public class Buffer implements WritableToDataOutputStream {
 	public Buffer(DataInput dis) throws IOException {
 		_length = dis.readInt();
 		if(_length < 0)
-			throw new IllegalArgumentException("Negative Length: "+_length);
+			throw new IllegalArgumentException("Negative Length: " + _length);
 		if (_length > Serializer.MAX_ARRAY_LENGTH) {
 			//TODO: Is it more appropriate for this to be an IOException?
 			throw new IllegalArgumentException("Length larger than " + Serializer.MAX_ARRAY_LENGTH);
@@ -122,11 +122,11 @@ public class Buffer implements WritableToDataOutputStream {
 	@Override
 	public String toString() {
 		if (this._length > 50) {
-			return "Buffer {"+this._length+ '}';
+			return "Buffer {" + this._length + '}';
 		} else {
-			StringBuilder b = new StringBuilder(this._length*3);
+			StringBuilder b = new StringBuilder(this._length * 3);
             b.append('{').append(this._length).append(':');
-			for (int x=0; x<this._length; x++) {
+			for (int x=0; x < this._length; x++) {
 				b.append(byteAt(x));
 				b.append(' ');
 			}

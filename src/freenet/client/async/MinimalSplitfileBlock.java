@@ -89,12 +89,12 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 			data.storeTo(container);
 		container.store(this);
 		if(logMINOR)
-			Logger.minor(this, "Storing "+this+" with data: "+data+" id = "+container.ext().getID(this));
+			Logger.minor(this, "Storing " + this + " with data: " + data + " id = " + container.ext().getID(this));
 	}
 
 	public synchronized void removeFrom(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing "+this+" with data: "+data);
+			Logger.minor(this, "Removing " + this + " with data: " + data);
 		if(data != null) {
 			container.activate(data, 1);
 			data.removeFrom(container);

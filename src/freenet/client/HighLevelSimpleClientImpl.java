@@ -57,9 +57,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
-	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
+	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES - 1);
 	/** Number of retries allowed on non-splitfile fetches. */
-	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
+	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES - 1);
 	static final int USK_RETRIES = RequestScheduler.COOLDOWN_RETRIES - 1;
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
@@ -285,10 +285,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
 		} catch (IOException e) {
-			Logger.error(this, "Bucket error: "+e, e);
+			Logger.error(this, "Bucket error: " + e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		} catch (MetadataUnresolvedException e) {
-			Logger.error(this, "Impossible error: "+e, e);
+			Logger.error(this, "Impossible error: " + e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		}
 

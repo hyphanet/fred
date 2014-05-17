@@ -23,7 +23,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("MeaningfulNodeNameUserAlert."+key);
+		return NodeL10n.getBase().getString("MeaningfulNodeNameUserAlert." + key);
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");
 		textNode.addChild("#", l10n("noNodeNick"));
-		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
+		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/" + sc.getPrefix(), "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "subconfig", sc.getPrefix() });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");

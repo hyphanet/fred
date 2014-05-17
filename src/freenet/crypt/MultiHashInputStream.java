@@ -40,7 +40,7 @@ public class MultiHashInputStream extends FilterInputStream {
 				try {
 					digesters.add(new Digester(type));
 				} catch (NoSuchAlgorithmException e) {
-					Logger.error(this, "Algorithm not available: "+type);
+					Logger.error(this, "Algorithm not available: " + type);
 				}
 			}
 		}
@@ -89,7 +89,7 @@ public class MultiHashInputStream extends FilterInputStream {
 	
 	public HashResult[] getResults() {
 		HashResult[] results = new HashResult[digesters.length];
-		for(int i=0;i<digesters.length;i++)
+		for(int i=0;i < digesters.length;i++)
 			results[i] = digesters[i].getResult();
 		digesters = null;
 		return results;

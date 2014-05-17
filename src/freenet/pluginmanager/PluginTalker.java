@@ -66,10 +66,10 @@ public class PluginTalker {
 	public void sendSyncInternalOnly(final SimpleFieldSet plugparams, final Bucket data2) {
 		try {
 			FredPluginFCP plug = pluginRef.get();
-			if (plug==null) {
+			if (plug == null) {
 				// FIXME How to get this out to surrounding send(..)?
 				// throw new PluginNotFoundException(How to get this out to surrounding send(..)?);
-				Logger.error(this, "Connection to plugin '"+pluginName+"' lost.", new Exception("FIXME"));
+				Logger.error(this, "Connection to plugin '" + pluginName + "' lost.", new Exception("FIXME"));
 				return;
 			}
 			plug.handle(replysender, plugparams, data2, access);
@@ -78,7 +78,7 @@ public class PluginTalker {
 		} catch (VirtualMachineError vme) {
 			throw vme; // OOM is included here
 		} catch (Throwable t) {
-			Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
+			Logger.error(this, "Cought error while execute fcp plugin handler for '" + pluginName + "', report it to the plugin author: " + t.getMessage(), t);
 		}
 	}
 }

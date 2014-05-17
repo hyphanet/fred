@@ -37,7 +37,7 @@ public class InsertableUSK extends USK {
 	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
 		super(pubKeyHash, cryptoKey, docName, suggestedEdition, cryptoAlgorithm);
 		if(cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH)
-			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+ClientSSK.CRYPTO_KEY_LENGTH);
+			throw new MalformedURLException("Decryption key wrong length: " + cryptoKey.length + " should be " + ClientSSK.CRYPTO_KEY_LENGTH);
 		this.privKey = key;
 	}
 
@@ -54,7 +54,7 @@ public class InsertableUSK extends USK {
 			return new InsertableClientSSK(string, pubKeyHash, 
 					new DSAPublicKey(getCryptoGroup(), privKey), privKey, cryptoKey, cryptoAlgorithm);
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
+			Logger.error(this, "Caught " + e + " should not be possible in USK.getSSK", e);
 			throw new Error(e);
 		}
 	}
@@ -70,7 +70,7 @@ public class InsertableUSK extends USK {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		Logger.minor(this, "Removing "+this, new Exception("debug"));
+		Logger.minor(this, "Removing " + this, new Exception("debug"));
 		container.activate(privKey, 5);
 		privKey.removeFrom(container);
 		super.removeFrom(container);

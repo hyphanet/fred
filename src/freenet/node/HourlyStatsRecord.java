@@ -181,8 +181,8 @@ public class HourlyStatsRecord {
 				if (chkT > 0) chkRate = ((double)(chkLS + chkRS)) / (chkT);
 				if (sskT > 0) sskRate = ((double)(sskLS + sskRS)) / (sskT);
 
-				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")"+nbsp+"("+fix4p.format(locdiffCHK)+")");
-				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")"+nbsp+"("+fix4p.format(locdiffSSK)+")");
+				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")" + nbsp + "(" + fix4p.format(locdiffCHK) + ")");
+				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")" + nbsp + "(" + fix4p.format(locdiffSSK) + ")");
 
 				totalCHKLS += chkLS;
 				totalCHKRS+= chkRS;
@@ -198,8 +198,8 @@ public class HourlyStatsRecord {
 
 			row = table.addChild("tr");
 			row.addChild("td", "Total");
-			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "("+ totalCHKLS + "," + totalCHKRS + "," + totalCHKT + ")");
-			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "("+ totalSSKLS + "," + totalSSKRS + "," + totalSSKT + ")");
+			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "(" + totalCHKLS + "," + totalCHKRS + "," + totalCHKT + ")");
+			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "(" + totalSSKLS + "," + totalSSKRS + "," + totalSSKT + ")");
 		}
 	}
 

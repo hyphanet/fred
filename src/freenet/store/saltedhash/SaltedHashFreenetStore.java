@@ -163,7 +163,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		dataBlockLength = callback.dataLength();
 
 		hdPadding =
-			((headerBlockLength + dataBlockLength + 512 - 1) & ~(512-1)) -
+			((headerBlockLength + dataBlockLength + 512 - 1) & ~(512 - 1)) -
 			(headerBlockLength + dataBlockLength);
 
 		this.random = random;
@@ -192,7 +192,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		bloomFile = new File(this.baseDir, name + ".bloom");
 		if(bloomFile.exists()) {
 			bloomFile.delete();
-			System.err.println("Deleted old bloom filter for "+name+" - obsoleted by slot filter");
+			System.err.println("Deleted old bloom filter for " + name + " - obsoleted by slot filter");
 			System.err.println("We will need to rebuild the slot filters, it will take a while and there will be a lot of disk access, but once it's done there should be a lot less disk access.");
 		}
 
@@ -201,7 +201,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		slotFilterDisabled = !enableSlotFilters;
 		if(!slotFilterDisabled) {
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size);
-			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+").");
+			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new=" + slotFilter.isNew() + ").");
 			if(newStore && slotFilter.isNew())
 				slotFilter.fill(SLOT_CHECKED);
 		} else {
@@ -209,7 +209,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				if(slotFilterFile.delete()) {
 					System.err.println("Old slot filter file deleted as slot filters are disabled, keeping it might cause data loss when they are turned back on.");
 				} else {
-					System.err.println("Old slot filter file "+slotFilterFile+" could not be deleted. If you turn on slot filters later you might lose data from your datastore. Please delete it manually.");
+					System.err.println("Old slot filter file " + slotFilterFile + " could not be deleted. If you turn on slot filters later you might lose data from your datastore. Please delete it manually.");
 				}
 			}
 			slotFilter = null;
@@ -317,7 +317,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					throw new IOException("lock timeout (20s)");
 			}
 		} catch(InterruptedException e) {
-			throw new IOException("interrupted: " +e);
+			throw new IOException("interrupted: " + e);
 		}
 		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
 		try {
@@ -427,7 +427,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					throw new IOException("lock timeout (20s)");
 			}
 		} catch(InterruptedException e) {
-			throw new IOException("interrupted: " +e);
+			throw new IOException("interrupted: " + e);
 		}
 		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
 		try {
@@ -512,10 +512,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 				if((!wrongStore) && altStore != null) {
 					if(altStore.put(block, data, header, overwrite, isOldBlock, true)) {
-						if(logMINOR) Logger.minor(this, "Successfully wrote block to wrong store "+altStore+" on "+this);
+						if(logMINOR) Logger.minor(this, "Successfully wrote block to wrong store " + altStore + " on " + this);
 						return true;
 					} else {
-						if(logMINOR) Logger.minor(this, "Writing to wrong store "+altStore+" on "+this+" failed");
+						if(logMINOR) Logger.minor(this, "Writing to wrong store " + altStore + " on " + this + " failed");
 					}
 				}
 
@@ -526,7 +526,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					// Distribute overwrites evenly between the right store and the wrong store.
 					int a = OPTION_MAX_PROBE;
 					int b = wrongStoreCount;
-					if(random.nextInt(a+b) < b)
+					if(random.nextInt(a + b) < b)
 						// Allow the overwrite to happen in the wrong store.
 						indexToOverwrite = firstWrongStoreIndex;
 					else
@@ -556,7 +556,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private boolean onWrite() {
-		return (writes.incrementAndGet() % (storeSize*2) == 0);
+		return (writes.incrementAndGet() % (storeSize * 2) == 0);
 	}
 	
 	// ------------- Entry I/O
@@ -870,7 +870,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		do {
 			int status = metaFC.read(mbf, Entry.METADATA_LENGTH * offset + mbf.position());
 			if (status == -1) {
-				Logger.error(this, "Failed to access offset "+offset, new Exception("error"));
+				Logger.error(this, "Failed to access offset " + offset, new Exception("error"));
 				throw new EOFException();
 			}
 		} while (mbf.hasRemaining());
@@ -883,14 +883,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		int trueCache = entry.getSlotFilterEntry();
 		if(trueCache != cache && !slotFilterDisabled) {
 			if(validCache)
-				Logger.error(this, "Slot cache has changed for slot "+offset+" from "+cache+" to "+trueCache);
+				Logger.error(this, "Slot cache has changed for slot " + offset + " from " + cache + " to " + trueCache);
 			slotFilter.put((int)offset, trueCache);
 		}
 		
 		if (routingKey != null) {
 			if (entry.isFree()) {
 				if(validCache && !likelyMatch && !slotCacheIsFree(cache)) {
-					Logger.error(this, "Slot falsely identified as non-free on slot "+offset+" cache was "+cache);
+					Logger.error(this, "Slot falsely identified as non-free on slot " + offset + " cache was " + cache);
 					bloomFalsePos.incrementAndGet();
 				} else if(logMINOR && validCache && !likelyMatch && slotCacheIsFree(cache))
 					Logger.minor(this, "True negative!");
@@ -898,7 +898,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			if (!Arrays.equals(digestedRoutingKey, slotDigestedRoutingKey)) {
 				if(validCache && likelyMatch) {
-					Logger.normal(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
+					Logger.normal(this, "False positive from slot cache on slot " + offset + " cache was " + cache);
 					bloomFalsePos.incrementAndGet();
 				} else if(logMINOR && validCache && !likelyMatch)
 					Logger.minor(this, "True negative!");
@@ -906,7 +906,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			
 			if(validCache && !likelyMatch) {
-				Logger.error(this, "False NEGATIVE from slot cache on slot "+offset+" cache was "+cache);
+				Logger.error(this, "False NEGATIVE from slot cache on slot " + offset + " cache was " + cache);
 				bloomFalsePos.incrementAndGet();
 			}
 
@@ -916,7 +916,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				boolean decrypted = cipherManager.decrypt(entry, routingKey);
 				if (!decrypted) {
 					if(logMINOR && validCache && likelyMatch)
-						Logger.minor(this, "True positive but decrypt failed on slot "+offset+" cache was "+cache);
+						Logger.minor(this, "True positive but decrypt failed on slot " + offset + " cache was " + cache);
 					return null;
 				} else {
 					if(logMINOR && validCache && likelyMatch)
@@ -1101,7 +1101,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					bf.rewind();
 					hdFC.write(bf, currentHdLen);
 					currentHdLen += 4096;
-					if(currentHdLen % (1024*1024*1024L) == 0) {
+					if(currentHdLen % (1024 * 1024 * 1024L) == 0) {
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
 						if (starting) {
@@ -1168,13 +1168,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				try {
 					cipher = new Rijndael(256, 128);
 				} catch (UnsupportedCipherException e) {
-					throw new Error("Impossible: no Rijndael(256,128): "+e, e);
+					throw new Error("Impossible: no Rijndael(256,128): " + e, e);
 				}
 				cipher.initialize(masterKey);
 				diskSalt = new byte[0x10];
 				cipher.encipher(newsalt, diskSalt);
 				if(logDEBUG)
-					Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(newsalt)+" from "+HexUtil.bytesToHex(diskSalt));
+					Logger.debug(this, "Encrypting with " + HexUtil.bytesToHex(newsalt) + " from " + HexUtil.bytesToHex(diskSalt));
 			}
 			cipherManager = new CipherManager(newsalt, diskSalt);
 
@@ -1194,13 +1194,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						try {
 							cipher = new Rijndael(256, 128);
 						} catch (UnsupportedCipherException e) {
-							throw new Error("Impossible: no Rijndael(256,128): "+e, e);
+							throw new Error("Impossible: no Rijndael(256,128): " + e, e);
 						}
 						cipher.initialize(masterKey);
 						salt = new byte[0x10];
 						cipher.decipher(diskSalt, salt);
 						if(logDEBUG)
-							Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
+							Logger.debug(this, "Encrypting (new) with " + HexUtil.bytesToHex(salt) + " from " + HexUtil.bytesToHex(diskSalt));
 					}
 
 					cipherManager = new CipherManager(salt, diskSalt);
@@ -1225,7 +1225,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						long w = raf.readLong();
 						writes.set(w);
 						initialWrites = w;
-						Logger.normal(this, "Set writes to saved value "+w);
+						Logger.normal(this, "Set writes to saved value " + w);
 						hits.set(raf.readLong());
 						initialHits = hits.get();
 						misses.set(raf.readLong());
@@ -1409,7 +1409,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		 */
 		private void resizeStore(final long _prevStoreSize, final boolean sleep) {
 			Logger.normal(this, "Starting datastore resize");
-			System.out.println("Resizing datastore "+name);
+			System.out.println("Resizing datastore " + name);
 
 			BatchProcessor<T> resizeProcesser = new BatchProcessor<T>() {
 				Deque<Entry> oldEntryList = new LinkedList<Entry>();
@@ -1550,7 +1550,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						try {
 							slotFilter.put((int)entry.curOffset, cache, true);
 						} catch (IOException e) {
-							Logger.error(this, "Unable to update slot filter in bloom rebuild: "+e, e);
+							Logger.error(this, "Unable to update slot filter in bloom rebuild: " + e, e);
 						}
 					}
 					if (!entry.isFree()) {
@@ -1654,7 +1654,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 				processor.finish();
 			} catch (Exception e) {
-				Logger.error(this, "Caught: "+e+" while shrinking", e);
+				Logger.error(this, "Caught: " + e + " while shrinking", e);
 				processor.abort();
 			}
 		}
@@ -1726,7 +1726,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								try {
 									slotFilter.put((int)(offset + j), SLOT_CHECKED);
 								} catch (IOException e) {
-									Logger.error(this, "Unable to update slot filter: "+e, e);
+									Logger.error(this, "Unable to update slot filter: " + e, e);
 								}
 
 							dirty = true;
@@ -1746,7 +1746,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 									try {
 										slotFilter.put((int)(offset + j), newVal);
 									} catch (IOException e) {
-										Logger.error(this, "Unable to update slot filter: "+e, e);
+										Logger.error(this, "Unable to update slot filter: " + e, e);
 									}
 								}
 							}
@@ -1962,7 +1962,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				while(prevStoreSize == old) {
 					resizeCompleteCondition.awaitUninterruptibly();
 				}
-				System.err.println("Completed shrink, old size was "+old+" new size was "+newStoreSize+" size is now "+storeSize+" (prev="+prevStoreSize+")");
+				System.err.println("Completed shrink, old size was " + old + " new size was " + newStoreSize + " size is now " + storeSize + " (prev=" + prevStoreSize + ")");
 			} finally {
 				configLock.writeLock().unlock();
 			}
@@ -2077,7 +2077,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			configLock.writeLock().unlock();
 		}
 		cipherManager.shutdown();
-		System.out.println("Successfully closed store "+name);
+		System.out.println("Successfully closed store " + name);
 	}
 
 	/**
@@ -2098,7 +2098,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			// Important for very small stores e.g. in unit tests.
 			while(true) {
 				boolean clear = true;
-				for(int j=0;j<i;j++) {
+				for(int j=0;j < i;j++) {
 					if(offsets[i] == offsets[j]) {
 						offsets[i] = (offsets[i] + 1) % storeSize;
 						clear = false;
@@ -2218,7 +2218,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	@Override
 	public String toString() {
-		return super.toString()+":"+name;
+		return super.toString() + ":" + name;
 	}
 	
 	@Override
@@ -2289,7 +2289,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	/** Only for testing (crude!) 
 	 * @throws InterruptedException */
 	void testingWaitForCleanerDone(int delay, int count) throws InterruptedException {
-		for(int i=0;i<count;i++) {
+		for(int i=0;i < count;i++) {
 			configLock.readLock().lock();
 			try {
 				if((flags & FLAG_REBUILD_BLOOM) == 0) return;

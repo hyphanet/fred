@@ -37,7 +37,7 @@ public class NodeRestartJobsQueue {
 		nodeDBHandle = nodeDBHandle2;
 		dbJobs = new Set[NativeThread.JAVA_PRIORITY_RANGE];
 		dbJobsEarly = new Set[NativeThread.JAVA_PRIORITY_RANGE];
-		for(int i=0;i<dbJobs.length;i++) {
+		for(int i=0;i < dbJobs.length;i++) {
 			dbJobs[i] = new HashSet<DBJob>();
 			dbJobsEarly[i] = new HashSet<DBJob>();
 		}
@@ -73,7 +73,7 @@ public class NodeRestartJobsQueue {
 	private Set<DBJob>[] dbJobsEarly;
 	
 	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
-		if(logMINOR) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
+		if(logMINOR) Logger.minor(this, "Queueing restart job " + job + " at priority " + priority + " early=" + early);
 		Set<DBJob> jobs = early ? dbJobsEarly[priority] : dbJobs[priority];
 		container.store(job);
 		container.activate(jobs, 1);
@@ -100,8 +100,8 @@ public class NodeRestartJobsQueue {
 			container.deactivate(dbJobs[priority], 1);
 			container.deactivate(dbJobsEarly[priority], 1);
 			int found = 0;
-			for(int i=0;i<dbJobs.length;i++) {
-				if(i==priority) continue;
+			for(int i=0;i < dbJobs.length;i++) {
+				if(i == priority) continue;
 				container.activate(dbJobs[i], 1);
 				container.activate(dbJobsEarly[i], 1);
 				if(dbJobs[i].remove(job)) {
@@ -132,9 +132,9 @@ public class NodeRestartJobsQueue {
 				container.deactivate(dbJobsEarly[i], 1);
 			}
 			if(found > 0)
-				Logger.error(this, "Job "+job+" not in specified priority "+priority+" found in "+found+" other priorities when removing");
+				Logger.error(this, "Job " + job + " not in specified priority " + priority + " found in " + found + " other priorities when removing");
 			else
-				Logger.error(this, "Job "+job+" not found when removing it");
+				Logger.error(this, "Job " + job + " not found when removing it");
 		} else {
 			/*
 			 * Store to 1 hop only.
@@ -163,10 +163,10 @@ public class NodeRestartJobsQueue {
 
 	synchronized RestartDBJob[] getEarlyRestartDatabaseJobs(ObjectContainer container) {
 		ArrayList<RestartDBJob> list = new ArrayList<RestartDBJob>();
-		for(int i=dbJobsEarly.length-1;i>=0;i--) {
+		for(int i=dbJobsEarly.length - 1;i >= 0;i--) {
 			container.activate(dbJobsEarly[i], 1);
 			if(!dbJobsEarly[i].isEmpty())
-				System.err.println("Adding "+dbJobsEarly[i].size()+" early restart jobs at priority "+i);
+				System.err.println("Adding " + dbJobsEarly[i].size() + " early restart jobs at priority " + i);
 			for(DBJob job : dbJobsEarly[i])
 				list.add(new RestartDBJob(job, i));
 			container.deactivate(dbJobsEarly[i], 1);
@@ -175,14 +175,14 @@ public class NodeRestartJobsQueue {
 	}
 	
 	void addLateRestartDatabaseJobs(DBJobRunner runner, ObjectContainer container) throws DatabaseDisabledException {
-		for(int i=dbJobsEarly.length-1;i>=0;i--) {
+		for(int i=dbJobsEarly.length - 1;i >= 0;i--) {
 			container.activate(dbJobs[i], 1);
 			if(!dbJobs[i].isEmpty())
-				System.err.println("Adding "+dbJobs[i].size()+" restart jobs at priority "+i);
+				System.err.println("Adding " + dbJobs[i].size() + " restart jobs at priority " + i);
 			for(Iterator<DBJob> it = dbJobs[i].iterator();it.hasNext();) {
 				DBJob job = it.next();
 				if(job == null) {
-					Logger.error(this, "Late restart job removed without telling the NodeRestartJobsQueue on priority "+i+"!");
+					Logger.error(this, "Late restart job removed without telling the NodeRestartJobsQueue on priority " + i + "!");
 					it.remove();
 					container.ext().store(dbJobs[i], 2);
 					continue;

@@ -28,15 +28,15 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert." + key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert." + key, pattern, value);
 	}
 
 	private String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key, patterns, values);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert." + key, patterns, values);
 	}
 
 	@Override

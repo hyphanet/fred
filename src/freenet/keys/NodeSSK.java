@@ -51,7 +51,7 @@ public class NodeSSK extends Key {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
+		return super.toString() + ":pkh=" + HexUtil.bytesToHex(pubKeyHash) + ":ehd=" + HexUtil.bytesToHex(encryptedHashedDocname);
 	}
 	
 	@Override
@@ -66,9 +66,9 @@ public class NodeSSK extends Key {
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.pubKey = null;
 		if(ehDocname.length != E_H_DOCNAME_SIZE)
-			throw new IllegalArgumentException("ehDocname must be "+E_H_DOCNAME_SIZE+" bytes");
+			throw new IllegalArgumentException("ehDocname must be " + E_H_DOCNAME_SIZE + " bytes");
 		if(pkHash.length != PUBKEY_HASH_SIZE)
-			throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
+			throw new IllegalArgumentException("pubKeyHash must be " + PUBKEY_HASH_SIZE + " bytes");
 		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
 	}
 	
@@ -84,9 +84,9 @@ public class NodeSSK extends Key {
 				throw new SSKVerifyException("Invalid pubKey: wrong hash");
 		}
 		if(ehDocname.length != E_H_DOCNAME_SIZE)
-			throw new IllegalArgumentException("ehDocname must be "+E_H_DOCNAME_SIZE+" bytes");
+			throw new IllegalArgumentException("ehDocname must be " + E_H_DOCNAME_SIZE + " bytes");
 		if(pkHash.length != PUBKEY_HASH_SIZE)
-			throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
+			throw new IllegalArgumentException("pubKeyHash must be " + PUBKEY_HASH_SIZE + " bytes");
 		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
 	}
 	
@@ -171,7 +171,7 @@ public class NodeSSK extends Key {
 					if(pubKey != null) {
 						// same hash, yet different keys!
 						Logger.error(this, "Found SHA-256 collision or something... WTF?");
-						throw new SSKVerifyException("Invalid new pubkey: "+pubKey2+" old pubkey: "+pubKey);
+						throw new SSKVerifyException("Invalid new pubkey: " + pubKey2 + " old pubkey: " + pubKey);
 					} 
 					// Valid key, assign.
 				} else {
@@ -212,18 +212,18 @@ public class NodeSSK extends Key {
     	buf[0] = (byte) (type >> 8);
     	buf[1] = (byte) (type & 0xFF);
     	System.arraycopy(encryptedHashedDocname, 0, buf, 2, E_H_DOCNAME_SIZE);
-    	System.arraycopy(pubKeyHash, 0, buf, 2+E_H_DOCNAME_SIZE, PUBKEY_HASH_SIZE);
+    	System.arraycopy(pubKeyHash, 0, buf, 2 + E_H_DOCNAME_SIZE, PUBKEY_HASH_SIZE);
     	return buf;
     }
 
 	public static NodeSSK construct(byte[] buf) throws SSKVerifyException {
 		if(buf[0] != 2)
-			throw new SSKVerifyException("Unknown type byte "+buf[0]);
+			throw new SSKVerifyException("Unknown type byte " + buf[0]);
 		byte cryptoAlgorithm = buf[1];
 		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
-			throw new SSKVerifyException("Unknown crypto algorithm "+buf[1]);
-		byte[] encryptedHashedDocname = Arrays.copyOfRange(buf, 2, 2+E_H_DOCNAME_SIZE);
-		byte[] pubkeyHash = Arrays.copyOfRange(buf, 2+E_H_DOCNAME_SIZE, 2+E_H_DOCNAME_SIZE+PUBKEY_HASH_SIZE);
+			throw new SSKVerifyException("Unknown crypto algorithm " + buf[1]);
+		byte[] encryptedHashedDocname = Arrays.copyOfRange(buf, 2, 2 + E_H_DOCNAME_SIZE);
+		byte[] pubkeyHash = Arrays.copyOfRange(buf, 2 + E_H_DOCNAME_SIZE, 2 + E_H_DOCNAME_SIZE + PUBKEY_HASH_SIZE);
 		return new NodeSSK(pubkeyHash, encryptedHashedDocname, null, cryptoAlgorithm);
 	}
 
@@ -235,10 +235,10 @@ public class NodeSSK extends Key {
 
 	public static byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		if(keyBuf.length != FULL_KEY_LENGTH) {
-			Logger.error(NodeSSK.class, "routingKeyFromFullKey() on buffer length "+keyBuf.length);
+			Logger.error(NodeSSK.class, "routingKeyFromFullKey() on buffer length " + keyBuf.length);
 		}
-		byte[] encryptedHashedDocname = Arrays.copyOfRange(keyBuf, 2, 2+E_H_DOCNAME_SIZE);
-		byte[] pubKeyHash = Arrays.copyOfRange(keyBuf, 2+E_H_DOCNAME_SIZE, 2+E_H_DOCNAME_SIZE+PUBKEY_HASH_SIZE);
+		byte[] encryptedHashedDocname = Arrays.copyOfRange(keyBuf, 2, 2 + E_H_DOCNAME_SIZE);
+		byte[] pubKeyHash = Arrays.copyOfRange(keyBuf, 2 + E_H_DOCNAME_SIZE, 2 + E_H_DOCNAME_SIZE + PUBKEY_HASH_SIZE);
 		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
 	}
 

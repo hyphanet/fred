@@ -88,7 +88,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				synchronized(InsertBatch.this) {
 					runningInserts++;
 					//started = true;
-					System.out.println("Starting insert: running "+runningInserts);
+					System.out.println("Starting insert: running " + runningInserts);
 				}
 				long t1 = 0, t2 = 0;
 				FreenetURI thisURI = null;
@@ -102,7 +102,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				} finally {
 					synchronized(InsertBatch.this) {
 						runningInserts--;
-						System.out.println("Completed insert: running "+runningInserts);
+						System.out.println("Completed insert: running " + runningInserts);
 						//finished = true;
 						if(thisURI != null) {
 							uri = thisURI;
@@ -134,21 +134,21 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 
 		public synchronized FreenetURI[] getURIs() {
 			FreenetURI[] uris = new FreenetURI[inserts.size()];
-			for(int i=0;i<uris.length;i++)
+			for(int i=0;i < uris.length;i++)
 				uris[i] = inserts.get(i).uri;
 			return uris;
 		}
 
 		public synchronized long[] getTimes() {
 			long[] times = new long[inserts.size()];
-			for(int i=0;i<times.length;i++)
+			for(int i=0;i < times.length;i++)
 				times[i] = inserts.get(i).insertTime;
 			return times;
 		}
 
 		public InsertException[] getErrors() {
 			InsertException[] errors = new InsertException[inserts.size()];
-			for(int i=0;i<errors.length;i++)
+			for(int i=0;i < errors.length;i++)
 				errors[i] = inserts.get(i).failed;
 			return errors;
 		}
@@ -182,7 +182,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 		Node node = null;
 		Node node2 = null;
 		FileInputStream fis = null;
-		File file = new File("many-single-blocks-test-"+uid + ".csv");
+		File file = new File("many-single-blocks-test-" + uid + ".csv");
 		long t1, t2;
 		
 		try {
@@ -232,9 +232,9 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			
 			// Inserts are sloooooow so do them in parallel.
 			
-			for(int i=0;i<INSERTED_BLOCKS;i++) {
+			for(int i=0;i < INSERTED_BLOCKS;i++) {
 				
-				System.err.println("Inserting block "+i);
+				System.err.println("Inserting block " + i);
 				
 				Bucket single = randomData(node);
 				
@@ -249,22 +249,22 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			long[] times = batch.getTimes();
 			InsertException[] errors = batch.getErrors();
 			
-			for(int i=0;i<INSERTED_BLOCKS;i++) {
+			for(int i=0;i < INSERTED_BLOCKS;i++) {
 				if(uris[i] != null) {
 					csvLine.add(String.valueOf(times[i]));
 					csvLine.add(uris[i].toASCIIString());
-					System.out.println("Pushed block "+i+" : "+uris[i]+" in "+times[i]);
+					System.out.println("Pushed block " + i + " : " + uris[i] + " in " + times[i]);
 					successes++;
 				} else {
 					csvLine.add(FetchException.getShortMessage(errors[i].getMode()));
 					csvLine.add("N/A");
-					System.out.println("Failed to push block "+i+" : "+errors[i]);
+					System.out.println("Failed to push block " + i + " : " + errors[i]);
 				}
 			}
 			
 			long endInsertsTime = System.currentTimeMillis();
 			
-			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS+" in "+(endInsertsTime-startInsertsTime)+"ms");
+			System.err.println("Succeeded inserts: " + successes + " of " + INSERTED_BLOCKS + " in " + (endInsertsTime - startInsertsTime) + "ms");
 			
 			FetchContext fctx = client.getFetchContext();
 			fctx.maxNonSplitfileRetries = 0;
@@ -299,26 +299,26 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 			target.set(Calendar.MINUTE, 0);
 			target.set(Calendar.MILLISECOND, 0);
 			target.set(Calendar.SECOND, 0);
-			GregorianCalendar[] targets = new GregorianCalendar[MAX_N+1];
-			for(int i=0;i<targets.length;i++) {
+			GregorianCalendar[] targets = new GregorianCalendar[MAX_N + 1];
+			for(int i=0;i < targets.length;i++) {
 				targets[i] = ((GregorianCalendar)target.clone());
-				targets[i].add(Calendar.DAY_OF_MONTH, -((1<<i)-1));
+				targets[i].add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 				targets[i].getTime();
 			}
-			int[] totalFetchesByDelta = new int[MAX_N+1];
-			int[] totalSuccessfulFetchesByDelta = new int[MAX_N+1];
-			long[] totalFetchTimeByDelta = new long[MAX_N+1];
+			int[] totalFetchesByDelta = new int[MAX_N + 1];
+			int[] totalSuccessfulFetchesByDelta = new int[MAX_N + 1];
+			long[] totalFetchTimeByDelta = new long[MAX_N + 1];
 			
 loopOverLines:
 			while((line = br.readLine()) != null) {
 				
-				for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
+				for(int i=0;i < mhkURIs.length;i++) mhkURIs[i] = null;
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
 				Date date = dateFormat.parse(split[0]);
 				GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 				calendar.setTime(date);
-				System.out.println("Date: "+dateFormat.format(calendar.getTime()));
+				System.out.println("Date: " + dateFormat.format(calendar.getTime()));
 				calendar.set(Calendar.HOUR_OF_DAY, 0);
 				calendar.set(Calendar.MINUTE, 0);
 				calendar.set(Calendar.MILLISECOND, 0);
@@ -328,14 +328,14 @@ loopOverLines:
 				int[] insertTimes = new int[INSERTED_BLOCKS];
 				if(split.length < 3) continue;
 				int seedTime = Integer.parseInt(split[2]);
-				System.out.println("Seed time: "+seedTime);
+				System.out.println("Seed time: " + seedTime);
 				if(split.length < 4) continue;
 				
 				int token = 3;
 				
 				if(split.length < token + INSERTED_BLOCKS * 2) continue;
 			
-				for(int i=0;i<INSERTED_BLOCKS;i++) {
+				for(int i=0;i < INSERTED_BLOCKS;i++) {
 					try {
 						insertTimes[i] = Integer.parseInt(split[token]);
 					} catch (NumberFormatException e) {
@@ -348,16 +348,16 @@ loopOverLines:
 						insertedURIs[i] = null;
 					}
 					token++;
-					System.out.println("Key insert "+i+" : "+insertedURIs[i]+" in "+insertTimes[i]);
+					System.out.println("Key insert " + i + " : " + insertedURIs[i] + " in " + insertTimes[i]);
 				}
-				for(int i=0;i<targets.length;i++) {
+				for(int i=0;i < targets.length;i++) {
 					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
-						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
-						System.out.println("Version: "+split[1]);
+						System.out.println("Found row for target date " + ((1 << i) - 1) + " days ago.");
+						System.out.println("Version: " + split[1]);
 						csvLine.add(Integer.toString(i));
 						int pulled = 0;
 						int inserted = 0;
-						for(int j=0;j<INSERTED_BLOCKS;j++) {
+						for(int j=0;j < INSERTED_BLOCKS;j++) {
 							if(insertedURIs[j] == null) {
 								csvLine.add("INSERT FAILED");
 								continue;
@@ -370,7 +370,7 @@ loopOverLines:
 								fw.waitForCompletion();
 								t2 = System.currentTimeMillis();
 								
-								System.out.println("PULL-TIME FOR BLOCK "+j+": " + (t2 - t1));
+								System.out.println("PULL-TIME FOR BLOCK " + j + ": " + (t2 - t1));
 								csvLine.add(String.valueOf(t2 - t1));
 								pulled++;
 							} catch (FetchException e) {
@@ -378,10 +378,10 @@ loopOverLines:
 										&& e.getMode() != FetchException.DATA_NOT_FOUND)
 									e.printStackTrace();
 								csvLine.add(FetchException.getShortMessage(e.getMode()));
-								System.err.println("FAILED PULL FOR BLOCK "+j+": "+e);
+								System.err.println("FAILED PULL FOR BLOCK " + j + ": " + e);
 							}
 						}
-						System.out.println("Pulled "+pulled+" blocks of "+inserted+" from "+((1<<i)-1)+" days ago.");
+						System.out.println("Pulled " + pulled + " blocks of " + inserted + " from " + ((1 << i) - 1) + " days ago.");
 					}
 				}
 				
@@ -390,43 +390,43 @@ loopOverLines:
 					try {
 						delta = Integer.parseInt(split[token]);
 					} catch (NumberFormatException e) {
-						System.err.println("Unable to parse token "+token+" = \""+token+"\"");
+						System.err.println("Unable to parse token " + token + " = \"" + token + "\"");
 						System.err.println("This is supposed to be a delta");
-						System.err.println("Skipping the rest of the line for date "+dateFormat.format(calendar.getTime()));
+						System.err.println("Skipping the rest of the line for date " + dateFormat.format(calendar.getTime()));
 						continue loopOverLines;
 					}
-					System.out.println("Delta: "+((1<<delta)-1)+" days");
+					System.out.println("Delta: " + ((1 << delta) - 1) + " days");
 					token++;
 					int totalFetchTime = 0;
 					int totalSuccesses = 0;
 					int totalFetches = 0;
-					for(int i=0;i<INSERTED_BLOCKS;i++) {
+					for(int i=0;i < INSERTED_BLOCKS;i++) {
 						if(split[token].equals(""))
 							continue;
 						int mhkFetchTime = -1;
 						totalFetches++;
 						try {
 							mhkFetchTime = Integer.parseInt(split[token]);
-							System.out.println("Fetched block #"+i+" on "+date+" in "+mhkFetchTime+"ms");
+							System.out.println("Fetched block #" + i + " on " + date + " in " + mhkFetchTime + "ms");
 							totalSuccesses++;
 							totalFetchTime += mhkFetchTime;
 						} catch (NumberFormatException e) {
-							System.out.println("Failed block #"+i+" on "+date+" : "+split[token]);
+							System.out.println("Failed block #" + i + " on " + date + " : " + split[token]);
 						}
 						token++;
 					}
 					totalFetchesByDelta[delta] += totalFetches;
 					totalSuccessfulFetchesByDelta[delta] += totalSuccesses;
 					totalFetchTimeByDelta[delta] += totalFetchTime;
-					System.err.println("Succeeded: "+totalSuccesses+" of "+totalFetches+" average "+((double)totalFetchTime)/((double)totalSuccesses)+"ms for delta "+delta+" on "+dateFormat.format(date));
+					System.err.println("Succeeded: " + totalSuccesses + " of " + totalFetches + " average " + ((double)totalFetchTime) / ((double)totalSuccesses) + "ms for delta " + delta + " on " + dateFormat.format(date));
 				}
 			}
 			
 			System.out.println();
 			System.out.println();
 			
-			for(int i=0;i<MAX_N+1;i++) {
-				System.out.println("DELTA: "+i+" days: Total fetches: "+totalFetchesByDelta[i]+" total successes "+totalSuccessfulFetchesByDelta[i]+" = "+((totalSuccessfulFetchesByDelta[i]*100.0)/totalFetchesByDelta[i])+"% in "+(totalFetchTimeByDelta[i]*1.0)/totalSuccessfulFetchesByDelta[i]+"ms");
+			for(int i=0;i < MAX_N + 1;i++) {
+				System.out.println("DELTA: " + i + " days: Total fetches: " + totalFetchesByDelta[i] + " total successes " + totalSuccessfulFetchesByDelta[i] + " = " + ((totalSuccessfulFetchesByDelta[i] * 100.0) / totalFetchesByDelta[i]) + "% in " + (totalFetchTimeByDelta[i] * 1.0) / totalSuccessfulFetchesByDelta[i] + "ms");
 			}
 			
 			fis.close();
@@ -449,7 +449,7 @@ loopOverLines:
 			Closer.close(fis);
 			writeToStatusLog(file, csvLine);
 
-			System.out.println("Exiting with status "+exitCode);
+			System.out.println("Exiting with status " + exitCode);
 			System.exit(exitCode);
 		}
 	}	

@@ -35,7 +35,7 @@ public class PluginStores {
         pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
         if(!pluginStoresDir.dir().mkdirs()) {
-            System.err.println("Unable to create folder for plugin data: "+pluginStoresDir.dir());
+            System.err.println("Unable to create folder for plugin data: " + pluginStoresDir.dir());
         }
     }
 
@@ -45,7 +45,7 @@ public class PluginStores {
         for(PluginStoreContainer psc : stores) {
             if(psc.nodeDBHandle != nodeDBHandle) continue;
             if(psc.pluginStore == null) {
-                System.err.println("No pluginStore on PSC for "+psc.storeIdentifier);
+                System.err.println("No pluginStore on PSC for " + psc.storeIdentifier);
                 continue;
             }
             pscs.add(psc);
@@ -54,7 +54,7 @@ public class PluginStores {
             System.out.println("No plugin stores to migrate.");
             return;
         }
-        System.out.println("Plugin stores to migrate: "+pscs.size());
+        System.out.println("Plugin stores to migrate: " + pscs.size());
         for(PluginStoreContainer psc : pscs) {
             container.activate(psc, Integer.MAX_VALUE);
             migratePluginStores(container, psc);
@@ -70,9 +70,9 @@ public class PluginStores {
             psc.pluginStore.removeFrom(container);
             container.delete(psc);
             container.commit();
-            System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
+            System.out.println("Migrated plugin store for " + psc.storeIdentifier + " from database to disk");
         } catch (IOException e) {
-            System.err.println("Unable to migrate plugin store for "+psc.storeIdentifier+" from database to disk : "+e);
+            System.err.println("Unable to migrate plugin store for " + psc.storeIdentifier + " from database to disk : " + e);
         }
     }
 
@@ -166,19 +166,19 @@ public class PluginStores {
             }
         } catch (IOException e) {
             // Hence, if close() throws, we DO need to catch it here.
-            System.err.println("Unable to load plugin data for "+storeIdentifier+" : "+e);
+            System.err.println("Unable to load plugin data for " + storeIdentifier + " : " + e);
             System.err.println("This could be caused by data corruption or bugs in Freenet.");
             // FIXME crypto - possible it's caused by attack while offline.
             return null;
         } catch (IllegalBase64Exception e) {
             // Hence, if close() throws, we DO need to catch it here.
-            System.err.println("Unable to load plugin data for "+storeIdentifier+" : "+e);
+            System.err.println("Unable to load plugin data for " + storeIdentifier + " : " + e);
             System.err.println("This could be caused by data corruption or bugs in Freenet.");
             // FIXME crypto - possible it's caused by attack while offline.
             return null;
         } catch (FSParseException e) {
             // Hence, if close() throws, we DO need to catch it here.
-            System.err.println("Unable to load plugin data for "+storeIdentifier+" : "+e);
+            System.err.println("Unable to load plugin data for " + storeIdentifier + " : " + e);
             System.err.println("This could be caused by data corruption or bugs in Freenet.");
             // FIXME crypto - possible it's caused by attack while offline.
             return null;
@@ -194,7 +194,7 @@ public class PluginStores {
         }
         if(main.exists()) {
             if(!main.renameTo(backup))
-                System.err.println("Unable to rename "+main+" to "+backup+" when writing pluginstore for "+storeIdentifier);
+                System.err.println("Unable to rename " + main + " to " + backup + " when writing pluginstore for " + storeIdentifier);
         }
         writePluginStoreInner(storeIdentifier, store, isEncrypted, false);
         File f = getPluginStoreFile(storeIdentifier, !isEncrypted, true);

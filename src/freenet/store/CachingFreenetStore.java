@@ -91,7 +91,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 			try {
 				return this.callback.construct(block.data, block.header, routingKey, block.block.getFullKey(), canReadClientCache, canReadSlashdotCache, meta, null);
 			} catch (KeyVerifyException e) {
-				Logger.error(this, "Error in fetching for CachingFreenetStore: "+e, e);
+				Logger.error(this, "Error in fetching for CachingFreenetStore: " + e, e);
 			}
 		}
 		
@@ -152,7 +152,7 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 		storeBlock.overwrite = overwrite;
 		storeBlock.isOldBlock = isOldBlock;
 		
-		long sizeBlock = data.length+header.length+block.getFullKey().length+routingKey.length;	
+		long sizeBlock = data.length + header.length + block.getFullKey().length + routingKey.length;	
 		boolean cacheIt = true;
 		
 		//Case cache it
@@ -228,9 +228,9 @@ public class CachingFreenetStore<T extends StorableBlock> implements FreenetStor
 					try {
 						backDatastore.put(block.block, block.data, block.header, block.overwrite, block.isOldBlock);
 					} catch (IOException e) {
-						Logger.error(this, "Error in pushAll for CachingFreenetStore: "+e, e);
+						Logger.error(this, "Error in pushAll for CachingFreenetStore: " + e, e);
 					} catch (KeyCollisionException e) {
-						if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: "+e, e);
+						if(logMINOR) Logger.minor(this, "KeyCollisionException in pushAll for CachingFreenetStore: " + e, e);
 					}
 				}
 			blocksByRoutingKey.clear();

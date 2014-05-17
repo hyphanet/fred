@@ -83,7 +83,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block.getBlock(), false);
@@ -109,7 +109,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		CachingFreenetStore<CHKBlock> cachingStore = new CachingFreenetStore<CHKBlock>(store, 0, cachingFreenetStorePeriod, saltStore, ticker);
 		cachingStore.start(null, true);
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block.getBlock(), false);
@@ -139,7 +139,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.start(null, true);
 		RandomSource random = new DummyRandomSource(12345);
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
 			SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -170,7 +170,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		List<ClientCHKBlock> chkBlocks = new ArrayList<ClientCHKBlock>();
 		List<String> tests = new ArrayList<String>();
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			// Check that it's in the cache, *not* the underlying store.
@@ -186,7 +186,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore = new CachingFreenetStore<CHKBlock>(store, cachingFreenetStoreMaxSize, cachingFreenetStorePeriod, saltStore2, ticker);
 		cachingStore.start(null, true);
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = tests.remove(0); //get the first element
 			ClientCHKBlock block = chkBlocks.remove(0); //get the first element
 			ClientCHK key = block.getClientKey();
@@ -213,7 +213,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		List<String> tests = new ArrayList<String>();
 		
 		// Put five chk blocks 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			store.put(block.getBlock(), false);
@@ -224,13 +224,13 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 		
 		try {
-			Thread.sleep(2*delay);
+			Thread.sleep(2 * delay);
 		} catch (InterruptedException e) {
 			// Ignore
 		}
 		
 		//Fetch five chk blocks
-		for(int i=0; i<5; i++){
+		for(int i=0; i < 5; i++){
 			String test = tests.remove(0); //get the first element
 			ClientCHKBlock block = chkBlocks.remove(0); //get the first element
 			ClientCHK key = block.getClientKey();
@@ -275,7 +275,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		List<ClientSSKBlock> sskBlocks = new ArrayList<ClientSSKBlock>();
 		List<String> tests = new ArrayList<String>();
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
 			SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -292,7 +292,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		cachingStore.start(null, true);
 		
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = tests.remove(0); //get the first element
 			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
 			ClientSSK key = block.getClientKey();
@@ -324,7 +324,7 @@ public class CachingFreenetStoreTest extends TestCase {
 		List<ClientSSKBlock> sskBlocks = new ArrayList<ClientSSKBlock>();
 		List<String> tests = new ArrayList<String>();
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = "test" + i;
 			ClientSSKBlock block = encodeBlockSSK(test, random);
 			SSKBlock sskBlock = (SSKBlock) block.getBlock();
@@ -335,12 +335,12 @@ public class CachingFreenetStoreTest extends TestCase {
 		}
 		
 		try {
-			Thread.sleep(2*delay);
+			Thread.sleep(2 * delay);
 		} catch (InterruptedException e) {
 			// Ignore
 		}
 		
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			String test = tests.remove(0); //get the first element
 			ClientSSKBlock block = sskBlocks.remove(0); //get the first element
 			ClientSSK key = block.getClientKey();

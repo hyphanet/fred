@@ -121,7 +121,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				if(offset + length >= max)
 					length = (int) Math.min(max - offset, Integer.MAX_VALUE);
 				if(length == 0) return -1;
-				if(length < 0) throw new IllegalStateException("offset="+bufOffset+" length="+length+" buf len = "+buffer.length+" my offset is "+offset+" my size is "+max+" for "+this+" for "+PersistentBlobTempBucket.this);
+				if(length < 0) throw new IllegalStateException("offset=" + bufOffset + " length=" + length + " buf len = " + buffer.length + " my offset is " + offset + " my size is " + max + " for " + this + " for " + PersistentBlobTempBucket.this);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int read;
 				// Synchronize to guarantee that index doesn't change during a read.
@@ -158,7 +158,7 @@ public class PersistentBlobTempBucket implements Bucket {
 
 	@Override
 	public String getName() {
-		return factory.getName()+":"+index;
+		return factory.getName() + ":" + index;
 	}
 
 	@Override
@@ -186,7 +186,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				}
 				long remaining = blockSize - offset;
 				if(remaining <= 0) throw new IOException("Too big");
-				if(length > remaining) throw new IOException("Writing too many bytes: written "+offset+" of "+blockSize+" and now want to write "+length);
+				if(length > remaining) throw new IOException("Writing too many bytes: written " + offset + " of " + blockSize + " and now want to write " + length);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int written = 0;
 				while(written < length) {
@@ -237,7 +237,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		boolean p;
 		synchronized(this) {
 			if(freed) {
-				Logger.error(this, "Storing freed bucket "+this+" formerly for slot "+index, new Exception("error"));
+				Logger.error(this, "Storing freed bucket " + this + " formerly for slot " + index, new Exception("error"));
 				if(tag != null) {
 					container.activate(tag, 1);
 					if(tag.bucket == this) {
@@ -269,14 +269,14 @@ public class PersistentBlobTempBucket implements Bucket {
 					if(tag.bucket == null) {
 						Logger.error(this, "Found tag but is empty");
 						// Can we auto-repair???
-						throw new NullPointerException("Active but tag null! (Other tag is also null) shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index+" for "+this);
+						throw new NullPointerException("Active but tag null! (Other tag is also null) shadow=" + shadow + " freed=" + freed + " persisted=" + persisted + " stored=" + container.ext().isStored(this) + " index=" + index + " for " + this);
 					} else if(tag.bucket == this) {
 						// Auto-repair
 						this.tag = tag;
 						container.store(this);
 						Logger.error(this, "Found tag, was pointing to us, fixed");
 					} else {
-						throw new NullPointerException("Active but tag null, and other tag points to other bucket!: "+tag.bucket+" not "+this+" details: shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index);
+						throw new NullPointerException("Active but tag null, and other tag points to other bucket!: " + tag.bucket + " not " + this + " details: shadow=" + shadow + " freed=" + freed + " persisted=" + persisted + " stored=" + container.ext().isStored(this) + " index=" + index);
 					}
 				}
 			}
@@ -292,7 +292,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		synchronized(this) {
 			if(persisted) return true;
 		}
-		Logger.error(this, "objectOnNew() called but we haven't been stored yet! for "+this+" for "+factory+" index "+index, new Exception("error"));
+		Logger.error(this, "objectOnNew() called but we haven't been stored yet! for " + this + " for " + factory + " index " + index, new Exception("error"));
 		return true;
 		
 	}

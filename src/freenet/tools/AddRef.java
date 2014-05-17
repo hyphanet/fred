@@ -80,7 +80,7 @@ public class AddRef {
 				// TODO: We ought to do stricter checking!
 				// FIXME: some checks even
 			} catch(MessageInvalidException me){
-				System.err.println("Invalid reference file!"+me);
+				System.err.println("Invalid reference file!" + me);
 				me.printStackTrace();
 			}
 
@@ -112,11 +112,11 @@ public class AddRef {
         protected SimpleFieldSet getMessage(LineReadingInputStream lis){
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		try {
-			while(lis.available()>0){
+			while(lis.available() > 0){
 				String line = lis.readLine(128, 128, true);
 				int index = line.indexOf('=');
 				if(index == -1 || line.startsWith("End")) return sfs;
-				sfs.putSingle(line.substring(0, index), line.substring(index+1));
+				sfs.putSingle(line.substring(0, index), line.substring(index + 1));
 			}
 		}catch(IOException e){
 			return sfs;

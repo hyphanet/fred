@@ -50,16 +50,16 @@ public abstract class FCPMessage {
 	public void send(OutputStream os) throws IOException {
 		SimpleFieldSet sfs = getFieldSet();
 		if(sfs == null) {
-			Logger.warning(this, "Not sending message "+this);
+			Logger.warning(this, "Not sending message " + this);
 			return;
 		}
 		sfs.setEndMarker(getEndString());
 		String msg = sfs.toString();
-		os.write((getName()+ '\n').getBytes("UTF-8"));
+		os.write((getName() + '\n').getBytes("UTF-8"));
 		os.write(msg.getBytes("UTF-8"));
 		if(logDEBUG) {
-			Logger.debug(this, "Outgoing FCP message:\n"+getName()+'\n'+sfs.toString());
-			Logger.debug(this, "Being handled by "+this);
+			Logger.debug(this, "Outgoing FCP message:\n" + getName() + '\n' + sfs.toString());
+			Logger.debug(this, "Being handled by " + this);
 		}
 	}
 
@@ -156,7 +156,7 @@ public abstract class FCPMessage {
 		if(name.equals("Void"))
 			return null;
 
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name " + name, null, false);
 	}
 	
 	/**

@@ -30,11 +30,11 @@ public class UndetectableCharsetException extends UnsafeContentTypeException {
 	}
 
 	public String l10n(String message) {
-		return NodeL10n.getBase().getString("UndetectableCharsetException."+message);
+		return NodeL10n.getBase().getString("UndetectableCharsetException." + message);
 	}
 
 	public String l10n(String message, String key, String value) {
-		return NodeL10n.getBase().getString("UndetectableCharsetException."+message, key, value);
+		return NodeL10n.getBase().getString("UndetectableCharsetException." + message, key, value);
 	}
 
 

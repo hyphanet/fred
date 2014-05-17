@@ -71,11 +71,11 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 			if(subset == null) break;
 			DirPutFile f = DirPutFile.create(subset, identifier, global, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
-			if(logMINOR) Logger.minor(this, "Adding "+f);
+			if(logMINOR) Logger.minor(this, "Adding " + f);
 			if(f instanceof DirectDirPutFile) {
 				totalBytes += ((DirectDirPutFile)f).bytesToRead();
 				filesToRead.addLast(f);
-				if(logMINOR) Logger.minor(this, "totalBytes now "+totalBytes);
+				if(logMINOR) Logger.minor(this, "totalBytes now " + totalBytes);
 			}
 		}
 		attachedBytes = totalBytes;
@@ -96,14 +96,14 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 			byName.put(name, f);
 		} else {
 			String before = name.substring(0, idx);
-			String after = name.substring(idx+1);
+			String after = name.substring(idx + 1);
 			Object o = byName.get(before);
 			if(o != null) {
 				if (o instanceof HashMap) {
 					addFile((HashMap<String, Object>) o, after, f);
 					return;
 				} else {
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: "+before, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: " + before, identifier, global);
 				}
 			} else {
 				o = new HashMap<Object, Object>();
@@ -172,7 +172,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 			} else {
 				DirPutFile f = (DirPutFile) val;
 				if(f instanceof DiskDirPutFile && !node.clientCore.allowUploadFrom(((DiskDirPutFile)f).getFile()))
-					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload "+((DiskDirPutFile) f).getFile(), identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload " + ((DiskDirPutFile) f).getFile(), identifier, global);
 				ManifestElement e = f.getElement();
 				manifestElements.put(tempName, e);
 			}

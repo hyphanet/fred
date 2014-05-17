@@ -117,11 +117,11 @@ public class URLEncoderDecoderTest extends TestCase {
 	public void testEncodeForced() {
 		String toEncode,expectedResult;
 		char eachChar;
-		for(int i=0; i<URLEncoder.safeURLCharacters.length(); i++) {
+		for(int i=0; i < URLEncoder.safeURLCharacters.length(); i++) {
 			eachChar = URLEncoder.safeURLCharacters.charAt(i);
 			toEncode = String.valueOf(eachChar);
 			try {
-				expectedResult = "%"+ HexUtil.bytesToHex(
+				expectedResult = "%" + HexUtil.bytesToHex(
 						//since safe chars are only US-ASCII
 						toEncode.getBytes("US-ASCII")); 
 				assertEquals(URLEncoder.encode(toEncode,toEncode,false),
@@ -166,11 +166,11 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * verifies if it raises an exception
 	 */
 	public void testDecodeWrongHex() {
-		String toDecode = "123456789abcde"+prtblAscii+stressedUTF_8Chars;
+		String toDecode = "123456789abcde" + prtblAscii + stressedUTF_8Chars;
 		
-		for (int i = 0; i<toDecode.length(); i++)
+		for (int i = 0; i < toDecode.length(); i++)
 			assertTrue(
-					isDecodeRaisingEncodedException("%"+toDecode.substring(i,i+1),false));
+					isDecodeRaisingEncodedException("%" + toDecode.substring(i,i + 1),false));
 	}
 	
 	/**

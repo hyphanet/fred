@@ -82,11 +82,11 @@ public class WELCOME implements Step {
 	 * @param incognito whether incognito mode is enabled
 	 */
 	private void addSecurityTableCell(HTMLNode header, HTMLNode row, String preset, PageHelper helper, boolean incognito) {
-		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle"+preset));
+		header.addChild("th", "width", "33%", WizardL10n.l10n("presetTitle" + preset));
 		HTMLNode tableCell = row.addChild("td");
 		tableCell.addChild("p", WizardL10n.l10n("preset" + preset));
 		HTMLNode centerForm = tableCell.addChild("div", "style", "text-align:center;");
-		HTMLNode secForm = helper.addFormChild(centerForm, ".", "SecForm"+preset);
+		HTMLNode secForm = helper.addFormChild(centerForm, ".", "SecForm" + preset);
 		secForm.addChild("input",
 		        new String[]{"type", "name", "value", },
 		        new String[]{"hidden", "incognito", String.valueOf(incognito), });

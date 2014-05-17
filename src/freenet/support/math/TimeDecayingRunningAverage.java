@@ -53,11 +53,11 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
 	public String toString() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-		return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+
-			", lastReportTime="+(now - lastReportTime)+
-			"ms ago, createdTime="+(now - createdTime)+
-			"ms ago, totalReports="+totalReports+", started="+started+
-			", defaultValue="+defaultValue+", min="+minReport+", max="+maxReport;
+		return super.toString() + ": currentValue=" + curValue + ", halfLife=" + halfLife +
+			", lastReportTime=" + (now - lastReportTime) +
+			"ms ago, createdTime=" + (now - createdTime) +
+			"ms ago, totalReports=" + totalReports + ", started=" + started +
+			", defaultValue=" + defaultValue + ", min=" + minReport + ", max=" + maxReport;
 		}
     }
     
@@ -81,7 +81,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
         totalReports = 0;
         logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
-        	Logger.debug(this, "Created "+this,
+        	Logger.debug(this, "Created " + this,
         			new Exception("debug"));
         this.timeSkewCallback = callback;
     }
@@ -108,7 +108,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
         totalReports = 0;
         logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
-        	Logger.debug(this, "Created "+this,
+        	Logger.debug(this, "Created " + this,
         			new Exception("debug"));
         if(fs != null) {
         	started = fs.getBoolean("Started", false);
@@ -140,14 +140,14 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
      */
     public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis, TimeSkewDetectorCallback callback) throws IOException {
         int m = dis.readInt();
-        if(m != MAGIC) throw new IOException("Invalid magic "+m);
+        if(m != MAGIC) throw new IOException("Invalid magic " + m);
         int v = dis.readInt();
-        if(v != 1) throw new IOException("Invalid version "+v);
+        if(v != 1) throw new IOException("Invalid version " + v);
         curValue = dis.readDouble();
         if(Double.isInfinite(curValue) || Double.isNaN(curValue))
-            throw new IOException("Invalid weightedTotal: "+curValue);
+            throw new IOException("Invalid weightedTotal: " + curValue);
         if((curValue < min) || (curValue > max))
-            throw new IOException("Out of range: curValue = "+curValue);
+            throw new IOException("Out of range: curValue = " + curValue);
         started = dis.readBoolean();
         long priorExperienceTime = dis.readLong();
         this.halfLife = halfLife;
@@ -197,15 +197,15 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
 			// Must synchronize first to achieve serialization.
 			long now = System.currentTimeMillis();
 			if(d < minReport) {
-				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+				Logger.error(this, "Impossible: " + d + " on " + this, new Exception("error"));
 				return;
 			}
 			if(d > maxReport) {
-				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+				Logger.error(this, "Impossible: " + d + " on " + this, new Exception("error"));
 				return;
 			}
 			if(Double.isInfinite(d) || Double.isNaN(d)) {
-				Logger.error(this, "Reported infinity or NaN to "+this+" : "+d, new Exception("error"));
+				Logger.error(this, "Reported infinity or NaN to " + this + " : " + d, new Exception("error"));
 				return;
 			}
 			totalReports++;
@@ -213,13 +213,13 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
 				curValue = d;
 				started = true;
 				if(logDEBUG)
-					Logger.debug(this, "Reported "+d+" on "+this+" when just started");
+					Logger.debug(this, "Reported " + d + " on " + this + " when just started");
 			} else if(lastReportTime != -1) { // might be just serialized in
 				long thisInterval =
 					 now - lastReportTime;
 				long uptime = now - createdTime;
 				if(thisInterval < 0) {
-					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms)");
+					Logger.error(this, "Clock (reporting) went back in time, ignoring report: " + now + " was " + lastReportTime + " (back " + (-thisInterval) + "ms)");
 					lastReportTime = now;
 					if(timeSkewCallback != null)
 						timeSkewCallback.setTimeSkewDetectedUserAlert();
@@ -227,7 +227,7 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
 				}
 				double thisHalfLife = halfLife;
 				if(uptime < 0) {
-					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms)");
+					Logger.error(this, "Clock (uptime) went back in time, ignoring report: " + now + " was " + createdTime + " (back " + (-uptime) + "ms)");
 					if(timeSkewCallback != null)
 						timeSkewCallback.setTimeSkewDetectedUserAlert();
 					return;
@@ -248,16 +248,16 @@ public final class TimeDecayingRunningAverage implements RunningAverage, Cloneab
 					+ (1.0 - changeFactor) * d;
 				// FIXME remove when stop getting reports of wierd output values
 				if(curValue < minReport || curValue > maxReport) {
-					Logger.error(this, "curValue="+curValue+" was "+oldCurValue+" - out of range");
+					Logger.error(this, "curValue=" + curValue + " was " + oldCurValue + " - out of range");
 					curValue = oldCurValue;
 				}
 				if(logDEBUG)
-					Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
-							", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
-							", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
-							", currentValue="+currentValue()+
-							", thisInterval="+thisInterval+", thisHalfLife="+thisHalfLife+
-							", uptime="+uptime+", changeFactor="+changeFactor);
+					Logger.debug(this, "Reported " + d + " on " + this + ": thisInterval=" + thisInterval +
+							", halfLife=" + halfLife + ", uptime=" + uptime + ", thisHalfLife=" + thisHalfLife +
+							", changeFactor=" + changeFactor + ", oldCurValue=" + oldCurValue +
+							", currentValue=" + currentValue() +
+							", thisInterval=" + thisInterval + ", thisHalfLife=" + thisHalfLife +
+							", uptime=" + uptime + ", changeFactor=" + changeFactor);
 			}
 			lastReportTime = now;
 		}

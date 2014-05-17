@@ -53,7 +53,7 @@ public class ECDH {
             byte [] pubkey = pub.getEncoded();
             byte [] pkey = pk.getEncoded();
 			if(pubkey.length > modulusSize || pubkey.length == 0)
-				throw new Error("Unexpected pubkey length: "+pubkey.length+"!="+modulusSize);
+				throw new Error("Unexpected pubkey length: " + pubkey.length + "!=" + modulusSize);
             PublicKey pub2 = kf.generatePublic(
                     new X509EncodedKeySpec(pubkey)
                     );
@@ -94,7 +94,7 @@ public class ECDH {
 					key = selftest(kg, kf, modulusSize);
 				} catch(Throwable e) {
 					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default KeyPairGenerator provider ("+(kg != null ? kg.getProvider() : null)+") is broken, falling back to BouncyCastle", e);
+					Logger.warning(this, "default KeyPairGenerator provider (" + (kg != null ? kg.getProvider() : null) + ") is broken, falling back to BouncyCastle", e);
 					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
 					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
 					kg.initialize(this.spec);
@@ -106,7 +106,7 @@ public class ECDH {
 					selftest_genSecret(key, ka);
 				} catch(Throwable e) {
 					/* we don't care why we fail, just fallback */
-					Logger.warning(this, "default KeyAgreement provider ("+(ka != null ? ka.getProvider() : null)+") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
+					Logger.warning(this, "default KeyAgreement provider (" + (ka != null ? ka.getProvider() : null) + ") is broken or incompatible with KeyPairGenerator, falling back to BouncyCastle", e);
 					kg = KeyPairGenerator.getInstance("EC", JceLoader.BouncyCastle);
 					kf = KeyFactory.getInstance("EC", JceLoader.BouncyCastle);
 					kg.initialize(this.spec);
@@ -132,9 +132,9 @@ public class ECDH {
 			this.kgProvider = kg.getProvider();
 			this.kfProvider = kf.getProvider();
 			this.kaProvider = ka.getProvider();
-			Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
-			Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
-			Logger.normal(this, name +": using "+kaProvider+" for KeyAgreement(ECDH)");
+			Logger.normal(this, name + ": using " + kgProvider + " for KeyPairGenerator(EC)");
+			Logger.normal(this, name + ": using " + kfProvider + " for KeyFactory(EC)");
+			Logger.normal(this, name + ": using " + kaProvider + " for KeyAgreement(ECDH)");
 		}
         
         private synchronized KeyPairGenerator getKeyPairGenerator() {
@@ -144,10 +144,10 @@ public class ECDH {
                 kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
-                Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
+                Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(),e);
                 e.printStackTrace();
             } catch (InvalidAlgorithmParameterException e) {
-                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : "+e.getMessage(),e);
+                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : " + e.getMessage(),e);
                 e.printStackTrace();
             }
             keygenCached = kg;
@@ -188,10 +188,10 @@ public class ECDH {
 
             return ka.generateSecret();
         } catch (InvalidKeyException e) {
-            Logger.error(this, "InvalidKeyException : "+e.getMessage(),e);
+            Logger.error(this, "InvalidKeyException : " + e.getMessage(),e);
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(this, "NoSuchAlgorithmException : "+e.getMessage(),e);
+            Logger.error(this, "NoSuchAlgorithmException : " + e.getMessage(),e);
             e.printStackTrace();
         }
         return null;
@@ -214,10 +214,10 @@ public class ECDH {
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
             
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(ECDH.class, "NoSuchAlgorithmException : "+e.getMessage(),e);
+            Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(),e);
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
-            Logger.error(ECDH.class, "InvalidKeySpecException : "+e.getMessage(), e);
+            Logger.error(ECDH.class, "InvalidKeySpecException : " + e.getMessage(), e);
             e.printStackTrace();
         }
         
@@ -248,9 +248,9 @@ public class ECDH {
         if(ret.length == curve.modulusSize) {
         	return ret;
         } else if(ret.length > curve.modulusSize) {
-        	throw new IllegalStateException("Encoded public key too long: should be "+curve.modulusSize+" bytes but is "+ret.length);
+        	throw new IllegalStateException("Encoded public key too long: should be " + curve.modulusSize + " bytes but is " + ret.length);
         } else {
-        	Logger.warning(this, "Padding public key from "+ret.length+" to "+curve.modulusSize+" bytes");
+        	Logger.warning(this, "Padding public key from " + ret.length + " to " + curve.modulusSize + " bytes");
         	byte[] out = new byte[curve.modulusSize];
         	System.arraycopy(ret, 0, out, 0, ret.length);
         	return ret;

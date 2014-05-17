@@ -200,7 +200,7 @@ public class PeerManager {
 		}
 		OutgoingPacketMangler mangler = crypto.packetMangler;
 		int maxBackups = isOpennet ? BACKUPS_OPENNET : BACKUPS_DARKNET;
-		for(int i=0;i<=maxBackups;i++) {
+		for(int i=0;i <= maxBackups;i++) {
 			File peersFile = this.getBackupFilename(filename, i);
 			// Try to read the node list from disk
 			if(peersFile.exists())
@@ -253,22 +253,22 @@ public class PeerManager {
 					gotSome = true;
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					System.err.println("Cannot parse a friend from the peers file: " + e2);
 					someBroken = true;
 					continue;
 				} catch(PeerParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					System.err.println("Cannot parse a friend from the peers file: " + e2);
 					someBroken = true;
 					continue;
 				} catch(ReferenceSignatureVerificationException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					System.err.println("Cannot parse a friend from the peers file: " + e2);
 					someBroken = true;
 					continue;
 				} catch (RuntimeException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
-					System.err.println("Cannot parse a friend from the peers file: "+e2);
+					System.err.println("Cannot parse a friend from the peers file: " + e2);
 					someBroken = true;
 					continue;
 					// FIXME tell the user???
@@ -285,7 +285,7 @@ public class PeerManager {
 			Logger.error(this, "Ignoring " + e3 + " caught reading " + peersFile, e3);
 		}
 		if(someBroken) {
-			File broken = new File(peersFile.getPath()+".broken");
+			File broken = new File(peersFile.getPath() + ".broken");
 			try {
 				broken.delete();
 				FileOutputStream fos = new FileOutputStream(broken);
@@ -293,7 +293,7 @@ public class PeerManager {
 				FileUtil.copy(fis, fos, -1);
 				fos.close();
 				fis.close();
-				System.err.println("Broken peers file copied to "+broken);
+				System.err.println("Broken peers file copied to " + broken);
 			} catch (IOException e) {
 				System.err.println("Unable to copy broken peers file.");
 			}
@@ -631,7 +631,7 @@ public class PeerManager {
 		}
 		if(pn.notifyDisconnecting(dumpMessagesNow)) {
 			if(logMINOR)
-				Logger.minor(this, "Already disconnecting "+pn.shortToString());
+				Logger.minor(this, "Already disconnecting " + pn.shortToString());
 			return;
 		}
 		if(sendDisconnectMessage) {
@@ -918,7 +918,7 @@ public class PeerManager {
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
-			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
+			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length + " key " + key);
 		
 		double myLoc = node.getLocation();
 		
@@ -965,7 +965,7 @@ public class PeerManager {
 		
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
-		for(int i=0;i<peers.length;i++) {
+		for(int i=0;i < peers.length;i++) {
 			selectionRates[i] = peers[i].selectionRate();
 			totalSelectionRate += selectionRates[i];
 		}
@@ -989,12 +989,12 @@ public class PeerManager {
 			}
 			if(p.isDisconnecting()) {
 				if(logMINOR)
-					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
+					Logger.minor(this, "Skipping (disconnecting): " + p.getPeer());
 				continue;
 			}
 			if(newLoadManagement && p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
-					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
+					Logger.minor(this, "Skipping (no load stats): " + p.getPeer());
 				continue;
 			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
@@ -1012,7 +1012,7 @@ public class PeerManager {
 				}
 			}
 			if(newLoadManagement && p.isInMandatoryBackoff(now, realTime)) {
-				if(logMINOR) Logger.minor(this, "Skipping (mandatory backoff): "+p.getPeer());
+				if(logMINOR) Logger.minor(this, "Skipping (mandatory backoff): " + p.getPeer());
 				continue;
 			}
 			
@@ -1058,7 +1058,7 @@ public class PeerManager {
 					}
 				}
 				if(logMINOR)
-					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+					Logger.minor(this, "The peer " + p + " has published his peer's locations and the closest we have found to the target is " + diff + " away.");
 			}
 			
 			if(diff > maxDistance)
@@ -1071,7 +1071,7 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + Location.distance(loc, target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
 			boolean chosen = false;
-			if(diff < closestDistance || (Math.abs(diff - closestDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
+			if(diff < closestDistance || (Math.abs(diff - closestDistance) < Double.MIN_VALUE * 2 && (direct || realDiff < closestRealDistance))) {
 				closestDistance = diff;
 				chosen = true;
 				closestRealDistance = realDiff;
@@ -1079,7 +1079,7 @@ public class PeerManager {
 					Logger.minor(this, "New best: " + diff + " (" + loc + " for " + p.getPeer());
 			}
 			boolean backedOff = p.isRoutingBackedOff(ignoreBackoffUnder, realTime);
-			if(backedOff && (diff < closestBackedOffDistance || (Math.abs(diff - closestBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
+			if(backedOff && (diff < closestBackedOffDistance || (Math.abs(diff - closestBackedOffDistance) < Double.MIN_VALUE * 2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
 				closestBackedOffDistance = diff;
 				closestBackedOff = p;
 				chosen = true;
@@ -1087,7 +1087,7 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "New best-backed-off: " + diff + " (" + loc + " for " + p.getPeer());
 			}
-			if(!backedOff && (diff < closestNotBackedOffDistance || (Math.abs(diff - closestNotBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealNotBackedOffDistance))) && !timedOut) {
+			if(!backedOff && (diff < closestNotBackedOffDistance || (Math.abs(diff - closestNotBackedOffDistance) < Double.MIN_VALUE * 2 && (direct || realDiff < closestRealNotBackedOffDistance))) && !timedOut) {
 				closestNotBackedOffDistance = diff;
 				closestNotBackedOff = p;
 				chosen = true;
@@ -1162,7 +1162,7 @@ public class PeerManager {
 		}
 		
 		if(recentlyFailed != null && logMINOR)
-			Logger.minor(this, "Count waiting: "+countWaiting);
+			Logger.minor(this, "Count waiting: " + countWaiting);
 		if(recentlyFailed != null && countWaiting >= 3 && 
 				node.enableULPRDataPropagation /* dangerous to do RecentlyFailed if we won't track/propagate offers */) {
 			// Recently failed is possible.
@@ -1189,7 +1189,7 @@ public class PeerManager {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
-								if(logMINOR) Logger.minor(this, "Recently failed: "+(int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now))+"ms");
+								if(logMINOR) Logger.minor(this, "Recently failed: " + (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)) + "ms");
 							}
 							
 							long check;
@@ -1200,12 +1200,12 @@ public class PeerManager {
 								// A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
 								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
 							if(check < until) {
-								if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
+								if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from " + (until - now) + "ms to " + (check - now) + "ms because of check for peers to wakeup");
 								until = check;
 							}
 							if(until > now + MIN_DELTA) {
 								if(until > now + FailureTable.RECENTLY_FAILED_TIME) {
-									Logger.error(this, "Wakeup time is too long: "+TimeUtil.formatTime(until-now));
+									Logger.error(this, "Wakeup time is too long: " + TimeUtil.formatTime(until - now));
 									until = now + FailureTable.RECENTLY_FAILED_TIME;
 								}
 								if(!node.failureTable.hadAnyOffers(key)) {
@@ -1216,14 +1216,14 @@ public class PeerManager {
 								}
 							} else {
 								// Waking up too soon. Don't RecentlyFailed.
-								if(logMINOR) Logger.minor(this, "Not sending RecentlyFailed because will wake up in "+(check-now)+"ms");
+								if(logMINOR) Logger.minor(this, "Not sending RecentlyFailed because will wake up in " + (check - now) + "ms");
 							}
 						}
 					} else {
-						if(logMINOR) Logger.minor(this, "Second choice is not in timeout (for recentlyfailed): "+second);
+						if(logMINOR) Logger.minor(this, "Second choice is not in timeout (for recentlyfailed): " + second);
 					}
 				} else {
-					if(logMINOR) Logger.minor(this, "First choice is not in timeout (for recentlyfailed): "+first);
+					if(logMINOR) Logger.minor(this, "First choice is not in timeout (for recentlyfailed): " + first);
 				}
 			}
 		}
@@ -1289,7 +1289,7 @@ public class PeerManager {
 					}
 				}
 				if(logMINOR)
-					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+					Logger.minor(this, "The peer " + p + " has published his peer's locations and the closest we have found to the target is " + diff + " away.");
 			}
 			
 			if(diff >= bestDistance) continue;
@@ -1319,12 +1319,12 @@ public class PeerManager {
 			else if(bulkBackoff > now && rtBackoff > now)
 				wakeup = Math.max(wakeup, Math.min(bulkBackoff, rtBackoff));
 			if(wakeup > now) {
-				if(logMINOR) Logger.minor(this, "Peer "+p+" will wake up from backoff, failure table and recentlyfailed in "+(wakeup-now)+"ms");
+				if(logMINOR) Logger.minor(this, "Peer " + p + " will wake up from backoff, failure table and recentlyfailed in " + (wakeup - now) + "ms");
 				overallWakeup = Math.min(overallWakeup, wakeup);
 			} else {
 				// Race condition??? Just come out of backoff and we used the other one?
 				// Don't take it into account.
-				if(logMINOR) Logger.minor(this, "Better node in check backoffs for RecentlyFailed??? "+p);
+				if(logMINOR) Logger.minor(this, "Better node in check backoffs for RecentlyFailed??? " + p);
 			}
 		}
 		return overallWakeup;
@@ -1505,7 +1505,7 @@ public class PeerManager {
 			File f;
 			File full = new File(filename).getAbsoluteFile();
 			try {
-				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
+				f = File.createTempFile(full.getName() + ".", ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
 				Closer.close(fos);
@@ -1536,7 +1536,7 @@ public class PeerManager {
 				
 				if(rotateBackups) {
 					File prevFile = null;
-					for(int i=maxBackups;i>=0;i--) {
+					for(int i=maxBackups;i >= 0;i--) {
 						File thisFile = getBackupFilename(filename, i);
 						if(prevFile == null) {
 							thisFile.delete();
@@ -1570,8 +1570,8 @@ public class PeerManager {
 
 	private File getBackupFilename(String filename, int i) {
 		if(i == 0) return new File(filename);
-		if(i == 1) return new File(filename+".bak");
-		return new File(filename+".bak."+i);
+		if(i == 1) return new File(filename + ".bak");
+		return new File(filename + ".bak." + i);
 	}
 
 	/**
@@ -1790,7 +1790,7 @@ public class PeerManager {
 						break;
 				}
 			}
-			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting+" No load stats: "+numberOfNoLoadStats);
+			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting + " No load stats: " + numberOfNoLoadStats);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
 	}
@@ -1849,7 +1849,7 @@ public class PeerManager {
 	 */
 	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode, boolean realTime) {
 		if(peerNodeRoutingBackoffReason == null) {
-			Logger.error(this, "Impossible backoff reason null on "+peerNode+" realtime="+realTime, new Exception("error"));
+			Logger.error(this, "Impossible backoff reason null on " + peerNode + " realtime=" + realTime, new Exception("error"));
 			return;
 		}
 		PeerStatusTracker<String> peerNodeRoutingBackoffReasons =
@@ -2072,7 +2072,7 @@ public class PeerManager {
 				continue;
 			count++;
 		}
-		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
+		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning " + count);
 		return count;
 	}
 

@@ -22,7 +22,7 @@ public class ErrorTest extends TestCase {
 					assertTrue("valueOf() threw when given valid code " + code + ". (" + t.name() + ")", false);
 				}
 			} else {
-				assertTrue("isValid() returned false for valid code " + code +". (" + t.name() + ")", false);
+				assertTrue("isValid() returned false for valid code " + code + ". (" + t.name() + ")", false);
 			}
 		}
 	}

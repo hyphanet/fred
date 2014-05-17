@@ -18,12 +18,12 @@ public class PluginStoreTest extends TestCase {
 
     /** These are not allowed in SFS except base64 encoded when the always allow base64 flag is on.
      * So they ARE allowed in PluginStore's. */
-    private String invalidCharsForSFS = "\r\n"+SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR+
-        SimpleFieldSet.MULTI_LEVEL_CHAR+SimpleFieldSet.MULTI_VALUE_CHAR;
+    private String invalidCharsForSFS = "\r\n" + SimpleFieldSet.KEYVALUE_SEPARATOR_CHAR +
+        SimpleFieldSet.MULTI_LEVEL_CHAR + SimpleFieldSet.MULTI_VALUE_CHAR;
     
     public void testStringsWithInvalidChars() throws IllegalBase64Exception, FSParseException {
         PluginStore store = new PluginStore();
-        for(int i=0;i<invalidCharsForSFS.length();i++) {
+        for(int i=0;i < invalidCharsForSFS.length();i++) {
             char c = invalidCharsForSFS.charAt(i);
             store.strings.put(String.valueOf(c), String.valueOf(c));
         }
@@ -38,52 +38,52 @@ public class PluginStoreTest extends TestCase {
     }
     
     private void addRandomContent(PluginStore store, Random r) {
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.booleans.put(randomKey(r), r.nextBoolean());
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             boolean[] list = new boolean[r.nextInt(10)];
-            for(int j=0;j<list.length;j++) list[j] = r.nextBoolean();
+            for(int j=0;j < list.length;j++) list[j] = r.nextBoolean();
             store.booleansArrays.put(randomKey(r), list);
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.integers.put(randomKey(r), r.nextInt());
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             int[] list = new int[r.nextInt(10)];
-            for(int j=0;j<list.length;j++) list[j] = r.nextInt();
+            for(int j=0;j < list.length;j++) list[j] = r.nextInt();
             store.integersArrays.put(randomKey(r), list);
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.longs.put(randomKey(r), r.nextLong());
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             long[] list = new long[r.nextInt(10)];
-            for(int j=0;j<list.length;j++) list[j] = r.nextLong();
+            for(int j=0;j < list.length;j++) list[j] = r.nextLong();
             store.longsArrays.put(randomKey(r), list);
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.shorts.put(randomKey(r), (short)r.nextInt());
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             short[] list = new short[r.nextInt(10)];
-            for(int j=0;j<list.length;j++) list[j] = (short)r.nextInt();
+            for(int j=0;j < list.length;j++) list[j] = (short)r.nextInt();
             store.shortsArrays.put(randomKey(r), list);
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.bytes.put(randomKey(r), (byte)r.nextInt());
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             byte[] list = new byte[r.nextInt(10)];
             r.nextBytes(list);
             store.bytesArrays.put(randomKey(r), list);
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             store.strings.put(randomKey(r), randomKey(r));
         }
-        for(int i=0;i<20;i++) {
+        for(int i=0;i < 20;i++) {
             String[] list = new String[r.nextInt(10)];
-            for(int j=0;j<list.length;j++) list[j] = randomKey(r);
+            for(int j=0;j < list.length;j++) list[j] = randomKey(r);
             store.stringsArrays.put(randomKey(r), list);
         }
     }
@@ -91,7 +91,7 @@ public class PluginStoreTest extends TestCase {
     private String randomKey(Random r) {
         int len = r.nextInt(20);
         char[] c = new char[len];
-        for(int i=0;i<len;i++) {
+        for(int i=0;i < len;i++) {
             c[i] = randomChar(r);
         }
         return new String(c);
@@ -105,7 +105,7 @@ public class PluginStoreTest extends TestCase {
             return invalidCharsForSFS.charAt(r.nextInt(invalidCharsForSFS.length()));
         else {
             while(true) {
-                char ch = (char) (128+r.nextInt(0xF000-128));
+                char ch = (char) (128 + r.nextInt(0xF000 - 128));
                 if(Character.isDefined(ch) && (!Character.isHighSurrogate(ch)) &&
                         (!Character.isISOControl(ch)) && !Character.isSupplementaryCodePoint(ch)) {
                     return ch;

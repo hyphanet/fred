@@ -18,7 +18,7 @@ public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray impl
 	
 	@Override
 	public String toString() {
-		return super.toString() + ":"+number;
+		return super.toString() + ":" + number;
 	}
 
 }

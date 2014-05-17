@@ -19,7 +19,7 @@ public class Loader {
      **/
     static public Class<?> load(String name) throws ClassNotFoundException {
 		Class<?> c = classes.get(name);
-	if(c==null) {
+	if(c == null) {
 	    c=Class.forName(name);
 	    classes.put(name, c);
 	}

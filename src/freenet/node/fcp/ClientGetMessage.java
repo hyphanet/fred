@@ -113,7 +113,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: " + e.getMessage(), identifier, global);
 			}
 		}
 		String returnTypeString = fs.get("ReturnType");
@@ -148,7 +148,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 				// Then delete it, as we have to rename over it anyway (atomic creation of a file does not guarantee
 				// that it won't be replaced with a symlink).
 				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
-					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file " + tempFile, identifier, global);
 				tempFile.delete();
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
@@ -163,7 +163,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			try {
 				maxSize = Long.parseLong(maxSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: " + e.getMessage(), identifier, global);
 			}
 		}
 		String maxTempSizeString = fs.get("MaxTempSize");
@@ -174,7 +174,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			try {
 				maxTempSize = Long.parseLong(maxTempSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: " + e.getMessage(), identifier, global);
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
@@ -185,11 +185,11 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: " + e.getMessage(), identifier, global);
 			}
 		}
 		if(logMINOR)
-			Logger.minor(this, "max retries="+maxRetries);
+			Logger.minor(this, "max retries=" + maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below FProxy
@@ -198,9 +198,9 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString);
 				if(!RequestStarter.isValidPriorityClass(priorityClass))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class " + priorityClass + " - range is " + RequestStarter.MINIMUM_PRIORITY_CLASS + " to " + RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: " + e.getMessage(), identifier, global);
 			}
 		}
 		String persistenceString = fs.get("Persistence");
@@ -215,7 +215,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: " + persistenceString, identifier, global);
 		}
 		if(global && (persistenceType == ClientRequest.PERSIST_CONNECTION)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier, global);
@@ -277,7 +277,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		try {
 			return parseReturnType(string);
 		} catch (NumberFormatException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unable to parse ReturnType "+string+" : "+e, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unable to parse ReturnType " + string + " : " + e, identifier, global);
 		}
 	}
 	
@@ -299,7 +299,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		short s = parseReturnType(string);
 		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK))
 			return s;
-		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
+		throw new IllegalArgumentException("Invalid or unsupported return type: " + returnTypeString(s));
 	}
 
 	@Override

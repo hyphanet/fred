@@ -45,7 +45,7 @@ public class URIPreEncoderTest extends TestCase {
 	 * not safe chars into safe chars.
 	 */
 	public void testEncode() {
-		String toEncode = prtblAscii+stressedUTF_8Chars;
+		String toEncode = prtblAscii + stressedUTF_8Chars;
 		String encoded = URIPreEncoder.encode(toEncode);
 		assertTrue(containsOnlyValidChars(encoded));
 		

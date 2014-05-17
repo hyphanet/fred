@@ -49,18 +49,18 @@ public class DATASTORE_SIZE implements Step {
 			long current = sizeOption.getValue();
 			result.addChild("option",
 			        new String[] { "value", "selected" },
-			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
+			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix") + " " + SizeUtil.formatSize(current));
 		} else if(autodetectedSize != -1) {
 			result.addChild("option",
 			        new String[] { "value", "selected" },
 			        new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
 		}
-		if(autodetectedSize != 512*1024*1024) {
+		if(autodetectedSize != 512 * 1024 * 1024) {
 			result.addChild("option", "value", "512M", "512 MiB");
 		}
 		// We always allow at least 1GB
 		result.addChild("option", "value", "1G", "1 GiB");
-		if(maxSize >= 2l*1024*1024*1024) {
+		if(maxSize >= 2l * 1024 * 1024 * 1024) {
 			if(autodetectedSize != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "2G", "2 GiB");
 			} else {
@@ -69,16 +69,16 @@ public class DATASTORE_SIZE implements Step {
 				        new String[] { "2G", "on" }, "2GiB");
 			}
 		}
-		if(maxSize >= 3l*1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");
-		if(maxSize >= 5l*1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
-		if(maxSize >= 10l*1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
-		if(maxSize >= 20l*1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
-		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
-		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
-		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
-		if(maxSize >= 200l*1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
-		if(maxSize >= 300l*1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
-		if(maxSize >= 500l*1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
+		if(maxSize >= 3l * 1024 * 1024 * 1024) result.addChild("option", "value", "3G", "3 GiB");
+		if(maxSize >= 5l * 1024 * 1024 * 1024) result.addChild("option", "value", "5G", "5 GiB");
+		if(maxSize >= 10l * 1024 * 1024 * 1024) result.addChild("option", "value", "10G", "10 GiB");
+		if(maxSize >= 20l * 1024 * 1024 * 1024) result.addChild("option", "value", "20G", "20 GiB");
+		if(maxSize >= 30l * 1024 * 1024 * 1024) result.addChild("option", "value", "30G", "30 GiB");
+		if(maxSize >= 50l * 1024 * 1024 * 1024) result.addChild("option", "value", "50G", "50 GiB");
+		if(maxSize >= 100l * 1024 * 1024 * 1024) result.addChild("option", "value", "100G", "100 GiB");
+		if(maxSize >= 200l * 1024 * 1024 * 1024) result.addChild("option", "value", "200G", "200GiB");
+		if(maxSize >= 300l * 1024 * 1024 * 1024) result.addChild("option", "value", "300G", "300GiB");
+		if(maxSize >= 500l * 1024 * 1024 * 1024) result.addChild("option", "value", "500G", "500GiB");
 
 		//Put buttons below dropdown.
 		HTMLNode below = bandwidthForm.addChild("div");
@@ -101,7 +101,7 @@ public class DATASTORE_SIZE implements Step {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
 			// client cache: 10% up to 200MB
-			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
+			long clientCacheSize = Math.min(size / 10, 200 * 1024 * 1024);
 			// recent requests cache / slashdot cache / ULPR cache
 			int upstreamLimit = config.get("node").getInt("outputBandwidthLimit");
 			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
@@ -119,15 +119,15 @@ public class DATASTORE_SIZE implements Step {
 
 			long storeSize = size - (clientCacheSize + slashdotCacheSize);
 
-			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
+			System.out.println("Setting datastore size to " + Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
 			if(config.get("node").getString("storeType").equals("ram"))
 				config.get("node").set("storeType", "salt-hash");
-			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
+			System.out.println("Setting client cache size to " + Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
 			if(config.get("node").getString("clientCacheType").equals("ram"))
 				config.get("node").set("clientCacheType", "salt-hash");
-			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
+			System.out.println("Setting slashdot/ULPR/recent requests cache size to " + Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
 
 
@@ -139,10 +139,10 @@ public class DATASTORE_SIZE implements Step {
 
 	private long maxDatastoreSize() {
 		long maxMemory = NodeStarter.getMemoryLimitBytes();
-		if(maxMemory == Long.MAX_VALUE) return 1024*1024*1024; // Treat as don't know.
-		if(maxMemory < 128*1024*1024) return 1024*1024*1024; // 1GB default if don't know or very small memory.
+		if(maxMemory == Long.MAX_VALUE) return 1024 * 1024 * 1024; // Treat as don't know.
+		if(maxMemory < 128 * 1024 * 1024) return 1024 * 1024 * 1024; // 1GB default if don't know or very small memory.
 		// Don't use the first 100MB for slot filters.
-		long available = maxMemory - 100*1024*1024;
+		long available = maxMemory - 100 * 1024 * 1024;
 		// Don't use more than 50% of available memory for slot filters.
 		available = available / 2;
 		// Slot filters are 4 bytes per slot.
@@ -167,15 +167,15 @@ public class DATASTORE_SIZE implements Step {
 			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
 				// If 20GB+ free, 5% of available disk space.
 				// Maximum of 256GB. That's a 128MB bloom filter.
-				shortSize = Math.min(freeSpace / 20, 256*1024*1024*1024L);
+				shortSize = Math.min(freeSpace / 20, 256 * 1024 * 1024 * 1024L);
 			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
 				// If 10GB+ free, 10% of available disk space.
 				shortSize = freeSpace / 10;
 			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
 				// If 5GB+ free, default to 512MB
-				shortSize = 512*1024*1024;
+				shortSize = 512 * 1024 * 1024;
 			}else { // <5GB => 256MB
-				shortSize = 256*1024*1024;
+				shortSize = 256 * 1024 * 1024;
 			}
 
 			return shortSize;

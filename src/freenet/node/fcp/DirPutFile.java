@@ -63,7 +63,7 @@ abstract class DirPutFile {
 		} else if(type.equalsIgnoreCase("redirect")) {
 			return RedirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: " + type, identifier, global);
 		}
 	}
 
@@ -80,9 +80,9 @@ abstract class DirPutFile {
 	public ManifestElement getElement() {
 		String n = name;
 		int idx = n.lastIndexOf('/');
-		if(idx != -1) n = n.substring(idx+1);
+		if(idx != -1) n = n.substring(idx + 1);
 		if(logMINOR)
-			Logger.minor(this, "Element name: "+name+" -> "+n);
+			Logger.minor(this, "Element name: " + name + " -> " + n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}
 

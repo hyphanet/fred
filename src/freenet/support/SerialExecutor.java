@@ -72,8 +72,8 @@ public class SerialExecutor implements Executor {
 				try {
 					job.run();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-					Logger.error(this, "While running "+job+" on "+this);
+					Logger.error(this, "Caught " + t, t);
+					Logger.error(this, "While running " + job + " on " + this);
 				}
 			}
 			} finally {
@@ -142,7 +142,7 @@ public class SerialExecutor implements Executor {
 
 	@Override
 	public int[] runningThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 		if (threadStarted && !threadWaiting)
 			retval[priority] = 1;
 		return retval;
@@ -150,7 +150,7 @@ public class SerialExecutor implements Executor {
 
 	@Override
 	public int[] waitingThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
 		synchronized (syncLock) {
 			if(threadStarted && threadWaiting)
 				retval[priority] = 1;

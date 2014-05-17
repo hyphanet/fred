@@ -35,18 +35,18 @@ public class ContentFilterTest extends TestCase {
 	private static final String BASE_URI_PROTOCOL = "http";
 	private static final String BASE_URI_CONTENT = "localhost:8888";
 	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
-	private static final String BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/';
-	private static final String ALT_BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
+	private static final String BASE_URI = BASE_URI_PROTOCOL + "://" + BASE_URI_CONTENT + '/';
+	private static final String ALT_BASE_URI = BASE_URI_PROTOCOL + "://" + BASE_URI_CONTENT + '/' + BASE_KEY;
 
 	private static final String EXTERNAL_LINK = "www.evilwebsite.gov";
 	private static final String EXTERNAL_LINK_OK = "<a />";
 	// check that external links are not allowed
-	private static final String EXTERNAL_LINK_CHECK1 = "<a href=\""+EXTERNAL_LINK+"\"/>";
-	private static final String EXTERNAL_LINK_CHECK2 = "<a href=\""+BASE_URI_PROTOCOL+"://"+EXTERNAL_LINK+"\"/>";
-	private static final String EXTERNAL_LINK_CHECK3 = "<a href=\""+BASE_URI_CONTENT+"@http://"+EXTERNAL_LINK+"\"/>";
+	private static final String EXTERNAL_LINK_CHECK1 = "<a href=\"" + EXTERNAL_LINK + "\"/>";
+	private static final String EXTERNAL_LINK_CHECK2 = "<a href=\"" + BASE_URI_PROTOCOL + "://" + EXTERNAL_LINK + "\"/>";
+	private static final String EXTERNAL_LINK_CHECK3 = "<a href=\"" + BASE_URI_CONTENT + "@http://" + EXTERNAL_LINK + "\"/>";
 
 	private static final String INTERNAL_RELATIVE_LINK = "<a href=\"/KSK@gpl.txt\" />";
-	private static final String INTERNAL_ABSOLUTE_LINK = "<a href=\""+BASE_URI+"KSK@gpl.txt\" />";
+	private static final String INTERNAL_ABSOLUTE_LINK = "<a href=\"" + BASE_URI + "KSK@gpl.txt\" />";
 
 	private static final String INTERNAL_RELATIVE_LINK1 = "<a href=\"test.html\" />";
 
@@ -71,11 +71,11 @@ public class ContentFilterTest extends TestCase {
 	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous 1 AND CAPITAL LETTERS!!!!.ogg\" />";
 	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing%20-%20%5bblah%5d%20Apostrophe%27%20-%20gratuitous%201%20AND%20CAPITAL%20LETTERS%21%21%21%21.ogg\" />";
 	// @see bug #2297
-	private static final String PREVENT_FPROXY_ACCESS = "<a href=\""+BASE_URI+"\"/>";
+	private static final String PREVENT_FPROXY_ACCESS = "<a href=\"" + BASE_URI + "\"/>";
 	// @see bug #2921
-	private static final String PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE = "<style>div { background: url("+BASE_URI+") }</style>";
-	private static final String PREVENT_EXTERNAL_ACCESS_CSS_CASE = "<style>div { background: uRl("+BASE_URI+") }</style>";
-	private static final String PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE = "<style>div { background: \\u\\r\\l("+BASE_URI+") }</style>";
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE = "<style>div { background: url(" + BASE_URI + ") }</style>";
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_CASE = "<style>div { background: uRl(" + BASE_URI + ") }</style>";
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE = "<style>div { background: \\u\\r\\l(" + BASE_URI + ") }</style>";
 	private static final String WHITELIST_STATIC_CONTENT = "<a href=\"/static/themes/clean/theme.css\" />";
 	private static final String XHTML_VOIDELEMENT="<html xmlns=\"http://www.w3.org/1999/xhtml\"><br><hr></html>";
 	private static final String XHTML_VOIDELEMENTC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><br /><hr /></html>";
@@ -113,7 +113,7 @@ public class ContentFilterTest extends TestCase {
 
 	private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
 	
-	private static final String BASE_HREF = "<base href=\"/"+BASE_KEY+"\">";
+	private static final String BASE_HREF = "<base href=\"/" + BASE_KEY + "\">";
 	private static final String BAD_BASE_HREF = "<base href=\"/\">";
 	private static final String BAD_BASE_HREF2 = "<base href=\"//www.google.com\">";
 	private static final String BAD_BASE_HREF3 = "<base>";
@@ -254,13 +254,13 @@ public class ContentFilterTest extends TestCase {
 	}
 
 	private String headFilter(String data) throws Exception {
-		String s = HTMLFilter("<head>"+data+"</head>");
+		String s = HTMLFilter("<head>" + data + "</head>");
 		if(s == null) return s;
 		if(!s.startsWith("<head>"))
-			assertTrue("Head deleted???: "+s, false);
+			assertTrue("Head deleted???: " + s, false);
 		s = s.substring("<head>".length());
 		if(!s.endsWith("</head>"))
-			assertTrue("Head close deleted???: "+s, false);
+			assertTrue("Head close deleted???: " + s, false);
 		s = s.substring(0, s.length() - "</head>".length());
 		return s;
 	}
@@ -270,9 +270,9 @@ public class ContentFilterTest extends TestCase {
 		String s = "<html><body><a href=\"http://www.google.com/\">Blah</a>";
 		String end = "</body></html>";
 		String alt = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-16\"></head><body><a href=\"http://www.freenetproject.org/\">Blah</a></body></html>";
-		if((s.length()+end.length()) % 2 == 1)
+		if((s.length() + end.length()) % 2 == 1)
 			s += " ";
-		s = s+end;
+		s = s + end;
 		byte[] buf;
 		try {
 			buf = s.getBytes("UTF-8");
@@ -281,10 +281,10 @@ public class ContentFilterTest extends TestCase {
 		}
 		byte[] utf16bom = new byte[] { (byte)0xFE, (byte)0xFF };
 		byte[] bufUTF16 = alt.getBytes("UTF-16");
-		byte[] total = new byte[buf.length+utf16bom.length+bufUTF16.length];
+		byte[] total = new byte[buf.length + utf16bom.length + bufUTF16.length];
 		System.arraycopy(utf16bom, 0, total, 0, utf16bom.length);
 		System.arraycopy(buf, 0, total, utf16bom.length, buf.length);
-		System.arraycopy(bufUTF16, 0, total, utf16bom.length+buf.length, bufUTF16.length);
+		System.arraycopy(bufUTF16, 0, total, utf16bom.length + buf.length, bufUTF16.length);
 		HTMLFilter filter = new HTMLFilter();
 		boolean failed = false;
 		FileOutputStream fos;
@@ -297,7 +297,7 @@ public class ContentFilterTest extends TestCase {
 			failed = true;
 			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (HTMLFilter)", true);
 		} catch (DataFilterException e) {
-			System.out.println("Failure: "+e);
+			System.out.println("Failure: " + e);
 			e.printStackTrace();
 			if(e.getCause() != null) {
 				e.getCause().printStackTrace();
@@ -311,9 +311,9 @@ public class ContentFilterTest extends TestCase {
 			fos.write(out.toByteArray());
 			fos.close();
 			failed = true;
-			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter) - Detected charset: "+fo.charset, true);
+			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter) - Detected charset: " + fo.charset, true);
 		} catch (DataFilterException e) {
-			System.out.println("Failure: "+e);
+			System.out.println("Failure: " + e);
 			e.printStackTrace();
 			if(e.getCause() != null) {
 				e.getCause().printStackTrace();
@@ -331,10 +331,10 @@ public class ContentFilterTest extends TestCase {
 	public static String HTMLFilter(String data) throws Exception {
 		if(data.startsWith("<html")) return HTMLFilter(data, false);
 		if(data.startsWith("<?")) return HTMLFilter(data, false);
-		String s = HTMLFilter("<html>"+data+"</html>", false);
+		String s = HTMLFilter("<html>" + data + "</html>", false);
 		assertTrue(s.startsWith("<html>"));
 		s = s.substring("<html>".length());
-		assertTrue("s = \""+s+"\"", s.endsWith("</html>"));
+		assertTrue("s = \"" + s + "\"", s.endsWith("</html>"));
 		s = s.substring(0, s.length() - "</html>".length());
 		return s;
 	}

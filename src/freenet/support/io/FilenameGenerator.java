@@ -51,31 +51,31 @@ public class FilenameGenerator {
             tmpDir.mkdir();
 		}
 		if(!(tmpDir.isDirectory() && tmpDir.canRead() && tmpDir.canWrite()))
-			throw new IOException("Not a directory or cannot read/write: "+tmpDir);
+			throw new IOException("Not a directory or cannot read/write: " + tmpDir);
 		if(wipeFiles) {
 			long wipedFiles = 0;
 			long wipeableFiles = 0;
 			long startWipe = System.currentTimeMillis();
 			File[] filenames = tmpDir.listFiles();
 			if(filenames != null) {
-				for(int i=0;i<filenames.length;i++) {
+				for(int i=0;i < filenames.length;i++) {
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					if(i % 1024 == 0 && i > 0)
 						// User may want some feedback during startup
-						System.err.println("Deleted "+wipedFiles+" temp files ("+(i - wipeableFiles)+" non-temp files in temp dir)");
+						System.err.println("Deleted " + wipedFiles + " temp files (" + (i - wipeableFiles) + " non-temp files in temp dir)");
 					File f = filenames[i];
 					String name = f.getName();
 					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
 							name.startsWith(prefix))) {
 						wipeableFiles++;
 						if((!f.delete()) && f.exists())
-							System.err.println("Unable to delete temporary file "+f+" - permissions problem?");
+							System.err.println("Unable to delete temporary file " + f + " - permissions problem?");
 						else
 							wipedFiles++;
 					}
 				}
 				long endWipe = System.currentTimeMillis();
-				System.err.println("Deleted "+wipedFiles+" of "+wipeableFiles+" temporary files ("+(filenames.length-wipeableFiles)+" non-temp files in temp directory) in "+TimeUtil.formatTime(endWipe-startWipe));
+				System.err.println("Deleted " + wipedFiles + " of " + wipeableFiles + " temporary files (" + (filenames.length - wipeableFiles) + " non-temp files in temp directory) in " + TimeUtil.formatTime(endWipe - startWipe));
 			}
 		}
 	}
@@ -89,7 +89,7 @@ public class FilenameGenerator {
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
 				if(logMINOR)
-					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
+					Logger.minor(this, "Made random filename: " + ret, new Exception("debug"));
 				return randomFilename;
 			}
 		}
@@ -112,18 +112,18 @@ public class FilenameGenerator {
 
 	public long getID(File file) {
 		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) {
-			Logger.error(this, "Not the same dir: parent="+FileUtil.getCanonicalFile(file.getParentFile())+" but tmpDir="+tmpDir);
+			Logger.error(this, "Not the same dir: parent=" + FileUtil.getCanonicalFile(file.getParentFile()) + " but tmpDir=" + tmpDir);
 			return -1;
 		}
 		String name = file.getName();
 		if(!name.startsWith(prefix)) {
-			Logger.error(this, "Does not start with prefix: "+name+" prefix "+prefix);
+			Logger.error(this, "Does not start with prefix: " + name + " prefix " + prefix);
 			return -1;
 		}
 		try {
 			return Fields.hexToLong(name.substring(prefix.length()));
 		} catch (NumberFormatException e) {
-			Logger.error(this, "Cannot getID: "+e+" from "+(name.substring(prefix.length())), e);
+			Logger.error(this, "Cannot getID: " + e + " from " + (name.substring(prefix.length())), e);
 			return -1;
 		}
 	}
@@ -144,34 +144,34 @@ public class FilenameGenerator {
 		// Symptoms are it trying to move even though the two dirs are blatantly identical.
 		File oldDir = FileUtil.getCanonicalFile(new File(tmpDir.getPath()));
 		File newDir = FileUtil.getCanonicalFile(dir);
-		System.err.println("Old: "+oldDir+" prefix "+this.prefix+" from "+tmpDir+" old path "+tmpDir.getPath()+" old parent "+tmpDir.getParent());
-		System.err.println("New: "+newDir+" prefix "+prefix+" from "+dir);
+		System.err.println("Old: " + oldDir + " prefix " + this.prefix + " from " + tmpDir + " old path " + tmpDir.getPath() + " old parent " + tmpDir.getParent());
+		System.err.println("New: " + newDir + " prefix " + prefix + " from " + dir);
 		if(newDir.exists() && newDir.isDirectory() && newDir.canWrite() && newDir.canRead() && !oldDir.exists()) {
-			System.err.println("Assuming the user has moved the data from "+oldDir+" to "+newDir);
+			System.err.println("Assuming the user has moved the data from " + oldDir + " to " + newDir);
 			tmpDir = newDir;
 			return;
 		}
 		if(oldDir.equals(newDir) && this.prefix.equals(prefix)) {
-			Logger.normal(this, "Initialised FilenameGenerator successfully - no change in dir and prefix: dir="+dir+" prefix="+prefix);
+			Logger.normal(this, "Initialised FilenameGenerator successfully - no change in dir and prefix: dir=" + dir + " prefix=" + prefix);
 		} else if((!oldDir.equals(newDir)) && this.prefix.equals(prefix)) {
 			if((!dir.exists()) && oldDir.renameTo(dir)) {
 				tmpDir = dir;
 				// This will interest the user, since they changed it.
-				String msg = "Successfully renamed persistent temporary directory from "+tmpDir+" to "+dir;
+				String msg = "Successfully renamed persistent temporary directory from " + tmpDir + " to " + dir;
 				Logger.error(this, msg);
 				System.err.println(msg);
 			} else {
 				if(!dir.exists()) {
 					if((!dir.mkdir()) && !dir.exists()) {
 						// FIXME localise these errors somehow??
-						System.err.println("Unable to create new temporary directory: "+dir);
-						throw new IOException("Unable to create new temporary directory: "+dir);
+						System.err.println("Unable to create new temporary directory: " + dir);
+						throw new IOException("Unable to create new temporary directory: " + dir);
 					}
 				}
 				if(!(dir.canRead() && dir.canWrite())) {
 					// FIXME localise these errors somehow??
-					System.err.println("Unable to read and write new temporary directory: "+dir);
-					throw new IOException("Unable to read and write new temporary directory: "+dir);
+					System.err.println("Unable to read and write new temporary directory: " + dir);
+					throw new IOException("Unable to read and write new temporary directory: " + dir);
 				}
 				int failed = 0;
 				// Move each file
@@ -183,7 +183,7 @@ public class FilenameGenerator {
 				}
 				if(failed > 0) {
 					// FIXME maybe a useralert
-					System.err.println("WARNING: Not all files successfully moved changing temp dir: "+failed+" failed.");
+					System.err.println("WARNING: Not all files successfully moved changing temp dir: " + failed + " failed.");
 					System.err.println("WARNING: Some persistent downloads etc may fail.");
 				}
 			}
@@ -191,14 +191,14 @@ public class FilenameGenerator {
 			if(!dir.exists()) {
 				if((!dir.mkdir()) && (!dir.exists())) {
 					// FIXME localise these errors somehow??
-					System.err.println("Unable to create new temporary directory: "+dir);
-					throw new IOException("Unable to create new temporary directory: "+dir);
+					System.err.println("Unable to create new temporary directory: " + dir);
+					throw new IOException("Unable to create new temporary directory: " + dir);
 				}
 			}
 			if(!(dir.canRead() && dir.canWrite())) {
 				// FIXME localise these errors somehow??
-				System.err.println("Unable to read and write new temporary directory: "+dir);
-				throw new IOException("Unable to read and write new temporary directory: "+dir);
+				System.err.println("Unable to read and write new temporary directory: " + dir);
+				throw new IOException("Unable to read and write new temporary directory: " + dir);
 			}
 			int failed = 0;
 			// Move each file
@@ -212,7 +212,7 @@ public class FilenameGenerator {
 			}
 			if(failed > 0) {
 				// FIXME maybe a useralert
-				System.err.println("WARNING: Not all files successfully moved changing temp dir: "+failed+" failed.");
+				System.err.println("WARNING: Not all files successfully moved changing temp dir: " + failed + " failed.");
 				System.err.println("WARNING: Some persistent downloads etc may fail.");
 			}
 		}

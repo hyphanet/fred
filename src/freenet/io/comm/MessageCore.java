@@ -87,7 +87,7 @@ public class MessageCore {
         try {
             return Message.decodeMessageFromPacket(data, offset, length, peer, overhead);
         } catch (Throwable t) {
-            Logger.error(this, "Could not decode packet: "+t, t);
+            Logger.error(this, "Could not decode packet: " + t, t);
             return null;
         }
     }
@@ -105,7 +105,7 @@ public class MessageCore {
 				try {
 					nextRun = removeTimedOutFilters(nextRun);
 				} catch (Throwable t) {
-					Logger.error(this, "Failed to remove timed out filters: "+t, t);
+					Logger.error(this, "Failed to remove timed out filters: " + t, t);
 				} finally {
 					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
 				}
@@ -129,19 +129,19 @@ public class MessageCore {
 				MessageFilter f = i.next();
 				if (f.timedOut(tStart)) {
 					if(logMINOR)
-						Logger.minor(this, "Removing "+f);
+						Logger.minor(this, "Removing " + f);
 					i.remove();
 					if(timedOutFilters == null) 
 						timedOutFilters = new HashSet<MessageFilter>();
 					if(!timedOutFilters.add(f))
-						Logger.error(this, "Filter "+f+" is in filter list twice!");
+						Logger.error(this, "Filter " + f + " is in filter list twice!");
 					if(logMINOR) {
 						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
 							Message m = it.next();
 							MATCHED status = f.match(m, true, tStart);
 							if (status == MATCHED.MATCHED) {
 								// Don't match it, we timed out; two-level timeouts etc may want it for the next filter.
-								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
+								Logger.error(this, "Timed out but should have matched in _unclaimed: " + m + " for " + f);
 								break;
 							}
 						}
@@ -168,9 +168,9 @@ public class MessageCore {
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - tStart > 50) {
 			if(tEnd - tStart > 3000)
-				Logger.error(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
+				Logger.error(this, "removeTimedOutFilters took " + (tEnd - tStart) + "ms");
 			else
-				if(logMINOR) Logger.minor(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
+				if(logMINOR) Logger.minor(this, "removeTimedOutFilters took " + (tEnd - tStart) + "ms");
 		}
 		return nextTimeout;
 	}
@@ -184,7 +184,7 @@ public class MessageCore {
 		final boolean logMINOR = MessageCore.logMINOR;
 		final boolean logDEBUG = MessageCore.logDEBUG;
 		long tStart = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "checkFilters: "+m+" from "+m.getSource());
+		if(logMINOR) Logger.minor(this, "checkFilters: " + m + " from " + m.getSource());
 		if ((m.getSource()) instanceof PeerNode)
 		{
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
@@ -200,7 +200,7 @@ public class MessageCore {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
 				if (f.matched()) {
-					Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
+					Logger.error(this, "removed pre-matched message filter found in _filters: " + f);
 					i.remove();
 					continue;
 				}
@@ -217,14 +217,14 @@ public class MessageCore {
 					match = f;
 					// We must setMessage() inside the lock to ensure that waitFor() sees it even if it times out.
 					f.setMessage(m);
-					if(logMINOR) Logger.minor(this, "Matched (1): "+f);
+					if(logMINOR) Logger.minor(this, "Matched (1): " + f);
 					break; // Only one match permitted per message
-				} else if(logDEBUG) Logger.minor(this, "Did not match "+f);
+				} else if(logDEBUG) Logger.minor(this, "Did not match " + f);
 			}
 		}
 		if(timedOut != null) {
 			for(MessageFilter f : timedOut) {
-				if(logMINOR) Logger.minor(this, "Timed out "+f);
+				if(logMINOR) Logger.minor(this, "Timed out " + f);
 				f.setMessage(null);
 				f.onTimedOut(_executor);
 			}
@@ -235,16 +235,16 @@ public class MessageCore {
 		// Feed unmatched messages to the dispatcher
 		if ((!matched) && (_dispatcher != null)) {
 		    try {
-		    	if(logMINOR) Logger.minor(this, "Feeding to dispatcher: "+m);
+		    	if(logMINOR) Logger.minor(this, "Feeding to dispatcher: " + m);
 		        matched = _dispatcher.handleMessage(m);
 		    } catch (Throwable t) {
-		        Logger.error(this, "Dispatcher threw "+t, t);
+		        Logger.error(this, "Dispatcher threw " + t, t);
 		    }
 		}
 		if(timedOut != null) timedOut.clear();
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
-			if(logMINOR) Logger.minor(this, "Unclaimed: "+m);
+			if(logMINOR) Logger.minor(this, "Unclaimed: " + m);
 		    /** Check filters and then add to _unmatched is ATOMIC
 		     * It has to be atomic, because otherwise we can get a
 		     * race condition that results in timeouts on MFs.
@@ -275,7 +275,7 @@ public class MessageCore {
 						matched = true;
 						match = f;
 						i.remove();
-						if(logMINOR) Logger.minor(this, "Matched (2): "+f);
+						if(logMINOR) Logger.minor(this, "Matched (2): " + f);
 						match.setMessage(m);
 						break; // Only one match permitted per message
 					} else if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
@@ -291,9 +291,9 @@ public class MessageCore {
 				        Message removed = _unclaimed.removeFirst();
 				        long messageLifeTime = System.currentTimeMillis() - removed.localInstantiationTime;
 				        if ((removed.getSource()) instanceof PeerNode) {
-				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (quantity)"+": "+removed);
+				            Logger.normal(this, "Dropping unclaimed from " + removed.getSource().getPeer() + ", lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (quantity)" + ": " + removed);
 				        } else {
-				            Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (quantity)"+": "+removed);
+				            Logger.normal(this, "Dropping unclaimed, lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (quantity)" + ": " + removed);
 				        }
 				    }
 				    _unclaimed.addLast(m);
@@ -314,9 +314,9 @@ public class MessageCore {
 		long dT = tEnd - tStart;
 		if(dT > 50) {
 			if(dT > 3000)
-				Logger.error(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+				Logger.error(this, "checkFilters took " + (dT) + "ms with unclaimedFIFOSize of " + _unclaimed.size() + " for matched: " + matched);
 			else
-				if(logMINOR) Logger.minor(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+				if(logMINOR) Logger.minor(this, "checkFilters took " + (dT) + "ms with unclaimedFIFOSize of " + _unclaimed.size() + " for matched: " + matched);
 		}
 	}
 	
@@ -367,11 +367,11 @@ public class MessageCore {
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback, ByteCounter ctr) throws DisconnectedException {
 		filter.setAsyncCallback(callback, ctr);
 		if(filter.matched()) {
-			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
+			Logger.error(this, "addAsyncFilter() on a filter which is already matched: " + filter, new Exception("error"));
 			filter.clearMatched();
 		}
 		filter.onStartWaiting(false);
-		if(logMINOR) Logger.minor(this, "Adding async filter "+filter+" for "+callback);
+		if(logMINOR) Logger.minor(this, "Adding async filter " + filter + " for " + callback);
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
 			throw new DisconnectedException();
@@ -405,9 +405,9 @@ public class MessageCore {
 					i.remove();
 					messageLifeTime = now - m.localInstantiationTime;
 					if ((m.getSource()) instanceof PeerNode) {
-						Logger.normal(this, "Dropping unclaimed from "+m.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+						Logger.normal(this, "Dropping unclaimed from " + m.getSource().getPeer() + ", lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (age)" + ": " + m);
 					} else {
-						Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+						Logger.normal(this, "Dropping unclaimed, lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (age)" + ": " + m);
 					}
 				}
 			}
@@ -425,7 +425,7 @@ public class MessageCore {
 					if (mf.getTimeout() > timeout) {
 						i.previous();
 						i.add(filter);
-						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
+						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout=" + mf.getTimeout() + " - my timeout=" + filter.getTimeout());
 						return;
 					}
 				}
@@ -452,7 +452,7 @@ public class MessageCore {
 	 * @throws IllegalArgumentException If {@code filter} has a callback
 	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
-		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
+		if(logDEBUG) Logger.debug(this, "Waiting for " + filter);
 
 		if(filter.hasCallback()) {
 			throw new IllegalArgumentException("waitFor called with a filter that has a callback");
@@ -460,7 +460,7 @@ public class MessageCore {
 
 		long startTime = System.currentTimeMillis();
 		if(filter.matched()) {
-			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
+			Logger.error(this, "waitFor() on a filter which is already matched: " + filter, new Exception("error"));
 			filter.clearMatched();
 		}
 		filter.onStartWaiting(true);
@@ -488,9 +488,9 @@ public class MessageCore {
 					i.remove();
 					messageLifeTime = now - m.localInstantiationTime;
 					if ((m.getSource()) instanceof PeerNode) {
-						Logger.normal(this, "Dropping unclaimed from "+m.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+						Logger.normal(this, "Dropping unclaimed from " + m.getSource().getPeer() + ", lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (age)" + ": " + m);
 					} else {
-						Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (age)"+": "+m);
+						Logger.normal(this, "Dropping unclaimed, lived " + TimeUtil.formatTime(messageLifeTime, 2, true) + " (age)" + ": " + m);
 					}
 				}
 			}
@@ -501,14 +501,14 @@ public class MessageCore {
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
-						if(logMINOR) Logger.minor(this, "Added at end "+filter);
+						if(logMINOR) Logger.minor(this, "Added at end " + filter);
 						break;
 					}
 					MessageFilter mf = i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
-						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout()+" filter "+filter);
+						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout=" + mf.getTimeout() + " - my timeout=" + filter.getTimeout() + " filter " + filter);
 						break;
 					}
 				}
@@ -517,9 +517,9 @@ public class MessageCore {
 		long tEnd = System.currentTimeMillis();
 		if(tEnd - now > 50) {
 			if(tEnd - now > 3000)
-				Logger.error(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+				Logger.error(this, "waitFor _unclaimed iteration took " + (tEnd - now) + "ms with unclaimedFIFOSize of " + _unclaimed.size() + " for ret of " + ret);
 			else
-				if(logMINOR) Logger.minor(this, "waitFor _unclaimed iteration took "+(tEnd-now)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for ret of "+ret);
+				if(logMINOR) Logger.minor(this, "waitFor _unclaimed iteration took " + (tEnd - now) + "ms with unclaimedFIFOSize of " + _unclaimed.size() + " for ret of " + ret);
 		}
 		// Unlock to wait on filter
 		// Waiting on the filter won't release the outer lock
@@ -532,7 +532,7 @@ public class MessageCore {
 					// here - bug discovered by Mason
 					// Check reallyTimedOut() too a) for paranoia, b) for filters with a callback (we could conceivably waitFor() them).
 				    while(!(filter.matched() || (filter.droppedConnection() != null) || (filter.reallyTimedOut(now = System.currentTimeMillis())))) {
-						long wait = filter.getTimeout()-now;
+						long wait = filter.getTimeout() - now;
 						if(wait <= 0)
 							break;
 						filter.wait(wait);
@@ -543,7 +543,7 @@ public class MessageCore {
 				}
 				ret = filter.getMessage();
 			}
-			if(logMINOR) Logger.minor(this, "Returning "+ret+" from "+filter);
+			if(logMINOR) Logger.minor(this, "Returning " + ret + " from " + filter);
 		}
 		
 		// More tricky locking ...
@@ -578,7 +578,7 @@ public class MessageCore {
 //			Dijjer.getDijjer().getDumpMessageWaitTimes().flush();
 //		}
 		long endTime = System.currentTimeMillis();
-		if(logDEBUG) Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
+		if(logDEBUG) Logger.debug(this, "Returning in " + (endTime - startTime) + "ms");
 		if((ctr != null) && (ret != null))
 			ctr.receivedBytes(ret._receivedByteCount);
 		return ret;
@@ -590,7 +590,7 @@ public class MessageCore {
 	 */
 	public void send(PeerContext destination, Message m, ByteCounter ctr) throws NotConnectedException {
 	    if(m.getSpec().isInternalOnly()) {
-	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
+	        Logger.error(this, "Trying to send internal-only message " + m + " of spec " + m.getSpec(), new Exception("debug"));
 	        return;
 	    }
 		destination.sendAsync(m, null, ctr);

@@ -67,7 +67,7 @@ public class NodePinger implements Runnable {
 		if(peers.length == 0) return;
 		meanPing = calculateMedianPing(peers);
 		if(logMINOR)
-			Logger.minor(this, "Median ping: "+meanPing);
+			Logger.minor(this, "Median ping: " + meanPing);
 	}
 	
 	private double calculateMedianPing(PeerNode[] peers) {
@@ -123,7 +123,7 @@ public class NodePinger implements Runnable {
 				firstQuartile = allPeers[x / 4];
 				lastQuartile = allPeers[(x * 3) / 4];
 				max = allPeers[x - 1];
-				if(logMINOR) Logger.minor(this, "Quartiles for peer capacities: "+(isInput?"input ":"output ")+(isRealtime?"realtime: ":"bulk: ")+Arrays.toString(getQuartiles()));
+				if(logMINOR) Logger.minor(this, "Quartiles for peer capacities: " + (isInput?"input ":"output ") + (isRealtime?"realtime: ":"bulk: ") + Arrays.toString(getQuartiles()));
 			}
 		}
 		
@@ -133,7 +133,7 @@ public class NodePinger implements Runnable {
 		
 		/** Get min(half the median, first quartile). Used as a threshold. */
 		synchronized double getThreshold() {
-			return Math.min(median/2, firstQuartile);
+			return Math.min(median / 2, firstQuartile);
 		}
 	}
 

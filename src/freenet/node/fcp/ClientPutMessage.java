@@ -151,7 +151,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: " + e.getMessage(), identifier, global);
 			}
 		}
 		contentType = fs.get("Metadata.ContentType");
@@ -163,7 +163,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: " + e.getMessage(), identifier, global);
 			}
 		}
 		getCHKOnly = fs.getBoolean("GetCHKOnly", false);
@@ -175,9 +175,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString);
 				if(!RequestStarter.isValidPriorityClass(priorityClass))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class " + priorityClass + " - range is " + RequestStarter.MINIMUM_PRIORITY_CLASS + " to " + RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: " + e.getMessage(), identifier, global);
 			}
 		}
 		// We do *NOT* check that FileHash is valid here for backward compatibility... and to make the override work
@@ -191,7 +191,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				dataLength = Long.parseLong(dataLengthString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: " + e.getMessage(), identifier, global);
 			}
 			this.origFilename = null;
 			redirectTarget = null;
@@ -218,13 +218,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				redirectTarget = new FreenetURI(target);
 			} catch (MalformedURLException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: " + e, identifier, global);
 			}
 			dataLength = 0;
 			origFilename = null;
 			bucket = null;
 		} else
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: " + uploadFrom, identifier, global);
 		dontCompress = fs.getBoolean("DontCompress", false);
 		String persistenceString = fs.get("Persistence");
 		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
@@ -238,7 +238,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: " + persistenceString, identifier, global);
 		}
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
@@ -375,7 +375,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(bucket == null) {
 			if(dataLength() <= 0)
 				return; // Okay.
-			Logger.error(this, "bucket is null on "+this+" - freed twice?", new Exception("error"));
+			Logger.error(this, "bucket is null on " + this + " - freed twice?", new Exception("error"));
 			return;
 		}
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)

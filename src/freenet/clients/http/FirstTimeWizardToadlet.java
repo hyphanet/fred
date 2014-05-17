@@ -123,12 +123,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		if (currentStep == WIZARD_STEP.BROWSER_WARNING &&
 				request.isChrome() && request.isIncognito()) {
 			super.writeTemporaryRedirect(ctx, "Skipping unneeded warning",
-			        persistFields.appendTo(TOADLET_URL+"?step=MISC"));
+			        persistFields.appendTo(TOADLET_URL + "?step=MISC"));
 			return;
 		} else if (currentStep == WIZARD_STEP.MISC && persistFields.isUsingPreset()) {
 			/*If using a preset, skip the miscellaneous page as both high and low security set those settings.
 			 * This overrides the persistence fields.*/
-			StringBuilder redirectBase = new StringBuilder(TOADLET_URL+"?step=");
+			StringBuilder redirectBase = new StringBuilder(TOADLET_URL + "?step=");
 			if (persistFields.preset == WIZARD_PRESET.HIGH) {
 				redirectBase.append("SECURITY_NETWORK&preset=HIGH&confirm=true&opennet=false&security-levels.networkThreatLevel=HIGH");
 			} else /*if (persistFields.preset == WIZARD_PRESET.LOW)*/ {
@@ -140,7 +140,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if (currentStep == WIZARD_STEP.SECURITY_NETWORK && !request.isParameterSet("opennet")) {
 			//If opennet isn't defined when attempting to set network security level, ask again.
 			super.writeTemporaryRedirect(ctx, "Need opennet choice",
-			        persistFields.appendTo(TOADLET_URL+"?step=OPENNET"));
+			        persistFields.appendTo(TOADLET_URL + "?step=OPENNET"));
 			return;
 		} else if (currentStep == WIZARD_STEP.NAME_SELECTION && core.node.isOpennetEnabled()) {
 			//Skip node name selection if not in darknet mode.
@@ -188,7 +188,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 			/*Apply presets and UPnP is enabled first to allow it time to load (and thus enable
 			  autodetection) before hitting the bandwidth page. This also effectively sets the preset field.*/
-			StringBuilder redirectTo = new StringBuilder(TOADLET_URL+"?step=BROWSER_WARNING&incognito=");
+			StringBuilder redirectTo = new StringBuilder(TOADLET_URL + "?step=BROWSER_WARNING&incognito=");
 			redirectTo.append(request.getPartAsStringFailsafe("incognito", 5));
 
 			//Translate button name to preset value on the query string.
@@ -227,7 +227,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 							persistFields = new PersistFields(persistFields.preset, newRequest);
 						}
 					} catch (URISyntaxException e) {
-						Logger.error(this, "Unexpected invalid query string from OPENNET step! "+e, e);
+						Logger.error(this, "Unexpected invalid query string from OPENNET step! " + e, e);
 						redirectTarget = WIZARD_STEP.WELCOME.name();
 					}
 				}
@@ -274,7 +274,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 
 	private String stepURL(String step) {
-		return TOADLET_URL+"?step="+step;
+		return TOADLET_URL + "?step=" + step;
 	}
 
 	//FIXME: There really has to be a better way to find the previous step, but with an enum there's no decrement.

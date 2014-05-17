@@ -93,8 +93,8 @@ public class CodeTest extends TestCase {
 
 		System.out.println(maybeNative);
 		System.out.println(pureCode);
-		System.out.println("Native code took "+dNativeEncode+"ms whereas java's code took "+dPureEncode+"ms to encode()");
-		System.out.println("Native code took "+dNativeDecode+"ms whereas java's code took "+dPureDecode+"ms to decode()");
+		System.out.println("Native code took " + dNativeEncode + "ms whereas java's code took " + dPureEncode + "ms to encode()");
+		System.out.println("Native code took " + dNativeDecode + "ms whereas java's code took " + dPureDecode + "ms to decode()");
 	}
 
 	public void testSimpleRev() {

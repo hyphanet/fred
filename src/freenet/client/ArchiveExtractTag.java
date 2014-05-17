@@ -39,7 +39,7 @@ class ArchiveExtractTag {
 	public boolean checkBroken(ObjectContainer container, ClientContext context) {
 		container.activate(this, 1);
 		if(data == null || actx == null || callback == null || handler == null) {
-			String error = "Archive extract tag is broken: data="+data+" actx="+actx+" callback="+callback+" handler="+handler;
+			String error = "Archive extract tag is broken: data=" + data + " actx=" + actx + " callback=" + callback + " handler=" + handler;
 			Logger.error(this, error);
 			if(callback != null) {
 				container.activate(callback, 1);

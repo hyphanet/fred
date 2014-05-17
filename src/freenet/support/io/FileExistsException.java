@@ -16,7 +16,7 @@ public class FileExistsException extends IOException {
 	public final File file;
 	
 	public FileExistsException(File f) {
-		super("File exists: "+f);
+		super("File exists: " + f);
 		this.file = f;
 	}
 

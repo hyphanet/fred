@@ -42,7 +42,7 @@ public class GIFFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("GIFFilter."+key);
+		return NodeL10n.getBase().getString("GIFFilter." + key);
 	}
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {

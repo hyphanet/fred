@@ -100,7 +100,7 @@ public final class ReceivedCookie extends Cookie {
 				if(keyEndIndex >= header.length || header[keyEndIndex] == ';')
 					value = "";
 				
-				while(Character.isWhitespace(header[keyEndIndex-1])) // Remove trailing whitespace
+				while(Character.isWhitespace(header[keyEndIndex - 1])) // Remove trailing whitespace
 					--keyEndIndex;
 				
 				key = new String(header, keyBeginIndex, keyEndIndex - keyBeginIndex).toLowerCase();
@@ -138,7 +138,7 @@ public final class ReceivedCookie extends Cookie {
 
 				int valueEndIndex = i;
 				
-				while(valueEndIndex > valueBeginIndex && Character.isWhitespace(header[valueEndIndex-1])) // Remove trailing whitespace
+				while(valueEndIndex > valueBeginIndex && Character.isWhitespace(header[valueEndIndex - 1])) // Remove trailing whitespace
 					--valueEndIndex;
 
 				value = new String(header, valueBeginIndex, valueEndIndex - valueBeginIndex);

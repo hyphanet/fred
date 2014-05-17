@@ -15,7 +15,7 @@ import freenet.support.Logger.LogLevel;
 public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;
 	public static final int STATISTICS_DURATION_S = 30;
-	public static final int STATISTICS_DURATION = 1000*STATISTICS_DURATION_S;
+	public static final int STATISTICS_DURATION = 1000 * STATISTICS_DURATION_S;
 	private long lastrotate;
 	
 	private static boolean logDEBUG;
@@ -52,14 +52,14 @@ public class IOStatisticCollector {
 				entry = new StatisticEntry();
 				targets.put(key, entry);
 			}
-			entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
+			entry.addData((inbytes > 0)?inbytes:0, (outbytes > 0)?outbytes:0);
 		}
 		if(!isLocal) {
 			synchronized(this) {
-				totalbytesout += (outbytes>0)?outbytes:0;
-				totalbytesin += (inbytes>0)?inbytes:0;
+				totalbytesout += (outbytes > 0)?outbytes:0;
+				totalbytesin += (inbytes > 0)?inbytes:0;
 				if(logDEBUG)
-					Logger.debug(IOStatisticCollector.class, "Add("+addr+":"+port+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+					Logger.debug(IOStatisticCollector.class, "Add(" + addr + ":" + port + ',' + inbytes + ',' + outbytes + " -> " + totalbytesin + " : " + totalbytesout);
 			}
 		}
 	}
@@ -115,7 +115,7 @@ public class IOStatisticCollector {
 		//DateFormat df = DateFormat.getDateInstance(DateFormat.LONG, Locale.FRANCE);
 		//System.err.println(DateFormat.getDateInstance().format(new Date()));
 		System.err.println(new Date());
-		final double divby = STATISTICS_DURATION_S*1024; 
+		final double divby = STATISTICS_DURATION_S * 1024; 
 		for (Map.Entry<String,StatisticEntry> entry : targets.entrySet()) {
 			String key = entry.getKey();
 			int inres[] = entry.getValue().getRecieved();
@@ -129,11 +129,11 @@ public class IOStatisticCollector {
 				tin += inres[i];
 				tout += outres[i];
 				
-				int in = (int) ((tin*10.0) / (divby*(i+1)));
-				int out =(int) ((tout*10.0) /(divby*(i+1)));
+				int in = (int) ((tin * 10.0) / (divby * (i + 1)));
+				int out =(int) ((tout * 10.0) / (divby * (i + 1)));
 				
-				System.err.print("i:" + (in/10) + '.' + (in%10));
-				System.err.print(" o:" + (out/10) + '.' + (out%10));
+				System.err.print("i:" + (in / 10) + '.' + (in % 10));
+				System.err.print(" o:" + (out / 10) + '.' + (out % 10));
 				System.err.print(" \t");
 			}
 			System.err.println();
@@ -189,8 +189,8 @@ public class IOStatisticCollector {
 		
 		public StatisticEntry() {
 			// Create a new array and clear it
-			recieved = new int[IOStatisticCollector.STATISTICS_ENTRIES+1];
-			sent     = new int[IOStatisticCollector.STATISTICS_ENTRIES+1];
+			recieved = new int[IOStatisticCollector.STATISTICS_ENTRIES + 1];
+			sent     = new int[IOStatisticCollector.STATISTICS_ENTRIES + 1];
 			for (int i = 0 ; i < recieved.length ; i++) {
 				recieved[i] = sent[i] = 0;
 			}
@@ -204,8 +204,8 @@ public class IOStatisticCollector {
 		public boolean rotate() {
 			boolean hasdata = false;
 			for (int i = recieved.length - 1 ; i > 0 ; i--) {
-				recieved[i] = recieved[i-1];
-				sent[i]     = sent[i-1];
+				recieved[i] = recieved[i - 1];
+				sent[i]     = sent[i - 1];
 				hasdata |= (recieved[i] > 0) || (sent[i] > 0);
 			}
 			recieved[0] = sent[0] = 0;

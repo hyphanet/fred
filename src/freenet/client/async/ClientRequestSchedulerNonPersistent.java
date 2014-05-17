@@ -53,7 +53,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		if(succeeded.isCancelled(container)) return;
 		// Don't bother with getCooldownTime at this point.
 			if(logMINOR)
-				Logger.minor(this, "Recording successful fetch from "+succeeded);
+				Logger.minor(this, "Recording successful fetch from " + succeeded);
 		synchronized(recentSuccesses) {
 			while(recentSuccesses.size() >= 8)
 				recentSuccesses.pollFirst();

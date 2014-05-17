@@ -26,7 +26,7 @@ public class SizeUtil {
 		boolean negative = (bytes < 0);
 		if (negative) bytes *= -1;
 
-		for(i=0;i<SizeUtil.suffixes.length;i++) {
+		for(i=0;i < SizeUtil.suffixes.length;i++) {
 			if (s > Long.MAX_VALUE / 1024) {
 				// Largest supported size
 				break;

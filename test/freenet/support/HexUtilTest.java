@@ -132,7 +132,7 @@ public class HexUtilTest extends TestCase {
 	 */
 	private void addOne(BitSet aBitSet) {
 		int bitSetIndex = 0;
-		while (aBitSet.get(bitSetIndex)==true) {
+		while (aBitSet.get(bitSetIndex) == true) {
 			aBitSet.flip(bitSetIndex);
 			bitSetIndex++;
 		}
@@ -147,7 +147,7 @@ public class HexUtilTest extends TestCase {
 		//border case
 		assertEquals(HexUtil.countBytesForBits(0),0);
 		for (int expectedBytesCount = 1; expectedBytesCount < 256; expectedBytesCount++)
-			for (int bits = (expectedBytesCount-1)*8+1; bits <= (expectedBytesCount)*8; bits++)
+			for (int bits = (expectedBytesCount - 1) * 8 + 1; bits <= (expectedBytesCount) * 8; bits++)
 				assertEquals(HexUtil.countBytesForBits(bits),expectedBytesCount);
 	}
 	
@@ -207,7 +207,7 @@ public class HexUtilTest extends TestCase {
 		String methodStringToStore = "00";
 		BitSet methodBitSet = new BitSet(8);
 		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
-		assertTrue(methodBitSet.cardinality()==0);		
+		assertTrue(methodBitSet.cardinality() == 0);		
 		BitSet expectedBitSet = new BitSet(8);
 		expectedBitSet.set(0,7,true); /*0x7f*/
 		methodStringToStore = "7f";
@@ -236,7 +236,7 @@ public class HexUtilTest extends TestCase {
 			ByteArrayInputStream methodByteArrayInStream = 
 				new ByteArrayInputStream(methodByteArrayOutStream.toByteArray());
 			DataInputStream methodDataInStream = new DataInputStream(methodByteArrayInStream);
-			assertTrue(methodBigInteger.compareTo(HexUtil.readBigInteger(methodDataInStream))==0);
+			assertTrue(methodBigInteger.compareTo(HexUtil.readBigInteger(methodDataInStream)) == 0);
 		} catch (IOException aException) {
 			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
@@ -250,7 +250,7 @@ public class HexUtilTest extends TestCase {
         try {
         	int arrayLength = 3;
         	byte[] methodBytesArray = new byte[arrayLength];
-    		HexUtil.bytesToHex(methodBytesArray,arrayLength+1,1);
+    		HexUtil.bytesToHex(methodBytesArray,arrayLength + 1,1);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (IllegalArgumentException anException) {
             assertNotNull(anException); }
@@ -265,7 +265,7 @@ public class HexUtilTest extends TestCase {
         try {
         	int arrayLength = 3;
         	byte[] methodBytesArray = new byte[arrayLength];
-    		HexUtil.bytesToHex(methodBytesArray,0,arrayLength+1);
+    		HexUtil.bytesToHex(methodBytesArray,0,arrayLength + 1);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (IllegalArgumentException anException) {
             assertNotNull(anException); }
@@ -360,7 +360,7 @@ public class HexUtilTest extends TestCase {
 		methodBitSet.flip(7);
 		/* 0x08 */
 		methodBitSet.flip(3);
-		expectedByteArray[0] = (byte)128+8+1;
+		expectedByteArray[0] = (byte)128 + 8 + 1;
 		/* 0x89 & 0x08 == 0x89 */
 		outputArray = HexUtil.bitsToBytes(methodBitSet,3);
 		assertFalse(Arrays.equals(expectedByteArray,outputArray));

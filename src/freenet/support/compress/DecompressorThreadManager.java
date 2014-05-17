@@ -60,8 +60,8 @@ public class DecompressorThreadManager {
 		}
 		input = inputStream;
 		while(!decompressors.isEmpty()) {
-			Compressor compressor = decompressors.remove(decompressors.size()-1);
-			if(logMINOR) Logger.minor(this, "Decompressing with "+compressor);
+			Compressor compressor = decompressors.remove(decompressors.size() - 1);
+			if(logMINOR) Logger.minor(this, "Decompressing with " + compressor);
 			DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
 			threads.add(thread);
 			input = new PipedInputStream(output);
@@ -85,9 +85,9 @@ public class DecompressorThreadManager {
 				if(getError() != null) throw getError();
 				DecompressorThread threadRunnable = threads.remove();
 				if(threads.isEmpty()) threadRunnable.setLast();
-				Thread t = new Thread(threadRunnable, "DecompressorThread"+count);
+				Thread t = new Thread(threadRunnable, "DecompressorThread" + count);
 				t.start();
-				if(logMINOR) Logger.minor(this, "Started decompressor thread "+t);
+				if(logMINOR) Logger.minor(this, "Started decompressor thread " + t);
 				count++;
 			}
 			output.close();
@@ -126,9 +126,9 @@ public class DecompressorThreadManager {
 				// Something wierd is happening...
 				//wait(0)
 				wait(MINUTES.toMillis(20));
-				long time = System.currentTimeMillis()-start;
+				long time = System.currentTimeMillis() - start;
 				if(time > MINUTES.toMillis(20))
-					Logger.error(this, "Still waiting for decompressor chain after "+TimeUtil.formatTime(time));
+					Logger.error(this, "Still waiting for decompressor chain after " + TimeUtil.formatTime(time));
 			} catch(InterruptedException e) {
 				//Do nothing
 			}

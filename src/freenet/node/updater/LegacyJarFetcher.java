@@ -84,7 +84,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 				tmp = File.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_BLOB_SUFFIX, saveTo.getParentFile());
 				tmp.deleteOnExit(); // To be used sparingly, as it leaks, but safe enough here as it should only happen twice during a normal run.
 			} catch (IOException e) {
-				Logger.error(this, "Cannot create temp file so cannot fetch legacy jar "+uri+" : UOM from old versions will not work!");
+				Logger.error(this, "Cannot create temp file so cannot fetch legacy jar " + uri + " : UOM from old versions will not work!");
 				cg = null;
 				fetched = false;
 				tempFile = null;
@@ -126,7 +126,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 
 	public long getBlobSize() {
 		if(failed || !fetched) {
-			Logger.error(this, "Asking for blob size but failed="+failed+" fetched="+fetched);
+			Logger.error(this, "Asking for blob size but failed=" + failed + " fetched=" + fetched);
 			return -1;
 		}
 		return blobBucket.size();
@@ -134,7 +134,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	
 	public File getBlobFile() {
 		if(failed || !fetched) {
-			Logger.error(this, "Asking for blob but failed="+failed+" fetched="+fetched);
+			Logger.error(this, "Asking for blob but failed=" + failed + " fetched=" + fetched);
 			return null;
 		}
 		return saveTo;
@@ -160,7 +160,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			ObjectContainer container) {
 		result.asBucket().free();
 		if(!FileUtil.renameTo(tempFile, saveTo)) {
-			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
+			Logger.error(this, "Fetched file but unable to rename temp file " + tempFile + " to " + saveTo + " : UOM FROM OLD NODES WILL NOT WORK!");
 		} else {
 			synchronized(this) {
 				fetched = true;

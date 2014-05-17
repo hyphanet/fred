@@ -123,18 +123,18 @@ public class NodeCrypto {
 		UdpSocketHandler u = null;
 
 		if(port > 65535) {
-			throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
+			throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: " + port);
 		} else if(port == -1) {
 			// Pick a random port
-			for(int i=0;i<200000;i++) {
-				int portNo = 1024 + random.nextInt(65535-1024);
+			for(int i=0;i < 200000;i++) {
+				int portNo = 1024 + random.nextInt(65535 - 1024);
 				try {
 					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
-					Logger.normal(this, "Could not use port: "+bindto+ ':' +portNo+": "+e, e);
-					System.err.println("Could not use port: "+bindto+ ':' +portNo+": "+e);
+					Logger.normal(this, "Could not use port: " + bindto + ':' + portNo + ": " + e, e);
+					System.err.println("Could not use port: " + bindto + ':' + portNo + ": " + e);
 					e.printStackTrace();
 					continue;
 				}
@@ -145,16 +145,16 @@ public class NodeCrypto {
 			try {
 				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
 			} catch (Exception e) {
-				Logger.error(this, "Caught "+e, e);
+				Logger.error(this, "Caught " + e, e);
 				System.err.println(e);
 				e.printStackTrace();
-				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
+				throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: " + port + " (node already running?)");
 			}
 		}
 		socket = u;
 
-		Logger.normal(this, "FNP port created on "+bindto+ ':' +port);
-		System.out.println("FNP port created on "+bindto+ ':' +port);
+		Logger.normal(this, "FNP port created on " + bindto + ':' + port);
+		System.out.println("FNP port created on " + bindto + ':' + port);
 		portNumber = port;
 		config.setPort(port);
 
@@ -219,10 +219,10 @@ public class NodeCrypto {
 			    ecdsaP256 = new ECDSA(ecdsaSFS.subset(ECDSA.Curves.P256.name()), Curves.P256);
 		    }
 		} catch (IllegalBase64Exception e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			throw new IOException(e.toString());
 		} catch (FSParseException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			throw new IOException(e.toString());
 		}
 		
@@ -257,7 +257,7 @@ public class NodeCrypto {
 				}
 			}
 		} catch (MalformedURLException e) {
-			Logger.minor(this, "Caught "+e, e);
+			Logger.minor(this, "Caught " + e, e);
 			ark = null;
 		}
 		if(ark == null) {
@@ -271,7 +271,7 @@ public class NodeCrypto {
 			try {
 				clientNonce = Base64.decode(cn);
 			} catch (IllegalBase64Exception e) {
-				throw new IOException("Invalid clientNonce field: "+e);
+				throw new IOException("Invalid clientNonce field: " + e);
 			}
 		} else {
 			clientNonce = new byte[32];
@@ -376,7 +376,7 @@ public class NodeCrypto {
 			}
 		}
 
-		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
+		if(logMINOR) Logger.minor(this, "My reference: " + fs.toOrderedString());
 		return fs;
 	}
 
@@ -405,12 +405,12 @@ public class NodeCrypto {
 	}
 
 	private DSASignature signRef(String mySignedReference) throws NodeInitException {
-		if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
+		if(logMINOR) Logger.minor(this, "Signing reference:\n" + mySignedReference);
 
 		try{
 			byte[] ref = mySignedReference.getBytes("UTF-8");
 			BigInteger m = new BigInteger(1, SHA256.digest(ref));
-			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
+			if(logMINOR) Logger.minor(this, "m = " + m.toString(16));
 			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
 			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
 				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
@@ -421,7 +421,7 @@ public class NodeCrypto {
 	}
 	
 	private String ecdsaSignRef(String mySignedReference) throws NodeInitException {
-	    if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
+	    if(logMINOR) Logger.minor(this, "Signing reference:\n" + mySignedReference);
 
 	    try{
 	        byte[] ref = mySignedReference.getBytes("UTF-8");
@@ -433,7 +433,7 @@ public class NodeCrypto {
 	    } catch(UnsupportedEncodingException e){
 	        //duh ?
 	        Logger.error(this, "Error while signing the node identity!" + e, e);
-	        System.err.println("Error while signing the node identity!"+e);
+	        System.err.println("Error while signing the node identity!" + e);
 	        e.printStackTrace();
 	        throw new NodeInitException(NodeInitException.EXIT_CRAPPY_JVM, "Impossible: JVM doesn't support UTF-8");
 	    }
@@ -451,7 +451,7 @@ public class NodeCrypto {
 		try {
 			fs.writeTo(gis);
                 } catch (IOException e) {
-                    Logger.error(this, "IOE :"+e.getMessage(), e);
+                    Logger.error(this, "IOE :" + e.getMessage(), e);
 		} finally {
 			Closer.close(gis);
                         Closer.close(baos);
@@ -459,20 +459,20 @@ public class NodeCrypto {
 
 		byte[] buf = baos.toByteArray();
 		if(buf.length >= 4096)
-			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
+			throw new IllegalStateException("We are attempting to send a " + buf.length + " bytes big reference!");
 		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 1 : 0)];
 		int offset = 0;
 		if(shouldStripGroup) {
 			obuf[offset++] = 0x3; // compressed noderef - group
 			int dsaGroupIndex = Global.GROUP_INDEX_BIG_A;
 			if(logMINOR)
-				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex="+dsaGroupIndex+')');
+				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex=" + dsaGroupIndex + ')');
 			obuf[offset++] = (byte)(dsaGroupIndex & 0xff);
 		} else
 			obuf[offset++] = 0x01; // compressed noderef
 		System.arraycopy(buf, 0, obuf, offset, buf.length);
 		if(logMINOR)
-			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
+			Logger.minor(this, "myCompressedRef(" + setup + "," + heavySetup + ") returning " + obuf.length + " bytes");
 		return obuf;
 	}
 
@@ -522,7 +522,7 @@ public class NodeCrypto {
 
 	/** Sign a hash */
 	byte[] sign(byte[] hash) {
-        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH*2];
+        byte[] sig = new byte[Node.SIGNATURE_PARAMETER_LENGTH * 2];
         DSASignature s = DSA.sign(cryptoGroup, privKey, new NativeBigInteger(1, hash), random);
         System.arraycopy(s.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, 0, Node.SIGNATURE_PARAMETER_LENGTH);
         System.arraycopy(s.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH), 0, sig, Node.SIGNATURE_PARAMETER_LENGTH, Node.SIGNATURE_PARAMETER_LENGTH);
@@ -566,7 +566,7 @@ public class NodeCrypto {
 			// check for "same /64 subnet" [configurable] instead of exact match
     		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)
     				&& addr.isRealInternetAddress(false, false, false)) {
-    			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
+    			Logger.normal(this, "Not sending handshake packets to " + addr + " for " + pn + " : Same IP address as another node");
     			return false;
     		}
 		}
@@ -596,8 +596,8 @@ public class NodeCrypto {
 						// FIXME likewise, FOAFs should not boot darknet connections.
 						continue;
 					}
-					Logger.error(this, "Dropping peer "+pn+" because don't want connection due to others on the same IP address!");
-					System.out.println("Disconnecting permanently from your friend \""+((DarknetPeerNode)pn).getName()+"\" because your friend \""+((DarknetPeerNode)peerNode).getName()+"\" is using the same IP address "+address+"!");
+					Logger.error(this, "Dropping peer " + pn + " because don't want connection due to others on the same IP address!");
+					System.out.println("Disconnecting permanently from your friend \"" + ((DarknetPeerNode)pn).getName() + "\" because your friend \"" + ((DarknetPeerNode)peerNode).getName() + "\" is using the same IP address " + address + "!");
 				}
 				node.peers.disconnectAndRemove(pn, true, true, pn.isOpennet());
 			}
@@ -670,7 +670,7 @@ public class NodeCrypto {
 		long handle;
 		if(result.hasNext()) {
 			handle = result.next().handle;
-			System.err.println("Retrieved database handle for node on port "+portNumber+": "+handle);
+			System.err.println("Retrieved database handle for node on port " + portNumber + ": " + handle);
 			return handle;
 		} else {
 			while(true) {
@@ -687,14 +687,14 @@ public class NodeCrypto {
 					}
 				});
 				if(os.hasNext()) {
-					System.err.println("Generating database handle for node: already taken: "+handle);
+					System.err.println("Generating database handle for node: already taken: " + handle);
 					continue;
 				}
 				newTuple.portNumber = portNumber;
 				setupContainer.store(newTuple);
 				setupContainer.commit();
 				if(logMINOR) Logger.minor(this, "COMMITTED");
-				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);
+				System.err.println("Generated and stored database handle for node on port " + portNumber + ": " + handle);
 				return handle;
 			}
 		}

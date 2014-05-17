@@ -67,7 +67,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					return toReturn;
 				}
 				if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+					throw new TooLongException("We reached maxLength=" + maxLength + " parsing\n " + HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			}
 			if((buf.length < maxLength) && (buf.length - ctr < bufferSize)) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
@@ -98,7 +98,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+					throw new TooLongException("We reached maxLength=" + maxLength + " parsing\n " + HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			if(ctr >= buf.length) {
 				buf = Arrays.copyOf(buf, Math.min(buf.length * 2, maxLength));
 			}

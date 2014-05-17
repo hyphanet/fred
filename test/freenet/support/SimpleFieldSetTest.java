@@ -48,7 +48,7 @@ public class SimpleFieldSetTest extends TestCase {
 		{"foo.bar.foo","foobar"},
 		{"foo.bar.boo.far","foobar"},
 		{"foo2","foobar.fooboo.foofar.foofoo"},
-		{"foo3",KEY_VALUE_SEPARATOR+"bar"} };
+		{"foo3",KEY_VALUE_SEPARATOR + "bar"} };
 	
 	private static final String SAMPLE_END_MARKER = "END";
 	
@@ -178,12 +178,12 @@ public class SimpleFieldSetTest extends TestCase {
 		methodSFS.putAllOverwrite(methodNewSFS);
 		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
 			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),
-					SAMPLE_STRING_PAIRS[i][1]+methodAppendedString);
+					SAMPLE_STRING_PAIRS[i][1] + methodAppendedString);
 		SimpleFieldSet nullSFS = new SimpleFieldSet(false);
 		nullSFS.putAllOverwrite(methodNewSFS);
 		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
 			assertEquals(nullSFS.get(SAMPLE_STRING_PAIRS[i][0]),
-					SAMPLE_STRING_PAIRS[i][1]+methodAppendedString);
+					SAMPLE_STRING_PAIRS[i][1] + methodAppendedString);
 	}
 	
 	/**
@@ -195,7 +195,7 @@ public class SimpleFieldSetTest extends TestCase {
 		methodSFS.put(methodKey,sfsFromSampleStringPairs());
 		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
 			assertEquals(
-					methodSFS.get(methodKey+SimpleFieldSet.MULTI_LEVEL_CHAR+SAMPLE_STRING_PAIRS[i][0]),
+					methodSFS.get(methodKey + SimpleFieldSet.MULTI_LEVEL_CHAR + SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]);
 	}
 	
@@ -207,7 +207,7 @@ public class SimpleFieldSetTest extends TestCase {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		methodSFS.tput(methodKey,sfsFromSampleStringPairs());
 		for (int i=0; i < SAMPLE_STRING_PAIRS.length; i++)
-			assertEquals(methodSFS.get(methodKey+SimpleFieldSet.MULTI_LEVEL_CHAR+SAMPLE_STRING_PAIRS[i][0]),
+			assertEquals(methodSFS.get(methodKey + SimpleFieldSet.MULTI_LEVEL_CHAR + SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]);
 	}
 	
@@ -241,7 +241,7 @@ public class SimpleFieldSetTest extends TestCase {
 		//creating new
 		for (int i = 0; i < SAMPLE_STRING_PAIRS.length; i++) 
 			methodSFS.putSingle(SAMPLE_STRING_PAIRS[i][0],
-					SAMPLE_STRING_PAIRS[i][1]+aSuffix);
+					SAMPLE_STRING_PAIRS[i][1] + aSuffix);
 		return methodSFS;
 	}
 	
@@ -439,7 +439,7 @@ public class SimpleFieldSetTest extends TestCase {
 		
 		String methodStringToReturn = "";
 		for(int i = 0; i < aStringPairsArray.length; i++)
-			methodStringToReturn += aStringPairsArray[i][0]+KEY_VALUE_SEPARATOR+aStringPairsArray[i][1]+'\n';
+			methodStringToReturn += aStringPairsArray[i][0] + KEY_VALUE_SEPARATOR + aStringPairsArray[i][1] + '\n';
 		methodStringToReturn += SAMPLE_END_MARKER;
 		return methodStringToReturn;
 	}
@@ -588,9 +588,9 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testPutAppend() {
 		String methodKey = "foo.bar";
 		String[] methodValues = {"boo","bar","zoo"};
-		String expectedResult = "boo"+SimpleFieldSet.MULTI_VALUE_CHAR
-								+"bar"+SimpleFieldSet.MULTI_VALUE_CHAR
-								+"zoo";
+		String expectedResult = "boo" + SimpleFieldSet.MULTI_VALUE_CHAR
+								+ "bar" + SimpleFieldSet.MULTI_VALUE_CHAR
+								+ "zoo";
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		for (int i = 0 ; i < methodValues.length; i++)
 			methodSFS.putAppend(methodKey,methodValues[i]);
@@ -615,11 +615,11 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testGetIntArray() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String keyPrefix = "foo";
-		for (int i = 0; i<15; i++)
+		for (int i = 0; i < 15; i++)
 			methodSFS.putAppend(keyPrefix,String.valueOf(i));
 		int[] result = methodSFS.getIntArray(keyPrefix);
-		for (int i = 0; i<15; i++)
-			assertTrue(result[i]==i);
+		for (int i = 0; i < 15; i++)
+			assertTrue(result[i] == i);
 		
 	}
 	
@@ -629,11 +629,11 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testGetDoubleArray() {
 		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
 		String keyPrefix = "foo";
-		for (int i = 0; i<15; i++)
+		for (int i = 0; i < 15; i++)
 			methodSFS.putAppend(keyPrefix,String.valueOf((double)i));
 		double[] result = methodSFS.getDoubleArray(keyPrefix);
-		for (int i = 0; i<15; i++)
-			assertTrue(result[i]== (i));
+		for (int i = 0; i < 15; i++)
+			assertTrue(result[i] == (i));
 		
 	}
 	
@@ -644,7 +644,7 @@ public class SimpleFieldSetTest extends TestCase {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		methodSFS.removeValue("foo");
 		assertNull(methodSFS.get(SAMPLE_STRING_PAIRS[0][0]));
-		for(int i=1;i<SAMPLE_STRING_PAIRS.length;i++)
+		for(int i=1;i < SAMPLE_STRING_PAIRS.length;i++)
 			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]);
 	}
@@ -655,11 +655,11 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testRemoveSubset() {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		methodSFS.removeSubset("foo");
-		for(int i = 1; i< 4; i++)
+		for(int i = 1; i < 4; i++)
 			assertNull(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]));
 		assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[0][0]),
 				SAMPLE_STRING_PAIRS[0][1]);
-		for(int i = 4; i< 6; i++)
+		for(int i = 4; i < 6; i++)
 			assertEquals(methodSFS.get(SAMPLE_STRING_PAIRS[i][0]),
 					SAMPLE_STRING_PAIRS[i][1]);
 	}
@@ -673,8 +673,8 @@ public class SimpleFieldSetTest extends TestCase {
 	 * @return true if there is the key
 	 */
 	private boolean isAKey(String[][] aStringPairsArray, String aPrefix, String aKey) {
-		for (int i=0; i<aStringPairsArray.length; i++)
-			if (aKey.equals(aPrefix+aStringPairsArray[i][0])) 
+		for (int i=0; i < aStringPairsArray.length; i++)
+			if (aKey.equals(aPrefix + aStringPairsArray[i][0])) 
 				return true;
 		return false;
 	}
@@ -697,7 +697,7 @@ public class SimpleFieldSetTest extends TestCase {
 			actualLength++;
 			retValue &= isAKey(aStringPairsArray,aPrefix,aIterator.next());
 		}
-		retValue &= (actualLength==aStringPairsArray.length);
+		retValue &= (actualLength == aStringPairsArray.length);
 		return retValue;
 	}
 
@@ -734,7 +734,7 @@ public class SimpleFieldSetTest extends TestCase {
 		SimpleFieldSet methodSFS = sfsFromSampleStringPairs();
 		Iterator<String> itr = methodSFS.toplevelKeyIterator();
 		
-        for(int i=0; i<3; i++) {
+        for(int i=0; i < 3; i++) {
             assertTrue(itr.hasNext());
             assertTrue(isAKey(SAMPLE_STRING_PAIRS, "", (String)itr.next()));
         }
@@ -761,7 +761,7 @@ public class SimpleFieldSetTest extends TestCase {
 	public void testBase64() throws IOException {
 		checkBase64("test", " ", "IA");
 		for(String[] s : SAMPLE_STRING_PAIRS) {
-			String evilValue = "="+s[1];
+			String evilValue = "=" + s[1];
 			String base64 = Base64.encodeUTF8(evilValue);
 			checkBase64(s[0], evilValue, base64);
 		}
@@ -770,11 +770,11 @@ public class SimpleFieldSetTest extends TestCase {
 	private void checkBase64(String key, String value, String base64Value) throws IOException {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle(key, value);
-		assertEquals(sfs.toOrderedString(), key+"="+value+"\nEnd\n");
+		assertEquals(sfs.toOrderedString(), key + "=" + value + "\nEnd\n");
 		StringWriter sw = new StringWriter();
 		sfs.writeTo(sw, "", false, true);
 		String written = sw.toString();
-		assertEquals(written, key+"=="+base64Value+"\nEnd\n");
+		assertEquals(written, key + "==" + base64Value + "\nEnd\n");
 		LineReader r = Readers.fromBufferedReader(new BufferedReader(new StringReader(written)));
 		SimpleFieldSet sfsCheck = new SimpleFieldSet(r, 1024, 1024, true, false, true, true);
 		assertEquals(sfsCheck.get(key), value);

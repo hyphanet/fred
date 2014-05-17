@@ -42,7 +42,7 @@ public class NodeInitException extends Exception {
 	private static final long serialVersionUID = -1;
 	
 	NodeInitException(int exitCode, String msg) {
-		super(msg+" ("+exitCode+ ')');
+		super(msg + " (" + exitCode + ')');
 		this.exitCode = exitCode;
 	}
 }

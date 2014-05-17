@@ -244,8 +244,8 @@ public class CTRBlockCipherTest extends TestCase {
 	
 	public void testRandomJCA() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		if(!TEST_JCA) return;
-		for(int i=0;i<1024;i++) {
-			byte[] plaintext = new byte[mt.nextInt(4096)+1];
+		for(int i=0;i < 1024;i++) {
+			byte[] plaintext = new byte[mt.nextInt(4096) + 1];
 			byte[] key = new byte[32];
 			byte[] iv = new byte[16];
 			mt.nextBytes(plaintext);
@@ -263,8 +263,8 @@ public class CTRBlockCipherTest extends TestCase {
 	}
 	
 	public void testRandom() throws UnsupportedCipherException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		for(int i=0;i<1024;i++) {
-			byte[] plaintext = new byte[mt.nextInt(4096)+1];
+		for(int i=0;i < 1024;i++) {
+			byte[] plaintext = new byte[mt.nextInt(4096) + 1];
 			byte[] key = new byte[32];
 			byte[] iv = new byte[16];
 			mt.nextBytes(plaintext);

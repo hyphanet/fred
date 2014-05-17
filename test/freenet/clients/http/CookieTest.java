@@ -26,7 +26,7 @@ public class CookieTest extends TestCase {
 		super.setUp();
 	
 		validPath = new URI(VALID_PATH);
-		validExpiresDate = new Date(CurrentTimeUTC.getInMillis()+60*60*1000);
+		validExpiresDate = new Date(CurrentTimeUTC.getInMillis() + 60 * 60 * 1000);
 		cookie = new Cookie(validPath, VALID_NAME, VALID_VALUE, validExpiresDate);
 	}
 
@@ -78,17 +78,17 @@ public class CookieTest extends TestCase {
 		// TODO: Test for more invalid characters in value;
 		
 		try {
-			new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis()-1));
+			new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis() - 1));
 			fail("Constructor allows construction of expired cookies.");
 		} catch(RuntimeException e) {}
 	}
 
 	public void testEqualsObject() throws URISyntaxException {
 		assertEquals(cookie, cookie);
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis()+60*1000)));
+		assertEquals(cookie, new Cookie(validPath, VALID_NAME, VALID_VALUE, new Date(CurrentTimeUTC.getInMillis() + 60 * 1000)));
 		
 		// Value is not checked in equals().
-		assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", new Date(CurrentTimeUTC.getInMillis()+60*1000)));
+		assertEquals(cookie, new Cookie(validPath, VALID_NAME, "", new Date(CurrentTimeUTC.getInMillis() + 60 * 1000)));
 		
 		assertFalse(cookie.equals(new Cookie(new URI(VALID_PATH.toLowerCase()), VALID_NAME, VALID_VALUE, validExpiresDate)));
 		assertEquals(cookie, new Cookie(validPath, VALID_NAME.toLowerCase(), VALID_VALUE, validExpiresDate));

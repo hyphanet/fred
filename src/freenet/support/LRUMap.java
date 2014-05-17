@@ -76,7 +76,7 @@ public class LRUMap<K, V> {
             list.remove(insert);
         }
         if(logMINOR)
-        	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
+        	Logger.minor(this, "Pushed " + insert + " ( " + key + ' ' + value + " )");
 
         list.unshift(insert);
     } 
@@ -213,7 +213,7 @@ public class LRUMap<K, V> {
         
 		@Override
         public String toString() {
-        	return super.toString()+": "+obj+ ' ' +value;
+        	return super.toString() + ": " + obj + ' ' + value;
         }
     }
 

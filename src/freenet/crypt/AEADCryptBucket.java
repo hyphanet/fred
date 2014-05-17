@@ -45,7 +45,7 @@ public class AEADCryptBucket implements Bucket {
 
     @Override
     public String getName() {
-        return "AEADEncrypted:"+underlying.getName();
+        return "AEADEncrypted:" + underlying.getName();
     }
 
     @Override

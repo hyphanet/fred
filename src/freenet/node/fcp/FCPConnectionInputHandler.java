@@ -43,7 +43,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	void start() {
 		if (handler.sock == null)
 			return;
-		handler.server.node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
+		handler.server.node.executor.execute(this, "FCP input handler for " + handler.sock.getRemoteSocketAddress());
 	}
 
 	@Override
@@ -52,14 +52,14 @@ public class FCPConnectionInputHandler implements Runnable {
 		try {
 			realRun();
 		} catch (TooLongException e) {
-			Logger.normal(this, "Caught "+e.getMessage(), e);
+			Logger.normal(this, "Caught " + e.getMessage(), e);
 		} catch (IOException e) {
 			if(logMINOR)
-				Logger.minor(this, "Caught "+e, e);
+				Logger.minor(this, "Caught " + e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 			t.printStackTrace();
 		}
 		handler.close();
@@ -92,7 +92,7 @@ public class FCPConnectionInputHandler implements Runnable {
 
 			// check for valid endmarker
 			if (!firstMessage && fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), fs.getBoolean("Global", false));
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: " + fs.getEndMarker(), fs.get("Identifer"), fs.getBoolean("Global", false));
 				handler.outputHandler.queue(err);
 				continue;
 			}
@@ -100,7 +100,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			FCPMessage msg;
 			try {
 				if(logDEBUG)
-					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
+					Logger.debug(this, "Incoming FCP message:\n" + messageType + '\n' + fs.toString());
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
@@ -140,7 +140,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			}
 			try {
 				if(logDEBUG)
-					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
+					Logger.debug(this, "Parsed message: " + msg + " for " + handler);
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);

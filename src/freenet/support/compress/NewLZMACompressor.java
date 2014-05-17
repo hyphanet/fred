@@ -28,7 +28,7 @@ public class NewLZMACompressor implements Compressor {
 	
     // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
     // Next one up is 2MB = -5 = 26M compress, 3M decompress.
-	static final int MAX_DICTIONARY_SIZE = 1<<20;
+	static final int MAX_DICTIONARY_SIZE = 1 << 20;
 
         private static volatile boolean logMINOR;
 	static {
@@ -51,7 +51,7 @@ public class NewLZMACompressor implements Compressor {
 			is = data.getInputStream();
 			os = output.getOutputStream();
 			if(logMINOR)
-				Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
+				Logger.minor(this, "Compressing " + data + " size " + data.size() + " to new bucket " + output);
 			compress(is, os, maxReadLength, maxWriteLength);
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
@@ -86,7 +86,7 @@ public class NewLZMACompressor implements Compressor {
 			throw new CompressionOutputSizeException(cos.written());
         cos.flush();
 		if(logMINOR)
-			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
+			Logger.minor(this, "Read " + cis.count() + " written " + cos.written());
 		return cos.written();
 	}
 
@@ -97,7 +97,7 @@ public class NewLZMACompressor implements Compressor {
 		else
 			output = bf.makeBucket(maxLength);
 		if(logMINOR)
-			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
+			Logger.minor(this, "Decompressing " + data + " size " + data.size() + " to new bucket " + output);
 		CountedInputStream is = null;
 		BufferedOutputStream os = null;
 		try {
@@ -105,7 +105,7 @@ public class NewLZMACompressor implements Compressor {
 			os = new BufferedOutputStream(output.getOutputStream(), 32768);
 			decompress(is, os, maxLength, maxCheckSizeLength);
 			if(logMINOR)
-				Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
+				Logger.minor(this, "Output: " + output + " size " + output.size() + " read " + is.count());
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
 			os.close(); os = null;

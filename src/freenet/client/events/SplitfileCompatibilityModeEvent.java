@@ -22,7 +22,7 @@ public class SplitfileCompatibilityModeEvent implements ClientEvent {
 		if(minCompatibilityMode == -1)
 			return "Unknown CompatibilityMode";
 		else
-			return "CompatibilityMode between "+minCompatibilityMode+" and "+maxCompatibilityMode;
+			return "CompatibilityMode between " + minCompatibilityMode + " and " + maxCompatibilityMode;
 	}
 	
 	public SplitfileCompatibilityModeEvent(CompatibilityMode min, CompatibilityMode max, byte[] splitfileCryptoKey, boolean dontCompress, boolean bottomLayer) {

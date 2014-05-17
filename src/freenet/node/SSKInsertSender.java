@@ -103,7 +103,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     }
 
     void start() {
-    	node.executor.execute(this, "SSKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
+    	node.executor.execute(this, "SSKInsertSender for UID " + uid + " on " + node.getDarknetPortNumber() + " at " + System.currentTimeMillis());
     }
     
 	@Override
@@ -117,11 +117,11 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
+            Logger.error(this, "Caught " + t, t);
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } finally {
-        	if(logMINOR) Logger.minor(this, "Finishing "+this);
+        	if(logMINOR) Logger.minor(this, "Finishing " + this);
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
             origTag.finishedSender();
@@ -159,10 +159,10 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
                     finish(ROUTE_NOT_FOUND, null);
                     return;
             	}
-            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            	if(logMINOR) Logger.minor(this, "Allowing failure " + highHTLFailureCount + " htl is still " + htl);
             } else {
                 htl = node.decrementHTL(hasForwarded ? next : source, htl);
-                if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+                if(logMINOR) Logger.minor(this, "Decremented HTL to " + htl);
             }
             starting = false;
             if(htl <= 0) {
@@ -192,7 +192,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
             	forkedRequestTag.startedSender();
             	forkedRequestTag.unlockHandler();
 				forkedRequestTag.setAccepted();
-            	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
+            	Logger.normal(this, "FORKING SSK INSERT " + origUID + " to " + uid);
             	nodesRoutedTo.clear();
             	node.tracker.lockUID(forkedRequestTag);
             }
@@ -222,7 +222,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	// The problem is the peer has now got everything it needs to run the insert!
     	
 		// Try to propagate back to source
-		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
+		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on " + next);
 		next.localRejectedOverload("Timeout2", realTimeFlag);
 		// This is a local timeout, they should send it immediately.
 		forwardRejectedOverload();
@@ -298,7 +298,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		// It could still be running. So the timeout is fatal to the node.
 		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
 		// FIXME use a callback to rule this out and log an ERROR.
-		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		Logger.warning(this, "Timeout awaiting Accepted/Rejected " + this + " to " + next);
 		// Use the right UID here, in case we fork.
 		final long uid = tag.uid;
 		tag.handlingTimeout(next);
@@ -318,8 +318,8 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 					} else {
 						assert(m.getSpec() == DMT.FNPSSKAccepted);
 						if(logMINOR)
-							Logger.minor(this, "Accepted after timeout on "+SSKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
-						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
+							Logger.minor(this, "Accepted after timeout on " + SSKInsertSender.this + " - will not send DataInsert, waiting for RejectedTimeout");
+						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on " + SSKInsertSender.this + " to " + next);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
 						// However, we need to send a DataInsertRejected, or two-stage timeout will happen.
@@ -329,24 +329,24 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 								@Override
 								public void sent() {
 									// Ignore.
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on "+SSKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on " + SSKInsertSender.this);
 								}
 
 								@Override
 								public void acknowledged() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on "+SSKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on " + SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void disconnected() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on "+SSKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on " + SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void fatalError() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on "+SSKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on " + SSKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 								
@@ -364,7 +364,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 				@Override
 				public void onTimeout() {
-					Logger.error(this, "Fatal: No Accepted/Rejected for "+SSKInsertSender.this);
+					Logger.error(this, "Fatal: No Accepted/Rejected for " + SSKInsertSender.this);
 					next.fatalTimeout(tag, false);
 				}
 
@@ -456,7 +456,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		 * 
 		 * For now, accept the "old" i.e. preexisting data.
 		 */
-		Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
+		Logger.normal(this, "Got collision on " + myKey + " (" + uid + ") sending to " + next.getPeer());
 		
 		headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
 		// Wait for the data
@@ -466,12 +466,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			dataMessage = node.usm.waitFor(mfData, this);
 		} catch (DisconnectedException e) {
 			if(logMINOR)
-				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
+				Logger.minor(this, "Disconnected: " + next + " getting datareply for " + this);
 			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
 		if(dataMessage == null) {
-			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
+			Logger.error(this, "Got headers but not data for datareply for insert from " + this);
 			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
@@ -489,7 +489,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			// The node will now propagate the new data. There is no need to move to the next node yet.
 			return DO.WAIT;
 		} catch (SSKVerifyException e) {
-			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" + block);
 			finish(INTERNAL_ERROR, next);
 			return DO.FINISHED;
 		}
@@ -529,7 +529,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	}
     
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this+" from "+(next == null ? "(null)" : next.shortToString()), new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: " + getStatusString(code) + " on " + this + " from " + (next == null ? "(null)" : next.shortToString()), new Exception("debug"));
     	
     	if(next != null) {
     		if(origTag != null) next.noLongerRoutingTo(origTag, false);
@@ -538,7 +538,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
     	
     	synchronized(this) {
     		if(status != NOT_FINISHED && status != TIMED_OUT)
-    			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+    			throw new IllegalStateException("finish() called with " + code + " when was already " + status);
     		
     		if((code == ROUTE_NOT_FOUND) && !hasForwarded)
     			code = ROUTE_REALLY_NOT_FOUND;
@@ -552,7 +552,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         if(code == SUCCESS && next != null)
         	next.onSuccess(true, true);
         
-        if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
+        if(logMINOR) Logger.minor(this, "Set status code: " + getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }
 
@@ -589,7 +589,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         	return "GENERATED REJECTED OVERLOAD";
         if(status == ROUTE_REALLY_NOT_FOUND)
         	return "ROUTE REALLY NOT FOUND";
-        return "UNKNOWN STATUS CODE: "+status;
+        return "UNKNOWN STATUS CODE: " + status;
     }
 
 	@Override
@@ -674,7 +674,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	public String toString() {
-		return "SSKInsertSender:" + myKey+":"+uid;
+		return "SSKInsertSender:" + myKey + ":" + uid;
 	}
 
 	public PeerNode[] getRoutedTo() {
@@ -723,7 +723,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	protected void onAccepted(PeerNode next) {
-        if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
+        if(logMINOR) Logger.minor(this, "Got Accepted on " + this);
         
         InsertTag thisTag = forkedRequestTag;
         if(forkedRequestTag == null) thisTag = origTag;
@@ -738,12 +738,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			next.sendSync(dataMsg, this, realTimeFlag);
 			sentPayload(data.length);
 		} catch (NotConnectedException e1) {
-			if(logMINOR) Logger.minor(this, "Not connected to "+next);
+			if(logMINOR) Logger.minor(this, "Not connected to " + next);
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
 			return;
 		} catch (SyncSendWaitedTooLongException e) {
-			Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
+			Logger.error(this, "Waited too long to send " + dataMsg + " to " + next + " on " + this);
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
 			return;
@@ -756,12 +756,12 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         	try {
         		next.sendSync(pkMsg, this, realTimeFlag);
         	} catch (NotConnectedException e) {
-        		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
+        		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: " + next);
 				next.noLongerRoutingTo(thisTag, false);
 				routeRequests();
 				return;
         	} catch (SyncSendWaitedTooLongException e) {
-        		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
+        		Logger.warning(this, "Took too long to send pubkey to " + next + " on " + this);
 				next.noLongerRoutingTo(thisTag, false);
 				routeRequests();
 				return;
@@ -770,13 +770,13 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
         	// Wait for the SSKPubKeyAccepted
         	
         	// FIXME doubled the timeout because handling it properly would involve forking.
-        	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT*2).setType(DMT.FNPSSKPubKeyAccepted);
+        	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT * 2).setType(DMT.FNPSSKPubKeyAccepted);
         	
         	Message newAck;
 			try {
 				newAck = node.usm.waitFor(mf1, this);
 			} catch (DisconnectedException e) {
-				if(logMINOR) Logger.minor(this, "Disconnected from "+next);
+				if(logMINOR) Logger.minor(this, "Disconnected from " + next);
 				next.noLongerRoutingTo(thisTag, false);
 				routeRequests();
 				return;
@@ -809,7 +809,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			if (msg == null) {
 				
 				// First timeout.
-				Logger.warning(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
+				Logger.warning(this, "Timeout waiting for reply after Accepted in " + this + " from " + next);
 				next.localRejectedOverload("AfterInsertAcceptedTimeout", realTimeFlag);
 				forwardRejectedOverload();
 				finish(TIMED_OUT, next);
@@ -828,7 +828,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 					
 					if(msg == null) {
 						// Second timeout.
-						Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
+						Logger.error(this, "Fatal timeout waiting for reply after Accepted on " + this + " from " + next);
 						next.fatalTimeout(thisTag, false);
 						return;
 					}

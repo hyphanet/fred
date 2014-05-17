@@ -136,13 +136,13 @@ public class MP3Filter implements ContentDataFilter {
 				}
 
 				//Generate other values from tables
-				int bitrate = bitRateIndices[version][layer][bitrateIndex]*1000;
+				int bitrate = bitRateIndices[version][layer][bitrateIndex] * 1000;
 				int samplerate = sampleRateIndices[version][samplerateIndex];
 				int frameLength = 0;
 				if(layer == 1 || layer == 2) {
-					frameLength = 144*bitrate/samplerate+(paddingBit ? 1 : 0);
+					frameLength = 144 * bitrate / samplerate + (paddingBit ? 1 : 0);
 				}
-				else if(layer == 3) frameLength = (12*bitrate/samplerate+(paddingBit ? 1 : 0))*4;
+				else if(layer == 3) frameLength = (12 * bitrate / samplerate + (paddingBit ? 1 : 0)) * 4;
 
 				short crc = 0;
 				
@@ -154,7 +154,7 @@ public class MP3Filter implements ContentDataFilter {
 				}
 				//Write out the frame
 				byte[] frame = null;
-				frame = new byte[frameLength-4];
+				frame = new byte[frameLength - 4];
 				in.readFully(frame);
 				out.writeInt(frameHeader);
 				// FIXME CRCs may or may not work. I have not been able to find an mp3 file with CRCs but without free bitrate.
@@ -164,12 +164,12 @@ public class MP3Filter implements ContentDataFilter {
 				totalFrames++;
 				foundFrames++;
 				if(countLostSyncBytes != 0)
-					Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
+					Logger.normal(this, "Lost sync for " + countLostSyncBytes + " bytes");
 				countLostSyncBytes = 0;
 				frameHeader = in.readInt();
 			} else {
 				if(foundFrames != 0)
-					Logger.normal(this, "Series of frames: "+foundFrames);
+					Logger.normal(this, "Series of frames: " + foundFrames);
 				if(foundFrames > maxFoundFrames) maxFoundFrames = foundFrames;
 				foundFrames = 0;
 				frameHeader = frameHeader << 8;
@@ -184,9 +184,9 @@ public class MP3Filter implements ContentDataFilter {
 		}
 		} catch (EOFException e) {
 			if(foundFrames != 0)
-				Logger.normal(this, "Series of frames: "+foundFrames);
+				Logger.normal(this, "Series of frames: " + foundFrames);
 			if(countLostSyncBytes != 0)
-				Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
+				Logger.normal(this, "Lost sync for " + countLostSyncBytes + " bytes");
 			if(totalFrames == 0 || maxFoundFrames < 10) {
 				if(countFreeBitrate > 100)
 					throw new DataFilterException(l10n("freeBitrateNotSupported"), l10n("freeBitrateNotSupported"), l10n("freeBitrateNotSupportedExplanation"));
@@ -195,13 +195,13 @@ public class MP3Filter implements ContentDataFilter {
 			}
 			
 			out.flush();
-			Logger.normal(this, totalFrames+" frames, of which "+totalCRCs+" had a CRC");
+			Logger.normal(this, totalFrames + " frames, of which " + totalCRCs + " had a CRC");
 			return;
 		}
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("MP3Filter."+key);
+		return NodeL10n.getBase().getString("MP3Filter." + key);
 	}
 
 	@Override
@@ -214,7 +214,7 @@ public class MP3Filter implements ContentDataFilter {
 	public static void main(String[] args) throws DataFilterException, IOException {
 		File f = new File(args[0]);
 		FileInputStream fis = new FileInputStream(f);
-		File out = new File(args[0]+".filtered.mp3");
+		File out = new File(args[0] + ".filtered.mp3");
 		FileOutputStream fos = new FileOutputStream(out);
 		MP3Filter filter = new MP3Filter();
 //		// Skip some bytes for testing resyncing.

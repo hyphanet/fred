@@ -110,7 +110,7 @@ public class IPAddressDetector implements Runnable {
 		} catch (SocketException e) {
 			Logger.error(
 				this,
-				"SocketException trying to detect NetworkInterfaces: "+e,
+				"SocketException trying to detect NetworkInterfaces: " + e,
 				e);
 			addrs.add(oldDetect());
 			old = true;
@@ -136,7 +136,7 @@ public class IPAddressDetector implements Runnable {
                 } catch (SocketException e) {
                     Logger.error(
                                 this,
-                                 "SocketException trying to retrieve the MTU NetworkInterfaces: "+e,
+                                 "SocketException trying to retrieve the MTU NetworkInterfaces: " + e,
                                  e);
                     ifaceMTU = 0; //code for ignoring this MTU
                 }
@@ -291,7 +291,7 @@ public class IPAddressDetector implements Runnable {
 					detector.redetectAddress();
 				}
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 			}
 		}
 	}

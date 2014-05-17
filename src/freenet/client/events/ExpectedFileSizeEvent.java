@@ -17,7 +17,7 @@ public class ExpectedFileSizeEvent implements ClientEvent {
 
 	@Override
 	public String getDescription() {
-		return "Expected file size: "+expectedSize;
+		return "Expected file size: " + expectedSize;
 	}
 
 }

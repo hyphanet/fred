@@ -41,8 +41,8 @@ public class Location {
 	public static double distance(double a, double b, boolean allowCrazy) {
 	    // Circular keyspace
 		if(!allowCrazy) {
-			if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
-		    	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
+			if((a < 0.0 || a > 1.0) || (b < 0.0 || b > 1.0)) {
+		    	Logger.error(PeerManager.class, "Invalid Location ! a = " + a + " b = " + b + "Please report this bug!", new Exception("error"));
 		    	throw new NullPointerException();
 			}
 			return simpleDistance(a, b);	
@@ -93,10 +93,10 @@ public class Location {
 	 */
 	public static double normalize(double rough) {
 		int intPart=(int)rough;
-		double maybeNegative=rough-intPart;
+		double maybeNegative=rough - intPart;
 		//note: maybeNegative is bound between (-1.0, 1.0)
 		if (maybeNegative < 0)
-			return 1.0+maybeNegative;
+			return 1.0 + maybeNegative;
 		return maybeNegative;
 	}
 	

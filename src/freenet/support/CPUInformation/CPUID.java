@@ -127,7 +127,7 @@ public class CPUID {
 			return new AMDInfoImpl();
 		if(getCPUVendorID().equals("GenuineIntel"))
 			return new IntelInfoImpl();
-		throw new UnknownCPUException("Unknown CPU type: '"+getCPUVendorID()+ '\'');
+		throw new UnknownCPUException("Unknown CPU type: '" + getCPUVendorID() + '\'');
 	}
 	
 	protected abstract static class CPUIDCPUInfo
@@ -260,7 +260,7 @@ public class CPUID {
 					}
 				}
 			}
-			throw new UnknownCPUException("Unknown AMD CPU; Family="+getCPUFamily()+", Model="+getCPUModel());
+			throw new UnknownCPUException("Unknown AMD CPU; Family=" + getCPUFamily() + ", Model=" + getCPUModel());
 		}
 	}
 
@@ -274,17 +274,17 @@ public class CPUID {
 		@Override
 		public boolean IsPentiumMMXCompatible()
 		{
-			return IsPentium2Compatible() || ((getCPUFamily() == 5) && ((getCPUModel() ==4) || (getCPUModel() == 8)));
+			return IsPentium2Compatible() || ((getCPUFamily() == 5) && ((getCPUModel() == 4) || (getCPUModel() == 8)));
 		}
 		@Override
 		public boolean IsPentium2Compatible()
 		{
-			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=3));
+			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >= 3));
 		}
 		@Override
 		public boolean IsPentium3Compatible()
 		{
-			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=7));
+			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >= 7));
 		}
 		@Override
 		public boolean IsPentium4Compatible()
@@ -381,7 +381,7 @@ public class CPUID {
 					}	
 				}
 			}
-			throw new UnknownCPUException("Unknown Intel CPU; Family="+getCPUFamily()+", Model="+getCPUModel());
+			throw new UnknownCPUException("Unknown Intel CPU; Family=" + getCPUFamily() + ", Model=" + getCPUModel());
 		}
 	}
 
@@ -407,14 +407,14 @@ public class CPUID {
 		System.out.println(" CPU has SSE2: " + c.hasSSE2());
 		if(c instanceof IntelCPUInfo){
 			System.out.println("  **Intel-info**");
-			System.out.println("  Is pII-compatible: "+((IntelCPUInfo)c).IsPentium2Compatible());
-			System.out.println("  Is pIII-compatible: "+((IntelCPUInfo)c).IsPentium3Compatible());
-			System.out.println("  Is pIV-compatible: "+((IntelCPUInfo)c).IsPentium4Compatible());
+			System.out.println("  Is pII-compatible: " + ((IntelCPUInfo)c).IsPentium2Compatible());
+			System.out.println("  Is pIII-compatible: " + ((IntelCPUInfo)c).IsPentium3Compatible());
+			System.out.println("  Is pIV-compatible: " + ((IntelCPUInfo)c).IsPentium4Compatible());
 		}
 		if(c instanceof AMDCPUInfo){
 			System.out.println("  **AMD-info**");
-			System.out.println("  Is Athlon-compatible: "+((AMDCPUInfo)c).IsAthlonCompatible());
-                        System.out.println("  Is Athlon64-compatible: "+((AMDCPUInfo)c).IsAthlon64Compatible());
+			System.out.println("  Is Athlon-compatible: " + ((AMDCPUInfo)c).IsAthlonCompatible());
+                        System.out.println("  Is Athlon64-compatible: " + ((AMDCPUInfo)c).IsAthlon64Compatible());
 
 		}
 		
@@ -438,13 +438,13 @@ public class CPUID {
             if (loaded) {
                 _nativeOk = true;
                 if (_doLog)
-                    System.err.println("INFO: Native CPUID library '"+getResourceName()+"' loaded from resource");
+                    System.err.println("INFO: Native CPUID library '" + getResourceName() + "' loaded from resource");
             } else {
                 loaded = loadGeneric();
                 if (loaded) {
                     _nativeOk = true;
                     if (_doLog)
-                        System.err.println("INFO: Native CPUID library '"+getLibraryMiddlePart()+"' loaded from somewhere in the path");
+                        System.err.println("INFO: Native CPUID library '" + getLibraryMiddlePart() + "' loaded from somewhere in the path");
                 } else {
                     _nativeOk = false;
                     if (_doLog)
@@ -457,7 +457,7 @@ public class CPUID {
         }
     	}catch(Exception e){
             if (_doLog)
-            	System.err.println("INFO: Native CPUID library jcpuid not loaded, reason: '"+e.getMessage()+"' - will not be able to read CPU information using CPUID");
+            	System.err.println("INFO: Native CPUID library jcpuid not loaded, reason: '" + e.getMessage() + "' - will not be able to read CPU information using CPUID");
         }
     }
     
@@ -505,11 +505,11 @@ public class CPUID {
             try{
             	outFile = File.createTempFile("jcpuid", "lib.tmp");
                 }catch (IOException e){
-            	System.err.println("freenet.support.CPUInformation.CPUID: Can't create the temporary file in "+System.getProperty("java.io.tmpdir")+" trying something else now.");
+            	System.err.println("freenet.support.CPUInformation.CPUID: Can't create the temporary file in " + System.getProperty("java.io.tmpdir") + " trying something else now.");
             	outFile = new File("cpuid-lib.tmp");
             }
             FileOutputStream fos = new FileOutputStream(outFile);
-            byte buf[] = new byte[4096*1024];
+            byte buf[] = new byte[4096 * 1024];
             while (true) {
                 int read = libStream.read(buf);
                 if (read < 0) break;
@@ -541,7 +541,7 @@ public class CPUID {
     private static String getResourceName()
     {
     	String pname = CPUID.class.getPackage().getName().replace('.','/');
-    	return pname+ '/' +getLibraryPrefix()+getLibraryMiddlePart()+ '.' +getLibrarySuffix();
+    	return pname + '/' + getLibraryPrefix() + getLibraryMiddlePart() + '.' + getLibrarySuffix();
     }
     
     private static String getLibraryPrefix()
@@ -566,7 +566,7 @@ public class CPUID {
 			return "jcpuid-x86-freebsd"; // The convention on freebsd...
 		if(isMacOS)
 			return "jcpuid-x86-osx"; // The convention on Mac OS X...
-		throw new RuntimeException("Dont know jcpuid library name for os type '"+System.getProperty("os.name")+ '\'');
+		throw new RuntimeException("Dont know jcpuid library name for os type '" + System.getProperty("os.name") + '\'');
     }
     
     private static String getLibrarySuffix()

@@ -39,10 +39,10 @@ public class InsertFreesiteToadlet extends Toadlet {
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
 		li.addChild("a", "href", "/SSK@940RYvj1-aowEHGsb5HeMTigq8gnV14pbKNsIvUO~-0,FdTbR3gIz21QNfDtnK~MiWgAf2kfwHe-cpyJXuLHdOE,AQACAAE/publish-3/", "Publish!");
-		li.addChild("#", " - "+l10n("publishExplanation"));
+		li.addChild("#", " - " + l10n("publishExplanation"));
 		li = ul.addChild("li");
 		li.addChild("a", "href", "/SSK@8r-uSRcJPkAr-3v3YJR16OCx~lyV2XOKsiG4MOQQBMM,P42IgNemestUdaI7T6z3Og6P-Hi7g9U~e37R3kWGVj8,AQACAAE/freesite-HOWTO-4/", "Freesite HOWTO");
-		li.addChild("#", " - "+l10n("freesiteHowtoExplanation"));
+		li.addChild("#", " - " + l10n("freesiteHowtoExplanation"));
 		
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.contentThingamablog",
 		        new String[] { "thingamablog", "thingamablog-freenet" },

@@ -181,7 +181,7 @@ public final class MessageFilter {
 			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
 		}
 		if(or._initialTimeout != _initialTimeout) {
-			Logger.error(this, "Message filters being or()ed have different timeouts! This is very dangerous! This is "+this+" or is "+or);
+			Logger.error(this, "Message filters being or()ed have different timeouts! This is very dangerous! This is " + this + " or is " + or);
 			// FIXME throw new IllegalArgumentException()
 		}
 		_or = or;
@@ -238,7 +238,7 @@ public final class MessageFilter {
 			}
 		}
 		if((!noTimeout) && reallyTimedOut(now)) {
-			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
+			if(logMINOR) Logger.minor(this, "Matched but timed out: " + this);
 			return MATCHED.TIMED_OUT_AND_MATCHED;
 		}
 		return MATCHED.MATCHED;
@@ -268,7 +268,7 @@ public final class MessageFilter {
 	 */
 	boolean timedOut(long time) {
 		if(_matched) {
-			Logger.error(this, "Impossible: filter already matched in timedOut(): "+this, new Exception("error"));
+			Logger.error(this, "Impossible: filter already matched in timedOut(): " + this, new Exception("error"));
 			return true; // Remove it.
 		}
 		return reallyTimedOut(time);
@@ -296,7 +296,7 @@ public final class MessageFilter {
 
     @Override
 	public String toString() {
-    	return super.toString()+":"+_type.getName();
+    	return super.toString() + ":" + _type.getName();
     }
 
     public void clearMatched() {
@@ -428,7 +428,7 @@ public final class MessageFilter {
 						return ((SlowAsyncMessageFilterCallback)cb).getPriority();
 					}
 					
-				}, "Slow callback for "+cb);
+				}, "Slow callback for " + cb);
 			else
 				cb.onMatched(msg);
 			if(ctr != null)

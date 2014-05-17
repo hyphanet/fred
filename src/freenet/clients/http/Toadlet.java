@@ -79,11 +79,11 @@ public abstract class Toadlet {
 	private String supportedMethodsCache;
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("Toadlet." + key, new String[] { pattern }, new String[] { value });
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("Toadlet."+key);
+		return NodeL10n.getBase().getString("Toadlet." + key);
 	}
 
 	/**
@@ -109,8 +109,8 @@ public abstract class Toadlet {
 			}
 			if (sb.length() >= 2) {
 				// remove last ", "
-				sb.deleteCharAt(sb.length()-1);
-				sb.deleteCharAt(sb.length()-1);
+				sb.deleteCharAt(sb.length() - 1);
+				sb.deleteCharAt(sb.length() - 1);
 			}
 			supportedMethodsCache = sb.toString();
 		}
@@ -320,9 +320,9 @@ public abstract class Toadlet {
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
-			"<html><head><title>"+msg+"</title></head><body><h1>" +
-			l10n("permRedirectWithReason", "reason", msg)+
-			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">"+l10n("clickHere")+"</a></body></html>";
+			"<html><head><title>" + msg + "</title></head><body><h1>" +
+			l10n("permRedirectWithReason", "reason", msg) +
+			"</h1><a href=\"" + HTMLEncoder.encode(location) + "\">" + l10n("clickHere") + "</a></body></html>";
 		byte[] buf;
 		try {
 			buf = redirDoc.getBytes("UTF-8");
@@ -351,9 +351,9 @@ public abstract class Toadlet {
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
-			"<html><head><title>"+msg+"</title></head><body><h1>" +
-			l10n("tempRedirectWithReason", "reason", msg)+
-			"</h1><a href=\""+HTMLEncoder.encode(location)+"\">" +
+			"<html><head><title>" + msg + "</title></head><body><h1>" +
+			l10n("tempRedirectWithReason", "reason", msg) +
+			"</h1><a href=\"" + HTMLEncoder.encode(location) + "\">" +
 			l10n("clickHere") + "</a></body></html>";
 		byte[] buf;
 		try {
@@ -430,9 +430,9 @@ public abstract class Toadlet {
     }
 
 	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		Logger.error(this, "Caught "+t, t);
-		String msg = "<html><head><title>"+NodeL10n.getBase().getString("Toadlet.internalErrorTitle")+
-				"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+		Logger.error(this, "Caught " + t, t);
+		String msg = "<html><head><title>" + NodeL10n.getBase().getString("Toadlet.internalErrorTitle") +
+				"</title></head><body><h1>" + NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport") + "</h1><pre>";
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		while (t != null) {
