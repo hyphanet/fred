@@ -87,7 +87,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, target, cm);
 			metadata = m;
-			if(logMINOR) Logger.minor(this, "Simple redirect metadata: "+m);
+			if(logMINOR) Logger.minor(this, "Simple redirect metadata: " + m);
 			origSFI = null;
 			containerHandle = null;
 		}
@@ -100,7 +100,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			this.targetInArchive = targetInArchive;
 			Metadata m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, targetInArchive, cm);
 			metadata = m;
-			if(logMINOR) Logger.minor(this, "Internal redirect: "+m);
+			if(logMINOR) Logger.minor(this, "Internal redirect: " + m);
 			origSFI = null;
 			containerHandle = null;
 		}
@@ -142,7 +142,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
 			if(logMINOR)
-				Logger.minor(this, "Cancelling "+this, new Exception("debug"));
+				Logger.minor(this, "Cancelling " + this, new Exception("debug"));
 			ClientPutState oldState = null;
 			synchronized(this) {
 				if(cancelled) return;
@@ -170,7 +170,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 		@Override
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Completed "+this);
+			if(logMINOR) Logger.minor(this, "Completed " + this);
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
 				container.activate(runningPutHandlers, 2);
@@ -191,7 +191,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 				if(putHandlersWaitingForMetadata.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForMetadata, 2);
-					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
+					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on " + this + " for " + SimpleManifestPutter.this);
 				}
 
 				if(persistent) {
@@ -200,7 +200,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 				if(waitingForBlockSets.remove(this)) {
 					if(persistent) container.store(waitingForBlockSets);
-					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
+					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on " + this + " for " + SimpleManifestPutter.this);
 				}
 				if(persistent) {
 					container.deactivate(waitingForBlockSets, 1);
@@ -210,21 +210,21 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				if(putHandlersWaitingForFetchable.remove(this)) {
 					if(persistent) container.ext().store(putHandlersWaitingForFetchable, 2);
 					// Not getting an onFetchable is not unusual, just ignore it.
-					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
+					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on " + this + " for " + SimpleManifestPutter.this);
 				}
 				if(persistent)
 					container.deactivate(putHandlersWaitingForFetchable, 1);
 
 				if(!runningPutHandlers.isEmpty()) {
 					if(logMINOR) {
-						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
+						Logger.minor(this, "Running put handlers: " + runningPutHandlers.size());
 						for(Object o : runningPutHandlers) {
 							boolean activated = true;
 							if(persistent) {
 								activated = container.ext().isActive(o);
 								if(!activated) container.activate(o, 1);
 							}
-							Logger.minor(this, "Still running: "+o);
+							Logger.minor(this, "Still running: " + o);
 							if(!activated)
 								container.deactivate(o, 1);
 						}
@@ -259,7 +259,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			} else if(state != null && persistent) {
 				state.removeFrom(container, context);
 			}
-			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
+			if(logMINOR) Logger.minor(this, "Failed: " + this + " - " + e, e);
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			fail(e, container, context);
@@ -269,7 +269,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
+			if(logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
 			if(metadata == null) {
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
@@ -302,16 +302,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					if(persistent())
 						container.store(this);
 					if(logMINOR)
-						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
+						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState + " for " + this);
 					return;
 				}
-				Logger.error(this, "Ignoring onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
+				Logger.error(this, "Ignoring onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState + " for " + this);
 			}
 		}
 
 		@Override
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state+" persistent="+persistent,
+			if(logMINOR) Logger.minor(this, "Assigning metadata: " + m + " for " + this + " from " + state + " persistent=" + persistent,
 					new Exception("debug"));
 			if(metadata != null) {
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
@@ -334,7 +334,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				allMetadatas = putHandlersWaitingForMetadata.isEmpty();
 				if(!allMetadatas) {
 					if(logMINOR)
-						Logger.minor(this, "Still waiting for metadata: "+putHandlersWaitingForMetadata.size());
+						Logger.minor(this, "Still waiting for metadata: " + putHandlersWaitingForMetadata.size());
 				}
 			}
 			if(allMetadatas) {
@@ -518,7 +518,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Removing "+this);
+			if(logMINOR) Logger.minor(this, "Removing " + this);
 			ClientPutState oldSFI;
 			ClientPutState oldState;
 			synchronized(this) {
@@ -528,14 +528,14 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				currentState = null;
 			}
 			if(oldSFI != null) {
-				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
+				Logger.error(this, "origSFI is set in removeFrom() on " + this + " for " + SimpleManifestPutter.this, new Exception("debug"));
 				container.activate(oldSFI, 1);
 				oldSFI.cancel(container, context);
 				oldSFI.removeFrom(container, context);
 				if(oldState == oldSFI) oldState = null;
 			}
 			if(oldState != null) {
-				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
+				Logger.error(this, "currentState is set in removeFrom() on " + this + " for " + SimpleManifestPutter.this, new Exception("debug"));
 				container.activate(oldState, 1);
 				oldState.cancel(container, context);
 				oldState.removeFrom(container, context);
@@ -546,7 +546,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			}
 			if(metadata != null) {
 				// Possible if cancelled
-				Logger.normal(this, "Metadata is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
+				Logger.normal(this, "Metadata is set in removeFrom() on " + this + " for " + SimpleManifestPutter.this);
 				container.activate(metadata, 1);
 				metadata.removeFrom(container);
 			}
@@ -557,10 +557,10 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		@Override
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
-				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
+				Logger.error(this, "Storing " + this + " when already cancelled!", new Exception("error"));
 				return false;
 			}
-			if(logMINOR) Logger.minor(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Storing " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 			return true;
 		}
 
@@ -708,17 +708,17 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		int idx;
 		while((idx = defaultName.indexOf('/')) != -1) {
 			String dir = defaultName.substring(0, idx);
-			String subname = defaultName.substring(idx+1);
+			String subname = defaultName.substring(idx + 1);
 			Object o = manifestElements.get(defaultName);
-			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
+			if(o == null) throw new IllegalArgumentException("Default name dir \"" + dir + "\" does not exist");
 			if(!(o instanceof HashMap))
-				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
+				throw new IllegalArgumentException("Default name dir \"" + dir + "\" is not a directory in \"" + defaultName + "\"");
 			manifestElements = (HashMap<String, Object>)o;
 			defaultName = subname;
 		}
 		Object o = manifestElements.get(defaultName);
-		if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
-		if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
+		if(o == null) throw new IllegalArgumentException("Default name \"" + defaultName + "\" does not exist");
+		if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \"" + defaultName + "\" is a directory?!");
 		// instanceof Bucket is checked in bucketsByNameToManifestEntries
 	}
 
@@ -729,7 +729,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		if (logMINOR)
-			Logger.minor(this, "Starting " + this+" persistence="+persistent());
+			Logger.minor(this, "Starting " + this + " persistence=" + persistent());
 		PutHandler[] running;
 
 		if(persistent()) {
@@ -741,7 +741,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		try {
 			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
-				if(logMINOR) Logger.minor(this, "Starting "+running[i]);
+				if(logMINOR) Logger.minor(this, "Starting " + running[i]);
 				running[i].start(container, context);
 				synchronized(this) {
 					// It might have failed to start.
@@ -786,9 +786,9 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				HashMap<String,Object> elements = Metadata.forceMap(o);
 				putHandlersByName.put(name, subMap);
-				makePutHandlers(elements, subMap, ZipPrefix+name+ '/', persistent);
+				makePutHandlers(elements, subMap, ZipPrefix + name + '/', persistent);
 				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+elements.size());
+					Logger.debug(this, "Sub map for " + name + " : " + subMap.size() + " elements from " + elements.size());
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -818,24 +818,24 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 							// FIXME no way to know at this point how big that is...
 							// need major refactoring to make this work... for now just
 							// assume 64k will cover it.
-							(bytesOnZip + sz < (2038-64)*1024)) { // totally dumb heuristic!
+							(bytesOnZip + sz < (2038 - 64) * 1024)) { // totally dumb heuristic!
 						bytesOnZip += sz;
 						// Put it in the zip.
 						if(logMINOR)
-							Logger.minor(this, "Putting into ZIP: "+name);
-						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data, persistent);
+							Logger.minor(this, "Putting into ZIP: " + name);
+						ph = new PutHandler(this, name, ZipPrefix + element.fullName, cm, data, persistent);
 						if(logMINOR)
-							Logger.minor(this, "Putting file into container: "+element.fullName+" : "+ph);
+							Logger.minor(this, "Putting file into container: " + element.fullName + " : " + ph);
 						elementsToPutInArchive.add(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
-							ph = new PutHandler(this,name, data, cm, getCHKOnly, persistent);
+							ph = new PutHandler(this, name, data, cm, getCHKOnly, persistent);
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
 						if(logMINOR)
-							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
+							Logger.minor(this, "Inserting separately as PutHandler: " + name + " : " + ph + " persistent=" + ph.persistent() + ":" + ph.persistent + " " + persistent());
 						numberOfFiles++;
 						totalSize += data.size();
 					}
@@ -922,7 +922,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
 			if(meta == null) {
-				fail(new InsertException(InsertException.INVALID_URI, "Default name "+defaultName+" does not exist", null), container, context);
+				fail(new InsertException(InsertException.INVALID_URI, "Default name " + defaultName + " does not exist", null), container, context);
 				return;
 			}
 			namesToByteArrays.put("", meta);
@@ -964,7 +964,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.activate(baseMetadata, Integer.MAX_VALUE);
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				if(logMINOR)
-					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
+					Logger.minor(this, "Metadata bucket is " + bucket.size() + " bytes long");
 				break;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
@@ -973,7 +973,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				try {
 					// Start the insert for the sub-Metadata.
 					// Eventually it will generate a URI and call onEncode(), which will call back here.
-					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: "+e);
+					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: " + e);
 					resolve(e, container, context);
 					if(persistent())
 						container.deactivate(baseMetadata, 1);
@@ -1021,11 +1021,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					createTarBucket(bucket, os, container) :
 					createZipBucket(bucket, os, container));
 				if(logMINOR)
-					Logger.minor(this, "Archive size is "+outputBucket.size());
+					Logger.minor(this, "Archive size is " + outputBucket.size());
 				bucket.free();
 				if(persistent()) bucket.removeFrom(container);
 
-				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
+				if(logMINOR) Logger.minor(this, "We are using " + archiveType);
 
 				// Now we have to insert the Archive we have generated.
 
@@ -1051,8 +1051,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
-			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP), getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
+			if(logMINOR) Logger.minor(this, "Inserting main metadata: " + metadataInserter + " for " + baseMetadata + " for " + this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
 				container.activate(metadataPuttersUnfetchable, 2);
@@ -1094,7 +1094,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				container.activate(ph.data, 1);
 			}
 			if(logMINOR)
-				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
+				Logger.minor(this, "Putting into tar: " + ph + " data length " + ph.data.size() + " name " + ph.targetInArchive);
 			ze = new TarArchiveEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
@@ -1106,7 +1106,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 		// Add .metadata - after the rest.
 		if(logMINOR)
-			Logger.minor(this, "Putting metadata into tar: length is "+inputBucket.size());
+			Logger.minor(this, "Putting metadata into tar: length is " + inputBucket.size());
 		ze = new TarArchiveEntry(".metadata");
 		ze.setModTime(0); // -1 = now, 0 = 1970.
 		long size = inputBucket.size();
@@ -1167,15 +1167,15 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			container.activate(metadataPuttersByMetadata, 2);
 		for(Metadata m: metas) {
 			if(persistent()) container.activate(m, Integer.MAX_VALUE);
-			if(logMINOR) Logger.minor(this, "Resolving "+m+" for "+this);
+			if(logMINOR) Logger.minor(this, "Resolving " + m + " for " + this);
 			synchronized(this) {
 				if(metadataPuttersByMetadata.containsKey(m)) {
-					if(logMINOR) Logger.minor(this, "Already started insert for "+m+" in resolve() for "+metas.length+" Metadata's");
+					if(logMINOR) Logger.minor(this, "Already started insert for " + m + " in resolve() for " + metas.length + " Metadata's");
 					continue;
 				}
 			}
 			if(m.isResolved()) {
-				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
+				Logger.error(this, "Already resolved: " + m + " in resolve() - race condition???");
 				if(persistent()) container.deactivate(m, 1);
 				continue;
 			}
@@ -1186,7 +1186,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
 					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
-				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
+				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: " + metadataInserter + " for " + m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
@@ -1216,16 +1216,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					container.activate(ph, 1);
 				Metadata meta = ph.metadata;
 				if(ph.metadata == null)
-					Logger.error(this, "Metadata for "+name+" : "+ph+" is null");
+					Logger.error(this, "Metadata for " + name + " : " + ph + " is null");
 				else {
 					ph.clearMetadata(container);
 					if(persistent())
 						container.activate(meta, Integer.MAX_VALUE);
 					if(logMINOR)
-						Logger.minor(this, "Putting "+name);
+						Logger.minor(this, "Putting " + name);
 					namesToByteArrays.put(name, meta);
 					if(logMINOR)
-						Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
+						Logger.minor(this, "Putting PutHandler into base metadata: " + ph + " name " + name);
 				}
 			} else if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
@@ -1235,8 +1235,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				}
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR) {
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+elements.size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
-					Logger.minor(this, "Putting directory: "+name);
+					Logger.minor(this, "Putting hashmap into base metadata: " + name + " size " + elements.size() + " active = " + (container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
+					Logger.minor(this, "Putting directory: " + name);
 				}
 				namesToByteArrays(elements, subMap, container);
 			} else
@@ -1249,7 +1249,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		synchronized(this) {
 			insertedAllFiles = true;
 			if(finished || cancelled) {
-				if(logMINOR) Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
+				if(logMINOR) Logger.minor(this, "Already " + (finished?"finished":"cancelled"));
 				if(persistent())
 					container.store(this);
 				return;
@@ -1308,55 +1308,55 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		putHandlersByName = null;
 
 		if(!runningPutHandlers.isEmpty()) {
-			Logger.error(this, "Running put handlers not part of putHandlersByName: "+runningPutHandlers.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Running put handlers not part of putHandlersByName: " + runningPutHandlers.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still running, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still running, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			runningPutHandlers.clear();
 		}
 		if(!putHandlersWaitingForMetadata.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: "+putHandlersWaitingForMetadata.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: " + putHandlersWaitingForMetadata.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForMetadata.toArray(new PutHandler[putHandlersWaitingForMetadata.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			putHandlersWaitingForMetadata.clear();
 		}
 		if(!waitingForBlockSets.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: "+waitingForBlockSets.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: " + waitingForBlockSets.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = waitingForBlockSets.toArray(new PutHandler[waitingForBlockSets.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			waitingForBlockSets.clear();
 		}
 		if(!putHandlersWaitingForFetchable.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: "+putHandlersWaitingForFetchable.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: " + putHandlersWaitingForFetchable.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForFetchable.toArray(new PutHandler[putHandlersWaitingForFetchable.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: "+handler);
+				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: " + handler);
 				handler.cancel();
 				handler.removeFrom(container, context);
 			}
 			putHandlersWaitingForFetchable.clear();
 		}
 		if(!elementsToPutInArchive.isEmpty()) {
-			Logger.error(this, "Elements to put in archive, not part of putHandlersByName: "+elementsToPutInArchive.size()+" in removePutHandlers() on "+this, new Exception("error"));
+			Logger.error(this, "Elements to put in archive, not part of putHandlersByName: " + elementsToPutInArchive.size() + " in removePutHandlers() on " + this, new Exception("error"));
 			PutHandler[] handlers = elementsToPutInArchive.toArray(new PutHandler[elementsToPutInArchive.size()]);
 			for(PutHandler handler : handlers) {
 				container.activate(handler, 1);
-				Logger.error(this, "To put in archive, but not in putHandlersByName: "+handler);
+				Logger.error(this, "To put in archive, but not in putHandlersByName: " + handler);
 				handler.removeFrom(container, context);
 			}
 			elementsToPutInArchive.clear();
@@ -1384,7 +1384,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 * @param putHandlersByName
 	 */
 	private void removePutHandlersByName(ObjectContainer container, ClientContext context, HashMap<String, Object> putHandlersByName) {
-		if(logMINOR) Logger.minor(this, "removePutHandlersByName on "+this+" : map size = "+putHandlersByName.size());
+		if(logMINOR) Logger.minor(this, "removePutHandlersByName on " + this + " : map size = " + putHandlersByName.size());
 		for(Map.Entry<String, Object> entry : putHandlersByName.entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
@@ -1425,7 +1425,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
 
-		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
+		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: " + running.length);
 		for(PutHandler putter : running) {
 			boolean active = true;
 			if(persistent) {
@@ -1444,7 +1444,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			runningMeta = metadataPuttersByMetadata.values().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
 		}
 
-		if(logMINOR) Logger.minor(this, "Metadata putters to cancel: "+runningMeta.length);
+		if(logMINOR) Logger.minor(this, "Metadata putters to cancel: " + runningMeta.length);
 		for(ClientPutState putter : runningMeta) {
 			boolean active = true;
 			if(persistent) {
@@ -1493,11 +1493,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
 			} else {
-				if(logMINOR) Logger.minor(this, "Did not remove metadata putter "+state+" for "+token+" because not present");
+				if(logMINOR) Logger.minor(this, "Did not remove metadata putter " + state + " for " + token + " because not present");
 			}
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) {
-					Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
+					Logger.minor(this, "Still running metadata putters: " + metadataPuttersByMetadata.size());
 					// FIXME simplify when confident that it works.
 					// We do want to show what's still running though.
 					for(Map.Entry<Metadata,ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
@@ -1511,8 +1511,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 							metaActive = container.ext().isActive(key);
 							if(!active) container.activate(metaActive, 1);
 						}
-						Logger.minor(this, "Still waiting for "+s+" for "+key);
-						if(persistent()) Logger.minor(this, "Key id is "+container.ext().getID(key));
+						Logger.minor(this, "Still waiting for " + s + " for " + key);
+						if(persistent()) Logger.minor(this, "Key id is " + container.ext().getID(key));
 						if(key == token)
 							Logger.error(this, "MATCHED, yet didn't find it earlier?!");
 						if(key.equals(token))
@@ -1522,7 +1522,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 					}
 				}
 			} else {
-				Logger.minor(this, "Inserted manifest successfully on "+this+" : "+state);
+				Logger.minor(this, "Inserted manifest successfully on " + this + " : " + state);
 				insertedManifest = true;
 				if(finished) {
 					if(logMINOR) Logger.minor(this, "Already finished");
@@ -1591,7 +1591,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
-			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
+			if(logMINOR) Logger.minor(this, "Got metadata key: " + finalURI);
 			if(persistent())
 				container.activate(cb, 1);
 			cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this, container);
@@ -1607,7 +1607,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			m.resolve(key.getURI());
 			if(persistent())
 				container.store(m);
-			if(logMINOR) Logger.minor(this, "Resolved "+m+" : "+key.getURI());
+			if(logMINOR) Logger.minor(this, "Resolved " + m + " : " + key.getURI());
 			resolveAndStartBase(container, context);
 		}
 	}
@@ -1624,7 +1624,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			ClientPutState prevState = metadataPuttersByMetadata.get(m);
 			if(prevState != null) {
 				if(prevState != oldState) {
-					if(logMINOR) Logger.minor(this, "Ignoring transition in "+this+" for metadata putter: "+oldState+" -> "+newState+" because current for "+m+" is "+prevState);
+					if(logMINOR) Logger.minor(this, "Ignoring transition in " + this + " for metadata putter: " + oldState + " -> " + newState + " because current for " + m + " is " + prevState);
 					if(persistent()) {
 						container.deactivate(metadataPuttersUnfetchable, 1);
 						container.deactivate(metadataPuttersByMetadata, 1);
@@ -1634,15 +1634,15 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				if(persistent()) container.store(newState);
 				metadataPuttersByMetadata.put(m, newState);
 				if(persistent()) container.ext().store(metadataPuttersByMetadata, 2);
-				if(logMINOR) Logger.minor(this, "Metadata putter transition: "+oldState+" -> "+newState);
+				if(logMINOR) Logger.minor(this, "Metadata putter transition: " + oldState + " -> " + newState);
 				if(metadataPuttersUnfetchable.containsKey(m)) {
 					metadataPuttersUnfetchable.put(m, newState);
 					if(persistent()) container.ext().store(metadataPuttersUnfetchable, 2);
-					if(logMINOR) Logger.minor(this, "Unfetchable metadata putter transition: "+oldState+" -> "+newState);
+					if(logMINOR) Logger.minor(this, "Unfetchable metadata putter transition: " + oldState + " -> " + newState);
 				}
-				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+				if(logMINOR) Logger.minor(this, "Transition: " + oldState + " -> " + newState);
 			} else {
-				Logger.error(this, "onTransition() but metadataPuttersByMetadata does not contain metadata tag "+m+" for "+oldState+" should -> "+newState);
+				Logger.error(this, "onTransition() but metadataPuttersByMetadata does not contain metadata tag " + m + " for " + oldState + " should -> " + newState);
 			}
 		}
 
@@ -1762,7 +1762,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				manifestEntries.put(name, o);
 			} else if(o instanceof Bucket) {
 				Bucket data = (Bucket) o;
-				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
+				manifestEntries.put(name, new ManifestElement(name, data, null, data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
 			} else
@@ -1784,7 +1784,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
 		for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
 			String name = entry.getKey();
-			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
+			String fullName = prefix.length() == 0 ? name : prefix + '/' + name;
 			Object o = entry.getValue();
 			if(o instanceof HashMap) {
 				flatten(Metadata.forceMap(o), v, fullName);
@@ -1815,7 +1815,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			target.put(namePart, new ManifestElement(e, namePart));
 		} else {
 			String before = namePart.substring(0, idx);
-			String after = namePart.substring(idx+1);
+			String after = namePart.substring(idx + 1);
 			HashMap<String, Object> hm = Metadata.forceMap(target.get(before));
 			if(hm == null) {
 				hm = new HashMap<String, Object>();
@@ -1919,7 +1919,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(putHandlersByName != null) {
-			Logger.error(this, "Put handlers list still present in removeFrom() on "+this);
+			Logger.error(this, "Put handlers list still present in removeFrom() on " + this);
 			removePutHandlers(container, context);
 		}
 		if(finalURI != null) {
@@ -1935,14 +1935,14 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		container.activate(metadataPuttersUnfetchable, 2);
 		ArrayList<Metadata> metas = null;
 		if(!metadataPuttersByMetadata.isEmpty()) {
-			Logger.error(this, "Metadata putters by metadata not empty in removeFrom() on "+this);
+			Logger.error(this, "Metadata putters by metadata not empty in removeFrom() on " + this);
 			for(Map.Entry<Metadata, ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
 				Metadata meta = entry.getKey();
 				container.activate(meta, 1);
 				ClientPutState sfi = entry.getValue();
 				container.activate(sfi, 1);
 				metadataPuttersUnfetchable.remove(meta);
-				Logger.error(this, "Metadata putters not empty: "+sfi+" for "+this);
+				Logger.error(this, "Metadata putters not empty: " + sfi + " for " + this);
 				sfi.cancel(container, context);
 				sfi.removeFrom(container, context);
 				if(metas == null) metas = new ArrayList<Metadata>();
@@ -1950,14 +1950,14 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			}
 		}
 		if(!metadataPuttersUnfetchable.isEmpty()) {
-			Logger.error(this, "Metadata putters unfetchable by metadata not empty in removeFrom() on "+this);
+			Logger.error(this, "Metadata putters unfetchable by metadata not empty in removeFrom() on " + this);
 			for(Map.Entry<Metadata, ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
 				Metadata meta = entry.getKey();
 				container.activate(meta, 1);
 				ClientPutState sfi = entry.getValue();
 				container.activate(sfi, 1);
 				metadataPuttersUnfetchable.remove(meta);
-				Logger.error(this, "Metadata putters unfetchable not empty: "+sfi+" for "+this);
+				Logger.error(this, "Metadata putters unfetchable not empty: " + sfi + " for " + this);
 				sfi.cancel(container, context);
 				sfi.removeFrom(container, context);
 			}
@@ -1983,16 +1983,16 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	public void objectOnUpdate(ObjectContainer container) {
-		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Updating " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 	}
 
 	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
-			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
+			Logger.error(this, "Storing " + this + " when already finished!", new Exception("error"));
 			return false;
 		}
-		if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Storing " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 		return true;
 	}
 
@@ -2030,7 +2030,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			putHandlersWaitingForMetadata.add(ph);
 			putHandlersWaitingForFetchable.add(ph);
 			if(logMINOR)
-				Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
+				Logger.minor(this, "Inserting separately as PutHandler: " + name + " : " + ph + " persistent=" + ph.persistent() + ":" + ph.persistent + " " + persistent());
 			numberOfFiles++;
 			totalSize += data.size();
 		}

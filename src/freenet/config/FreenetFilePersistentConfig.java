@@ -29,7 +29,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 			try {
 				innerStore();
 			} catch (IOException e) {
-				String err = "Cannot store config: "+e;
+				String err = "Cannot store config: " + e;
 				Logger.error(this, err, e);
 				System.err.println(err);
 				e.printStackTrace();
@@ -46,7 +46,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 
 	public static FreenetFilePersistentConfig constructFreenetFilePersistentConfig(File f) throws IOException {
 		File filename = f;
-		File tempFilename = new File(f.getPath()+".tmp");
+		File tempFilename = new File(f.getPath() + ".tmp");
 		return new FreenetFilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
 	}
 

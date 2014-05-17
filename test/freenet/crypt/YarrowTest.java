@@ -83,15 +83,15 @@ public class YarrowTest extends TestCase {
 		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
 		int[] results = new int[2];
 		int RUNS = 1000000;
-		for(int i=0; i<RUNS; i++) {
+		for(int i=0; i < RUNS; i++) {
 			if(y.nextBoolean())
 				results[0]++;
 			else
 				results[1]++;
 		}
 
-		assertEquals(RUNS, results[0]+results[1]);
-		assertTrue(results[0] > RUNS/2 - RUNS/1000);
-		assertTrue(results[1] > RUNS/2 - RUNS/1000);
+		assertEquals(RUNS, results[0] + results[1]);
+		assertTrue(results[0] > RUNS / 2 - RUNS / 1000);
+		assertTrue(results[1] > RUNS / 2 - RUNS / 1000);
 	}
 }

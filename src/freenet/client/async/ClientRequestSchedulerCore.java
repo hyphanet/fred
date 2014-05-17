@@ -98,7 +98,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted(container, context);
-		System.err.println("insert scheduler: "+isInsertScheduler);
+		System.err.println("insert scheduler: " + isInsertScheduler);
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
@@ -136,7 +136,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 //
 //				});
 				ObjectSet<RegisterMe> results = null;
-				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i<=RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
+				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i <= RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 					Query query = container.query();
 					query.constrain(RegisterMe.class);
 					query.descend("core").constrain(ClientRequestSchedulerCore.this).and(query.descend("priority").constrain(i));
@@ -179,13 +179,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				}
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
-				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart)+" hasNext="+registerMeSet.hasNext()+" for insert="+isInsertScheduler+" ssk="+isSSKScheduler);
+				Logger.minor(this, "RegisterMe query took " + (tEnd - tStart) + " hasNext=" + registerMeSet.hasNext() + " for insert=" + isInsertScheduler + " ssk=" + isSSKScheduler);
 //				if(logMINOR)
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
 				boolean boost = ClientRequestSchedulerCore.this.sched.isQueueAlmostEmpty();
 
 				try {
-					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY - 1) + (boost ? 1 : 0), true);
 				} catch (DatabaseDisabledException e) {
 					// Do nothing, persistence is disabled
 				}
@@ -228,7 +228,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				// If the queue isn't empty, reschedule at NORM-1, wait for the backlog to clear
 				if(!sched.isQueueAlmostEmpty()) {
 					try {
-						context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, false);
+						context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY - 1, false);
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}
@@ -237,14 +237,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			}
 			long deadline = System.currentTimeMillis() + SECONDS.toMillis(10);
 			if(registerMeSet == null) {
-				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
+				Logger.error(this, "registerMeSet is null for " + ClientRequestSchedulerCore.this + " ( " + this + " )");
 				return false;
 			}
 			for(int i=0;i < 1000; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
 				} catch (NullPointerException t) {
-					Logger.error(this, "DB4O thew NPE in hasNext(): "+t, t);
+					Logger.error(this, "DB4O thew NPE in hasNext(): " + t, t);
 					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
 					try {
 						context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
@@ -254,7 +254,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 					return true;
 				} catch (ClassCastException t) {
 					// WTF?!?!?!?!?!
-					Logger.error(this, "DB4O thew ClassCastException in hasNext(): "+t, t);
+					Logger.error(this, "DB4O thew ClassCastException in hasNext(): " + t, t);
 					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
 					try {
 						context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
@@ -266,28 +266,28 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				container.activate(reg, 1);
 				if(reg.bootID == context.bootID) {
-					if(logMINOR) Logger.minor(this, "Not registering block "+reg+" as was added to the queue");
+					if(logMINOR) Logger.minor(this, "Not registering block " + reg + " as was added to the queue");
 					continue;
 				}
 				// FIXME remove the leftover/old core handling at some point, an NPE is acceptable long-term.
 				if(reg.core != ClientRequestSchedulerCore.this) {
 					if(!container.ext().isStored(reg)) {
-						if(logMINOR) Logger.minor(this, "Already deleted RegisterMe "+reg+" - skipping");
+						if(logMINOR) Logger.minor(this, "Already deleted RegisterMe " + reg + " - skipping");
 						continue;
 					}
 					if(reg.core == null) {
-						Logger.error(this, "Leftover RegisterMe "+reg+" : core already deleted. THIS IS AN ERROR unless you have seen \"Old core not active\" messages before this point.");
+						Logger.error(this, "Leftover RegisterMe " + reg + " : core already deleted. THIS IS AN ERROR unless you have seen \"Old core not active\" messages before this point.");
 						container.delete(reg);
 						continue;
 					}
 					if(!container.ext().isActive(reg.core)) {
-						Logger.error(this, "Old core not active in RegisterMe "+reg+" - duplicated cores????");
+						Logger.error(this, "Old core not active in RegisterMe " + reg + " - duplicated cores????");
 						container.delete(reg.core);
 						container.delete(reg);
 						continue;
 					}
 					if(logMINOR)
-						Logger.minor(this, "Ignoring RegisterMe "+reg+" as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
+						Logger.minor(this, "Ignoring RegisterMe " + reg + " as doesn't belong to me: my insert=" + isInsertScheduler + " my ssk=" + isSSKScheduler + " his insert=" + reg.core.isInsertScheduler + " his ssk=" + reg.core.isSSKScheduler);
 					container.deactivate(reg, 1);
 					continue; // Don't delete.
 				}
@@ -298,7 +298,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 //					continue; // Don't delete
 //				}
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.nonGetRequest+" : "+reg.addedTime+" : "+reg.priority);
+					Logger.minor(this, "Running RegisterMe " + reg + " for " + reg.nonGetRequest + " : " + reg.addedTime + " : " + reg.priority);
 				// Don't need to activate, fields should exist? FIXME
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
@@ -309,12 +309,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 						} catch (Throwable t) {
 							// It throws :|
 						}
-						Logger.error(this, "Stored SingleBlockInserter is broken, maybe leftover from database leakage?: "+toString);
+						Logger.error(this, "Stored SingleBlockInserter is broken, maybe leftover from database leakage?: " + toString);
 					} else if(reg.nonGetRequest.isCancelled(container)) {
-						Logger.normal(this, "RegisterMe: request cancelled: "+reg.nonGetRequest);
+						Logger.normal(this, "RegisterMe: request cancelled: " + reg.nonGetRequest);
 					} else {
 						if(logMINOR)
-							Logger.minor(this, "Registering RegisterMe for insert: "+reg.nonGetRequest);
+							Logger.minor(this, "Registering RegisterMe for insert: " + reg.nonGetRequest);
 						sched.registerInsert(reg.nonGetRequest, true, false, container);
 					}
 					container.delete(reg);
@@ -330,7 +330,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			boolean boost = sched.isQueueAlmostEmpty();
 			if(registerMeSet.hasNext())
 				try {
-					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY - 1) + (boost ? 1 : 0), true);
 				} catch (DatabaseDisabledException e) {
 					// Impossible
 				}
@@ -358,7 +358,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long ret = super.countQueuedRequests(container, context);
 		long cooldown = persistentCooldownQueue.size(container);
-		System.out.println("Cooldown queue size: "+cooldown);
+		System.out.println("Cooldown queue size: " + cooldown);
 		return ret + cooldown;
 	}
 

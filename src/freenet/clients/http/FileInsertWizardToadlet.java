@@ -95,9 +95,9 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
-		insertForm.addChild("#", ": "+l10n("insertCanonical"));
+		insertForm.addChild("#", ": " + l10n("insertCanonical"));
 		if(isAdvancedModeEnabled)
-			insertForm.addChild("#", " "+l10n("insertCanonicalAdvanced"));
+			insertForm.addChild("#", " " + l10n("insertCanonicalAdvanced"));
 		insertForm.addChild("br");
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -106,16 +106,16 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			input.addAttribute("checked", "checked");
 		}
 		insertForm.addChild("b", l10n("insertRandomTitle"));
-		insertForm.addChild("#", ": "+l10n("insertRandom"));
+		insertForm.addChild("#", ": " + l10n("insertRandom"));
 		if(isAdvancedModeEnabled)
-			insertForm.addChild("#", " "+l10n("insertRandomAdvanced"));
+			insertForm.addChild("#", " " + l10n("insertRandomAdvanced"));
 		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "radio", "keytype", "specify" });
 			insertForm.addChild("b", l10n("insertSpecificKeyTitle"));
-			insertForm.addChild("#", ": "+l10n("insertSpecificKey")+" ");
+			insertForm.addChild("#", ": " + l10n("insertSpecificKey") + " ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "text", "key", "KSK@" });
@@ -135,17 +135,17 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compatModeLabel")+": ");
+			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compatModeLabel") + ": ");
 			HTMLNode select = insertForm.addChild("select", "name", "compatibilityMode");
 			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
 				if(mode == CompatibilityMode.COMPAT_UNKNOWN) continue;
 				// FIXME l10n???
 				HTMLNode option = select.addChild("option", "value", mode.name(),
-				        NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
+				        NodeL10n.getBase().getString("InsertContext.CompatibilityMode." + mode.name()));
 				if (mode == CompatibilityMode.COMPAT_CURRENT) option.addAttribute("selected", "");
 			}
 			insertForm.addChild("br");
-			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
+			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel") + ": ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "maxlength" },
 			        new String[] { "text", "overrideSplitfileKey", "64" });
@@ -155,7 +155,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		// Local file browser
 		if (ctx.isAllowedFullAccess()) {
 			insertForm.addChild("#",
-			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel") + ": ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "insert-local",
@@ -219,7 +219,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		// Local file browser
 		if (ctx.isAllowedFullAccess()) {
 			insertForm.addChild("#",
-			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			        NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel") + ": ");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "submit", "filter-local",
@@ -240,11 +240,11 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 	}
 	
 	String l10n (String key) {
-		return NodeL10n.getBase().getString("FileInsertWizardToadlet."+key);
+		return NodeL10n.getBase().getString("FileInsertWizardToadlet." + key);
 	}
 	
 	String l10n (String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("FileInsertWizardToadlet."+key, pattern, value);
+		return NodeL10n.getBase().getString("FileInsertWizardToadlet." + key, pattern, value);
 	}
 
 	@Override

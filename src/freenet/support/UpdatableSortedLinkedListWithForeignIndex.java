@@ -24,7 +24,7 @@ public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdata
         T i = item;
         if(map.get(i.indexValue()) != null) {
             // Ignore duplicate
-            Logger.error(this, "Ignoring duplicate: "+i+" was already present: "+map.get(i.indexValue()));
+            Logger.error(this, "Ignoring duplicate: " + i + " was already present: " + map.get(i.indexValue()));
             return;
         }
         super.add(i);

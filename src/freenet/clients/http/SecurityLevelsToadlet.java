@@ -110,7 +110,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			String physicalThreatLevel = request.getPartAsStringFailsafe(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
-			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
+			if(logMINOR) Logger.minor(this, "New physical threat level: " + newPhysicalLevel + " old = " + node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 					String password = request.getPartAsStringFailsafe("masterPassword", MAX_PASSWORD_LENGTH);
@@ -197,10 +197,10 @@ public class SecurityLevelsToadlet extends Toadlet {
 									// Ok.
 									System.out.println("Master password file no longer exists, assuming this is deliberate");
 								} else {
-									System.err.println("Cannot change password as cannot write new passwords file: "+e);
+									System.err.println("Cannot change password as cannot write new passwords file: " + e);
 									e.printStackTrace();
-									String msg = "<html><head><title>"+l10nSec("cantWriteNewMasterKeysFileTitle")+
-										"</title></head><body><h1>"+l10nSec("cantWriteNewMasterKeysFileTitle")+"</h1><p>"+l10nSec("cantWriteNewMasterKeysFile")+"<pre>";
+									String msg = "<html><head><title>" + l10nSec("cantWriteNewMasterKeysFileTitle") +
+										"</title></head><body><h1>" + l10nSec("cantWriteNewMasterKeysFileTitle") + "</h1><p>" + l10nSec("cantWriteNewMasterKeysFile") + "<pre>";
 									StringWriter sw = new StringWriter();
 									PrintWriter pw = new PrintWriter(sw);
 									e.printStackTrace(pw);
@@ -482,7 +482,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 
 		HTMLNode p = seclevelGroup.addChild("p");
 		p.addChild("b", l10nSec("networkThreatLevel.opennetLabel"));
-		p.addChild("#", ": "+l10nSec("networkThreatLevel.opennetExplain"));
+		p.addChild("#", ": " + l10nSec("networkThreatLevel.opennetExplain"));
 		HTMLNode div = seclevelGroup.addChild("div", "class", "opennetDiv");
 		
 		String controlName = "security-levels.networkThreatLevel";
@@ -493,19 +493,19 @@ public class SecurityLevelsToadlet extends Toadlet {
 			} else {
 				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
 			}
-			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("b", l10nSec("networkThreatLevel.name." + level));
 			input.addChild("#", ": ");
-			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" },
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice." + level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
 			HTMLNode inner = input.addChild("p").addChild("i");
 
-			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc." + level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
 		}
 
 		p = seclevelGroup.addChild("p");
 		p.addChild("b", l10nSec("networkThreatLevel.darknetLabel"));
-		p.addChild("#", ": "+l10nSec("networkThreatLevel.darknetExplain"));
+		p.addChild("#", ": " + l10nSec("networkThreatLevel.darknetExplain"));
 		div = seclevelGroup.addChild("div", "class", "darknetDiv");
 		
 		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.getDarknetValues()) {
@@ -515,12 +515,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 			} else {
 				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
 			}
-			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("b", l10nSec("networkThreatLevel.name." + level));
 			input.addChild("#", ": ");
-			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" },
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice." + level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
 			HTMLNode inner = input.addChild("p").addChild("i");
-			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "link" },
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc." + level, new String[] { "bold", "link" },
 					new HTMLNode[] { HTMLNode.STRONG, HTMLNode.link("/wizard/?step=OPENNET") });
 		}
 		seclevelGroup.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
@@ -539,7 +539,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		OperatingSystem os = FileUtil.detectedOS;
 		swapWarning.addChild("#", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelSwapfile",
 		        "operatingSystem",
-		        NodeL10n.getBase().getString("OperatingSystemName."+os.name())));
+		        NodeL10n.getBase().getString("OperatingSystemName." + os.name())));
 		if(os == FileUtil.OperatingSystem.Windows) {
 			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
@@ -554,26 +554,26 @@ public class SecurityLevelsToadlet extends Toadlet {
 			} else {
 				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
 			}
-			input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
+			input.addChild("b", l10nSec("physicalThreatLevel.name." + level));
 			input.addChild("#", ": ");
-			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold" },
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice." + level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
 			HTMLNode inner = input.addChild("p").addChild("i");
-			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold" },
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc." + level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
 			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
+					inner.addChild("b", " " + l10nSec("warningWillEncrypt"));
 				else
-					inner.addChild("b", " "+l10nSec("warningWontEncrypt"));
+					inner.addChild("b", " " + l10nSec("warningWontEncrypt"));
 			} else if(level == PHYSICAL_THREAT_LEVEL.LOW && physicalLevel != PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
+					inner.addChild("b", " " + l10nSec("warningWillDecrypt"));
 				else
-					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
+					inner.addChild("b", " " + l10nSec("warningWontDecrypt"));
 			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
-				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
+				inner.addChild("b", " " + l10nSec("warningMaximumWillDeleteQueue"));
 			}
 			if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
 				if(physicalLevel == level) {
@@ -622,11 +622,11 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	private static String l10nSec(String key) {
-		return NodeL10n.getBase().getString("SecurityLevels."+key);
+		return NodeL10n.getBase().getString("SecurityLevels." + key);
 	}
 
 	private static String l10nSec(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("SecurityLevels."+key, pattern, value);
+		return NodeL10n.getBase().getString("SecurityLevels." + key, pattern, value);
 	}
 
 	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {

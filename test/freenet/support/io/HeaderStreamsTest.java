@@ -43,9 +43,9 @@ public class HeaderStreamsTest extends TestCase {
 		int size = augStream.available();
 		assertEquals(size, bHeader.length + bString.length);
 		byte[] buffer = new byte[size];
-		for (int i=0; i<bJoined.length; i++) {
+		for (int i=0; i < bJoined.length; i++) {
 			int data = augStream.read();
-			assertEquals(size-i-1, augStream.available());
+			assertEquals(size - i - 1, augStream.available());
 			assertEquals((char)data, bJoined[i]);
 			buffer[i] = (byte)data;
 		}
@@ -64,14 +64,14 @@ public class HeaderStreamsTest extends TestCase {
 		_testAugInputRead(bString.length); }
 
 	public void _testAugInputRead(int m) throws IOException {
-		int i = bHeader.length+m;
+		int i = bHeader.length + m;
 		int size = augStream.available();
 		byte[] buffer = new byte[size];
 		augStream.read(buffer, 0, i);
 		assertArrayEquals(
 		  Arrays.copyOfRange(Arrays.copyOfRange(bJoined, 0, i), 0, size),
 		  buffer);
-		augStream.read(buffer, i, size-i);
+		augStream.read(buffer, i, size - i);
 		assertArrayEquals(bJoined, buffer);
 	}
 
@@ -87,10 +87,10 @@ public class HeaderStreamsTest extends TestCase {
 		_testAugInputSkipAndRead(bString.length); }
 
 	public void _testAugInputSkipAndRead(int m) throws IOException {
-		int i = bHeader.length+m;
+		int i = bHeader.length + m;
 		augStream.skip(i);
 		int size = augStream.available();
-		assertEquals(size, bJoined.length-i);
+		assertEquals(size, bJoined.length - i);
 		byte[] buffer = new byte[size];
 		int read = augStream.read(buffer);
 		assertEquals(read, size > 0? size: -1);
@@ -99,10 +99,10 @@ public class HeaderStreamsTest extends TestCase {
 	}
 
 	public void testDimOutputWrite1() throws IOException {
-		for (int i=0; i<bJoined.length; i++) {
+		for (int i=0; i < bJoined.length; i++) {
 			assertArrayEquals(origStream.toByteArray(),
 			  (i < bHeader.length)? new byte[0]:
-			  Arrays.copyOfRange(bString, 0, i-bHeader.length));
+			  Arrays.copyOfRange(bString, 0, i - bHeader.length));
 			dimStream.write(bJoined[i]);
 		}
 		assertArrayEquals(bString, origStream.toByteArray());
@@ -120,11 +120,11 @@ public class HeaderStreamsTest extends TestCase {
 		_testDimOutputWrite(bString.length); }
 
 	public void _testDimOutputWrite(int m) throws IOException {
-		int i = bHeader.length+m;
+		int i = bHeader.length + m;
 		dimStream.write(Arrays.copyOfRange(bJoined, 0, i));
 		assertArrayEquals(origStream.toByteArray(),
 		  (i < bHeader.length)? new byte[0]:
-		  Arrays.copyOfRange(bString, 0, i-bHeader.length));
+		  Arrays.copyOfRange(bString, 0, i - bHeader.length));
 		dimStream.write(Arrays.copyOfRange(bJoined, i, bJoined.length));
 		assertArrayEquals(bString, origStream.toByteArray());
 	}

@@ -72,7 +72,7 @@ public class LongTermMHKTest extends LongTermTest {
 		Node node = null;
 		Node node2 = null;
 		FileInputStream fis = null;
-		File file = new File("mhk-test-"+uid + ".csv");
+		File file = new File("mhk-test-" + uid + ".csv");
 		long t1, t2;
 
 		HighLevelSimpleClient client = null;
@@ -120,7 +120,7 @@ public class LongTermMHKTest extends LongTermTest {
 			Bucket single = randomData(node);
 			Bucket[] mhks = new Bucket[3];
 			
-			for(int i=0;i<mhks.length;i++) mhks[i] = randomData(node);
+			for(int i=0;i < mhks.length;i++) mhks[i] = randomData(node);
 			
 			client = node.clientCore.makeClient((short) 0, false, false);
 
@@ -132,19 +132,19 @@ public class LongTermMHKTest extends LongTermTest {
 			
 			int successes = 0;
 			
-			for(int i=0;i<3;i++) {
-				System.err.println("Inserting single block, try #"+i);
+			for(int i=0;i < 3;i++) {
+				System.err.println("Inserting single block, try #" + i);
 				try {
 					t1 = System.currentTimeMillis();
 					FreenetURI thisURI = client.insert(block, false, null);
 					if(uri != null && !thisURI.equals(uri)) {
-						System.err.println("URI "+i+" is "+thisURI+" but previous is "+uri);
+						System.err.println("URI " + i + " is " + thisURI + " but previous is " + uri);
 						System.exit(EXIT_DIFFERENT_URI);
 					}
 					uri = thisURI;
 					t2 = System.currentTimeMillis();
 					
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri+" for single block");
+					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1) + " for " + uri + " for single block");
 					csvLine.add(String.valueOf(t2 - t1));
 					csvLine.add(uri.toASCIIString());
 					successes++;
@@ -152,23 +152,23 @@ public class LongTermMHKTest extends LongTermTest {
 					e.printStackTrace();
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
-					System.out.println("INSERT FAILED: "+e+" for insert "+i+" for single block");
+					System.out.println("INSERT FAILED: " + e + " for insert " + i + " for single block");
 				}
 			}
 			
 			if(successes == 3)
-				System.err.println("All inserts succeeded for single block: "+successes);
+				System.err.println("All inserts succeeded for single block: " + successes);
 			else if(successes != 0)
-				System.err.println("Some inserts succeeded for single block: "+successes);
+				System.err.println("Some inserts succeeded for single block: " + successes);
 			else
-				System.err.println("NO INSERTS SUCCEEDED FOR SINGLE BLOCK: "+successes);
+				System.err.println("NO INSERTS SUCCEEDED FOR SINGLE BLOCK: " + successes);
 			
 			uri = null;
 			
 			// Insert 3 blocks
 			
-			for(int i=0;i<3;i++) {
-				System.err.println("Inserting MHK #"+i);
+			for(int i=0;i < 3;i++) {
+				System.err.println("Inserting MHK #" + i);
 				uri = null;
 				block = new InsertBlock(mhks[i], new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
 				try {
@@ -177,7 +177,7 @@ public class LongTermMHKTest extends LongTermTest {
 					uri = thisURI;
 					t2 = System.currentTimeMillis();
 					
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri+" for MHK #"+i);
+					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1) + " for " + uri + " for MHK #" + i);
 					csvLine.add(String.valueOf(t2 - t1));
 					csvLine.add(uri.toASCIIString());
 					successes++;
@@ -185,16 +185,16 @@ public class LongTermMHKTest extends LongTermTest {
 					e.printStackTrace();
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
-					System.out.println("INSERT FAILED: "+e+" for MHK #"+i);
+					System.out.println("INSERT FAILED: " + e + " for MHK #" + i);
 				}
 			}
 			
 			if(successes == 3)
-				System.err.println("All inserts succeeded for MHK: "+successes);
+				System.err.println("All inserts succeeded for MHK: " + successes);
 			else if(successes != 0)
-				System.err.println("Some inserts succeeded for MHK: "+successes);
+				System.err.println("Some inserts succeeded for MHK: " + successes);
 			else
-				System.err.println("NO INSERTS SUCCEEDED FOR MHK: "+successes);
+				System.err.println("NO INSERTS SUCCEEDED FOR MHK: " + successes);
 			
 			uri = null;
 			}
@@ -214,13 +214,13 @@ public class LongTermMHKTest extends LongTermTest {
 			while((line = br.readLine()) != null) {
 				
 				singleURI = null;
-				for(int i=0;i<mhkURIs.length;i++) mhkURIs[i] = null;
+				for(int i=0;i < mhkURIs.length;i++) mhkURIs[i] = null;
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
 				Date date = dateFormat.parse(split[0]);
 				GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 				calendar.setTime(date);
-				System.out.println("Date: "+dateFormat.format(calendar.getTime()));
+				System.out.println("Date: " + dateFormat.format(calendar.getTime()));
 				GregorianCalendar target = (GregorianCalendar) today.clone();
 				target.set(Calendar.HOUR_OF_DAY, 0);
 				target.set(Calendar.MINUTE, 0);
@@ -239,7 +239,7 @@ public class LongTermMHKTest extends LongTermTest {
 						continue;
 					}
 					int seedTime = Integer.parseInt(split[2]);
-					System.out.println("Seed time: "+seedTime);
+					System.out.println("Seed time: " + seedTime);
 					
 					int token = 3;
 					if(split.length < 4) {
@@ -247,75 +247,75 @@ public class LongTermMHKTest extends LongTermTest {
 						continue;
 					}
 					
-					for(int i=0;i<3;i++) {
+					for(int i=0;i < 3;i++) {
 						int insertTime = Integer.parseInt(split[token]);
-						System.out.println("Single key insert "+i+" : "+insertTime);
+						System.out.println("Single key insert " + i + " : " + insertTime);
 						token++;
 						FreenetURI thisURI = new FreenetURI(split[token]);
 						if(singleURI == null)
 							singleURI = thisURI;
 						else {
 							if(!singleURI.equals(thisURI)) {
-								System.err.println("URI is not the same for all 3 inserts: was "+singleURI+" but "+i+" is "+thisURI);
+								System.err.println("URI is not the same for all 3 inserts: was " + singleURI + " but " + i + " is " + thisURI);
 								linesBroken++;
 								continue;
 							}
 						}
 						token++;
 					}
-					System.out.println("Single key URI: "+singleURI);
+					System.out.println("Single key URI: " + singleURI);
 					
-					for(int i=0;i<3;i++) {
+					for(int i=0;i < 3;i++) {
 						int insertTime = Integer.parseInt(split[token]);
 						token++;
 						mhkURIs[i] = new FreenetURI(split[token]);
 						token++;
-						System.out.println("MHK #"+i+" URI: "+mhkURIs[i]+" insert time "+insertTime);
+						System.out.println("MHK #" + i + " URI: " + mhkURIs[i] + " insert time " + insertTime);
 					}
 					
 				} catch (NumberFormatException e) {
-					System.err.println("Failed to parse row: "+e);
+					System.err.println("Failed to parse row: " + e);
 					linesNoNumber++;
 					continue;
 				} catch (MalformedURLException e) {
-					System.err.println("Failed to parse row: "+e);
+					System.err.println("Failed to parse row: " + e);
 					linesNoURL++;
 					continue;
 				}
 				if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < HOURS.toMillis(12)) {
-					System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
-					System.out.println("Version: "+split[1]);
+					System.out.println("Found row for target date " + dateFormat.format(target.getTime()) + " : " + dateFormat.format(calendar.getTime()));
+					System.out.println("Version: " + split[1]);
 					match = true;
 					break;
-				} else if(split.length > 3+6+6) {
+				} else if(split.length > 3 + 6 + 6) {
 					int token = 3 + 6 + 6;
 					int singleKeyFetchTime = -1;
 					boolean singleKeySuccess = false;
-					for(int i=0;i<3;i++) {
+					for(int i=0;i < 3;i++) {
 						// Fetched 3 times
 						if(!singleKeySuccess) {
 							try {
 								singleKeyFetchTime = Integer.parseInt(split[token]);
 								singleKeySuccess = true;
-								System.out.println("Fetched single key on try "+i+" on "+date+" in "+singleKeyFetchTime+"ms");
+								System.out.println("Fetched single key on try " + i + " on " + date + " in " + singleKeyFetchTime + "ms");
 							} catch (NumberFormatException e) {
-								System.out.println("Failed fetch single key on "+date+" try "+i+" : "+split[token]);
+								System.out.println("Failed fetch single key on " + date + " try " + i + " : " + split[token]);
 								singleKeyFetchTime = -1;
 							}
 						} // Else will be empty.
 						token++;
 					}
 					boolean mhkSuccess = false;
-					for(int i=0;i<3;i++) {
+					for(int i=0;i < 3;i++) {
 						totalSingleKeyFetches++;
 						int mhkFetchTime = -1;
 						try {
 							mhkFetchTime = Integer.parseInt(split[token]);
 							mhkSuccess = true;
 							totalSingleKeySuccesses++;
-							System.out.println("Fetched MHK #"+i+" on "+date+" in "+mhkFetchTime+"ms");
+							System.out.println("Fetched MHK #" + i + " on " + date + " in " + mhkFetchTime + "ms");
 						} catch (NumberFormatException e) {
-							System.out.println("Failed fetch MHK #"+i+" on "+date+" : "+split[token]);
+							System.out.println("Failed fetch MHK #" + i + " on " + date + " : " + split[token]);
 						}
 						token++;
 					}
@@ -326,15 +326,15 @@ public class LongTermMHKTest extends LongTermTest {
 						mhkSucceeded++;
 				} else linesNoFetch++;
 			}
-			System.out.println("Lines where insert failed or no fetch: too short: "+linesTooShort+" broken: "+linesBroken+" no number: "+linesNoNumber+" no url: "+linesNoURL+" no fetch "+linesNoFetch);
-			System.out.println("Total attempts where insert succeeded and fetch executed: "+total);
-			System.out.println("Single keys succeeded: "+singleKeysSucceeded);
-			System.out.println("MHKs succeeded: "+mhkSucceeded);
-			System.out.println("Single key individual fetches: "+totalSingleKeyFetches);
-			System.out.println("Single key individual fetches succeeded: "+totalSingleKeySuccesses);
-			System.out.println("Success rate for individual keys (from MHK inserts): "+((double)totalSingleKeySuccesses)/((double)totalSingleKeyFetches));
-			System.out.println("Success rate for the single key triple inserted: "+((double)singleKeysSucceeded)/((double)total));
-			System.out.println("Success rate for the MHK (success = any of the 3 different keys worked): "+((double)mhkSucceeded)/((double)total));
+			System.out.println("Lines where insert failed or no fetch: too short: " + linesTooShort + " broken: " + linesBroken + " no number: " + linesNoNumber + " no url: " + linesNoURL + " no fetch " + linesNoFetch);
+			System.out.println("Total attempts where insert succeeded and fetch executed: " + total);
+			System.out.println("Single keys succeeded: " + singleKeysSucceeded);
+			System.out.println("MHKs succeeded: " + mhkSucceeded);
+			System.out.println("Single key individual fetches: " + totalSingleKeyFetches);
+			System.out.println("Single key individual fetches succeeded: " + totalSingleKeySuccesses);
+			System.out.println("Success rate for individual keys (from MHK inserts): " + ((double)totalSingleKeySuccesses) / ((double)totalSingleKeyFetches));
+			System.out.println("Success rate for the single key triple inserted: " + ((double)singleKeysSucceeded) / ((double)total));
+			System.out.println("Success rate for the MHK (success = any of the 3 different keys worked): " + ((double)mhkSucceeded) / ((double)total));
 			fis.close();
 			fis = null;
 			
@@ -349,7 +349,7 @@ public class LongTermMHKTest extends LongTermTest {
 				// Technically this is 9 fetches because we multiply by 3 fetches per high-level fetch by default.
 				
 				boolean fetched = false;
-				for(int i=0;i<3;i++) {
+				for(int i=0;i < 3;i++) {
 					if(fetched) {
 						csvLine.add("");
 						continue;
@@ -367,24 +367,24 @@ public class LongTermMHKTest extends LongTermTest {
 								&& e.getMode() != FetchException.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
-						System.err.println("FAILED PULL FOR SINGLE URI: "+e);
+						System.err.println("FAILED PULL FOR SINGLE URI: " + e);
 					}
 				}
 				
-				for(int i=0;i<mhkURIs.length;i++) {
+				for(int i=0;i < mhkURIs.length;i++) {
 					try {
 						t1 = System.currentTimeMillis();
 						client.fetch(mhkURIs[i]);
 						t2 = System.currentTimeMillis();
 						
-						System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
+						System.out.println("PULL-TIME FOR MHK #" + i + ":" + (t2 - t1));
 						csvLine.add(String.valueOf(t2 - t1));
 					} catch (FetchException e) {
 						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
 								&& e.getMode() != FetchException.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
-						System.err.println("FAILED PULL FOR MHK #"+i+": "+e);
+						System.err.println("FAILED PULL FOR MHK #" + i + ": " + e);
 					}
 				}
 			}

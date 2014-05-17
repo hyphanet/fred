@@ -88,7 +88,7 @@ public class FailureCodeTracker implements Cloneable {
 	}
 	
 	public synchronized String toVerboseString() {
-		if(map == null) return super.toString()+":empty";
+		if(map == null) return super.toString() + ":empty";
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<Integer, Item> e : map.entrySet()) {
 			Integer x = e.getKey();
@@ -104,7 +104,7 @@ public class FailureCodeTracker implements Cloneable {
 
 	@Override
 	public synchronized String toString() {
-		if(map == null) return super.toString()+":empty";
+		if(map == null) return super.toString() + ":empty";
 		StringBuilder sb = new StringBuilder(super.toString());
 		sb.append(':');
 		if(map.size() == 0) sb.append("empty");
@@ -168,9 +168,9 @@ public class FailureCodeTracker implements Cloneable {
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
-				sfs.putSingle(Integer.toString(code)+".Description", 
+				sfs.putSingle(Integer.toString(code) + ".Description", 
 						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
-			sfs.put(Integer.toString(code)+".Count", item.x);
+			sfs.put(Integer.toString(code) + ".Count", item.x);
 		}
 		}
 		return sfs;
@@ -199,7 +199,7 @@ public class FailureCodeTracker implements Cloneable {
 	}
 
 	public void merge(InsertException e) {
-		if(!insert) throw new IllegalArgumentException("This is not an insert yet merge("+e+") called!");
+		if(!insert) throw new IllegalArgumentException("This is not an insert yet merge(" + e + ") called!");
 		if(e.errorCodes != null)
 			merge(e.errorCodes);
 		inc(e.getMode());
@@ -218,7 +218,7 @@ public class FailureCodeTracker implements Cloneable {
 			if(map != null) map.clear();
 		}
 		if(items != null)
-			for(int i=0;i<items.length;i++) {
+			for(int i=0;i < items.length;i++) {
 				container.delete(items[i]);
 				container.delete(ints[i]);
 			}

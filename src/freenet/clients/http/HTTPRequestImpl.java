@@ -123,8 +123,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
-		if ((encodedQueryString!=null) && (encodedQueryString.length()>0)) {
-			this.uri = new URI(path+ '?' +encodedQueryString);
+		if ((encodedQueryString != null) && (encodedQueryString.length() > 0)) {
+			this.uri = new URI(path + '?' + encodedQueryString);
 		} else {
 			this.uri = new URI(path);
 		}
@@ -153,7 +153,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			try {
 				this.parseMultiPartData();
 			} catch (IOException ioe) {
-				Logger.error(this, "Temporary files error ? Could not parse: "+ioe, ioe);
+				Logger.error(this, "Temporary files error ? Could not parse: " + ioe, ioe);
 			}
 		}
 	}
@@ -198,7 +198,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	private void parseRequestParameters(String queryString, boolean doUrlDecoding, boolean asParts) {
 
-		if(logMINOR) Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
+		if(logMINOR) Logger.minor(this, "queryString is " + queryString + ", doUrlDecoding=" + doUrlDecoding);
 
 		Map<String, List<String>> parameters = parseUriParameters(queryString, doUrlDecoding);
 
@@ -215,7 +215,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				Bucket b = new SimpleReadOnlyArrayBucket(buf);
 				parts.put(parameterValues.getKey(), b);
 				if(logMINOR)
-					Logger.minor(this, "Added as part: name="+parameterValues.getKey()+" value="+value);
+					Logger.minor(this, "Added as part: name=" + parameterValues.getKey() + " value=" + value);
 			}
 		} else {
 			parameterNameValuesMap.clear();
@@ -272,7 +272,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @return The decoded parameters
 	 */
 	public static Map<String, List<String>> parseUriParameters(String queryString, boolean doUrlDecoding) {
-		if(logMINOR) Logger.minor(HTTPRequestImpl.class, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
+		if(logMINOR) Logger.minor(HTTPRequestImpl.class, "queryString is " + queryString + ", doUrlDecoding=" + doUrlDecoding);
 
 		/* create result map. */
 		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
@@ -287,7 +287,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		while (tokenizer.hasMoreTokens()) {
 			String nameValueToken = tokenizer.nextToken();
 
-			if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Token: "+nameValueToken);
+			if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Token: " + nameValueToken);
 
 			// a token can be either a name, or a name value pair...
 			String name = null;
@@ -296,17 +296,17 @@ public class HTTPRequestImpl implements HTTPRequest {
 			if (indexOfEqualsChar < 0) {
 				// ...it's only a name, so the value stays emptys
 				name = nameValueToken;
-				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name);
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: " + name);
 			} else if (indexOfEqualsChar == nameValueToken.length() - 1) {
 				// ...it's a name with an empty value, so remove the '='
 				// character
 				name = nameValueToken.substring(0, indexOfEqualsChar);
-				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name);
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: " + name);
 			} else {
 				// ...it's a name value pair, split into name and value
 				name = nameValueToken.substring(0, indexOfEqualsChar);
 				value = nameValueToken.substring(indexOfEqualsChar + 1);
-				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: "+name+" Value: "+value);
+				if(logMINOR) Logger.minor(HTTPRequestImpl.class, "Name: " + name + " Value: " + value);
 			}
 
 			// url-decode the name and value
@@ -318,8 +318,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 						throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 					}
 				if(logMINOR) {
-					Logger.minor(HTTPRequestImpl.class, "Decoded name: "+name);
-					Logger.minor(HTTPRequestImpl.class, "Decoded value: "+value);
+					Logger.minor(HTTPRequestImpl.class, "Decoded name: " + name);
+					Logger.minor(HTTPRequestImpl.class, "Decoded value: " + value);
 				}
 			}
 

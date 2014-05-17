@@ -102,40 +102,40 @@ public class RequestTracker {
 			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
 			return innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
-			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk,false, realTimeFlag);
-			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk, local, realTimeFlag) : null;
 			return innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
 	}
 
 	private<T extends UIDTag> boolean innerLock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(overallMap) {
-			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Locking " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + overallMap.size(), new Exception("debug"));
 			T oldTag = overallMap.get(uid);
 			if(oldTag != null) {
 				if(oldTag == tag) {
-					Logger.error(this, "Tag already registered: "+tag, new Exception("debug"));
+					Logger.error(this, "Tag already registered: " + tag, new Exception("debug"));
 				} else {
 					return false;
 				}
 			}
 			overallMap.put(uid, tag);
-			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
+			if(logMINOR) Logger.minor(this, "Locked " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + overallMap.size());
 			if(local) {
-				if(logMINOR) Logger.minor(this, "Locking (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size(), new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Locking (local) " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + localMap.size(), new Exception("debug"));
 				oldTag = localMap.get(uid);
 				if(oldTag != null) {
 					if(oldTag == tag) {
-						Logger.error(this, "Tag already registered (local): "+tag, new Exception("debug"));
+						Logger.error(this, "Tag already registered (local): " + tag, new Exception("debug"));
 					} else {
 						// Violates the invariant that local requests are always registered on the main (non-local) map too.
-						Logger.error(this, "Different tag already registered (local) EVEN THOUGH NOT ON MAIN MAP: "+tag, new Exception("debug"));
+						Logger.error(this, "Different tag already registered (local) EVEN THOUGH NOT ON MAIN MAP: " + tag, new Exception("debug"));
 						overallMap.remove(uid);
 						return false;
 					}
 				}
 				localMap.put(uid, tag);
-				if(logMINOR) Logger.minor(this, "Locked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
+				if(logMINOR) Logger.minor(this, "Locked (local) " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + localMap.size());
 			}
 		}
 		return true;
@@ -155,11 +155,11 @@ public class RequestTracker {
 			innerUnlock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false, canFail);
 		} else if(insert) {
 			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
-			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
 			innerUnlock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else {
 			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
-			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk, local, realTimeFlag) : null;
 			innerUnlock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 	}
@@ -182,26 +182,26 @@ public class RequestTracker {
 	 */
 	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> overallMap, HashMap<Long, T> localMap, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean canFail) {
 		synchronized(overallMap) {
-			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size(), new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Unlocking " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + overallMap.size(), new Exception("debug"));
 			if(overallMap.get(uid) != tag) {
 				if(canFail) {
-					if(logMINOR) Logger.minor(this, "Can fail and did fail: removing "+tag+" got "+overallMap.get(uid)+" for "+uid);
+					if(logMINOR) Logger.minor(this, "Can fail and did fail: removing " + tag + " got " + overallMap.get(uid) + " for " + uid);
 				} else {
-					Logger.error(this, "Removing "+tag+" for "+uid+" returned "+overallMap.get(uid));
+					Logger.error(this, "Removing " + tag + " for " + uid + " returned " + overallMap.get(uid));
 				}
 			} else
 				overallMap.remove(uid);
-			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+overallMap.size());
+			if(logMINOR) Logger.minor(this, "Unlocked " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + overallMap.size());
 			if(local) {
 				if(localMap.get(uid) != tag) {
 					if(canFail) {
-						if(logMINOR) Logger.minor(this, "Can fail and did fail (local): removing "+tag+" got "+localMap.get(uid)+" for "+uid);
+						if(logMINOR) Logger.minor(this, "Can fail and did fail (local): removing " + tag + " got " + localMap.get(uid) + " for " + uid);
 					} else {
-						Logger.error(this, "Removing "+tag+" for "+uid+" returned (local) "+localMap.get(uid));
+						Logger.error(this, "Removing " + tag + " for " + uid + " returned (local) " + localMap.get(uid));
 					}
 				} else
 					localMap.remove(uid);
-				if(logMINOR) Logger.minor(this, "Unlocked (local) "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+localMap.size());
+				if(logMINOR) Logger.minor(this, "Unlocked (local) " + uid + " ssk=" + ssk + " insert=" + insert + " offerReply=" + offerReply + " local=" + local + " size=" + localMap.size());
 				
 			} else {
 				assert(localMap == null);
@@ -264,7 +264,7 @@ public class RequestTracker {
 					transfersOutSR += out;
 					transfersInSR += in;
 				}
-				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
+				if(logDEBUG) Logger.debug(this, "UID " + entry.getKey() + " : out " + transfersOut + " in " + transfersIn);
 			}
 			counter.total += count;
 			counter.expectedTransfersIn += transfersIn;
@@ -332,10 +332,10 @@ public class RequestTracker {
 							transfersOutSR += out;
 							transfersInSR += in;
 						}
-						if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source+" count now "+count+" out now "+transfersOut+" in now "+transfersIn);
-					} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+						if(logMINOR) Logger.minor(this, "Counting " + tag + " from " + entry.getKey() + " from " + source + " count now " + count + " out now " + transfersOut + " in now " + transfersIn);
+					} else if(logDEBUG) Logger.debug(this, "Not counting " + entry.getKey());
 				}
-				if(logMINOR) Logger.minor(this, "Returning count: "+count+" in: "+transfersIn+" out: "+transfersOut);
+				if(logMINOR) Logger.minor(this, "Returning count: " + count + " in: " + transfersIn + " out: " + transfersOut);
 				counter.total += count;
 				counter.expectedTransfersIn += transfersIn;
 				counter.expectedTransfersOut += transfersOut;
@@ -354,18 +354,18 @@ public class RequestTracker {
 					// Ordinary requests can be routed to an offered key.
 					// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 					if(tag.currentlyFetchingOfferedKeyFrom(source)) {
-						if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+						if(logMINOR) Logger.minor(this, "Counting " + tag + " to " + entry.getKey());
 						transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
 						transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 						count++;
 					} else if(tag.currentlyRoutingTo(source)) {
-						if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+						if(logMINOR) Logger.minor(this, "Counting " + tag + " to " + entry.getKey());
 						transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert, false);
 						transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert, false);
 						count++;
-					} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+					} else if(logDEBUG) Logger.debug(this, "Not counting " + entry.getKey());
 				}
-				if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
+				if(logMINOR) Logger.minor(this, "Counted for " + (local?"local":"remote") + " " + (ssk?"ssk":"chk") + " " + (insert?"insert":"request") + " " + (offer?"offer":"") + " : " + count + " of " + map.size() + " for " + source);
 				counter.total += count;
 				counter.expectedTransfersIn += transfersIn;
 				counter.expectedTransfersOut += transfersOut;
@@ -550,7 +550,7 @@ public class RequestTracker {
 				tags = map.values().toArray(new UIDTag[map.size()]);
 			}
 			long now = System.currentTimeMillis();
-			for(int i=0;i<uids.length;i++) {
+			for(int i=0;i < uids.length;i++) {
 				tags[i].maybeLogStillPresent(now, uids[i]);
 			}
 		}

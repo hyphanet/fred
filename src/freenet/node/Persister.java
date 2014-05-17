@@ -56,8 +56,8 @@ class Persister implements Runnable {
 			OOMHandler.handleOOM(e);
 			System.err.println("Will restart ThrottlePersister...");
 		} catch (Throwable t) {
-			Logger.error(this, "Caught in ThrottlePersister: "+t, t);
-			System.err.println("Caught in ThrottlePersister: "+t);
+			Logger.error(this, "Caught in ThrottlePersister: " + t, t);
+			System.err.println("Caught in ThrottlePersister: " + t);
 			t.printStackTrace();
 			System.err.println("Will restart ThrottlePersister...");
 		}
@@ -95,7 +95,7 @@ class Persister implements Runnable {
 				// Ignore
 			} catch (IOException e1) {
 				if(persistTarget.length() > 0 || persistTemp.length() > 0)
-					Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
+					Logger.error(this, "Could not read " + persistTarget + " (" + e + ") and could not read " + persistTemp + " either (" + e1 + ')');
 			}
 		}
 		return throttleFS;
@@ -104,7 +104,7 @@ class Persister implements Runnable {
 	public void start() {
 		synchronized(this) {
 			if(started) {
-				Logger.error(this, "Already started: "+this, new Exception("debug"));
+				Logger.error(this, "Already started: " + this, new Exception("debug"));
 				return;
 			}
 			started = true;
@@ -112,7 +112,7 @@ class Persister implements Runnable {
 		SemiOrderedShutdownHook.get().addEarlyJob(new Thread() {
 			
 			public void run() {
-				System.out.println("Writing "+persistTarget+" on shutdown");
+				System.out.println("Writing " + persistTarget + " on shutdown");
 				persistThrottle();
 			}
 			

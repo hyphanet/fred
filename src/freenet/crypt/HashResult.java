@@ -91,19 +91,19 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 
 	public static boolean strictEquals(HashResult[] results, HashResult[] hashes) {
 		if(results.length != hashes.length) {
-			Logger.error(HashResult.class, "Hashes not equal: "+results.length+" hashes vs "+hashes.length+" hashes");
+			Logger.error(HashResult.class, "Hashes not equal: " + results.length + " hashes vs " + hashes.length + " hashes");
 			return false;
 		}
-		for(int i=0;i<results.length;i++) {
+		for(int i=0;i < results.length;i++) {
 			if(results[i].type != hashes[i].type) {
 				// FIXME Db4o kludge
 				if(HashType.valueOf(results[i].type.name()) != HashType.valueOf(hashes[i].type.name())) {
-					Logger.error(HashResult.class, "Hashes not the same type: "+results[i].type.name()+" vs "+hashes[i].type.name());
+					Logger.error(HashResult.class, "Hashes not the same type: " + results[i].type.name() + " vs " + hashes[i].type.name());
 					return false;
 				}
 			}
 			if(!Arrays.equals(results[i].result, hashes[i].result)) {
-				Logger.error(HashResult.class, "Hash "+results[i].type.name()+" not equal");
+				Logger.error(HashResult.class, "Hash " + results[i].type.name() + " not equal");
 				return false;
 			}
 		}
@@ -127,7 +127,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable {
 	public static HashResult[] copy(HashResult[] hashes) {
 		if(hashes == null) return null;
 		HashResult[] out = new HashResult[hashes.length];
-		for(int i=0;i<hashes.length;i++) {
+		for(int i=0;i < hashes.length;i++) {
 			out[i] = hashes[i].clone();
 		}
 		return out;

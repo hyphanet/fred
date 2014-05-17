@@ -23,7 +23,7 @@ public abstract class BaseClientKey {
 			return ClientKSK.create(origURI.getDocName());
 		if("USK".equals(keyType))
 			return USK.create(origURI);
-		throw new MalformedURLException("Unknown keytype from "+origURI);
+		throw new MalformedURLException("Unknown keytype from " + origURI);
 	}
 	
 	public abstract FreenetURI getURI();

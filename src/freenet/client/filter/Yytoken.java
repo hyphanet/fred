@@ -23,11 +23,11 @@ class Yytoken {
 
   @Override
 public String toString() {
-    return "Text   : "+m_text+
-           "\nindex : "+m_index+
-           "\nline  : "+m_line+
-           "\ncBeg. : "+m_charBegin+
-           "\ncEnd. : "+m_charEnd;
+    return "Text   : " + m_text +
+           "\nindex : " + m_index +
+           "\nline  : " + m_line +
+           "\ncBeg. : " + m_charBegin +
+           "\ncEnd. : " + m_charEnd;
   }
 }
 

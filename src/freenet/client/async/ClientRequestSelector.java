@@ -122,7 +122,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			boolean persistent = false;
-			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
+			priority = fuzz < 0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			if(transientOnly || schedCore == null)
 				result = null;
 			else {
@@ -133,9 +133,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 						if(logMINOR) {
 							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
+								Logger.minor(this, "Priority " + priority + " (persistent) is waiting until a request finishes or is empty");
 							else
-								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+								Logger.minor(this, "Priority " + priority + " (persistent) is in cooldown for another " + (cooldownTime - now) + " " + TimeUtil.formatTime(cooldownTime - now));
 						}
 						result = null;
 					} else {
@@ -152,9 +152,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 						if(logMINOR) {
 							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
+								Logger.minor(this, "Priority " + priority + " (transient) is waiting until a request finishes or is empty");
 							else
-								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+								Logger.minor(this, "Priority " + priority + " (transient) is in cooldown for another " + (cooldownTime - now) + " " + TimeUtil.formatTime(cooldownTime - now));
 						}
 						result = null;
 					}
@@ -165,11 +165,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
 			if(((result != null) && (!result.isEmpty(persistent ? container : null)))) {
-				if(logMINOR) Logger.minor(this, "using priority : "+priority);
+				if(logMINOR) Logger.minor(this, "using priority : " + priority);
 				return priority;
 			}
 			
-			if(logMINOR) Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
+			if(logMINOR) Logger.minor(this, "Priority " + priority + " is null (fuzz = " + fuzz + ')');
 			fuzz++;
 		}
 		
@@ -184,7 +184,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, boolean realTime, ClientContext context, ObjectContainer container) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
 			SelectorReturn r;
 			synchronized(sched) {
@@ -207,16 +207,16 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
 		if(req.isCancelled(container)) {
-			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
+			if(logMINOR) Logger.minor(this, "Request is cancelled: " + req);
 			return null;
 		}
 		if(req.getCooldownTime(container, context, now) != 0) {
-			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
+			if(logMINOR) Logger.minor(this, "Request is in cooldown: " + req);
 			return null;
 		}
 		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
-			if(logMINOR) Logger.minor(this, "Choose key returned null: "+req);
+			if(logMINOR) Logger.minor(this, "Choose key returned null: " + req);
 			return null;
 		} else {
 			Key key;
@@ -264,7 +264,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				ignoreStore = false;
 			}
 			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
-			if(logMINOR) Logger.minor(this, "Created "+ret+" for "+req);
+			if(logMINOR) Logger.minor(this, "Created " + ret + " for " + req);
 			return ret;
 		}
 	}
@@ -297,7 +297,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
 		if(l > Integer.MAX_VALUE) {
-			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
+			if(logMINOR) Logger.minor(this, "No priority available for the next " + TimeUtil.formatTime(l - now));
 			return null;
 		}
 		int choosenPriorityClass = (int)l;
@@ -314,7 +314,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
-			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
+			if(logMINOR) Logger.minor(this, "Using priority " + choosenPriorityClass);
 			SectoredRandomGrabArray perm = null;
 			if(!transientOnly)
 				perm = schedCore.newPriorities[choosenPriorityClass];
@@ -340,7 +340,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, false, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority " + choosenPriorityClass + " (transient) is in cooldown for another " + (cooldownTime - now) + " " + TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 					persistent = false;
@@ -350,7 +350,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(perm, true, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority " + choosenPriorityClass + " (persistent) is in cooldown for another " + (cooldownTime - now) + " " + TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 					container.activate(perm, 1);
@@ -372,23 +372,23 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority " + choosenPriorityClass + " (perm=" + choosePerm + ") is in cooldown for another " + (cooldownTime - now) + " " + TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 				}
 				
 				if(logMINOR)
-					Logger.minor(this, "Got priority tracker "+chosenTracker);
+					Logger.minor(this, "Got priority tracker " + chosenTracker);
 				RemoveRandomReturn val = chosenTracker.removeRandom(starter, persistent ? container : null, context, now);
 				SendableRequest req;
 				if(val == null) {
-					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
+					Logger.normal(this, "Priority " + choosenPriorityClass + " returned null - nothing to schedule, should remove priority");
 					continue;
 				} else if(val.item == null) {
 					if(val.wakeupTime == -1)
-						Logger.normal(this, "Priority "+choosenPriorityClass+" returned cooldown time of -1 - nothing to schedule, should remove priority");
+						Logger.normal(this, "Priority " + choosenPriorityClass + " returned cooldown time of -1 - nothing to schedule, should remove priority");
 					else {
-						Logger.normal(this, "Priority "+choosenPriorityClass+" returned cooldown time of "+(val.wakeupTime - now)+" = "+TimeUtil.formatTime(val.wakeupTime - now));
+						Logger.normal(this, "Priority " + choosenPriorityClass + " returned cooldown time of " + (val.wakeupTime - now) + " = " + TimeUtil.formatTime(val.wakeupTime - now));
 						if(val.wakeupTime > 0 && val.wakeupTime < wakeupTime)
 							wakeupTime = val.wakeupTime;
 					}
@@ -399,17 +399,17 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				if(persistent)
 					container.activate(req, 1); // FIXME
 				if(chosenTracker.persistent() != persistent) {
-					Logger.error(this, "Tracker.persistent()="+chosenTracker.persistent()+" but is in the queue for persistent="+persistent+" for "+chosenTracker);
+					Logger.error(this, "Tracker.persistent()=" + chosenTracker.persistent() + " but is in the queue for persistent=" + persistent + " for " + chosenTracker);
 					// FIXME fix it
 				}
 				if(req.persistent() != persistent) {
-					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+chosenTracker.persistent()+" for "+req);
+					Logger.error(this, "Request.persistent()=" + req.persistent() + " but is in the queue for persistent=" + chosenTracker.persistent() + " for " + req);
 					// FIXME fix it
 				}
 				if(req.getPriorityClass(container) != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
-					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
+					Logger.normal(this, "In wrong priority class: " + req + " (req.prio=" + req.getPriorityClass(container) + " but chosen=" + choosenPriorityClass + ')');
 					// Remove it.
 					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
 					if(clientGrabber != null) {
@@ -427,7 +427,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							// Okay, it's been removed already. Cool.
 						}
 					} else {
-						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
+						Logger.error(this, "Could not find client grabber for client " + req.getClient(container) + " from " + chosenTracker);
 					}
 					if(req.persistent())
 						schedCore.innerRegister(req, container, context, null);
@@ -459,12 +459,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					}
 					if(altReq != null && (altReq.isCancelled(container))) {
 						if(logMINOR)
-							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
+							Logger.minor(this, "Ignoring cancelled recently succeeded item " + altReq);
 						altReq = null;
 					}
 					if(altReq != null && (l = altReq.getCooldownTime(container, context, now)) != 0) {
 						if(logMINOR) {
-							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
+							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = " + l + ((l > 0) ? " (" + TimeUtil.formatTime(l - now) + ")" : ""));
 							altReq = null;
 						}
 					}
@@ -473,13 +473,13 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						if(prio <= choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
-								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
+								Logger.minor(this, "Recently succeeded (transient) req " + altReq + " (prio=" + altReq.getPriorityClass(container) + ") is better than " + req + " (prio=" + req.getPriorityClass(container) + "), using that");
 							// Don't need to reregister, because removeRandom doesn't actually remove!
 							req = altReq;
 						} else {
 							// Don't use the recent one
 							if(logMINOR)
-								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+								Logger.minor(this, "Chosen req " + req + " is better, reregistering recently succeeded " + altReq);
 							synchronized(recent) {
 								recent.add(altReq);
 							}
@@ -497,11 +497,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						SendableRequest altReq = null;
 						if(container.ext().isStored(altRGA) && !altRGA.isEmpty(container)) {
 							if(logMINOR)
-								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
+								Logger.minor(this, "Maybe using recently succeeded item from " + altRGA);
 							val = altRGA.removeRandom(starter, container, context, now);
 							if(val != null) {
 								if(val.item == null) {
-									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+")" : ""));
+									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time " + val.wakeupTime + ((val.wakeupTime > 0) ? " (" + TimeUtil.formatTime(val.wakeupTime - now) + ")" : ""));
 								} else {
 									altReq = (SendableRequest) val.item;
 								}
@@ -517,12 +517,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								if(useRecent) {
 									// Use the recent one instead
 									if(logMINOR)
-										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
+										Logger.minor(this, "Recently succeeded (persistent) req " + altReq + " (prio=" + altReq.getPriorityClass(container) + ") is better than " + req + " (prio=" + req.getPriorityClass(container) + "), using that");
 									// Don't need to reregister, because removeRandom doesn't actually remove!
 									req = altReq;
 								} else {
 									if(logMINOR)
-										Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
+										Logger.minor(this, "Chosen (persistent) req " + req + " is better, reregistering recently succeeded " + altRGA + " for " + altReq);
 									synchronized(recentSuccesses) {
 										recentSuccesses.add(altRGA);
 									}
@@ -535,9 +535,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				}
 				
 				// Now we have chosen a request.
-				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
-						req.getPriorityClass(container)+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
-				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
+				if(logMINOR) Logger.minor(this, "removeFirst() returning " + req + " (prio " +
+						req.getPriorityClass(container) + ", client " + req.getClient(container) + ", client-req " + req.getClientRequest() + ')');
+				if(logMINOR) Logger.minor(this, "removeFirst() returning " + req + " of " + req.getClientRequest());
 				assert(req.realTimeFlag() == realTime);
 				return new SelectorReturn(req);
 				
@@ -600,10 +600,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(keysFetching) {
 			boolean retval = keysFetching.add(key);
 			if(!retval) {
-				Logger.normal(this, "Already in keysFetching: "+key);
+				Logger.normal(this, "Already in keysFetching: " + key);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Added to keysFetching: "+key);
+					Logger.minor(this, "Added to keysFetching: " + key);
 			}
 			return retval;
 		}
@@ -632,7 +632,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						for(long l : waiting) {
 							if(l == pid) return true;
 						}
-						Long[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
+						Long[] newWaiting = Arrays.copyOf(waiting, waiting.length + 1);
 						newWaiting[waiting.length] = pid;
 						persistentRequestsWaitingForKeysFetching.put(key, newWaiting);
 					}
@@ -644,7 +644,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						for(WeakReference<BaseSendableGet> ref : waiting) {
 							if(ref.get() == getterWaiting) return true;
 						}
-						WeakReference<BaseSendableGet>[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
+						WeakReference<BaseSendableGet>[] newWaiting = Arrays.copyOf(waiting, waiting.length + 1);
 						newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
 						transientRequestsWaitingForKeysFetching.put(key, newWaiting);
 					}
@@ -659,7 +659,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		Long[] persistentWaiting;
 		WeakReference<BaseSendableGet>[] transientWaiting;
 		if(logMINOR)
-			Logger.minor(this, "Removing from keysFetching: "+key);
+			Logger.minor(this, "Removing from keysFetching: " + key);
 		if(key != null) {
 			synchronized(keysFetching) {
 				keysFetching.remove(key);
@@ -698,10 +698,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(runningTransientInserts) {
 			boolean retval = runningTransientInserts.add(tmp);
 			if(!retval) {
-				Logger.normal(this, "Already in runningTransientInserts: "+insert+" : "+token);
+				Logger.normal(this, "Already in runningTransientInserts: " + insert + " : " + token);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Added to runningTransientInserts: "+insert+" : "+token);
+					Logger.minor(this, "Added to runningTransientInserts: " + insert + " : " + token);
 			}
 			return retval;
 		}
@@ -710,7 +710,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		if(logMINOR)
-			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);
+			Logger.minor(this, "Removing from runningTransientInserts: " + insert + " : " + token);
 		synchronized(runningTransientInserts) {
 			runningTransientInserts.remove(tmp);
 		}

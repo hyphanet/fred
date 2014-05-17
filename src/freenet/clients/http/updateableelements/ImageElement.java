@@ -48,24 +48,24 @@ public class ImageElement extends BaseUpdateableElement {
 
 	private boolean					wasError		= false;
 
-	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx, boolean pushed){
-		return createImageElement(tracker,key,maxSize,ctx,-1,-1, null, pushed);
+	public static ImageElement createImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, boolean pushed){
+		return createImageElement(tracker, key, maxSize, ctx, -1, -1, null, pushed);
 	}
 	
-	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx,int width,int height, String name, boolean pushed){
+	public static ImageElement createImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, int width, int height, String name, boolean pushed){
 		Map<String,String> attributes=new HashMap<String, String>();
 		attributes.put("src", key.toString());
-		if(width!=-1){
+		if(width != -1){
 			attributes.put("width", String.valueOf(width));
 		}
-		if(height!=-1){
+		if(height != -1){
 			attributes.put("height", String.valueOf(height));
 		}
 		if(name != null) {
 			attributes.put("alt", name);
 			attributes.put("title", name);
 		}
-		return new ImageElement(tracker,key,maxSize,ctx,new ParsedTag("img", attributes), pushed);
+		return new ImageElement(tracker, key, maxSize, ctx, new ParsedTag("img", attributes), pushed);
 	}
 	
 	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg, boolean pushed) {
@@ -163,7 +163,7 @@ public class ImageElement extends BaseUpdateableElement {
 				if (attr.containsKey("width") && attr.containsKey("height")) {
 					sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
 				}
-				attr.put("src", "/imagecreator/?text=+"+FProxyToadlet.l10n("imageinitializing")+"+" + sizePart);
+				attr.put("src", "/imagecreator/?text=+" + FProxyToadlet.l10n("imageinitializing") + "+" + sizePart);
 				whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(0) });
 				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(1) });

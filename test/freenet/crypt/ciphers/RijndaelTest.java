@@ -1119,7 +1119,7 @@ public class RijndaelTest extends TestCase {
 						", PLAIN=" + HexUtil.bytesToHex(plain) + //
 						", CIPHER=" + HexUtil.bytesToHex(cipher) + //
 						", PLAIN2=" + HexUtil.bytesToHex(plain2),//
-						Arrays.equals(plain, plain2));
+						        Arrays.equals(plain, plain2));
 			}
 		}
 	}
@@ -1931,10 +1931,10 @@ public class RijndaelTest extends TestCase {
 		for(int testNumber : GLADMAN_TEST_NUMBERS) {
 			InputStream is = null;
 			try {
-				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn"+type+testNumber+".txt");
+				is = getClass().getResourceAsStream("/freenet/crypt/ciphers/rijndael-gladman-test-data/ecbn" + type + testNumber + ".txt");
 				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
 				BufferedReader br = new BufferedReader(isr);
-				for(int i=0;i<7;i++) br.readLine(); // Skip header
+				for(int i=0;i < 7;i++) br.readLine(); // Skip header
 				String line = br.readLine();
 				int blockSize = Integer.parseInt(line.substring("BLOCKSIZE=".length()));
 				line = br.readLine();
@@ -1957,22 +1957,22 @@ public class RijndaelTest extends TestCase {
 						if(prefix.equals("PT=   ")) {
 							assertTrue(plaintext == null);
 							plaintext = data;
-							assertEquals(plaintext.length, blockSize/8);
+							assertEquals(plaintext.length, blockSize / 8);
 						} else if(prefix.equals("KEY=  ")) {
 							assertTrue(key == null);
 							key = data;
-							assertEquals(key.length, keySize/8);
+							assertEquals(key.length, keySize / 8);
 						} else if(prefix.equals("CT=   ")) {
 							assertTrue(ciphertext == null);
 							ciphertext = data;
-							assertEquals(ciphertext.length, blockSize/8);
+							assertEquals(ciphertext.length, blockSize / 8);
 						}
 						if(plaintext != null && ciphertext != null && key != null) {
 							Rijndael cipher = new Rijndael(keySize, blockSize);
 							cipher.initialize(key);
 							// Encrypt
 							byte[] copyOfPlaintext = Arrays.copyOf(plaintext, plaintext.length);
-							byte[] output = new byte[blockSize/8];
+							byte[] output = new byte[blockSize / 8];
 							cipher.encipher(copyOfPlaintext, output);
 							assertTrue(Arrays.equals(output, ciphertext));
 							// Decrypt

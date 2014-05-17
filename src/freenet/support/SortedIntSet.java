@@ -25,7 +25,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	public SortedIntSet() {
 		this.data = new int[MIN_SIZE];
-		for(int i=0;i<data.length;i++)
+		for(int i=0;i < data.length;i++)
 			data[i] = Integer.MAX_VALUE;
 		length = 0;
 	}
@@ -58,7 +58,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	public synchronized int getLast() {
 		if(length == 0) return -1;
-		return data[length-1];
+		return data[length - 1];
 	}
 
 	/**
@@ -96,15 +96,15 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		boolean ret = false;
 		int x = binarySearch(item);
 		if(x >= 0) {
-			if(x < length-1)
-				System.arraycopy(data, x+1, data, x, length-x-1);
+			if(x < length - 1)
+				System.arraycopy(data, x + 1, data, x, length - x - 1);
 			data[--length] = Integer.MAX_VALUE;
 			ret = true;
 		}
-		if((length*4 < data.length) && (length > MIN_SIZE)) {
-			int[] newData = new int[Math.max(data.length/2, MIN_SIZE)];
+		if((length * 4 < data.length) && (length > MIN_SIZE)) {
+			int[] newData = new int[Math.max(data.length / 2, MIN_SIZE)];
 			System.arraycopy(data, 0, newData, 0, length);
-			for(int i=length;i<newData.length;i++)
+			for(int i=length;i < newData.length;i++)
 				newData[i] = Integer.MAX_VALUE;
 			data = newData;
 		}
@@ -118,17 +118,17 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 */
 	private synchronized boolean verify() { // TODO: Move to a unit test.
 		int lastItem = -1;
-		for(int i=0;i<length;i++) {
+		for(int i=0;i < length;i++) {
 			int item = data[i];
-			if(i>0) {
+			if(i > 0) {
 				if(item <= lastItem)
 					throw new IllegalStateException("Verify failed!");
 			}
 			lastItem = item;
 		}
-		for(int i=length;i<data.length;i++)
+		for(int i=length;i < data.length;i++)
 			if(data[i] != Integer.MAX_VALUE)
-				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Integer.MAX_VALUE");
+				throw new IllegalStateException("length=" + length + ", data.length=" + data.length + " but [" + i + "] != Integer.MAX_VALUE");
 		
 		return true;
 	}
@@ -143,7 +143,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		int x = binarySearch(num);
 		if(x >= 0) return false;
 		// insertion point
-		x = -x-1;
+		x = -x - 1;
 		push(num, x);
 		return true;
 	}
@@ -161,23 +161,23 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 			throw new IllegalArgumentException(); // already exists
 		}
 		// insertion point
-		x = -x-1;
+		x = -x - 1;
 		push(num, x);
 	}
 
 	private synchronized void push(int num, int x) {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
+		if(logMINOR) Logger.minor(this, "Insertion point: " + x + " length " + length + " data.length " + data.length);
 		// Move the data
 		if(length == data.length) {
-			int[] newData = Arrays.copyOf(data, Math.max(length*2, 4));
-			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+newData.length);
-			for(int i=length;i<newData.length;i++)
+			int[] newData = Arrays.copyOf(data, Math.max(length * 2, 4));
+			if(logMINOR) Logger.minor(this, "Expanding from " + length + " to " + newData.length);
+			for(int i=length;i < newData.length;i++)
 				newData[i] = Integer.MAX_VALUE;
 			data = newData;
 		}
 		if(x < length)
-			System.arraycopy(data, x, data, x+1, length-x);
+			System.arraycopy(data, x, data, x + 1, length - x);
 		data[x] = num;
 		length++;
 		
@@ -201,7 +201,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	@Override
 	public synchronized void clear() {
 		data = new int[MIN_SIZE];
-		for(int i=0;i<data.length;i++)
+		for(int i=0;i < data.length;i++)
 			data[i] = Integer.MAX_VALUE;
 		length = 0;
 	}

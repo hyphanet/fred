@@ -106,7 +106,7 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
 		if(logDEBUG)
-			Logger.debug(this, "Connection from "+remoteAddr);
+			Logger.debug(this, "Connection from " + remoteAddr);
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
@@ -128,11 +128,11 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("ToadletContextImpl."+key);
+		return NodeL10n.getBase().getString("ToadletContextImpl." + key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("ToadletContextImpl."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("ToadletContextImpl." + key, new String[] { pattern }, new String[] { value });
 	}
 
 	/**
@@ -140,7 +140,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * will become the title and the h1'ed contents of the error page. 
 	 */
 	private static void sendError(OutputStream os, int code, String httpReason, String message, boolean shouldDisconnect, MultiValueTable<String,String> mvt) throws IOException {
-		sendHTMLError(os, code, httpReason, "<html><head><title>"+message+"</title></head><body><h1>"+message+"</h1></body>", shouldDisconnect, mvt);
+		sendHTMLError(os, code, httpReason, "<html><head><title>" + message + "</title></head><body><h1>" + message + "</h1></body>", shouldDisconnect, mvt);
 	}
 	
 	/**
@@ -171,7 +171,7 @@ public class ToadletContextImpl implements ToadletContext {
 		PrintWriter pw = new PrintWriter(sw);
 		e.printStackTrace(pw);
 		pw.close();
-		String message = "<html><head><title>"+l10n("uriParseErrorTitle")+"</title></head><body><p>"+HTMLEncoder.encode(e.getMessage())+"</p><pre>\n"+sw.toString();
+		String message = "<html><head><title>" + l10n("uriParseErrorTitle") + "</title></head><body><p>" + HTMLEncoder.encode(e.getMessage()) + "</p><pre>\n" + sw.toString();
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
 
@@ -370,7 +370,7 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt = new MultiValueTable<String,String>();
 		if(mimeType != null)
 			if(mimeType.equalsIgnoreCase("text/html")){
-				mvt.put("content-type", mimeType+"; charset=UTF-8");
+				mvt.put("content-type", mimeType + "; charset=UTF-8");
 			}else{
 				mvt.put("content-type", mimeType);
 			}
@@ -419,7 +419,7 @@ public class ToadletContextImpl implements ToadletContext {
 			String key = e.nextElement();
 			Object[] list = mvt.getArray(key);
 			key = fixKey(key);
-			for(int i=0;i<list.length;i++) {
+			for(int i=0;i < list.length;i++) {
 				String val = (String) list[i];
 				buf.append(key);
 				buf.append(": ");
@@ -448,7 +448,7 @@ public class ToadletContextImpl implements ToadletContext {
     static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
 	
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.parse(httpDate);
 	}
@@ -460,7 +460,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static String fixKey(String key) {
 		StringBuilder sb = new StringBuilder(key.length());
 		char prev = 0;
-		for(int i=0;i<key.length();i++) {
+		for(int i=0;i < key.length();i++) {
 			char c = key.charAt(i);
 			if((i == 0) || (prev == '-')) {
 				c = Character.toUpperCase(c);
@@ -491,20 +491,20 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 				
 				if(logMINOR)
-					Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);
+					Logger.minor(ToadletContextImpl.class, "first line: " + firstLine);
 				
 				String[] split = firstLine.split(" ");
 				
 				if(split.length != 3)
-					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine, -1);
+					throw new ParseException("Could not parse request line (split.length=" + split.length + "): " + firstLine, -1);
 				
 				if(!split[2].startsWith("HTTP/1."))
-					throw new ParseException("Unrecognized protocol "+split[2], -1);
+					throw new ParseException("Unrecognized protocol " + split[2], -1);
 				
 				URI uri;
 				try {
 					uri = URIPreEncoder.encodeURI(split[1]).normalize();
-					if(logMINOR) Logger.minor(ToadletContextImpl.class, "URI: "+uri+" path "+uri.getPath()+" host "+uri.getHost()+" frag "+uri.getFragment()+" port "+uri.getPort()+" query "+uri.getQuery()+" scheme "+uri.getScheme());
+					if(logMINOR) Logger.minor(ToadletContextImpl.class, "URI: " + uri + " path " + uri.getPath() + " host " + uri.getHost() + " frag " + uri.getFragment() + " port " + uri.getPort() + " query " + uri.getQuery() + " scheme " + uri.getScheme());
 				} catch (URISyntaxException e) {
 					sendURIParseError(sock.getOutputStream(), true, e);
 					return;
@@ -526,7 +526,7 @@ public class ToadletContextImpl implements ToadletContext {
 						throw new ParseException("Missing ':' in request header field", -1);
 					}
 					String before = line.substring(0, index).toLowerCase();
-					String after = line.substring(index+1);
+					String after = line.substring(index + 1);
 					after = after.trim();
 					headers.put(before, after);
 				}
@@ -679,10 +679,10 @@ public class ToadletContextImpl implements ToadletContext {
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
 		} catch (Throwable t) {
-			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
+			Logger.error(ToadletContextImpl.class, "Caught error: " + t + " handling socket", t);
 			try {
-				String msg = "<html><head><title>"+NodeL10n.getBase().getString("Toadlet.internalErrorTitle")+
-						"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+				String msg = "<html><head><title>" + NodeL10n.getBase().getString("Toadlet.internalErrorTitle") +
+						"</title></head><body><h1>" + NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport") + "</h1><pre>";
 				StringWriter sw = new StringWriter();
 				PrintWriter pw = new PrintWriter(sw);
 				t.printStackTrace(pw);

@@ -51,7 +51,7 @@ public class BMPFilter implements ContentDataFilter {
 		if (b >= 0)
 			return b;
 		else
-			return 256+b;
+			return 256 + b;
 	}
 
 
@@ -81,7 +81,7 @@ public class BMPFilter implements ContentDataFilter {
 		if (r2 < 0)// end of file reached
 			throw new EOFException();
 
-		return result | (r2*256);
+		return result | (r2 * 256);
 	}
 
 
@@ -100,49 +100,49 @@ public class BMPFilter implements ContentDataFilter {
 		byte[] skipbytes=new byte[4];
 		dis.readFully(skipbytes);
 		int headerSize = readInt(dis); // read file header size or pixel offset
-		if(headerSize<0) {
+		if(headerSize < 0) {
 			throwHeaderError(l10n("InvalidOffsetT"), l10n("InvalidOffsetD"));
 		}
 
 		int size_bitmapinfoheader=readInt(dis);
-		if(size_bitmapinfoheader!=40) {
+		if(size_bitmapinfoheader != 40) {
 			throwHeaderError(l10n("InvalidBitMapInfoHeaderSizeT"), l10n("InvalidBitMapInfoHeaderSizeD"));
 		}
 
 		int imageWidth = readInt(dis); // read width
 		int imageHeight = readInt(dis); // read height
-		if(imageWidth<0 || imageHeight<0) {
+		if(imageWidth < 0 || imageHeight < 0) {
 			throwHeaderError(l10n("InvalidDimensionT"), l10n("InvalidDimensionD"));
 		}
 
 		int no_plane=readShort(dis);
-		if(no_plane!=1) { // No of planes should be 1
+		if(no_plane != 1) { // No of planes should be 1
 			throwHeaderError(l10n("InvalidNoOfPlanesT"), l10n("InvalidNoOfPlanesD"));
 		}
 
 		int bitDepth = readShort(dis);
 		// Bit depth should be 1,2,4,8,16 or 32.
-		if(bitDepth!=1 && bitDepth!=2 && bitDepth!=4 && bitDepth!=8 && bitDepth!=16 && bitDepth!=24 && bitDepth!=32) {
+		if(bitDepth != 1 && bitDepth != 2 && bitDepth != 4 && bitDepth != 8 && bitDepth != 16 && bitDepth != 24 && bitDepth != 32) {
 			throwHeaderError(l10n("InvalidBitDepthT"), l10n("InvalidBitDepthD"));
 		}
 
 		int compression_type=readInt(dis);
-		if( !(compression_type>=0 && compression_type<=3) ) {
-			throwHeaderError(l10n("Invalid Compression type"), l10n("Compression type field is set to "+compression_type+" instead of 0-3"));
+		if( !(compression_type >= 0 && compression_type <= 3) ) {
+			throwHeaderError(l10n("Invalid Compression type"), l10n("Compression type field is set to " + compression_type + " instead of 0-3"));
 		}
 
 		int imagedatasize=readInt(dis);
-		if(fileSize!=headerSize+imagedatasize) {
+		if(fileSize != headerSize + imagedatasize) {
 			throwHeaderError(l10n("InvalidFileSizeT"), l10n("InvalidFileSizeD"));
 		}
 
 		int horizontal_resolution=readInt(dis);
 		int vertical_resolution=readInt(dis);
-		if(horizontal_resolution<0 || vertical_resolution<0) {
+		if(horizontal_resolution < 0 || vertical_resolution < 0) {
 			throwHeaderError(l10n("InvalidResolutionT"), l10n("InvalidResolutionD"));
 		}
 
-		if(compression_type==0) {
+		if(compression_type == 0) {
 			// Verifying the file size w.r.t. image dimensions(width and height), bitDepth with imagedatasize(including padding).
 			int bitsPerLine = imageWidth * bitDepth;
 
@@ -153,7 +153,7 @@ public class BMPFilter implements ContentDataFilter {
 
 			int bytesPerLine = bitsPerLine / 8;
 			int calculatedsize = bytesPerLine * imageHeight;
-			if(calculatedsize!=imagedatasize) {
+			if(calculatedsize != imagedatasize) {
 				throwHeaderError(l10n("InvalidImageDataSizeT"), l10n("InvalidImageDataSizeD" ));
 			}
 		}
@@ -164,7 +164,7 @@ public class BMPFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("BMPFilter."+key);
+		return NodeL10n.getBase().getString("BMPFilter." + key);
 	}
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {

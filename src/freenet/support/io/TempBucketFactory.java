@@ -112,7 +112,7 @@ public class TempBucketFactory implements BucketFactory {
 			this.creationTime = now;
 			this.osIndex = 0;
 			this.tbis = new ArrayList<TempBucketInputStream>(1);
-			if(logMINOR) Logger.minor(TempBucket.class, "Created "+this, new Exception("debug"));
+			if(logMINOR) Logger.minor(TempBucket.class, "Created " + this, new Exception("debug"));
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
@@ -123,7 +123,7 @@ public class TempBucketFactory implements BucketFactory {
 						try {
 							is.close();
 						} catch (IOException e) {
-							Logger.error(this, "Caught "+e+" closing "+is);
+							Logger.error(this, "Caught " + e + " closing " + is);
 						}
 					} else {
 						try {
@@ -173,7 +173,7 @@ public class TempBucketFactory implements BucketFactory {
 				// We need streams to be reset to point to the new bucket
 			}
 			if(logMINOR)
-				Logger.minor(this, "We have migrated "+toMigrate.hashCode());
+				Logger.minor(this, "We have migrated " + toMigrate.hashCode());
 			
 			synchronized(ramBucketQueue) {
 				ramBucketQueue.remove(getReference());
@@ -192,13 +192,13 @@ public class TempBucketFactory implements BucketFactory {
 		@Override
 		public synchronized OutputStream getOutputStream() throws IOException {
 			if(osIndex > 0)
-				throw new IOException("Only one OutputStream per bucket on "+this+" !");
+				throw new IOException("Only one OutputStream per bucket on " + this + " !");
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
 			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
 			OutputStream tos = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
-				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+				Logger.minor(this, "Got " + tos + " for " + this, new Exception());
 			return tos;
 		}
 
@@ -226,7 +226,7 @@ public class TempBucketFactory implements BucketFactory {
 					if(shouldMigrate) {
 						if(logMINOR) {
 							if(isOversized)
-								Logger.minor(this, "The bucket "+TempBucket.this+" is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
+								Logger.minor(this, "The bucket " + TempBucket.this + " is over " + SizeUtil.formatSize(maxRAMBucketSize * RAMBUCKET_CONVERSION_FACTOR) + ": we will force-migrate it to disk.");
 							else
 								Logger.minor(this, "The bucketpool is full: force-migrate before we go over the limit");
 						}
@@ -288,7 +288,7 @@ public class TempBucketFactory implements BucketFactory {
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
 			if(logMINOR)
-				Logger.minor(this, "Got "+is+" for "+this, new Exception());
+				Logger.minor(this, "Got " + is + " for " + this, new Exception());
 			return is;
 		}
 		
@@ -456,7 +456,7 @@ public class TempBucketFactory implements BucketFactory {
 		protected void finalize() throws Throwable {
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
-					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
+					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket() + " : " + this, tracer);
 				free();
 			}
                         super.finalize();
@@ -617,7 +617,7 @@ public class TempBucketFactory implements BucketFactory {
 						shouldContinue = false;
 					else {
 						if (logMINOR)
-							Logger.minor(this, "The bucket "+tmpBucket+" is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
+							Logger.minor(this, "The bucket " + tmpBucket + " is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
 							        + " old: we will force-migrate it to disk.");
 						ramBucketQueue.remove(tmpBucketRef);
 						if(toMigrate == null) toMigrate = new LinkedList<TempBucket>();

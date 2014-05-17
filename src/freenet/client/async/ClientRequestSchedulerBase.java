@@ -110,14 +110,14 @@ abstract class ClientRequestSchedulerBase {
 		if((!isInsertScheduler) && req instanceof SendableInsert)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(isInsertScheduler != req.isInsert())
-			throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
+			throw new IllegalArgumentException("Request isInsert=" + req.isInsert() + " but my isInsertScheduler=" + isInsertScheduler + "!!");
 		if(req.persistent() != persistent())
-			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
+			throw new IllegalArgumentException("innerRegister for persistence=" + req.persistent() + " but our persistence is " + persistent());
 		short prio = req.getPriorityClass(container);
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
+		if(logMINOR) Logger.minor(this, "Still registering " + req + " at prio " + prio + " for " + req.getClientRequest() + " ssk=" + this.isSSKScheduler + " insert=" + this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
 		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
+		if(logMINOR) Logger.minor(this, "Registered " + req + " on prioclass=" + prio);
 		if(persistent())
 			sched.maybeAddToStarterQueue(req, container, maybeActive);
 	}
@@ -153,7 +153,7 @@ abstract class ClientRequestSchedulerBase {
 	 */
 	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
-			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
+			throw new IllegalStateException("Invalid priority: " + priorityClass + " - range is " + RequestStarter.MAXIMUM_PRIORITY_CLASS + " (most important) to " + RequestStarter.MINIMUM_PRIORITY_CLASS + " (least important)");
 		// Client
 		synchronized(this) {
 			SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
@@ -162,7 +162,7 @@ abstract class ClientRequestSchedulerBase {
 				clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);
 				newPriorities[priorityClass] = clientGrabber;
 				if(persistent()) container.store(this);
-				if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
+				if(logMINOR) Logger.minor(this, "Registering client tracker for priority " + priorityClass + " : " + clientGrabber);
 			}
 			// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
 			// To avoid a race condition it is essential to mirror that here.
@@ -173,7 +173,7 @@ abstract class ClientRequestSchedulerBase {
 				if(requestGrabber == null) {
 					requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
 					if(logMINOR)
-						Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
+						Logger.minor(this, "Creating new grabber: " + requestGrabber + " for " + client + " from " + clientGrabber + " : prio=" + priorityClass);
 					clientGrabber.addGrabber(client, requestGrabber, container, context);
 					// FIXME unnecessary as it knows its parent and addGrabber() will call it???
 					context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
@@ -193,7 +193,7 @@ abstract class ClientRequestSchedulerBase {
 	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
 	 */
 	protected static int fixRetryCount(int retryCount) {
-		return Math.max(0, retryCount-MIN_RETRY_COUNT);
+		return Math.max(0, retryCount - MIN_RETRY_COUNT);
 	}
 
 	/**
@@ -217,11 +217,11 @@ abstract class ClientRequestSchedulerBase {
 		SendableRequest[] reqs = getSendableRequests(request, container);
 		
 		if(reqs == null) return;
-		for(int i=0;i<reqs.length;i++) {
+		for(int i=0;i < reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			if(req == null) {
 				// We will get rid of SendableRequestSet soon, so this is low priority.
-				Logger.error(this, "Request "+i+" is null reregistering for "+request);
+				Logger.error(this, "Request " + i + " is null reregistering for " + request);
 				continue;
 			}
 			if(persistent())
@@ -233,11 +233,11 @@ abstract class ClientRequestSchedulerBase {
 				continue;
 			}
 			if(persistent() && req.isStorageBroken(container)) {
-				Logger.error(this, "Broken request while changing priority: "+req);
+				Logger.error(this, "Broken request while changing priority: " + req);
 				continue;
 			}
 			if(req.persistent() != persistent()) {
-				Logger.error(this, "Request persistence is "+req.persistent()+" but scheduler's is "+persistent()+" on "+this+" for "+req);
+				Logger.error(this, "Request persistence is " + req.persistent() + " but scheduler's is " + persistent() + " on " + this + " for " + req);
 				continue;
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
@@ -266,7 +266,7 @@ abstract class ClientRequestSchedulerBase {
 			keyListeners.add(listener);
 		}
 		if (logMINOR)
-			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
+			Logger.minor(this, "Added pending keys to " + this + " : size now " + keyListeners.size() + " : " + listener);
 	}
 	
 	public boolean removePendingKeys(KeyListener listener) {
@@ -274,11 +274,11 @@ abstract class ClientRequestSchedulerBase {
 		synchronized (this) {
 			ret = keyListeners.remove(listener);
 			while(logMINOR && keyListeners.remove(listener))
-				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
+				Logger.error(this, "Still in pending keys after removal, must be in twice or more: " + listener, new Exception("error"));
 			listener.onRemove();
 		}
 		if (logMINOR)
-			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener, new Exception("debug"));
+			Logger.minor(this, "Removed pending keys from " + this + " : size now " + keyListeners.size() + " : " + listener, new Exception("debug"));
 		return ret;
 	}
 	
@@ -295,7 +295,7 @@ abstract class ClientRequestSchedulerBase {
 				found = true;
 				i.remove();
 				listener.onRemove();
-				Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
+				Logger.normal(this, "Removed pending keys from " + this + " : size now " + keyListeners.size() + " : " + listener);
 			}
 		}
 		return found;
@@ -364,7 +364,7 @@ abstract class ClientRequestSchedulerBase {
 	
 	public boolean tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		if((key instanceof NodeSSK) != isSSKScheduler) {
-			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
+			Logger.error(this, "Key " + key + " on scheduler ssk=" + isSSKScheduler, new Exception("debug"));
 			return false;
 		}
 		assert(key instanceof NodeSSK == isSSKScheduler);
@@ -375,7 +375,7 @@ abstract class ClientRequestSchedulerBase {
 				if(!listener.probablyWantKey(key, saltedKey)) continue;
 				if(matches == null) matches = new ArrayList<KeyListener> ();
 				if(matches.contains(listener)) {
-					Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
+					Logger.error(this, "In matches twice, presumably in keyListeners twice?: " + listener);
 					continue;
 				}
 				matches.add(listener);
@@ -496,33 +496,33 @@ abstract class ClientRequestSchedulerBase {
 
 	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long total = 0;
-		for(int i=0;i<newPriorities.length;i++) {
+		for(int i=0;i < newPriorities.length;i++) {
 			SectoredRandomGrabArray prio = newPriorities[i];
 			container.activate(prio, 1);
 			if(prio == null || prio.isEmpty(container))
-				System.out.println("Priority "+i+" : empty");
+				System.out.println("Priority " + i + " : empty");
 			else {
-				System.out.println("Priority "+i+" : "+prio.size());
-					System.out.println("Clients: "+prio.size()+" for "+prio);
-					for(int k=0;k<prio.size();k++) {
+				System.out.println("Priority " + i + " : " + prio.size());
+					System.out.println("Clients: " + prio.size() + " for " + prio);
+					for(int k=0;k < prio.size();k++) {
 						Object client = prio.getClient(k);
 						container.activate(client, 1);
-						System.out.println("Client "+k+" : "+client);
+						System.out.println("Client " + k + " : " + client);
 						container.deactivate(client, 1);
 						SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) prio.getGrabber(client);
 						container.activate(requestGrabber, 1);
-						System.out.println("SRGA for client: "+requestGrabber);
-						for(int l=0;l<requestGrabber.size();l++) {
+						System.out.println("SRGA for client: " + requestGrabber);
+						for(int l=0;l < requestGrabber.size();l++) {
 							client = requestGrabber.getClient(l);
 							container.activate(client, 1);
-							System.out.println("Request "+l+" : "+client);
+							System.out.println("Request " + l + " : " + client);
 							container.deactivate(client, 1);
 							RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(client);
 							container.activate(rga, 1);
-							System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
+							System.out.println("Queued SendableRequests: " + rga.size() + " on " + rga);
 							long sendable = 0;
 							long all = 0;
-							for(int m=0;m<rga.size();m++) {
+							for(int m=0;m < rga.size();m++) {
 								SendableRequest req = (SendableRequest) rga.get(m, container);
 								if(req == null) continue;
 								container.activate(req, 1);
@@ -530,7 +530,7 @@ abstract class ClientRequestSchedulerBase {
 								all += req.countAllKeys(container, context);
 								container.deactivate(req, 1);
 							}
-							System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));
+							System.out.println("Sendable keys: " + sendable + " all keys " + all + " diff " + (all - sendable));
 							total += all;
 							container.deactivate(rga, 1);
 						}

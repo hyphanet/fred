@@ -70,7 +70,7 @@ public class LowLevelGetException extends Exception {
 		case RECENTLY_FAILED:
 			return "Request killed by failure table due to recently DNFing on a downstream node";
 		default:
-			return "Unknown error code: "+reason;
+			return "Unknown error code: " + reason;
 		}
 	}
 	
@@ -94,7 +94,7 @@ public class LowLevelGetException extends Exception {
 	
 	@Override
 	public String toString() {
-		return super.toString()+':'+getMessage(code);
+		return super.toString() + ':' + getMessage(code);
 	}
 
     @Override

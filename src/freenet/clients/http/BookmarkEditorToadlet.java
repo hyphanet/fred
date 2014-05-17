@@ -313,7 +313,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
 		if(logDEBUG)
-			Logger.debug(this, "Returning:\n"+pageNode.generate());
+			Logger.debug(this, "Returning:\n" + pageNode.generate());
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}

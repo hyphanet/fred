@@ -70,9 +70,9 @@ public class FailureTable implements OOMHook {
 	private final Node node;
 	
 	/** Maximum number of keys to track */
-	static final int MAX_ENTRIES = 20*1000;
+	static final int MAX_ENTRIES = 20 * 1000;
 	/** Maximum number of offers to track */
-	static final int MAX_OFFERS = 10*1000;
+	static final int MAX_OFFERS = 10 * 1000;
 	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago.
 	 * Maximum time for any FailureTable i.e. for this period after a DNF, we will avoid the node that 
 	 * DNFed. */
@@ -102,7 +102,7 @@ public class FailureTable implements OOMHook {
 	}
 	
 	public void start() {
-		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
+		offerExecutor.start(node.executor, "FailureTable offers executor for " + node.getDarknetPortNumber());
 		OOMHandler.addOOMHook(this);
 	}
 	
@@ -117,12 +117,12 @@ public class FailureTable implements OOMHook {
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, long rfTimeout, long ftTimeout) {
 		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
-			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+			Logger.error(this, "Bogus timeout " + ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
 		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
 			if(rfTimeout > 0)
-				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
+				Logger.error(this, "Bogus timeout " + rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
@@ -152,12 +152,12 @@ public class FailureTable implements OOMHook {
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, long rfTimeout, long ftTimeout, PeerNode requestor) {
 		if(ftTimeout < -1 || ftTimeout > REJECT_TIME) {
 			// -1 is a valid no-op.
-			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+			Logger.error(this, "Bogus timeout " + ftTimeout, new Exception("error"));
 			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
 		}
 		if(rfTimeout < 0 || rfTimeout > RECENTLY_FAILED_TIME) {
 			if(rfTimeout > 0)
-				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
+				Logger.error(this, "Bogus timeout " + rfTimeout, new Exception("error"));
 			rfTimeout = Math.max(Math.min(RECENTLY_FAILED_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
@@ -218,11 +218,11 @@ public class FailureTable implements OOMHook {
 		}
 
 		public void deleteOffer(BlockOffer offer) {
-			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
+			if(logMINOR) Logger.minor(this, "Deleting " + offer + " from " + this);
 			synchronized(blockOfferListByKey) {
 				int idx = -1;
 				final int offerLength = offers.length;
-				for(int i=0;i<offerLength;i++) {
+				for(int i=0;i < offerLength;i++) {
 					if(offers[i] == offer) idx = i;
 				}
 				if(idx < 0) return;
@@ -240,14 +240,14 @@ public class FailureTable implements OOMHook {
 
 		public void addOffer(BlockOffer offer) {
 			synchronized(blockOfferListByKey) {
-				offers = Arrays.copyOf(offers, offers.length+1);
-				offers[offers.length-1] = offer;
+				offers = Arrays.copyOf(offers, offers.length + 1);
+				offers[offers.length - 1] = offer;
 			}
 		}
 		
 		@Override
 		public String toString() {
-			return super.toString()+"("+offers.length+")";
+			return super.toString() + "(" + offers.length + ")";
 		}
 	}
 	
@@ -288,9 +288,9 @@ public class FailureTable implements OOMHook {
 	 * they might cause a deadlock. Schedule off-thread if necessary.
 	 */
 	public void onFound(KeyBlock block) {
-		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
+		if(logMINOR) Logger.minor(this, "Found " + block.getKey());
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) {
-			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.enablePerNodeFailureTables);
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = " + node.enableULPRDataPropagation + " and enable failure tables = " + node.enablePerNodeFailureTables);
 			return;
 		}
 		Key key = block.getKey();
@@ -326,7 +326,7 @@ public class FailureTable implements OOMHook {
 	void onOffer(final Key key, final PeerNode peer, final byte[] authenticator) {
 		if(!node.enableULPRDataPropagation) return;
 		if(logMINOR)
-			Logger.minor(this, "Offered key "+key+" by peer "+peer);
+			Logger.minor(this, "Offered key " + key + " by peer " + peer);
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
@@ -349,7 +349,7 @@ public class FailureTable implements OOMHook {
 	 * serialise it, as high latencies can otherwise result.
 	 */
 	protected void innerOnOffer(Key key, PeerNode peer, byte[] authenticator) {
-		if(logMINOR) Logger.minor(this, "Inner on offer for "+key+" from "+peer+" on "+node.getDarknetPortNumber());
+		if(logMINOR) Logger.minor(this, "Inner on offer for " + key + " from " + peer + " on " + node.getDarknetPortNumber());
 		if(key.getRoutingKey() == null) throw new NullPointerException();
 		//NB: node.hasKey() executes a datastore fetch
 		// If we have the key in the datastore (store or cache), we don't want it.
@@ -403,7 +403,7 @@ public class FailureTable implements OOMHook {
 		boolean weAsked = entry.askedFromPeer(peer, now);
 		boolean heAsked = entry.askedByPeer(peer, now);
 		if(!(weAsked || heAsked)) {
-			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
+			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked=" + weAsked + " heAsked=" + heAsked);
 			if(entry.isEmpty(now)) {
 				synchronized(this) {
 					entriesByKey.removeKey(key);
@@ -451,7 +451,7 @@ public class FailureTable implements OOMHook {
 				if(blockOfferListByKey.isEmpty()) return;
 				BlockOfferList bl = blockOfferListByKey.peekValue();
 				if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
-					if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
+					if(logMINOR) Logger.minor(this, "Removing block offer list " + bl + " list size now " + blockOfferListByKey.size());
 					blockOfferListByKey.popKey();
 				} else {
 					return;
@@ -481,7 +481,7 @@ public class FailureTable implements OOMHook {
 					// Too bad.
 				} catch (Throwable t) {
 					tag.unlockHandler();
-					Logger.error(this, "Caught "+t+" sending offered key", t);
+					Logger.error(this, "Caught " + t + " sending offered key", t);
 				}
 			}
 		}, "sendOfferedKey");
@@ -609,7 +609,7 @@ public class FailureTable implements OOMHook {
 					expiredOffers.add(offer);
 			}
 			if(logMINOR)
-				Logger.minor(this, "Offers: "+recentOffers.size()+" recent "+expiredOffers.size()+" expired");
+				Logger.minor(this, "Offers: " + recentOffers.size() + " recent " + expiredOffers.size() + " expired");
 		}
 		
 		private final BlockOfferList offerList;
@@ -692,7 +692,7 @@ public class FailureTable implements OOMHook {
 			try {
 				realRun();
 			} catch (Throwable t) {
-				Logger.error(this, "FailureTableCleaner caught "+t, t);
+				Logger.error(this, "FailureTableCleaner caught " + t, t);
 			} finally {
 				node.ticker.queueTimedJob(this, CLEANUP_PERIOD);
 			}
@@ -711,7 +711,7 @@ public class FailureTable implements OOMHook {
 					synchronized(FailureTable.this) {
 						synchronized(entry) {
 						if(entry.isEmpty()) {
-							if(logMINOR) Logger.minor(this, "Removing entry for "+entry.key);
+							if(logMINOR) Logger.minor(this, "Removing entry for " + entry.key);
 							entriesByKey.removeKey(entry.key);
 						}
 						}
@@ -719,7 +719,7 @@ public class FailureTable implements OOMHook {
 				}
 			}
 			long endTime = System.currentTimeMillis();
-			if(logMINOR) Logger.minor(this, "Finished FailureTable cleanup took "+(endTime-startTime)+"ms");
+			if(logMINOR) Logger.minor(this, "Finished FailureTable cleanup took " + (endTime - startTime) + "ms");
 		}
 	}
 

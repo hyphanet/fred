@@ -107,7 +107,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			try {
 				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 			} catch (IOException e) {
-				Logger.error(this, "Unable to process old blob: "+e, e);
+				Logger.error(this, "Unable to process old blob: " + e, e);
 				return;
 			}
 			if(oldBlob.renameTo(temp)) {
@@ -117,11 +117,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					manager.uom.processMainJarBlob(temp, null, currentVersion, uri);
 				} catch (Throwable t) {
 					// Don't disrupt startup.
-					Logger.error(this, "Unable to process old blob, caught "+t, t);
+					Logger.error(this, "Unable to process old blob, caught " + t, t);
 				}
 				temp.delete();
 			} else {
-				Logger.error(this, "Unable to rename old blob file "+oldBlob+" to "+temp+" so can't process it.");
+				Logger.error(this, "Unable to rename old blob file " + oldBlob + " to " + temp + " so can't process it.");
 			}
 		}
 
@@ -145,7 +145,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+jarName() + " update edition "+l+": version too new (min "+minDeployVersion+" max "+maxDeployVersion+")");
+				System.err.println("Ignoring " + jarName() + " update edition " + l + ": version too new (min " + minDeployVersion + " max " + maxDeployVersion + ")");
 				found = maxDeployVersion;
 			}
 			
@@ -167,7 +167,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		}, SECONDS.toMillis(60)); // leave some time in case we get later editions
 		// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 		if(found <= currentVersion) {
-			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
+			System.err.println("Cancelling fetch for " + found + ": not newer than current version " + currentVersion);
 			return;
 		}
 		onStartFetching();
@@ -221,7 +221,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 						this, null, new BinaryBlobWriter(new FileBucket(tempBlobFile, false, false, false, false, false)), null);
 					toStart = cg;
 				} else {
-					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
+					System.err.println("Already fetching " + jarName() + " fetch for " + fetchingVersion + " want " + availableVersion);
 				}
 				isFetching = true;
 			} catch(Exception e) {
@@ -330,9 +330,9 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(name.equals("META-INF/MANIFEST.MF")) {
 						if(logMINOR) Logger.minor(this, "Found manifest");
 						long size = ze.getSize();
-						if(logMINOR) Logger.minor(this, "Manifest size: "+size);
+						if(logMINOR) Logger.minor(this, "Manifest size: " + size);
 						if(size > MAX_MANIFEST_SIZE) {
-							Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+							Logger.error(this, "Manifest is too big: " + size + " bytes, limit is " + MAX_MANIFEST_SIZE);
 							break;
 						}
 						byte[] buf = new byte[(int) size];
@@ -355,7 +355,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		} catch (IOException e) {
 			Logger.error(this, "IOException trying to read manifest on update");
 		} catch (Throwable t) {
-			Logger.error(this, "Failed to parse update manifest: "+t, t);
+			Logger.error(this, "Failed to parse update manifest: " + t, t);
 		} finally {
 			Closer.close(is);
 		}
@@ -386,9 +386,9 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				if(name.equals(filename)) {
 					if(logMINOR) Logger.minor(NodeUpdater.class, "Found manifest");
 					long size = ze.getSize();
-					if(logMINOR) Logger.minor(NodeUpdater.class, "Manifest size: "+size);
+					if(logMINOR) Logger.minor(NodeUpdater.class, "Manifest size: " + size);
 					if(size > MAX_MANIFEST_SIZE) {
-						Logger.error(NodeUpdater.class, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+						Logger.error(NodeUpdater.class, "Manifest is too big: " + size + " bytes, limit is " + MAX_MANIFEST_SIZE);
 						break;
 					}
 					byte[] buf = new byte[(int) size];
@@ -419,7 +419,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		} catch (IOException e) {
 			Logger.error(this, "IOException trying to read manifest on update");
 		} catch (Throwable t) {
-			Logger.error(this, "Failed to parse update manifest: "+t, t);
+			Logger.error(this, "Failed to parse update manifest: " + t, t);
 		} finally {
 			Closer.close(is);
 		}
@@ -434,7 +434,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		// Do nothing by default, only some NodeUpdater's will use this, those that don't won't call parseManifest().
 	}
 	
-	private static final int MAX_MANIFEST_SIZE = 1024*1024;
+	private static final int MAX_MANIFEST_SIZE = 1024 * 1024;
 
 	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
@@ -573,13 +573,13 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				if(realAvailableVersion != availableVersion && availableVersion < requiredExt && realAvailableVersion >= requiredExt) {
 					// We found a revision but didn't fetch it because it wasn't within the range for the old jar.
 					// The new one requires it, however.
-					System.err.println("Previously out-of-range edition "+realAvailableVersion+" is now needed by the new jar; scheduling fetch.");
+					System.err.println("Previously out-of-range edition " + realAvailableVersion + " is now needed by the new jar; scheduling fetch.");
 					callFinishedFound = availableVersion = realAvailableVersion;
 				} else if(availableVersion < requiredExt) {
 					// Including if it hasn't been found at all
 					// Just try it ...
 					callFinishedFound = availableVersion = requiredExt;
-					System.err.println("Need minimum edition "+requiredExt+" for new jar, found "+availableVersion+"; scheduling fetch.");
+					System.err.println("Need minimum edition " + requiredExt + " for new jar, found " + availableVersion + "; scheduling fetch.");
 				}
 			}
 		}

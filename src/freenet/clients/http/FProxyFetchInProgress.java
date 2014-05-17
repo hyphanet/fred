@@ -182,7 +182,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			}
 		} catch (DatabaseDisabledException e) {
 			// Impossible
-			Logger.error(this, "Failed to start: "+e);
+			Logger.error(this, "Failed to start: " + e);
 			synchronized(this) {
 				this.failed = new FetchException(FetchException.INTERNAL_ERROR, e);
 				this.finished = true;
@@ -274,7 +274,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				// Let it run normally.
 				return false;
 			} catch (URISyntaxException e) {
-				Logger.error(this, "Impossible: "+e, e);
+				Logger.error(this, "Impossible: " + e, e);
 				return false;
 			} finally {
 				Closer.close(is);
@@ -375,7 +375,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		for(FProxyFetchWaiter w : waiting) {
 			w.wakeUp(finished);
 		}
-		if(finished==true){
+		if(finished == true){
 			for(FProxyFetchListener l:new ArrayList<FProxyFetchListener>(listener)){
 				l.onEvent();
 			}
@@ -441,22 +441,22 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(!results.isEmpty()) return false;
 		if(!listener.isEmpty()) return false;
 		if(lastTouched + LIFETIME >= System.currentTimeMillis() && !requestImmediateCancel) {
-			if(logMINOR) Logger.minor(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
+			if(logMINOR) Logger.minor(this, "Not able to cancel for " + this + " : " + uri + " : " + maxSize);
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Can cancel for "+this+" : "+uri+" : "+maxSize);
+		if(logMINOR) Logger.minor(this, "Can cancel for " + this + " : " + uri + " : " + maxSize);
 		return true;
 	}
 	
 	/** Finish the cancel process, freeing the data if necessary. The fetch
 	 * must have been removed from the tracker already, so it won't be reused. */
 	public void finishCancel() {
-		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
+		if(logMINOR) Logger.minor(this, "Finishing cancel for " + this + " : " + uri + " : " + maxSize);
 		try {
 			getter.cancel(null, tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
-			Logger.error(this, "Failed to cancel: "+t, t);
+			Logger.error(this, "Failed to cancel: " + t, t);
 		}
 		Bucket d;
 		synchronized(this) {
@@ -468,7 +468,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				d.free();
 			} catch (Throwable t) {
 				// Ensure we get to the next bit
-				Logger.error(this, "Failed to free: "+t, t);
+				Logger.error(this, "Failed to free: " + t, t);
 			}
 		}
 	}
@@ -518,7 +518,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * @param listener - The listener to be added*/
 	public synchronized void addListener(FProxyFetchListener listener){
 		if(logMINOR){
-			Logger.minor(this,"Registered listener:"+listener);
+			Logger.minor(this, "Registered listener:" + listener);
 		}
 		this.listener.add(listener);
 	}
@@ -527,11 +527,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * @param listener - The listener to be removed*/
 	public synchronized void removeListener(FProxyFetchListener listener){
 		if(logMINOR){
-			Logger.minor(this,"Removed listener:"+listener);
+			Logger.minor(this, "Removed listener:" + listener);
 		}
 		this.listener.remove(listener);
 		if(logMINOR){
-			Logger.minor(this,"can cancel now?:"+canCancel());
+			Logger.minor(this, "can cancel now?:" + canCancel());
 		}
 	}
 	

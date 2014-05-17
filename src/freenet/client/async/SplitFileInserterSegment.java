@@ -211,7 +211,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// See onEncodedCrossCheckBlock().
 				if(encodedCrossCheckBlocks != crossCheckBlocks)
 					return;
-				if(logMINOR) Logger.minor(this, "Starting segment "+segNo);
+				if(logMINOR) Logger.minor(this, "Starting segment " + segNo);
 			}
 			if(started) return;
 			started = true;
@@ -256,13 +256,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					dataBlocks.length, checkBlocks.length);
 				if (logMINOR)
 					Logger.minor(this, "Encoding segment " + segNo + " of "
-							+ parent + " (" + parent.dataLength + ") persistent="+persistent);
+							+ parent + " (" + parent.dataLength + ") persistent=" + persistent);
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
 						// FIXME necessary??? the queue is persistence aware, won't it activate them...?
 						if(persistent) {
-							for(int i=0;i<dataBlocks.length;i++)
+							for(int i=0;i < dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
 						}
 						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, persistent ? context.persistentBucketFactory : context.tempBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
@@ -341,7 +341,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.deactivate(parent.ctx, 1);
 		}
 		byte cryptoAlgorithm = getCryptoAlgorithm(container);
-		for(int i=0;i<dataBlocks.length;i++) {
+		for(int i=0;i < dataBlocks.length;i++) {
 			if(dataURIs[i] == null && dataBlocks[i] != null) {
 				try {
 					boolean deactivate = false;
@@ -358,11 +358,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				}
 			} else if(dataURIs[i] == null && dataBlocks[i] == null) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block " + i + " cannot be encoded: no data", null), container, context);
 			}
 		}
 		if(encoded) {
-			for(int i=0;i<checkBlocks.length;i++) {
+			for(int i=0;i < checkBlocks.length;i++) {
 				if(checkURIs[i] == null && checkBlocks[i] != null) {
 					try {
 						boolean deactivate = false;
@@ -372,14 +372,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}
 						ClientCHK key = encodeBucket(checkBlocks[i], compressorDescriptor, cryptoAlgorithm, cryptoKey).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
-						onEncode(i+dataBlocks.length, key, container, context);
+						onEncode(i + dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
 						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 					} catch (IOException e) {
 						fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 					}
 				} else if(checkURIs[i] == null && checkBlocks[i] == null) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);
+					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block " + i + " cannot be encoded: no data", null), container, context);
 				}
 			}
 		}
@@ -411,7 +411,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			encodeJob = null;
 		}
 		if(removeOnEncode) {
-			if(logMINOR) Logger.minor(this, "Removing on encode: "+this);
+			if(logMINOR) Logger.minor(this, "Removing on encode: " + this);
 			freeBucketsArray(container, dataBuckets);
 			freeBucketsArray(container, checkBuckets);
 			removeFrom(container, context);
@@ -426,13 +426,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// Start the inserts
 		try {
 			if(logMINOR)
-				Logger.minor(this, "Scheduling "+checkBlocks.length+" check blocks...");
+				Logger.minor(this, "Scheduling " + checkBlocks.length + " check blocks...");
 			for (int i = 0; i < checkBlocks.length; i++) {
 				// See comments on FECCallback: WE MUST COPY THE DATA BACK!!!
 				checkBlocks[i] = checkBuckets[i];
 				if(checkBlocks[i] == null) {
 					if(logMINOR)
-						Logger.minor(this, "Skipping check block "+i+" - is null");
+						Logger.minor(this, "Skipping check block " + i + " - is null");
 					continue;
 				}
 				if(persistent)
@@ -442,7 +442,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				}
 			}
 			synchronized(this) {
-				for(int i=0;i<checkBlocks.length;i++)
+				for(int i=0;i < checkBlocks.length;i++)
 					blocks.add(dataBlocks.length + i);
 			}
 			if(persistent) container.store(blocks);
@@ -513,7 +513,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	 * @param parent
 	 */
 	private void finish(ObjectContainer container, ClientContext context, SplitFileInserter parent) {
-		if(logMINOR) Logger.minor(this, "Finishing "+this);
+		if(logMINOR) Logger.minor(this, "Finishing " + this);
 		if(persistent)
 			container.activate(errors, 5);
 		synchronized (this) {
@@ -522,7 +522,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			finished = true;
 			if(blocksSucceeded < blocksCompleted) {
 				toThrow = InsertException.construct(errors);
-				if(logMINOR) Logger.minor(this, "Blocks succeeded "+blocksSucceeded+" blocks completed "+blocksCompleted+" gives error "+toThrow+" on "+this);
+				if(logMINOR) Logger.minor(this, "Blocks succeeded " + blocksSucceeded + " blocks completed " + blocksCompleted + " gives error " + toThrow + " on " + this);
 			} else if(!hasURIs) {
 				fail(new InsertException(InsertException.INTERNAL_ERROR, "Completed but not encoded?!", null), container, context);
 				return;
@@ -540,7 +540,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, final ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
+		if(logMINOR) Logger.minor(this, "Encoded block " + x + " on " + this);
 		boolean gotAllURIs = false;
 		synchronized (this) {
 			if (finished) {
@@ -564,7 +564,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(persistent)
 				container.store(this);
 			if(logMINOR)
-				Logger.minor(this, "Blocks got URI: "+blocksGotURI+" of "+(dataBlocks.length + checkBlocks.length));
+				Logger.minor(this, "Blocks got URI: " + blocksGotURI + " of " + (dataBlocks.length + checkBlocks.length));
 			gotAllURIs = blocksGotURI == dataBlocks.length + checkBlocks.length;
 			if(gotAllURIs) {
 				// Double check
@@ -667,7 +667,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	private void cancelInner(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Cancelling "+this);
+		if(logMINOR) Logger.minor(this, "Cancelling " + this);
 		super.unregister(container, context, getPriorityClass(container));
 		if(persistent) {
 			container.store(this);
@@ -716,11 +716,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Failing but already finished on "+this, new Exception("error"));
+				Logger.error(this, "Failing but already finished on " + this, new Exception("error"));
 				return;
 			}
 			finished = true;
-			Logger.error(this, "Insert segment failed: "+e+" for "+this, e);
+			Logger.error(this, "Insert segment failed: " + e + " for " + this, e);
 			this.toThrow = e;
 			if(persistent) container.store(this);
 		}
@@ -731,12 +731,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "FEC decode or encode failed but already finished: "+t, t);
+				Logger.error(this, "FEC decode or encode failed but already finished: " + t, t);
 				return;
 			}
 			finished = true;
-			Logger.error(this, "Insert segment failed: "+t+" for "+this, t);
-			this.toThrow = new InsertException(InsertException.INTERNAL_ERROR, "FEC failure: "+t, null);
+			Logger.error(this, "Insert segment failed: " + t + " for " + this, t);
+			this.toThrow = new InsertException(InsertException.INTERNAL_ERROR, "FEC failure: " + t, null);
 		}
 		cancelInner(container, context);
 	}
@@ -751,7 +751,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context, int blockNum, byte cryptoAlgorithm) throws IOException {
 		Bucket sourceData = getBucket(blockNum);
 		if(sourceData == null) {
-			Logger.error(this, "Selected block "+blockNum+" but is null - already finished?? on "+this);
+			Logger.error(this, "Selected block " + blockNum + " but is null - already finished?? on " + this);
 			return null;
 		}
 		boolean deactivateBucket = false;
@@ -765,7 +765,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			data = context.tempBucketFactory.makeBucket(sourceData.size());
 			BucketTools.copy(sourceData, data);
 		}
-		if(logMINOR) Logger.minor(this, "Block "+blockNum+" : bucket "+sourceData+" shadow "+data);
+		if(logMINOR) Logger.minor(this, "Block " + blockNum + " : bucket " + sourceData + " shadow " + data);
 		if(persistent) {
 			if(deactivateBucket)
 				container.deactivate(sourceData, 1);
@@ -856,7 +856,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			fail(new InsertException(InsertException.INTERNAL_ERROR, "Collision on a CHK", null), container, context);
 			return;
 		case LowLevelPutException.INTERNAL_ERROR:
-			Logger.error(this, "Internal error: "+e, e);
+			Logger.error(this, "Internal error: " + e, e);
 			fail(new InsertException(InsertException.INTERNAL_ERROR, e.toString(), null), container, context);
 			return;
 		case LowLevelPutException.REJECTED_OVERLOAD:
@@ -869,7 +869,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
 			break;
 		default:
-			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
+			Logger.error(this, "Unknown LowLevelPutException code: " + e.code);
 			fail(new InsertException(InsertException.INTERNAL_ERROR, e.toString(), null), container, context);
 			return;
 		}
@@ -878,7 +878,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		boolean isRNF = e.code == LowLevelPutException.ROUTE_NOT_FOUND ||
 			e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND;
 		int blockNum = block.blockNum();
-		if(logMINOR) Logger.minor(this, "Block "+blockNum+" failed on "+this+" : "+e);
+		if(logMINOR) Logger.minor(this, "Block " + blockNum + " failed on " + this + " : " + e);
 		boolean treatAsSuccess = false;
 		boolean failedBlock = false;
 		int completed;
@@ -889,15 +889,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				int checkNum = blockNum - dataBlocks.length;
 				if(checkFinished[checkNum]) {
 					if(checkFailed[checkNum])
-						Logger.error(this, "Got onFailure() but block has already failed! Check block "+checkNum+" on "+this);
+						Logger.error(this, "Got onFailure() but block has already failed! Check block " + checkNum + " on " + this);
 					else
-						Logger.error(this, "Got onFailure() but block has already succeeded: Check block "+checkNum+" on "+this);
+						Logger.error(this, "Got onFailure() but block has already succeeded: Check block " + checkNum + " on " + this);
 					return;
 				}
 				if(isRNF) {
 					checkConsecutiveRNFs[checkNum]++;
 					if(persistent) container.activate(blockInsertContext, 1);
-					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+checkConsecutiveRNFs[checkNum]+" / "+blockInsertContext.consecutiveRNFsCountAsSuccess);
+					if(logMINOR) Logger.minor(this, "Consecutive RNFs: " + checkConsecutiveRNFs[checkNum] + " / " + blockInsertContext.consecutiveRNFsCountAsSuccess);
 					if(checkConsecutiveRNFs[checkNum] == blockInsertContext.consecutiveRNFsCountAsSuccess) {
 						// Treat as success
 						treatAsSuccess = true;
@@ -921,9 +921,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							checkBlocks[checkNum].free();
 							if(persistent) checkBlocks[checkNum].removeFrom(container);
 							checkBlocks[checkNum] = null;
-							if(logMINOR) Logger.minor(this, "Failed to insert check block "+checkNum+" on "+this);
+							if(logMINOR) Logger.minor(this, "Failed to insert check block " + checkNum + " on " + this);
 						} else {
-							Logger.error(this, "Check block "+checkNum+" failed on "+this+" but bucket is already nulled out!");
+							Logger.error(this, "Check block " + checkNum + " failed on " + this + " but bucket is already nulled out!");
 						}
 					}
 					// Else we are still registered, but will have to be
@@ -944,24 +944,24 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						checkBlocks[checkNum].free();
 						if(persistent) checkBlocks[checkNum].removeFrom(container);
 						checkBlocks[checkNum] = null;
-						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for check block "+checkNum+" on "+this);
+						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for check block " + checkNum + " on " + this);
 					} else {
-						Logger.error(this, "Check block "+checkNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
+						Logger.error(this, "Check block " + checkNum + " succeeded (sort of) on " + this + " but bucket is already nulled out!");
 					}
 				}
 			} else {
 				// Data block.
 				if(dataFinished[blockNum]) {
 					if(dataFailed[blockNum])
-						Logger.error(this, "Got onFailure() but block has already failed! Data block "+blockNum+" on "+this);
+						Logger.error(this, "Got onFailure() but block has already failed! Data block " + blockNum + " on " + this);
 					else
-						Logger.error(this, "Got onFailure() but block has already succeeded: Data block "+blockNum+" on "+this);
+						Logger.error(this, "Got onFailure() but block has already succeeded: Data block " + blockNum + " on " + this);
 					return;
 				}
 				if(isRNF) {
 					dataConsecutiveRNFs[blockNum]++;
 					if(persistent) container.activate(blockInsertContext, 1);
-					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+dataConsecutiveRNFs[blockNum]+" / "+blockInsertContext.consecutiveRNFsCountAsSuccess);
+					if(logMINOR) Logger.minor(this, "Consecutive RNFs: " + dataConsecutiveRNFs[blockNum] + " / " + blockInsertContext.consecutiveRNFsCountAsSuccess);
 					if(dataConsecutiveRNFs[blockNum] == blockInsertContext.consecutiveRNFsCountAsSuccess) {
 						// Treat as success
 						treatAsSuccess = true;
@@ -985,9 +985,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							dataBlocks[blockNum].free();
 							if(persistent) dataBlocks[blockNum].removeFrom(container);
 							dataBlocks[blockNum] = null;
-							if(logMINOR) Logger.minor(this, "Failed to insert data block "+blockNum+" on "+this);
+							if(logMINOR) Logger.minor(this, "Failed to insert data block " + blockNum + " on " + this);
 						} else if(dataBlocks[blockNum] == null) {
-							Logger.error(this, "Data block "+blockNum+" failed on "+this+" but bucket is already nulled out!");
+							Logger.error(this, "Data block " + blockNum + " failed on " + this + " but bucket is already nulled out!");
 						}
 					}
 					// Else we are still registered, but will have to be
@@ -1008,9 +1008,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						dataBlocks[blockNum].free();
 						if(persistent) dataBlocks[blockNum].removeFrom(container);
 						dataBlocks[blockNum] = null;
-						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for data block "+blockNum+" on "+this);
+						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for data block " + blockNum + " on " + this);
 					} else {
-						Logger.error(this, "Data block "+blockNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
+						Logger.error(this, "Data block " + blockNum + " succeeded (sort of) on " + this + " but bucket is already nulled out!");
 					}
 				}
 			}
@@ -1042,7 +1042,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int blockNum = block.blockNum();
 		int completed;
 		int succeeded;
-		if(logMINOR) Logger.minor(this, "Block "+blockNum+" succeeded on "+this);
+		if(logMINOR) Logger.minor(this, "Block " + blockNum + " succeeded on " + this);
 		synchronized(this) {
 			if(finished) {
 				return;
@@ -1060,9 +1060,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(persistent) container.store(blocks);
 				} else {
 					if(checkFailed[checkNum])
-						Logger.error(this, "Got onSuccess() but block has already failed! Check block "+checkNum+" on "+this);
+						Logger.error(this, "Got onSuccess() but block has already failed! Check block " + checkNum + " on " + this);
 					else
-						Logger.error(this, "Got onSuccess() but block has already succeeded: Check block "+checkNum+" on "+this);
+						Logger.error(this, "Got onSuccess() but block has already succeeded: Check block " + checkNum + " on " + this);
 					return;
 				}
 				if(checkBlocks[checkNum] != null) {
@@ -1071,7 +1071,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(persistent) checkBlocks[checkNum].removeFrom(container);
 					checkBlocks[checkNum] = null;
 				} else {
-					Logger.error(this, "Check block "+checkNum+" succeeded on "+this+" but bucket is already nulled out!");
+					Logger.error(this, "Check block " + checkNum + " succeeded on " + this + " but bucket is already nulled out!");
 				}
 			} else {
 				// Data block
@@ -1085,9 +1085,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(persistent) container.store(blocks);
 				} else {
 					if(dataFailed[blockNum])
-						Logger.error(this, "Got onSuccess() but block has already failed! Data block "+blockNum+" on "+this);
+						Logger.error(this, "Got onSuccess() but block has already failed! Data block " + blockNum + " on " + this);
 					else
-						Logger.error(this, "Got onSuccess() but block has already succeeded: Data block "+blockNum+" on "+this);
+						Logger.error(this, "Got onSuccess() but block has already succeeded: Data block " + blockNum + " on " + this);
 					return;
 				}
 				// Data blocks may not be freed until after we have encoded the check blocks.
@@ -1097,8 +1097,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(persistent) dataBlocks[blockNum].removeFrom(container);
 					dataBlocks[blockNum] = null;
 				} else if(dataBlocks[blockNum] == null) {
-					Logger.error(this, "Data block "+blockNum+" succeeded on "+this+" but bucket is already nulled out!");
-					if(persistent) Logger.minor(this, "Activation state: "+container.ext().isActive(this));
+					Logger.error(this, "Data block " + blockNum + " succeeded on " + this + " but bucket is already nulled out!");
+					if(persistent) Logger.minor(this, "Activation state: " + container.ext().isActive(this));
 				}
 			}
 			if(persistent)
@@ -1163,7 +1163,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					Logger.minor(this, "No blocks to remove");
 				return null;
 			}
-			for(int i=0;i<10;i++) {
+			for(int i=0;i < 10;i++) {
 				Integer ret;
 				int x;
 				if(blocks.size() == 0) return null;
@@ -1220,22 +1220,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			final ClientCHK key;
 			BlockItem block = (BlockItem) req.token;
 				try {
-					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum());
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number " + block.blockNum());
 					ClientCHKBlock encodedBlock;
 					CHKBlock b;
 					try {
 						encodedBlock = encodeBucket(block.copyBucket, compressorDescriptor, block.cryptoAlgorithm, block.cryptoKey);
 						b = encodedBlock.getBlock();
 					} catch (CHKEncodeException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage() + " for " + block.copyBucket, e);
 					} catch (MalformedURLException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage() + " for " + block.copyBucket, e);
 					} catch (IOException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage() + " for " + block.copyBucket, e);
 					} finally {
 						block.copyBucket.free();
 					}
-					if (b==null) {
+					if (b == null) {
 						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
@@ -1256,7 +1256,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
-					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for " + e);
 					return true;
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
@@ -1327,7 +1327,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		byte cryptoAlgorithm = getCryptoAlgorithm(container);
 		for(int blockNumber: blockNumbers) {
 			if(blockNumber == prevBlockNumber) {
-				Logger.error(this, "Duplicate block number in makeBlocks() in "+this+": two copies of "+blockNumber);
+				Logger.error(this, "Duplicate block number in makeBlocks() in " + this + ": two copies of " + blockNumber);
 				continue;
 			}
 			prevBlockNumber = blockNumber;
@@ -1340,13 +1340,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				return null;
 			}
 			PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
-			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
+			if(logMINOR) Logger.minor(this, "Created block " + block + " for block number " + blockNumber + " on " + this);
 			ret.add(block);
 		}
 		if(persistent) {
 			container.deactivate(blocks, 1);
 		}
-		if(logMINOR) Logger.minor(this, "Returning "+ret.size()+" blocks");
+		if(logMINOR) Logger.minor(this, "Returning " + ret.size() + " blocks");
 		return ret;
 	}
 
@@ -1379,7 +1379,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(!encodeJob.cancel(container, context)) {
 				synchronized(this) {
 					removeOnEncode = true;
-					if(logMINOR) Logger.minor(this, "Will remove after encode finished: "+this);
+					if(logMINOR) Logger.minor(this, "Will remove after encode finished: " + this);
 					container.store(this);
 					return;
 				}
@@ -1389,22 +1389,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// parent, putter can deal with themselves
 		freeBucketsArray(container, dataBlocks);
 		freeBucketsArray(container, checkBlocks);
-		for(int i=0;i<dataURIs.length;i++) {
+		for(int i=0;i < dataURIs.length;i++) {
 			ClientCHK chk = dataURIs[i];
 			if(chk != null) {
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			} else {
-				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
+				if(logMINOR) Logger.minor(this, "dataURI " + i + " is null on " + this);
 			}
 		}
-		for(int i=0;i<checkURIs.length;i++) {
+		for(int i=0;i < checkURIs.length;i++) {
 			ClientCHK chk = checkURIs[i];
 			if(chk != null) {
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			} else {
-				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
+				if(logMINOR) Logger.minor(this, "checkURI " + i + " is null on " + this);
 			}
 		}
 		container.activate(blocks, 5);
@@ -1468,15 +1468,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
-			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
+			Logger.error(this, "Storing " + this + " when already finished!", new Exception("error"));
 			return false;
 		}
-		if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Storing " + this + " activated=" + container.ext().isActive(this) + " stored=" + container.ext().isStored(this), new Exception("debug"));
 		return true;
 	}
 
 	private void freeBucketsArray(ObjectContainer container, Bucket[] buckets) {
-		for(int i=0;i<buckets.length;i++) {
+		for(int i=0;i < buckets.length;i++) {
 			if(buckets[i] == null) continue;
 			if(persistent)
 				container.activate(buckets[i], 1);
@@ -1494,9 +1494,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	 * @param container
 	 */
 	private void freeFinishedDataBlocks(ObjectContainer container) {
-		for(int i=0;i<dataBlocks.length;i++) {
+		for(int i=0;i < dataBlocks.length;i++) {
 			if(dataFinished[i] && dataBlocks[i] != null) {
-				if(logMINOR) Logger.minor(this, "Freeing data block "+i+" delayed for encode");
+				if(logMINOR) Logger.minor(this, "Freeing data block " + i + " delayed for encode");
 				if(persistent) container.activate(dataBlocks[i], 1);
 				dataBlocks[i].free();
 				if(persistent)
@@ -1519,19 +1519,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int dataCount = 0;
 		int dataKeys = 0;
 		int dataDone = 0;
-		for(int i=0;i<dataBlocks.length;i++) {
+		for(int i=0;i < dataBlocks.length;i++) {
 			Bucket data = dataBlocks[i];
 			if(data == null) {
 				if(log)
-					System.err.println("Data block "+i+" is null!");
+					System.err.println("Data block " + i + " is null!");
 			} else {
 				container.activate(data, 5);
 				if(data.size() != CHKBlock.DATA_LENGTH) {
-					System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					System.err.println("Size of data block " + i + " is " + data.size() + " should be " + CHKBlock.DATA_LENGTH);
 				} else {
 					dataCount++;
 				}
-				if(log) System.err.println(data.toString()+" : "+data.size());
+				if(log) System.err.println(data.toString() + " : " + data.size());
 				container.deactivate(data, 5);
 			}
 			if(dataURIs[i] != null)
@@ -1542,18 +1542,18 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(dataCount == dataBlocks.length)
 			System.out.println("Has all data blocks");
 		else
-			System.out.println("Does not have all data blocks: "+dataCount+" of "+dataBlocks.length);
-		System.out.println("Data blocks have URIs: "+dataKeys+" finished: "+dataDone);
+			System.out.println("Does not have all data blocks: " + dataCount + " of " + dataBlocks.length);
+		System.out.println("Data blocks have URIs: " + dataKeys + " finished: " + dataDone);
 		int checkCount = 0;
 		int checkKeys = 0;
 		int checkDone = 0;
-		for(int i=0;i<checkBlocks.length;i++) {
+		for(int i=0;i < checkBlocks.length;i++) {
 			Bucket data = checkBlocks[i];
 			if(data == null) {
 				// Not here
 			} else {
 				if(data.size() != CHKBlock.DATA_LENGTH) {
-					System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					System.err.println("Size of check block " + i + " is " + data.size() + " should be " + CHKBlock.DATA_LENGTH);
 				} else {
 					checkCount++;
 				}
@@ -1563,18 +1563,18 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(checkFinished[i])
 				checkDone++;
 		}
-		System.out.println("Check count: "+checkCount+" keys: "+checkKeys+" done: "+checkDone);
+		System.out.println("Check count: " + checkCount + " keys: " + checkKeys + " done: " + checkDone);
 		if(encodeJob == null) {
 			System.err.println("NO QUEUED FEC JOB!");
 			container.activate(parent, 1);
-			System.err.println("Parent: "+parent);
+			System.err.println("Parent: " + parent);
 			if(parent != null) {
 				parent.dump(container);
 			}
 			container.deactivate(parent, 1);
 		} else {
 			container.activate(encodeJob, 1);
-			System.err.println("Queued FEC job: "+encodeJob);
+			System.err.println("Queued FEC job: " + encodeJob);
 			encodeJob.dump(container);
 			container.deactivate(encodeJob, 1);
 		}
@@ -1593,7 +1593,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int size = realDataBlocks();
 		if(crossDataBlocksAllocated == size) return -1;
 		int x = 0;
-		for(int i=0;i<10;i++) {
+		for(int i=0;i < 10;i++) {
 			x = random.nextInt(size);
 			if(crossSegmentsByBlock[x] == null) {
 				crossSegmentsByBlock[x] = seg;
@@ -1601,7 +1601,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				return x;
 			}
 		}
-		for(int i=0;i<size;i++) {
+		for(int i=0;i < size;i++) {
 			x++;
 			if(x == size) x = 0;
 			if(crossSegmentsByBlock[x] == null) {
@@ -1616,7 +1616,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public int allocateCrossCheckBlock(SplitFileInserterCrossSegment seg, Random random) {
 		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
 		int x = dataBlocks.length - (1 + random.nextInt(crossCheckBlocks));
-		for(int i=0;i<crossCheckBlocks;i++) {
+		for(int i=0;i < crossCheckBlocks;i++) {
 			x++;
 			if(x == dataBlocks.length) x = dataBlocks.length - crossCheckBlocks;
 			if(crossSegmentsByBlock[x] == null) {
@@ -1635,14 +1635,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void onEncodedCrossCheckBlock(int blockNum, Bucket data, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(dataBlocks[blockNum] != null) {
-				Logger.error(this, "Cross-check block already encoded??? "+blockNum+" on "+this);
+				Logger.error(this, "Cross-check block already encoded??? " + blockNum + " on " + this);
 				data.free();
 				return;
 			}
 			dataBlocks[blockNum] = data;
 			++encodedCrossCheckBlocks;
 			if(logMINOR && encodedCrossCheckBlocks != crossCheckBlocks)
-				Logger.minor(this, "Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
+				Logger.minor(this, "Segment " + segNo + " has " + encodedCrossCheckBlocks + " encoded of " + crossCheckBlocks + ", still waiting...");
 		}
 		if(persistent) {
 			data.storeTo(container);

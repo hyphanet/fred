@@ -10,7 +10,7 @@ public class CannotCreateFromFieldSetException extends Exception {
 	}
 
 	public CannotCreateFromFieldSetException(String msg, Exception e) {
-		super(msg+" : "+e, e);
+		super(msg + " : " + e, e);
 	}
 
 }

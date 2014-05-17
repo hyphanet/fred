@@ -126,19 +126,19 @@ public class HourlyStatsRecord {
 	public synchronized String toString() {
 		StringBuilder s = new StringBuilder();
 		s.append("HourlyStats: Report for hour beginning with UTC ");
-		s.append(utcDateTime.format(beginTime, new StringBuffer(), new FieldPosition(0))).append("\n");
-		s.append("HourlyStats: Node uptime (ms):\t").append(node.getUptime()).append("\n");
-		s.append("HourlyStats: build:\t").append(Version.buildNumber()).append("\n");
+		s.append(utcDateTime.format(beginTime, new StringBuffer(), new FieldPosition(0))).append('\n');
+		s.append("HourlyStats: Node uptime (ms):\t").append(node.getUptime()).append('\n');
+		s.append("HourlyStats: build:\t").append(Version.buildNumber()).append('\n');
 		s.append("HourlyStats: CompleteHour: ").append(completeHour);
-		s.append("\tFinished: ").append(finishedReporting).append("\n");
+		s.append("\tFinished: ").append(finishedReporting).append('\n');
 
 		for (int i = byHTL.length - 1; i >= 0; i--) {
-			s.append("HourlyStats: HTL\t").append(i).append("\t");
-			s.append(byHTL[i].toString()).append("\n");
+			s.append("HourlyStats: HTL\t").append(i).append('\t');
+			s.append(byHTL[i].toString()).append('\n');
 		}
 		for (int i = 0; i < byDist.length; i++) {
-			s.append("HourlyStats: logDist\t").append(i).append("\t");
-			s.append(byDist[i].toString()).append("\n");
+			s.append("HourlyStats: logDist\t").append(i).append('\t');
+			s.append(byDist[i].toString()).append('\n');
 		}
 		return s.toString();
 	}
@@ -181,8 +181,8 @@ public class HourlyStatsRecord {
 				if (chkT > 0) chkRate = ((double)(chkLS + chkRS)) / (chkT);
 				if (sskT > 0) sskRate = ((double)(sskLS + sskRS)) / (sskT);
 
-				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")"+nbsp+"("+fix4p.format(locdiffCHK)+")");
-				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")"+nbsp+"("+fix4p.format(locdiffSSK)+")");
+				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")" + nbsp + "(" + fix4p.format(locdiffCHK) + ")");
+				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")" + nbsp + "(" + fix4p.format(locdiffSSK) + ")");
 
 				totalCHKLS += chkLS;
 				totalCHKRS+= chkRS;
@@ -198,8 +198,8 @@ public class HourlyStatsRecord {
 
 			row = table.addChild("tr");
 			row.addChild("td", "Total");
-			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "("+ totalCHKLS + "," + totalCHKRS + "," + totalCHKT + ")");
-			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "("+ totalSSKLS + "," + totalSSKRS + "," + totalSSKT + ")");
+			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "(" + totalCHKLS + "," + totalCHKRS + "," + totalCHKT + ")");
+			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "(" + totalSSKLS + "," + totalSSKRS + "," + totalSSKT + ")");
 		}
 	}
 
@@ -228,19 +228,19 @@ public class HourlyStatsRecord {
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 
-			sb.append(chkLocalSuccess.countReports()).append("\t");
-			sb.append(chkRemoteSuccess.countReports()).append("\t");
-			sb.append(chkFailure.countReports()).append("\t");
-			sb.append(sskLocalSuccess.countReports()).append("\t");
-			sb.append(sskRemoteSuccess.countReports()).append("\t");
-			sb.append(sskFailure.countReports()).append("\t");
+			sb.append(chkLocalSuccess.countReports()).append('\t');
+			sb.append(chkRemoteSuccess.countReports()).append('\t');
+			sb.append(chkFailure.countReports()).append('\t');
+			sb.append(sskLocalSuccess.countReports()).append('\t');
+			sb.append(sskRemoteSuccess.countReports()).append('\t');
+			sb.append(sskFailure.countReports()).append('\t');
 
-			sb.append(fix4p.format(fixNaN(chkLocalSuccess.currentValue()))).append("\t");
-			sb.append(fix4p.format(fixNaN(chkRemoteSuccess.currentValue()))).append("\t");
-			sb.append(fix4p.format(fixNaN(chkFailure.currentValue()))).append("\t");
-			sb.append(fix4p.format(fixNaN(sskLocalSuccess.currentValue()))).append("\t");
-			sb.append(fix4p.format(fixNaN(sskRemoteSuccess.currentValue()))).append("\t");
-			sb.append(fix4p.format(fixNaN(sskFailure.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(chkLocalSuccess.currentValue()))).append('\t');
+			sb.append(fix4p.format(fixNaN(chkRemoteSuccess.currentValue()))).append('\t');
+			sb.append(fix4p.format(fixNaN(chkFailure.currentValue()))).append('\t');
+			sb.append(fix4p.format(fixNaN(sskLocalSuccess.currentValue()))).append('\t');
+			sb.append(fix4p.format(fixNaN(sskRemoteSuccess.currentValue()))).append('\t');
+			sb.append(fix4p.format(fixNaN(sskFailure.currentValue()))).append('\t');
 			return sb.toString();
 		}
 	}

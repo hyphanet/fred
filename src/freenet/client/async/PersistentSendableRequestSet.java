@@ -46,12 +46,12 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 	}
 
 	private synchronized int find(SendableRequest req, ObjectContainer container) {
-		for(int i=0;i<list.size();i++) {
+		for(int i=0;i < list.size();i++) {
 			if(list.get(i) == req) return i;
 		}
 		if(container.ext().isStored(req)) {
 			long id = container.ext().getID(req);
-			for(int i=0;i<list.size();i++) {
+			for(int i=0;i < list.size();i++) {
 				if(container.ext().getID(list.get(i)) == id) {
 					Logger.warning(this, "db4o being wierd: found on second round");
 					return i;
@@ -69,16 +69,16 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 
 	@Override
 	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Removing "+req+" from "+this);
+		if(logMINOR) Logger.minor(this, "Removing " + req + " from " + this);
 		container.activate(list, 1);
 		boolean success = false;
 		while(true) {
 			int idx = find(req, container);
 			if(idx == -1) break;
 			if(success)
-				Logger.error(this, "Request is in "+this+" twice or more : "+req);
+				Logger.error(this, "Request is in " + this + " twice or more : " + req);
 			success = true;
-			ListUtils.removeBySwapLast(list,idx);
+			ListUtils.removeBySwapLast(list, idx);
 		}
 		if(!success) return false;
 		container.ext().store(list, 1);

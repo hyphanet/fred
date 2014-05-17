@@ -110,7 +110,7 @@ public abstract class BloomFilter {
 	// Wierd impl's should override
 	public void unsetAll() {
 		int x = filter.limit();
-		for(int i=0;i<x;i++)
+		for(int i=0;i < x;i++)
 			filter.put(i, (byte)0);
 	}
 
@@ -232,7 +232,7 @@ public abstract class BloomFilter {
 	
 	public int getFilledCount() {
 		int x = 0;
-		for(int i=0;i<length;i++)
+		for(int i=0;i < length;i++)
 			if(getBit(i)) x++;
 		return x;
 	}

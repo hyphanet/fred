@@ -216,7 +216,7 @@ public final class ISO639_3 {
 						LanguageCode.Scope.fromTabFile(tokens[4]),
 						LanguageCode.Type.fromTabFile(tokens[5]),
 						tokens[6],
-						tokens.length==8 ? tokens[7] : null
+						tokens.length == 8 ? tokens[7] : null
 						);
 				
 				if(codes.put(newCode.id, newCode) != null)

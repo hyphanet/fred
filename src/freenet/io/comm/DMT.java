@@ -637,7 +637,7 @@ public class DMT {
 			return "SSK error";
 		else if(reason == DATA_INSERT_REJECTED_TIMEOUT_WAITING_FOR_ACCEPTED)
 			return "Timeout waiting for Accepted (moved on)";
-		return "Unknown reason code: "+reason;
+		return "Unknown reason code: " + reason;
 	}
 
 	// FIXME consider using this again now we have new packet format which can handle big messages on any connection.
@@ -943,7 +943,7 @@ public class DMT {
 		case NODEREF_REJECTED_INVALID:
 			return "Invalid noderef";
 		default:
-			return "Unknown rejection code "+x;
+			return "Unknown rejection code " + x;
 		}
 	}
 	
@@ -1251,7 +1251,7 @@ public class DMT {
 	}
 	
 	/** Divide output bandwidth limit by this to get bandwidth class. */
-	static final int CAPACITY_USAGE_MULTIPLIER = 10*1024;
+	static final int CAPACITY_USAGE_MULTIPLIER = 10 * 1024;
 	/** Maximum value of bandwidth class */
 	static final byte CAPACITY_USAGE_MAX = 10;
 	/** Minimum value of bandwidth class */
@@ -1700,7 +1700,7 @@ public class DMT {
 	
 	public static Message createFNPBestRoutesNotTaken(Double[] doubles) {
 		double[] locs = new double[doubles.length];
-		for(int i=0;i<locs.length;i++) locs[i] = doubles[i].doubleValue();
+		for(int i=0;i < locs.length;i++) locs[i] = doubles[i].doubleValue();
 		return createFNPBestRoutesNotTaken(locs);
 	}
 	

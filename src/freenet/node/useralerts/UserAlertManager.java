@@ -192,7 +192,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				try {
 					alertsNode.addChild(renderAlert(alert));
 				} catch (Throwable t) {
-					Logger.error(this, "FAILED TO RENDER ALERT: "+alert+" : "+t, t);
+					Logger.error(this, "FAILED TO RENDER ALERT: " + alert + " : " + t, t);
 				}
 			} else {
 				// Alerts toadlet itself can error, that's OK.
@@ -215,7 +215,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	public HTMLNode renderAlert(UserAlert userAlert) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
-		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));
+		userAlertNode = new HTMLNode("div", "class", "infobox infobox-" + getAlertLevelName(level));
 
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
@@ -239,7 +239,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		else if (level <= UserAlert.MINOR)
 			return "minor";
 		else {
-			Logger.error(this, "Unknown alert level: "+level, new Exception("debug"));
+			Logger.error(this, "Unknown alert level: " + level, new Exception("debug"));
 			return "error";
 		}
 	}
@@ -354,7 +354,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("UserAlertManager."+key);
+		return NodeL10n.getBase().getString("UserAlertManager." + key);
 	}
 
 	public void dumpEvents(HashSet<String> toDump) {
@@ -401,7 +401,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 		sb.append("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
-		sb.append("\n");
+		sb.append('\n');
 		sb.append("  <title>").append(l10n("feedTitle")).append("</title>\n");
 		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
 		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
@@ -412,10 +412,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		for(int i = alerts.length - 1; i >= 0; i--) {
 			UserAlert alert = alerts[i];
 			if (alert.isValid()) {
-				sb.append("\n");
+				sb.append('\n');
 				sb.append("  <entry>\n");
 				sb.append("    <title>").append(alert.getTitle()).append("</title>\n");
-				sb.append("    <link href=\"").append(messagesURI).append("#").append(alert.anchor()).append("\"/>\n");
+				sb.append("    <link href=\"").append(messagesURI).append('#').append(alert.anchor()).append("\"/>\n");
 				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
 				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
 				sb.append("    <id>urn:feed:").append(alert.anchor()).append("</id>\n");

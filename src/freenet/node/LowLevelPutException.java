@@ -37,7 +37,7 @@ public class LowLevelPutException extends Exception {
 		case COLLISION:
 			return "The insert collided with different data of the same key already on the network";
 		default:
-			return "Unknown error code: "+reason;
+			return "Unknown error code: " + reason;
 		}
 		
 	}

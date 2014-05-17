@@ -190,8 +190,8 @@ public class OpennetManager {
 			successCount.put(c, 0L);
 		}
 
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-" + crypto.portNumber);
+		File backupNodeFile = node.nodeDir().file("opennet-" + crypto.portNumber + ".bak");
 
 		// Keep opennet crypto details in a separate file
 		try {
@@ -209,8 +209,8 @@ public class OpennetManager {
 	}
 
 	public void writeFile() {
-		File nodeFile = node.nodeDir().file("opennet-"+crypto.portNumber);
-		File backupNodeFile = node.nodeDir().file("opennet-"+crypto.portNumber+".bak");
+		File nodeFile = node.nodeDir().file("opennet-" + crypto.portNumber);
+		File backupNodeFile = node.nodeDir().file("opennet-" + crypto.portNumber + ".bak");
 		writeFile(nodeFile, backupNodeFile);
 	}
 
@@ -253,8 +253,8 @@ public class OpennetManager {
 				try {
 					p = new Peer(u, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
-					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: "+u);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while loading opennet peer node reference: " + u);
+					System.err.println("Invalid hostname or IP Address syntax error while loading opennet peer node reference: " + u);
 					continue;
 				} catch (PeerParseException e) {
 					throw (IOException)new IOException().initCause(e);
@@ -275,7 +275,7 @@ public class OpennetManager {
 			stopping = false;
 		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-" + crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			@Override
@@ -296,23 +296,23 @@ public class OpennetManager {
 				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
 				if(pn1.hashCode > pn2.hashCode) return 1;
 				else if(pn1.hashCode < pn2.hashCode) return -1;
-				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: " + pn1 + " vs " + pn2);
 				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
 		for(OpennetPeerNode opn: nodes)
 			peersLRU.push(opn);
 		if(logMINOR) {
-			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
-			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
-			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
+			Logger.minor(this, "My full compressed ref: " + crypto.myCompressedFullRef().length);
+			Logger.minor(this, "My full setup ref: " + crypto.myCompressedSetupRef().length);
+			Logger.minor(this, "My heavy setup ref: " + crypto.myCompressedHeavySetupRef().length);
 		}
 		dropExcessPeers();
 		writeFile();
 		// Read old peers
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-" + crypto.portNumber).toString(), crypto, this, true, true);
 		crypto.start();
-		if(announcer!= null)
+		if(announcer != null)
 			announcer.start();
 	}
 
@@ -341,14 +341,14 @@ public class OpennetManager {
 			// Maybe just parse the pubkey, and then compare it with the existing peers?
 			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 			if(peersLRU.contains(pn)) {
-				if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
+				if(logMINOR) Logger.minor(this, "Not adding " + pn.userToString() + " to opennet list as already there");
 				return true;
 			}
 			// Don't check for self. That should be passed through too.
 			return false;
 		} catch (Throwable t) {
 			// Don't break the code flow in the caller which is normally a request.
-			Logger.error(this, "Caught "+t+" parsing opennet node from fieldset", t);
+			Logger.error(this, "Caught " + t + " parsing opennet node from fieldset", t);
 			return false;
 		}
 	}
@@ -361,7 +361,7 @@ public class OpennetManager {
 			return null; // Equal to myself
 		}
 		if(peersLRU.contains(pn)) {
-			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
+			if(logMINOR) Logger.minor(this, "Not adding " + pn.userToString() + " to opennet list as already there");
 			if(allowExisting) {
 				// However, we can reconnect.
 				return (OpennetPeerNode) peersLRU.get(pn);
@@ -379,7 +379,7 @@ public class OpennetManager {
 		// Start at bottom. Node must prove itself.
 		} catch (Throwable t) {
 			// Don't break the code flow in the caller which is normally a request.
-			Logger.error(this, "Caught "+t+" adding opennet node from fieldset", t);
+			Logger.error(this, "Caught " + t + " adding opennet node from fieldset", t);
 			return null;
 		}
 
@@ -423,12 +423,12 @@ public class OpennetManager {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
+		if(logMINOR) Logger.minor(this, "wantPeer(" + addAtLRU + "," + justChecking + "," + oldOpennetPeer + "," + connectionType + ")");
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
-		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: "+nodeToAddNow.getVersionNumber()+" for "+connectionType);
+		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: " + nodeToAddNow.getVersionNumber() + " for " + connectionType);
 		if(outdated) {
 			if(tooManyOutdatedPeers()) {
-				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from " + connectionType + " (too many already): " + nodeToAddNow);
 				return false;
 			}
 		}
@@ -466,20 +466,20 @@ public class OpennetManager {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
 				if(logMINOR)
-					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
+					Logger.minor(this, "Opennet peer already present in LRU: " + nodeToAddNow);
 				return true;
 			}
 			if(nodeToAddNow != null)
-				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
+				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType) + 1);
 			if(getSize() < maxPeers || outdated) {
 				if(nodeToAddNow != null) {
-					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
+					if(logMINOR) Logger.minor(this, "Added opennet peer " + nodeToAddNow + " as opennet peers list not full");
 					if(addAtLRU)
 						peersLRU.pushLeast(nodeToAddNow);
 					else
 						peersLRU.push(nodeToAddNow);
 					oldPeers.remove(nodeToAddNow);
-					connectionAttemptsAddedPlentySpace.put(connectionType, connectionAttemptsAddedPlentySpace.get(connectionType)+1);
+					connectionAttemptsAddedPlentySpace.put(connectionType, connectionAttemptsAddedPlentySpace.get(connectionType) + 1);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
@@ -513,16 +513,16 @@ public class OpennetManager {
 				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
 				if(toDrop == null) {
 					if(logMINOR)
-						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
+						Logger.minor(this, "No more peers to drop (in first bit), still " + peersLRU.size() + " peers, cannot accept peer" + (nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
 					if(nodeToAddNow != null)
-						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType)+1);
+						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType) + 1);
 				} else {
 					// Only check per-type limits if we are throwing out connected peers.
 					// This is important for bootstrapping, given the low announcement limit.
 					if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) {
 						if(nodeToAddNow != null)
-							connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType)+1);
+							connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType) + 1);
 						return false;
 					}
 				}
@@ -532,22 +532,22 @@ public class OpennetManager {
 				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
 				if(toDrop == null) {
 					if(logMINOR)
-						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
+						Logger.minor(this, "No more peers to drop, still " + peersLRU.size() + " peers, cannot accept peer" + (nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
 					if(nodeToAddNow != null)
-						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType)+1);
+						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType) + 1);
 					break;
 				}
 				// Only check per-type limits if we are throwing out connected peers.
 				// This is important for bootstrapping, given the low announcement limit.
 				if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) {
 					if(nodeToAddNow != null)
-						connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType)+1);
+						connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType) + 1);
 					return false;
 				}
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
-						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
+						Logger.minor(this, "Drop opennet peer: " + toDrop + " (connected=" + toDrop.isConnected() + ") of " + peersLRU.size() + ":" + getSize());
 					peersLRU.remove(toDrop);
 					dropList.add(toDrop);
 				}
@@ -559,13 +559,13 @@ public class OpennetManager {
 						peersLRU.pushLeast(nodeToAddNow);
 					else
 						peersLRU.push(nodeToAddNow);
-					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items - now have "+peersLRU.size()+" opennet peers");
+					if(logMINOR) Logger.minor(this, "Added opennet peer " + nodeToAddNow + " after clearing " + dropList.size() + " items - now have " + peersLRU.size() + " opennet peers");
 					oldPeers.remove(nodeToAddNow);
 					if(!dropList.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Dropped opennet peer: "+dropList.get(0));
+						if(logMINOR) Logger.minor(this, "Dropped opennet peer: " + dropList.get(0));
 						timeLastDropped.put(connectionType, now);
 					}
-					connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType)+1);
+					connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType) + 1);
 				} else {
 					// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
 					if(!justChecking) {
@@ -578,12 +578,12 @@ public class OpennetManager {
 		}
 		if(nodeToAddNow != null && canAdd && !node.peers.addPeer(nodeToAddNow, true, true)) {
 			if(logMINOR)
-				Logger.minor(this, "Already in global peers list: "+nodeToAddNow+" when adding opennet node");
+				Logger.minor(this, "Already in global peers list: " + nodeToAddNow + " when adding opennet node");
 			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
 			// In which case we add it to the global peers list *before* adding it here.
 		}
 		for(OpennetPeerNode pn : dropList) {
-			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
+			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: " + pn);
 			pn.setAddedReason(null);
 			node.peers.disconnectAndRemove(pn, true, true, true);
 		}
@@ -628,7 +628,7 @@ public class OpennetManager {
 		announceMax = reconnectMax = (maxGracePeriodPeers / 5) + 1;
 		pathFoldingMax = maxGracePeriodPeers - announceMax - reconnectMax;
 		if(pathFoldingMax < 2) return false;
-		if(logMINOR) Logger.minor(this, "Per type grace period limits: total peers: "+maxPeers+" announce "+announceMax+" reconnect "+reconnectMax+" path folding "+pathFoldingMax);
+		if(logMINOR) Logger.minor(this, "Per type grace period limits: total peers: " + maxPeers + " announce " + announceMax + " reconnect " + reconnectMax + " path folding " + pathFoldingMax);
 		int myLimit;
 		if(type == ConnectionType.PATH_FOLDING)
 			myLimit = pathFoldingMax;
@@ -643,11 +643,11 @@ public class OpennetManager {
 			if(!pn.isConnected()) continue;
 			if(pn.isDroppable(false)) continue;
 			if(++count >= myLimit) {
-				if(logMINOR) Logger.minor(this, "Per type grace period limit rejected peer of type "+type+" count is "+count+" limit is "+myLimit);
+				if(logMINOR) Logger.minor(this, "Per type grace period limit rejected peer of type " + type + " count is " + count + " limit is " + myLimit);
 				return true;
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit+" addingPeer="+addingPeer);
+		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type " + type + " count is " + count + " limit is " + myLimit + " addingPeer=" + addingPeer);
 		return false;
 	}
 
@@ -655,7 +655,7 @@ public class OpennetManager {
 		int maxPeers = getNumberOfConnectedPeersToAim();
 		while(getSize() > maxPeers) {
 			if(logMINOR)
-				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
+				Logger.minor(this, "Dropping opennet peers: currently " + peersLRU.size());
 			PeerNode toDrop;
 			toDrop = peerToDrop(false, false, false, null, maxPeers);
 			if(toDrop == null) toDrop = peerToDrop(false, true, false, null, maxPeers);
@@ -664,7 +664,7 @@ public class OpennetManager {
 				peersLRU.remove(toDrop);
 			}
 			if(logMINOR)
-				Logger.minor(this, "Dropping "+toDrop);
+				Logger.minor(this, "Dropping " + toDrop);
 			node.peers.disconnectAndRemove(toDrop, true, true, true);
 		}
 	}
@@ -691,7 +691,7 @@ public class OpennetManager {
 	private OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode, ConnectionType connectionType, int maxPeers) {
 		if(getSize() < maxPeers) {
 			// Don't drop any peers
-			if(logMINOR) Logger.minor(this, "peerToDrop(): Not dropping any peer (force="+force+" addingNode="+addingNode+") because don't need to");
+			if(logMINOR) Logger.minor(this, "peerToDrop(): Not dropping any peer (force=" + force + " addingNode=" + addingNode + ") because don't need to");
 			return null;
 		}
 		synchronized(this) {
@@ -712,7 +712,7 @@ public class OpennetManager {
 					if(x == null)
 						map.put(reason, 1);
 					else
-						map.put(reason, x+1);
+						map.put(reason, x + 1);
 				}
 				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
 				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
@@ -721,7 +721,7 @@ public class OpennetManager {
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(logMINOR)
-						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected (reason="+reason+" force="+force+" tooOld="+tooOld);
+						Logger.minor(this, "Possibly dropping opennet peer " + pn + " as is disconnected (reason=" + reason + " force=" + force + " tooOld=" + tooOld);
 					pn.setWasDropped();
 					return pn;
 				}
@@ -731,7 +731,7 @@ public class OpennetManager {
 					Logger.minor(this, "Not disconnecting");
 					if(map != null)
 						for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
-							Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
+							Logger.minor(this, "" + entry.getKey() + " : " + entry.getValue());
 						}
 				}
 				return null;
@@ -750,15 +750,15 @@ public class OpennetManager {
 					if(x == null)
 						map.put(reason, 1);
 					else
-						map.put(reason, x+1);
+						map.put(reason, x + 1);
 				}
 				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
 				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
-							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
+					Logger.minor(this, "Possibly dropping opennet peer " + pn + " " +
+							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType)) + " ms since last dropped peer of type " + connectionType)));
 				pn.setWasDropped();
 				return pn;
 			}
@@ -766,7 +766,7 @@ public class OpennetManager {
 				Logger.minor(this, "Nothing to drop");
 				if(map != null)
 					for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
-						Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
+						Logger.minor(this, "" + entry.getKey() + " : " + entry.getValue());
 					}
 			}
 		}
@@ -776,13 +776,13 @@ public class OpennetManager {
 	public void onSuccess(OpennetPeerNode pn) {
 		synchronized(this) {
 			for(ConnectionType type : ConnectionType.values())
-				successCount.put(type, successCount.get(type)+1);
+				successCount.put(type, successCount.get(type) + 1);
 			if(peersLRU.contains(pn)) {
 				peersLRU.push(pn);
-				if(logMINOR) Logger.minor(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
+				if(logMINOR) Logger.minor(this, "Opennet peer " + pn + " promoted to top of LRU because of successful request");
 				return;
 			} else {
-				if(logMINOR) Logger.minor(this, "Success on opennet peer which isn't in the LRU!: "+pn, new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Success on opennet peer which isn't in the LRU!: " + pn, new Exception("debug"));
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
@@ -795,7 +795,7 @@ public class OpennetManager {
 		synchronized (this) {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
-				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
+				if(logMINOR) Logger.minor(this, "onRemove() for " + pn);
 				if(pn.timeLastConnected(now) > 0) {
 					// Don't even add it if it never connected.
 					oldPeers.push(pn);
@@ -824,7 +824,7 @@ public class OpennetManager {
 	}
 
 	final String getOldPeersFilename() {
-		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
+		return node.nodeDir().file("openpeers-old-" + crypto.portNumber).toString();
 	}
 
 	synchronized int countOldOpennetPeers() {
@@ -874,11 +874,11 @@ public class OpennetManager {
 	public boolean sendOpennetRef(boolean isReply, long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, AllSentCallback cb) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		if(noderef.length > padded.length) {
-			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
+			Logger.error(this, "Noderef too big: " + noderef.length + " bytes");
 			return false;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length - noderef.length);
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
@@ -922,15 +922,15 @@ public class OpennetManager {
 			long xferUID) throws NotConnectedException {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length-noderef.length);
+		Util.randomBytes(node.fastWeakRandom, padded, noderef.length, padded.length - noderef.length);
 		innerSendOpennetRef(xferUID, padded, peer, ctr, null);
 	}
 
 	private int paddedSize(int length) {
 		if(length < PADDED_NODEREF_SIZE) return PADDED_NODEREF_SIZE;
-		Logger.normal(this, "Large noderef: "+length);
+		Logger.normal(this, "Large noderef: " + length);
 		if(length > MAX_OPENNET_NODEREF_LENGTH)
-			throw new IllegalArgumentException("Too big noderef: "+length+" limit is "+MAX_OPENNET_NODEREF_LENGTH);
+			throw new IllegalArgumentException("Too big noderef: " + length + " limit is " + MAX_OPENNET_NODEREF_LENGTH);
 		return ((length >>> 10) + ((length & 1023) == 0 ? 0 : 1)) << 10;
 	}
 
@@ -938,7 +938,7 @@ public class OpennetManager {
 	throws NotConnectedException {
 		byte[] padded = new byte[PADDED_NODEREF_SIZE];
 		if(noderef.length > padded.length) {
-			Logger.error(this, "Noderef too big: "+noderef.length+" bytes");
+			Logger.error(this, "Noderef too big: " + noderef.length + " bytes");
 			return;
 		}
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
@@ -1010,7 +1010,7 @@ public class OpennetManager {
 	 */
 	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) throws WaitedTooLongForOpennetNoderefException {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
-		if(logMINOR) Logger.minor(OpennetManager.class, "Waiting for opennet noderef on "+uid+" from "+source+" reply="+isReply);
+		if(logMINOR) Logger.minor(OpennetManager.class, "Waiting for opennet noderef on " + uid + " from " + source + " reply=" + isReply);
 		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
 	}
@@ -1103,13 +1103,13 @@ public class OpennetManager {
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {
-			Logger.minor(OpennetManager.class, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
+			Logger.minor(OpennetManager.class, "Receiving noderef (reply=" + isReply + ") as bulk transfer for request uid " + uid + " with transfer " + xferUID + " from " + source);
 		}
 		if (!br.receive()) {
 			if (source.isConnected()) {
 				String msg = "Failed to receive noderef bulk transfer : "
-					+RetrievalException.getErrString(prb.getAbortReason())+" : "
-					+prb.getAbortDescription()+" from "+source;
+					+ RetrievalException.getErrString(prb.getAbortReason()) + " : "
+					+ prb.getAbortDescription() + " from " + source;
 				if (prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED) {
 					Logger.warning(OpennetManager.class, msg);
 				} else {
@@ -1137,14 +1137,14 @@ public class OpennetManager {
 		try {
 			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
 		} catch (FSParseException e) {
-			Logger.error(OpennetManager.class, "Invalid noderef: "+e, e);
+			Logger.error(OpennetManager.class, "Invalid noderef: " + e, e);
 			return null;
 		}
 		if(forceOpennetEnabled)
 			ref.put("opennet", true);
 
 		if(!OpennetPeerNode.validateRef(ref)) {
-			Logger.error(OpennetManager.class, "Could not parse opennet noderef from "+from);
+			Logger.error(OpennetManager.class, "Could not parse opennet noderef from " + from);
 			return null;
 		}
 
@@ -1162,7 +1162,7 @@ public class OpennetManager {
 	 * and we can do a much more effective announcement this way. */
 	public void announce(double target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
-		node.executor.execute(sender, "Announcement to "+target);
+		node.executor.execute(sender, "Announcement to " + target);
 	}
 
 	public long getCreationTime() {

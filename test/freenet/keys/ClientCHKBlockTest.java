@@ -22,7 +22,7 @@ public class ClientCHKBlockTest extends TestCase {
 	public void testEncodeDecodeFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {
 		byte[] fullBlock = new byte[CHKBlock.DATA_LENGTH];
 		MersenneTwister random = new MersenneTwister(42);
-		for(int i=0;i<10;i++) {
+		for(int i=0;i < 10;i++) {
 			random.nextBytes(fullBlock);
 			checkBlock(fullBlock, false);
 			checkBlock(fullBlock, true);
@@ -30,7 +30,7 @@ public class ClientCHKBlockTest extends TestCase {
 	}
 	
 	public void testEncodeDecodeShortInteger() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
-		for(int i=0;i<100;i++) {
+		for(int i=0;i < 100;i++) {
 			String s = Integer.toString(i);
 			checkBlock(s.getBytes("UTF-8"), false);
 			checkBlock(s.getBytes("UTF-8"), true);
@@ -39,8 +39,8 @@ public class ClientCHKBlockTest extends TestCase {
 	
 	public void testEncodeDecodeRandomLength() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
 		MersenneTwister random = new MersenneTwister(42);
-		for(int i=0;i<10;i++) {
-			byte[] buf = new byte[random.nextInt(CHKBlock.DATA_LENGTH+1)];
+		for(int i=0;i < 10;i++) {
+			byte[] buf = new byte[random.nextInt(CHKBlock.DATA_LENGTH + 1)];
 			random.nextBytes(buf);
 			checkBlock(buf, false);
 			checkBlock(buf, true);
@@ -49,14 +49,14 @@ public class ClientCHKBlockTest extends TestCase {
 	
 	public void testEncodeDecodeNearlyFullBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, UnsupportedEncodingException, InvalidCompressionCodecException, IOException {	
 		MersenneTwister random = new MersenneTwister(68);
-		for(int i=0;i<10;i++) {
+		for(int i=0;i < 10;i++) {
 			byte[] buf = new byte[CHKBlock.DATA_LENGTH - i];
 			random.nextBytes(buf);
 			checkBlock(buf, false);
 			checkBlock(buf, true);
 		}
-		for(int i=0;i<10;i++) {
-			byte[] buf = new byte[CHKBlock.DATA_LENGTH - (1<<i)];
+		for(int i=0;i < 10;i++) {
+			byte[] buf = new byte[CHKBlock.DATA_LENGTH - (1 << i)];
 			random.nextBytes(buf);
 			checkBlock(buf, false);
 			checkBlock(buf, true);

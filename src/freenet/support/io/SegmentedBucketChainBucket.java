@@ -117,7 +117,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(segment != null) {
 					container.activate(segment, 1);
 					if(logMINOR)
-						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
+						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment " + segment);
 					segment.activateBuckets(container);
 					segment.free();
 					segment.removeFrom(container);
@@ -158,7 +158,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			dbJobRunner.runBlocking(freeJob, NativeThread.HIGH_PRIORITY);
 		} catch (DatabaseDisabledException e) {
 			// Impossible
-			Logger.error(this, "Unable to free "+this+" because database is disabled!");
+			Logger.error(this, "Unable to free " + this + " because database is disabled!");
 		}
 	}
 
@@ -382,7 +382,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			public void close() throws IOException {
 				if(closed) return;
 				if(logMINOR)
-					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
+					Logger.minor(this, "Closing " + this + " for " + SegmentedBucketChainBucket.this);
 				if(baos != null && baos.size() > 0) {
 					if(bucketNo == segmentSize) {
 						bucketNo = 0;
@@ -411,7 +411,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(container.ext().isStored(oldSeg)) {
 								if(!container.ext().isActive(oldSeg)) {
-									Logger.error(this, "OLD SEGMENT STORED BUT NOT ACTIVE: "+oldSeg, new Exception("error"));
+									Logger.error(this, "OLD SEGMENT STORED BUT NOT ACTIVE: " + oldSeg, new Exception("error"));
 									container.activate(oldSeg, 1);
 								}
 							}
@@ -447,11 +447,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
 		if(logMINOR)
-			Logger.minor(this, "Make a segment for "+this+" index "+index+ "old "+oldSeg);
+			Logger.minor(this, "Make a segment for " + this + " index " + index + "old " + oldSeg);
 		if(oldSeg != null) {
 			synchronized(this) {
 				while(runningSegStore) {
-					Logger.normal(this, "Waiting for last segment-store job to finish on "+this);
+					Logger.normal(this, "Waiting for last segment-store job to finish on " + this);
 					try {
 						wait();
 					} catch (InterruptedException e) {
@@ -486,15 +486,15 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					return true;
 				}
 				
-			}, NativeThread.HIGH_PRIORITY-1);
+			}, NativeThread.HIGH_PRIORITY - 1);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught throwable: "+t, t);
+				Logger.error(this, "Caught throwable: " + t, t);
 				runningSegStore = false;
 			}
 		}
 		synchronized(this) {
 			SegmentedChainBucketSegment seg = new SegmentedChainBucketSegment(this);
-			if(segments.size() != index) throw new IllegalArgumentException("Asked to add segment "+index+" but segments length is "+segments.size());
+			if(segments.size() != index) throw new IllegalArgumentException("Asked to add segment " + index + " but segments length is " + segments.size());
 			segments.add(seg);
 			return seg;
 		}
@@ -556,15 +556,15 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	protected synchronized Bucket[] getBuckets(ObjectContainer container) {
 		int segs = segments.size();
 		if(segs == 0) return new Bucket[0];
-		SegmentedChainBucketSegment seg = segments.get(segs-1);
+		SegmentedChainBucketSegment seg = segments.get(segs - 1);
 		container.activate(seg, 1);
 		seg.activateBuckets(container);
 		int size = (segs - 1) * segmentSize + seg.size();
 		Bucket[] buckets = new Bucket[size];
-		seg.shallowCopyBuckets(buckets, (segs-1)*segmentSize);
+		seg.shallowCopyBuckets(buckets, (segs - 1) * segmentSize);
 		container.deactivate(seg, 1);
 		int pos = 0;
-		for(int i=0;i<(segs-1);i++) {
+		for(int i=0;i < (segs - 1);i++) {
 			seg = segments.get(i);
 			container.activate(seg, 1);
 			seg.activateBuckets(container);
@@ -600,13 +600,13 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(segment != null) {
 					container.activate(segment, 1);
 					if(logMINOR)
-						Logger.minor(SegmentedBucketChainBucket.this, "Clearing segment "+segment);
+						Logger.minor(SegmentedBucketChainBucket.this, "Clearing segment " + segment);
 					segment.clear(container);
 					synchronized(this) {
 						if(!segments.isEmpty()) {
 							try {
-								dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, true);
-								dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY-1, container, false);
+								dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY - 1, true);
+								dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY - 1, container, false);
 							} catch (DatabaseDisabledException e) {
 								// Impossible.
 							}
@@ -637,9 +637,9 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		// added before committing. If we are not on the database thread, it doesn't
 		// matter.
 		try {
-			dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY-1);
+			dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY - 1);
 		} catch (DatabaseDisabledException e) {
-			Logger.error(this, "Unable to clear() on "+this+" because database is disabled");
+			Logger.error(this, "Unable to clear() on " + this + " because database is disabled");
 		}
 	}
 
@@ -650,7 +650,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	 */
 	synchronized boolean removeContents(ObjectContainer container) {
 		while(segments.size() > 0) {
-			Logger.normal(this, "Freeing unfinished unstored bucket "+this+" segments left "+segments.size());
+			Logger.normal(this, "Freeing unfinished unstored bucket " + this + " segments left " + segments.size());
 			// Remove the first so the space is reused at the beginning not at the end.
 			// Removing from the end results in not shrinking.
 			SegmentedChainBucketSegment seg = segments.remove(0);
@@ -659,7 +659,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				continue;
 			}
 			container.activate(seg, 1);
-			if(logMINOR) Logger.minor(this, "Removing segment "+seg+" size "+seg.size());
+			if(logMINOR) Logger.minor(this, "Removing segment " + seg + " size " + seg.size());
 			if(clearing) {
 				seg.clear(container);
 			} else {
@@ -673,10 +673,10 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				return true; // Do some more in the next transaction
 			} else break;
 		}
-		if(logMINOR) Logger.minor(this, "Removed segments for "+this);
+		if(logMINOR) Logger.minor(this, "Removed segments for " + this);
 		container.delete(segments);
 		container.delete(this);
-		if(logMINOR) Logger.minor(this, "Removed "+this);
+		if(logMINOR) Logger.minor(this, "Removed " + this);
 		freed = true; // Just in case it wasn't already.
 		return false;
 	}

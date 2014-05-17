@@ -396,23 +396,23 @@ public class FieldsTest extends TestCase {
 		assertEquals(1, Fields.getDigits("1.0", 2, true));
 		assertEquals(0, Fields.getDigits("1.0", 2, false));
 		Random r = new Random(88888);
-		for(int i=0;i<1024;i++) {
-			int digits = r.nextInt(20)+1;
-			int nonDigits = r.nextInt(20)+1;
-			int digits2 = r.nextInt(20)+1;
+		for(int i=0;i < 1024;i++) {
+			int digits = r.nextInt(20) + 1;
+			int nonDigits = r.nextInt(20) + 1;
+			int digits2 = r.nextInt(20) + 1;
 			String s = generateDigits(r, digits) + generateNonDigits(r, nonDigits) + generateDigits(r, digits2);
 			assertEquals(0, Fields.getDigits(s, 0, false));
 			assertEquals(digits, Fields.getDigits(s, 0, true));
 			assertEquals(nonDigits, Fields.getDigits(s, digits, false));
 			assertEquals(0, Fields.getDigits(s, digits, true));
-			assertEquals(digits2, Fields.getDigits(s, digits+nonDigits, true));
-			assertEquals(0, Fields.getDigits(s, digits+nonDigits, false));
+			assertEquals(digits2, Fields.getDigits(s, digits + nonDigits, true));
+			assertEquals(0, Fields.getDigits(s, digits + nonDigits, false));
 		}
 	}
 
 	private String generateDigits(Random r, int count) {
 		StringBuffer sb = new StringBuffer(count);
-		for(int i=0;i<count;i++) {
+		for(int i=0;i < count;i++) {
 			char c = '0';
 			c += r.nextInt(10);
 			sb.append(c);
@@ -422,9 +422,9 @@ public class FieldsTest extends TestCase {
 	
 	private String generateNonDigits(Random r, int count) {
 		final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-		final String NONDIGITS = "./\\_=+:"+ALPHABET+ALPHABET.toUpperCase();
+		final String NONDIGITS = "./\\_=+:" + ALPHABET + ALPHABET.toUpperCase();
 		StringBuffer sb = new StringBuffer(count);
-		for(int i=0;i<count;i++)
+		for(int i=0;i < count;i++)
 			sb.append(NONDIGITS.charAt(r.nextInt(NONDIGITS.length())));
 		return sb.toString();
 	}

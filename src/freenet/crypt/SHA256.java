@@ -105,7 +105,7 @@ public class SHA256 {
 			synchronized(digests) {
 				int x = digests.size();
 				if(x == 0) md = null;
-				else md = digests.remove(x-1);
+				else md = digests.remove(x - 1);
 			}
 			if(md == null)
 				md = MessageDigest.getInstance("SHA-256", mdProvider);
@@ -134,7 +134,7 @@ public class SHA256 {
 		synchronized (digests) {
 			int mdPoolSize = digests.size();
 			if (mdPoolSize > MESSAGE_DIGESTS_TO_CACHE || noCache) { // don't cache too many of them
-				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
+				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest (" + mdPoolSize + '>' + MESSAGE_DIGESTS_TO_CACHE + ')');
 				return;
 			}
 			digests.add(md256);

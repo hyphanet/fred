@@ -87,7 +87,7 @@ public class ExternalLinkToadlet extends Toadlet {
 	 * @return String appropriate for a link.
 	 */
 	public static String escape(String uri) {
-		return ExternalLinkToadlet.PATH+"?" + magicHTTPEscapeString + '=' + uri;
+		return ExternalLinkToadlet.PATH + "?" + magicHTTPEscapeString + '=' + uri;
 	}
 
 	private static String l10n(String key, String pattern, String value) {

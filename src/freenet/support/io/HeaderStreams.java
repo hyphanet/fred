@@ -28,26 +28,26 @@ final public class HeaderStreams {
 			private int i = 0;
 
 			@Override public int available() throws IOException {
-				return (hd.length-i) + in.available();
+				return (hd.length - i) + in.available();
 			}
 
 			@Override public int read() throws IOException {
-				return (i < hd.length)? ((int)hd[i++])&0xff: in.read();
+				return (i < hd.length)? ((int)hd[i++]) & 0xff: in.read();
 			}
 
 			@Override public int read(byte[] buf, int off, int len) throws IOException {
 				int prev = i;
-				for (; i<hd.length && len>0; i++, len--, off++) {
+				for (; i < hd.length && len > 0; i++, len--, off++) {
 					buf[off] = hd[i];
 				}
-				return (i-prev) + in.read(buf, off, len);
+				return (i - prev) + in.read(buf, off, len);
 				//System.out.println("" + System.identityHashCode(this) + " || augInput read: " + Arrays.toString(buf) + " off " + off + " len " + len);
 			}
 
 			@Override public long skip(long len) throws IOException {
 				int prev = i;
-				for (; i<hd.length && len>0; i++, len--) { }
-				return (i-prev) + in.skip(len);
+				for (; i < hd.length && len > 0; i++, len--) { }
+				return (i - prev) + in.skip(len);
 			}
 
 			@Override public boolean markSupported() {
@@ -89,7 +89,7 @@ final public class HeaderStreams {
 			}
 
 			@Override public void write(byte[] buf, int off, int len) throws IOException {
-				for (; i<hd.length && len>0; i++, len--, off++) {
+				for (; i < hd.length && len > 0; i++, len--, off++) {
 					if (buf[off] != hd[i]) { throw new IOException("byte " + i + ": expected '" + hd[i] + "'; got '" + buf[off] + "'."); }
 				}
 				out.write(buf, off, len);

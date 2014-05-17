@@ -272,10 +272,10 @@ public class MainJarDependenciesChecker {
 		@Override
 		public void onSuccess() {
 			if(!essential) {
-				System.out.println("Downloaded "+dep.newFilename+" - may be used by next update");
+				System.out.println("Downloaded " + dep.newFilename + " - may be used by next update");
 				return;
 			}
-			System.out.println("Downloaded "+dep.newFilename+" needed for update "+forBuild+"...");
+			System.out.println("Downloaded " + dep.newFilename + " needed for update " + forBuild + "...");
 			boolean toDeploy = false;
 			boolean forCurrentVersion = false;
 			synchronized(MainJarDependenciesChecker.this) {
@@ -294,9 +294,9 @@ public class MainJarDependenciesChecker {
 		@Override
 		public void onFailure(FetchException e) {
 			if(!essential) {
-				Logger.error(this, "Failed to pre-load "+dep.newFilename+" : "+e, e);
+				Logger.error(this, "Failed to pre-load " + dep.newFilename + " : " + e, e);
 			} else {
-				System.err.println("Failed to fetch "+dep.newFilename+" needed for next update ("+e.getShortMessage()+"). Will try again if we find a new freenet.jar.");
+				System.err.println("Failed to fetch " + dep.newFilename + " needed for next update (" + e.getShortMessage() + "). Will try again if we find a new freenet.jar.");
 				synchronized(MainJarDependenciesChecker.this) {
 					downloaders.remove(this);
 					if(forBuild != build) return;
@@ -326,11 +326,11 @@ public class MainJarDependenciesChecker {
 			return innerHandle(props, build);
 		} catch (RuntimeException e) {
 			broken = true;
-			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: "+e, e);
+			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: " + e, e);
 			throw e;
 		} catch (Error e) {
 			broken = true;
-			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: "+e, e);
+			Logger.error(this, "MainJarDependencies parsing update dependencies.properties file broke: " + e, e);
 			throw e;
 		}
 	}
@@ -385,9 +385,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split("\\.")[0];
 			if(!processed.add(baseName)) continue;
-			String s = props.getProperty(baseName+".type");
+			String s = props.getProperty(baseName + ".type");
 			if(s == null) {
-				Logger.error(this, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				Logger.error(this, "dependencies.properties broken? missing type for \"" + baseName + "\"");
 				broken = true;
 				continue;
 			}
@@ -401,40 +401,40 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
 					// We don't understand it, but that's OK as it's optional.
-					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \"" + s + "\" for \"" + baseName + "\"");
 					continue;
 				}
 				// We don't understand it, and it's not optional, so we can't deploy the update.
-				Logger.error(this, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				Logger.error(this, "dependencies.properties broken? unrecognised type for \"" + baseName + "\"");
 				broken = true;
 				continue;
 			}
 			
 			// Check operating system restrictions.
-			s = props.getProperty(baseName+".os");
+			s = props.getProperty(baseName + ".os");
 			if(s != null) {
 				if(!matchesCurrentOS(s)) {
-					Logger.normal(this, "Ignoring "+baseName+" as not relevant to this operating system");
+					Logger.normal(this, "Ignoring " + baseName + " as not relevant to this operating system");
 					continue;
 				}
 			}
             // Check architecture restrictions.
-			s = props.getProperty(baseName+".arch");
+			s = props.getProperty(baseName + ".arch");
 			if(s != null) {
 			    if(!matchesCurrentArch(s)) {
-                    Logger.normal(this, "Ignoring "+baseName+" as not relevant to this architecture");
+                    Logger.normal(this, "Ignoring " + baseName + " as not relevant to this architecture");
                     continue;
 			    }
 			}
 			// Version is used in cleanup().
-			String version = props.getProperty(baseName+".version");
+			String version = props.getProperty(baseName + ".version");
 			if(version == null) {
 				Logger.error(this, "dependencies.properties broken? missing version");
 				broken = true;
 				continue;
 			}
 			File filename = null;
-			s = props.getProperty(baseName+".filename");
+			s = props.getProperty(baseName + ".filename");
 			// FIXME use nodeDir
 			if(s != null) filename = new File(s);
 			if(filename == null) {
@@ -445,15 +445,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(filename.getParentFile() != null)
 			    filename.getParentFile().mkdirs();
 			FreenetURI maxCHK = null;
-			s = props.getProperty(baseName+".key");
+			s = props.getProperty(baseName + ".key");
 			if(s == null) {
-				Logger.error(this, "dependencies.properties broken? missing "+baseName+".key");
+				Logger.error(this, "dependencies.properties broken? missing " + baseName + ".key");
 				// Can't fetch it. :(
 			} else {
 				try {
 					maxCHK = new FreenetURI(s);
 				} catch (MalformedURLException e) {
-					Logger.error(this, "Unable to parse CHK for "+baseName+": \""+s+"\": "+e, e);
+					Logger.error(this, "Unable to parse CHK for " + baseName + ": \"" + s + "\": " + e, e);
 					maxCHK = null;
 				}
 			}
@@ -462,29 +462,29 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			Pattern p = null;
 			if(type == DEPENDENCY_TYPE.CLASSPATH) {
 				// Regex used for matching filenames.
-				String regex = props.getProperty(baseName+".filename-regex");
+				String regex = props.getProperty(baseName + ".filename-regex");
 				if(regex == null && type == DEPENDENCY_TYPE.CLASSPATH) {
 					// Not a critical error. Just means we can't clean it up, and can't identify whether we already have a compatible jar.
-					Logger.error(this, "No "+baseName+".filename-regex in dependencies.properties - we will not be able to clean up old versions of files, and may have to download the latest version unnecessarily");
+					Logger.error(this, "No " + baseName + ".filename-regex in dependencies.properties - we will not be able to clean up old versions of files, and may have to download the latest version unnecessarily");
 					// May be fatal later on depending on what else we have.
 				}
 				try {
 					if(regex != null)
 						p = Pattern.compile(regex);
 				} catch (PatternSyntaxException e) {
-					Logger.error(this, "Bogus Pattern \""+regex+"\" in dependencies.properties");
+					Logger.error(this, "Bogus Pattern \"" + regex + "\" in dependencies.properties");
 					p = null;
 				}
 			}
 			
-			byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
+			byte[] expectedHash = parseExpectedHash(props.getProperty(baseName + ".sha256"), baseName);
 			if(expectedHash == null) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: No hash for "+baseName);
+				System.err.println("Unable to update to build " + build + ": dependencies.properties broken: No hash for " + baseName);
 				broken = true;
 				continue;
 			}
 			
-			s = props.getProperty(baseName+".size");
+			s = props.getProperty(baseName + ".size");
 			long size = -1;
 			if(s != null) {
 				try {
@@ -494,7 +494,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			if(size < 0) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				System.err.println("Unable to update to build " + build + ": dependencies.properties broken: Broken length for " + baseName + " : \"" + s + "\"");
 				broken = true;
 				continue;
 			}
@@ -503,7 +503,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			File currentFile = null;
 
 			if(type == DEPENDENCY_TYPE.CLASSPATH || type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE) {
-				s = props.getProperty(baseName+".order");
+				s = props.getProperty(baseName + ".order");
 				if(s != null) {
 					try {
 						// Order is an optional field.
@@ -511,7 +511,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						// But if it's present it must be correct!
 						order = Integer.parseInt(s);
 					} catch (NumberFormatException e) {
-						System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+						System.err.println("Unable to update to build " + build + ": dependencies.properties broken: Broken order for " + baseName + " : \"" + s + "\"");
 						broken = true;
 						continue;
 					}
@@ -522,24 +522,24 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			
             // Executable?
             boolean executable = false;
-            s = props.getProperty(baseName+".executable");
+            s = props.getProperty(baseName + ".executable");
             if(s != null) {
                 executable = Boolean.parseBoolean(s);
             }
 			
 			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
 			    if(filename.canRead() && filename.length() > 0) {
-			        System.out.println("Assuming non-updated dependency file is current: "+filename);
+			        System.out.println("Assuming non-updated dependency file is current: " + filename);
 			        dependencies.add(new Dependency(currentFile, filename, p, order));
 			        continue;
 			    } else {
-			        System.out.println("Non-updated dependency is empty?: "+filename+" - will try to fetch it");
+			        System.out.println("Non-updated dependency is empty?: " + filename + " - will try to fetch it");
 			        filename.delete();
 			    }
 			}
 			if(validFile(filename, expectedHash, size, executable)) {
 				// Nothing to do. Yay!
-				System.out.println("Found file required by the new Freenet version: "+filename);
+				System.out.println("Found file required by the new Freenet version: " + filename);
 				// Use it.
 				if(type == DEPENDENCY_TYPE.CLASSPATH)
 					dependencies.add(new Dependency(currentFile, filename, p, order));
@@ -547,7 +547,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			// Check the version currently in use.
 			if(currentFile != null && validFile(currentFile, expectedHash, size, executable)) {
-				System.out.println("Existing version of "+currentFile+" is OK for update.");
+				System.out.println("Existing version of " + currentFile + " is OK for update.");
 				// Use it.
 				if(type == DEPENDENCY_TYPE.CLASSPATH)
 					dependencies.add(new Dependency(currentFile, currentFile, p, order));
@@ -561,12 +561,12 @@ outer:	for(String propName : props.stringPropertyNames()) {
 							fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, true, executable);
 						} catch (FetchException fe) {
 							broken = true;
-							Logger.error(this, "Failed to start fetch: "+fe, fe);
-							System.err.println("Failed to start fetch of essential component for next release: "+fe);
+							Logger.error(this, "Failed to start fetch: " + fe, fe);
+							System.err.println("Failed to start fetch of essential component for next release: " + fe);
 						}
 					} else {
 						// Critical error.
-						System.err.println("Unable to fetch "+baseName+" because no URI and no regex to match old versions.");
+						System.err.println("Unable to fetch " + baseName + " because no URI and no regex to match old versions.");
 						broken = true;
 						continue;
 					} 
@@ -577,14 +577,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					if(!p.matcher(name.toLowerCase()).matches()) continue;
 					if(validFile(f, expectedHash, size, executable)) {
 						// Use it.
-						System.out.println("Found "+name+" - meets requirement for "+baseName+" for next update.");
+						System.out.println("Found " + name + " - meets requirement for " + baseName + " for next update.");
 						dependencies.add(new Dependency(currentFile, f, p, order));
 						continue outer;
 					}
 				}
 			}
 			if(maxCHK == null) {
-				System.err.println("Cannot fetch "+baseName+" for update because no CHK and no old file");
+				System.err.println("Cannot fetch " + baseName + " for update because no CHK and no old file");
 				broken = true;
 				continue;
 			}
@@ -593,8 +593,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				fetchDependency(maxCHK, new Dependency(currentFile, filename, p, order), expectedHash, size, type != DEPENDENCY_TYPE.OPTIONAL_PRELOAD, executable);
 			} catch (FetchException e) {
 				broken = true;
-				Logger.error(this, "Failed to start fetch: "+e, e);
-				System.err.println("Failed to start fetch of essential component for next release: "+e);
+				Logger.error(this, "Failed to start fetch: " + e, e);
+				System.err.println("Failed to start fetch of essential component for next release: " + e);
 			}
 		}
 		if(ready())
@@ -670,16 +670,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			
 		});
 		for(File f : toDelete) {
-			System.out.println("Deleting old temp file \""+f+"\"");
+			System.out.println("Deleting old temp file \"" + f + "\"");
 			f.delete();
 		}
 		for(String propName : props.stringPropertyNames()) {
 			if(!propName.contains(".")) continue;
 			String baseName = propName.split("\\.")[0];
 			if(!processed.add(baseName)) continue;
-			String s = props.getProperty(baseName+".type");
+			String s = props.getProperty(baseName + ".type");
 			if(s == null) {
-				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \"" + baseName + "\"");
 				continue;
 			}
 			final DEPENDENCY_TYPE type;
@@ -687,36 +687,36 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				type = DEPENDENCY_TYPE.valueOf(s);
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
-					if(logMINOR) Logger.minor(MainJarDependencies.class, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					if(logMINOR) Logger.minor(MainJarDependencies.class, "Ignoring non-essential dependency type \"" + s + "\" for \"" + baseName + "\"");
 					continue;
 				}
-				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \"" + baseName + "\"");
 				continue;
 			}
 			
 	         // Check operating system restrictions.
-            s = props.getProperty(baseName+".os");
+            s = props.getProperty(baseName + ".os");
             if(s != null) {
                 if(!matchesCurrentOS(s)) {
-                    Logger.normal(MainJarDependenciesChecker.class, "Ignoring "+baseName+" as not relevant to this operating system");
+                    Logger.normal(MainJarDependenciesChecker.class, "Ignoring " + baseName + " as not relevant to this operating system");
                     continue;
                 }
             }
             // Check architecture restrictions.
-            s = props.getProperty(baseName+".arch");
+            s = props.getProperty(baseName + ".arch");
             if(s != null) {
                 if(!matchesCurrentArch(s)) {
-                    Logger.normal(this, "Ignoring "+baseName+" as not relevant to this architecture");
+                    Logger.normal(this, "Ignoring " + baseName + " as not relevant to this architecture");
                     continue;
                 }
             }
 
             // For wrapper updates.
             // 3.2 tolerates "java" being a script, 3.5 does not, so we must not upgrade in this case.
-            String mustBeOnPathNotAScript = props.getProperty(baseName+".mustBeOnPathNotAScript");
+            String mustBeOnPathNotAScript = props.getProperty(baseName + ".mustBeOnPathNotAScript");
             if(mustBeOnPathNotAScript != null && !isOnPathNotAScript(mustBeOnPathNotAScript)) {
-                Logger.normal(this, "Ignoring "+baseName+" because needs \""+mustBeOnPathNotAScript+"\" on the path and not a script");
-                System.out.println( "Ignoring "+baseName+" because needs \""+mustBeOnPathNotAScript+"\" on the path and not a script"); // FIXME remove when tested
+                Logger.normal(this, "Ignoring " + baseName + " because needs \"" + mustBeOnPathNotAScript + "\" on the path and not a script");
+                System.out.println( "Ignoring " + baseName + " because needs \"" + mustBeOnPathNotAScript + "\" on the path and not a script"); // FIXME remove when tested
                 continue;
             }
             
@@ -726,13 +726,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
             }
 			
 			// Version is useful for checking for obsolete versions of files.
-			String version = props.getProperty(baseName+".version");
+			String version = props.getProperty(baseName + ".version");
 			if(version == null) {
 				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing version");
 				return false;
 			}
 			File filename = null;
-			s = props.getProperty(baseName+".filename");
+			s = props.getProperty(baseName + ".filename");
 			// FIXME use nodeDir
 			if(s != null) filename = new File(s);
 			if(filename == null) {
@@ -741,41 +741,41 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			}
 			
 			final FreenetURI key;
-			s = props.getProperty(baseName+".key");
+			s = props.getProperty(baseName + ".key");
 			if(s == null) {
-				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+baseName+".key");
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing " + baseName + ".key");
 				return false;
 			}
 			try {
 				key = new FreenetURI(s);
 			} catch (MalformedURLException e) {
-				Logger.error(MainJarDependencies.class, "Unable to parse CHK for "+baseName+": \""+s+"\": "+e, e);
+				Logger.error(MainJarDependencies.class, "Unable to parse CHK for " + baseName + ": \"" + s + "\": " + e, e);
 				return false;
 			}
 			
 			Pattern p = null;
 			// Regex used for matching filenames.
 			if(type == DEPENDENCY_TYPE.CLASSPATH) {
-				String regex = props.getProperty(baseName+".filename-regex");
+				String regex = props.getProperty(baseName + ".filename-regex");
 				if(regex == null) {
-					Logger.error(MainJarDependencies.class, "No "+baseName+".filename-regex in dependencies.properties");
+					Logger.error(MainJarDependencies.class, "No " + baseName + ".filename-regex in dependencies.properties");
 					return false;
 				}
 				try {
 					p = Pattern.compile(regex);
 				} catch (PatternSyntaxException e) {
-					Logger.error(MainJarDependencies.class, "Bogus Pattern \""+regex+"\" in dependencies.properties");
+					Logger.error(MainJarDependencies.class, "Bogus Pattern \"" + regex + "\" in dependencies.properties");
 					return false;
 				}
 			}
 			
-			final byte[] expectedHash = parseExpectedHash(props.getProperty(baseName+".sha256"), baseName);
+			final byte[] expectedHash = parseExpectedHash(props.getProperty(baseName + ".sha256"), baseName);
 			if(expectedHash == null) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: No hash for "+baseName);
+				System.err.println("Unable to update to build " + build + ": dependencies.properties broken: No hash for " + baseName);
 				return false;
 			}
 			
-			s = props.getProperty(baseName+".size");
+			s = props.getProperty(baseName + ".size");
 			long size = -1;
 			if(s != null) {
 				try {
@@ -785,11 +785,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			if(size < 0) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				System.err.println("Unable to update to build " + build + ": dependencies.properties broken: Broken length for " + baseName + " : \"" + s + "\"");
 				return false;
 			}
 			
-			s = props.getProperty(baseName+".order");
+			s = props.getProperty(baseName + ".order");
 			if(s != null) {
 				try {
 					// Order is an optional field.
@@ -797,7 +797,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					// But if it's present it must be correct!
 					Integer.parseInt(s);
 				} catch (NumberFormatException e) {
-					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+					System.err.println("Unable to update to build " + build + ": dependencies.properties broken: Broken order for " + baseName + " : \"" + s + "\"");
 					continue;
 				}
 			}
@@ -808,10 +808,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			
 			if(type == DEPENDENCY_TYPE.OPTIONAL_CLASSPATH_NO_UPDATE && filename.exists()) {
 			    if(filename.canRead() && filename.length() > 0) {
-			        Logger.normal(MainJarDependenciesChecker.class, "Assuming non-updated dependency file is current: "+filename);
+			        Logger.normal(MainJarDependenciesChecker.class, "Assuming non-updated dependency file is current: " + filename);
 			        continue;
 			    } else {
-			        System.out.println("Non-updated dependency is empty?: "+filename+" - will try to fetch it");
+			        System.out.println("Non-updated dependency is empty?: " + filename + " - will try to fetch it");
 			        filename.delete();
 			    }
 			}
@@ -825,7 +825,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			
             // Executable?
             boolean executable = false;
-            s = props.getProperty(baseName+".executable");
+            s = props.getProperty(baseName + ".executable");
             if(s != null) {
                 executable = Boolean.parseBoolean(s);
             }
@@ -838,36 +838,36 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			        validFile(currentFile, expectedHash, size, executable)) {
 			    // File is OK.
 			    if(!type.optional) {
-			        System.out.println("Will serve "+currentFile+" for UOM");
+			        System.out.println("Will serve " + currentFile + " for UOM");
 			        deployer.addDependency(expectedHash, currentFile);
 			    }
 			} else if(currentFile != null && !type.optional) {
 			    // Will be dealt with during update. For now ignore it. Not safe to preload it, since it's on the classpath, whether it exists or not.
-			    System.out.println("Component "+baseName+" is using a non-standard file, we cannot serve the file "+filename+" via UOM to other nodes. Hence they may not be able to download the update from us.");
+			    System.out.println("Component " + baseName + " is using a non-standard file, we cannot serve the file " + filename + " via UOM to other nodes. Hence they may not be able to download the update from us.");
 			} else {
 			    // Optional update, or not present in spite of being required.
 				final File file = filename;
 				try {
-					System.out.println("Preloading "+filename+(type.optional ? "" : " for the next update..."));
+					System.out.println("Preloading " + filename + (type.optional ? "" : " for the next update..."));
 					deployer.fetch(key, filename, size, expectedHash, new JarFetcherCallback() {
 
 						@Override
 						public void onSuccess() {
-							System.out.println("Preloaded "+file+" which will be needed when we upgrade.");
+							System.out.println("Preloaded " + file + " which will be needed when we upgrade.");
 							if(!type.optional) {
-							    System.out.println("Will serve "+file+" for UOM");
+							    System.out.println("Will serve " + file + " for UOM");
 							    deployer.addDependency(expectedHash, file);
 							}
 						}
 
 						@Override
 						public void onFailure(FetchException e) {
-							Logger.error(this, "Failed to preload "+file+" from "+key+" : "+e, e);
+							Logger.error(this, "Failed to preload " + file + " from " + key + " : " + e, e);
 						}
 						
 					}, type.optional ? 0 : build, false, executable);
 				} catch (FetchException e) {
-					Logger.error(MainJarDependencies.class, "Failed to preload "+file+" from "+key+" : "+e, e);
+					Logger.error(MainJarDependencies.class, "Failed to preload " + file + " from " + key + " : " + e, e);
 				}
 			}
 			
@@ -887,12 +887,12 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				String fileVersion = getDependencyVersion(f);
 				if(fileVersion == null) {
 					f.delete();
-					System.out.println("Deleting old dependency file (no version): "+f);
+					System.out.println("Deleting old dependency file (no version): " + f);
 					continue;
 				}
 				if(Fields.compareVersion(fileVersion, version) <= 0) {
 					f.delete();
-					System.out.println("Deleting old dependency file (outdated): "+f);
+					System.out.println("Deleting old dependency file (outdated): " + f);
 				} // Keep newer versions.
 			}
 		}
@@ -919,11 +919,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	            f = new File(f, toFind);
 	            if(f.exists() && f.canExecute()) {
 	                if(!f.canRead()) {
-	                    Logger.error(this, "On path and can execute but not read, so can't check whether it is a script?!: "+f);
+	                    Logger.error(this, "On path and can execute but not read, so can't check whether it is a script?!: " + f);
 	                    return false;
 	                }
 	                if(f.length() < SCRIPT_HEAD.length) {
-	                    Logger.error(this, "Found "+toFind+" on path but less than "+SCRIPT_HEAD+" bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
+	                    Logger.error(this, "Found " + toFind + " on path but less than " + SCRIPT_HEAD + " bytes long, so can't check whether it is a script - will the shell try the next match? We can't tell whether it is a script or not ...");
 	                    return false; // Weird!
 	                }
 	                try {
@@ -934,7 +934,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                             dis.read(buf);
                             return !Arrays.equals(buf, SCRIPT_HEAD);
                         } catch (IOException e) {
-                            Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
+                            Logger.error(this, "Unable to read " + f + " to check whether it is a script: " + e + " - disk corruption problems???", e);
                             return false;
                         }
                     } catch (FileNotFoundException e) {
@@ -943,7 +943,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	            }
 	        }
 	    }
-	    Logger.normal(this, "Could not find "+toFind+" on the path");
+	    Logger.normal(this, "Could not find " + toFind + " on the path");
 	    return false; // Not found on the path.
     }
 
@@ -980,93 +980,93 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	        if(!split[0].equals(name)) continue;
 	        if(!split[1].equals("files")) continue;
 	        if(!split[3].equals("filename")) continue;
-	        String fileBase = name+".files."+split[2];
+	        String fileBase = name + ".files." + split[2];
 	        // Filename.
 	        File filename = null;
-	        String s = props.getProperty(fileBase+".filename");
+	        String s = props.getProperty(fileBase + ".filename");
 	        if(s == null) break;
 	        filename = new File(s);
 	        // Key.
 	        final FreenetURI key;
-	        s = props.getProperty(fileBase+".key");
+	        s = props.getProperty(fileBase + ".key");
 	        if(s == null) {
-	            Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing "+fileBase+".key in atomic multi-files list");
+	            Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing " + fileBase + ".key in atomic multi-files list");
                 atomicDeployer.cleanup();
 	            return false;
 	        }
 	        try {
 	            key = new FreenetURI(s);
 	        } catch (MalformedURLException e) {
-	            Logger.error(MainJarDependencies.class, "Unable to parse CHK for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+	            Logger.error(MainJarDependencies.class, "Unable to parse CHK for multi-files replace for " + fileBase + ": \"" + s + "\": " + e, e);
                 atomicDeployer.cleanup();
 	            return false;
 	        }
 	        // Size.
-	        s = props.getProperty(fileBase+".size");
+	        s = props.getProperty(fileBase + ".size");
 	        long size = -1;
 	        if(s != null) {
 	            try {
 	                size = Long.parseLong(s);
 	            } catch (NumberFormatException e) {
-	                Logger.error(MainJarDependencies.class, "Unable to parse size for multi-files replace for "+fileBase+": \""+s+"\": "+e, e);
+	                Logger.error(MainJarDependencies.class, "Unable to parse size for multi-files replace for " + fileBase + ": \"" + s + "\": " + e, e);
                     atomicDeployer.cleanup();
 	                return false;
 	            }
 	        }
             // Must exist?
 	        MUST_EXIST mustExist;
-            s = props.getProperty(fileBase+".mustExist");
+            s = props.getProperty(fileBase + ".mustExist");
             if(s == null) {
                 mustExist = MUST_EXIST.FALSE;
             } else {
                 try {
                     mustExist = MUST_EXIST.valueOf(s.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    Logger.error(MainJarDependencies.class, "Unable to past mustExist \""+s+"\" for "+fileBase);
+                    Logger.error(MainJarDependencies.class, "Unable to past mustExist \"" + s + "\" for " + fileBase);
                     atomicDeployer.cleanup();
                     return false;
                 }
             }
             boolean mustBeOnClassPath = false;
-            s = props.getProperty(fileBase+".mustBeOnClassPath");
+            s = props.getProperty(fileBase + ".mustBeOnClassPath");
             if(s != null) {
                 mustBeOnClassPath = Boolean.parseBoolean(s);
             }
 	        // SHA256 hash
-            byte[] expectedHash = parseExpectedHash(props.getProperty(fileBase+".sha256"), fileBase);
+            byte[] expectedHash = parseExpectedHash(props.getProperty(fileBase + ".sha256"), fileBase);
             if(expectedHash == null) {
-                System.err.println("dependencies.properties multi-file replace broken: No hash for "+fileBase);
+                System.err.println("dependencies.properties multi-file replace broken: No hash for " + fileBase);
                 atomicDeployer.cleanup();
                 return false;
             }
             // Executable?
             boolean executable = false;
-            s = props.getProperty(fileBase+".executable");
+            s = props.getProperty(fileBase + ".executable");
             if(s != null) {
                 executable = Boolean.parseBoolean(s);
             }
             if(!filename.exists()) {
                 if(mustExist != MUST_EXIST.FALSE) {
-                    System.out.println("Not running multi-file replace "+name+" : File does not exist: "+filename);
+                    System.out.println("Not running multi-file replace " + name + " : File does not exist: " + filename);
                     atomicDeployer.cleanup();
                     return false;
                 }
                 nothingToDo = false;
-                System.out.println("Multi-file replace: Must create "+filename+" for "+name);
+                System.out.println("Multi-file replace: Must create " + filename + " for " + name);
             } else if(!validFile(filename, expectedHash, size, executable)) {
                 if(mustExist == MUST_EXIST.EXACT) {
-                    System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite "+filename);
+                    System.out.println("Not running multi-file replace: Not compatible with old version of prerequisite " + filename);
                     atomicDeployer.cleanup();
                     return false;
                 }
-                System.out.println("Multi-file replace: Must update "+filename+" for "+name);
+                System.out.println("Multi-file replace: Must update " + filename + " for " + name);
                 nothingToDo = false;
             } else if(mustExist == MUST_EXIST.EXACT)
                 continue;
             if(mustBeOnClassPath) {
                 File f = getDependencyInUse(Pattern.compile(Pattern.quote(filename.getName())));
                 if(f == null) {
-                    System.err.println("Not running multi-file replace: File must be on classpath: "+filename+" for "+name);
+                    System.err.println("Not running multi-file replace: File must be on classpath: " + filename + " for " + name);
                     atomicDeployer.cleanup();
                     return false;
                 }
@@ -1075,14 +1075,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 dependency = new AtomicDependency(filename, key, size, expectedHash, executable);
             } catch (IOException e) {
-                System.err.println("Unable to start multi-file update for "+name+" : "+e);
+                System.err.println("Unable to start multi-file update for " + name + " : " + e);
                 atomicDeployer.cleanup();
                 return false;
             }
             atomicDeployer.add(dependency);
 	    }
 	    if(nothingToDo) {
-	        System.out.println("Multi-file replace: Nothing to do for "+name+".");
+	        System.out.println("Multi-file replace: Nothing to do for " + name + ".");
 	        atomicDeployer.cleanup();
 	        return false; // Valid no-op.
 	    }
@@ -1135,7 +1135,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 if(this.myDeployer != null) return true; // Already running.
                 this.myDeployer = myDeployer;
             }
-            System.out.println("Fetching "+filename+" from "+key);
+            System.out.println("Fetching " + filename + " from " + key);
             try {
                 JarFetcher fetcher = deployer.fetch(key, tempFilename, size, expectedHash, this, build, false, executable /* we use rename, so ideally we'd like the temp file to be executable if the target will be */);
                 synchronized(this) {
@@ -1143,8 +1143,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 }
                 return true;
             } catch (FetchException e) {
-                Logger.error(this, "Unable to start fetch for "+filename+" from "+key+" size "+size+" expected hash "+HexUtil.bytesToHex(expectedHash)+" : "+e, e);
-                System.err.println("Unable to start fetch for "+filename+" for multi-file replace");
+                Logger.error(this, "Unable to start fetch for " + filename + " from " + key + " size " + size + " expected hash " + HexUtil.bytesToHex(expectedHash) + " : " + e, e);
+                System.err.println("Unable to start fetch for " + filename + " for multi-file replace");
                 return false;
             }
         }
@@ -1156,13 +1156,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 succeededFetch = true;
                 d = myDeployer;
             }
-            System.out.println("Fetched "+filename+" from "+key);
+            System.out.println("Fetched " + filename + " from " + key);
             d.onSuccess(this);
         }
 
         @Override
         public void onFailure(FetchException e) {
-            System.out.println("Failed to fetch "+filename+" from "+key);
+            System.out.println("Failed to fetch " + filename + " from " + key);
             getDeployer().onFailure(this, e);
         }
 
@@ -1181,7 +1181,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         boolean backupOriginal() {
-            System.out.println("Backing up "+filename+" to "+backupFilename);
+            System.out.println("Backing up " + filename + " to " + backupFilename);
             if(!filename.exists()) {
                 synchronized(this) {
                     nothingToBackup = true;
@@ -1200,7 +1200,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         }
         
         boolean deploy() {
-            System.out.println("Deploying "+tempFilename+" to "+filename);
+            System.out.println("Deploying " + tempFilename + " to " + filename);
             synchronized(this) {
                 assert(succeededFetch);
                 assert(backedUp);
@@ -1235,14 +1235,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 assert(backedUp);
                 if(!triedDeploy) return true; // Valid no-op.
             }
-            System.out.println("Reverting from backup "+backupFilename+" to "+filename);
+            System.out.println("Reverting from backup " + backupFilename + " to " + filename);
             boolean nothingToBackup;
             synchronized(this) {
                 nothingToBackup = this.nothingToBackup;
             }
             if(nothingToBackup) {
                 if(!filename.delete() && filename.exists()) {
-                    System.err.println("Unable to delete file while reverting multi-file deploy: "+filename);
+                    System.err.println("Unable to delete file while reverting multi-file deploy: " + filename);
                     tempFilename.delete();
                     return true; // Usually this is OK.
                 } else {
@@ -1274,11 +1274,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	    if(FileUtil.detectedOS.isUnix || FileUtil.detectedOS.isMac) {
 	        return new UnixRestartingAtomicDeployer(name);
 	    } else if(FileUtil.detectedOS.isWindows) {
-	        System.out.println("Multi-file update for "+name+" not supported on Windows at present, see bug #5883");
+	        System.out.println("Multi-file update for " + name + " not supported on Windows at present, see bug #5883");
 	        // FIXME implement Windows support using bug #5883.
 	        return null;
 	    } else {
-            System.out.println("Multi-file update for "+name+" not supported on unknown non-unix non-windows OS "+FileUtil.detectedOS);
+            System.out.println("Multi-file update for " + name + " not supported on unknown non-unix non-windows OS " + FileUtil.detectedOS);
 	        return null;
 	    }
 	}
@@ -1313,7 +1313,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 failed = true;
                 dependenciesWaiting.remove(dep);
             }
-            System.err.println("Unable to deploy multi-file update "+name+" because fetch failed for "+dep.filename);
+            System.err.println("Unable to deploy multi-file update " + name + " because fetch failed for " + dep.filename);
             cleanup();
         }
 
@@ -1344,7 +1344,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         public void start() {
             for(AtomicDependency dep : dependencies()) {
                 if(!dep.start(this)) {
-                    System.err.println("Unable to start fetch for "+this);
+                    System.err.println("Unable to start fetch for " + this);
                     AtomicDependency[] deps;
                     synchronized(this) {
                         failed = true;
@@ -1386,7 +1386,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         
         protected boolean deployMultiFileUpdate() {
             if(!innerDeployMultiFileUpdate()) {
-                System.err.println("Failed to deploy multi-file update "+name);
+                System.err.println("Failed to deploy multi-file update " + name);
                 return false;
             } else return true;
         }
@@ -1395,14 +1395,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
         boolean innerDeployMultiFileUpdate() {
             synchronized(this) {
                 if(failed || !started) {
-                    Logger.error(this, "Not deploying: failed="+failed+" started="+started, new Exception("error"));
+                    Logger.error(this, "Not deploying: failed=" + failed + " started=" + started, new Exception("error"));
                     return false;
                 }
             }
             AtomicDependency[] deps = dependencies();
             for(AtomicDependency dep : deps) {
                 if(!dep.backupOriginal()) {
-                    System.err.println("Unable to backup dependency "+dep.filename+" - aborting multi-file update deployment "+name);
+                    System.err.println("Unable to backup dependency " + dep.filename + " - aborting multi-file update deployment " + name);
                     return false;
                 }
             }
@@ -1410,16 +1410,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
             for(AtomicDependency dep : deps) {
                 if(!dep.deploy()) {
                     failedDeploy = true;
-                    System.err.println("Unable to update file "+dep.filename+" from "+dep.tempFilename+" - aborting multi-file update deployment "+name);
+                    System.err.println("Unable to update file " + dep.filename + " from " + dep.tempFilename + " - aborting multi-file update deployment " + name);
                     break;
                 }
             }
             if(failedDeploy) {
-                System.err.println("Deploying multi-file update failed: "+name);
+                System.err.println("Deploying multi-file update failed: " + name);
                 System.err.println("Restoring files from backups");
                 for(AtomicDependency dep : deps) {
                     if(!dep.revertFromBackup()) {
-                        System.err.println("Restoring file from backup failed. Freenet may fail to start on next restart! You should move "+dep.backupFilename+" to "+dep.filename);
+                        System.err.println("Restoring file from backup failed. Freenet may fail to start on next restart! You should move " + dep.backupFilename + " to " + dep.filename);
                         // FIXME useralert???
                     }
                 }
@@ -1452,8 +1452,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
             try {
                 restartScript = createRestartScript();
             } catch (IOException e) {
-                System.err.println("Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e);
-                Logger.error(this, "Unable to deploy multi-file update for "+name+" because cannot write script to restart the wrapper: "+e, e);
+                System.err.println("Unable to deploy multi-file update for " + name + " because cannot write script to restart the wrapper: " + e);
+                Logger.error(this, "Unable to deploy multi-file update for " + name + " because cannot write script to restart the wrapper: " + e, e);
                 return false;
             }
             if(restartScript == null) return false;
@@ -1462,15 +1462,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
             if(innerDeployMultiFileUpdate()) {
                 try { // FIXME use nodeDir
                     if(Runtime.getRuntime().exec(new String[] { shell.toString(), restartScript.toString() }) == null) {
-                        System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name);
+                        System.err.println("Unable to start restarter script " + restartScript + " with shell " + shell + " -> cannot deploy multi-file update for " + name);
                         return false;
                     }
                 } catch (IOException e) {
-                    System.err.println("Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e);
-                    Logger.error(this, "Unable to start restarter script "+restartScript+" with shell "+shell+" -> cannot deploy multi-file update for "+name+" : "+e, e);
+                    System.err.println("Unable to start restarter script " + restartScript + " with shell " + shell + " -> cannot deploy multi-file update for " + name + " : " + e);
+                    Logger.error(this, "Unable to start restarter script " + restartScript + " with shell " + shell + " -> cannot deploy multi-file update for " + name + " : " + e, e);
                     return false;
                 }
-                System.out.println("Shutting down Freenet for hard restart after deploying multi-file update for "+name+". The script "+restartScript+" should start it back up.");
+                System.out.println("Shutting down Freenet for hard restart after deploying multi-file update for " + name + ". The script " + restartScript + " should start it back up.");
                 WrapperManager.stop(0);
                 return true;
             } else return false;
@@ -1492,7 +1492,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             File runsh = new File("run.sh");
             String runshNoNice = "run.nonice-for-update.sh";
             if(!(runsh.exists() && runsh.canExecute())) {
-                System.err.println("Cannot find run.sh so cannot deploy multi-file update for "+name);
+                System.err.println("Cannot find run.sh so cannot deploy multi-file update for " + name);
                 return null;
             }
             // EVIL HACK
@@ -1500,7 +1500,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 return null;
             }
             if(!new File("/dev/null").exists()) {
-                System.err.println("Cannot deploy multi-file update for "+name+" without /dev/null");
+                System.err.println("Cannot deploy multi-file update for " + name + " without /dev/null");
                 return null;
             }
             File restartFreenet = new File(RESTART_SCRIPT_NAME);
@@ -1512,10 +1512,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1"); // Right???
                 osw.write("#!/bin/sh\n"); // FIXME exec >/dev/null 2>&1 ???? Believed to be portable.
                 //osw.write("trap true PIPE\n"); - should not be necessary
-                osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
-                osw.write("./"+runshNoNice+" start > /dev/null 2>&1\n");
-                osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
-                osw.write("rm "+runshNoNice+"\n");
+                osw.write("while kill -0 " + WrapperManager.getWrapperPID() + " > /dev/null 2>&1; do sleep 1; done\n");
+                osw.write("./" + runshNoNice + " start > /dev/null 2>&1\n");
+                osw.write("rm " + RESTART_SCRIPT_NAME + "\n");
+                osw.write("rm " + runshNoNice + "\n");
                 osw.close();
                 osw = null; 
                 os = null;
@@ -1548,7 +1548,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                         writtenPrio = true;
                         line = "PRIORITY="; // = don't use nice.
                     }
-                    w.write(line+"\n");
+                    w.write(line + "\n");
                 }
                 // We want to see exceptions on close() here.
                 br.close();
@@ -1605,7 +1605,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         			}
         		}
         	}
-        	Logger.error(MainJarDependenciesChecker.class, "Unable to get dependency version from "+currentFile);
+        	Logger.error(MainJarDependenciesChecker.class, "Unable to get dependency version from " + currentFile);
         	return null;
         } catch (FileNotFoundException e) {
         	return null;
@@ -1646,16 +1646,16 @@ outer:	for(String propName : props.stringPropertyNames()) {
 
 	private static byte[] parseExpectedHash(String sha256, String baseName) {
 		if(sha256 == null) {
-			Logger.error(MainJarDependencies.class, "No SHA256 for "+baseName+" in dependencies.properties");
+			Logger.error(MainJarDependencies.class, "No SHA256 for " + baseName + " in dependencies.properties");
 			return null;
 		}
 		try {
 			return HexUtil.hexToBytes(sha256);
 		} catch (NumberFormatException e) {
-			Logger.error(MainJarDependencies.class, "Bogus expected hash: \""+sha256+"\" : "+e, e);
+			Logger.error(MainJarDependencies.class, "Bogus expected hash: \"" + sha256 + "\" : " + e, e);
 			return null;
 		} catch (IndexOutOfBoundsException e) {
-			Logger.error(MainJarDependencies.class, "Bogus expected hash: \""+sha256+"\" : "+e, e);
+			Logger.error(MainJarDependencies.class, "Bogus expected hash: \"" + sha256 + "\" : " + e, e);
 			return null;
 		}
 	}
@@ -1664,7 +1664,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		if(filename == null) return false;
 		if(!filename.exists()) return false;
 		if(filename.length() != size) {
-			System.out.println("File exists while updating but length is wrong ("+filename.length()+" should be "+size+") for "+filename);
+			System.out.println("File exists while updating but length is wrong (" + filename.length() + " should be " + size + ") for " + filename);
 			return false;
 		}
 		FileInputStream fis = null;
@@ -1685,10 +1685,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			    return false;
 			}
 		} catch (FileNotFoundException e) {
-			Logger.error(MainJarDependencies.class, "File not found: "+filename);
+			Logger.error(MainJarDependencies.class, "File not found: " + filename);
 			return false;
 		} catch (IOException e) {
-			System.err.println("Unable to read "+filename+" for updater");
+			System.err.println("Unable to read " + filename + " for updater");
 			return false;
 		} finally {
 			Closer.close(fis);
@@ -1718,7 +1718,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 		synchronized(this) {
 			f = new TreeSet<Dependency>(dependencies);
 		}
-		if(logMINOR) Logger.minor(this, "Deploying build "+build+" with "+f.size()+" dependencies");
+		if(logMINOR) Logger.minor(this, "Deploying build " + build + " with " + f.size() + " dependencies");
 		deployer.deploy(new MainJarDependencies(f, build));
 	}
 

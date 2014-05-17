@@ -600,7 +600,7 @@ public class NodeUpdateManager {
 			}
 			data = fetchedMainJarData;
 		}
-		if(logMINOR) Logger.minor(this, "Got data for UOM: "+data+" size "+data.size());
+		if(logMINOR) Logger.minor(this, "Got data for UOM: " + data + " size " + data.size());
 		return data.size();
 	}
 
@@ -737,8 +737,8 @@ public class NodeUpdateManager {
 				mainUpdater.cleanupDependencies();
 			} catch (Throwable t) {
 				// Don't let it block startup, but be very loud!
-				Logger.error(this, "Caught "+t+" setting up Update Over Mandatory", t);
-				System.err.println("Updater error: "+t);
+				Logger.error(this, "Caught " + t + " setting up Update Over Mandatory", t);
+				System.err.println("Updater error: " + t);
 				t.printStackTrace();
 			}
 			mainUpdater.start();
@@ -1041,7 +1041,7 @@ public class NodeUpdateManager {
 			return true;
 		}
 		long waitTime = Math.max(REVOCATION_FETCH_TIMEOUT, waitForNextJar);
-		if(logMINOR) Logger.minor(this, "Will deploy in "+waitTime+"ms");
+		if(logMINOR) Logger.minor(this, "Will deploy in " + waitTime + "ms");
 		deployOffThread(waitTime, false);
 		return false;
 	}
@@ -1104,10 +1104,10 @@ public class NodeUpdateManager {
 			}
 			// isDeployingUpdate remains true as we are about to restart.
 		} catch (Throwable t) {
-			Logger.error(this, "DEPLOYING UPDATE FAILED: "+t, t);
-			System.err.println("UPDATE FAILED: CAUGHT "+t);
+			Logger.error(this, "DEPLOYING UPDATE FAILED: " + t, t);
+			System.err.println("UPDATE FAILED: CAUGHT " + t);
 			System.err.println("YOUR NODE DID NOT UPDATE. THIS IS PROBABLY A BUG OR SERIOUS PROBLEM SUCH AS OUT OF MEMORY.");
-			System.err.println("Cause of the problem: "+t);
+			System.err.println("Cause of the problem: " + t);
 			t.printStackTrace();
 			failUpdate(t.getMessage());
 			String error = l10n("updateFailedInternalError", "reason", t.getMessage());
@@ -1147,7 +1147,7 @@ public class NodeUpdateManager {
 	    while(true) {
 	        System.err.println("Waiting for shutdown after deployed update...");
 	        try {
-                Thread.sleep(60*1000);
+                Thread.sleep(60 * 1000);
             } catch (InterruptedException e) {
                 // Ignore.
             }
@@ -1158,7 +1158,7 @@ public class NodeUpdateManager {
 	 * Deploy the update. Inner method. Doesn't check anything, just does it.
 	 */
 	private boolean innerDeployUpdate(MainJarDependencies deps) {
-		System.err.println("Deploying update "+deps.build+" with "+deps.dependencies.size()+" dependencies...");
+		System.err.println("Deploying update " + deps.build + " with " + deps.dependencies.size() + " dependencies...");
 		// Write the jars, config etc.
 		// Then restart
 
@@ -1313,7 +1313,7 @@ public class NodeUpdateManager {
 			} else {
 				writeJarTo(newMainJar);
 			}
-			System.out.println("Written new main jar to "+newMainJar);
+			System.out.println("Written new main jar to " + newMainJar);
 		} catch (IOException e) {
 			throw new UpdateFailedException("Cannot update: Cannot write to "
 					+ (tryEasyWay ? " temp file " : "new jar ") + newMainJar);
@@ -1323,7 +1323,7 @@ public class NodeUpdateManager {
 			// Do it the easy way. Just rewrite the main jar.
 			backupMainJar.delete();
 			if(FileUtil.copyFile(mainJar, backupMainJar))
-				System.err.println("Written backup of current main jar to "+backupMainJar+" (if freenet fails to start up try renaming "+backupMainJar+" over "+mainJar);
+				System.err.println("Written backup of current main jar to " + backupMainJar + " (if freenet fails to start up try renaming " + backupMainJar + " over " + mainJar);
 			if (!newMainJar.renameTo(mainJar)) {
 				Logger.error(NodeUpdateManager.class,
 						"Cannot rename temp file " + newMainJar
@@ -1336,11 +1336,11 @@ public class NodeUpdateManager {
 				}
 				// Try the hard way
 			} else {
-				System.err.println("Completed writing new Freenet jar to "+mainJar+".");
+				System.err.println("Completed writing new Freenet jar to " + mainJar + ".");
 				return false;
 			}
 		}
-		System.err.println("Rewriting wrapper.conf to point to "+newMainJar+" rather than "+mainJar+" (if Freenet fails to start after the update you could try changing wrapper.conf to use the old jar)");
+		System.err.println("Rewriting wrapper.conf to point to " + newMainJar + " rather than " + mainJar + " (if Freenet fails to start after the update you could try changing wrapper.conf to use the old jar)");
 		return true;
 	}
 

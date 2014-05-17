@@ -34,7 +34,7 @@ public class ListUtilsTest extends TestCase {
 		{
 			int oldSize = list.size();
 			// remove non-existing element
-			assertFalse(ListUtils.removeBySwapLast(list, Integer.valueOf(oldSize+1)));
+			assertFalse(ListUtils.removeBySwapLast(list, Integer.valueOf(oldSize + 1)));
 			assertEquals(list.size(), oldSize);
 		}
 		// 0 1 2 3 4 5 6 7 8 9
@@ -43,11 +43,11 @@ public class ListUtilsTest extends TestCase {
 		{
 			// remove last element
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			assertTrue(ListUtils.removeBySwapLast(list, oldTop));
 			// 0 1 2 3 4 5 6 7 8
 			assertFalse(list.contains(oldTop));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 		}
 		for(int i = 0; i < list.size(); i++)
 			assertEquals(list.get(i), Integer.valueOf(i));
@@ -55,11 +55,11 @@ public class ListUtilsTest extends TestCase {
 			// remove first element
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			assertTrue(ListUtils.removeBySwapLast(list, oldFirst));
 			// 8 1 2 3 4 5 6 7
 			assertFalse(list.contains(oldFirst));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertEquals(list.get(0), oldTop);
 			for(int i = 1; i < list.size(); i++)
 				assertEquals(list.get(i), Integer.valueOf(i));
@@ -74,10 +74,10 @@ public class ListUtilsTest extends TestCase {
 		{
 			// remove last element
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
-			assertEquals(ListUtils.removeBySwapLast(list, oldSize-1), oldTop);
+			Integer oldTop = list.get(oldSize - 1);
+			assertEquals(ListUtils.removeBySwapLast(list, oldSize - 1), oldTop);
 			// 0 1 2 3 4 5 6 7 8
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertFalse(list.contains(oldTop));
 		}
 		for(int i = 0; i < list.size(); i++)
@@ -85,12 +85,12 @@ public class ListUtilsTest extends TestCase {
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			// remove first element
 			assertEquals(ListUtils.removeBySwapLast(list, 0), oldTop);
 			// 8 1 2 3 4 5 6 7
 			assertFalse(list.contains(oldFirst));
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertEquals(list.get(0), oldTop);
 		}
 		for(int i = 1; i < list.size(); i++)
@@ -118,12 +118,12 @@ public class ListUtilsTest extends TestCase {
 			list.add(Integer.valueOf(i));
 		ListUtils.RandomRemoveResult<Integer> res;
 		for(int i = 0; i < 10; i++) {
-			assertEquals(list.size(), 10-i);
-			Integer oldTop = list.get(list.size()-1);
+			assertEquals(list.size(), 10 - i);
+			Integer oldTop = list.get(list.size() - 1);
 			assertNotNull(oldTop);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
 			assertNotNull(res);
-			assertEquals(list.size(), 10-i-1);
+			assertEquals(list.size(), 10 - i - 1);
 			assertFalse(list.contains(res.removed));
 			assertTrue(res.removed.equals(res.moved) || list.contains(res.moved));
 		}
@@ -144,9 +144,9 @@ public class ListUtilsTest extends TestCase {
 		// not enforced by specification)
 		{
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res.moved, oldTop);
 			assertEquals(res.moved, res.removed);
@@ -165,9 +165,9 @@ public class ListUtilsTest extends TestCase {
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLast(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res.removed, oldFirst);
 			assertEquals(res.moved, oldTop);
@@ -184,12 +184,12 @@ public class ListUtilsTest extends TestCase {
 			list.add(Integer.valueOf(i));
 		Integer res;
 		for(int i = 0; i < 10; i++) {
-			assertEquals(list.size(), 10-i);
-			Integer oldTop = list.get(list.size()-1);
+			assertEquals(list.size(), 10 - i);
+			Integer oldTop = list.get(list.size() - 1);
 			assertNotNull(oldTop);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
 			assertNotNull(res);
-			assertEquals(list.size(), 10-i-1);
+			assertEquals(list.size(), 10 - i - 1);
 			assertFalse(list.contains(res));
 		}
 		assertNull(ListUtils.removeRandomBySwapLastSimple(rand, list));
@@ -210,9 +210,9 @@ public class ListUtilsTest extends TestCase {
 		// not enforced by specification)
 		{
 			int oldSize = list.size();
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res, oldTop);
 		}
@@ -230,9 +230,9 @@ public class ListUtilsTest extends TestCase {
 		{
 			int oldSize = list.size();
 			Integer oldFirst = list.get(0);
-			Integer oldTop = list.get(oldSize-1);
+			Integer oldTop = list.get(oldSize - 1);
 			res = ListUtils.removeRandomBySwapLastSimple(rand, list);
-			assertEquals(list.size(), oldSize-1);
+			assertEquals(list.size(), oldSize - 1);
 			assertNotNull(res);
 			assertEquals(res, oldFirst);
 			assertEquals(list.get(0), oldTop);

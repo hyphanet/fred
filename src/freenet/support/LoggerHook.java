@@ -60,7 +60,7 @@ public abstract class LoggerHook extends Logger {
 	 **/
 	@Override
 	public void log(Object source, String message, LogLevel priority) {
-		if (!instanceShouldLog(priority,source)) return;
+		if (!instanceShouldLog(priority, source)) return;
 		log(source, source == null ? null : source.getClass(), 
 				message, null, priority);
 	}
@@ -77,7 +77,7 @@ public abstract class LoggerHook extends Logger {
 	@Override
 	public void log(Object o, String message, Throwable e, 
 			LogLevel priority) {
-		if (!instanceShouldLog(priority,o)) return;
+		if (!instanceShouldLog(priority, o)) return;
 		log(o, o == null ? null : o.getClass(), message, e, priority);
 	}
 
@@ -90,7 +90,7 @@ public abstract class LoggerHook extends Logger {
 	 */
 	@Override
 	public void log(Class<?> c, String message, LogLevel priority) {
-		if (!instanceShouldLog(priority,c)) return;
+		if (!instanceShouldLog(priority, c)) return;
 		log(null, c, message, null, priority);
 	}
 

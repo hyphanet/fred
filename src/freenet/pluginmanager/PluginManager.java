@@ -182,13 +182,13 @@ public class PluginManager {
 		toStart = pmconfig.getStringArr("loadplugin");
 
 		if(lastVersion < 1237 && contains(toStart, "XMLLibrarian") && !contains(toStart, "Library")) {
-			toStart = Arrays.copyOf(toStart, toStart.length+1);
-			toStart[toStart.length-1] = "Library";
+			toStart = Arrays.copyOf(toStart, toStart.length + 1);
+			toStart[toStart.length - 1] = "Library";
 			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
 		}
 
 		if(contains(toStart, "KeyExplorer")) {
-			for(int i=0;i<toStart.length;i++) {
+			for(int i=0;i < toStart.length;i++) {
 				if("KeyExplorer".equals(toStart[i]))
 					toStart[i] = "KeyUtils";
 			}
@@ -271,12 +271,12 @@ public class PluginManager {
 			int delta = (int) (deadline - now);
 			if(delta <= 0) {
 				String list = pluginList(wrappers);
-				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
-				System.err.println("Plugins still shutting down at timeout:\n"+list);
+				Logger.error(this, "Plugins still shutting down at timeout:\n" + list);
+				System.err.println("Plugins still shutting down at timeout:\n" + list);
 			} else {
 				for(Iterator<PluginInfoWrapper> it = wrappers.listIterator();it.hasNext();) {
 					PluginInfoWrapper pi = it.next();
-					System.out.println("Waiting for plugin to finish shutting down: "+pi.getFilename());
+					System.out.println("Waiting for plugin to finish shutting down: " + pi.getFilename());
 					if(pi.finishShutdownPlugin(this, delta, false)) {
 						it.remove();
 					}
@@ -287,8 +287,8 @@ public class PluginManager {
 					return;
 				}
 				String list = pluginList(wrappers);
-				Logger.error(this, "Plugins still shutting down:\n"+list);
-				System.err.println("Plugins still shutting down:\n"+list);
+				Logger.error(this, "Plugins still shutting down:\n" + list);
+				System.err.println("Plugins still shutting down:\n" + list);
 			}
 		}
 	}
@@ -358,7 +358,7 @@ public class PluginManager {
 	}
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
-		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
+		if((alwaysLoadOfficialPluginsFromCentralServer && !force) || force && forceHTTPS) {
 			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store, false);
 		} else {
 			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store, false);
@@ -463,8 +463,8 @@ public class PluginManager {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 			System.err.println("Could not load plugin " + filename + " : " + e);
 			e.printStackTrace();
-			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
-			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
+			System.err.println("Plugin " + filename + " is broken, but we want to retry after next startup");
+			Logger.error(this, "Plugin " + filename + " is broken, but we want to retry after next startup");
 			PluginLoadFailedUserAlert newAlert =
 				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, false, e);
 			PluginLoadFailedUserAlert oldAlert = null;
@@ -552,7 +552,7 @@ public class PluginManager {
 
 		@Override
 		public String anchor() {
-			return "pluginfailed:"+filename;
+			return "pluginfailed:" + filename;
 		}
 
 		@Override
@@ -665,10 +665,10 @@ public class PluginManager {
 				}
 			}
 			if(pluginIsTryingToHijackNodeConfig) {
-				Logger.warning(this, "The plugin loaded from "+pi.getFilename()+" is attempting to hijack a node configuration page; refusing to register its ConfigToadlet");
+				Logger.warning(this, "The plugin loaded from " + pi.getFilename() + " is attempting to hijack a node configuration page; refusing to register its ConfigToadlet");
 			} else {
 				Toadlet toadlet = pi.getConfigToadlet();
-				core.getToadletContainer().register(toadlet, "FProxyToadlet.categoryConfig", toadlet.path(), true, "ConfigToadlet."+pi.getPluginClassName()+".label", "ConfigToadlet."+pi.getPluginClassName()+".tooltip", true, null, (FredPluginL10n)pi.getPlugin());
+				core.getToadletContainer().register(toadlet, "FProxyToadlet.categoryConfig", toadlet.path(), true, "ConfigToadlet." + pi.getPluginClassName() + ".label", "ConfigToadlet." + pi.getPluginClassName() + ".tooltip", true, null, (FredPluginL10n)pi.getPlugin());
 			}
 		}
 
@@ -681,7 +681,7 @@ public class PluginManager {
 	}
 
 	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
-		Logger.normal(this, "Cancelling loads for plugin "+filename);
+		Logger.normal(this, "Cancelling loads for plugin " + filename);
 		ArrayList<PluginProgress> matches = null;
 		synchronized(this) {
 			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
@@ -953,7 +953,7 @@ public class PluginManager {
 			handler = toadletList.get(plugin);
 		}
 		if (handler == null)
-			throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
+			throw new NotFoundPluginHTTPException("Plugin '" + plugin + "' not found!", "/plugins");
 
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
@@ -964,7 +964,7 @@ public class PluginManager {
 		} finally {
 			Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
-		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
+		throw new NotFoundPluginHTTPException("Plugin '" + plugin + "' not found!", "/plugins");
 	}
 
 	public void killPlugin(String name, long maxWaitTime, boolean reloading) {
@@ -1144,13 +1144,13 @@ public class PluginManager {
 		boolean downloaded = false;
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
-			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
+			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists() + " downloader " + pdl + " name " + name);
 		int RETRIES = 5;
 		for(int i = 0; i < RETRIES; i++) {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
 				try {
 					downloaded = true;
-					System.err.println("Downloading plugin "+name);
+					System.err.println("Downloading plugin " + name);
 					WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
@@ -1242,7 +1242,7 @@ public class PluginManager {
 					throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
 				}
 				if(this.isPluginLoaded(pluginMainClassName)) {
-					Logger.error(this, "Plugin already loaded: "+filename);
+					Logger.error(this, "Plugin already loaded: " + filename);
 					return null;
 				}
 
@@ -1278,7 +1278,7 @@ public class PluginManager {
 
 				if(pdl instanceof PluginDownLoaderOfficialHTTPS ||
 						pdl instanceof PluginDownLoaderOfficialFreenet) {
-					System.err.println("Loading official plugin "+name);
+					System.err.println("Loading official plugin " + name);
 					// Check the version after loading it!
 					// FIXME IMPORTANT Build the version into the manifest. This is actually pretty easy and just involves changing build.xml.
 					// We already do similar things elsewhere.
@@ -1299,8 +1299,8 @@ public class PluginManager {
 
 					// FIXME l10n the PluginNotFoundException errors.
 					if(ver < minVer) {
-						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
+						System.err.println("Failed to load plugin " + name + " : TOO OLD: need at least version " + minVer + " but is " + ver);
+						Logger.error(this, "Failed to load plugin " + name + " : TOO OLD: need at least version " + minVer + " but is " + ver);
 
 						// At this point, the constructor has run, so it's theoretically possible that the plugin has e.g. created some threads.
 						// However, it has not been able to use any of the node's services, because we haven't passed it the PluginRespirator.
@@ -1310,11 +1310,11 @@ public class PluginManager {
 						try {
 							jarClassLoader.close();
 						} catch (Throwable t) {
-							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
+							Logger.error(this, "Failed to close jar classloader for plugin: " + t, t);
 						}
 						pluginFile.delete();
 						if(!downloaded) continue;
-						throw new PluginTooOldException("plugin too old: need at least version "+minVer+" but is "+ver);
+						throw new PluginTooOldException("plugin too old: need at least version " + minVer + " but is " + ver);
 					}
 
 				}
@@ -1435,7 +1435,7 @@ public class PluginManager {
 			if (wasFromDigest256Pool)
 				SHA256.returnMessageDigest(hash);
 		} catch(Exception e) {
-			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
+			throw new PluginNotFoundException("Error while computing hash '" + digest + "' of the downloaded plugin: " + e, e);
 		} finally {
 			Closer.close(bis);
 			Closer.close(fis);
@@ -1549,7 +1549,7 @@ public class PluginManager {
 
 		public String toLocalisedString() {
 			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0)
-				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+"%";
+				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : " + ((current * 100.0) / total) + "%";
 			else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
 				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading");
 			else if(pluginProgress == PROGRESS_STATE.STARTING)
@@ -1596,7 +1596,7 @@ public class PluginManager {
 	}
 	
 	static String getOfficialPluginLocalisedName(String pluginName) {
-		return l10n("pluginName."+pluginName);
+		return l10n("pluginName." + pluginName);
 	}
 
 	public void setFProxyTheme(final THEME cssName) {

@@ -85,7 +85,7 @@ public class ProxyUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String anchor() {
-		return "anchor:"+Integer.toString(hashCode());
+		return "anchor:" + Integer.toString(hashCode());
 	}
 
 	@Override

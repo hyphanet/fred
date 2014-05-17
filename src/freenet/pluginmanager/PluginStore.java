@@ -75,43 +75,43 @@ public class PluginStore {
 	public SimpleFieldSet exportStoreAsSFS() {
 	    SimpleFieldSet fs = new SimpleFieldSet(true, true);
 	    for(Map.Entry<String, PluginStore> entry : subStores.entrySet()) {
-	        fs.put("substore."+encode(entry.getKey()), entry.getValue().exportStoreAsSFS());
+	        fs.put("substore." + encode(entry.getKey()), entry.getValue().exportStoreAsSFS());
 	    }
 	    for(Map.Entry<String, Long> entry : longs.entrySet()) {
-	        fs.put("long."+encode(entry.getKey()), entry.getValue());
+	        fs.put("long." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, long[]> entry : longsArrays.entrySet()) {
-	        fs.put("longs."+encode(entry.getKey()), entry.getValue());
+	        fs.put("longs." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, Integer> entry : integers.entrySet()) {
-	        fs.put("integer."+encode(entry.getKey()), entry.getValue());
+	        fs.put("integer." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, int[]> entry : integersArrays.entrySet()) {
-	        fs.put("integers."+encode(entry.getKey()), entry.getValue());
+	        fs.put("integers." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, Short> entry : shorts.entrySet()) {
-	        fs.put("short."+encode(entry.getKey()), entry.getValue());
+	        fs.put("short." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, short[]> entry : shortsArrays.entrySet()) {
-	        fs.put("shorts."+encode(entry.getKey()), entry.getValue());
+	        fs.put("shorts." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, Byte> entry : bytes.entrySet()) {
-	        fs.put("byte."+encode(entry.getKey()), entry.getValue());
+	        fs.put("byte." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, byte[]> entry : bytesArrays.entrySet()) {
-	        fs.put("bytes."+encode(entry.getKey()), entry.getValue());
+	        fs.put("bytes." + encode(entry.getKey()), entry.getValue());
 	    }
         for(Map.Entry<String, Boolean> entry : booleans.entrySet()) {
-            fs.put("boolean."+encode(entry.getKey()), entry.getValue());
+            fs.put("boolean." + encode(entry.getKey()), entry.getValue());
         }
         for(Map.Entry<String, boolean[]> entry : booleansArrays.entrySet()) {
-            fs.put("booleans."+encode(entry.getKey()), entry.getValue());
+            fs.put("booleans." + encode(entry.getKey()), entry.getValue());
         }
 	    for(Map.Entry<String, String> entry : strings.entrySet()) {
-	        fs.putSingle("string."+encode(entry.getKey()), entry.getValue());
+	        fs.putSingle("string." + encode(entry.getKey()), entry.getValue());
 	    }
 	    for(Map.Entry<String, String[]> entry : stringsArrays.entrySet()) {
-	        fs.putEncoded("strings."+encode(entry.getKey()), entry.getValue());
+	        fs.putEncoded("strings." + encode(entry.getKey()), entry.getValue());
 	    }
 	    return fs;
 	}

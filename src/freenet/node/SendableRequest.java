@@ -156,7 +156,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		} else {
 			// Should this be a higher priority?
 			if(logMINOR)
-				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
+				Logger.minor(this, "Cannot unregister " + this + " : not registered", new Exception("debug"));
 		}
 		ClientRequester cr = getClientRequest();
 		if(persistent)
@@ -191,11 +191,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public void clearCooldown(ObjectContainer container, ClientContext context, boolean definitelyExists) {
 		if(persistent && !container.ext().isStored(this)) {
 			if(definitelyExists)
-				Logger.error(this, "Clear cooldown on persistent request "+this+" but already removed");
+				Logger.error(this, "Clear cooldown on persistent request " + this + " but already removed");
 			else if(hashCode != 0) // conceivably there might be a problem, but unlikely 
-				Logger.normal(this, "Clear cooldown on persistent request "+this+" but already removed");
+				Logger.normal(this, "Clear cooldown on persistent request " + this + " but already removed");
 			else // removed, not likely to be an issue.
-				Logger.minor(this, "Clear cooldown on persistent request "+this+" but already removed");
+				Logger.minor(this, "Clear cooldown on persistent request " + this + " but already removed");
 			return;
 		}
 		// The request is no longer running, therefore presumably it can be selected, or it's been removed.

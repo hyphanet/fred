@@ -70,7 +70,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.server.core.allowUploadFrom(dirname))
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+dirname, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from " + dirname, identifier, global);
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
 		HashMap<String, Object> buckets = makeBucketsByName(dirname, "");
@@ -85,7 +85,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     private HashMap<String, Object> makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
     	if(logMINOR)
-    		Logger.minor(this, "Listing directory: "+thisdir);
+    		Logger.minor(this, "Listing directory: " + thisdir);
     	
     	HashMap<String, Object> ret = new HashMap<String, Object>();
     	
@@ -108,11 +108,11 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 					        + filelist[i].getName() + '/');
 	        		ret.put(filelist[i].getName(), subdir);
 	        	} else if(!allowUnreadableFiles) {
-	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier, global);
+	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: " + filelist[i], identifier, global);
 	        	}
 	        } else {
 	        	if(!allowUnreadableFiles)
-	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: "+filelist[i], identifier, global);
+	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not readable or doesn't exist: " + filelist[i], identifier, global);
 	        }
     	}
     	return ret;

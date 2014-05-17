@@ -105,7 +105,7 @@ public class Base64Test extends TestCase {
 
 		try {
 			bytesDecoded = Base64.decode(aBase64EncodedString);
-			assertTrue(Arrays.equals(bytesToEncode,bytesDecoded)); }
+			assertTrue(Arrays.equals(bytesToEncode, bytesDecoded)); }
 		catch (IllegalBase64Exception aException) {
 			fail("Not expected exception thrown : " + aException.getMessage()); }
 	}
@@ -118,20 +118,20 @@ public class Base64Test extends TestCase {
 	public void testEncodePadding() {
 		byte[][] methodBytesArray = {
 				//three byte Array -> no padding char expected
-				{4,4,4},
+				{4, 4, 4},
 				//two byte Array -> one padding char expected
-				{4,4},
+				{4, 4},
 				//one byte Array -> two padding-chars expected
 				{4}};
 		String encoded;
 
-		for (int i = 0; i<methodBytesArray.length; i++) {
-			encoded = Base64.encode(methodBytesArray[i],true);
+		for (int i = 0; i < methodBytesArray.length; i++) {
+			encoded = Base64.encode(methodBytesArray[i], true);
 			if (i == 0)
 				//no occurrences expected
-				assertEquals(encoded.indexOf('='),-1);
+				assertEquals(encoded.indexOf('='), -1);
 			else
-				assertEquals(encoded.indexOf('='),encoded.length()-i);
+				assertEquals(encoded.indexOf('='), encoded.length() - i);
 		}
 	}
 
@@ -148,7 +148,7 @@ public class Base64Test extends TestCase {
 			Base64.decode(illegalCharString);
 			fail("Expected IllegalBase64Exception not thrown"); }
 		catch (IllegalBase64Exception exception) {
-			assertSame("illegal Base64 character",exception.getMessage()); }
+			assertSame("illegal Base64 character", exception.getMessage()); }
 	}
 
 	/**
@@ -167,7 +167,7 @@ public class Base64Test extends TestCase {
 			Base64.decode(illegalLengthString);
 			fail("Expected IllegalBase64Exception not thrown"); }
 		catch (IllegalBase64Exception exception) {
-			assertSame("illegal Base64 length",exception.getMessage()); }
+			assertSame("illegal Base64 length", exception.getMessage()); }
 	}
 
 	/**

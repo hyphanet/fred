@@ -52,9 +52,9 @@ public class InsertableClientSSK extends ClientSSK {
 			return ClientKSK.create(uri);
 
 		if(uri.getRoutingKey() == null)
-			throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
+			throw new MalformedURLException("Insertable SSK URIs must have a private key!: " + uri);
 		if(uri.getCryptoKey() == null)
-			throw new MalformedURLException("Insertable SSK URIs must have a private key!: "+uri);
+			throw new MalformedURLException("Insertable SSK URIs must have a private key!: " + uri);
 		
 		byte keyType;
 
@@ -73,7 +73,7 @@ public class InsertableClientSSK extends ClientSSK {
 				throw new MalformedURLException("Unrecognized crypto type in SSK private key");
 		}
 		else {
-			throw new MalformedURLException("Not a valid SSK insert URI type: "+uri.getKeyType());
+			throw new MalformedURLException("Not a valid SSK insert URI type: " + uri.getKeyType());
 		}
 		
 		// Allow docName="" for SSKs. E.g. GenerateSSK returns these; we want to be consistent. 
@@ -204,11 +204,11 @@ public class InsertableClientSSK extends ClientSSK {
 			System.arraycopy(bs, 0, buf, len - bs.length, bs.length);
 			return buf;
 		} else { // if (bs.length > len) {
-			for(int i=0;i<(bs.length-len);i++) {
+			for(int i=0;i < (bs.length - len);i++) {
 				if(bs[i] != 0)
 					throw new IllegalStateException("Cannot truncate");
 			}
-			return Arrays.copyOfRange(bs, bs.length-len, bs.length);
+			return Arrays.copyOfRange(bs, bs.length - len, bs.length);
 		}
 	}
 

@@ -90,7 +90,7 @@ public class NewLzmaCompressorTest extends TestCase {
 
 		Random random = new Random(1234);
 
-		for(int rounds=0;rounds<100;rounds++) {
+		for(int rounds=0;rounds < 100;rounds++) {
 			int scale = random.nextInt(19) + 1;
 			int size = random.nextInt(1 << scale);
 

@@ -137,7 +137,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		case BAD_MIME_TYPE:
 			return "Bad MIME type";
 		default:
-			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
+			Logger.error(this, "Unknown error code: " + code, new Exception("debug"));
 		return "(Unknown)";
 		}
 	}
@@ -189,7 +189,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;
+		return super.toString() + ":" + code + ":" + extra + ":" + fatal + ":" + ident + ":" + global;
 	}
 
 }

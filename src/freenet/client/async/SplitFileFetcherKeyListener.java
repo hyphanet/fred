@@ -97,11 +97,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		}
 		segmentFilters = new BinaryBloomFilter[segments];
 		if(cachedSegFilters != null) {
-			for(int i=0;i<cachedSegFilters.length;i++) {
+			for(int i=0;i < cachedSegFilters.length;i++) {
 				segmentFilters[i] = cachedSegFilters[i];
 				container.activate(cachedSegFilters[i], Integer.MAX_VALUE);
 				cachedSegFilters[i].init(container);
-				if(logMINOR) Logger.minor(this, "Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
+				if(logMINOR) Logger.minor(this, "Restored segment " + i + " filter for " + parent + " : k=" + cachedSegFilters[i].getK() + " size = " + cachedSegFilters[i].getSizeBytes() + " bytes = " + cachedSegFilters[i].getLength() + " elements, filled: " + cachedSegFilters[i].getFilledCount());
 			}
 		} else {
 			byte[] segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];
@@ -114,7 +114,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			}
 			int start = 0;
 			int end = segmentFilterSizeBytes;
-			for(int i=0;i<segments;i++) {
+			for(int i=0;i < segments;i++) {
 				baseBuffer.position(start);
 				baseBuffer.limit(end);
 				ByteBuffer slice;
@@ -131,8 +131,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				end += segmentFilterSizeBytes;
 			}
 			if(persistent) {
-				for(int i=0;i<segments;i++) {
-					if(logMINOR) Logger.minor(this, "Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+				for(int i=0;i < segments;i++) {
+					if(logMINOR) Logger.minor(this, "Storing segment " + i + " filter to database for " + parent + " : k=" + segmentFilters[i].getK() + " size = " + segmentFilters[i].getSizeBytes() + " bytes = " + segmentFilters[i].getLength() + " elements, filled: " + segmentFilters[i].getFilledCount());
 					segmentFilters[i].storeTo(container);
 				}
 			}
@@ -147,7 +147,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter = cachedMainFilter;
 			if(persistent) container.activate(filter, Integer.MAX_VALUE);
 			filter.init(container);
-			if(logMINOR) Logger.minor(this, "Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+			if(logMINOR) Logger.minor(this, "Restored filter for " + parent + " : k=" + filter.getK() + " size = " + filter.getSizeBytes() + " bytes = " + filter.getLength() + " elements, filled: " + filter.getFilledCount());
 		} else if(newFilter) {
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
 			filter.setWarnOnRemoveFromEmpty();
@@ -166,13 +166,13 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter.setWarnOnRemoveFromEmpty();
 			parent.setCachedMainFilter(filter);
 			if(persistent) {
-				if(logMINOR) Logger.minor(this, "Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+				if(logMINOR) Logger.minor(this, "Storing filter to database for " + parent + " : k=" + filter.getK() + " size = " + filter.getSizeBytes() + " bytes = " + filter.getLength() + " elements, filled: " + filter.getFilledCount());
 				filter.storeTo(container);
 				container.store(parent);
 			}
 		}
 		if(logMINOR)
-			Logger.minor(this, "Created "+this+" for "+fetcher);
+			Logger.minor(this, "Created " + this + " for " + fetcher);
 	}
 
 	@Override
@@ -204,10 +204,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	@Override
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
-		if(filter == null) Logger.error(this, "Probably want key: filter = null for "+this+ " fetcher = "+fetcher);
+		if(filter == null) Logger.error(this, "Probably want key: filter = null for " + this + " fetcher = " + fetcher);
 		if(filter.checkFilter(saltedKey)) {
 			byte[] salted = localSaltKey(key);
-			for(int i=0;i<segmentFilters.length;i++) {
+			for(int i=0;i < segmentFilters.length;i++) {
 				if(segmentFilters[i].checkFilter(salted)) {
 					return true;
 				}
@@ -221,11 +221,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			ClientContext context) {
 		// Caller has already called probablyWantKey(), so don't do it again.
 		byte[] salted = localSaltKey(key);
-		for(int i=0;i<segmentFilters.length;i++) {
+		for(int i=0;i < segmentFilters.length;i++) {
 			if(segmentFilters[i].checkFilter(salted)) {
 				if(persistent) {
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): "+fetcher);
+						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): " + fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
@@ -233,12 +233,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.deactivate(fetcher, 1);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): "+segment);
+						Logger.error(this, "ALREADY ACTIVE in definitelyWantKey(): " + segment);
 					container.activate(segment, 1);
 				}
 				boolean found = segment.getBlockNumber(key, container) >= 0;
 				if(!found)
-					Logger.error(this, "Found block in primary and segment bloom filters but segment doesn't want it: "+segment+" on "+this);
+					Logger.error(this, "Found block in primary and segment bloom filters but segment doesn't want it: " + segment + " on " + this);
 				if(persistent)
 					container.deactivate(segment, 1);
 				if(found) return prio;
@@ -254,8 +254,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		boolean found = false;
 		byte[] salted = localSaltKey(key);
 		if(logMINOR)
-			Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
-		for(int i=0;i<segmentFilters.length;i++) {
+			Logger.minor(this, "handleBlock(" + key + ") on " + this + " for " + fetcher);
+		for(int i=0;i < segmentFilters.length;i++) {
 			boolean match;
 			synchronized(this) {
 				match = segmentFilters[i].checkFilter(salted);
@@ -263,21 +263,21 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			if(match) {
 				if(persistent) {
 					if(!container.ext().isStored(fetcher)) {
-						Logger.error(this, "Fetcher not in database! for "+this);
+						Logger.error(this, "Fetcher not in database! for " + this);
 						return false;
 					}
 					if(container.ext().isActive(fetcher))
-						Logger.warning(this, "ALREADY ACTIVATED: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED: " + fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.warning(this, "ALREADY ACTIVATED: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED: " + segment);
 					container.activate(segment, 1);
 				}
 				if(logMINOR)
-					Logger.minor(this, "Key "+key+" may be in segment "+segment);
+					Logger.minor(this, "Key " + key + " may be in segment " + segment);
 				// A segment can contain the same key twice if e.g. it isn't compressed and repeats itself.
 				while(segment.onGotKey(key, block, container, context)) {
 					found = true;
@@ -307,11 +307,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		ArrayList<SendableGet> ret = new ArrayList<SendableGet>();
 		// Caller has already called probablyWantKey(), so don't do it again.
 		byte[] salted = localSaltKey(key);
-		for(int i=0;i<segmentFilters.length;i++) {
+		for(int i=0;i < segmentFilters.length;i++) {
 			if(segmentFilters[i].checkFilter(salted)) {
 				if(persistent) {
 					if(container.ext().isActive(fetcher))
-						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: " + fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
@@ -319,7 +319,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.deactivate(fetcher, 1);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: " + segment);
 					container.activate(segment, 1);
 				}
 				int blockNum = segment.getBlockNumber(key, container);
@@ -353,9 +353,9 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			if(killed) return;
 		}
 		filter.storeTo(container);
-		for(int i=0;i<segmentFilters.length;i++) {
+		for(int i=0;i < segmentFilters.length;i++) {
 			if(logMINOR)
-				Logger.minor(this, "Storing segment "+i+" filter to database ("+reason+") k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+				Logger.minor(this, "Storing segment " + i + " filter to database (" + reason + ") k=" + segmentFilters[i].getK() + " size = " + segmentFilters[i].getSizeBytes() + " bytes = " + segmentFilters[i].getLength() + " elements, filled: " + segmentFilters[i].getFilledCount());
 			segmentFilters[i].storeTo(container);
 		}
 	}
@@ -365,33 +365,33 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		segmentFilters[segNo].unsetAll();
 		Key[] removeKeys = segment.listKeys(container);
 		if(logMINOR)
-			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
+			Logger.minor(this, "Removing segment from bloom filter: " + segment + " keys: " + removeKeys.length);
 		for(Key removeKey: removeKeys) {
 			if(logMINOR)
-				Logger.minor(this, "Removing key from bloom filter: "+removeKey);
+				Logger.minor(this, "Removing key from bloom filter: " + removeKey);
 			byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, removeKey);
 			if(filter.checkFilter(salted)) {
 				filter.removeKey(salted);
 			} else
 				// Huh??
-				Logger.error(this, "Removing key "+removeKey+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
+				Logger.error(this, "Removing key " + removeKey + " for " + this + " from " + segment + " : NOT IN BLOOM FILTER!", new Exception("debug"));
 		}
-		scheduleWriteFilters(container, context, "killed segment "+segNo);
+		scheduleWriteFilters(container, context, "killed segment " + segNo);
 		return keyCount -= removeKeys.length;
 	}
 	
 	public synchronized void removeKey(Key key, SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Removing key "+key+" from bloom filter for "+segment);
+			Logger.minor(this, "Removing key " + key + " from bloom filter for " + segment);
 		if(logMINOR)
-			Logger.minor(this, "Removing key from bloom filter: "+key);
+			Logger.minor(this, "Removing key from bloom filter: " + key);
 		byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, key);
 		if(filter.checkFilter(salted)) {
 			filter.removeKey(salted);
 			keyCount--;
 		} else
 			// Huh??
-			Logger.error(this, "Removing key "+key+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
+			Logger.error(this, "Removing key " + key + " for " + this + " from " + segment + " : NOT IN BLOOM FILTER!", new Exception("debug"));
 		boolean deactivateFetcher = false;
 		if(persistent) {
 			deactivateFetcher = !container.ext().isActive(fetcher);
@@ -428,7 +428,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 							try {
 								writeFilters(container, reason);
 							} catch (IOException e) {
-								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
+								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: " + e, e);
 							} finally {
 								writingBloomFilter = false;
 							}
@@ -439,7 +439,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				}, NativeThread.HIGH_PRIORITY, false);
 			} catch (Throwable t) {
 				writingBloomFilter = false;
-				Logger.error(this, "Caught "+t+" writing bloom filter", t);
+				Logger.error(this, "Caught " + t + " writing bloom filter", t);
 			}
 		}
 	}
@@ -458,7 +458,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	}
 	
 	public void objectOnDeactivate(ObjectContainer container) {
-		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));
+		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: " + this, new Exception("error"));
 	}
 
 	@Override

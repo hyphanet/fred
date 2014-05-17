@@ -56,14 +56,14 @@ public class PushDataManager {
 			Logger.minor(this, "Element updated id:" + id);
 		}
 		boolean needsUpdate = false;
-		if(elements.containsKey(id)==false){
+		if(elements.containsKey(id) == false){
 			if(logMINOR){
-				Logger.minor(this, "Element is updating, but not present on elements! elements:"+elements+" pages:"+pages+" awaitingNotifications:"+awaitingNotifications);
+				Logger.minor(this, "Element is updating, but not present on elements! elements:" + elements + " pages:" + pages + " awaitingNotifications:" + awaitingNotifications);
 			}
 		}
 		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
 			if(logMINOR){
-				Logger.minor(this, "Element is present on page:"+reqId+". Adding an UpdateEvent for all notification list.");
+				Logger.minor(this, "Element is present on page:" + reqId + ". Adding an UpdateEvent for all notification list.");
 			}
 			for(Map.Entry<String, List<UpdateEvent>> entry : awaitingNotifications.entrySet()) {
 //			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
@@ -72,11 +72,11 @@ public class PushDataManager {
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
 					if (logMINOR) {
-						Logger.minor(this, "Notification("+updateEvent+") added to a notification list for "+entry.getKey());
+						Logger.minor(this, "Notification(" + updateEvent + ") added to a notification list for " + entry.getKey());
 					}
 				} else {
 					if (logMINOR)
-						Logger.minor(this, "Not notifying "+entry.getKey()+" because already on list");
+						Logger.minor(this, "Not notifying " + entry.getKey() + " because already on list");
 				}
 			}
 			needsUpdate = true;
@@ -99,7 +99,7 @@ public class PushDataManager {
 	 */
 	public synchronized void elementRendered(String requestUniqueId, BaseUpdateableElement element) {
 		if(logMINOR){
-			Logger.minor(this, "Element is rendered in page:"+requestUniqueId+" element:"+element);
+			Logger.minor(this, "Element is rendered in page:" + requestUniqueId + " element:" + element);
 		}
 		// Add to the pages
 		if (pages.containsKey(requestUniqueId) == false) {
@@ -138,7 +138,7 @@ public class PushDataManager {
 	 */
 	public synchronized BaseUpdateableElement getRenderedElement(String requestId, String id) {
 		if(logMINOR){
-			Logger.minor(this, "Getting element data for element:"+id+" in page:"+requestId);
+			Logger.minor(this, "Getting element data for element:" + id + " in page:" + requestId);
 		}
 		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
 			if (element.getUpdaterId(requestId).compareTo(id) == 0) {
@@ -146,7 +146,7 @@ public class PushDataManager {
 				return element;
 			}
 		}
-		Logger.error(this, "Could not find data for the element requested. requestId:"+requestId+" id:"+id+" pages:"+pages+" keepaliveReceived:"+isKeepaliveReceived);
+		Logger.error(this, "Could not find data for the element requested. requestId:" + requestId + " id:" + id + " pages:" + pages + " keepaliveReceived:" + isKeepaliveReceived);
 		return null;
 	}
 
@@ -198,7 +198,7 @@ public class PushDataManager {
 	 */
 	public synchronized boolean keepAliveReceived(String requestId) {
 		if(logMINOR){
-			Logger.minor(this, "Keepalive is received for page:"+requestId);
+			Logger.minor(this, "Keepalive is received for page:" + requestId);
 		}
 		// If the request is already deleted, then fail
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
@@ -225,7 +225,7 @@ public class PushDataManager {
 			Logger.minor(this, "Polling for notification:" + requestId);
 		}
 		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0 || // No notifications 
-				(awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() != 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false)) { // Not asked us yet
+				(awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() != 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId) == false)) { // Not asked us yet
 			try {
 				wait();
 			} catch (InterruptedException ie) {

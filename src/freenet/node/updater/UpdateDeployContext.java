@@ -54,7 +54,7 @@ public class UpdateDeployContext {
 		this.deps = deps;
 		
 		for(int propNo=1;true;propNo++) {
-			String prop = p.getProperty("wrapper.java.classpath."+propNo);
+			String prop = p.getProperty("wrapper.java.classpath." + propNo);
 			if(prop == null) break;
 			File f = new File(prop);
 			boolean isAbsolute = f.isAbsolute();
@@ -88,15 +88,15 @@ public class UpdateDeployContext {
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("UpdateDeployContext."+key);
+		return NodeL10n.getBase().getString("UpdateDeployContext." + key);
 	}
 
 	public static String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("UpdateDeployContext."+key, patterns, values);
+		return NodeL10n.getBase().getString("UpdateDeployContext." + key, patterns, values);
 	}
 
 	public static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("UpdateDeployContext."+key, pattern, value);
+		return NodeL10n.getBase().getString("UpdateDeployContext." + key, pattern, value);
 	}
 
 	File getMainJar() {
@@ -170,7 +170,7 @@ public class UpdateDeployContext {
 				int idx = line.indexOf('=');
 				if(idx != -1) {
 					// Ignore the numbers.
-					String rhs = line.substring(idx+1);
+					String rhs = line.substring(idx + 1);
 					dontWrite = true;
 					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
 							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
@@ -184,11 +184,11 @@ public class UpdateDeployContext {
 						Dependency dep = findDependencyByRHSFilename(new File(rhs));
 						if(dep != null) {
 						    if(dep.oldFilename() != null)
-						        System.out.println("Found old dependency "+dep.oldFilename());
+						        System.out.println("Found old dependency " + dep.oldFilename());
 						    else
-						        System.out.println("Found new dependency "+dep.newFilename());
+						        System.out.println("Found new dependency " + dep.newFilename());
 						} else { // dep == null
-						    System.out.println("Found unknown jar in classpath, will keep: "+rhs);
+						    System.out.println("Found unknown jar in classpath, will keep: " + rhs);
 							// If not, it's something the user has added, we just keep it.
 							classpath.add(rhs);
 						}
@@ -216,21 +216,21 @@ public class UpdateDeployContext {
 		// As above, we need to write ALL the dependencies BEFORE we write the main jar.
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
-		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
-			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
+		    System.out.println("Writing dependency " + d.newFilename() + " priority " + d.order());
+			bw.write("wrapper.java.classpath." + count + "=" + d.newFilename() + '\n');
 			count++;
 		}
 		
 		// Write the main jar.
-		bw.write("wrapper.java.classpath."+count+"="+mainRHS+'\n');
+		bw.write("wrapper.java.classpath." + count + "=" + mainRHS + '\n');
 		count++;
 		for(String s : classpath) {
-			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
+			bw.write("wrapper.java.classpath." + count + "=" + s + '\n');
 			count++;
 		}
 		
 		for(String s : otherLines)
-			bw.write(s+'\n');
+			bw.write(s + '\n');
 
 		if(!writtenReload) {
 			// Add it.
@@ -256,7 +256,7 @@ public class UpdateDeployContext {
 		
 		// New config installed.
 		
-		System.err.println("Rewritten wrapper.conf for build "+deps.build+" and "+deps.dependencies.size()+" dependencies.");
+		System.err.println("Rewritten wrapper.conf for build " + deps.build + " and " + deps.dependencies.size() + " dependencies.");
 	}
 
 	private Dependency findDependencyByRHSFilename(File rhs) {
@@ -347,7 +347,7 @@ public class UpdateDeployContext {
 					// There have been some cases where really high limits have caused the JVM to do bad things.
 					if(newMemoryLimit > 2048) newMemoryLimit = 2048;
 					bw.write('#' + markerComment + '\n');
-					bw.write("wrapper.java.maxmemory="+newMemoryLimit+'\n');
+					bw.write("wrapper.java.maxmemory=" + newMemoryLimit + '\n');
 					success = true;
 					continue;
 				} catch (NumberFormatException e) {
@@ -355,7 +355,7 @@ public class UpdateDeployContext {
 				}
 			}
 			
-			bw.write(line+'\n');
+			bw.write(line + '\n');
 		}
 		br.close();
 		
@@ -376,12 +376,12 @@ public class UpdateDeployContext {
 		if(success) {
 			if(!newConfig.renameTo(oldConfig)) {
 				if(!oldConfig.delete()) {
-					System.err.println("Unable to move rewritten wrapper.conf with new memory limit "+newConfig+" over old config "+oldConfig+" : unable to delete old config");
+					System.err.println("Unable to move rewritten wrapper.conf with new memory limit " + newConfig + " over old config " + oldConfig + " : unable to delete old config");
 					return CHANGED.FAIL;
 				}
 				if(!newConfig.renameTo(oldConfig)) {
 					System.err.println("Old wrapper.conf deleted but new wrapper.conf cannot be renamed!");
-					System.err.println("FREENET WILL NOT START UNTIL YOU RENAME "+newConfig+" to "+oldConfig);
+					System.err.println("FREENET WILL NOT START UNTIL YOU RENAME " + newConfig + " to " + oldConfig);
 					System.exit(NodeInitException.EXIT_BROKE_WRAPPER_CONF);
 				}
 			}

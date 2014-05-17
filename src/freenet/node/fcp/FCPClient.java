@@ -210,7 +210,7 @@ public class FCPClient {
 			reqs = completedUnackedRequests.toArray();
 		}
 		int i = 0;
-		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
+		for(i=offset;i < Math.min(reqs.length, offset + max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);
@@ -232,7 +232,7 @@ public class FCPClient {
 			reqs = runningPersistentRequests.toArray();
 		}
 		int i = 0;
-		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
+		for(i=offset;i < Math.min(reqs.length, offset + max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);
@@ -245,7 +245,7 @@ public class FCPClient {
 		assert(cg.persistenceType == persistenceType);
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(logMINOR)
-			Logger.minor(this, "Registering "+cg.getIdentifier());
+			Logger.minor(this, "Registering " + cg.getIdentifier());
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);
@@ -284,7 +284,7 @@ public class FCPClient {
 	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		ClientRequest req;
-		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
+		if(logMINOR) Logger.minor(this, "removeByIdentifier(" + identifier + ',' + kill + ')');
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);
@@ -304,7 +304,7 @@ public class FCPClient {
 					if(r.getIdentifier().equals(identifier)) {
 						req = r;
 						completedUnackedRequests.remove(r);
-						Logger.error(this, "Found completed unacked request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
+						Logger.error(this, "Found completed unacked request " + r + " for identifier " + r.getIdentifier() + " but not in clientRequestsByIdentifier!!");
 						break;
 					}
 					if(persistenceType == ClientRequest.PERSIST_FOREVER)
@@ -318,7 +318,7 @@ public class FCPClient {
 							req = r;
 							runningPersistentRequests.remove(r);
 							removedFromRunning = true;
-							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
+							Logger.error(this, "Found running request " + r + " for identifier " + r.getIdentifier() + " but not in clientRequestsByIdentifier!!");
 							break;
 						}
 						if(persistenceType == ClientRequest.PERSIST_FOREVER)
@@ -327,7 +327,7 @@ public class FCPClient {
 				}
 				if(req == null) return false;
 			} else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
-				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
+				Logger.error(this, "Removing " + identifier + ": in clientRequestsByIdentifier but not in running/completed maps!");
 				
 				return false;
 			}
@@ -341,7 +341,7 @@ public class FCPClient {
 		if(container != null)
 			container.activate(req, 1);
 		if(kill) {
-			if(logMINOR) Logger.minor(this, "Killing request "+req);
+			if(logMINOR) Logger.minor(this, "Killing request " + req);
 			req.cancel(container, context);
 		}
         req.requestWasRemoved(container, context);
@@ -387,7 +387,7 @@ public class FCPClient {
 			for(ClientRequest req: runningPersistentRequests) {
 				if(container != null) container.activate(req, 1);
 				if(req == null) {
-					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
+					Logger.error(this, "Request is null on runningPersistentRequests for " + this + " - database corruption??");
 					continue;
 				}
 				if((req.isPersistentForever()) || !onlyForever)
@@ -413,7 +413,7 @@ public class FCPClient {
 				status.add(req.getStatus(container));
 			} catch (Throwable t) {
 				// Try to load the rest. :<
-				Logger.error(this, "BROKEN REQUEST LOADING PERSISTENT REQUEST STATUS: "+t, t);
+				Logger.error(this, "BROKEN REQUEST LOADING PERSISTENT REQUEST STATUS: " + t, t);
 				// FIXME tell the user in wrapper.log or even in a useralert.
 			}
 			// FIXME deactivate? Unconditional deactivate depends on callers. Keep-as-is would need merge with addPersistentRequests.
@@ -434,7 +434,7 @@ public class FCPClient {
 	public boolean setWatchGlobal(boolean enabled, int verbosityMask, FCPServer server, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(isGlobalQueue) {
-			Logger.error(this, "Set watch global on global queue!: "+this, new Exception("debug"));
+			Logger.error(this, "Set watch global on global queue!: " + this, new Exception("debug"));
 			return false;
 		}
 		if(server.globalForeverClient == null) return false;
@@ -520,7 +520,7 @@ public class FCPClient {
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +name;
+		return super.toString() + ':' + name;
 	}
 
 	/**
@@ -562,7 +562,7 @@ public class FCPClient {
 	}
 	
 	public synchronized void removeRequestCompletionCallback(RequestCompletionCallback cb){
-		if(completionCallbacks!=null) completionCallbacks.remove(cb);
+		if(completionCallbacks != null) completionCallbacks.remove(cb);
 	}
 
 	public void removeFromDatabase(ObjectContainer container) {
@@ -614,7 +614,7 @@ public class FCPClient {
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 		}
-		for(int i=0;i<completedUnackedRequests.size();i++) {
+		for(int i=0;i < completedUnackedRequests.size();i++) {
 			ClientRequest req = completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
@@ -642,7 +642,7 @@ public class FCPClient {
 		assert completedUnackedRequests != null;
 		assert clientRequestsByIdentifier != null;
 		if(lowLevelClient == null) {
-			System.err.println("No lowLevelClient for "+this+" but other fields exist.");
+			System.err.println("No lowLevelClient for " + this + " but other fields exist.");
 			System.err.println("This means your database has been corrupted slightly, probably by a bug in Freenet.");
 			System.err.println("We are trying to recover ...");
 			Query q = container.query();

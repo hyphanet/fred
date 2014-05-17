@@ -71,8 +71,8 @@ public class AddressTracker {
 	private long brokenTime;
 
 	public static AddressTracker create(long lastBootID, ProgramDirectory runDir, int port) {
-		File data = runDir.file("packets-"+port+".dat");
-		File dataBak = runDir.file("packets-"+port+".bak");
+		File data = runDir.file("packets-" + port + ".dat");
+		File dataBak = runDir.file("packets-" + port + ".bak");
 		dataBak.delete();
 		FileInputStream fis = null;
 		try {
@@ -85,7 +85,7 @@ public class AddressTracker {
 		} catch (IOException e) {
 			// Fall through
 		} catch (FSParseException e) {
-			Logger.warning(AddressTracker.class, "Failed to load from disk for port "+port+": "+e, e);
+			Logger.warning(AddressTracker.class, "Failed to load from disk for port " + port + ": " + e, e);
 			// Fall through
 		} finally {
 			if(fis != null)
@@ -110,10 +110,10 @@ public class AddressTracker {
 	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
 		int version = fs.getInt("Version");
 		if(version != 2)
-			throw new FSParseException("Unknown Version "+version);
+			throw new FSParseException("Unknown Version " + version);
 		long savedBootID = fs.getLong("BootID");
 		if(savedBootID != lastBootID) throw new FSParseException("Unable to load address tracker table, assuming an unclean shutdown: Last ID was " +
-				lastBootID+" but stored "+savedBootID);
+				lastBootID + " but stored " + savedBootID);
 		// Sadly we don't know whether there were packets arriving during the gap,
 		// and some insecure firewalls will use incoming packets to keep tunnels open
 		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
@@ -158,7 +158,7 @@ public class AddressTracker {
 	private void packetTo(Peer peer, boolean sent) {
 		Peer peer2 = peer.dropHostName();
 		if(peer2 == null) {
-			Logger.error(this, "Impossible: No host name in AddressTracker.packetTo for "+peer);
+			Logger.error(this, "Impossible: No host name in AddressTracker.packetTo for " + peer);
 			return;
 		}
 		peer = peer2;
@@ -170,7 +170,7 @@ public class AddressTracker {
 			if(peerItem == null) {
 				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceivedPeer, timeDefinitelyNoPacketsSentPeer, peer);
 				if(peerTrackers.size() > MAX_ITEMS) {
-					Logger.error(this, "Clearing peer trackers on "+this);
+					Logger.error(this, "Clearing peer trackers on " + this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceivedPeer = now;
@@ -186,7 +186,7 @@ public class AddressTracker {
 			if(ipItem == null) {
 				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceivedIP, timeDefinitelyNoPacketsSentIP, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
-					Logger.error(this, "Clearing IP trackers on "+this);
+					Logger.error(this, "Clearing IP trackers on " + this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceivedIP = now;
@@ -285,15 +285,15 @@ public class AddressTracker {
 	}
 
 	public static String statusString(Status status) {
-		return NodeL10n.getBase().getString("ConnectivityToadlet.status."+status);
+		return NodeL10n.getBase().getString("ConnectivityToadlet.status." + status);
 	}
 
 	/** Persist the table to disk */
 	public void storeData(long bootID, ProgramDirectory runDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
 		if(isBroken()) return;
-		File data = runDir.file("packets-"+port+".dat");
-		File dataBak = runDir.file("packets-"+port+".bak");
+		File data = runDir.file("packets-" + port + ".dat");
+		File dataBak = runDir.file("packets-" + port + ".bak");
 		dataBak.delete();
 		FileOutputStream fos = null;
 		try {

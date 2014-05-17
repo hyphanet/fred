@@ -49,10 +49,10 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			return;
 		}
 		
-		addChild("#", FProxyToadlet.l10n("filenameLabel")+ " ");
-		addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
-		if(fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel")+" "+fr.mimeType);
-		if(fr.size > 0) addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
+		addChild("#", FProxyToadlet.l10n("filenameLabel") + " ");
+		addChild("a", "href", "/" + key.toString(false, false), key.getPreferredFilename());
+		if(fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel") + " " + fr.mimeType);
+		if(fr.size > 0) addChild("br", "Size: " + SizeUtil.formatSize(fr.size));
 		if(isAdvancedMode) {
 			addChild("br", FProxyToadlet.l10n("blocksDetail", 
 					new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },

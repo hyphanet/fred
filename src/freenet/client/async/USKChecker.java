@@ -38,7 +38,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		super(key, maxRetries, ctx, parent, false, realTimeFlag);
 		this.cb = cb;
         if(logMINOR)
-            Logger.minor(USKChecker.class, "Created USKChecker for "+key+" : "+this);
+            Logger.minor(USKChecker.class, "Created USKChecker for " + key + " : " + this);
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(cb, 1);
 		}
                 if(logMINOR)
-                    Logger.minor(this, "onFailure: "+e+" for "+this);
+                    Logger.minor(this, "onFailure: " + e + " for " + this);
 		// Firstly, can we retry?
 		boolean canRetry;
 		switch(e.code) {
@@ -82,7 +82,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 			break;
 		default:
-			Logger.error(this, "Unknown low-level fetch error code: "+e.code, new Exception("error"));
+			Logger.error(this, "Unknown low-level fetch error code: " + e.code, new Exception("error"));
 			canRetry = true;
 		}
 
@@ -106,7 +106,7 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	@Override
 	protected String transientToString() {
-		return "USKChecker for "+key.getURI()+" for "+cb;
+		return "USKChecker for " + key.getURI() + " for " + cb;
 	}
 
 	@Override

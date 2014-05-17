@@ -72,11 +72,11 @@ public class ResizablePersistentIntBuffer {
 		this.lock = new ReentrantReadWriteLock();
 		this.size = size;
 		buffer = new int[size];
-		long expectedLength = ((long)size)*4;
+		long expectedLength = ((long)size) * 4;
 		long realLength = raf.length();
 		if(realLength > expectedLength)
 			raf.setLength(expectedLength);
-		readBuffer((int)Math.min(size, realLength/4));
+		readBuffer((int)Math.min(size, realLength / 4));
 		if(realLength < expectedLength)
 			raf.setLength(expectedLength);
 		channel = raf.getChannel();
@@ -85,7 +85,7 @@ public class ResizablePersistentIntBuffer {
 	/** Should be called during startup to fill in an appropriate default value e.g. if the store 
 	 * is completely new. */
 	public void fill(int value) {
-		for(int i=0;i<buffer.length;i++)
+		for(int i=0;i < buffer.length;i++)
 			buffer[i] = value;
 	}
 
@@ -107,7 +107,7 @@ public class ResizablePersistentIntBuffer {
 			this.ticker = ticker;
 			if(dirty) {
 				int persistenceTime = getPersistenceTime();
-				Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+				Logger.normal(this, "Scheduling write of slot cache " + this + " in " + persistenceTime);
 				ticker.queueTimedJob(writer, persistenceTime);
 				scheduled = true;
 			}
@@ -135,18 +135,18 @@ public class ResizablePersistentIntBuffer {
 			int persistenceTime = getPersistenceTime();
 			buffer[offset] = value;
 			if(persistenceTime == -1 && !noWrite) {
-				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset)*4);
+				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset) * 4);
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
 					dirty = true;
 					if(ticker != null) {
 						if(!scheduled) {
-							Logger.normal(this, "Scheduling write of slot cache "+this+" in "+persistenceTime);
+							Logger.normal(this, "Scheduling write of slot cache " + this + " in " + persistenceTime);
 							ticker.queueTimedJob(writer, persistenceTime);
 							scheduled = true;
 						}
 					} else {
-						Logger.normal(this, "Will scheduling write of slot cache after startup: "+this+" in "+persistenceTime);
+						Logger.normal(this, "Will scheduling write of slot cache after startup: " + this + " in " + persistenceTime);
 					}
 				}
 			} else {
@@ -162,7 +162,7 @@ public class ResizablePersistentIntBuffer {
 	private Runnable writer = new Runnable() {
 
 		public void run() {
-			Logger.normal(this, "Writing slot cache "+ResizablePersistentIntBuffer.this);
+			Logger.normal(this, "Writing slot cache " + ResizablePersistentIntBuffer.this);
 			lock.readLock().lock(); // Protect buffer.
 			try {
 				synchronized(ResizablePersistentIntBuffer.this) {
@@ -177,7 +177,7 @@ public class ResizablePersistentIntBuffer {
 				try {
 					writeBuffer();
 				} catch (IOException e) {
-					Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+					Logger.error(this, "Write failed during shutdown: " + e + " on " + filename, e);
 				}
 			} finally {
 				synchronized(ResizablePersistentIntBuffer.this) {
@@ -186,7 +186,7 @@ public class ResizablePersistentIntBuffer {
 				}
 				lock.readLock().unlock();
 			}
-			Logger.normal(this, "Written slot cache "+ResizablePersistentIntBuffer.this);
+			Logger.normal(this, "Written slot cache " + ResizablePersistentIntBuffer.this);
 		}
 		
 	};
@@ -211,10 +211,10 @@ public class ResizablePersistentIntBuffer {
 				writing = true;
 			}
 			try {
-				Logger.normal(this, "Writing slot cache on shutdown: "+this);
+				Logger.normal(this, "Writing slot cache on shutdown: " + this);
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(this, "Write failed during shutdown: " + e + " on " + filename, e);
 			}
 			synchronized(this) {
 				writing = false;
@@ -222,7 +222,7 @@ public class ResizablePersistentIntBuffer {
 			try {
 				raf.close();
 			} catch (IOException e) {
-				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(this, "Close failed during shutdown: " + e + " on " + filename, e);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -240,7 +240,7 @@ public class ResizablePersistentIntBuffer {
 			try {
 				raf.close();
 			} catch (IOException e) {
-				Logger.error(this, "Close failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(this, "Close failed during shutdown: " + e + " on " + filename, e);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -263,14 +263,14 @@ public class ResizablePersistentIntBuffer {
 		lock.writeLock().lock();
 		try {
 			if(this.size == size) return;
-			Logger.normal(this, "Resizing cache from "+this.size+" slots to "+size);
+			Logger.normal(this, "Resizing cache from " + this.size + " slots to " + size);
 			this.size = size;
 			buffer = Arrays.copyOf(buffer, size);
 			try {
 				raf.setLength(size * 4);
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Failed to change size or write during resize on "+filename+" : "+e, e);
+				Logger.error(this, "Failed to change size or write during resize on " + filename + " : " + e, e);
 			}
 		} finally {
 			lock.writeLock().unlock();
@@ -278,7 +278,7 @@ public class ResizablePersistentIntBuffer {
 	}
 
 	public void forceWrite() {
-		Logger.normal(this, "Force write slot cache: "+this);
+		Logger.normal(this, "Force write slot cache: " + this);
 		lock.readLock().lock();
 		try {
 			synchronized(this) {
@@ -300,7 +300,7 @@ public class ResizablePersistentIntBuffer {
 			try {
 				writeBuffer();
 			} catch (IOException e) {
-				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+				Logger.error(this, "Write failed during shutdown: " + e + " on " + filename, e);
 			}
 		} finally {
 			synchronized(this) {
@@ -320,7 +320,7 @@ public class ResizablePersistentIntBuffer {
 
 	// Testing only! Hence no lock.
 	public void replaceAllEntries(int key, int value) {
-		for(int i=0;i<buffer.length;i++)
+		for(int i=0;i < buffer.length;i++)
 			if(buffer[i] == key) buffer[i] = value;
 	}
 	

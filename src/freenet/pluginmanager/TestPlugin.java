@@ -26,12 +26,12 @@ public class TestPlugin implements FredPlugin {
 			String key = getRandomKey();//"freenet:CHK@j-v1zc0cuN3wlaCpxlKd6vT6c1jAnT9KiscVjfzLu54,q9FIlJSh8M1I1ymRBz~A0fsIcGkvUYZahZb5j7uepLA,AAEA--8";
 			FetchResult fr = pr.getHLSimpleClient().fetch(new FreenetURI(key));
 			
-			return "This is the echo of the past.... ["+ path + "]\n" + 
-			"This is from within the plugin. I've fetched some data for you.\n"+
-			"The key is: " + key + ", and the data inside:\n"+
-			"-----------------------------------------------------------\n"+
+			return "This is the echo of the past.... [" + path + "]\n" + 
+			"This is from within the plugin. I've fetched some data for you.\n" +
+			"The key is: " + key + ", and the data inside:\n" +
+			"-----------------------------------------------------------\n" +
 			new String(fr.asByteArray(), "UTF-8").trim() + '\n' +
-			"-----------------------------------------------------------\n"+
+			"-----------------------------------------------------------\n" +
 			"Length: " + fr.size() + ", Mime-Type: " + fr.getMimeType();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

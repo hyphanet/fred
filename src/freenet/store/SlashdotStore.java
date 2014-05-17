@@ -133,7 +133,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 					blocksByRoutingKey.push(key, block);
 				}
 			}
-			if(logDEBUG) Logger.debug(this, "Block was last accessed "+(System.currentTimeMillis() - timeAccessed)+"ms ago");
+			if(logDEBUG) Logger.debug(this, "Block was last accessed " + (System.currentTimeMillis() - timeAccessed) + "ms ago");
 			return ret;
 		} catch (KeyVerifyException e) {
 			block.data.free();

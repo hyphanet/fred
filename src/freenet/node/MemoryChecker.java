@@ -51,7 +51,7 @@ public class MemoryChecker implements Runnable {
 		long freeMemory = r.freeMemory();
 		long maxMemory = r.maxMemory();
 		
-		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((totalMemory-freeMemory)));
+		Logger.normal(this, "Memory in use: " + SizeUtil.formatSize((totalMemory - freeMemory)));
 		
 		if (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE) {
 			// jvm have allocated maximum memory
@@ -98,15 +98,15 @@ public class MemoryChecker implements Runnable {
 		if(aggressiveGCModificator > 0) {
 			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			long beforeGCUsedMemory = (r.totalMemory() - r.freeMemory());
-			if(logMINOR) Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
+			if(logMINOR) Logger.minor(this, "Memory in use before GC: " + beforeGCUsedMemory);
 			long beforeGCTime = System.currentTimeMillis();
 			System.gc();
 			System.runFinalization();
 			long afterGCTime = System.currentTimeMillis();
 			long afterGCUsedMemory = (r.totalMemory() - r.freeMemory());
 			if(logMINOR) {
-				Logger.minor(this, "Memory in use after GC: "+afterGCUsedMemory);
-				Logger.minor(this, "GC completed after "+(afterGCTime - beforeGCTime)+"ms and \"recovered\" "+(beforeGCUsedMemory - afterGCUsedMemory)+" bytes, leaving "+afterGCUsedMemory+" bytes used");
+				Logger.minor(this, "Memory in use after GC: " + afterGCUsedMemory);
+				Logger.minor(this, "GC completed after " + (afterGCTime - beforeGCTime) + "ms and \"recovered\" " + (beforeGCUsedMemory - afterGCUsedMemory) + " bytes, leaving " + afterGCUsedMemory + " bytes used");
 			}
 		}
 

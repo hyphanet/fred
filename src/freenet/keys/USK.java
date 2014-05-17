@@ -58,9 +58,9 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		ClientSSK tmp = new ClientSSK(siteName, pubKeyHash, extra, null, cryptoKey);
 		cryptoAlgorithm = tmp.cryptoAlgorithm;
 		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
-			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
+			throw new MalformedURLException("Pubkey hash wrong length: " + pubKeyHash.length + " should be " + NodeSSK.PUBKEY_HASH_SIZE);
 		if(cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH)
-			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+ClientSSK.CRYPTO_KEY_LENGTH);
+			throw new MalformedURLException("Decryption key wrong length: " + cryptoKey.length + " should be " + ClientSSK.CRYPTO_KEY_LENGTH);
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
@@ -127,7 +127,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 		try {
 			return new ClientSSK(string, pubKeyHash, ClientSSK.getExtraBytes(cryptoAlgorithm), null, cryptoKey);
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
+			Logger.error(this, "Caught " + e + " should not be possible in USK.getSSK", e);
 			throw new Error(e);
 		}
 	}
@@ -185,7 +185,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 	
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +getURI();
+		return super.toString() + ':' + getURI();
 	}
 
 	public FreenetURI turnMySSKIntoUSK(FreenetURI uri) {
@@ -203,7 +203,7 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 			try {
 				edition = Long.parseLong(doc);
 			} catch (NumberFormatException e) {
-				Logger.normal(this, "Trying to turn SSK back into USK: "+uri+" doc="+doc+" caught "+e, e);
+				Logger.normal(this, "Trying to turn SSK back into USK: " + uri + " doc=" + doc + " caught " + e, e);
 				return uri;
 			}
 			if(!doc.equals(Long.toString(edition))) return uri;

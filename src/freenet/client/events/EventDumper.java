@@ -23,7 +23,7 @@ public class EventDumper implements ClientEventListener {
 	@Override
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		try {
-			w.write(ce.getDescription()+"\n");
+			w.write(ce.getDescription() + "\n");
 		} catch (IOException e) {
 			// Ignore.
 		}

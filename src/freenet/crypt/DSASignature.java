@@ -31,8 +31,8 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		int x=sig.indexOf(',');
 		if (x <= 0)
 	    	throw new NumberFormatException("DSA Signatures have two values");
-		r = new NativeBigInteger(sig.substring(0,x), 16);
-		s = new NativeBigInteger(sig.substring(x+1), 16);
+		r = new NativeBigInteger(sig.substring(0, x), 16);
+		s = new NativeBigInteger(sig.substring(x + 1), 16);
 		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
     }
 
@@ -40,7 +40,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		BigInteger r, s;
 		r=Util.readMPI(in);
 		s=Util.readMPI(in);
-		return new DSASignature(r,s);
+		return new DSASignature(r, s);
     }
 
     public void write(OutputStream o) throws IOException {
@@ -83,16 +83,16 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 			byte[] out = new byte[length];
 			System.arraycopy(data, 0, out, out.length - data.length, data.length);
 			return out;
-		} else if(data.length == length+1) {
+		} else if(data.length == length + 1) {
 			if(data[0] == 0) {
 				byte[] out = new byte[length];
 				System.arraycopy(data, 1, out, 0, length);
 				return out;
 			} else
-				throw new IllegalArgumentException("Parameter longer than "+length+" bytes : "+param.bitLength());
+				throw new IllegalArgumentException("Parameter longer than " + length + " bytes : " + param.bitLength());
 		} else if(data.length == length) {
 			return data;
-		} else throw new IllegalArgumentException("Length is much shorter: "+data.length+" but target length = "+length);
+		} else throw new IllegalArgumentException("Length is much shorter: " + data.length + " but target length = " + length);
 	}
 		  
 }

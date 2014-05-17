@@ -73,14 +73,14 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	@Override
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(l < 0) {
-			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
+			Logger.error(this, "Found negative edition: " + l + " for " + key + " !!!");
 			return;
 		}
 		if(l < origUSK.suggestedEdition) {
-			Logger.warning(this, "Found edition prior to that specified by the client: "+l+" < "+origUSK.suggestedEdition, new Exception("error"));
+			Logger.warning(this, "Found edition prior to that specified by the client: " + l + " < " + origUSK.suggestedEdition, new Exception("error"));
 			return;
 		}
-		if(logMINOR) Logger.minor(this, "Found edition "+l+" for "+this+" - fetching...");
+		if(logMINOR) Logger.minor(this, "Found edition " + l + " for " + this + " - fetching...");
 		// Create a SingleFileFetcher for the key (as an SSK).
 		// Put the edition number into its context object.
 		// Put ourself as callback.
@@ -92,16 +92,16 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 						ctx.maxNonSplitfileRetries, 0, true, l, true, false, null, context, realTimeFlag, false);
 			getter.schedule(null, context);
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Impossible: "+e, e);
+			Logger.error(this, "Impossible: " + e, e);
 		} catch (FetchException e) {
-			Logger.error(this, "Could not start fetcher for "+uri+" : "+e, e);
+			Logger.error(this, "Could not start fetcher for " + uri + " : " + e, e);
 		}
 	}
 
 	@Override
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
+			Logger.minor(this, "Success on " + this + " from " + state + " : length " + streamGenerator.size() + "mime type " + clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
 		Bucket finalResult = null;
@@ -109,11 +109,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 		} catch (IOException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
 			return;
 		} catch(Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			return;
 		}
@@ -150,10 +150,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
 			return;
 		} catch(IOException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			return;
 		} finally {
@@ -187,7 +187,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 			return;
 		}
-		Logger.warning(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
+		Logger.warning(this, "Found edition " + state.getToken() + " but failed to fetch edition: " + e, e);
 	}
 
 	@Override

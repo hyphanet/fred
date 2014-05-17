@@ -164,7 +164,7 @@ public abstract class ClientRequester {
 			blockSetFinalized = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
+			Logger.minor(this, "Finalized set of blocks for " + this, new Exception("debug"));
 		if(persistent())
 			container.store(this);
 		notifyClients(container, context);
@@ -185,7 +185,7 @@ public abstract class ClientRequester {
 				Logger.error(this, "addBlock() but set finalized! on " + this);
 		}
 		
-		if(logMINOR) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
+		if(logMINOR) Logger.minor(this, "addBlock(): total=" + totalBlocks + " successful=" + successfulBlocks + " failed=" + failedBlocks + " required=" + minSuccessBlocks);
 		if(persistent()) container.store(this);
 	}
 
@@ -199,19 +199,19 @@ public abstract class ClientRequester {
 
 		if (wasFinalized) {
 			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThresholdNew()))
-				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
+				Logger.error(this, "addBlocks() but set finalized! on " + this, new Exception("error"));
 			else
-				Logger.error(this, "addBlocks() but set finalized! on "+this);
+				Logger.error(this, "addBlocks() but set finalized! on " + this);
 		}
 		
-		if(logMINOR) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+		if(logMINOR) Logger.minor(this, "addBlocks(" + num + "): total=" + totalBlocks + " successful=" + successfulBlocks + " failed=" + failedBlocks + " required=" + minSuccessBlocks); 
 		if(persistent()) container.store(this);
 	}
 
 	/** We completed a block. Count it and notify clients unless dontNotify. */
 	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
+			Logger.minor(this, "Completed block (" + dontNotify + "): total=" + totalBlocks + " success=" + successfulBlocks + " failed=" + failedBlocks + " fatally=" + fatallyFailedBlocks + " finalised=" + blockSetFinalized + " required=" + minSuccessBlocks + " on " + this);
 		synchronized(this) {
 			if(cancelled) return;
 			successfulBlocks++;
@@ -231,7 +231,7 @@ public abstract class ClientRequester {
 				// Data corruption?!?!?
 				// Obviously broken, possibly associated with a busted FCPClient.
 				// Lets fail it.
-				Logger.error(this, "Stored and active "+this+" but client is null!");
+				Logger.error(this, "Stored and active " + this + " but client is null!");
 				if(!isFinished()) {
 					context.postUserAlert(brokenClientAlert);
 					System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
@@ -263,10 +263,10 @@ public abstract class ClientRequester {
 				return true;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
 				// Definitely a bug, hopefully a simple one.
-				Logger.error(this, "Not active in completedBlock on "+this, new Exception("error"));
+				Logger.error(this, "Not active in completedBlock on " + this, new Exception("error"));
 				return true;
 			} else
-				throw new IllegalStateException("Client is null on persistent request "+this);
+				throw new IllegalStateException("Client is null on persistent request " + this);
 		}
 		return false;
 	}
@@ -294,7 +294,7 @@ public abstract class ClientRequester {
 		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
 		if(persistent()) container.store(this);
-		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks(" + blocks + "): total=" + totalBlocks + " successful=" + successfulBlocks + " failed=" + failedBlocks + " required=" + minSuccessBlocks); 
 	}
 
 	/** Insertors should override this. The method is duplicated rather than calling addMustSucceedBlocks to avoid confusing consequences when addMustSucceedBlocks does other things. */
@@ -302,7 +302,7 @@ public abstract class ClientRequester {
 		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
 		if(persistent()) container.store(this);
-		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks(" + blocks + "): total=" + totalBlocks + " successful=" + successfulBlocks + " failed=" + failedBlocks + " required=" + minSuccessBlocks); 
 	}
 	
 	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
@@ -352,7 +352,7 @@ public abstract class ClientRequester {
 			oldPrio = priorityClass;
 			this.priorityClass = newPriorityClass;
 		}
-		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
+		if(logMINOR) Logger.minor(this, "Changing priority class of " + this + " from " + oldPrio + " to " + newPriorityClass);
 		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
 		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
 		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
@@ -422,7 +422,7 @@ public abstract class ClientRequester {
 		if(persistent())
 			container.activate(requests, 1);
 		if(!requests.removeRequest(req, container) && !dontComplain) {
-			Logger.error(this, "Not in request list for "+this+": "+req);
+			Logger.error(this, "Not in request list for " + this + ": " + req);
 		}
 		if(persistent())
 			container.deactivate(requests, 1);
@@ -434,11 +434,11 @@ public abstract class ClientRequester {
 		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
 		for(ClientRequester req : requesters) {
 			try {
-				if(logMINOR) Logger.minor(req, "Checking "+req);
+				if(logMINOR) Logger.minor(req, "Checking " + req);
 				if(req.isCancelled() || req.isFinished()) {
 					if(logMINOR) Logger.minor(req, "Cancelled or finished");
 				} else {
-					if(logMINOR) Logger.minor(req, "Checking for broken client: "+req);
+					if(logMINOR) Logger.minor(req, "Checking for broken client: " + req);
 					if(!req.checkForBrokenClient(container, clientContext))
 						if(logMINOR) Logger.minor(req, "Request is clean.");
 					else {

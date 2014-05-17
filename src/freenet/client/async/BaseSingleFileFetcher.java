@@ -55,7 +55,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		super(parent, realTimeFlag);
 		this.deleteFetchContext = deleteFetchContext;
 		if(logMINOR)
-			Logger.minor(this, "Creating BaseSingleFileFetcher for "+key);
+			Logger.minor(this, "Creating BaseSingleFileFetcher for " + key);
 		retryCount = 0;
 		this.maxRetries = maxRetries;
 		this.key = key;
@@ -84,7 +84,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(l > 0 && l > now) {
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
-				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until " + TimeUtil.formatTime(l - now) + " on " + this);
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
@@ -128,7 +128,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		else
 			r = ++retryCount;
 		if(logMINOR)
-			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+r+") on "+this+" finished="+finished+" cancelled="+cancelled);
+			Logger.minor(this, "Attempting to retry... (max " + maxRetries + ", current " + r + ") on " + this + " finished=" + finished + " cancelled=" + cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
 				container.store(this);
@@ -137,14 +137,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
 				if(tracker.cooldownWakeupTime > now) {
-					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(tracker.cooldownWakeupTime - now), new Exception("error"));
+					Logger.error(this, "Already on the cooldown queue for " + this + " until " + freenet.support.TimeUtil.formatTime(tracker.cooldownWakeupTime - now), new Exception("error"));
 				} else {
-					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
+					if(logMINOR) Logger.minor(this, "Adding to cooldown queue " + this);
 					if(persistent)
 						container.activate(key, 5);
 					tracker.cooldownWakeupTime = now + cachedCooldownTime;
 					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, context, true);
-					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
+					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until " + TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
 						container.deactivate(key, 5);
 				}
@@ -256,7 +256,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		synchronized(this) {
 			if(finished) {
 				if(logMINOR)
-					Logger.minor(this, "onGotKey() called twice on "+this, new Exception("debug"));
+					Logger.minor(this, "onGotKey() called twice on " + this, new Exception("debug"));
 				return;
 			}
 			finished = true;
@@ -266,9 +266,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(key == null)
 				throw new NullPointerException();
 			if(this.key == null)
-				throw new NullPointerException("Key is null on "+this);
+				throw new NullPointerException("Key is null on " + this);
 			if(!key.equals(this.key.getNodeKey(false))) {
-				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
+				Logger.normal(this, "Got sent key " + key + " but want " + this.key + " for " + this);
 				return;
 			}
 		}
@@ -325,11 +325,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(persistent)
 			container.activate(this.key, 5);
 		if(!(key.equals(this.key.getNodeKey(false)))) {
-			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey(false)+" for "+this.key);
+			Logger.error(this, "Got requeueAfterCooldown for wrong key: " + key + " but mine is " + this.key.getNodeKey(false) + " for " + this.key);
 			return;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
+			Logger.minor(this, "Requeueing after cooldown " + key + " for " + this);
 		reschedule(container, context);
 		if(persistent)
 			container.deactivate(this.key, 5);
@@ -345,7 +345,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		try {
 			getScheduler(container, context).register(this, new SendableGet[] { this }, persistent, container, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
+			Logger.error(this, "Impossible: " + e + " on " + this, e);
 		}
 	}
 	
@@ -358,7 +358,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		try {
 			getScheduler(container, context).register(null, new SendableGet[] { this }, persistent, container, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
+			Logger.error(this, "Impossible: " + e + " on " + this, e);
 		}
 	}
 	
@@ -369,7 +369,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	@Override
 	public Key[] listKeys(ObjectContainer container) {
 		if(container != null && !persistent)
-			Logger.error(this, "listKeys() on "+this+" but persistent=false, stored is "+container.ext().isStored(this)+" active is "+container.ext().isActive(this));
+			Logger.error(this, "listKeys() on " + this + " but persistent=false, stored is " + container.ext().isStored(this) + " active is " + container.ext().isActive(this));
 		synchronized(this) {
 			if(cancelled || finished)
 				return new Key[0];
@@ -392,7 +392,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(l > 0 && l > now) {
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
-				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
+				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until " + TimeUtil.formatTime(l - now) + " on " + this);
 				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
@@ -417,15 +417,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(cancelled) return null;
 		}
 		if(key == null) {
-			Logger.error(this, "Key is null - left over BSSF? on "+this+" in makeKeyListener()", new Exception("error"));
+			Logger.error(this, "Key is null - left over BSSF? on " + this + " in makeKeyListener()", new Exception("error"));
 			if(persistent) container.delete(this);
 			return null;
 		}
 		Key newKey = key.getNodeKey(true);
 		if(parent == null) {
-			Logger.error(this, "Parent is null on "+this+" persistent="+persistent+" key="+key+" ctx="+ctx);
+			Logger.error(this, "Parent is null on " + this + " persistent=" + persistent + " key=" + key + " ctx=" + ctx);
 			if(container != null)
-				Logger.error(this, "Stored = "+container.ext().isStored(this)+" active = "+container.ext().isActive(this));
+				Logger.error(this, "Stored = " + container.ext().isStored(this) + " active = " + container.ext().isActive(this));
 			return null;
 		}
 		short prio = parent.getPriorityClass();

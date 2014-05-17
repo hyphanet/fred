@@ -119,7 +119,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		public void write(int b) throws IOException {
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+				throw new IllegalStateException("Writing to old stream in " + getName());
 			//if((b < 0) || (b > 255))
 			//	throw new IllegalArgumentException();
 			int toWrite = pcfb.encipher(b);
@@ -135,7 +135,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			if(closed)
 				throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+				throw new IllegalStateException("Writing to old stream in " + getName());
 			write(buf, 0, buf.length);
 		}
 		
@@ -143,7 +143,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		public void write(byte[] buf, int offset, int length) throws IOException {
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+				throw new IllegalStateException("Writing to old stream in " + getName());
 			if(length == 0) return;
 			byte[] enc = Arrays.copyOfRange(buf, offset, offset + length);
 			pcfb.blockEncipher(enc, 0, enc.length);
@@ -159,7 +159,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			if(closed) return;
 			try {
 				if(streamNumber != lastOutputStream) {
-					Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
+					Logger.normal(this, "Not padding out to length because have been superceded: " + getName());
 					return;
 				}
 				Random random = new MersenneTwister(randomSeed);
@@ -221,8 +221,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		@Override
 		public int read(byte[] buf, int offset, int length) throws IOException {
 			// FIXME remove debugging
-			if((length+offset > buf.length) || (offset < 0) || (length < 0))
-				throw new ArrayIndexOutOfBoundsException("a="+offset+", b="+length+", length "+buf.length);
+			if((length + offset > buf.length) || (offset < 0) || (length < 0))
+				throw new ArrayIndexOutOfBoundsException("a=" + offset + ", b=" + length + ", length " + buf.length);
 			int x = available();
 			if(x <= 0) return -1;
 			length = Math.min(length, x);
@@ -243,7 +243,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			byte[] buf = new byte[(int)Math.min(4096, bytes)];
 			long skipped = 0;
 			while(skipped < bytes) {
-				int x = read(buf, 0, (int)Math.min(bytes-skipped, buf.length));
+				int x = read(buf, 0, (int)Math.min(bytes - skipped, buf.length));
 				if(x <= 0) return skipped;
 				skipped += x;
 			}
@@ -267,12 +267,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		long max = (long)minPaddedSize << 1;
 		while(true) {
 			if(max < 0)
-				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
+				throw new Error("Impossible size: " + size + " - min=" + min + ", max=" + max);
 			if(size < min)
 				throw new IllegalStateException("???");
 			if((size >= min) && (size <= max)) {
 				if(logMINOR)
-					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
+					Logger.minor(this, "Padded: " + max + " was: " + dataLength + " for " + getName());
 				return max;
 			}
 			min = max;
@@ -304,12 +304,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 
 	@Override
 	public String getName() {
-		return "Encrypted:"+bucket.getName();
+		return "Encrypted:" + bucket.getName();
 	}
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +bucket;
+		return super.toString() + ':' + bucket;
 	}
 	
 	@Override
@@ -355,13 +355,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
+			Logger.minor(this, "Removing from database: " + this);
 		bucket.removeFrom(container);
 		container.delete(this);
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {
-		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
+		Logger.minor(this, "Activating " + super.toString() + " bucket == null = " + (bucket == null));
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}

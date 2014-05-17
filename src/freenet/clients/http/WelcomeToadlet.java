@@ -201,7 +201,7 @@ public class WelcomeToadlet extends Toadlet {
                 String u = key.toString();
                 NodeL10n.getBase().addL10nSubstitution(content, "WelcomeToadlet.keyInsertedSuccessfullyWithKeyAndName",
                         new String[]{"link", "name"},
-                        new HTMLNode[] { HTMLNode.link("/"+u), HTMLNode.text(u) });
+                        new HTMLNode[] { HTMLNode.link("/" + u), HTMLNode.text(u) });
             } catch (InsertException e) {
             	content = ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle"), contentNode, "failed-insert", false);
                 content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));
@@ -329,7 +329,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "key", key});
                 if(request.isParameterSet("hasAnActivelink")) {
-                	addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden","hasAnActivelink",request.getParam("hasAnActivelink")});
+                	addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "hasAnActivelink", request.getParam("hasAnActivelink")});
                 }
 				addForm.addChild("label", "for", "name", NodeL10n.getBase().getString("BookmarkEditorToadlet.nameLabel") + ' ');
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"text", "name", request.getParam("desc")});
@@ -363,7 +363,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
         } else if (uri.getQuery() != null && uri.getQuery().startsWith("_CHECKED_HTTP_=")) {
 		//Redirect requests for escaped URLs using the old destination to ExternalLinkToadlet.
-		super.writeTemporaryRedirect(ctx, "Depreciated", ExternalLinkToadlet.PATH+'?'+uri.getQuery());
+		super.writeTemporaryRedirect(ctx, "Depreciated", ExternalLinkToadlet.PATH + '?' + uri.getQuery());
 		return;
         }
         }

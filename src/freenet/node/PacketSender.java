@@ -170,7 +170,7 @@ public class PacketSender implements Runnable {
 			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
 			canSendAt = MILLISECONDS.convert(canSendAt + MILLISECONDS.toNanos(1) - 1, NANOSECONDS);
 			if(logMINOR)
-				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+				Logger.minor(this, "Can send throttled packets in " + canSendAt + "ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 			canSendThrottled = false;
 		}
@@ -241,7 +241,7 @@ public class PacketSender implements Runnable {
 					 as being incompatible.
 					 */
 					pn.invalidate(now);
-					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
+					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: " + pn);
 					continue;
 				}
 
@@ -295,7 +295,7 @@ public class PacketSender implements Runnable {
 					long urgentTime = pn.getNextUrgentTime(now);
 					// Should spam the logs, unless there is a deadlock
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
-						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn);
+						Logger.minor(this, "Next urgent time: " + urgentTime + "(in " + (urgentTime - now) + ") for " + pn);
 					nextActionTime = Math.min(nextActionTime, urgentTime);
 				} else {
 					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
@@ -359,7 +359,7 @@ public class PacketSender implements Runnable {
 					nextActionTime = now;
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" : "+("(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: " + TimeUtil.formatTime(e.delta) + " to allocate a packet number to send to " + toSendPacket + " : " + ("(new packet format)") + " (version " + toSendPacket.getVersionNumber() + ") - DISCONNECTING!");
 				toSendPacket.forceDisconnect();
 			}
 		} else if(toSendAckOnly != null) {
@@ -369,7 +369,7 @@ public class PacketSender implements Runnable {
                     nextActionTime = now;
 				}
 			} catch (BlockedTooLongException e) {
-				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" : "+("(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
+				Logger.error(this, "Waited too long: " + TimeUtil.formatTime(e.delta) + " to allocate a packet number to send to " + toSendAckOnly + " : " + ("(new packet format)") + " (version " + toSendAckOnly.getVersionNumber() + ") - DISCONNECTING!");
 				toSendAckOnly.forceDisconnect();
 			}
 		}
@@ -420,11 +420,11 @@ public class PacketSender implements Runnable {
 			for(PeerNode pn : peers) {
 				long lastConnected = pn.timeLastConnected(now);
 				if(lastConnected <= 0)
-					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
+					Logger.error(this, "Last connected is zero or negative for old-opennet-peer " + pn);
 				// Will be removed by next line.
 				if(now - lastConnected > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
 					om.purgeOldOpennetPeer(pn);
-					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - lastConnected));
+					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): " + pn + " age is " + TimeUtil.formatTime(now - lastConnected));
 					continue;
 				}
 				if(pn.isConnected()) continue; // Race condition??
@@ -477,7 +477,7 @@ public class PacketSender implements Runnable {
 			}
 		} else {
 			if(logDEBUG)
-				Logger.debug(this, "Next urgent time is "+(now - nextActionTime)+"ms in the past");
+				Logger.debug(this, "Next urgent time is " + (now - nextActionTime) + "ms in the past");
 		}
 	}
 
@@ -490,10 +490,10 @@ public class PacketSender implements Runnable {
 	}
 
 	protected String l10n(String key, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("PacketSender."+key, patterns, values);
+		return NodeL10n.getBase().getString("PacketSender." + key, patterns, values);
 	}
 
 	protected String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("PacketSender."+key, pattern, value);
+		return NodeL10n.getBase().getString("PacketSender." + key, pattern, value);
 	}
 }

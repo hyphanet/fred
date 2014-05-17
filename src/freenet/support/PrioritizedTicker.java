@@ -158,7 +158,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 
 	@Override
 	public void queueTimedJob(Runnable job, long offset) {
-		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
+		queueTimedJob(job, "Scheduled job: " + job, offset, false, false);
 	}
 
 	/**
@@ -181,7 +181,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
-			if(logMINOR) Logger.minor(this, "Running directly: "+runner);
+			if(logMINOR) Logger.minor(this, "Running directly: " + runner);
 			executor.execute(runner, name);
 			return;
 		}
@@ -194,7 +194,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				Long t = timedJobsQueued.get(job);
 				if(t != null) {
 					if(t <= l) {
-						Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
+						Logger.normal(this, "Not re-running as already queued: " + runner + " for " + name);
 						return;
 					} else {
 						// Delete the existing job because the new job will run first.
@@ -210,7 +210,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 								assert(jobs[0].equals(job));
 								timedJobsByTime.remove(t);
 							} else {
-								Job[] newJobs = new Job[jobs.length-1];
+								Job[] newJobs = new Job[jobs.length - 1];
 								int x = 0;
 								for(Job oldjob: jobs) {
 									if(oldjob.equals(job)) {
@@ -232,7 +232,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 									if(x != newJobs.length)
 										newJobs = Arrays.copyOf(newJobs, x);
 									timedJobsByTime.put(t, newJobs);
-									assert(x == jobs.length-1);
+									assert(x == jobs.length - 1);
 								}
 							}
 						}
@@ -246,7 +246,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				timedJobsByTime.put(l, new Job[]{(Job) o, job});
 			else if(o instanceof Job[]) {
 				Job[] r = (Job[]) o;
-				Job[] jobs = Arrays.copyOf(r, r.length+1);
+				Job[] jobs = Arrays.copyOf(r, r.length + 1);
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
@@ -293,7 +293,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						assert(jobs[0].equals(job));
 						timedJobsByTime.remove(t);
 					} else {
-						Job[] newJobs = new Job[jobs.length-1];
+						Job[] newJobs = new Job[jobs.length - 1];
 						int x = 0;
 						for(Job oldjob : jobs) {
 							if(oldjob.equals(job)) {
@@ -314,7 +314,7 @@ public class PrioritizedTicker implements Ticker, Runnable {
 							if(x != newJobs.length)
 								newJobs = Arrays.copyOf(newJobs, x);
 							timedJobsByTime.put(t, newJobs);
-							assert(x == jobs.length-1);
+							assert(x == jobs.length - 1);
 						}
 					}
 				}

@@ -80,7 +80,7 @@ public class AllowedHosts {
 
 	public synchronized String getAllowedHosts() {
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<addressMatchers.size();i++) {
+		for(int i=0;i < addressMatchers.size();i++) {
 			AddressMatcher matcher = addressMatchers.get(i);
 			if(matcher instanceof EverythingMatcher) return "*";
 			if(i != 0) sb.append(',');

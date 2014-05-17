@@ -136,7 +136,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		if(!itemsFromLastTime.isEmpty()) {
 			if(v == null)
 				v = new ArrayList<Key>(Math.min(maxCount, itemsFromLastTime.size()));
-			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
+			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now " + itemsFromLastTime.size());
 			for(Iterator<PersistentCooldownQueueItem> it = itemsFromLastTime.iterator();it.hasNext() && v.size() < maxCount;) {
 				PersistentCooldownQueueItem i = it.next();
 				container.activate(i, 1);
@@ -152,10 +152,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 
 				container.activate(i.key, 5);
 				if(i.client == null || !container.ext().isStored(i.client)) {
-					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time "+i.time+" for key "+i.key);
+					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time " + i.time + " for key " + i.key);
 				}
 				if(i.key == null) {
-					Logger.error(this, "Key is null on cooldown queue! i = "+i+" client="+i.client+" key as bytes = "+i.keyAsBytes);
+					Logger.error(this, "Key is null on cooldown queue! i = " + i + " client=" + i.client + " key as bytes = " + i.keyAsBytes);
 				} else {
 					v.add(i.key.cloneKey());
 					i.key.removeFrom(container);
@@ -179,10 +179,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
-				Logger.error(this, "Query took "+(tEnd-tStart)+" for "+results.size());
+				Logger.error(this, "Query took " + (tEnd - tStart) + " for " + results.size());
 			else
 				if(logMINOR)
-					Logger.minor(this, "Query took "+(tEnd-tStart));
+					Logger.minor(this, "Query took " + (tEnd - tStart));
 			if(v == null)
 				v = new ArrayList<Key>(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
@@ -196,10 +196,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				}
 				container.activate(i.key, 5);
 				if(i.client == null || !container.ext().isStored(i.client)) {
-					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time "+i.time+" for key "+i.key);
+					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time " + i.time + " for key " + i.key);
 				}
 				if(i.key == null) {
-					Logger.error(this, "Key is null on cooldown queue! i = "+i+" client="+i.client+" key as bytes = "+i.keyAsBytes);
+					Logger.error(this, "Key is null on cooldown queue! i = " + i + " client=" + i.client + " key as bytes = " + i.keyAsBytes);
 				} else {
 					v.add(i.key.cloneKey());
 					i.key.removeFrom(container);
@@ -212,16 +212,16 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					container.deactivate(i, 1);
 					itemsFromLastTime.add(i);
 				}
-				Logger.normal(this, "Overflow handling in cooldown queue: added items, items from last time now "+itemsFromLastTime.size());
+				Logger.normal(this, "Overflow handling in cooldown queue: added items, items from last time now " + itemsFromLastTime.size());
 				return v.toArray(new Key[v.size()]);
 			}
 		} else {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
-				Logger.error(this, "Query took "+(tEnd-tStart));
+				Logger.error(this, "Query took " + (tEnd - tStart));
 			else
 				if(logMINOR)
-					Logger.minor(this, "Query took "+(tEnd-tStart));
+					Logger.minor(this, "Query took " + (tEnd - tStart));
 			return null;
 		}
 		return null;

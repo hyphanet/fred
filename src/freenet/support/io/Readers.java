@@ -35,7 +35,7 @@ final public class Readers {
 			private int currentLine = -1;
 			@Override
 			public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
-				if(++currentLine<lines.length) {
+				if(++currentLine < lines.length) {
 					return lines[currentLine];
 				} 
 				return null;

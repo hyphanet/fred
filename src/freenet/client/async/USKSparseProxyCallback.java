@@ -32,7 +32,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		lastEdition = -1; // So we see the first one even if it's 0
 		lastSent = -1;
 		this.key = key;
-		if(logMINOR) Logger.minor(this, "Creating sparse proxy callback "+this+" for "+cb+" for "+key);
+		if(logMINOR) Logger.minor(this, "Creating sparse proxy callback " + this + " for " + cb + " for " + key);
 	}
 
 	@Override

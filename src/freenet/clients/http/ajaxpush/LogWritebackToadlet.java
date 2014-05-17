@@ -32,7 +32,7 @@ public class LogWritebackToadlet extends Toadlet {
 			try {
 				Logger.minor(this, "GWT:" + new String(URLDecoder.decode(req.getParam("msg"), false)));
 			} catch (URLEncodedFormatException e) {
-				Logger.error(this, "Invalid GWT:"+req.getParam("msg"));
+				Logger.error(this, "Invalid GWT:" + req.getParam("msg"));
 			}
 		}
 		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS);

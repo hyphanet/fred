@@ -36,7 +36,7 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 		try {
 			store.put(key, key.asPaddedBytes(), empty, false, isOldBlock);
 		} catch (KeyCollisionException e) {
-			Logger.error(this, "Impossible for PubkeyStore: "+e, e);
+			Logger.error(this, "Impossible for PubkeyStore: " + e, e);
 		}
 	}
 	

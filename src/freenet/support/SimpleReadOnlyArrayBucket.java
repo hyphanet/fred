@@ -43,7 +43,7 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 
 	@Override
 	public String getName() {
-		return "SimpleReadOnlyArrayBucket: len="+length+ ' ' +super.toString();
+		return "SimpleReadOnlyArrayBucket: len=" + length + ' ' + super.toString();
 	}
 
 	@Override
@@ -78,8 +78,8 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 
 	@Override
 	public Bucket createShadow() {
-		if(buf.length < 256*1024) {
-			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset+length));
+		if(buf.length < 256 * 1024) {
+			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset + length));
 		}
 		return null;
 	}

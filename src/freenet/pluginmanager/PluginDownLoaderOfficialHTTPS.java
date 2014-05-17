@@ -48,7 +48,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	@Override
 	String getSHA1sum() throws PluginNotFoundException {
 		try {
-			URL sha1url = new URL(getSource().toString()+".sha1");
+			URL sha1url = new URL(getSource().toString() + ".sha1");
 			URLConnection urlConnection = sha1url.openConnection();
 			urlConnection.setUseCaches(false);
 			urlConnection.setAllowUserInteraction(false);
@@ -66,9 +66,9 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 			return new String(bos.toByteArray(), "ISO-8859-1").split(" ")[0];
 	
 		} catch (MalformedURLException e) {
-			throw new PluginNotFoundException("impossible: "+e,e);
+			throw new PluginNotFoundException("impossible: " + e, e);
 		} catch (IOException e) {
-			throw new PluginNotFoundException("Error while fetching sha1 for plugin: "+e,e);
+			throw new PluginNotFoundException("Error while fetching sha1 for plugin: " + e, e);
 		}
 	}
 
@@ -102,7 +102,7 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 			System.out.println("The CA has been imported into the trustStore");
 		} catch(Exception e) {
 			System.err.println("Error while handling the CA :" + e.getMessage());
-			throw new IOException("Error while handling the CA : "+e);
+			throw new IOException("Error while handling the CA : " + e);
 		} finally {
 			Closer.close(fis);
 		}

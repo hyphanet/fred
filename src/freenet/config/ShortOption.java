@@ -16,7 +16,7 @@ public class ShortOption extends Option<Short> {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("ShortOption."+key, pattern, value);
+		return NodeL10n.getBase().getString("ShortOption." + key, pattern, value);
 	}
 	
 	@Override

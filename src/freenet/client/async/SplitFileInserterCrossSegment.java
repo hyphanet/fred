@@ -55,7 +55,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	}
 	
 	public void addDataBlock(SplitFileInserterSegment seg, int blockNum) {
-		if(logMINOR) Logger.minor(this, "Allocated "+counter+" blocks: block "+blockNum+" on segment "+seg.segNo);
+		if(logMINOR) Logger.minor(this, "Allocated " + counter + " blocks: block " + blockNum + " on segment " + seg.segNo);
 		segments[counter] = seg;
 		blockNumbers[counter] = blockNum;
 		counter++;
@@ -67,7 +67,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 		// Schedule encode job.
 		SplitfileBlock[] decodeData = new SplitfileBlock[dataBlocks];
 		SplitfileBlock[] decodeCheck = new SplitfileBlock[segments.length - dataBlocks];
-		for(int i=0;i<decodeData.length;i++) {
+		for(int i=0;i < decodeData.length;i++) {
 			MinimalSplitfileBlock wrapper = new MinimalSplitfileBlock(i);
 			SplitFileInserterSegment seg = segments[i];
 			boolean active = true;
@@ -81,7 +81,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 			if(!active) container.deactivate(seg, 1);
 			decodeData[i] = wrapper;
 		}
-		for(int i=0;i<decodeCheck.length;i++) {
+		for(int i=0;i < decodeCheck.length;i++) {
 			decodeCheck[i] = new MinimalSplitfileBlock(i);
 		}
 		FECQueue queue = context.fecQueue;
@@ -115,7 +115,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 
 	@Override
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks) {
-		for(int i=0;i<crossCheckBlocks;i++) {
+		for(int i=0;i < crossCheckBlocks;i++) {
 			SplitFileInserterSegment seg = segments[i + this.dataBlocks];
 			int blockNum = blockNumbers[i + this.dataBlocks];
 			if(persistent) container.activate(seg, 1);
@@ -124,7 +124,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 			checkBlocks[i].clearData();
 			if(persistent) container.delete(checkBlocks[i]);
 		}
-		for(int i=0;i<dataBlocks.length;i++) {
+		for(int i=0;i < dataBlocks.length;i++) {
 			dataBlocks[i].clearData();
 			if(persistent) container.delete(dataBlocks[i]);
 		}
@@ -141,7 +141,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 
 	@Override
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
-		Logger.error(this, "Encode or decode failed for cross segment: "+this, t);
+		Logger.error(this, "Encode or decode failed for cross segment: " + this, t);
 	}
 
 }

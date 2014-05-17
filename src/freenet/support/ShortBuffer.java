@@ -47,7 +47,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	public ShortBuffer(DataInput dis) throws IOException {
 		_length = dis.readShort();
 		if(_length < 0)
-			throw new IllegalArgumentException("Negative Length: "+_length);
+			throw new IllegalArgumentException("Negative Length: " + _length);
 		_data = new byte[_length];
 		_start = 0;
 		dis.readFully(_data);
@@ -68,7 +68,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	 */
 	public ShortBuffer(byte[] data) {
 		if(data.length > Short.MAX_VALUE)
-		    throw new IllegalArgumentException("Too big: "+data.length);
+		    throw new IllegalArgumentException("Too big: " + data.length);
 		_start = 0;
 		_length = (short)data.length;
 		_data = data;
@@ -93,7 +93,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		if ((_start == 0) && (_length == _data.length)) {
 			return _data;
 		} else {
-			return Arrays.copyOfRange(_data, _start, _start+_length);
+			return Arrays.copyOfRange(_data, _start, _start + _length);
 		}
 	}
 
@@ -123,11 +123,11 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	@Override
 	public String toString() {
 		if (this._length > 50) {
-			return "Buffer {"+this._length+ '}';
+			return "Buffer {" + this._length + '}';
 		} else {
-			StringBuilder b = new StringBuilder(this._length*3);
+			StringBuilder b = new StringBuilder(this._length * 3);
             b.append('{').append(this._length).append(':');
-			for (int x=0; x<this._length; x++) {
+			for (int x=0; x < this._length; x++) {
 				b.append(byteAt(x));
 				b.append(' ');
 			}

@@ -195,9 +195,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
 			if(!(server.core.allowDownloadTo(tempFile) && server.core.allowDownloadTo(targetFile)))
-				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to " + tempFile + " or " + targetFile, identifier, global);
 			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to " + tempFile + " or " + targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
 			ret = new FileBucket(message.tempFile, false, true, false, false, false);
 			if(fctx.filterData) {
 				String name = targetFile.getName();
@@ -221,15 +221,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				else
 					ret = server.core.tempBucketFactory.makeBucket(fctx.maxOutputLength);
 			} catch (IOException e) {
-				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
+				Logger.error(this, "Cannot create bucket for temp storage: " + e, e);
 				getter = null;
 				returnBucket = null;
 				// This is *not* a FetchException since we don't register it: it's a protocol error.
-				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Cannot create bucket for temporary storage (out of disk space???): "+e, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Cannot create bucket for temporary storage (out of disk space???): " + e, identifier, global);
 			}
 		}
 		if(ret == null)
-			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
+			Logger.error(this, "Impossible: ret = null in FCP constructor for " + this, new Exception("debug"));
 		returnBucket = ret;
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
@@ -306,7 +306,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.minor(this, "Succeeded: "+identifier);
+		Logger.minor(this, "Succeeded: " + identifier);
 		Bucket data = result.asBucket();
 		if(persistenceType == PERSIST_FOREVER) {
 			if(data != null)
@@ -328,7 +328,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				// Check for already finished.
 				if(finished) {
-					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
+					Logger.error(this, "Already finished but onSuccess() for " + this + " data = " + data, new Exception("debug"));
 					data.free();
 					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
 					return; // Already failed - bucket error maybe??
@@ -344,7 +344,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			// Check for db4o bug. Can work around.
 			if(bucketChanged && persistenceType == PERSIST_FOREVER) {
 				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
-					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
+					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)=" + container.ext().getID(returnBucket) + " for " + returnBucket + " active=" + container.ext().isActive(returnBucket) + " stored = " + container.ext().isStored(returnBucket) + " but UID(data)=" + container.ext().getID(data) + " for " + data + " active = " + container.ext().isActive(data) + " stored = " + container.ext().isStored(data));
 					// Succeed anyway, hope that the returned bucket is consistent...
 					returnBucket = data;
 					bucketChanged = false;
@@ -358,12 +358,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					File actualFile = ((FileBucket)data).getFile();
 					File expectedFile = ((FileBucket)returnBucket).getFile();
 					if(actualFile.toString().equals(expectedFile.toString())) {
-						Logger.warning(this, "Data was written to the correct file "+actualFile+" but the bucket changed: "+returnBucket+" -> "+data);
+						Logger.warning(this, "Data was written to the correct file " + actualFile + " but the bucket changed: " + returnBucket + " -> " + data);
 						// It was written to the right place, just something wierd happened to copy the bucket (db4o error for instance).
 						returnBucket = data;
 						bucketChanged = false;
 					} else {
-						Logger.error(this, "Data was written to "+actualFile+" but should be written to "+expectedFile);
+						Logger.error(this, "Data was written to " + actualFile + " but should be written to " + expectedFile);
 						// We can handle this. Just move the data.
 						boolean shortCut = false;
 						if(expectedFile.renameTo(actualFile))
@@ -382,7 +382,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						} // Otherwise the data will have to be copied.
 					}
 				} else {
-					Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket+((data == returnBucket) ? " (equal)" : "(not equal)"), new Exception("error"));
+					Logger.error(this, "Returned bucket " + data + " in onSuccess, expected " + returnBucket + ((data == returnBucket) ? " (equal)" : "(not equal)"), new Exception("error"));
 					// We can work around this, just copy the data.
 				}
 			}
@@ -401,11 +401,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				returnBucket.storeTo(container);
 				container.store(this);
 				
-				Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
+				Logger.error(this, "Data returned to wrong bucket " + data + " expected " + returnBucket + " in " + this, new Exception("error"));
 				try {
 					BucketTools.copy(data, returnBucket);
 				} catch (IOException e) {
-					Logger.error(this, "Data != returnBucket and then failed to copy to "+returnBucket);
+					Logger.error(this, "Data != returnBucket and then failed to copy to " + returnBucket);
 					data.free();
 					returnBucket.free();
 					if(persistenceType == PERSIST_FOREVER) {
@@ -421,7 +421,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		AllDataMessage adm = null;
 		synchronized(this) {
 			if(succeeded) {
-				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
+				Logger.error(this, "onSuccess called twice for " + this + " (" + identifier + ')');
 				return; // We might be called twice; ignore it if so.
 			}
 			started = true;
@@ -704,7 +704,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			completionTime = System.currentTimeMillis();
 		}
 		if(logMINOR)
-			Logger.minor(this, "Caught "+e, e);
+			Logger.minor(this, "Caught " + e, e);
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
@@ -1016,7 +1016,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			container.activate(getFailedMessage, 5);
 		String s = getFailedMessage.shortCodeDescription;
 		if(longDescription && getFailedMessage.extraDescription != null)
-			s += ": "+getFailedMessage.extraDescription;
+			s += ": " + getFailedMessage.extraDescription;
 		return s;
 	}
 	
@@ -1080,11 +1080,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public boolean canRestart() {
 		if(!finished) {
-			Logger.minor(this, "Cannot restart because not finished for "+identifier);
+			Logger.minor(this, "Cannot restart because not finished for " + identifier);
 			return false;
 		}
 		if(succeeded) {
-			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
+			Logger.minor(this, "Cannot restart because succeeded for " + identifier);
 			return false;
 		}
 		return getter.canRestart();

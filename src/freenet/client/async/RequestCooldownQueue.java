@@ -81,18 +81,18 @@ public class RequestCooldownQueue implements CooldownQueue {
 
 	private synchronized long getLastTime() {
 		if(startPtr == endPtr) return -1;
-		if(endPtr > 0) return times[endPtr-1];
-		return times[times.length-1];
+		if(endPtr > 0) return times[endPtr - 1];
+		return times[times.length - 1];
 	}
 
 	private synchronized void add(Key key, SendableGet client, long removeTime) {
-		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
+		if(holes < 0) Logger.error(this, "holes = " + holes + " !!");
 		if(logMINOR)
-			Logger.minor(this, "Adding key "+key+" client "+client+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
+			Logger.minor(this, "Adding key " + key + " client " + client + " remove time " + removeTime + " startPtr=" + startPtr + " endPtr=" + endPtr + " keys.length=" + keys.length);
 		int ptr = endPtr;
 		if(endPtr > startPtr) {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
-			if(endPtr == keys.length-1) {
+			if(endPtr == keys.length - 1) {
 				// Last key
 				if(startPtr == 0) {
 					// No room
@@ -121,7 +121,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			startPtr = 0;
 			ptr = 0;
 		}
-		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
+		if(logMINOR) Logger.minor(this, "Added at " + ptr + " startPtr=" + startPtr + " endPtr=" + endPtr);
 		keys[ptr] = key;
 		times[ptr] = removeTime;
 		clients[ptr] = client;
@@ -139,8 +139,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 			foundIT = bigLog();
 		}
 		if(logMINOR)
-			Logger.minor(this, "Remove key before "+now+" : startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
-		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
+			Logger.minor(this, "Remove key before " + now + " : startPtr=" + startPtr + " endPtr=" + endPtr + " holes=" + holes + " keys.length=" + keys.length);
+		if(holes < 0) Logger.error(this, "holes = " + holes + " !!");
 		if(foundIT) {
 			if(logMINOR) Logger.minor(this, "FOUND IT!"); // FIXME remove
 		}
@@ -164,7 +164,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				continue;
 			} else {
 				if(time > now) {
-					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
+					if(logMINOR) Logger.minor(this, "First key is later at time " + time);
 					if(!v.isEmpty())
 						return v.toArray(new Key[v.size()]);
 					else if(time < (now + dontCareAfterMillis))
@@ -178,7 +178,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				startPtr++;
 				if(startPtr == times.length) startPtr = 0;
 			}
-			if(logMINOR) Logger.minor(this, "Returning key "+key);
+			if(logMINOR) Logger.minor(this, "Returning key " + key);
 			v.add(key);
 			if(v.size() == maxKeys)
 				return v.toArray(new Key[v.size()]);
@@ -198,7 +198,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			ClientRequester cr = clients[startPtr].parent;
 			if(cr instanceof ClientGetter) {
 				String s = ((ClientGetter)cr).getURI().toShortString();
-				if(logMINOR) Logger.minor(this, "client = "+s);
+				if(logMINOR) Logger.minor(this, "client = " + s);
 				if(s.equals(DEBUG_TARGET_URI)) {
 					foundIT = true;
 				}
@@ -210,7 +210,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		int nullClients = 0;
 		int notGetter = 0;
 		int valid = 0;
-		for(int i=0;i<keys.length;i++) {
+		for(int i=0;i < keys.length;i++) {
 			if(keys[i] == null) {
 				nulls++;
 				continue;
@@ -225,7 +225,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				String shortURI = ((ClientGetter)cr).getURI().toShortString();
 				Integer ctr = countsByShortURI.get(shortURI);
 				if(ctr == null) ctr = Integer.valueOf(1);
-				else ctr = Integer.valueOf(ctr.intValue()+1);
+				else ctr = Integer.valueOf(ctr.intValue() + 1);
 				countsByShortURI.put(shortURI, ctr);
 			} else {
 				notGetter++;
@@ -252,8 +252,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 	@Override
 	public synchronized boolean removeKey(Key key, SendableGet client, long time, ObjectContainer container) {
 		if(time <= 0) return false; // We won't find it.
-		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
-		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
+		if(holes < 0) Logger.error(this, "holes = " + holes + " !!");
+		if(logMINOR) Logger.minor(this, "Remove key " + key + " client " + client + " at time " + time + " startPtr=" + startPtr + " endPtr=" + endPtr + " holes=" + holes + " keys.length=" + keys.length);
 		int idx = -1;
 		if(endPtr > startPtr) {
 			idx = Arrays.binarySearch(times, startPtr, endPtr, time);
@@ -267,7 +267,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			if(idx < 0 && startPtr != 0)
 				idx = Arrays.binarySearch(times, 0, endPtr, time);
 		}
-		if(logMINOR) Logger.minor(this, "idx = "+idx);
+		if(logMINOR) Logger.minor(this, "idx = " + idx);
 		if(idx < 0) return false;
 		if(keys[idx] == key && clients[idx] == client) {
 			keys[idx] = null;
@@ -289,7 +289,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			}
 			if(nidx == startPtr) break;
 			nidx--;
-			if(nidx == -1) nidx = times.length-1;
+			if(nidx == -1) nidx = times.length - 1;
 		}
 		nidx = idx;
 		// Now try forwards
@@ -316,7 +316,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	private synchronized void expandQueue() {
 		if(logMINOR) Logger.minor(this, "Expanding queue");
 		if(holes < 0) {
-			Logger.error(this, "holes = "+holes+" !!");
+			Logger.error(this, "holes = " + holes + " !!");
 			holes = 0;
 		}
 		int newSize = (keys.length - holes) * 2;
@@ -329,39 +329,39 @@ public class RequestCooldownQueue implements CooldownQueue {
 		int x = 0;
 		long lastTime = -1;
 		if(endPtr > startPtr) {
-			for(int i=startPtr;i<endPtr;i++) {
+			for(int i=startPtr;i < endPtr;i++) {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
 				newClients[x] = clients[i];
 				if(lastTime > times[i])
-					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
+					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times[" + i + "] = times[i] but lastTime=" + lastTime);
 				lastTime = times[i];
 				x++;
 			}
 		} else if(endPtr < startPtr) {
-			for(int i=startPtr;i<keys.length;i++) {
+			for(int i=startPtr;i < keys.length;i++) {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
 				newClients[x] = clients[i];
 				if(lastTime > times[i])
-					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
+					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times[" + i + "] = times[i] but lastTime=" + lastTime);
 				lastTime = times[i];
 				x++;
 			}
-			for(int i=0;i<endPtr;i++) {
+			for(int i=0;i < endPtr;i++) {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
 				newClients[x] = clients[i];
 				if(lastTime > times[i])
-					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
+					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times[" + i + "] = times[i] but lastTime=" + lastTime);
 				lastTime = times[i];
 				x++;
 			}
 		} else /* endPtr == startPtr */ {
-			Logger.error(this, "RequestCooldownQueue: expandQueue() called with endPtr == startPtr == "+startPtr+" !!");
+			Logger.error(this, "RequestCooldownQueue: expandQueue() called with endPtr == startPtr == " + startPtr + " !!");
 			return;
 		}
 		holes = 0;

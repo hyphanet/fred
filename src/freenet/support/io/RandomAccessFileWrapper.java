@@ -53,7 +53,7 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 		try {
 			raf.close();
 		} catch (IOException e) {
-			Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
+			Logger.error(this, "Could not close " + raf + " : " + e + " for " + this, e);
 		}
 	}
 

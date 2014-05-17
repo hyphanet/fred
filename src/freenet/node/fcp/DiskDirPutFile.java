@@ -20,7 +20,7 @@ public class DiskDirPutFile extends DirPutFile {
 			String identifier, boolean global) throws MessageInvalidException {
 		String s = subset.get("Filename");
 		if(s == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Filename on "+name, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Filename on " + name, identifier, global);
 		File file = new File(s);
 		String mimeType;
 		if(contentTypeOverride == null)

@@ -129,12 +129,12 @@ public class Inet4AddressMatcher implements AddressMatcher {
 		if(networkMask == -1)
 			return convertToString(address);
 		else
-			return convertToString(address)+'/'+convertToString(networkMask);
+			return convertToString(address) + '/' + convertToString(networkMask);
 	}
 
 	private String convertToString(int addr) {
 		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<4;i++) {
+		for(int i=0;i < 4;i++) {
 			int x = addr >>> 24;
 			addr = addr << 8;
 			if(i != 0) sb.append('.');

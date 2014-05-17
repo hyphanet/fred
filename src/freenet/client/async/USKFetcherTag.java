@@ -59,7 +59,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		priority = pollingPriorityNormal;
 		this.checkStoreOnly = checkStoreOnly;
 		this.hashCode = super.hashCode();
-		if(logMINOR) Logger.minor(this, "Created tag for "+origUSK+" and "+callback+" : "+this);
+		if(logMINOR) Logger.minor(this, "Created tag for " + origUSK + " and " + callback + " : " + this);
 	}
 	
 	@Override
@@ -105,7 +105,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
 		fetcher.schedule(null, context); // non-persistent
-		if(logMINOR) Logger.minor(this, "Starting "+fetcher+" for "+this);
+		if(logMINOR) Logger.minor(this, "Starting " + fetcher + " for " + this);
 	}
 
 	@Override
@@ -114,13 +114,13 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(f != null) fetcher.cancel(null, context);
 		synchronized(this) {
 			if(finished) {
-				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
+				if(logMINOR) Logger.minor(this, "Already cancelled " + this);
 				return;
 			}
 			finished = true;
 		}
 		if(f != null)
-			Logger.error(this, "cancel() for "+fetcher+" did not set finished on "+this+" ???");
+			Logger.error(this, "cancel() for " + fetcher + " did not set finished on " + this + " ???");
 	}
 
 	@Override
@@ -135,7 +135,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	@Override
 	public void onCancelled(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Cancelled on "+this);
+		if(logMINOR) Logger.minor(this, "Cancelled on " + this);
 		synchronized(this) {
 			finished = true;
 		}
@@ -170,10 +170,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	@Override
 	public void onFailure(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Failed on "+this);
+		if(logMINOR) Logger.minor(this, "Failed on " + this);
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "onFailure called after finish on "+this, new Exception("error"));
+				Logger.error(this, "onFailure called after finish on " + this, new Exception("error"));
 				return;
 			}
 			finished = true;
@@ -226,13 +226,13 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	@Override
 	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
-		if(logMINOR) Logger.minor(this, "Found edition "+l+" on "+this);
+		if(logMINOR) Logger.minor(this, "Found edition " + l + " on " + this);
 		synchronized(this) {
 			if(fetcher == null) {
 				Logger.error(this, "onFoundEdition but fetcher is null - isn't onFoundEdition() terminal for USKFetcherCallback's??", new Exception("debug"));
 			}
 			if(finished) {
-				Logger.error(this, "onFoundEdition called after finish on "+this, new Exception("error"));
+				Logger.error(this, "onFoundEdition called after finish on " + this, new Exception("error"));
 				return;
 			}
 			finished = true;
@@ -293,7 +293,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	
 	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Removing "+this);
+		if(logMINOR) Logger.minor(this, "Removing " + this);
 		container.activate(origUSK, 5);
 		origUSK.removeFrom(container);
 		if(ownFetchContext) {

@@ -149,7 +149,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		List<byte[]> finished = handleDecryptedPacket(packet, s);
 		if(logMINOR && !finished.isEmpty()) 
-			Logger.minor(this, "Decoded messages: "+finished.size());
+			Logger.minor(this, "Decoded messages: " + finished.size());
 		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
 			group.processDecryptedMessage(buffer, 0, buffer.length, 0);
@@ -192,7 +192,7 @@ public class NewPacketFormat implements PacketFormat {
 				lossyMessages.add(msg);
 			}
 			// Handle them *before* the rest.
-			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
+			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed " + lossyMessages.size() + " lossy packet messages");
 			for(Message msg : lossyMessages)
 				pn.handleMessage(msg);
 		}
@@ -200,13 +200,13 @@ public class NewPacketFormat implements PacketFormat {
 			if(messageWindowPtrReceived + MSG_WINDOW_SIZE > NUM_MESSAGE_IDS) {
 				int upperBound = (messageWindowPtrReceived + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS;
 				if((fragment.messageID > upperBound) && (fragment.messageID < messageWindowPtrReceived)) {
-					if(logMINOR) Logger.minor(this, "Received message "+fragment.messageID+" outside window, acking");
+					if(logMINOR) Logger.minor(this, "Received message " + fragment.messageID + " outside window, acking");
 					continue;
 				}
 			} else {
 				int upperBound = messageWindowPtrReceived + MSG_WINDOW_SIZE;
 				if(!((fragment.messageID >= messageWindowPtrReceived) && (fragment.messageID < upperBound))) {
-					if(logMINOR) Logger.minor(this, "Received message "+fragment.messageID+" outside window, acking");
+					if(logMINOR) Logger.minor(this, "Received message " + fragment.messageID + " outside window, acking");
 					continue;
 				}
 			}
@@ -374,7 +374,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {
-				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
+				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber() + " on " + sessionKey);
 				return p;
 			}
 		}
@@ -517,12 +517,12 @@ public class NewPacketFormat implements PacketFormat {
 				for(MessageFragment frag : packet.getFragments()) {
 					if(fragments == null) fragments = String.valueOf(frag.messageID);
 					else fragments = fragments + ", " + frag.messageID;
-					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+")";
+					fragments += " (" + frag.fragmentOffset + "->" + (frag.fragmentOffset + frag.fragmentLength - 1) + ")";
 				}
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
 				                + data.length + " bytes) with fragments " + fragments + " and "
-				                + packet.getAcks().size() + " acks on "+this);
+				                + packet.getAcks().size() + " acks on " + this);
 			}
 			pn.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
@@ -581,7 +581,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		
 		if(numAcks > 0) {
-			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
+			if(logDEBUG) Logger.debug(this, "Added acks for " + this + " for " + pn.shortToString());
 		}
 		
 		byte[] haveAddedStatsBulk = null;
@@ -654,7 +654,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			}
 			
 			if(addedFragments) {
-				if(logDEBUG) Logger.debug(this, "Added fragments for "+this+" (must send)");
+				if(logDEBUG) Logger.debug(this, "Added fragments for " + this + " (must send)");
 			}
 			
 		}
@@ -676,7 +676,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			int maxSendBufferSize = maxSendBufferSize();
 			synchronized(sendBufferLock) {
 				if(sendBufferUsed > maxSendBufferSize / 2) {
-					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+sendBufferUsed);
+					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is " + sendBufferUsed);
 					mustSend = true;
 				}
 			}
@@ -818,7 +818,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 								break fragments;
 							}
 							
-							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
+							if(logDEBUG) Logger.debug(this, "Allocated " + messageID + " for " + item + " for " + this);
 							
 							MessageWrapper wrapper = new MessageWrapper(item, messageID);
 							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
@@ -834,7 +834,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 							synchronized(sendBufferLock) {
 								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
 								sendBufferUsed += item.buf.length;
-								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
+								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for " + pn.shortToString());
 								queue.put(messageID, wrapper);
 							}
 							
@@ -886,9 +886,9 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		packet.setSequenceNumber(seqNum);
 		
 		if(logDEBUG && ackOnly) {
-			Logger.debug(this, "Sending ack-only packet length "+packet.getLength()+" for "+this);
+			Logger.debug(this, "Sending ack-only packet length " + packet.getLength() + " for " + this);
 		} else if(logDEBUG && !ackOnly) {
-			Logger.debug(this, "Sending packet length "+packet.getLength()+" for "+this);
+			Logger.debug(this, "Sending packet length " + packet.getLength() + " for " + this);
 		}
 
 		if(packet.getFragments().size() > 0) {
@@ -980,7 +980,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			sendBufferUsed -= messageSize;
 			// This is just a check for logging/debugging purposes.
 			if(sendBufferUsed != 0) {
-				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+sendBufferUsed);
+				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on " + this + " for " + pn + " after removing " + messageSize + " total was " + sendBufferUsed);
 				sendBufferUsed = 0;
 			}
 		}
@@ -1007,7 +1007,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 						if(d > 0)
 							ret = Math.min(ret, d);
 						else
-							Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+							Logger.error(this, "Started sending message " + wrapper.getItem() + " but deadline is " + d);
 					}
 				}
 			}
@@ -1016,7 +1016,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 		ret = Math.min(ret, timeCheckForAcks());
 		
 		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
-		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
+		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT() / 2));
 		return ret;
 	}
 	
@@ -1043,7 +1043,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();
-				Logger.error(this, "Can't send because we would block on "+this);
+				Logger.error(this, "Can't send because we would block on " + this);
 				return false;
 			}
 		}
@@ -1055,7 +1055,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			}
 			int maxSendBufferSize = maxSendBufferSize();
 			if((bufferUsage + MAX_MESSAGE_SIZE) > maxSendBufferSize) {
-				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage+" max is "+maxSendBufferSize+" on "+this);
+				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage + " max is " + maxSendBufferSize + " on " + this);
 				return false;
 			}
 
@@ -1083,7 +1083,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
 					// whereas messages are supposed to not be visible.
 					// Arguably we should count bytes rather than packets.
-					if(logDEBUG) Logger.debug(this, "Cannot send because "+packets.countSentPackets()+" in flight of limit "+maxPackets+" on "+this);
+					if(logDEBUG) Logger.debug(this, "Cannot send because " + packets.countSentPackets() + " in flight of limit " + maxPackets + " on " + this);
 					return false;
 				}
 			}
@@ -1099,7 +1099,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			}
 		}
 		
-		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID on "+this);
+		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID on " + this);
 		return canAllocateID;
 	}
 
@@ -1156,7 +1156,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 				int[] range = rangeIt.next();
 				
 				if(logDEBUG)
-					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
+					Logger.debug(this, "Acknowledging " + range[0] + " to " + range[1] + " on " + wrapper.getMessageID());
 
 				if(wrapper.ack(range[0], range[1], npf.pn)) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
@@ -1171,11 +1171,11 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 					}
 					if(removed == null && logMINOR) {
 						// ack() can return true more than once, it just only calls the callbacks once.
-						Logger.minor(this, "Completed message "+wrapper.getMessageID()+" but it is not in the map from "+wrapper);
+						Logger.minor(this, "Completed message " + wrapper.getMessageID() + " but it is not in the map from " + wrapper);
 					}
 
 					if(removed != null) {
-						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
+						if(logDEBUG) Logger.debug(this, "Completed message " + wrapper.getMessageID() + " from " + wrapper);
 
 						boolean couldSend = npf.canSend(key);
 						int id = wrapper.getMessageID();
@@ -1295,7 +1295,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 	
 	@Override
 	public String toString() {
-		if(pn != null) return super.toString() +" for "+pn.shortToString();
+		if(pn != null) return super.toString() + " for " + pn.shortToString();
 		else return super.toString();
 	}
 

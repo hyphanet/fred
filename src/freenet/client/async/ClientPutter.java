@@ -156,7 +156,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.activate(client, 1);
 		}
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this+" for "+targetURI);
+			Logger.minor(this, "Starting " + this + " for " + targetURI);
 		byte cryptoAlgorithm;
 		CompatibilityMode mode = ctx.getCompatibilityMode();
 		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
@@ -179,18 +179,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(restart) {
 					clearCountersOnRestart();
 					if(currentState != null && !finished) {
-						if(logMINOR) Logger.minor(this, "Can't restart, not finished and currentState != null : "+currentState);
+						if(logMINOR) Logger.minor(this, "Can't restart, not finished and currentState != null : " + currentState);
 						return false;
 					}
 					finished = false;
 				}
 				if(startedStarting) {
-					if(logMINOR) Logger.minor(this, "Can't "+(restart?"restart":"start")+" : startedStarting = true");
+					if(logMINOR) Logger.minor(this, "Can't " + (restart?"restart":"start") + " : startedStarting = true");
 					return false;
 				}
 				startedStarting = true;
 				if(currentState != null) {
-					if(logMINOR) Logger.minor(this, "Can't "+(restart?"restart":"start")+" : currentState != null : "+currentState);
+					if(logMINOR) Logger.minor(this, "Can't " + (restart?"restart":"start") + " : currentState != null : " + currentState);
 					return false;
 				}
 				cancel = this.cancelled;
@@ -229,7 +229,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				return false;
 			}
 			if(logMINOR)
-				Logger.minor(this, "Starting insert: "+currentState);
+				Logger.minor(this, "Starting insert: " + currentState);
 			if(currentState instanceof SingleFileInserter)
 				((SingleFileInserter)currentState).start(container, context);
 			else
@@ -247,7 +247,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				return false;
 			}
 		} catch (InsertException e) {
-			Logger.error(this, "Failed to start insert: "+e, e);
+			Logger.error(this, "Failed to start insert: " + e, e);
 			synchronized(this) {
 				finished = true;
 				currentState = null;
@@ -255,11 +255,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(persistent())
 				container.store(this);
 			// notify the client that the insert could not even be started
-			if (this.client!=null) {
+			if (this.client != null) {
 				this.client.onFailure(e, this, container);
 			}
 		} catch (IOException e) {
-			Logger.error(this, "Failed to start insert: "+e, e);
+			Logger.error(this, "Failed to start insert: " + e, e);
 			synchronized(this) {
 				finished = true;
 				currentState = null;
@@ -267,11 +267,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(persistent())
 				container.store(this);
 			// notify the client that the insert could not even be started
-			if (this.client!=null) {
+			if (this.client != null) {
 				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
 			}
 		} catch (BinaryBlobFormatException e) {
-			Logger.error(this, "Failed to start insert: "+e, e);
+			Logger.error(this, "Failed to start insert: " + e, e);
 			synchronized(this) {
 				finished = true;
 				currentState = null;
@@ -279,12 +279,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(persistent())
 				container.store(this);
 			// notify the client that the insert could not even be started
-			if (this.client!=null) {
+			if (this.client != null) {
 				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
 			}
 		}
 		if(logMINOR)
-			Logger.minor(this, "Started "+this);
+			Logger.minor(this, "Started " + this);
 		return true;
 	}
 
@@ -330,8 +330,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(persistent()) container.activate(uri, 1);
 			// USK auxiliary inserts are allowed to fail.
 			if(!uri.isUSK())
-				Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
-						", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
+				Logger.error(this, "Failed blocks: " + failedBlocks + ", Fatally failed blocks: " + fatallyFailedBlocks +
+						", Successful blocks: " + successfulBlocks + ", Total blocks: " + totalBlocks + " but success?! on " + this + " from " + state,
 						new Exception("debug"));
 		}
 		if(persistent())
@@ -342,7 +342,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** Called when the insert fails. */
 	@Override
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
+		if(logMINOR) Logger.minor(this, "onFailure() for " + this + " : " + state + " : " + e, e);
 		if(persistent())
 			container.activate(client, 1);
 		ClientPutState oldState;
@@ -378,12 +378,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		FreenetURI u;
 		synchronized(this) {
 			if(this.uri != null) {
-				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
+				Logger.error(this, "onEncode() called twice? Already have a uri: " + uri + " for " + this);
 				if(persistent())
 					this.uri.removeFrom(container);
 			}
 			if(gotFinalMetadata) {
-				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
+				Logger.error(this, "Generated URI *and* sent final metadata??? on " + this + " from " + state);
 			}
 			this.uri = key.getURI();
 			if(targetFilename != null)
@@ -405,10 +405,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		boolean freeIt = false;
 		synchronized(this) {
 			if(uri != null) {
-				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
+				Logger.error(this, "Generated URI *and* sent final metadata??? on " + this + " from " + state);
 			}
 			if(gotFinalMetadata) {
-				Logger.error(this, "onMetadata called twice - already sent metadata to client for "+this);
+				Logger.error(this, "onMetadata called twice - already sent metadata to client for " + this);
 				freeIt = true;
 			} else {
 				gotFinalMetadata = true;
@@ -430,7 +430,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
+			Logger.minor(this, "Cancelling " + this, new Exception("debug"));
 		ClientPutState oldState = null;
 		synchronized(this) {
 			if(cancelled) return;
@@ -502,7 +502,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * insert the metadata! */
 	@Override
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
-		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
+		Logger.error(this, "Got metadata on " + this + " from " + state + " (this means the metadata won't be inserted)");
 	}
 
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
@@ -589,7 +589,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** Can we restart the insert? */
 	public boolean canRestart() {
 		if(currentState != null && !finished) {
-			Logger.minor(this, "Cannot restart because not finished for "+uri);
+			Logger.minor(this, "Cannot restart because not finished for " + uri);
 			return false;
 		}
 		if(data == null) return false;
@@ -633,12 +633,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public void dump(ObjectContainer container) {
 		container.activate(uri, 5);
-		System.out.println("URI: "+uri);
+		System.out.println("URI: " + uri);
 		container.activate(client, 1);
-		System.out.println("Client: "+client);
-		System.out.println("Finished: "+finished);
+		System.out.println("Client: " + client);
+		System.out.println("Finished: " + finished);
 		container.activate(data, 5);
-		System.out.println("Data: "+data);
+		System.out.println("Data: " + data);
 	}
 	
 }

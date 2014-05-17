@@ -51,21 +51,21 @@ public class ThrottleWindowManager {
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
         if(logMINOR)
-        	Logger.minor(this, "request rejected overload: "+this);
+        	Logger.minor(this, "request rejected overload: " + this);
 	}
 
 	public synchronized void requestCompleted() {
         _totalPackets++;
         _simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
         if(logMINOR)
-        	Logger.minor(this, "requestCompleted on "+this);
+        	Logger.minor(this, "requestCompleted on " + this);
 	}
 
 	@Override
 	public synchronized String toString() {
-		return  super.toString()+" w: "
+		return  super.toString() + " w: "
 				+ _simulatedWindowSize + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + '=' +_droppedPackets+ '/' +_totalPackets;
+				+ (((float) _droppedPackets / (float) _totalPackets)) + '=' + _droppedPackets + '/' + _totalPackets;
 	}
 
 	public SimpleFieldSet exportFieldSet(boolean shortLived) {

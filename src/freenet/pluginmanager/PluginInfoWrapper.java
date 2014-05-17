@@ -66,7 +66,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
 		isConfigurablePlugin = (plug instanceof FredPluginConfigurable);
 		if(isConfigurablePlugin) {
-			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"), "config options for plugin: "+getPluginClassName());
+			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-" + getPluginClassName() + ".ini"), "config options for plugin: " + getPluginClassName());
 			subconfig = new SubConfig(getPluginClassName(), config);
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
@@ -88,7 +88,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	
 	@Override
 	public String toString() {
-		return "ID: \"" +threadName + "\", Name: "+ className +", Started: " + (new Date(start)).toString();
+		return "ID: \"" + threadName + "\", Name: " + className + ", Started: " + (new Date(start)).toString();
 	}
 	
 	public String getThreadName() {
@@ -130,12 +130,12 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	public void startShutdownPlugin(PluginManager manager, boolean reloading) {
 		unregister(manager, reloading);
 		// TODO add a timeout for plug.terminate() too
-		System.out.println("Terminating plugin "+this.getFilename());
+		System.out.println("Terminating plugin " + this.getFilename());
 		try {
 			plug.terminate();
 		} catch (Throwable t) {
 			Logger.error(this, "Error while terminating plugin.", t);
-			System.err.println("Error while terminating plugin: "+t);
+			System.err.println("Error while terminating plugin: " + t);
 			t.printStackTrace();
 		}
 		synchronized(this) {
@@ -155,7 +155,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 					Logger.normal(this, "stopPlugin interrupted while join()ed to terminating plugin thread - maybe one plugin stopping another???");
 				}
 				if(thread.isAlive()) {
-					String error = "Waited for "+thread+" for "+plug+" to exit for "+maxWaitTime+"ms, and it is still alive!";
+					String error = "Waited for " + thread + " for " + plug + " to exit for " + maxWaitTime + "ms, and it is still alive!";
 					Logger.error(this, error);
 					System.err.println(error);
 					success = false;

@@ -112,7 +112,7 @@ public class NewPacketFormatKeyContext {
 		boolean lostBeforeAcked = false;
 		boolean validAck = false;
 		synchronized(sentPackets) {
-			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
+			if(logDEBUG) Logger.debug(this, "Acknowledging packet " + ack + " from " + pn);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked(key);
@@ -120,11 +120,11 @@ public class NewPacketFormatKeyContext {
 				sentTimes.removeTime(ack);
 				validAck = true;
 			} else {
-				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
+				if(logDEBUG) Logger.debug(this, "Already acked or lost " + ack);
 				lostBeforeAcked = true;
 				long l = sentTimes.removeTime(ack);
 				if(l < 0) {
-					if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
+					if(logDEBUG) Logger.debug(this, "No time for " + ack + " - maybe acked twice?");
 					return;
 				} else {
 					rtt = System.currentTimeMillis() - l;
@@ -198,9 +198,9 @@ public class NewPacketFormatKeyContext {
 				Map.Entry<Integer, Long> entry = it.next();
 				int ack = entry.getKey();
 				// All acks must be sent within 200ms.
-				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
+				if(logDEBUG) Logger.debug(this, "Trying to ack " + ack);
 				if(!packet.addAck(ack, maxPacketSize)) {
-					if(logDEBUG) Logger.debug(this, "Can't add ack "+ack);
+					if(logDEBUG) Logger.debug(this, "Can't add ack " + ack);
 					break;
 				}
 				if(entry.getValue() + MAX_ACK_DELAY < now)
@@ -235,7 +235,7 @@ public class NewPacketFormatKeyContext {
 			int inFlight = sentPackets.size();
 			if(inFlight > maxSeenInFlight) {
 				maxSeenInFlight = inFlight;
-				if(logDEBUG) Logger.debug(this, "Max seen in flight new record: "+maxSeenInFlight+" for "+this);
+				if(logDEBUG) Logger.debug(this, "Max seen in flight new record: " + maxSeenInFlight + " for " + this);
 			}
 		}
 	}
@@ -282,12 +282,12 @@ public class NewPacketFormatKeyContext {
 					count++;
 			}
 			if(count > 0 && logMINOR)
-				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+				Logger.minor(this, "" + count + " packets in flight with threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle != null) {
-				for(int i=0;i<bigLostCount;i++) {
+				for(int i=0;i < bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
 				}
 			}

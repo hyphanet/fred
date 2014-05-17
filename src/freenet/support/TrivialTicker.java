@@ -41,7 +41,7 @@ public class TrivialTicker implements Ticker {
 				if(job instanceof FastRunnable) {
 					job.run();
 				} else {
-					executor.execute(job, "Delayed task: "+job);
+					executor.execute(job, "Delayed task: " + job);
 				}
 			}
 		};

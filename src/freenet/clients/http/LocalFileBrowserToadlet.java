@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	protected final NodeClientCore core;
-	private static final int MAX_POST_SIZE = 1024*1024;
+	private static final int MAX_POST_SIZE = 1024 * 1024;
 
 	public LocalFileBrowserToadlet (NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
@@ -436,12 +436,12 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	}
 
 	private String l10n (String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("LocalFileInsertToadlet."+key,
+		return NodeL10n.getBase().getString("LocalFileInsertToadlet." + key,
 		        new String[] { pattern },
 		        new String[] { value });
 	}
 
 	private String l10n(String msg) {
-		return NodeL10n.getBase().getString("LocalFileInsertToadlet."+msg);
+		return NodeL10n.getBase().getString("LocalFileInsertToadlet." + msg);
 	}
 }

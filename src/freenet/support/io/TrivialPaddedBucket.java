@@ -43,7 +43,7 @@ public class TrivialPaddedBucket implements Bucket {
     public OutputStream getOutputStream() throws IOException {
         OutputStream os; 
         synchronized(this) {
-            if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
+            if(outputStreamOpen) throw new IOException("Already have an OutputStream for " + this);
             os = underlying.getOutputStream();
             outputStreamOpen = true;
             size = 0;
@@ -99,7 +99,7 @@ public class TrivialPaddedBucket implements Bucket {
         }
         
         public String toString() {
-            return "TrivialPaddedBucketOutputStream:"+out+"("+TrivialPaddedBucket.this+")";
+            return "TrivialPaddedBucketOutputStream:" + out + "(" + TrivialPaddedBucket.this + ")";
         }
 
     }
@@ -113,7 +113,7 @@ public class TrivialPaddedBucket implements Bucket {
         long max = (long)MIN_PADDED_SIZE << 1;
         while(true) {
             if(max < 0)
-                throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
+                throw new Error("Impossible size: " + size + " - min=" + min + ", max=" + max);
             if(size < min)
                 throw new IllegalStateException("???");
             if((size >= min) && (size <= max)) {
@@ -199,7 +199,7 @@ public class TrivialPaddedBucket implements Bucket {
 
     @Override
     public String getName() {
-        return "Padded:"+underlying.getName();
+        return "Padded:" + underlying.getName();
     }
 
     @Override

@@ -87,10 +87,10 @@ public class Peer implements WritableToDataOutputStream {
         if(offset < 0) throw new PeerParseException();
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown);
-        String strport = physical.substring(offset+1);
+        String strport = physical.substring(offset + 1);
         try {
             _port = Integer.parseInt(strport);
-            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
+            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port " + _port);
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
@@ -116,13 +116,13 @@ public class Peer implements WritableToDataOutputStream {
     public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
         int offset = physical.lastIndexOf(':'); // ipv6
         if(offset < 0) 
-        	throw new PeerParseException("No port number: \""+physical+"\"");
+        	throw new PeerParseException("No port number: \"" + physical + "\"");
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
-        String strport = physical.substring(offset+1);
+        String strport = physical.substring(offset + 1);
         try {
             _port = Integer.parseInt(strport);
-            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
+            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port " + _port);
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
@@ -263,7 +263,7 @@ public class Peer implements WritableToDataOutputStream {
 	 * Get the address:port string, but prefer numeric IPs - don't return the name.
 	 */
 	public String toStringPrefNumeric() {
-		return addr.toStringPrefNumeric()+':'+_port;
+		return addr.toStringPrefNumeric() + ':' + _port;
 	}
 
 	public Peer dropHostName() {

@@ -70,9 +70,9 @@ public abstract class BaseFileBucket implements Bucket {
 			file.deleteOnExit();
 		} catch (NullPointerException e) {
 			if(WrapperManager.hasShutdownHookBeenTriggered()) {
-				Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: "+e, e);
+				Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: " + e, e);
 			} else {
-				Logger.error(this, "Caught "+e+" doing deleteOnExit() for "+file+" - JVM bug ????");
+				Logger.error(this, "Caught " + e + " doing deleteOnExit() for " + file + " - JVM bug ????");
 			}
 		}
 	}
@@ -82,9 +82,9 @@ public abstract class BaseFileBucket implements Bucket {
 		synchronized (this) {
 			File file = getFile();
 			if(freed)
-				throw new IOException("File already freed: "+this);
+				throw new IOException("File already freed: " + this);
 			if(isReadOnly())
-				throw new IOException("Bucket is read-only: "+this);
+				throw new IOException("Bucket is read-only: " + this);
 			
 			if(createFileOnly() && file.exists()) {
 				boolean failed = true;
@@ -96,7 +96,7 @@ public abstract class BaseFileBucket implements Bucket {
 			}
 			
 			if(streams != null && !streams.isEmpty())
-				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
+				Logger.error(this, "Streams open on " + this + " while opening an output stream!: " + streams, new Exception("debug"));
 			
 			File tempfile = createFileOnly() ? getTempfile() : file;
 			long streamNumber = ++fileRestartCounter;
@@ -105,7 +105,7 @@ public abstract class BaseFileBucket implements Bucket {
 				new FileBucketOutputStream(tempfile, streamNumber);
 			
 			if(logDEBUG)
-				Logger.debug(this, "Creating "+os, new Exception("debug"));
+				Logger.debug(this, "Creating " + os, new Exception("debug"));
 			
 			addStream(os);
 			return os;
@@ -168,7 +168,7 @@ public abstract class BaseFileBucket implements Bucket {
 			throws FileNotFoundException {
 			super(tempfile, false);
 			if(logMINOR)
-				Logger.minor(FileBucketOutputStream.class, "Writing to "+tempfile+" for "+getFile()+" : "+this);
+				Logger.minor(FileBucketOutputStream.class, "Writing to " + tempfile + " for " + getFile() + " : " + this);
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
@@ -224,29 +224,29 @@ public abstract class BaseFileBucket implements Bucket {
 			}
 			removeStream(this);
 			if(logMINOR)
-				Logger.minor(this, "Closing "+BaseFileBucket.this);
+				Logger.minor(this, "Closing " + BaseFileBucket.this);
 			try {
 				super.close();
 			} catch (IOException e) {
 				if(logMINOR)
-					Logger.minor(this, "Failed closing "+BaseFileBucket.this+" : "+e, e);
+					Logger.minor(this, "Failed closing " + BaseFileBucket.this + " : " + e, e);
 				if(createFileOnly()) tempfile.delete();
 				throw e;
 			}
 			if(createFileOnly()) {
 				if(file.exists()) {
 					if(logMINOR)
-						Logger.minor(this, "File exists creating file for "+this);
+						Logger.minor(this, "File exists creating file for " + this);
 					tempfile.delete();
 					throw new FileExistsException(file);
 				}
 				if(!tempfile.renameTo(file)) {
 					if(logMINOR)
-						Logger.minor(this, "Cannot rename file for "+this);
+						Logger.minor(this, "Cannot rename file for " + this);
 					if(file.exists()) throw new FileExistsException(file);
 					tempfile.delete();
 					if(logMINOR)
-						Logger.minor(this, "Deleted, cannot rename file for "+this);
+						Logger.minor(this, "Deleted, cannot rename file for " + this);
 					throw new IOException("Cannot rename file");
 				}
 			}
@@ -254,7 +254,7 @@ public abstract class BaseFileBucket implements Bucket {
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString() + ":" + BaseFileBucket.this.toString();
 		}
 	}
 
@@ -277,24 +277,24 @@ public abstract class BaseFileBucket implements Bucket {
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString() + ":" + BaseFileBucket.this.toString();
 		}
 	}
 
 	@Override
 	public synchronized InputStream getInputStream() throws IOException {
 		if(freed)
-			throw new IOException("File already freed: "+this);
+			throw new IOException("File already freed: " + this);
 		File file = getFile();
 		if(!file.exists()) {
-			Logger.normal(this, "File does not exist: "+file+" for "+this);
+			Logger.normal(this, "File does not exist: " + file + " for " + this);
 			return new NullInputStream();
 		} else {
 			FileBucketInputStream is =
 				new FileBucketInputStream(file);
 			addStream(is);
 			if(logDEBUG)
-				Logger.debug(this, "Creating "+is, new Exception("debug"));
+				Logger.debug(this, "Creating " + is, new Exception("debug"));
 			return is;
 		}
 	}
@@ -318,7 +318,7 @@ public abstract class BaseFileBucket implements Bucket {
 	 */
 	protected synchronized void deleteFile() {
 		if(logMINOR)
-			Logger.minor(this, "Deleting "+getFile()+" for "+this, new Exception("debug"));
+			Logger.minor(this, "Deleting " + getFile() + " for " + this, new Exception("debug"));
 		getFile().delete();
 	}
 
@@ -411,12 +411,12 @@ public abstract class BaseFileBucket implements Bucket {
 
 	public synchronized Bucket[] split(int splitSize) {
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
-			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
+			throw new IllegalArgumentException("Way too big!: " + length + " for " + splitSize);
 		int bucketCount = (int) (length / splitSize);
 		if(length % splitSize > 0) bucketCount++;
 		Bucket[] buckets = new Bucket[bucketCount];
 		File file = getFile();
-		for(int i=0;i<buckets.length;i++) {
+		for(int i=0;i < buckets.length;i++) {
 			long startAt = 1L * i * splitSize;
 			long endAt = Math.min(startAt + splitSize * 1L, length);
 			long len = endAt - startAt;
@@ -433,7 +433,7 @@ public abstract class BaseFileBucket implements Bucket {
 	public void free(boolean forceFree) {
 		Object[] toClose;
 		if(logMINOR)
-			Logger.minor(this, "Freeing "+this, new Exception("debug"));
+			Logger.minor(this, "Freeing " + this, new Exception("debug"));
 		synchronized(this) {
 			if(freed) return;
 			freed = true;
@@ -442,7 +442,7 @@ public abstract class BaseFileBucket implements Bucket {
 		}
 		
 		if(toClose != null) {
-			Logger.error(this, "Streams open free()ing "+this+" : "+Arrays.toString(toClose), new Exception("debug"));
+			Logger.error(this, "Streams open free()ing " + this + " : " + Arrays.toString(toClose), new Exception("debug"));
 			for(Object strm: toClose) {
 				try {
 					if(strm instanceof FileBucketOutputStream) {
@@ -451,9 +451,9 @@ public abstract class BaseFileBucket implements Bucket {
 						((FileBucketInputStream) strm).close();
 					}
 				} catch (IOException e) {
-					Logger.error(this, "Caught closing stream in free(): "+e, e);
+					Logger.error(this, "Caught closing stream in free(): " + e, e);
 				} catch (Throwable t) {
-					Logger.error(this, "Caught closing stream in free(): "+t, t);
+					Logger.error(this, "Caught closing stream in free(): " + t, t);
 				}
 			}
 		}

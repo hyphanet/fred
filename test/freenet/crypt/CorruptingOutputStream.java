@@ -19,7 +19,7 @@ class CorruptingOutputStream extends OutputStream {
         this.os = os;
         this.random = random;
         TreeSet<Long> toKill = new TreeSet<Long>();
-        for(int i=0;i<errors;i++) {
+        for(int i=0;i < errors;i++) {
             long offset = from + nextLong(random, to - from);
             if(!toKill.add(offset)) {
                 i--;
@@ -28,7 +28,7 @@ class CorruptingOutputStream extends OutputStream {
         }
         killBytes = new long[errors];
         Iterator<Long> it = toKill.iterator();
-        for(int i=0;i<errors;i++)
+        for(int i=0;i < errors;i++)
             killBytes[i] = it.next();
         ptr = 0;
     }

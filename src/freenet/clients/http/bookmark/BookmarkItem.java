@@ -95,7 +95,7 @@ public class BookmarkItem extends Bookmark {
 		public HTMLNode getHTMLText() {
             HTMLNode n = new HTMLNode("div");
             NodeL10n.getBase().addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "name", "edition"},
-            		new HTMLNode[] { HTMLNode.link("/"+key), HTMLNode.text(name), HTMLNode.text(key.getSuggestedEdition()) });
+            		new HTMLNode[] { HTMLNode.link("/" + key), HTMLNode.text(name), HTMLNode.text(key.getSuggestedEdition()) });
             return n;
         }
 
@@ -195,7 +195,7 @@ public class BookmarkItem extends Bookmark {
     /** @return True if we updated the edition */
     public synchronized boolean setEdition(long ed, NodeClientCore node) {
         if (key.getSuggestedEdition() >= ed) {
-        	if(logMINOR) Logger.minor(this, "Edition "+ed+" is too old, not updating "+key);
+        	if(logMINOR) Logger.minor(this, "Edition " + ed + " is too old, not updating " + key);
             return false;
         }
         key = key.setSuggestedEdition(ed);
@@ -261,14 +261,14 @@ public class BookmarkItem extends Bookmark {
     public String getDescription() {
     	if(desc == null) return "";
 		if(desc.toLowerCase().startsWith("l10n:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description."+desc.substring("l10n:".length()));
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.Description." + desc.substring("l10n:".length()));
         return desc;
     }
     
     public String getShortDescription() {
     	if(shortDescription == null) return "";
 		if(shortDescription.toLowerCase().startsWith("l10n:"))
-			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription."+shortDescription.substring("l10n:".length()));
+			return NodeL10n.getBase().getString("Bookmarks.Defaults.ShortDescription." + shortDescription.substring("l10n:".length()));
         return shortDescription;
     }
     

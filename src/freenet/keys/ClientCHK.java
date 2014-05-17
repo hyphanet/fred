@@ -186,9 +186,9 @@ public class ClientCHK extends ClientKey {
 	
     @Override
 	public String toString() {
-        return super.toString()+ ':' +Base64.encode(routingKey)+ ',' +
-        	Base64.encode(cryptoKey)+ ',' +compressionAlgorithm+ ',' +controlDocument+
-                ',' +cryptoAlgorithm;
+        return super.toString() + ':' + Base64.encode(routingKey) + ',' +
+        	Base64.encode(cryptoKey) + ',' + compressionAlgorithm + ',' + controlDocument +
+                ',' + cryptoAlgorithm;
     }
 
 	@Override
@@ -267,7 +267,7 @@ public class ClientCHK extends ClientKey {
 	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(routingKey == null)
-			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
+			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored=" + container.ext().isStored(this) + " active=" + container.ext().isActive(this));
 		if(cryptoKey == null)
 			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
 		return true;

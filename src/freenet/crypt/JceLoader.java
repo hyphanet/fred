@@ -26,13 +26,13 @@ public class JceLoader {
 	}
 	static private boolean checkUse(String prop, String def)
 	{
-		return "true".equalsIgnoreCase(System.getProperty("freenet.jce."+prop, def));
+		return "true".equalsIgnoreCase(System.getProperty("freenet.jce." + prop, def));
 	}
 	static {
 		Provider p;
 		// NSS is preferred over BC, add it first
 		p = null;
-		if (checkUse("use.NSS","false")) {
+		if (checkUse("use.NSS", "false")) {
 			try {
 				p = (new NSSLoader()).load(checkUse("prefer.NSS"));
 			} catch(Throwable e) {
@@ -95,7 +95,7 @@ public class JceLoader {
 				}
 			}
 			if(nssProvider == null) {
-				File nssFile = File.createTempFile("nss",".cfg");
+				File nssFile = File.createTempFile("nss", ".cfg");
 				nssFile.deleteOnExit();
 				OutputStream os = null;
 				try {
@@ -130,9 +130,9 @@ public class JceLoader {
 	}
 	
 	static public void dumpLoaded() {
-		System.out.println("BouncyCastle: "+BouncyCastle);
-		System.out.println("SunPKCS11-NSS: "+NSS);
-		System.out.println("SUN: "+SUN);
-		System.out.println("SunJCE: "+SunJCE);
+		System.out.println("BouncyCastle: " + BouncyCastle);
+		System.out.println("SunPKCS11-NSS: " + NSS);
+		System.out.println("SUN: " + SUN);
+		System.out.println("SunJCE: " + SunJCE);
 	}
 }

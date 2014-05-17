@@ -35,7 +35,7 @@ public class BitArray implements WritableToDataOutputStream {
 
 	public BitArray(byte[] data) {
 		_bits = data;
-		_size = data.length*8;
+		_size = data.length * 8;
 	}
 	
 	public BitArray copy() {
@@ -53,8 +53,8 @@ public class BitArray implements WritableToDataOutputStream {
 	
 	public BitArray(DataInput dis, int maxSize) throws IOException {
 		_size = dis.readInt();
-		if (_size<=0 || _size>maxSize)
-			throw new IOException("Unacceptable bitarray size: "+_size);
+		if (_size <= 0 || _size > maxSize)
+			throw new IOException("Unacceptable bitarray size: " + _size);
 		_bits = new byte[(_size + 7) / 8];
 		dis.readFully(_bits);
 	}
@@ -94,7 +94,7 @@ public class BitArray implements WritableToDataOutputStream {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(this._size);
-		for (int x=0; x<_size; x++) {
+		for (int x=0; x < _size; x++) {
 			if (bitAt(x)) {
 				sb.append('1');
 			} else {
@@ -127,7 +127,7 @@ public class BitArray implements WritableToDataOutputStream {
 		if (ba.getSize() != getSize()) {
 			return false;
 		}
-		for (int x=0; x<getSize(); x++) {
+		for (int x=0; x < getSize(); x++) {
 			if (ba.bitAt(x) != bitAt(x)) {
 				return false;
 			}
@@ -141,20 +141,20 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public void setAllOnes() {
-		for(int i=0;i<_bits.length;i++)
+		for(int i=0;i < _bits.length;i++)
 			_bits[i] = (byte)0xFF;
 	}
 
 	public int firstOne(int start) {
-		int startByte = start/8;
-		int startBit = start%8;
-		for(int i=startByte;i<_bits.length;i++) {
+		int startByte = start / 8;
+		int startBit = start % 8;
+		for(int i=startByte;i < _bits.length;i++) {
 			byte b = _bits[i];
 			if(b == 0) continue;
-			for(int j=startBit;j<8;j++) {
+			for(int j=startBit;j < 8;j++) {
 				int mask = (1 << j);
 				if((b & mask) != 0) {
-					int x = i*8+j;
+					int x = i * 8 + j;
 					if(x >= _size) return -1;
 					return x;
 				}
@@ -169,15 +169,15 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public int firstZero(int start) {
-		int startByte = start/8;
-		int startBit = start%8;
-		for(int i=startByte;i<_bits.length;i++) {
+		int startByte = start / 8;
+		int startBit = start % 8;
+		for(int i=startByte;i < _bits.length;i++) {
 			byte b = _bits[i];
 			if(b == (byte)255) continue;
-			for(int j=startBit;j<8;j++) {
+			for(int j=startBit;j < 8;j++) {
 				int mask = (1 << j);
 				if((b & mask) == 0) {
-					int x = i*8+j;
+					int x = i * 8 + j;
 					if(x >= _size) return -1;
 					return x;
 				}
@@ -196,27 +196,27 @@ public class BitArray implements WritableToDataOutputStream {
 			_bits = Arrays.copyOf(_bits, bytes);
 		}
 		if(oldSize < _size && oldSize % 8 != 0) {
-			for(int i=oldSize;i<Math.min(_size, oldSize - oldSize % 8 + 8);i++) {
+			for(int i=oldSize;i < Math.min(_size, oldSize - oldSize % 8 + 8);i++) {
 				setBit(i, false);
 			}
 		}
 	}
 
 	public int lastOne(int start) {
-		if(start >= _size) start = _size-1;
-		int startByte = start/8;
-		int startBit = start%8;
+		if(start >= _size) start = _size - 1;
+		int startByte = start / 8;
+		int startBit = start % 8;
 		if(startByte >= _bits.length) {
-			System.err.println("Start byte is "+startByte+" _bits.length is "+_bits.length);
+			System.err.println("Start byte is " + startByte + " _bits.length is " + _bits.length);
 			assert(false);
 		}
-		for(int i=startByte;i>=0;i--,startBit=7) {
+		for(int i=startByte;i >= 0;i--, startBit=7) {
 			byte b = _bits[i];
 			if(b == (byte)0) continue;
-			for(int j=startBit;j>=0;j--) {
+			for(int j=startBit;j >= 0;j--) {
 				int mask = (1 << j);
 				if((b & mask) != 0) {
-					int x = i*8+j;
+					int x = i * 8 + j;
 					return x;
 				}
 			}

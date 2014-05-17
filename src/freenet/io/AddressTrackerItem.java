@@ -78,10 +78,10 @@ public class AddressTrackerItem {
 		SimpleFieldSet gaps = fs.getSubset("Gaps");
 		gapLengths = new long[TRACK_GAPS];
 		gapLengthRecvTimes = new long[TRACK_GAPS];
-		for(int i=0;i<TRACK_GAPS;i++) {
+		for(int i=0;i < TRACK_GAPS;i++) {
 			SimpleFieldSet gap = gaps.subset(Integer.toString(i));
 			if(gap == null) {
-				Logger.normal(this, "No more gaps at i="+i+" - TRACK_GAPS changed??");
+				Logger.normal(this, "No more gaps at i=" + i + " - TRACK_GAPS changed??");
 				break;
 			}
 			gapLengths[i] = gap.getLong("Length");
@@ -116,8 +116,8 @@ public class AddressTrackerItem {
 			// If no packets sent since last one, just replace it
 			if(timeLastSentPacket >= gapLengthRecvTimes[0]) {
 				// Rotate gaps array
-				System.arraycopy(gapLengths, 0, gapLengths, 1, TRACK_GAPS-1);
-				System.arraycopy(gapLengthRecvTimes, 0, gapLengthRecvTimes, 1, TRACK_GAPS-1);
+				System.arraycopy(gapLengths, 0, gapLengths, 1, TRACK_GAPS - 1);
+				System.arraycopy(gapLengthRecvTimes, 0, gapLengthRecvTimes, 1, TRACK_GAPS - 1);
 			} else {
 				// else overwrite [0]
 			}
@@ -132,7 +132,7 @@ public class AddressTrackerItem {
 	
 	public long longestGap(long horizon, long now) {
 		long longestGap = -1;
-		for(int i=0;i<TRACK_GAPS;i++) {
+		for(int i=0;i < TRACK_GAPS;i++) {
 			if(gapLengthRecvTimes[i] < now - horizon) break;
 			longestGap = Math.max(longestGap, gapLengths[i]);
 		}
@@ -150,7 +150,7 @@ public class AddressTrackerItem {
 	
 	public synchronized Gap[] getGaps() {
 		Gap[] gaps = new Gap[TRACK_GAPS];
-		for(int i=0;i<TRACK_GAPS;i++) {
+		for(int i=0;i < TRACK_GAPS;i++) {
 			gaps[i] = new Gap(gapLengths[i], gapLengthRecvTimes[i]);
 		}
 		return gaps;
@@ -215,7 +215,7 @@ public class AddressTrackerItem {
 		fs.put("PacketsSent", packetsSent);
 		fs.put("PacketsReceived", packetsReceived);
 		SimpleFieldSet gaps = new SimpleFieldSet(true);
-		for(int i=0;i<TRACK_GAPS;i++) {
+		for(int i=0;i < TRACK_GAPS;i++) {
 			SimpleFieldSet gap = new SimpleFieldSet(true);
 			gap.put("Length", gapLengths[i]);
 			gap.put("Received", gapLengthRecvTimes[i]);

@@ -82,7 +82,7 @@ public class SecurityLevels {
 			public String[] getPossibleValues() {
 				NETWORK_THREAT_LEVEL[] values = NETWORK_THREAT_LEVEL.values();
 				String[] names = new String[values.length];
-				for(int i=0;i<names.length;i++)
+				for(int i=0;i < names.length;i++)
 					names[i] = values[i].name();
 				return names;
 			}
@@ -96,7 +96,7 @@ public class SecurityLevels {
 			protected void setValue(String val) throws InvalidConfigValueException {
 				NETWORK_THREAT_LEVEL newValue = parseNetworkThreatLevel(val);
 				if(newValue == null)
-					throw new InvalidConfigValueException("Invalid value for network threat level: "+val);
+					throw new InvalidConfigValueException("Invalid value for network threat level: " + val);
 				synchronized(SecurityLevels.this) {
 					networkThreatLevel = newValue;
 				}
@@ -131,7 +131,7 @@ public class SecurityLevels {
 			public String[] getPossibleValues() {
 				PHYSICAL_THREAT_LEVEL[] values = PHYSICAL_THREAT_LEVEL.values();
 				String[] names = new String[values.length];
-				for(int i=0;i<names.length;i++)
+				for(int i=0;i < names.length;i++)
 					names[i] = values[i].name();
 				return names;
 			}
@@ -145,7 +145,7 @@ public class SecurityLevels {
 			protected void setValue(String val) throws InvalidConfigValueException {
 				PHYSICAL_THREAT_LEVEL newValue = PHYSICAL_THREAT_LEVEL.valueOf(val);
 				if(newValue != null)
-					throw new InvalidConfigValueException("Invalid value for physical threat level: "+val);
+					throw new InvalidConfigValueException("Invalid value for physical threat level: " + val);
 				synchronized(SecurityLevels.this) {
 					physicalThreatLevel = newValue;
 				}
@@ -182,7 +182,7 @@ public class SecurityLevels {
 		
 		public void addListener(SecurityLevelListener<T> listener) {
 			if(listeners.contains(listener)) {
-				Logger.error(this, "Already have listener "+listener+" in "+this);
+				Logger.error(this, "Already have listener " + listener + " in " + this);
 				return;
 			}
 			listeners.add(listener);
@@ -299,15 +299,15 @@ public class SecurityLevels {
 	}
 	
 	private String l10n(String string) {
-		return NodeL10n.getBase().getString("SecurityLevels."+string);
+		return NodeL10n.getBase().getString("SecurityLevels." + string);
 	}
 
 	private String l10n(String string, String pattern, String value) {
-		return NodeL10n.getBase().getString("SecurityLevels."+string, pattern, value);
+		return NodeL10n.getBase().getString("SecurityLevels." + string, pattern, value);
 	}
 
 	private String l10n(String string, String[] patterns, String[] values) {
-		return NodeL10n.getBase().getString("SecurityLevels."+string, patterns, values);
+		return NodeL10n.getBase().getString("SecurityLevels." + string, patterns, values);
 	}
 
 	public void setThreatLevel(NETWORK_THREAT_LEVEL newThreatLevel) {
@@ -335,11 +335,11 @@ public class SecurityLevels {
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {
-		return NodeL10n.getBase().getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
+		return NodeL10n.getBase().getString("SecurityLevels.networkThreatLevel.name." + newThreatLevel.name());
 	}
 	
 	public static String localisedName(PHYSICAL_THREAT_LEVEL newPhysicalLevel) {
-		return NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
+		return NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevel.name." + newPhysicalLevel.name());
 	}
 
 	public FRIEND_TRUST getDefaultFriendTrust() {

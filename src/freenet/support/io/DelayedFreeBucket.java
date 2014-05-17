@@ -90,7 +90,7 @@ public class DelayedFreeBucket implements Bucket {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
 			if(logMINOR)
-				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
+				Logger.minor(this, "Freeing " + this + " underlying=" + bucket, new Exception("debug"));
 			this.factory.delayedFreeBucket(this);
 			freed = true;
 		}
@@ -105,11 +105,11 @@ public class DelayedFreeBucket implements Bucket {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
+			Logger.minor(this, "Removing from database: " + this);
 		synchronized(this) {
 			boolean wasQueued = freed || removed;
 			if(!freed)
-				Logger.error(this, "Asking to remove from database but not freed: "+this, new Exception("error"));
+				Logger.error(this, "Asking to remove from database but not freed: " + this, new Exception("error"));
 			removed = true;
 			if(!wasQueued)
 				this.factory.delayedFreeBucket(this);
@@ -118,7 +118,7 @@ public class DelayedFreeBucket implements Bucket {
 
 	@Override
 	public String toString() {
-		return super.toString()+":"+bucket;
+		return super.toString() + ":" + bucket;
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {
@@ -127,7 +127,7 @@ public class DelayedFreeBucket implements Bucket {
 //			System.err.println("Infinite recursion in progress...");
 //		}
 		if(logMINOR)
-			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
+			Logger.minor(this, "Activating " + super.toString() + " : " + bucket.getClass());
 		if(bucket == this) {
 			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
 			return;
@@ -148,7 +148,7 @@ public class DelayedFreeBucket implements Bucket {
 	public void realRemoveFrom(ObjectContainer container) {
 		synchronized(this) {
 			if(reallyRemoved)
-				Logger.error(this, "Calling realRemoveFrom() twice on "+this);
+				Logger.error(this, "Calling realRemoveFrom() twice on " + this);
 			reallyRemoved = true;
 		}
 		bucket.removeFrom(container);
@@ -157,7 +157,7 @@ public class DelayedFreeBucket implements Bucket {
 	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(reallyRemoved) {
-			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			Logger.error(this, "objectCanNew() on " + this + " but really removed = " + reallyRemoved + " already freed=" + freed + " removed=" + removed, new Exception("debug"));
 			return false;
 		}
 		assert(bucket != null);
@@ -166,7 +166,7 @@ public class DelayedFreeBucket implements Bucket {
 	
 	public boolean objectCanUpdate(ObjectContainer container) {
 		if(reallyRemoved) {
-			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			Logger.error(this, "objectCanUpdate() on " + this + " but really removed = " + reallyRemoved + " already freed=" + freed + " removed=" + removed, new Exception("debug"));
 			return false;
 		}
 		assert(bucket != null);

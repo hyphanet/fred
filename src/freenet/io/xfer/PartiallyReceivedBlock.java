@@ -60,11 +60,11 @@ public class PartiallyReceivedBlock {
 
 	public PartiallyReceivedBlock(int packets, int packetSize, byte[] data) {
 		if (data.length != packets * packetSize) {
-			throw new RuntimeException("Length of data ("+data.length+") doesn't match packet number and size");
+			throw new RuntimeException("Length of data (" + data.length + ") doesn't match packet number and size");
 		}
 		_data = data;
 		_received = new boolean[packets];
-		for (int x=0; x<_received.length; x++) {
+		for (int x=0; x < _received.length; x++) {
 			_received[x] = true;
 		}
 		_receivedCount = packets;
@@ -123,7 +123,7 @@ public class PartiallyReceivedBlock {
 				throw new AbortedException("PRB is aborted");
 			}
 			if (packet.getLength() != _packetSize) {
-				throw new RuntimeException("New packet size "+packet.getLength()+" but expecting packet of size "+_packetSize);
+				throw new RuntimeException("New packet size " + packet.getLength() + " but expecting packet of size " + _packetSize);
 			}
 			if (_received[position])
 				return;
@@ -148,11 +148,11 @@ public class PartiallyReceivedBlock {
 
 	public synchronized boolean allReceived() throws AbortedException {
 		if(_receivedCount == _packets) {
-			if(logDEBUG) Logger.debug(this, "Received "+_receivedCount+" of "+_packets+" on "+this);
+			if(logDEBUG) Logger.debug(this, "Received " + _receivedCount + " of " + _packets + " on " + this);
 			return true;
 		}
 		if (_aborted) {
-			throw new AbortedException("PRB is aborted: "+_abortReason+" : "+_abortDescription+" received "+_receivedCount+" of "+_packets+" on "+this);
+			throw new AbortedException("PRB is aborted: " + _abortReason + " : " + _abortDescription + " received " + _receivedCount + " of " + _packets + " on " + this);
 		}
 		return false;
 	}
@@ -189,14 +189,14 @@ public class PartiallyReceivedBlock {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
-				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
+				if(logMINOR) Logger.minor(this, "Already aborted " + this + " : reason=" + _abortReason + " description=" + _abortDescription);
 				return null;
 			}
 			if(_receivedCount == _packets) {
 				if(logMINOR) Logger.minor(this, "Already received");
 				return _data;
 			}
-			Logger.normal(this, "Aborting PRB: "+reason+" : "+description+" on "+this, new Exception("debug"));
+			Logger.normal(this, "Aborting PRB: " + reason + " : " + description + " on " + this, new Exception("debug"));
 			_aborted = true;
 			_abortedLocally = cancelledLocally;
 			_abortReason = reason;

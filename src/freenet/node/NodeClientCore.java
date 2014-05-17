@@ -176,7 +176,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			System.err.println("Database corrupted (before entering NodeClientCore)!");
 		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, SECONDS.toMillis(30), this, node.nodeStats);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY + 1, NativeThread.NORM_PRIORITY, true, SECONDS.toMillis(30), this, node.nodeStats);
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -201,9 +201,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		  "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", nodeConfig);
 		
 		// FIXME remove back compatibility hack.
-		File oldTemp = node.runDir().file("temp-"+node.getDarknetPortNumber());
+		File oldTemp = node.runDir().file("temp-" + node.getDarknetPortNumber());
 		if(oldTemp.exists() && oldTemp.isDirectory() && !FileUtil.equals(tempDir.dir, oldTemp)) {
-			System.err.println("Deleting old temporary dir: "+oldTemp);
+			System.err.println("Deleting old temporary dir: " + oldTemp);
 			try {
 				FileUtil.secureDeleteAll(oldTemp);
 			} catch (IOException e) {
@@ -287,7 +287,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		}, true);
 
-		nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize+"MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+		nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize + "MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -563,14 +563,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				pfg = ptbf.fg;
 			}
 		} catch(IOException e2) {
-			String msg = "Could not find or create persistent temporary directory: "+e2;
+			String msg = "Could not find or create persistent temporary directory: " + e2;
 			e2.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		} catch (Db4oException e) {
 			killedDatabase = true;
 		} catch (Throwable t) {
 			// Let the rest of the node start up but kill the database
-			System.err.println("Failed to load persistent temporary buckets factory: "+t);
+			System.err.println("Failed to load persistent temporary buckets factory: " + t);
 			t.printStackTrace();
 			killedDatabase = true;
 		}
@@ -702,13 +702,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	    try {
 	        pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
 	    } catch (Db4oException e) {
-	        System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
-	        Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
+	        System.err.println("Failed to migrate plugin stores due to database error: " + e + " - assuming node.db4o[.crypt] is corrupt.");
+	        Logger.error(this, "Failed to migrate plugin stores due to database error: " + e + " - assuming node.db4o[.crypt] is corrupt.", e);
             killedDatabase = true;
 	    } catch (Throwable e) {
 	        // Yes this really is necessary. db4o corruption can throw all sorts of crap.
-            System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
-            Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
+            System.err.println("Failed to migrate plugin stores due to database error: " + e + " - assuming node.db4o[.crypt] is corrupt.");
+            Logger.error(this, "Failed to migrate plugin stores due to database error: " + e + " - assuming node.db4o[.crypt] is corrupt.", e);
             killedDatabase = true;
 	    }
     }
@@ -839,12 +839,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			try {
 				container.activate(job.job, 1);
 				// Remove before execution, to allow it to re-add itself if it wants to
-				System.err.println("Cleaning up after restart: "+job.job);
+				System.err.println("Cleaning up after restart: " + job.job);
 				restartJobsQueue.removeRestartJob(job.job, job.prio, container);
 				job.job.run(container, context);
 				container.commit();
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in startup job "+job, t);
+				Logger.error(this, "Caught " + t + " in startup job " + job, t);
 				// Try again next time
 				restartJobsQueue.queueRestartJob(job.job, job.prio, container, true);
 			}
@@ -910,7 +910,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// and use that for purposes of deciding whether to cache it in the store.
 		if(offersOnly) {
 			htl = node.failureTable.minOfferedHTL(key, htl);
-			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
+			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: " + htl);
 		}
 		final long startTime = System.currentTimeMillis();
 		asyncGet(key, offersOnly, uid, new RequestSenderListener() {
@@ -949,7 +949,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED) {
-					Logger.error(this, "Bogus status in onRequestSenderFinished for "+rs, new Exception("error"));
+					Logger.error(this, "Bogus status in onRequestSenderFinished for " + rs, new Exception("error"));
 					listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 					return;
 				}
@@ -1006,7 +1006,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 							node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						}
 						if(status == RequestSender.SUCCESS) {
-							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took "+rtt);
+							Logger.minor(this, "Successful " + (isSSK ? "SSK" : "CHK") + " fetch took " + rtt);
 						}
 					}
 
@@ -1044,7 +1044,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 							return;
 						default:
-							Logger.error(this, "Unknown RequestSender code in get"+ (isSSK ? "SSK" : "CHK") +": " + status + " on " + rs);
+							Logger.error(this, "Unknown RequestSender code in get" + (isSSK ? "SSK" : "CHK") + ": " + status + " on " + rs);
 							listener.onFailed(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 							return;
 					}
@@ -1213,7 +1213,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
 						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation, realTimeFlag);
 						if(status == RequestSender.SUCCESS) {
-							Logger.minor(this, "Successful CHK fetch took "+rtt);
+							Logger.minor(this, "Successful CHK fetch took " + rtt);
 						}
 					}
 
@@ -1603,7 +1603,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				} catch(KeyCollisionException e) {
 					// collision race?
 					// should be impossible.
-					Logger.normal(this, "collision race? is="+is, e);
+					Logger.normal(this, "collision race? is=" + is, e);
 				}
 				throw new LowLevelPutException(collided);
 			} else
@@ -1769,7 +1769,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb,null, toadletContainer);
+		return new GenericReadFilterCallback(uri, cb, null, toadletContainer);
 	}
 
 	public int maxBackgroundUSKFetchers() {
@@ -1942,7 +1942,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 					OOMHandler.handleOOM((OutOfMemoryError) t);
 				} else {
-					Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+					Logger.error(this, "Failed to run database job " + job + " : caught " + t, t);
 				}
 				boolean killed;
 				synchronized(NodeClientCore.this) {
@@ -1968,7 +1968,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		@Override
 		public String toString() {
-			return "DBJobWrapper:"+job;
+			return "DBJobWrapper:" + job;
 		}
 
 	}

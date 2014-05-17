@@ -51,7 +51,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	public void testCHKPresent() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		checkCHKPresent(-1, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE);
 		FileUtil.removeAll(tempDir);
-		checkCHKPresent(600*1000, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE); // Much longer than the test will take.
+		checkCHKPresent(600 * 1000, TEST_COUNT, ACCEPTABLE_FALSE_POSITIVES, STORE_SIZE); // Much longer than the test will take.
 		checkCHKPresent(-1, SaltedHashFreenetStore.OPTION_MAX_PROBE, 1, SaltedHashFreenetStore.OPTION_MAX_PROBE); // Check that it doesn't reuse slots if it can avoid it.
 		checkCHKPresent(-1, 10, 1, 20);
 	}
@@ -67,7 +67,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<testCount;i++) {
+		for(int i=0;i < testCount;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -83,7 +83,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		assertTrue(falsePositives <= acceptableFalsePositives);
 		
-		for(int i=0;i<testCount;i++) {
+		for(int i=0;i < testCount;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -100,7 +100,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 	public void testCHKPresentWithClose() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		checkCHKPresentWithClose(-1);
 		FileUtil.removeAll(tempDir);
-		checkCHKPresentWithClose(600*1000); // Much longer than the test will take.
+		checkCHKPresentWithClose(600 * 1000); // Much longer than the test will take.
 	}
 
 	public void checkCHKPresentWithClose(int persistenceTime) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
@@ -114,7 +114,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -135,7 +135,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -161,7 +161,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -178,7 +178,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		assertTrue(falsePositives <= ACCEPTABLE_FALSE_POSITIVES);
 		
 		try {
-			Thread.sleep(2*delay);
+			Thread.sleep(2 * delay);
 		} catch (InterruptedException e) {
 			// Ignore
 		}
@@ -189,7 +189,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -215,7 +215,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -237,7 +237,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		saltStore = SaltedHashFreenetStore.construct(f, "testCachingFreenetStoreCHK", store, weakPRNG, STORE_SIZE, true, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -263,7 +263,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		
 		int falsePositives = 0;
 
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();
@@ -287,7 +287,7 @@ public class SaltedHashSlotFilterTest extends TestCase {
 		saltStore.start(null, true);
 		saltStore.testingWaitForCleanerDone(50, 100);
 		
-		for(int i=0;i<TEST_COUNT;i++) {
+		for(int i=0;i < TEST_COUNT;i++) {
 			String test = "test" + i;
 			ClientCHKBlock block = encodeBlockCHK(test);
 			ClientCHK key = block.getClientKey();

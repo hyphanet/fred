@@ -27,8 +27,8 @@ public class USKManagerPersistent {
 			try {
 				set.next().start(manager, context, container);
 			} catch (Throwable t) {
-				Logger.error(USKManagerPersistent.class, "USKFetcherTag failed to start - partially removed??? : "+t, t);
-				System.err.println("USKFetcherTag failed to start - partially removed??? : "+t);
+				Logger.error(USKManagerPersistent.class, "USKFetcherTag failed to start - partially removed??? : " + t, t);
+				System.err.println("USKFetcherTag failed to start - partially removed??? : " + t);
 				t.printStackTrace();
 			}
 		}

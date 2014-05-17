@@ -29,7 +29,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
 
     @Override
 	public String toString() {
-        return super.toString() + ": "+msg+ ' ' +dest;
+        return super.toString() + ": " + msg + ' ' + dest;
     }
     
     Message msg;
@@ -41,7 +41,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
         this.dest = pn;
         this.ctr = ctr;
         if(logMINOR)
-        	Logger.minor(this, "Created "+this);
+        	Logger.minor(this, "Created " + this);
     }
 
     @Override
@@ -57,12 +57,12 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     @Override
     public void disconnected() {
     	if(logMINOR)
-    		Logger.minor(this, "Disconnect trigger: "+this);
+    		Logger.minor(this, "Disconnect trigger: " + this);
         try {
             dest.sendAsync(msg, null, ctr);
         } catch (NotConnectedException e) {
         	if(logMINOR)
-        		Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);
+        		Logger.minor(this, "Both source and destination disconnected: " + msg + " for " + this);
         }
     }
 

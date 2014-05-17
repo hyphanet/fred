@@ -102,11 +102,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(!dir.exists()) {
 			dir.mkdir();
 			if(!dir.exists()) {
-				throw new IOException("Directory does not exist and cannot be created: "+dir);
+				throw new IOException("Directory does not exist and cannot be created: " + dir);
 			}
 		}
 		if(!dir.isDirectory())
-			throw new IOException("Directory is not a directory: "+dir);
+			throw new IOException("Directory is not a directory: " + dir);
 		originalFiles = new HashSet<File>();
 		File[] files = dir.listFiles(new FileFilter() {
 
@@ -146,7 +146,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				throw new IllegalStateException("completed Init has already been called!");
 			file = FileUtil.getCanonicalFile(file);
 			if(!originalFiles.remove(file))
-				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
+				Logger.error(this, "Preserving " + file + " but it wasn't found!", new Exception("error"));
 		}
 	}
 	
@@ -328,7 +328,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				if(bucket.toRemove())
 					bucket.realRemoveFrom(db);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+				Logger.error(this, "Caught " + t + " freeing bucket " + bucket + " after transaction commit", t);
 			}
 			x++;
 		}

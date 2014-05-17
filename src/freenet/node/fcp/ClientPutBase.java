@@ -158,7 +158,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			finished = true;
 			completionTime = System.currentTimeMillis();
 			if(generatedURI == null)
-				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
+				Logger.error(this, "No generated URI in onSuccess() for " + this + " from " + state);
 		}
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
@@ -191,9 +191,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		synchronized(this) {
 			if(generatedURI != null) {
 				if(!uri.equals(generatedURI))
-					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
+					Logger.error(this, "onGeneratedURI(" + uri + ',' + state + ") but already set generatedURI to " + generatedURI);
 				else
-					if(logMINOR) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+					if(logMINOR) Logger.minor(this, "onGeneratedURI() twice with same value: " + generatedURI + " -> " + uri);
 			} else {
 				generatedURI = uri;
 			}
@@ -228,9 +228,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		boolean delete = false;
 		synchronized(this) {
 			if(generatedURI != null)
-				Logger.error(this, "Got generated metadata but already have URI on "+this+" from "+state);
+				Logger.error(this, "Got generated metadata but already have URI on " + this + " from " + state);
 			if(generatedMetadata != null) {
-				Logger.error(this, "Already got generated metadata from "+state+" on "+this);
+				Logger.error(this, "Already got generated metadata from " + state + " on " + this);
 				delete = true;
 			} else {
 				generatedMetadata = metadata;
@@ -410,7 +410,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 
 		if(msg == null) {
-			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
+			Logger.error(this, "Trying to send null message on " + this, new Exception("error"));
 		} else {
 			if(persistenceType == PERSIST_CONNECTION && handler == null)
 				handler = origHandler.outputHandler;
@@ -630,7 +630,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			container.activate(putFailedMessage, 5);
 		String s = putFailedMessage.shortCodeDescription;
 		if(longDescription && putFailedMessage.extraDescription != null)
-			s += ": "+putFailedMessage.extraDescription;
+			s += ": " + putFailedMessage.extraDescription;
 		return s;
 	}
 

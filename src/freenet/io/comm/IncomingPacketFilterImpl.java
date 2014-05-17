@@ -51,12 +51,12 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		if(!logMINOR) return null;
 		long decoded = successfullyDecodedPackets.get();
 		long failed = failedDecodePackets.get();
-		return new long[] { decoded, decoded+failed };
+		return new long[] { decoded, decoded + failed };
 	}
 
 	@Override
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
-		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
+		if(logMINOR) Logger.minor(this, "Packet length " + length + " from " + peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode opn = node.peers.getByPeer(peer, mangler);
 

@@ -33,11 +33,11 @@ public final class ContainerSizeEstimator {
 		}
 
 		public long getSizeTotal() {
-			return _sizeFiles+_sizeSubTrees;
+			return _sizeFiles + _sizeSubTrees;
 		}
 
 		public long getSizeTotalNoLimit() {
-			return _sizeFilesNoLimit+_sizeSubTreesNoLimit;
+			return _sizeFilesNoLimit + _sizeSubTreesNoLimit;
 		}
 
 		public long getSizeFiles() {
@@ -65,7 +65,7 @@ public final class ContainerSizeEstimator {
 		return result;
 	}
 
-	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
+	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize, int maxDeep) {
 		// files
 		for(Map.Entry<String,Object> entry:metadata.entrySet()) {
 			Object o = entry.getValue();
@@ -103,7 +103,7 @@ public final class ContainerSizeEstimator {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>) o;
 					ContainerSize tempResult = new ContainerSize();
-					getSubTreeSize(hm, tempResult, maxItemSize, (maxContainerSize-result._sizeSubTrees), maxDeep-1);
+					getSubTreeSize(hm, tempResult, maxItemSize, (maxContainerSize - result._sizeSubTrees), maxDeep - 1);
 					result._sizeSubTrees += tempResult.getSizeTotal();
 					result._sizeSubTreesNoLimit += tempResult.getSizeTotalNoLimit();
 					if (result._sizeSubTrees > maxContainerSize) break;

@@ -140,7 +140,7 @@ public class BookmarkManager implements RequestClient {
 					USK usk = USK.create(furi);
 
 					if(usk.equals(key, false)) {
-						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
+						if(logMINOR) Logger.minor(this, "Updating bookmark for " + furi + " to edition " + edition);
 						matched = true;
 						BookmarkItem item = items.get(i);
 						updated |= item.setEdition(edition, node);
@@ -152,7 +152,7 @@ public class BookmarkManager implements RequestClient {
 			if(updated) {
 				storeBookmarksLazy();
 			} else if(!matched) {
-				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
+				Logger.error(this, "No match for bookmark " + key + " edition " + edition);
 			}
 		}
 

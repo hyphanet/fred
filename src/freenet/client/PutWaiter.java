@@ -45,11 +45,11 @@ public class PutWaiter implements ClientPutCallback {
 	@Override
 	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "URI: "+uri);
+			Logger.minor(this, "URI: " + uri);
 		if(this.uri == null)
 			this.uri = uri;
 		if(uri.equals(this.uri)) return;
-		Logger.error(this, "URI already set: "+this.uri+" but new URI: "+uri, new Exception("error"));
+		Logger.error(this, "URI already set: " + this.uri + " but new URI: " + uri, new Exception("error"));
 	}
 
 	/** Waits for the insert to finish, returns the URI generated, throws if it failed. */
@@ -83,7 +83,7 @@ public class PutWaiter implements ClientPutCallback {
 	@Override
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
 			ObjectContainer container) {
-		Logger.error(this, "onGeneratedMetadata() on PutWaiter from "+state, new Exception("error"));
+		Logger.error(this, "onGeneratedMetadata() on PutWaiter from " + state, new Exception("error"));
 		metadata.free();
 	}
 

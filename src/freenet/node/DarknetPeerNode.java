@@ -108,8 +108,8 @@ public class DarknetPeerNode extends PeerNode {
 		static {
 			final FRIEND_TRUST[] values = values();
 			valuesBackwards = new FRIEND_TRUST[values.length];
-			for(int i=0;i<values.length;i++)
-				valuesBackwards[i] = values[values.length-i-1];
+			for(int i=0;i < values.length;i++)
+				valuesBackwards[i] = values[values.length - i - 1];
 		}
 
 		public static FRIEND_TRUST[] valuesBackwards() {
@@ -182,13 +182,13 @@ public class DarknetPeerNode extends PeerNode {
 				trustLevel = FRIEND_TRUST.valueOf(s);
 			} else {
 				trustLevel = node.securityLevels.getDefaultFriendTrust();
-				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
+				System.err.println("Assuming friend (" + name + ") trust is opposite of friend seclevel: " + trustLevel);
 			}
 			s = metadata.get("ourVisibility");
 			if(s != null) {
 				ourVisibility = FRIEND_VISIBILITY.valueOf(s);
 			} else {
-				System.err.println("Assuming friend ("+name+") wants to be invisible");
+				System.err.println("Assuming friend (" + name + ") wants to be invisible");
 				node.createVisibilityAlert();
 				ourVisibility = FRIEND_VISIBILITY.NO;
 			}
@@ -447,12 +447,12 @@ public class DarknetPeerNode extends PeerNode {
 
 	public boolean readExtraPeerData() {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath + File.separator + getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
 	 		return false;
 	 	}
 	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 	 		return false;
 	 	}
 	 	File[] extraPeerDataFiles = extraPeerDataPeerDir.listFiles();
@@ -482,39 +482,39 @@ public class DarknetPeerNode extends PeerNode {
 
 	public boolean rereadExtraPeerDataFile(int fileNumber) {
 		if(logMINOR)
-			Logger.minor(this, "Rereading peer data file "+fileNumber+" for "+shortToString());
+			Logger.minor(this, "Rereading peer data file " + fileNumber + " for " + shortToString());
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath + File.separator + getIdentityString());
 		if(!extraPeerDataPeerDir.exists()) {
-			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+			Logger.error(this, "Extra peer data directory for peer does not exist: " + extraPeerDataPeerDir.getPath());
 			return false;
 		}
 		if(!extraPeerDataPeerDir.isDirectory()) {
-			Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+			Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 			return false;
 		}
-		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+		File extraPeerDataFile = new File(extraPeerDataDirPath + File.separator + getIdentityString() + File.separator + fileNumber);
 		if(!extraPeerDataFile.exists()) {
-			Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
+			Logger.error(this, "Extra peer data file for peer does not exist: " + extraPeerDataFile.getPath());
 			return false;
 		}
 		return readExtraPeerDataFile(extraPeerDataFile, fileNumber);
 	}
 
 	public boolean readExtraPeerDataFile(File extraPeerDataFile, int fileNumber) {
-		if(logMINOR) Logger.minor(this, "Reading "+extraPeerDataFile+" : "+fileNumber+" for "+shortToString());
+		if(logMINOR) Logger.minor(this, "Reading " + extraPeerDataFile + " : " + fileNumber + " for " + shortToString());
 		boolean gotError = false;
 	 	if(!extraPeerDataFile.exists()) {
 	 		if(logMINOR)
 	 			Logger.minor(this, "Does not exist");
 	 		return false;
 	 	}
-		Logger.normal(this, "extraPeerDataFile: "+extraPeerDataFile.getPath());
+		Logger.normal(this, "extraPeerDataFile: " + extraPeerDataFile.getPath());
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(extraPeerDataFile);
 		} catch (FileNotFoundException e1) {
-			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
+			Logger.normal(this, "Extra peer data file not found: " + extraPeerDataFile.getPath());
 			return false;
 		}
 		InputStreamReader isr;
@@ -531,16 +531,16 @@ public class DarknetPeerNode extends PeerNode {
 		} catch (EOFException e3) {
 			// End of file, fine
 		} catch (IOException e4) {
-			Logger.error(this, "Could not read extra peer data file: "+e4, e4);
+			Logger.error(this, "Could not read extra peer data file: " + e4, e4);
 		} finally {
 			try {
 				br.close();
 			} catch (IOException e5) {
-				Logger.error(this, "Ignoring "+e5+" caught reading "+extraPeerDataFile.getPath(), e5);
+				Logger.error(this, "Ignoring " + e5 + " caught reading " + extraPeerDataFile.getPath(), e5);
 			}
 		}
 		if(fs == null) {
-			Logger.normal(this, "Deleting corrupt (too short?) file: "+extraPeerDataFile);
+			Logger.normal(this, "Deleting corrupt (too short?) file: " + extraPeerDataFile);
 			deleteExtraPeerDataFile(fileNumber);
 			return true;
 		}
@@ -551,7 +551,7 @@ public class DarknetPeerNode extends PeerNode {
 				gotError = true;
 			}
 		} catch (FSParseException e2) {
-			Logger.error(this, "Could not parse extra peer data: "+e2+ '\n' +fs.toString(),e2);
+			Logger.error(this, "Could not parse extra peer data: " + e2 + '\n' + fs.toString(), e2);
 			gotError = true;
 		}
 		return !gotError;
@@ -563,7 +563,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			extraPeerDataType = Integer.parseInt(extraPeerDataTypeString);
 		} catch (NumberFormatException e) {
-			Logger.error(this, "NumberFormatException parsing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath());
+			Logger.error(this, "NumberFormatException parsing extraPeerDataType (" + extraPeerDataTypeString + ") in file " + extraPeerDataFile.getPath());
 			return false;
 		}
 		if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_N2NTM) {
@@ -575,7 +575,7 @@ public class DarknetPeerNode extends PeerNode {
 			try {
 				peerNoteType = Integer.parseInt(peerNoteTypeString);
 			} catch (NumberFormatException e) {
-				Logger.error(this, "NumberFormatException parsing peerNoteType ("+peerNoteTypeString+") in file "+extraPeerDataFile.getPath());
+				Logger.error(this, "NumberFormatException parsing peerNoteType (" + peerNoteTypeString + ") in file " + extraPeerDataFile.getPath());
 				return false;
 			}
 			if(peerNoteType == Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT) {
@@ -590,7 +590,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 				return true;
 			}
-			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
+			Logger.error(this, "Read unknown peer note type '" + peerNoteType + "' from file " + extraPeerDataFile.getPath());
 			return false;
 		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM) {
 			boolean sendSuccess = false;
@@ -612,14 +612,14 @@ public class DarknetPeerNode extends PeerNode {
 				try {
 					n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
-					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
+					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType (" + extraPeerDataTypeString + ") in file " + extraPeerDataFile.getPath(), e);
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
 
 				try {
 					synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 						node.usm.send(this, n2nm, null);
-						Logger.normal(this, "Sent queued ("+fileNumber+") N2NM to '"+getName()+"': "+n2nm);
+						Logger.normal(this, "Sent queued (" + fileNumber + ") N2NM to '" + getName() + "': " + n2nm);
 						sendSuccess = true;
 						queuedToSendN2NMExtraPeerDataFileNumbers.remove(fileNumber);
 					}
@@ -647,7 +647,7 @@ public class DarknetPeerNode extends PeerNode {
 			handleFproxyDownloadFeed(fs, fileNumber);
 			return true;
 		}
-		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
+		Logger.error(this, "Read unknown extra peer data type '" + extraPeerDataType + "' from file " + extraPeerDataFile.getPath());
 		return false;
 	}
 
@@ -655,15 +655,15 @@ public class DarknetPeerNode extends PeerNode {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		if(extraPeerDataType > 0)
 			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath + File.separator + getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
 	 		if(!extraPeerDataPeerDir.mkdir()) {
-		   		Logger.error(this, "Extra peer data directory for peer could not be created: "+extraPeerDataPeerDir.getPath());
+		   		Logger.error(this, "Extra peer data directory for peer could not be created: " + extraPeerDataPeerDir.getPath());
 		 		return -1;
 		 	}
 	 	}
 	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 	 		return -1;
 	 	}
 		Integer[] localFileNumbers;
@@ -681,9 +681,9 @@ public class DarknetPeerNode extends PeerNode {
 			extraPeerDataFileNumbers.add(nextFileNumber);
 		}
 		FileOutputStream fos;
-		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
+		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath() + File.separator + nextFileNumber);
 	 	if(extraPeerDataFile.exists()) {
-   			Logger.error(this, "Extra peer data file already exists: "+extraPeerDataFile.getPath());
+   			Logger.error(this, "Extra peer data file already exists: " + extraPeerDataFile.getPath());
 		 	return -1;
 	 	}
 		String f = extraPeerDataFile.getPath();
@@ -708,7 +708,7 @@ public class DarknetPeerNode extends PeerNode {
 			try {
 				fos.close();
 			} catch (IOException e1) {
-				Logger.error(this, "Cannot close extra peer data file: "+e, e);
+				Logger.error(this, "Cannot close extra peer data file: " + e, e);
 			}
 			Logger.error(this, "Cannot write file: " + e, e);
 			return -1;
@@ -720,16 +720,16 @@ public class DarknetPeerNode extends PeerNode {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		File extraPeerDataPeerDir = new File(extraPeerDataDirPath, getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
-	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer does not exist: " + extraPeerDataPeerDir.getPath());
 	 		return;
 	 	}
 	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 	 		return;
 	 	}
 		File extraPeerDataFile = new File(extraPeerDataPeerDir, Integer.toString(fileNumber));
 	 	if(!extraPeerDataFile.exists()) {
-	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
+	   		Logger.error(this, "Extra peer data file for peer does not exist: " + extraPeerDataFile.getPath());
 	 		return;
 	 	}
 		synchronized(extraPeerDataFileNumbers) {
@@ -737,22 +737,22 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		if(!extraPeerDataFile.delete()) {
 			if(extraPeerDataFile.exists()) {
-				Logger.error(this, "Cannot delete file "+extraPeerDataFile+" after sending message to "+getPeer()+" - it may be resent on resting the node");
+				Logger.error(this, "Cannot delete file " + extraPeerDataFile + " after sending message to " + getPeer() + " - it may be resent on resting the node");
 			} else {
-				Logger.normal(this, "File does not exist when deleting: "+extraPeerDataFile+" after sending message to "+getPeer());
+				Logger.normal(this, "File does not exist when deleting: " + extraPeerDataFile + " after sending message to " + getPeer());
 			}
 		}
 	}
 
 	public void removeExtraPeerDataDir() {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath + File.separator + getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
-			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+			Logger.error(this, "Extra peer data directory for peer does not exist: " + extraPeerDataPeerDir.getPath());
 			return;
 	 	}
 	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 	 		return;
 	 	}
 		Integer[] localFileNumbers;
@@ -769,18 +769,18 @@ public class DarknetPeerNode extends PeerNode {
 		String extraPeerDataDirPath = node.getExtraPeerDataDir();
 		if(extraPeerDataType > 0)
 			fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
-		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath + File.separator + getIdentityString());
 	 	if(!extraPeerDataPeerDir.exists()) {
-	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer does not exist: " + extraPeerDataPeerDir.getPath());
 	 		return false;
 	 	}
 	 	if(!extraPeerDataPeerDir.isDirectory()) {
-	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: " + extraPeerDataPeerDir.getPath());
 	 		return false;
 	 	}
-		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+		File extraPeerDataFile = new File(extraPeerDataDirPath + File.separator + getIdentityString() + File.separator + fileNumber);
 	 	if(!extraPeerDataFile.exists()) {
-	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
+	   		Logger.error(this, "Extra peer data file for peer does not exist: " + extraPeerDataFile.getPath());
 	 		return false;
 	 	}
 		String f = extraPeerDataFile.getPath();
@@ -806,7 +806,7 @@ public class DarknetPeerNode extends PeerNode {
 			try {
 				fos.close();
 			} catch (IOException e1) {
-				Logger.error(this, "Cannot close extra peer data file: "+e, e);
+				Logger.error(this, "Cannot close extra peer data file: " + e, e);
 			}
 			Logger.error(this, "Cannot write file: " + e, e);
 			return false;
@@ -843,7 +843,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	public void sendQueuedN2NMs() {
 		if(logMINOR)
-			Logger.minor(this, "Sending queued N2NMs for "+shortToString());
+			Logger.minor(this, "Sending queued N2NMs for " + shortToString());
 		Integer[] localFileNumbers;
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 			localFileNumbers = queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
@@ -858,7 +858,7 @@ public class DarknetPeerNode extends PeerNode {
 	void startARKFetcher() {
 		synchronized(this) {
 			if(isListenOnly) {
-				Logger.minor(this, "Not starting ark fetcher for "+this+" as it's in listen-only mode.");
+				Logger.minor(this, "Not starting ark fetcher for " + this + " as it's in listen-only mode.");
 				return;
 			}
 		}
@@ -867,7 +867,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	@Override
 	public String getTMCIPeerInfo() {
-		return getName()+'\t'+super.getTMCIPeerInfo();
+		return getName() + '\t' + super.getTMCIPeerInfo();
 	}
 
 	/**
@@ -952,14 +952,14 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
-			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
+			final String baseFilename = "direct-" + FileUtil.sanitize(getName()) + "-" + filename;
+			final File dest = node.clientCore.downloadsDir().file(baseFilename + ".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
 				// Impossible
-				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
+				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! " + e, e);
 			}
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
 			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
@@ -971,19 +971,19 @@ public class DarknetPeerNode extends PeerNode {
 						Logger.minor(this, "Received file");
 					try {
 						if(!receiver.receive()) {
-							String err = "Failed to receive "+this;
+							String err = "Failed to receive " + this;
 							Logger.error(this, err);
 							System.err.println(err);
 							onReceiveFailure();
 						} else {
 							data.close();
 							if(!dest.renameTo(node.clientCore.downloadsDir().file(baseFilename))){
-								Logger.error(this, "Failed to rename "+dest.getName()+" to remove .part suffix.");
+								Logger.error(this, "Failed to rename " + dest.getName() + " to remove .part suffix.");
 							}
 							onReceiveSuccess();
 						}
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" receiving file", t);
+						Logger.error(this, "Caught " + t + " receiving file", t);
 						onReceiveFailure();
 					} finally {
 						remove();
@@ -991,7 +991,7 @@ public class DarknetPeerNode extends PeerNode {
 					if(logMINOR)
 						Logger.minor(this, "Received file");
 				}
-			}, "Receiver for bulk transfer "+uid+":"+filename);
+			}, "Receiver for bulk transfer " + uid + ":" + filename);
 			sendFileOfferAccepted(uid);
 		}
 
@@ -1008,7 +1008,7 @@ public class DarknetPeerNode extends PeerNode {
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
 			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, false, node.nodeStats.nodeToNodeCounter, false);
 			if(logMINOR)
-				Logger.minor(this, "Sending "+uid);
+				Logger.minor(this, "Sending " + uid);
 			node.executor.execute(new Runnable() {
 				@Override
 				public void run() {
@@ -1016,19 +1016,19 @@ public class DarknetPeerNode extends PeerNode {
 						Logger.minor(this, "Sending file");
 					try {
 						if(!transmitter.send()) {
-							String err = "Failed to send "+uid+" for "+FileOffer.this;
+							String err = "Failed to send " + uid + " for " + FileOffer.this;
 							Logger.error(this, err);
 							System.err.println(err);
 						}
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" sending file", t);
+						Logger.error(this, "Caught " + t + " sending file", t);
 						remove();
 					}
 					if(logMINOR)
 						Logger.minor(this, "Sent file");
 				}
 
-			}, "Sender for bulk transfer "+uid+":"+filename);
+			}, "Sender for bulk transfer " + uid + ":" + filename);
 		}
 
 		public void reject() {
@@ -1230,7 +1230,7 @@ public class DarknetPeerNode extends PeerNode {
 
 					// FIXME node_ is inefficient
 					form.addChild("input", new String[] { "type", "name" },
-							new String[] { "hidden", "node_"+DarknetPeerNode.this.hashCode() });
+							new String[] { "hidden", "node_" + DarknetPeerNode.this.hashCode() });
 
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "id", Long.toString(uid) });
@@ -1300,13 +1300,13 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		private String l10n(String key) {
-			return NodeL10n.getBase().getString("FileOffer."+key);
+			return NodeL10n.getBase().getString("FileOffer." + key);
 		}
 		private String l10n(String key, String pattern, String value) {
-			return NodeL10n.getBase().getString("FileOffer."+key, pattern, value);
+			return NodeL10n.getBase().getString("FileOffer." + key, pattern, value);
 		}
 		private String l10n(String key, String[] pattern, String[] value) {
-			return NodeL10n.getBase().getString("FileOffer."+key, pattern, value);
+			return NodeL10n.getBase().getString("FileOffer." + key, pattern, value);
 		}
 
 		private String describeFileText(String header) {
@@ -1412,7 +1412,7 @@ public class DarknetPeerNode extends PeerNode {
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
 		fs.put("uid", uid);
 		if(logMINOR)
-			Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
+			Logger.minor(this, "Sending node to node message (file offer accepted):\n" + fs);
 
 
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
@@ -1428,7 +1428,7 @@ public class DarknetPeerNode extends PeerNode {
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED);
 		fs.put("uid", uid);
 		if(logMINOR)
-			Logger.minor(this, "Sending node to node message (file offer rejected):\n"+fs);
+			Logger.minor(this, "Sending node to node message (file offer rejected):\n" + fs);
 
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
@@ -1446,7 +1446,7 @@ public class DarknetPeerNode extends PeerNode {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fo.toFieldSet(fs);
 		if(logMINOR)
-			Logger.minor(this, "Sending node to node message (file offer):\n"+fs);
+			Logger.minor(this, "Sending node to node message (file offer):\n" + fs);
 
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER);
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
@@ -1488,7 +1488,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			offer = new FileOffer(fs, false);
 		} catch (FSParseException e) {
-			Logger.error(this, "Could not parse offer: "+e+" on "+this+" :\n"+fs, e);
+			Logger.error(this, "Could not parse offer: " + e + " on " + this + " :\n" + fs, e);
 			return;
 		}
 		Long u = offer.uid;
@@ -1508,13 +1508,13 @@ public class DarknetPeerNode extends PeerNode {
 
 	public void acceptTransfer(long id) {
 		if(logMINOR)
-			Logger.minor(this, "Accepting transfer "+id+" on "+this);
+			Logger.minor(this, "Accepting transfer " + id + " on " + this);
 		FileOffer fo;
 		synchronized(this) {
 			fo = hisFileOffersByUID.get(id);
 		}
 		if(fo == null) {
-			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			Logger.error(this, "Cannot accept transfer " + id + " - does not exist");
 			return;
 		}
 		fo.accept();
@@ -1526,7 +1526,7 @@ public class DarknetPeerNode extends PeerNode {
 			fo = hisFileOffersByUID.remove(id);
 		}
 		if(fo == null) {
-			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			Logger.error(this, "Cannot accept transfer " + id + " - does not exist");
 			return;
 		}
 		fo.reject();
@@ -1540,17 +1540,17 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			uid = fs.getLong("uid");
 		} catch (FSParseException e) {
-			Logger.error(this, "Could not parse offer accepted: "+e+" on "+this+" :\n"+fs, e);
+			Logger.error(this, "Could not parse offer accepted: " + e + " on " + this + " :\n" + fs, e);
 			return;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Offer accepted for "+uid);
+			Logger.minor(this, "Offer accepted for " + uid);
 		FileOffer fo;
 		synchronized(this) {
 			fo = (myFileOffersByUID.get(uid));
 		}
 		if(fo == null) {
-			Logger.error(this, "No such offer: "+uid);
+			Logger.error(this, "No such offer: " + uid);
 			try {
 				sendAsync(DMT.createFNPBulkSendAborted(uid), null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
@@ -1561,7 +1561,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			fo.send();
 		} catch (DisconnectedException e) {
-			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+":"+fo.filename, e);
+			Logger.error(this, "Cannot send because node disconnected: " + e + " for " + uid + ":" + fo.filename, e);
 		}
 	}
 
@@ -1573,7 +1573,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			uid = fs.getLong("uid");
 		} catch (FSParseException e) {
-			Logger.error(this, "Could not parse offer rejected: "+e+" on "+this+" :\n"+fs, e);
+			Logger.error(this, "Could not parse offer rejected: " + e + " on " + this + " :\n" + fs, e);
 			return;
 		}
 
@@ -1632,7 +1632,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	@Override
 	public String userToString() {
-		return ""+getPeer()+" : "+getName();
+		return "" + getPeer() + " : " + getName();
 	}
 
 	@Override
@@ -1722,8 +1722,8 @@ public class DarknetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout", new Exception("error"));
-		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+" version "+getVersion()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
+		Logger.error(this, "Disconnecting from darknet node " + this + " because of fatal timeout", new Exception("error"));
+		System.err.println("Your friend node \"" + getName() + "\" (" + getPeer() + " version " + getVersion() + ") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
 		// FIXME post a useralert
 		// Disconnect.
 		forceDisconnect();
@@ -1779,7 +1779,7 @@ public class DarknetPeerNode extends PeerNode {
 	public void handleVisibility(Message m) {
 		FRIEND_VISIBILITY v = FRIEND_VISIBILITY.getByCode(m.getShort(DMT.FRIEND_VISIBILITY));
 		if(v == null) {
-			Logger.error(this, "Bogus visibility setting from peer "+this+" : code "+m.getShort(DMT.FRIEND_VISIBILITY));
+			Logger.error(this, "Bogus visibility setting from peer " + this + " : code " + m.getShort(DMT.FRIEND_VISIBILITY));
 			v = FRIEND_VISIBILITY.NO;
 		}
 		synchronized(this) {
@@ -1814,7 +1814,7 @@ public class DarknetPeerNode extends PeerNode {
 				myFullNoderef.writeTo(dos);
 				dos.close();
 			} catch (IOException e) {
-				Logger.error(this, "Impossible: Caught error while writing compressed noderef: "+e, e);
+				Logger.error(this, "Impossible: Caught error while writing compressed noderef: " + e, e);
 				synchronized(this) {
 					sendingFullNoderef = false;
 				}
@@ -1905,20 +1905,20 @@ public class DarknetPeerNode extends PeerNode {
 								synchronized(DarknetPeerNode.this) {
 									receivingFullNoderef = false;
 								}
-								Logger.error(this, "Impossible: "+e, e);
+								Logger.error(this, "Impossible: " + e, e);
 								e.printStackTrace();
 								return;
 							} catch (IOException e) {
 								synchronized(DarknetPeerNode.this) {
 									receivingFullNoderef = false;
 								}
-								Logger.error(this, "Impossible: "+e, e);
+								Logger.error(this, "Impossible: " + e, e);
 								return;
 							}
 							try {
 								processNewNoderef(fs, false, false, true);
 							} catch (FSParseException e) {
-								Logger.error(this, "Peer "+DarknetPeerNode.this+" sent bogus full noderef: "+e, e);
+								Logger.error(this, "Peer " + DarknetPeerNode.this + " sent bogus full noderef: " + e, e);
 								synchronized(DarknetPeerNode.this) {
 									receivingFullNoderef = false;
 								}
@@ -1929,7 +1929,7 @@ public class DarknetPeerNode extends PeerNode {
 							}
 							node.peers.writePeersDarknet();
 						} else {
-							Logger.error(this, "Failed to receive noderef from "+DarknetPeerNode.this);
+							Logger.error(this, "Failed to receive noderef from " + DarknetPeerNode.this);
 						}
 					} finally {
 						synchronized(DarknetPeerNode.this) {
@@ -1957,7 +1957,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			sendVisibility();
 		} catch(NotConnectedException e) {
-			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: "+e, e);
+			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: " + e, e);
 		}
 		if(!dontKeepFullFieldSet()) {
 			try {

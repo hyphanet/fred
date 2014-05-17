@@ -73,7 +73,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 				@Override
 				public void blockTransferFinished(boolean success) {
-					if(logMINOR) Logger.minor(this, "Transfer completed: "+success+" for "+this);
+					if(logMINOR) Logger.minor(this, "Transfer completed: " + success + " for " + this);
 					BackgroundTransfer.this.completedTransfer(success);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
 					if (pn.isConnected() && success) {
@@ -97,7 +97,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		 * or other valid completion. The timeout is relative to that, since up
 		 * to that point we could still be routing. */
 		private void startWait() {
-			if(logMINOR) Logger.minor(this, "Waiting for completion notification from "+this);
+			if(logMINOR) Logger.minor(this, "Waiting for completion notification from " + this);
 			//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 			//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 			try {
@@ -112,7 +112,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		}
 		
 		void start() {
-			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
+			node.executor.execute(this, "CHKInsert-BackgroundTransfer for " + uid + " to " + pn.getPeer());
 		}
 		
 		@Override
@@ -123,7 +123,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			} catch (Throwable t) {
 				this.completedTransfer(false);
 				this.receivedNotice(false, false, true);
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 			}
 		}
 		
@@ -148,13 +148,13 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		/** @param timeout Whether this completion is the result of a timeout.
 		 * @return True if we should wait again, false if we have already received a notice or timed out. */
 		private boolean receivedNotice(boolean success, boolean timeout, boolean kill) {
-			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
+			if(logMINOR) Logger.minor(this, "Received notice: " + success + (timeout ? " (timeout)" : "") + " on " + this);
 			boolean noUnlockPeer = false;
 			boolean gotFatalTimeout = false;
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 					if(!(killed || kill))
-						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
+						Logger.error(this, "Finished waiting already yet receivedNotice(" + success + "," + timeout + "," + kill + ")", new Exception("error"));
 					return false;
 				}
 				if(killed) {
@@ -167,7 +167,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				} else {
 					if (receivedCompletionNotice) {
 						// Two stage timeout.
-						if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+						if(logMINOR) Logger.minor(this, "receivedNotice(" + success + "), already had receivedNotice(" + completionSucceeded + ")");
 						if(timeout) {
 							// Fatal timeout.
 							finishedWaiting = true;
@@ -207,7 +207,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				}
 			}
 			if(timeout && gotFatalTimeout) {
-				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
+				Logger.error(this, "Second timeout waiting for final ack from " + pn + " on " + this);
 				pn.fatalTimeout(thisTag, false);
 				return false;
 			}
@@ -227,7 +227,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				}
 				receivedNotice(!anyTimedOut, false, false);
 			} else {
-				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
+				Logger.error(this, "received completion notice for wrong node: " + pn + " != " + this.pn);
 			}			
 		}
 		
@@ -247,7 +247,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
-			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
+			Logger.normal(this, "Timed out waiting for a final ack from: " + pn + " on " + this, new Exception("debug"));
 			if(receivedNotice(false, true, false)) {
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
@@ -264,14 +264,14 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 		@Override
 		public void onDisconnect(PeerContext ctx) {
-			Logger.normal(this, "Disconnected "+ctx+" for "+this);
+			Logger.normal(this, "Disconnected " + ctx + " for " + this);
 			receivedNotice(true, false, true); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
 
 		@Override
 		public void onRestarted(PeerContext ctx) {
-			Logger.normal(this, "Restarted "+ctx+" for "+this);
+			Logger.normal(this, "Restarted " + ctx + " for " + this);
 			receivedNotice(true, false, true);
 			pn.noLongerRoutingTo(thisTag, false);
 		}
@@ -283,7 +283,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+uid+":"+pn;
+			return super.toString() + ":" + uid + ":" + pn;
 		}
 
 		/** Called when we have received an InsertReply, RouteNotFound or other
@@ -302,7 +302,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 		/** Called when we get a failure, e.g. DataInsertRejected. */
 		public void kill() {
-			Logger.normal(this, "Killed "+this);
+			Logger.normal(this, "Killed " + this);
 			receivedNotice(false, false, true); // as far as we know
 			pn.noLongerRoutingTo(thisTag, false);
 		}
@@ -330,7 +330,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     }
 
 	void start() {
-		node.executor.execute(this, "CHKInsertSender for UID "+uid+" on "+node.getDarknetPortNumber()+" at "+System.currentTimeMillis());
+		node.executor.execute(this, "CHKInsertSender for UID " + uid + " on " + node.getDarknetPortNumber() + " at " + System.currentTimeMillis());
 	}
 
 	static boolean logMINOR;
@@ -391,7 +391,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     
     @Override
 	public String toString() {
-        return super.toString()+" for "+uid;
+        return super.toString() + " for " + uid;
     }
     
     @Override
@@ -403,7 +403,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
         } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
+            Logger.error(this, "Caught " + t, t);
         } finally {
         	// Always check: we ALWAYS set status, even if receiveFailed.
             int myStatus;
@@ -456,10 +456,10 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                     finish(ROUTE_NOT_FOUND, null);
                     return;
             	}
-            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
+            	if(logMINOR) Logger.minor(this, "Allowing failure " + highHTLFailureCount + " htl is still " + htl);
             } else {
                 htl = node.decrementHTL(hasForwarded ? next : source, htl);
-                if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
+                if(logMINOR) Logger.minor(this, "Decremented HTL to " + htl);
             }
             starting = false;
             boolean successNow = false;
@@ -492,7 +492,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				forkedRequestTag.startedSender();
 				forkedRequestTag.unlockHandler();
 				forkedRequestTag.setAccepted();
-            	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
+            	Logger.normal(this, "FORKING CHK INSERT " + origUID + " to " + uid);
             	nodesRoutedTo.clear();
             	node.tracker.lockUID(forkedRequestTag);
             }
@@ -510,7 +510,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
                 return;
             }
 			
-            if(logMINOR) Logger.minor(this, "Routing insert to "+next);
+            if(logMINOR) Logger.minor(this, "Routing insert to " + next);
             nodesRoutedTo.add(next);
             
             InsertTag thisTag = forkedRequestTag;
@@ -582,7 +582,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
 			if (fromStore) {
 				// That's odd...
-				Logger.error(this,"Verify failed on next node "
+				Logger.error(this, "Verify failed on next node "
 						+ next + " for DataInsert but we were sending from the store!");
 			} else {
 				try {
@@ -654,7 +654,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		// It could still be running. So the timeout is fatal to the node.
 		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
 		// FIXME use a callback to rule this out and log an ERROR.
-		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		Logger.warning(this, "Timeout awaiting Accepted/Rejected " + this + " to " + next);
 		// Use the right UID here, in case we fork.
 		final long uid = tag.uid;
 		tag.handlingTimeout(next);
@@ -674,7 +674,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					} else {
 						assert(m.getSpec() == DMT.FNPAccepted);
 						if(logMINOR)
-							Logger.minor(this, "Accepted after timeout on "+CHKInsertSender.this+" - will not send DataInsert, waiting for RejectedTimeout");
+							Logger.minor(this, "Accepted after timeout on " + CHKInsertSender.this + " - will not send DataInsert, waiting for RejectedTimeout");
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
 						// However, we need to send a DataInsertRejected, or two-stage timeout will happen.
@@ -684,24 +684,24 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 								@Override
 								public void sent() {
 									// Ignore.
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on "+CHKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected sent after accepted timeout on " + CHKInsertSender.this);
 								}
 
 								@Override
 								public void acknowledged() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on "+CHKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected acknowledged after accepted timeout on " + CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void disconnected() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on "+CHKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected peer disconnected after accepted timeout on " + CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 
 								@Override
 								public void fatalError() {
-									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on "+CHKInsertSender.this);
+									if(logDEBUG) Logger.debug(this, "DataInsertRejected fatal error after accepted timeout on " + CHKInsertSender.this);
 									next.noLongerRoutingTo(tag, false);
 								}
 								
@@ -719,7 +719,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 
 				@Override
 				public void onTimeout() {
-					Logger.error(this, "Fatal: No Accepted/Rejected for "+CHKInsertSender.this);
+					Logger.error(this, "Fatal: No Accepted/Rejected for " + CHKInsertSender.this);
 					next.fatalTimeout(tag, false);
 				}
 
@@ -786,7 +786,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
      * @param next The node we successfully inserted to.
      */
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: " + code + " on " + this, new Exception("debug"));
      
     	// If there is an InsertReply, it always happens before the transfer completion notice.
     	// So we do NOT need to removeRoutingTo().
@@ -799,15 +799,15 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         	if(status != NOT_FINISHED) {
         		if(status == RECEIVE_FAILED) {
         			if(code == SUCCESS)
-        				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
+        				Logger.error(this, "Request succeeded despite receive failed?! on " + this);
         		} else if(status != TIMED_OUT)
-        			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+        			throw new IllegalStateException("finish() called with " + code + " when was already " + status);
         	} else {
                 status = code;
         	}
         	
         	notifyAll();
-        	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
+        	if(logMINOR) Logger.minor(this, "Set status code: " + getStatusString() + " on " + uid);
         }
 		
         boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
@@ -859,7 +859,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
     	synchronized(backgroundTransfers) {
     		if(!receiveFailed) return false;
     	}
-    	if(logMINOR) Logger.minor(this, "Failing because receive failed on "+this);
+    	if(logMINOR) Logger.minor(this, "Failing because receive failed on " + this);
     	if(tag != null && next != null) {
    			next.noLongerRoutingTo(tag, false);
     	}
@@ -871,7 +871,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
      * failed.
      */
     public void onReceiveFailed() {
-    	if(logMINOR) Logger.minor(this, "Receive failed on "+this);
+    	if(logMINOR) Logger.minor(this, "Receive failed on " + this);
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();
@@ -910,7 +910,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         	return "GENERATED REJECTED OVERLOAD";
         if(status == ROUTE_REALLY_NOT_FOUND)
         	return "ROUTE REALLY NOT FOUND";
-        return "UNKNOWN STATUS CODE: "+status;
+        return "UNKNOWN STATUS CODE: " + status;
     }
 
 	@Override
@@ -921,7 +921,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		private void waitForBackgroundTransferCompletions() {
 			try {
 				freenet.support.Logger.OSThread.logPID(this);
-				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
+				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: " + this);
 				
 				// We must presently be at such a stage that no more background transfers will be added.
 				
@@ -971,20 +971,20 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					for(BackgroundTransfer transfer: transfers) {
 						if(!transfer.pn.isRoutable()) {
 							if(logMINOR)
-								Logger.minor(this, "Ignoring transfer to "+transfer.pn+" for "+this+" as not routable");
+								Logger.minor(this, "Ignoring transfer to " + transfer.pn + " for " + this + " as not routable");
 							continue;
 						}
 						noneRouteable = false;
 						if(!transfer.completedTransfer) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for transfer completion to "+transfer.pn+" : "+transfer);
+								Logger.minor(this, "Waiting for transfer completion to " + transfer.pn + " : " + transfer);
 							//must wait
 							completedTransfers = false;
 							break;
 						}
 						if (!transfer.receivedCompletionNotice) {
 							if(logMINOR)
-								Logger.minor(this, "Waiting for completion notice from "+transfer.pn+" : "+transfer);
+								Logger.minor(this, "Waiting for completion notice from " + transfer.pn + " : " + transfer);
 							//must wait
 							completedNotifications = false;
 							break;
@@ -995,7 +995,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 					if(noneRouteable) return false;
 					if(completedTransfers && completedNotifications) return !someFailed;
 					
-					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
+					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification=" + completedNotifications); 
 					try {
 						backgroundTransfers.wait(SECONDS.toMillis(100));
 					} catch (InterruptedException e) {
@@ -1162,12 +1162,12 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
         try {
 			next.sendSync(dataInsert, this, realTimeFlag);
 		} catch (NotConnectedException e1) {
-			if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
+			if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: " + next + " for " + uid);
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
 			return;
 		} catch (SyncSendWaitedTooLongException e) {
-			Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
+			Logger.error(this, "Unable to send " + dataInsert + " to " + next + " in a reasonable time");
 			// Other side will fail. No need to do anything.
 			next.noLongerRoutingTo(thisTag, false);
 			routeRequests();
@@ -1206,7 +1206,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			
 			if (msg == null) {
 				
-				Logger.warning(this, "Timeout on insert "+this+" to "+next);
+				Logger.warning(this, "Timeout on insert " + this + " to " + next);
 				
 				// First timeout.
 				// Could be caused by the next node, or could be caused downstream.
@@ -1268,7 +1268,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 							if(msg == null) {
 								// Second timeout.
 								// Definitely caused by the next node, fatal.
-								Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
+								Logger.error(this, "Got second (local) timeout on " + CHKInsertSender.this + " from " + waitingFor);
 			    				transfer.onCompleted();
 								waitingFor.fatalTimeout();
 								return;

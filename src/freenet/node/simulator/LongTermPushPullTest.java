@@ -83,11 +83,11 @@ public class LongTermPushPullTest extends LongTermTest {
 			try {
 				dumpStats(uid);
 			} catch (IOException e) {
-				System.err.println("IO ERROR: "+e);
+				System.err.println("IO ERROR: " + e);
 				e.printStackTrace();
 				System.exit(1);
 			} catch (ParseException e) {
-				System.err.println("PARSE ERROR: "+e);
+				System.err.println("PARSE ERROR: " + e);
 				e.printStackTrace();
 				System.exit(2);
 			}
@@ -254,31 +254,31 @@ public class LongTermPushPullTest extends LongTermTest {
 			Date date = dateFormat.parse(split[0]);
 			GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 			calendar.setTime(date);
-			System.out.println("Date: "+dateFormat.format(calendar.getTime()));
+			System.out.println("Date: " + dateFormat.format(calendar.getTime()));
 			if(prevDate != null) {
 				long now = calendar.getTimeInMillis();
 				long prev = prevDate.getTimeInMillis();
 				long dist = DAYS.convert(now - prev, MILLISECONDS);
-				if(dist != 1) System.out.println(""+dist+" days since last report");
+				if(dist != 1) System.out.println("" + dist + " days since last report");
 			}
 			prevDate = calendar;
 			int version = Integer.parseInt(split[1]);
 			if(split.length > 2) {
-				int[] pushTimes = new int[MAX_N+1];
-				String[] pushFailures = new String[MAX_N+1];
-				for(int i=0;i<=MAX_N;i++) {
-					String s = split[3+i];
+				int[] pushTimes = new int[MAX_N + 1];
+				String[] pushFailures = new String[MAX_N + 1];
+				for(int i=0;i <= MAX_N;i++) {
+					String s = split[3 + i];
 					try {
 						pushTimes[i] = Integer.parseInt(s);
 					} catch (NumberFormatException e) {
 						pushFailures[i] = s;
 					}
 				}
-				if(split.length > 3 + MAX_N+1) {
-					int[] pullTimes = new int[MAX_N+1];
-					String[] pullFailures = new String[MAX_N+1];
-					for(int i=0;i<=MAX_N;i++) {
-						String s = split[3+MAX_N+2+i];
+				if(split.length > 3 + MAX_N + 1) {
+					int[] pullTimes = new int[MAX_N + 1];
+					String[] pullFailures = new String[MAX_N + 1];
+					for(int i=0;i <= MAX_N;i++) {
+						String s = split[3 + MAX_N + 2 + i];
 						try {
 							pullTimes[i] = Integer.parseInt(s);
 						} catch (NumberFormatException e) {
@@ -299,9 +299,9 @@ public class LongTermPushPullTest extends LongTermTest {
 			map.put(calendar, element);
 		}
 		fis.close();
-		for(int i=0;i<=MAX_N;i++) {
-			int delta = ((1<<i)-1);
-			System.out.println("Checking delta: "+delta+" days");
+		for(int i=0;i <= MAX_N;i++) {
+			int delta = ((1 << i) - 1);
+			System.out.println("Checking delta: " + delta + " days");
 			int failures = 0;
 			int successes = 0;
 			long successTime = 0;
@@ -314,7 +314,7 @@ public class LongTermPushPullTest extends LongTermTest {
 				if(element.pullTimes != null) {
 					date = (GregorianCalendar) date.clone();
 					date.add(Calendar.DAY_OF_MONTH, -delta);
-					System.out.println("Checking "+date.getTime()+" for "+element.date.getTime()+" delta "+delta);
+					System.out.println("Checking " + date.getTime() + " for " + element.date.getTime() + " delta " + delta);
 					DumpElement inserted = map.get(date);
 					if(inserted == null) {
 						System.out.println("No match");
@@ -324,7 +324,7 @@ public class LongTermPushPullTest extends LongTermTest {
 					if(inserted.pushTimes == null || inserted.pushTimes[i] == 0) {
 						System.out.println("Insert failure");
 						if(element.pullTimes[i] != 0) {
-							System.err.println("Fetched it anyway??!?!?: time "+element.pullTimes[i]);
+							System.err.println("Fetched it anyway??!?!?: time " + element.pullTimes[i]);
 						}
 						insertFailure++;
 					}
@@ -334,7 +334,7 @@ public class LongTermPushPullTest extends LongTermTest {
 						if(count == null)
 							failureModes.put(failureMode, 1);
 						else
-							failureModes.put(failureMode, count+1);
+							failureModes.put(failureMode, count + 1);
 						failures++;
 					} else {
 						successes++;
@@ -342,18 +342,18 @@ public class LongTermPushPullTest extends LongTermTest {
 					}
 				}
 			}
-			System.out.println("Successes: "+successes);
-			if(successes != 0) System.out.println("Average success time "+(successTime / successes));
-			System.out.println("Failures: "+failures);
+			System.out.println("Successes: " + successes);
+			if(successes != 0) System.out.println("Average success time " + (successTime / successes));
+			System.out.println("Failures: " + failures);
 			for(Map.Entry<String,Integer> entry : failureModes.entrySet())
-				System.out.println(entry.getKey()+" : "+entry.getValue());
-			System.out.println("No match: "+noMatch);
-			System.out.println("Insert failure: "+insertFailure);
-			double psuccess = (successes*1.0 / (1.0*(successes + failures)));
-			System.out.println("Success rate for "+delta+" days: "+psuccess+" ("+(successes+failures)+" samples)");
+				System.out.println(entry.getKey() + " : " + entry.getValue());
+			System.out.println("No match: " + noMatch);
+			System.out.println("Insert failure: " + insertFailure);
+			double psuccess = (successes * 1.0 / (1.0 * (successes + failures)));
+			System.out.println("Success rate for " + delta + " days: " + psuccess + " (" + (successes + failures) + " samples)");
 			if(delta != 0) {
-				double halfLifeEstimate = -1*Math.log(2)/(Math.log(psuccess)/delta);
-				System.out.println("Half-life estimate: "+halfLifeEstimate+" days");
+				double halfLifeEstimate = -1 * Math.log(2) / (Math.log(psuccess) / delta);
+				System.out.println("Half-life estimate: " + halfLifeEstimate + " days");
 			}
 			System.out.println();
 		}

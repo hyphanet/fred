@@ -75,7 +75,7 @@ public class DSA {
 			Logger.warning(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
 			return sign(g, x, generateK(g, random), m, random);
 		}
-		return new DSASignature(r,s);
+		return new DSASignature(r, s);
 	}
 
 	private static BigInteger generateK(DSAGroup g, Random r){
@@ -104,13 +104,13 @@ public class DSA {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
 				if(logMINOR)
-					Logger.minor(DSA.class, "r < 0 || r > q: r="+sig.getR()+" q="+kp.getQ());
+					Logger.minor(DSA.class, "r < 0 || r > q: r=" + sig.getR() + " q=" + kp.getQ());
 				return false;
 			}
 			// 0<s<q has to be true as well
 			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
 				if(logMINOR)
-					Logger.minor(DSA.class, "s < 0 || s > q: s="+sig.getS()+" q="+kp.getQ());
+					Logger.minor(DSA.class, "s < 0 || s > q: s=" + sig.getS() + " q=" + kp.getQ());
 				return false;
 			}
 
@@ -125,7 +125,7 @@ public class DSA {
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
 			if(logMINOR)
-				Logger.minor(DSA.class, "Verify failed: "+e, e);
+				Logger.minor(DSA.class, "Verify failed: " + e, e);
 			return false;                  // and report that that data is bad.
 		}
 	}
@@ -163,7 +163,7 @@ public class DSA {
 			byte[] msg = new byte[32];
 			long[] timeSigning = new long[1000];
 			long[] timeVerifying = new long[timeSigning.length];
-			for(int i=0;i<timeSigning.length;i++) {
+			for(int i=0;i < timeSigning.length;i++) {
 				r.nextBytes(msg);
 				BigInteger m = new BigInteger(1, msg);
 				pk = new DSAPrivateKey(g, r);
@@ -182,9 +182,9 @@ public class DSA {
 				}
 				long t3 = System.nanoTime();
 				totalTimeSigning += (t2 - t1);
-				timeSigning[i] = t2-t1;
+				timeSigning[i] = t2 - t1;
 				totalTimeVerifying += (t3 - t2);
-				timeVerifying[i] = t3-t2;
+				timeVerifying[i] = t3 - t2;
 				int rSize = sig.getR().bitLength();
 				rSize = (rSize + 7) / 8;
 				totalRSize += rSize;
@@ -197,17 +197,17 @@ public class DSA {
 				totalSSize += sSize;
 				if(sSize > maxSSize) maxSSize = sSize;
 			}
-			System.out.println("Total time signing: "+totalTimeSigning);
+			System.out.println("Total time signing: " + totalTimeSigning);
 			java.util.Arrays.sort(timeSigning);
-			System.out.println("\tavg="+((double)totalTimeSigning/timeSigning.length)+"\tmed="+timeSigning[timeSigning.length/2]+"\tmin="+timeSigning[0]+"\tmax="+timeSigning[timeSigning.length-1]);
-			System.out.println("Total time verifying: "+totalTimeVerifying);
+			System.out.println("\tavg=" + ((double)totalTimeSigning / timeSigning.length) + "\tmed=" + timeSigning[timeSigning.length / 2] + "\tmin=" + timeSigning[0] + "\tmax=" + timeSigning[timeSigning.length - 1]);
+			System.out.println("Total time verifying: " + totalTimeVerifying);
 			java.util.Arrays.sort(timeVerifying);
-			System.out.println("\tavg="+((double)totalTimeVerifying/timeVerifying.length)+"\tmed="+timeVerifying[timeVerifying.length/2]+"\tmin="+timeVerifying[0]+"\tmax="+timeVerifying[timeVerifying.length-1]);
-			System.out.println("Total R size: "+totalRSize+" (max "+maxRSize+ ')');
-			System.out.println("Total S size: "+totalSSize+" (max "+maxSSize+ ')');
-			System.out.println("Total R unsigned bitsize: "+totalRUnsignedBitSize);
-			System.out.println("Total pub key size: "+totalPubKeySize+" (max "+maxPubKeySize+ ')');
-			System.out.println("Total priv key size: "+totalPrivKeySize+" (max "+maxPrivKeySize+ ')');
+			System.out.println("\tavg=" + ((double)totalTimeVerifying / timeVerifying.length) + "\tmed=" + timeVerifying[timeVerifying.length / 2] + "\tmin=" + timeVerifying[0] + "\tmax=" + timeVerifying[timeVerifying.length - 1]);
+			System.out.println("Total R size: " + totalRSize + " (max " + maxRSize + ')');
+			System.out.println("Total S size: " + totalSSize + " (max " + maxSSize + ')');
+			System.out.println("Total R unsigned bitsize: " + totalRUnsignedBitSize);
+			System.out.println("Total pub key size: " + totalPubKeySize + " (max " + maxPubKeySize + ')');
+			System.out.println("Total priv key size: " + totalPrivKeySize + " (max " + maxPrivKeySize + ')');
 		}
     }
 }

@@ -105,7 +105,7 @@ public class NetworkInterface implements Closeable {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		String[] failedBind = iface.setBindTo(bindTo, ignoreUnbindableIP6);
 		if(failedBind != null) {
-			System.err.println("Could not bind to some of the interfaces specified for port "+port+" : "+Arrays.toString(failedBind));
+			System.err.println("Could not bind to some of the interfaces specified for port " + port + " : " + Arrays.toString(failedBind));
 		}
 		return iface;
 	}
@@ -173,13 +173,13 @@ public class NetworkInterface implements Closeable {
 				try {
 					acceptor.setSoTimeout(timeout);
 				} catch (SocketException e) {
-					Logger.error(this, "Unable to setSoTimeout in setBindTo() on "+addr);
+					Logger.error(this, "Unable to setSoTimeout in setBindTo() on " + addr);
 				}
 				lock.lock();
 				try {
 					acceptors.add(acceptor);
 					runningAcceptors++;
-					executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
+					executor.execute(acceptor, "Network Interface Acceptor for " + acceptor.serverSocket);
 				} finally {
 					lock.unlock();
 				}
@@ -187,8 +187,8 @@ public class NetworkInterface implements Closeable {
 				if(e instanceof SocketException && ignoreUnbindableIP6 && addr != null && 
 						addr.getAddress() instanceof Inet6Address)
 					continue;
-				System.err.println("Unable to bind to address "+address+" for port "+port);
-				Logger.error(this, "Unable to bind to address "+address+" for port "+port);
+				System.err.println("Unable to bind to address " + address + " for port " + port);
+				Logger.error(this, "Unable to bind to address " + address + " for port " + port);
 				if(brokenList == null) brokenList = new ArrayList<String>();
 				brokenList.add(address);
 			}

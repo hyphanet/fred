@@ -67,7 +67,7 @@ public class CodeTest extends TestCase {
 		}
 
 		int[] indexBackup = new int[index.length];
-		System.arraycopy(index,0,indexBackup,0,index.length);
+		System.arraycopy(index, 0, indexBackup, 0, index.length);
 
 		System.out.println("Getting ready for benchmarking encode()");
 		long t1 = System.currentTimeMillis();
@@ -93,8 +93,8 @@ public class CodeTest extends TestCase {
 
 		System.out.println(maybeNative);
 		System.out.println(pureCode);
-		System.out.println("Native code took "+dNativeEncode+"ms whereas java's code took "+dPureEncode+"ms to encode()");
-		System.out.println("Native code took "+dNativeDecode+"ms whereas java's code took "+dPureDecode+"ms to decode()");
+		System.out.println("Native code took " + dNativeEncode + "ms whereas java's code took " + dPureEncode + "ms to encode()");
+		System.out.println("Native code took " + dNativeDecode + "ms whereas java's code took " + dPureDecode + "ms to decode()");
 	}
 
 	public void testSimpleRev() {

@@ -96,7 +96,7 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
 			if (result == null) {
-				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length-1];
+				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[values.length - 1];
 				int x = 0;
 				for(COMPRESSOR_TYPE v: values) {
 					if((v == LZMA) && !pre1254) continue;
@@ -125,10 +125,10 @@ public interface Compressor {
 					}
 				}
 				if (ct == null) {
-					throw new InvalidCompressionCodecException("Unknown compression codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Unknown compression codec identifier: '" + codec + "'");
 				}
 				if (result.contains(ct)) {
-					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '" + codec + "'");
 				}
 				result.add(ct);
 			}

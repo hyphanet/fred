@@ -49,7 +49,7 @@ public class SlashdotStoreTest extends TestCase {
 	
 	public void testSimple() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		new SlashdotStore<CHKBlock>(store, 10, 30*1000, 5*1000, new TrivialTicker(exec), tbf);
+		new SlashdotStore<CHKBlock>(store, 10, 30 * 1000, 5 * 1000, new TrivialTicker(exec), tbf);
 		
 		// Encode a block
 		String test = "test";
@@ -79,7 +79,7 @@ public class SlashdotStoreTest extends TestCase {
 		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
-		System.err.println("Got data: "+data+" but should have been deleted!");
+		System.err.println("Got data: " + data + " but should have been deleted!");
 		assertTrue(false);
 	}
 

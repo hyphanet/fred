@@ -74,30 +74,30 @@ public class NodeGetPubkey implements GetPubkey {
 				PubkeyStore pks = node.oldPKClientCache;
 				if(pks != null) key = pks.fetch(hash, false, false, meta);
 				if(key != null && logMINOR)
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old client cache");
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from old client cache");
 			}
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null) {
 				key = pubKeyDatastore.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPK;
 				if(pks != null) key = pks.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old store");
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from old store");
 			}
 			if (key == null) {
 				key = pubKeyDatacache.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from cache");
 			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPKCache;
 				if(pks != null) key = pks.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old cache");
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from old cache");
 			}
 			if(key == null && pubKeySlashdotcache != null && forULPR) {
 				key = pubKeySlashdotcache.fetch(hash, false, ignoreOldBlocks, meta);
@@ -139,7 +139,7 @@ public class NodeGetPubkey implements GetPubkey {
 				}
 			}
 			if (forULPR && !(canWriteDatastore || writeLocalToDatastore)) {
-				if(pubKeySlashdotcache!= null) {
+				if(pubKeySlashdotcache != null) {
 					pubKeySlashdotcache.put(hash, key, false);
 				}
 			}

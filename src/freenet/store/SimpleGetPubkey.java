@@ -20,7 +20,7 @@ public class SimpleGetPubkey implements GetPubkey {
 		try {
 			return store.fetch(hash, false, false, meta);
 		} catch (IOException e) {
-			Logger.error(this, "Caught "+e+" fetching pubkey for "+HexUtil.bytesToHex(hash));
+			Logger.error(this, "Caught " + e + " fetching pubkey for " + HexUtil.bytesToHex(hash));
 			return null;
 		}
 	}
@@ -32,7 +32,7 @@ public class SimpleGetPubkey implements GetPubkey {
 		try {
 			store.put(hash, key, false);
 		} catch (IOException e) {
-			Logger.error(this, "Caught "+e+" storing pubkey for "+HexUtil.bytesToHex(hash));
+			Logger.error(this, "Caught " + e + " storing pubkey for " + HexUtil.bytesToHex(hash));
 		}
 	}
 

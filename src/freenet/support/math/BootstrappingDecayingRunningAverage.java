@@ -114,17 +114,17 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	public synchronized void report(double d) {
 		if(d < min) {
 			if(logDEBUG)
-				Logger.debug(this, "Too low: "+d, new Exception("debug"));
+				Logger.debug(this, "Too low: " + d, new Exception("debug"));
 			d = min;
 		}
 		if(d > max) {
 			if(logDEBUG)
-				Logger.debug(this, "Too high: "+d, new Exception("debug"));
+				Logger.debug(this, "Too high: " + d, new Exception("debug"));
 			d = max;
 		}
 		reports++;
 		double decayFactor = 1.0 / (Math.min(reports, maxReports));
-		currentValue = (d * decayFactor) + (currentValue * (1-decayFactor));
+		currentValue = (d * decayFactor) + (currentValue * (1 - decayFactor));
 	}
 
 	/**
@@ -145,15 +145,15 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	@Override
 	public synchronized double valueIfReported(double d) {
 		if(d < min) {
-			Logger.error(this, "Too low: "+d, new Exception("debug"));
+			Logger.error(this, "Too low: " + d, new Exception("debug"));
 			d = min;
 		}
 		if(d > max) {
-			Logger.error(this, "Too high: "+d, new Exception("debug"));
+			Logger.error(this, "Too high: " + d, new Exception("debug"));
 			d = max;
 		}
 		double decayFactor = 1.0 / (Math.min(reports + 1, maxReports));
-		return (d * decayFactor) + (currentValue * (1-decayFactor));
+		return (d * decayFactor) + (currentValue * (1 - decayFactor));
 	}
     
 	/**

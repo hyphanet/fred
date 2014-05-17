@@ -100,7 +100,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			boolean dontTellClientGet, long l, boolean isEssential,
 			boolean isFinal, boolean topDontCompress, short topCompatibilityMode, ObjectContainer container, ClientContext context, boolean hasInitialMetadata) throws FetchException {
 		super(key, maxRetries, ctx, parent, cb, isEssential, false, l, container, context, deleteFetchContext, realTimeFlag);
-		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString()+" persistent="+persistent, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for " + key + " from " + origURI + " meta=" + metaStrings.toString() + " persistent=" + persistent, new Exception("debug"));
 		this.isFinal = isFinal;
 		this.cancelled = false;
 		this.dontTellClientGet = dontTellClientGet;
@@ -116,7 +116,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Always copy if persistent
 			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
-		if(logMINOR) Logger.minor(this, "Metadata: "+metadata);
+		if(logMINOR) Logger.minor(this, "Metadata: " + metadata);
 		this.clientMetadata = (metadata != null ? metadata.clone() : new ClientMetadata());
 		if(hasInitialMetadata)
 			thisKey = FreenetURI.EMPTY_CHK_URI.clone();
@@ -127,7 +127,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
-			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
+			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: " + recursionLevel + " > " + ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
 		this.topDontCompress = topDontCompress;
 		this.topCompatibilityMode = topCompatibilityMode;
@@ -147,7 +147,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	public SingleFileFetcher(SingleFileFetcher fetcher, boolean persistent, boolean deleteFetchContext, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2, ObjectContainer container, ClientContext context) throws FetchException {
 		// Don't add a block, we have already fetched the data, we are just handling the metadata in a different fetcher.
 		super(persistent ? fetcher.key.cloneKey() : fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, true, fetcher.token, container, context, deleteFetchContext, fetcher.realTimeFlag);
-		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for " + fetcher.key + " meta=" + fetcher.metaStrings.toString(), new Exception("debug"));
 		// We expect significant further processing in the parent
 		this.isFinal = false;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
@@ -189,7 +189,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Extract data
 		
 		if(block == null) {
-			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
+			Logger.error(this, "block is null! fromStore=" + fromStore + ", token=" + token, new Exception("error"));
 			return;
 		}
 		Bucket data = extract(block, container, context);
@@ -203,7 +203,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			return;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
+			Logger.minor(this, "Block " + (block.isMetadata() ? "is metadata" : "is not metadata") + " on " + this);
 
 		if(bucketSnoop != null) {
 			if(persistent)
@@ -314,7 +314,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// TOO_MANY_PATH_COMPONENTS
 				// report to user
 				if(logMINOR) {
-					Logger.minor(this, "Too many path components: for "+uri+" meta="+metaStrings.toString());
+					Logger.minor(this, "Too many path components: for " + uri + " meta=" + metaStrings.toString());
 				}
 				FreenetURI tryURI = uri;
 				tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
@@ -377,11 +377,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(uri == null) {
 			if(container != null) {
 				if(container.ext().isActive(this))
-					throw new NullPointerException("SFI "+this+" is active and uri is null!");
+					throw new NullPointerException("SFI " + this + " is active and uri is null!");
 				else
-					throw new NullPointerException("SFI "+this+" is not active!");
+					throw new NullPointerException("SFI " + this + " is not active!");
 			} else
-				throw new NullPointerException("uri = null on transient SFI?? "+this);
+				throw new NullPointerException("uri = null on transient SFI?? " + this);
 		}
 		synchronized(this) {
 			if(cancelled)
@@ -424,7 +424,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metadata.countDocuments() == 1 && metadata.getDocument("") != null && metadata.getDocument("").isSimpleManifest()) {
-					Logger.error(this, "Manifest is called \"\" for "+this, new Exception("error"));
+					Logger.error(this, "Manifest is called \"\" for " + this, new Exception("error"));
 					name = "";
 				} else if(metaStrings.isEmpty()) {
 					FreenetURI u = uri;
@@ -437,7 +437,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
-				if(logMINOR) Logger.minor(this, "Next meta-string: "+name+" length "+name.length()+" for "+this);
+				if(logMINOR) Logger.minor(this, "Next meta-string: " + name + " length " + name.length() + " for " + this);
 				if(name == null) {
 					if(!persistent) {
 						metadata = metadata.getDefaultDocument();
@@ -457,7 +457,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if (metadata != null && metadata.isSymbolicShortlink()) {
 							String oldName = name;
 							name = metadata.getSymbolicShortlinkTargetName();
-							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: "+name);
+							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: " + name);
 							metadata = origMd.getDocument(name);
 						}
 						thisKey = thisKey.pushMetaString(name);
@@ -466,7 +466,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if (newMeta != null && newMeta.isSymbolicShortlink()) {
 							String oldName = name;
 							name = newMeta.getSymbolicShortlinkTargetName();
-							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: "+name);
+							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: " + name);
 							newMeta = metadata.getDocument(name);
 						}
 						metadata.removeFrom(container);
@@ -479,11 +479,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						oldThisKey.removeFrom(container);
 					}
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_IN_ARCHIVE, "can't find "+name);
+						throw new FetchException(FetchException.NOT_IN_ARCHIVE, "can't find " + name);
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
-				if(logMINOR) Logger.minor(this, "Is archive manifest (type="+metadata.getArchiveType()+" codec="+metadata.getCompressionCodec()+')');
+				if(logMINOR) Logger.minor(this, "Is archive manifest (type=" + metadata.getArchiveType() + " codec=" + metadata.getCompressionCodec() + ')');
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -521,7 +521,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
-							if(logMINOR) Logger.minor(this, "gotBucket on "+SingleFileFetcher.this+" persistent="+persistent);
+							if(logMINOR) Logger.minor(this, "gotBucket on " + SingleFileFetcher.this + " persistent=" + persistent);
 							try {
 								metadata = Metadata.construct(data);
 								data.free();
@@ -579,7 +579,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
-				if(logMINOR) Logger.minor(this, "Fetching "+filename);
+				if(logMINOR) Logger.minor(this, "Fetching " + filename);
 				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
@@ -601,7 +601,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}
 					continue;
 				} else {
-					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
+					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey=" + thisKey + ')');
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
@@ -683,7 +683,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
-				if(logMINOR) Logger.minor(this, "Fetching "+filename);
+				if(logMINOR) Logger.minor(this, "Fetching " + filename);
 				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
@@ -705,7 +705,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					
 					return;
 				} else {
-					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
+					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey=" + thisKey + ')');
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
@@ -791,7 +791,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) container.store(clientMetadata);
 				if(clientMetadata != null && !clientMetadata.isTrivial()) { 
 					rcb.onExpectedMIME(clientMetadata, container, context);
-					if(logMINOR) Logger.minor(this, "MIME type is "+clientMetadata);
+					if(logMINOR) Logger.minor(this, "MIME type is " + clientMetadata);
 				}
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
@@ -816,7 +816,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Which will then fetch the target URI, and call the rcd.success
 				// Hopefully!
 				FreenetURI newURI = metadata.getSingleTarget();
-				if(logMINOR) Logger.minor(this, "Redirecting to "+newURI);
+				if(logMINOR) Logger.minor(this, "Redirecting to " + newURI);
 				ClientKey redirectedKey;
 				try {
 					BaseClientKey k = BaseClientKey.getBaseKey(newURI);
@@ -834,7 +834,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				// Move any new meta strings to beginning of our list of remaining meta strings
 				while(!newMetaStrings.isEmpty()) {
-					String o = newMetaStrings.remove(newMetaStrings.size()-1);
+					String o = newMetaStrings.remove(newMetaStrings.size() - 1);
 					metaStrings.add(0, o);
 					addedMetaStrings++;
 				}
@@ -933,7 +933,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						return;
 					}
 				} else
-					if(logMINOR) Logger.minor(this, "Not finished: rcb="+rcb+" for "+this); 
+					if(logMINOR) Logger.minor(this, "Not finished: rcb=" + rcb + " for " + this); 
 				
 				final long len = metadata.dataLength();
 				final long uncompressedLen = metadata.isCompressed() ? metadata.uncompressedDataLength() : len;
@@ -953,7 +953,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.store(sf); // Avoid problems caused by storing a deactivated sf
 					if(!container.ext().isActive(parent)) {
 						container.activate(parent, 1);
-						Logger.error(this, "Not active: "+parent);
+						Logger.error(this, "Not active: " + parent);
 					}
 				}
 				parent.onTransition(this, sf, container);
@@ -974,7 +974,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) removeFrom(container, context);
 				return;
 			} else {
-				Logger.error(this, "Don't know what to do with metadata: "+metadata);
+				Logger.error(this, "Don't know what to do with metadata: " + metadata);
 				removeMetadata(container);
 				throw new FetchException(FetchException.UNKNOWN_METADATA);
 			}
@@ -989,7 +989,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	private void addDecompressor(COMPRESSOR_TYPE codec) {
 		if(logMINOR)
-			Logger.minor(this, "Adding decompressor: "+codec+" on "+this, new Exception("debug"));
+			Logger.minor(this, "Adding decompressor: " + codec + " on " + this, new Exception("debug"));
 		decompressors.add(codec);
 	}
 
@@ -1008,7 +1008,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// this will use ctx.maxOutputLength
 		f = new SingleFileFetcher(this, persistent, true, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true, null), container, context);
 		if(persistent) container.store(f);
-		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
+		if(logMINOR) Logger.minor(this, "fetchArchive(): " + f);
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
 		// callback, or just go back around handleMetadata() on this, which will see that the data is now
 		// available.
@@ -1104,7 +1104,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
 				return;
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			} finally {
@@ -1339,7 +1339,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
 				return;
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			} finally {
@@ -1505,7 +1505,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				context.uskManager.startTemporaryBackgroundFetcher(usk, context, ctx, true, realTimeFlag);
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
-					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
+					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition " + edition);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
 					return null;
 				} else if(edition == -1 && 
@@ -1583,7 +1583,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.datastoreOnly = datastoreOnly;
 			this.hashCode = super.hashCode();
 			this.realTimeFlag = realTimeFlag;
-			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
+			if(logMINOR) Logger.minor(this, "Created " + this + " for " + usk + " and " + cb + " datastore only = " + datastoreOnly);
 		}
 		
 		@Override
@@ -1601,7 +1601,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
-							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, container, context, false);
+							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel + 1, dontTellClientGet, token, false, true, false, (short)0, container, context, false);
 					if(tag != null) {
 						if(persistent) container.activate(cb, 1);
 						cb.onTransition(tag, sf, container);
@@ -1643,10 +1643,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(this, 2);
 			if(e == null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
-			if(logMINOR) Logger.minor(this, "Failing USK with "+e, e);
+			if(logMINOR) Logger.minor(this, "Failing USK with " + e, e);
 			if(persistent) container.activate(cb, 1);
 			if(cb == null)
-				throw new NullPointerException("Callback is null in "+this+" for usk "+usk+" with datastoreOnly="+datastoreOnly);
+				throw new NullPointerException("Callback is null in " + this + " for usk " + usk + " with datastoreOnly=" + datastoreOnly);
 			cb.onFailure(e, null, container, context);
 			if(persistent) removeFrom(container);
 		}
@@ -1677,7 +1677,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 //	
 	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
+		if(logMINOR) Logger.minor(this, "removeFrom() on " + this);
 		container.activate(uri, 5);
 		uri.removeFrom(container);
 		if(thisKey != null) {
@@ -1704,7 +1704,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	
 	private void removeMetadata(ObjectContainer container) {
 		if(!persistent) return;
-		if(logMINOR) Logger.minor(this, "removeMetadata() on "+this);
+		if(logMINOR) Logger.minor(this, "removeMetadata() on " + this);
 		if(metadata == null) return;
 		container.activate(metadata, 1);
 		metadata.removeFrom(container);
@@ -1713,7 +1713,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	private void removeArchiveMetadata(ObjectContainer container) {
 		if(!persistent) return;
-		if(logMINOR) Logger.minor(this, "removeArchiveMetadata() on "+this);
+		if(logMINOR) Logger.minor(this, "removeArchiveMetadata() on " + this);
 		if(archiveMetadata == null) return;
 		container.activate(archiveMetadata, 1);
 		archiveMetadata.removeFrom(container);

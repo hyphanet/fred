@@ -6,7 +6,7 @@ public class DefaultMIMETypesTest extends TestCase {
 	
 	public void testFullList() {
 		for(String mimeType : DefaultMIMETypes.getMIMETypes()) {
-			assertTrue("Failed: \""+mimeType+"\"", DefaultMIMETypes.isPlausibleMIMEType(mimeType));
+			assertTrue("Failed: \"" + mimeType + "\"", DefaultMIMETypes.isPlausibleMIMEType(mimeType));
 		}
 	}
 	

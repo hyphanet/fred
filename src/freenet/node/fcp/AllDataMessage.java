@@ -45,7 +45,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		fs.put("Global", global);
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
-		if(mimeType!=null) fs.putSingle("Metadata.ContentType", mimeType);
+		if(mimeType != null) fs.putSingle("Metadata.ContentType", mimeType);
 		return fs;
 	}
 

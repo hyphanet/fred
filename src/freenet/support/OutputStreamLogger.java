@@ -19,14 +19,14 @@ public class OutputStreamLogger extends OutputStream {
 
 	@Override
 	public void write(int b) {
-		Logger.logStatic(this, prefix+(char)b, prio);
+		Logger.logStatic(this, prefix + (char)b, prio);
 	}
 	
 	@Override
 	public void write(byte[] buf, int offset, int length) {
 		try {
 			// FIXME use Charset/CharsetDecoder
-			Logger.logStatic(this, prefix+new String(buf, offset, length, charset), prio);
+			Logger.logStatic(this, prefix + new String(buf, offset, length, charset), prio);
 		} catch (UnsupportedEncodingException e) {
 			// Impossible. Nothing we can do safely here. :(
 		}

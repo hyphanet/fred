@@ -32,7 +32,7 @@ public class CHKBlock implements KeyBlock {
     
     @Override
 	public String toString() {
-        return super.toString()+": chk="+chk;
+        return super.toString() + ": chk=" + chk;
     }
     
     /**
@@ -65,7 +65,7 @@ public class CHKBlock implements KeyBlock {
         data = data2;
         headers = header2;
         if(headers.length != TOTAL_HEADERS_LENGTH)
-        	throw new IllegalArgumentException("Wrong length: "+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
+        	throw new IllegalArgumentException("Wrong length: " + headers.length + " should be " + TOTAL_HEADERS_LENGTH);
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
         if((key != null) && !verify) {

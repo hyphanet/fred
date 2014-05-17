@@ -122,8 +122,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				t.printStackTrace();
 			} catch (Throwable tt) {}
 		} finally {
-			System.err.println("run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
-			Logger.error(this, "run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
+			System.err.println("run() exiting for UdpSocketHandler on port " + _sock.getLocalPort());
+			Logger.error(this, "run() exiting for UdpSocketHandler on port " + _sock.getLocalPort());
 			synchronized (this) {
 				_isDone = true;
 				notifyAll();
@@ -141,7 +141,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
 			} catch (Throwable t) {
-				System.err.println("Caught "+t);
+				System.err.println("Caught " + t);
 				t.printStackTrace(System.err);
 				Logger.error(this, "Caught " + t, t);
 			}
@@ -158,25 +158,25 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			tracker.receivedPacketFrom(peer);
 			long endTime = System.currentTimeMillis();
 			if(endTime - startTime > 50) {
-				if(endTime-startTime > 3000) {
-					Logger.error(this, "packet creation took "+(endTime-startTime)+"ms");
+				if(endTime - startTime > 3000) {
+					Logger.error(this, "packet creation took " + (endTime - startTime) + "ms");
 				} else {
-					if(logMINOR) Logger.minor(this, "packet creation took "+(endTime-startTime)+"ms");
+					if(logMINOR) Logger.minor(this, "packet creation took " + (endTime - startTime) + "ms");
 				}
 			}
 			byte[] data = packet.getData();
 			int offset = packet.getOffset();
 			int length = packet.getLength();
 			try {
-				if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
+				if(logMINOR) Logger.minor(this, "Processing packet of length " + length + " from " + peer);
 				startTime = System.currentTimeMillis();
 				lowLevelFilter.process(data, offset, length, peer, now);
 				endTime = System.currentTimeMillis();
 				if(endTime - startTime > 50) {
-					if(endTime-startTime > 3000) {
-						Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
+					if(endTime - startTime > 3000) {
+						Logger.error(this, "processing packet took " + (endTime - startTime) + "ms");
 					} else {
-						if(logMINOR) Logger.minor(this, "processing packet took "+(endTime-startTime)+"ms");
+						if(logMINOR) Logger.minor(this, "processing packet took " + (endTime - startTime) + "ms");
 					}
 				}
 				if(logMINOR) Logger.minor(this,
@@ -253,12 +253,12 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			tracker.sentPacketTo(destination);
 			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
 			collector.addInfo(address, port, 0, getHeadersLength(address) + blockToSend.length, isLocal);
-			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
+			if(logMINOR) Logger.minor(this, "Sent packet length " + blockToSend.length + " to " + address + ':' + port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address) {
-				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e);
+				Logger.normal(this, "Error while sending packet to IPv6 address: " + destination + ": " + e);
 			} else {
-				Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
+				Logger.error(this, "Error while sending packet to " + destination + ": " + e, e);
 			}
 		}
 	}
@@ -295,7 +295,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		int newSize = innerCalculateMaxPacketSize();
 		maxPacketSize = newSize;
 		if(oldSize != newSize)
-			System.out.println("Max packet size: "+newSize);
+			System.out.println("Max packet size: " + newSize);
 		return maxPacketSize;
 	}
 	
@@ -316,7 +316,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
-		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
+		node.executor.execute(this, "UdpSocketHandler for port " + listenPort);
 	}
 
 	public void close() {

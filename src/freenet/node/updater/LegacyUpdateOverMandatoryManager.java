@@ -69,7 +69,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		File data = isExt ? updateManager.getTransitionExtBlob() : updateManager.getTransitionMainBlob();
 
 		if(data == null) {
-			Logger.normal(this, "Peer " + source + " asked us for the blob file for the "+name+" jar but we don't have it!");
+			Logger.normal(this, "Peer " + source + " asked us for the blob file for the " + name + " jar but we don't have it!");
 			// Probably a race condition on reconnect, hopefully we'll be asked again
 			return;
 		}
@@ -77,7 +77,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		final long uid = m.getLong(DMT.UID);
 
 		if(!source.sendingUOMJar(isExt)) {
-			Logger.error(this, "Peer "+source+" asked for UOM "+(isExt?"ext":"main")+" jar twice");
+			Logger.error(this, "Peer " + source + " asked for UOM " + (isExt?"ext":"main") + " jar twice");
 			return;
 		}
 		
@@ -86,7 +86,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			try {
 				raf = new RandomAccessFileWrapper(data, "r");
 			} catch(FileNotFoundException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
 			}
 			
@@ -97,7 +97,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
 						Node.PACKET_SIZE, raf, true);
 			} catch(IOException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, we have downloaded it but we can't determine the file size: " + e, e);
 				raf.close();
 				return;
 			}
@@ -105,7 +105,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			try {
 				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
 			} catch(DisconnectedException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, then disconnected: " + e, e);
 				raf.close();
 				return;
 			}
@@ -128,9 +128,9 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			public void run() {
 				try {
 					if(!bt.send())
-						Logger.error(this, "Failed to send "+name+" jar blob to " + source.userToString() + " : " + bt.getCancelReason());
+						Logger.error(this, "Failed to send " + name + " jar blob to " + source.userToString() + " : " + bt.getCancelReason());
 					else
-						Logger.normal(this, "Sent "+name+" jar blob to " + source.userToString());
+						Logger.normal(this, "Sent " + name + " jar blob to " + source.userToString());
 					raf.close();
 				} catch (DisconnectedException e) {
 					// Not much we can do.
@@ -150,20 +150,20 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 						Logger.minor(this, "Sending data...");
 					// Send the data
 
-					updateManager.node.executor.execute(r, name+" jar send for " + uid + " to " + source.userToString());
+					updateManager.node.executor.execute(r, name + " jar send for " + uid + " to " + source.userToString());
 				}
 
 				@Override
 				public void disconnected() {
 					// Argh
-					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMain");
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, then disconnected when we tried to send the UOMSendingMain");
 					source.finishedSendingUOMJar(isExt);
 				}
 
 				@Override
 				public void fatalError() {
 					// Argh
-					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then got a fatal error when we tried to send the UOMSendingMain");
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, then got a fatal error when we tried to send the UOMSendingMain");
 					source.finishedSendingUOMJar(isExt);
 				}
 
@@ -179,7 +179,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 				}
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the " + name + " jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
 			return;
 		} catch (RuntimeException e) {
 			source.finishedSendingUOMJar(isExt);

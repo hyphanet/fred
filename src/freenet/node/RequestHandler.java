@@ -204,7 +204,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	public void onReceivedRejectOverload() {
 		try {
 			if(!sentRejectedOverload) {
-				if(logMINOR) Logger.minor(this, "Propagating RejectedOverload on "+this);
+				if(logMINOR) Logger.minor(this, "Propagating RejectedOverload on " + this);
 				// Forward RejectedOverload
 				//Note: This message is only discernible from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
 				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
@@ -226,7 +226,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			unregisterRequestHandlerWithNode();
 			return;
 		}
-		if(logMINOR) Logger.minor(this, "CHK transfer start on "+this);
+		if(logMINOR) Logger.minor(this, "CHK transfer start on " + this);
 		try {
 			// Is a CHK.
 			Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
@@ -240,20 +240,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					public boolean onAbort() {
 						RequestSender rs = RequestHandler.this.rs;
 						if(rs != null && rs.uid != RequestHandler.this.uid) {
-							if(logMINOR) Logger.minor(this, "Not cancelling transfer because was coalesced on "+RequestHandler.this);
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because was coalesced on " + RequestHandler.this);
 							// No need to reassign tag since this UID will end immediately; the RequestSender is on a different one.
 							return false;
 						}
 						if(node.hasKey(key, false, false)) return true; // Don't want it
 						if(rs != null && rs.isTransferCoalesced()) {
-							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on " + RequestHandler.this);
 							// We do need to reassign the tag because the RS has the same UID.
 							node.tracker.reassignTagToSelf(tag);
 							return false;
 						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
-							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
+							Logger.error(this, "Downstream transfer successful but upstream transfer to " + source.shortToString() + " failed. Reassigning tag to self because want the data for peers on " + RequestHandler.this);
 							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
@@ -280,7 +280,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 							 * transfers, which would require getting rid of turtles. See the 
 							 * discussion in BlockReceiver's top comments.
 							 */
-							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
+							Logger.error(this, "Downstream transfer successful but upstream transfer to " + source.shortToString() + " failed. Reassigning tag to self because want the data for ourselves on " + RequestHandler.this);
 							node.tracker.reassignTagToSelf(tag);
 							return false; // Want it
 						}
@@ -294,7 +294,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					public void blockTransferFinished(boolean success) {
 						synchronized(RequestHandler.this) {
 							if(transferCompleted) {
-								Logger.error(this, "Transfer already completed on "+this, new Exception("debug"));
+								Logger.error(this, "Transfer already completed on " + this, new Exception("debug"));
 								return;
 							}
 							transferCompleted = true;
@@ -328,7 +328,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 * @param success Whether the block transfer succeeded.
 	 */
 	protected void transferFinished(boolean success) {
-		if(logMINOR) Logger.minor(this, "Transfer finished (success="+success+")");
+		if(logMINOR) Logger.minor(this, "Transfer finished (success=" + success + ")");
 		if(success) {
 			status = rs.getStatus();
 			// Run off-thread because, on the onRequestSenderFinished path, RequestSender won't start to wait for the noderef until we return!
@@ -363,11 +363,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	@Override
 	public void onAbortDownstreamTransfers(int reason, String desc) {
 		if(bt == null) {
-			Logger.error(this, "No downstream transfer to abort! on "+this);
+			Logger.error(this, "No downstream transfer to abort! on " + this);
 			return;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Aborting downstream transfer on "+this);
+			Logger.minor(this, "Aborting downstream transfer on " + this);
 		tag.onAbortDownstreamTransfers(reason, desc);
 		try {
 			bt.abortSend(reason, desc);
@@ -383,12 +383,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 */
 	private synchronized boolean readyToFinishTransfer() {
 		if(waitingForTransferSuccess) {
-			Logger.error(this, "waitAndFinishCHKTransferOffThread called twice on "+this);
+			Logger.error(this, "waitAndFinishCHKTransferOffThread called twice on " + this);
 			return false;
 		}
 		waitingForTransferSuccess = true;
 		if(!transferCompleted) {
-			if(logMINOR) Logger.minor(this, "Waiting for transfer to finish on "+this);
+			if(logMINOR) Logger.minor(this, "Waiting for transfer to finish on " + this);
 			return false; // Wait
 		}
 		return true;
@@ -402,7 +402,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			unregisterRequestHandlerWithNode();
 			return;
 		}
-		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
+		if(logMINOR) Logger.minor(this, "onRequestSenderFinished(" + status + ") on " + this);
 		long now = System.currentTimeMillis();
 
 		boolean tooLate;
@@ -410,7 +410,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			if(this.status == RequestSender.NOT_FINISHED)
 				this.status = status;
 			else {
-				if(logMINOR) Logger.minor(this, "Ignoring onRequestSenderFinished as status is already "+this.status);
+				if(logMINOR) Logger.minor(this, "Ignoring onRequestSenderFinished as status is already " + this.status);
 				return;
 			}
 			tooLate = responseDeadline > 0 && now > responseDeadline;
@@ -513,7 +513,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 				disconn = true;
 			else if(bt == null) {
 				// Bug! This is impossible!
-				Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
+				Logger.error(this, "Status is " + status + " but we never started a transfer on " + uid);
 				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
 				reject = DMT.createFNPRejectedOverload(uid, true, false, false);
 			} else {
@@ -770,7 +770,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
 	 */
 	private void finishOpennetInner(OpennetManager om) {
-		if(logMINOR) Logger.minor(this, "Finish opennet on "+this);
+		if(logMINOR) Logger.minor(this, "Finish opennet on " + this);
 		byte[] noderef;
 		try {
 			noderef = rs.waitForOpennetNoderef();
@@ -780,7 +780,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			return;
 		}
 		if(noderef == null) {
-			if(logMINOR) Logger.minor(this, "Not relaying as no noderef on "+this);
+			if(logMINOR) Logger.minor(this, "Not relaying as no noderef on " + this);
 			finishOpennetNoRelayInner(om);
 			return;
 		}
@@ -794,7 +794,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			if(ref == null || om.alreadyHaveOpennetNode(ref)) {
 				// Okay, let it through.
 			} else {
-				if(logMINOR) Logger.minor(this, "Resetting path folding on "+this);
+				if(logMINOR) Logger.minor(this, "Resetting path folding on " + this);
 				// Reset path folding.
 				// We need to tell the source of the noderef that we are not going to use it.
 				// RequestSender didn't because it expected us to use the ref.
@@ -821,7 +821,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	 */
 	private void finishOpennetNoRelayInner(final OpennetManager om) {
 		if(logMINOR)
-			Logger.minor(this, "Finishing opennet: sending own reference on "+this, new Exception("debug"));
+			Logger.minor(this, "Finishing opennet: sending own reference on " + this, new Exception("debug"));
 		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING)) {
 			ackOpennet();
 			return; // Don't want a reference
@@ -847,7 +847,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 			public void gotNoderef(byte[] noderef) {
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
-				if(logMINOR) Logger.minor(this, "Got noderef on "+RequestHandler.this);
+				if(logMINOR) Logger.minor(this, "Got noderef on " + RequestHandler.this);
 				finishOpennetNoRelayInner(om, noderef);
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
@@ -855,13 +855,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 
 			@Override
 			public void timedOut() {
-				if(logMINOR) Logger.minor(this, "Timed out waiting for noderef from "+source+" on "+RequestHandler.this);
+				if(logMINOR) Logger.minor(this, "Timed out waiting for noderef from " + source + " on " + RequestHandler.this);
 				gotNoderef(null);
 			}
 
 			@Override
 			public void acked(boolean timedOutMessage) {
-				if(logMINOR) Logger.minor(this, "Noderef acknowledged from "+source+" on "+RequestHandler.this);
+				if(logMINOR) Logger.minor(this, "Noderef acknowledged from " + source + " on " + RequestHandler.this);
 				gotNoderef(null);
 			}
 			
@@ -903,7 +903,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 	private void finishOpennetRelay(byte[] noderef, final OpennetManager om) {
 		final PeerNode dataSource = rs.successFrom();
 		if(logMINOR)
-			Logger.minor(this, "Finishing opennet: relaying reference from " + dataSource+" on "+this);
+			Logger.minor(this, "Finishing opennet: relaying reference from " + dataSource + " on " + this);
 		// Send it back to the handler, then wait for the ConnectReply
 
 		try {
@@ -936,7 +936,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSenderL
 					
 					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null) {
 						try {
-							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for "+RequestHandler.this);
+							if(logMINOR) Logger.minor(this, "Relaying noderef from source to data source for " + RequestHandler.this);
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this, new AllSentCallback() {
 
 								@Override

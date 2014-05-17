@@ -50,7 +50,7 @@ public class LibraryLoader {
 
 		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + prefix);
 		if (nativeLib.exists()) {
-			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
+			System.out.println("Attempting to load the NativeThread library [" + libraryName + ']');
 			System.loadLibrary(libraryName);
 			success = true;
 		} else {
@@ -76,11 +76,11 @@ public class LibraryLoader {
 				outputStream.close();
 
 				// Finally, load the dll
-				System.out.println("Attempting to load the "+libraryName+" library ["+resource+']');
+				System.out.println("Attempting to load the " + libraryName + " library [" + resource + ']');
 				System.load(temporaryLib.getPath());
 				success = true;
 			} catch(Throwable e) {
-				System.err.println("Caught the following exception attempting to load "+resourceName);
+				System.err.println("Caught the following exception attempting to load " + resourceName);
 				e.printStackTrace();
 			}
 		}

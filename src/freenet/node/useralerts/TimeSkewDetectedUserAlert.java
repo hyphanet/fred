@@ -29,7 +29,7 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("TimeSkewDetectedUserAlert."+key);
+		return NodeL10n.getBase().getString("TimeSkewDetectedUserAlert." + key);
 	}
 
 	@Override

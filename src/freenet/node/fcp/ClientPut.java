@@ -142,7 +142,7 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = " + tempData + ", uploadFrom = " + ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
@@ -173,7 +173,7 @@ public class ClientPut extends ClientPutBase {
 		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
-				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from " + message.origFilename, identifier, global);
 
 			if(message.fileHash != null) {
 				try {
@@ -187,7 +187,7 @@ public class ClientPut extends ClientPutBase {
 					}
 				}
 			} else if(!handler.allowDDAFrom(message.origFilename, false))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);		
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from " + message.origFilename + ". Have you done a testDDA previously ?", identifier, global);		
 		}
 			
 		this.targetFilename = message.targetFilename;
@@ -215,7 +215,7 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = " + tempData + ", uploadFrom = " + ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
@@ -224,12 +224,12 @@ public class ClientPut extends ClientPutBase {
 				d = m.writeToByteArray();
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
-				Logger.error(this, "Impossible: "+e, e);
+				Logger.error(this, "Impossible: " + e, e);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
 				// This is *not* an InsertException since we don't register it: it's a protocol error.
-				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Impossible: metadata unresolved: "+e, identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Impossible: metadata unresolved: " + e, identifier, global);
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
@@ -263,10 +263,10 @@ public class ClientPut extends ClientPutBase {
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 
 			if(!Arrays.equals(saltedHash, foundHash))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \""+salt+"\")", identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \"" + salt + "\")", identifier, global);
 		}
 		
-		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = " + data + ", uploadFrom = " + ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
@@ -287,7 +287,7 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	public void start(ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this+" : "+identifier);
+			Logger.minor(this, "Starting " + this + " : " + identifier);
 		synchronized(this) {
 			if(finished) return;
 		}
@@ -417,11 +417,11 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	public boolean canRestart() {
 		if(!finished) {
-			Logger.minor(this, "Cannot restart because not finished for "+identifier);
+			Logger.minor(this, "Cannot restart because not finished for " + identifier);
 			return false;
 		}
 		if(succeeded) {
-			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
+			Logger.minor(this, "Cannot restart because succeeded for " + identifier);
 			return false;
 		}
 		return putter.canRestart();

@@ -98,7 +98,7 @@ class ArchiveStoreContext {
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) {
 				if(logMINOR)
-					Logger.minor(this, "Not removing: "+item+" for "+this+" - already removed");
+					Logger.minor(this, "Not removing: " + item + " for " + this + " - already removed");
 				return; // only removed once
 			}
 		}

@@ -36,13 +36,13 @@ public class SendableGetRequestSender implements SendableRequestSender {
 		Object keyNum = req.token;
 		final ClientKey key = req.ckey;
 		if(key == null) {
-			Logger.error(SendableGet.class, "Key is null in send(): keyNum = "+keyNum+" for "+req);
+			Logger.error(SendableGet.class, "Key is null in send(): keyNum = " + keyNum + " for " + req);
 			return false;
 		}
 		if(logMINOR)
-			Logger.minor(SendableGet.class, "Sending get for key "+keyNum+" : "+key);
+			Logger.minor(SendableGet.class, "Sending get for key " + keyNum + " : " + key);
 		if(req.isCancelled()) {
-			if(logMINOR) Logger.minor(SendableGet.class, "Cancelled: "+req);
+			if(logMINOR) Logger.minor(SendableGet.class, "Cancelled: " + req);
 			req.onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), context);
 			return false;
 		}
@@ -81,12 +81,12 @@ public class SendableGetRequestSender implements SendableRequestSender {
 					
 				}, !req.ignoreStore, req.canWriteClientCache, req.realTimeFlag, req.localRequestOnly, req.ignoreStore);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
+				Logger.error(this, "Caught " + t, t);
 				req.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), context);
 				return true;
 			}
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught " + t, t);
 			req.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), context);
 			return true;
 		}

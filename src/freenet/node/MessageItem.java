@@ -48,7 +48,7 @@ public class MessageItem {
 			// and the window size is frequently very small, so if we have really big messages they
 			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
 			// (especially if there are retransmits).
-			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
+			Logger.error(this, "WARNING: Message too big: " + buf.length + " for " + msg2, new Exception("error"));
 		}
 	}
 
@@ -91,7 +91,7 @@ public class MessageItem {
 			try {
 				ctrCallback.sentBytes(length);
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this, t);
+				Logger.error(this, "Caught " + t + " reporting " + length + " sent bytes on " + this, t);
 			}
 		}
 	}
@@ -102,7 +102,7 @@ public class MessageItem {
 
 	@Override
 	public String toString() {
-		return super.toString()+":formatted="+formatted+",msg="+msg;
+		return super.toString() + ":formatted=" + formatted + ",msg=" + msg;
 	}
 
 	public void onDisconnect() {
@@ -111,7 +111,7 @@ public class MessageItem {
 				try {
 					cbi.disconnected();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
+					Logger.error(this, "Caught " + t + " calling sent() on " + cbi + " for " + this, t);
 				}
 			}
 		}
@@ -123,7 +123,7 @@ public class MessageItem {
 				try {
 					cbi.fatalError();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
+					Logger.error(this, "Caught " + t + " calling sent() on " + cbi + " for " + this, t);
 				}
 			}
 		}
@@ -153,7 +153,7 @@ public class MessageItem {
 				try {
 					cbi.sent();
 				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cbi+" for "+this, t);
+					Logger.error(this, "Caught " + t + " calling sent() on " + cbi + " for " + this, t);
 				}
 			}
 		}

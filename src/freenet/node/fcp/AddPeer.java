@@ -101,23 +101,23 @@ public class AddPeer extends FCPMessage {
 				URL url = new URL(urlString);
 				ref = getReferenceFromURL(url);
 			} catch (MalformedURLException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <" + urlString + ">: " + e.getMessage(), identifier, false);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <" + urlString + ">: " + e.getMessage(), identifier, false);
 			}
 			ref = new StringBuilder(ref.toString().trim());
 			if("".equals(ref.toString())) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <" + urlString + '>', identifier, false);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString(), false, true, true);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <" + urlString + ">: " + e.getMessage(), identifier, false);
 			}
 		} else if(fileString != null) {
 			File f = new File(fileString);
 			if(!f.isFile()) {
-				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <" + fileString + "> is not a file", identifier, false);
 			}
 			try {
 				in = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
@@ -129,18 +129,18 @@ public class AddPeer extends FCPMessage {
 				}
 				in.close();
 			} catch (FileNotFoundException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "File not found when retrieving ref file <"+fileString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "File not found when retrieving ref file <" + fileString + ">: " + e.getMessage(), identifier, false);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <" + fileString + ">: " + e.getMessage(), identifier, false);
 			}
 			ref = new StringBuilder(ref.toString().trim());
 			if("".equals(ref.toString())) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <" + fileString + '>', identifier, false);
 			}
 			try {
 				fs = new SimpleFieldSet(ref.toString(), false, true, true);
 			} catch (IOException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <" + fileString + ">: " + e.getMessage(), identifier, false);
 			}
 		}
 		fs.setEndMarker( "End" );
@@ -150,36 +150,36 @@ public class AddPeer extends FCPMessage {
 			try {
 				pn = node.createNewOpennetNode(fs);
 			} catch (FSParseException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: " + e.getMessage(), identifier, false);
 			} catch (OpennetDisabledException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.OPENNET_DISABLED, "Error adding ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.OPENNET_DISABLED, "Error adding ref: " + e.getMessage(), identifier, false);
 			} catch (PeerParseException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: " + e.getMessage(), identifier, false);
 			} catch (ReferenceSignatureVerificationException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: " + e.getMessage(), identifier, false);
 			}
 			if(Arrays.equals(pn.getPubKeyHash(), node.getOpennetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
 			}
-			System.out.println("Added opennet peer: "+pn);
+			System.out.println("Added opennet peer: " + pn);
 		} else {
 			try {
 				pn = node.createNewDarknetNode(fs, trust, visibility);
 			} catch (FSParseException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: " + e.getMessage(), identifier, false);
 			} catch (PeerParseException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: " + e.getMessage(), identifier, false);
 			} catch (ReferenceSignatureVerificationException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: "+e.getMessage(), identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_SIGNATURE_INVALID, "Error adding ref: " + e.getMessage(), identifier, false);
 			}
 			if(Arrays.equals(pn.getPubKeyHash(), node.getDarknetPubKeyHash()))
 				throw new MessageInvalidException(ProtocolErrorMessage.CANNOT_PEER_WITH_SELF, "Node cannot peer with itself", identifier, false);
 			if(!node.addPeerConnection(pn)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DUPLICATE_PEER_REF, "Node already has a peer with that identity", identifier, false);
 			}
-			System.out.println("Added darknet peer: "+pn);
+			System.out.println("Added darknet peer: " + pn);
 		}
 		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
 	}

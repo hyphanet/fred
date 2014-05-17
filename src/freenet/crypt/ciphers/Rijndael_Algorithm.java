@@ -55,7 +55,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	}
 
 	private static void trace(boolean in, String s) {
-		if (TRACE && logDEBUG) Logger.debug(Rijndael_Algorithm.class, (in?"==> ":"<== ")+NAME+ '.' +s);
+		if (TRACE && logDEBUG) Logger.debug(Rijndael_Algorithm.class, (in?"==> ":"<== ") + NAME + '.' + s);
 	}
 	
 //	Constants and variables
@@ -89,7 +89,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	};
 
 	private static final char[] HEX_DIGITS = {
-		'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 	};
 
 
@@ -100,7 +100,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		long time = System.currentTimeMillis();
 
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("Algorithm Name: "+FULL_NAME);
+			System.out.println("Algorithm Name: " + FULL_NAME);
 			System.out.println("Electronic Codebook (ECB) Mode");
 			System.out.println();
 		}
@@ -113,7 +113,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		alog[0] = 1;
 		for (i = 1; i < 256; i++) {
-			j = (alog[i-1] << 1) ^ alog[i-1];
+			j = (alog[i - 1] << 1) ^ alog[i - 1];
 			if ((j & 0x100) != 0) j ^= ROOT;
 			alog[i] = j;
 		}
@@ -157,7 +157,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		for (i = 0; i < 256; i++) {
 			S[i] = (byte)(cox[i][0] << 7);
 			for (t = 1; t < 8; t++)
-				S[i] ^= cox[i][t] << (7-t);
+				S[i] ^= cox[i][t] << (7 - t);
 			Si[S[i] & 0xFF] = (byte) i;
 		}
 		//
@@ -172,7 +172,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		byte[][] AA = new byte[4][8];
 		for (i = 0; i < 4; i++) {
 			for (j = 0; j < 4; j++) AA[i][j] = G[i][j];
-			AA[i][i+4] = 1;
+			AA[i][i + 4] = 1;
 		}
 		byte pivot, tmp;
 		byte[][] iG = new byte[4][4];
@@ -199,7 +199,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
 			for (t = 0; t < 4; t++)
 				if (i != t) {
-					for (j = i+1; j < 8; j++)
+					for (j = i + 1; j < 8; j++)
 						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
 					AA[t][i] = 0;
 				}
@@ -240,44 +240,44 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			System.out.println();
 			System.out.println("Static Data");
 			System.out.println();
-			System.out.println("S[]:"); for(i=0;i<16;i++) { for(j=0;j<16;j++) System.out.print("0x"+byteToString(S[i*16+j])+", "); System.out.println();}
+			System.out.println("S[]:"); for(i=0;i < 16;i++) { for(j=0;j < 16;j++) System.out.print("0x" + byteToString(S[i * 16 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("Si[]:"); for(i=0;i<16;i++) { for(j=0;j<16;j++) System.out.print("0x"+byteToString(Si[i*16+j])+", "); System.out.println();}
+			System.out.println("Si[]:"); for(i=0;i < 16;i++) { for(j=0;j < 16;j++) System.out.print("0x" + byteToString(Si[i * 16 + j]) + ", "); System.out.println();}
 
 			System.out.println();
-			System.out.println("iG[]:"); for(i=0;i<4;i++){for(j=0;j<4;j++) System.out.print("0x"+byteToString(iG[i][j])+", "); System.out.println();}
+			System.out.println("iG[]:"); for(i=0;i < 4;i++){for(j=0;j < 4;j++) System.out.print("0x" + byteToString(iG[i][j]) + ", "); System.out.println();}
 
 			System.out.println();
-			System.out.println("T1[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T1[i*4+j])+", "); System.out.println();}
+			System.out.println("T1[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T1[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T2[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T2[i*4+j])+", "); System.out.println();}
+			System.out.println("T2[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T2[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T3[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T3[i*4+j])+", "); System.out.println();}
+			System.out.println("T3[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T3[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T4[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T4[i*4+j])+", "); System.out.println();}
+			System.out.println("T4[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T4[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T5[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T5[i*4+j])+", "); System.out.println();}
+			System.out.println("T5[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T5[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T6[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T6[i*4+j])+", "); System.out.println();}
+			System.out.println("T6[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T6[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T7[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T7[i*4+j])+", "); System.out.println();}
+			System.out.println("T7[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T7[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("T8[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(T8[i*4+j])+", "); System.out.println();}
+			System.out.println("T8[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(T8[i * 4 + j]) + ", "); System.out.println();}
 
 			System.out.println();
-			System.out.println("U1[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(U1[i*4+j])+", "); System.out.println();}
+			System.out.println("U1[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(U1[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("U2[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(U2[i*4+j])+", "); System.out.println();}
+			System.out.println("U2[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(U2[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("U3[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(U3[i*4+j])+", "); System.out.println();}
+			System.out.println("U3[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(U3[i * 4 + j]) + ", "); System.out.println();}
 			System.out.println();
-			System.out.println("U4[]:"); for(i=0;i<64;i++){for(j=0;j<4;j++) System.out.print("0x"+intToString(U4[i*4+j])+", "); System.out.println();}
+			System.out.println("U4[]:"); for(i=0;i < 64;i++){for(j=0;j < 4;j++) System.out.print("0x" + intToString(U4[i * 4 + j]) + ", "); System.out.println();}
 
 			System.out.println();
-			System.out.println("rcon[]:"); for(i=0;i<5;i++){for(j=0;j<6;j++) System.out.print("0x"+byteToString(rcon[i*6+j])+", "); System.out.println();}
+			System.out.println("rcon[]:"); for(i=0;i < 5;i++){for(j=0;j < 6;j++) System.out.print("0x" + byteToString(rcon[i * 6 + j]) + ", "); System.out.println();}
 
 			System.out.println();
-			System.out.println("Total initialization time: "+time+" ms.");
+			System.out.println("Total initialization time: " + time + " ms.");
 			System.out.println();
 		}
 	}
@@ -315,7 +315,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 */
 	private static void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-		if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+ ')');
+		if (RDEBUG) trace(IN, "blockEncrypt(" + in + ", " + inOffset + ", " + sessionKey + ')');
 		int[][] Ke = (int[][]) ((Object[]) sessionKey)[0]; // extract encryption round keys
 		int ROUNDS = Ke.length - 1;
 		int[] Ker = Ke[0];
@@ -361,7 +361,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t1 = a1;
 		t2 = a2;
 		t3 = a3;
-		if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("CT" + r + '=' + intToString(t0) + intToString(t1) + intToString(t2) + intToString(t3));
 		}
 
 		// last round is special
@@ -387,7 +387,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[14] = (byte)(S[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[15] = (byte)(S[ t2         & 0xFF] ^  tt        );
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("CT="+toString(result));
+			System.out.println("CT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockEncrypt()");
@@ -404,7 +404,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 */
 	private static void
 	blockEncrypt256 (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-		if (RDEBUG) trace(IN, "blockEncrypt256("+in+", "+inOffset+", "+sessionKey+ ')');
+		if (RDEBUG) trace(IN, "blockEncrypt256(" + in + ", " + inOffset + ", " + sessionKey + ')');
 		int[][] Ke = (int[][]) ((Object[]) sessionKey)[0]; // extract encryption round keys
 		int ROUNDS = Ke.length - 1;
 		int[] Ker = Ke[0];
@@ -493,7 +493,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t5 = a5;
 		t6 = a6;
 		t7 = a7;
-		if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("CT" + r + '=' + intToString(t0) + intToString(t1) + intToString(t2) + intToString(t3));
 		}
 
 		// last round is special
@@ -539,7 +539,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[30] = (byte)(S[(t2 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[31] = (byte)(S[ t3         & 0xFF] ^  tt        );
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("CT="+toString(result));
+			System.out.println("CT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockEncrypt()");
@@ -555,7 +555,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 */
 	private static void
 	blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-		if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
+		if (RDEBUG) trace(IN, "blockDecrypt(" + in + ", " + inOffset + ", " + sessionKey + ')');
 		int[][] Kd = (int[][]) ((Object[]) sessionKey)[1]; // extract decryption round keys
 		int ROUNDS = Kd.length - 1;
 		int[] Kdr = Kd[0];
@@ -601,7 +601,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t1 = a1;
 		t2 = a2;
 		t3 = a3;
-		if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("PT" + r + '=' + intToString(t0) + intToString(t1) + intToString(t2) + intToString(t3));
 		}
 
 		// last round is special
@@ -627,7 +627,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[14] = (byte)(Si[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[15] = (byte)(Si[ t0         & 0xFF] ^  tt        );
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("PT="+toString(result));
+			System.out.println("PT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockDecrypt()");
@@ -643,7 +643,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 */
 	private static void
 	blockDecrypt256 (byte[] in, byte[] result, int inOffset, Object sessionKey) {
-		if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+ ')');
+		if (RDEBUG) trace(IN, "blockDecrypt(" + in + ", " + inOffset + ", " + sessionKey + ')');
 		int[][] Kd = (int[][]) ((Object[]) sessionKey)[1]; // extract decryption round keys
 		int ROUNDS = Kd.length - 1;
 		int[] Kdr = Kd[0];
@@ -732,7 +732,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		t5 = a5;
 		t6 = a6;
 		t7 = a7;
-		if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+		if (RDEBUG && (logMINOR)) System.out.println("PT" + r + '=' + intToString(t0) + intToString(t1) + intToString(t2) + intToString(t3));
 		}
 
 		// last round is special
@@ -778,7 +778,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		result[30] = (byte)(Si[(t4 >>>  8) & 0xFF] ^ (tt >>>  8));
 		result[31] = (byte)(Si[ t3         & 0xFF] ^  tt        );
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("PT="+toString(result));
+			System.out.println("PT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockDecrypt()");
@@ -817,7 +817,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	//CPU will result in fewer cache misses.  -- ejhuff 2003-10-12
 	static synchronized Object makeKey(byte[] k, int blockSize)
 	throws InvalidKeyException {
-		if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
+		if (RDEBUG) trace(IN, "makeKey(" + k + ", " + blockSize + ')');
 		if (k == null)
 			throw new InvalidKeyException("Empty key");
 		if (!((k.length == 16) || (k.length == 24) || (k.length == 32)))
@@ -831,7 +831,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			BCshift = 3;
 		else
 			/* Note: original code supported block size 192 bits */
-			throw new InvalidKeyException("Unsupported block size: "+blockSize);
+			throw new InvalidKeyException("Unsupported block size: " + blockSize);
 		int[][] Ke = new int[ROUNDS + 1][BC]; // encryption round keys
 		int[][] Kd = new int[ROUNDS + 1][BC]; // decryption round keys
 		int ROUND_KEY_COUNT = (ROUNDS + 1) << BCshift;
@@ -848,8 +848,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		// copy values into round key arrays
 		int t = 0;
 		for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-			Ke[t >>> BCshift][t & (BC-1)] = tk[j];
-			Kd[ROUNDS - (t >>> BCshift)][t & (BC-1)] = tk[j];
+			Ke[t >>> BCshift][t & (BC - 1)] = tk[j];
+			Kd[ROUNDS - (t >>> BCshift)][t & (BC - 1)] = tk[j];
 		}
 		int tt, rconpointer = 0;
 		while (t < ROUND_KEY_COUNT) {
@@ -891,8 +891,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			}
 			// copy values into round key arrays
 			for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-				Ke[t >>> BCshift][t & (BC-1)] = tk[j];
-				Kd[ROUNDS - (t >>> BCshift)][t & (BC-1)] = tk[j];
+				Ke[t >>> BCshift][t & (BC - 1)] = tk[j];
+				Kd[ROUNDS - (t >>> BCshift)][t & (BC - 1)] = tk[j];
 			}
 		}
 		for (int r = 1; r < ROUNDS; r++)    // inverse MixColumn where needed
@@ -925,11 +925,11 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			blockEncrypt(in, result, inOffset, sessionKey);
 			return;
 		}
-		if (blockSize == 256/8) {
+		if (blockSize == 256 / 8) {
 			blockEncrypt256(in, result, inOffset, sessionKey);
 			return;
 		}
-		if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+ ')');
+		if (RDEBUG) trace(IN, "blockEncrypt(" + in + ", " + inOffset + ", " + sessionKey + ", " + blockSize + ')');
 		Object[] sKey = (Object[]) sessionKey; // extract encryption round keys
 		int[][] Ke = (int[][]) sKey[0];
 
@@ -956,7 +956,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 						T3[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T4[ t[(i + s3) % BC]         & 0xFF]  ) ^ Ke[r][i];
 			System.arraycopy(a, 0, t, 0, BC);
-			if (RDEBUG && (logMINOR)) System.out.println("CT"+r+ '=' +toString(t));
+			if (RDEBUG && (logMINOR)) System.out.println("CT" + r + '=' + toString(t));
 		}
 		for (i = 0; i < BC; i++) {                   // last round is special
 			tt = Ke[ROUNDS][i];
@@ -966,7 +966,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			result[j++] = (byte)(S[ t[(i + s3) % BC]         & 0xFF] ^ tt);
 		}
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("CT="+toString(result));
+			System.out.println("CT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockEncrypt()");
@@ -987,12 +987,12 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			blockDecrypt(in, result, inOffset, sessionKey);
 			return;
 		}
-		if (blockSize == 256/8) {
+		if (blockSize == 256 / 8) {
 			blockDecrypt256(in, result, inOffset, sessionKey);
 			return;
 		}
 
-		if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+", "+blockSize+ ')');
+		if (RDEBUG) trace(IN, "blockDecrypt(" + in + ", " + inOffset + ", " + sessionKey + ", " + blockSize + ')');
 		Object[] sKey = (Object[]) sessionKey; // extract decryption round keys
 		int[][] Kd = (int[][]) sKey[1];
 
@@ -1019,7 +1019,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 						T7[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T8[ t[(i + s3) % BC]         & 0xFF]  ) ^ Kd[r][i];
 			System.arraycopy(a, 0, t, 0, BC);
-			if (RDEBUG && (logMINOR)) System.out.println("PT"+r+ '=' +toString(t));
+			if (RDEBUG && (logMINOR)) System.out.println("PT" + r + '=' + toString(t));
 		}
 		for (i = 0; i < BC; i++) {                   // last round is special
 			tt = Kd[ROUNDS][i];
@@ -1029,7 +1029,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			result[j++] = (byte)(Si[ t[(i + s3) % BC]         & 0xFF] ^ tt);
 		}
 		if (RDEBUG && (logMINOR)) {
-			System.out.println("PT="+toString(result));
+			System.out.println("PT=" + toString(result));
 			System.out.println();
 		}
 		if (RDEBUG) trace(OUT, "blockDecrypt()");
@@ -1037,7 +1037,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 
 	/** A basic symmetric encryption/decryption test for a given key size. */
 	private static boolean self_test (int keysize) {
-		if (RDEBUG) trace(IN, "self_test("+keysize+ ')');
+		if (RDEBUG) trace(IN, "self_test(" + keysize + ')');
 		boolean ok = false;
 		try {
 			byte[] kb = new byte[keysize];
@@ -1052,8 +1052,8 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			if (RDEBUG && (logMINOR)) {
 				System.out.println("==========");
 				System.out.println();
-				System.out.println("KEYSIZE="+(8*keysize));
-				System.out.println("KEY="+toString(kb));
+				System.out.println("KEYSIZE=" + (8 * keysize));
+				System.out.println("KEY=" + toString(kb));
 				System.out.println();
 			}
 			Object key = makeKey(kb, BLOCK_SIZE);
@@ -1061,7 +1061,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			if (RDEBUG && (logMINOR)) {
 				System.out.println("Intermediate Ciphertext Values (Encryption)");
 				System.out.println();
-				System.out.println("PT="+toString(pt));
+				System.out.println("PT=" + toString(pt));
 			}
 			byte[] ct = new byte[BLOCK_SIZE];
 			blockEncrypt(pt, ct, 0, key, BLOCK_SIZE);
@@ -1069,7 +1069,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			if (RDEBUG && (logMINOR)) {
 				System.out.println("Intermediate Plaintext Values (Decryption)");
 				System.out.println();
-				System.out.println("CT="+toString(ct));
+				System.out.println("CT=" + toString(ct));
 			}
 			byte[] cpt = new byte[BLOCK_SIZE];
 			blockDecrypt(ct, cpt, 0, key, BLOCK_SIZE);

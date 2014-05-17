@@ -83,7 +83,7 @@ public abstract class BandwidthManipulator {
 
 		int downstreamBits = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBits = bwIndicator.getUpstramMaxBitRate();
-		Logger.normal(this, "bandwidthIndicator reports downstream " + downstreamBits + " bits/s and upstream "+upstreamBits+" bits/s.");
+		Logger.normal(this, "bandwidthIndicator reports downstream " + downstreamBits + " bits/s and upstream " + upstreamBits + " bits/s.");
 
 		int downstreamBytes, upstreamBytes;
 
@@ -93,12 +93,12 @@ public abstract class BandwidthManipulator {
 		if (downstreamBits < 0) {
 			//Reported unavailable.
 			downstreamBytes = -1;
-		} else if (downstreamBits < 8*KiB) {
+		} else if (downstreamBits < 8 * KiB) {
 			//Nonsensically slow.
-			System.err.println("Detected downstream of "+downstreamBits+" bits/s is nonsensically slow, ignoring.");
+			System.err.println("Detected downstream of " + downstreamBits + " bits/s is nonsensically slow, ignoring.");
 			downstreamBytes = -1;
 		} else {
-			downstreamBytes = downstreamBits/8;
+			downstreamBytes = downstreamBits / 8;
 		}
 
 		if (upstreamBits < 0) {
@@ -106,10 +106,10 @@ public abstract class BandwidthManipulator {
 			upstreamBytes = -1;
 		} else if (upstreamBits < KiB) {
 			//Nonsensically slow.
-			System.err.println("Detected upstream of "+upstreamBits+" bits/s is nonsensically slow, ignoring.");
+			System.err.println("Detected upstream of " + upstreamBits + " bits/s is nonsensically slow, ignoring.");
 			upstreamBytes = -1;
 		} else {
-			upstreamBytes = upstreamBits/8;
+			upstreamBytes = upstreamBits / 8;
 		}
 
 		return new BandwidthLimit(downstreamBytes, upstreamBytes, "bandwidthDetected", false);

@@ -29,7 +29,7 @@ public class RandomShortWriteOutputStream extends FilterOutputStream {
         if(length > 2 && random.nextBoolean()) {
             int split = random.nextInt(length);
             out.write(buf, offset, split);
-            out.write(buf, offset+split, length-split);
+            out.write(buf, offset + split, length - split);
         } else {
             out.write(buf, offset, length);
         }

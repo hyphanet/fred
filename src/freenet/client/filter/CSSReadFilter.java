@@ -45,7 +45,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 				this,
 				"running "
 					+ this
-					+ "with charset"+charset);
+					+ "with charset" + charset);
 		Reader r = null;
 		Writer w = null;
 		try {
@@ -76,7 +76,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	@Override
 	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
 		if(logDEBUG)
-			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
+			Logger.debug(this, "Fetching charset for CSS with initial charset " + charset);
 		if(input.length > getCharsetBufferSize() && logMINOR) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
@@ -165,7 +165,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		for(String m : split) {
 			m = m.trim();
 			int i;
-			for(i=0;i<m.length();i++) {
+			for(i=0;i < m.length();i++) {
 				char c = m.charAt(i);
 				if(!('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || ('0' <= c && '9' >= c) || c == '-')
 					break;

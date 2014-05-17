@@ -56,7 +56,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		Bucket[] buckets = new Bucket[blocks];
 		byte[][] bufs = new byte[blocks][];
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			bufs[i] = new byte[blockSize];
 			fastWeakRandom.nextBytes(bufs[i]);
 			buckets[i] = factory.makeBucket();
@@ -68,7 +68,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 			assertEquals(factory.lastOccupiedBlock(), i);
 		}
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			DataInputStream dis = new DataInputStream(buckets[i].getInputStream());
 			byte[] check = new byte[blockSize];
 			dis.readFully(check);
@@ -108,7 +108,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		Bucket[] buckets = new Bucket[blocks];
 		byte[][] bufs = new byte[blocks][];
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			bufs[i] = new byte[blockSize];
 			fastWeakRandom.nextBytes(bufs[i]);
 			buckets[i] = factory.makeBucket();
@@ -120,7 +120,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 			assertEquals(factory.lastOccupiedBlock(), i);
 		}
 		
-		for(int i=blocks-1;i>=0;i--) {
+		for(int i=blocks - 1;i >= 0;i--) {
 			DataInputStream dis = new DataInputStream(buckets[i].getInputStream());
 			byte[] check = new byte[blockSize];
 			dis.readFully(check);
@@ -164,7 +164,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		byte[][] bufs = new byte[blocks][];
 		PersistentBlobTempBucketFactory.DISABLE_SANITY_CHECKS_DEFRAG = true;
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			bufs[i] = new byte[blockSize];
 			fastWeakRandom.nextBytes(bufs[i]);
 			buckets[i] = factory.makeBucket();
@@ -181,7 +181,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		int lastSlot = blocks - 1;
 		assertEquals(factory.lastOccupiedBlock(), lastSlot);
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			DataInputStream dis = new DataInputStream(buckets[i].getInputStream());
 			byte[] check = new byte[blockSize];
 			dis.readFully(check);
@@ -230,7 +230,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		DataInputStream[] is = new DataInputStream[blocks];
 		PersistentBlobTempBucketFactory.DISABLE_SANITY_CHECKS_DEFRAG = true;
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			bufs[i] = new byte[blockSize];
 			fastWeakRandom.nextBytes(bufs[i]);
 			buckets[i] = factory.makeBucket();
@@ -247,7 +247,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		
 		int lastSlot = blocks - 1;
 		
-		for(int i=0;i<blocks;i++) {
+		for(int i=0;i < blocks;i++) {
 			byte[] check = new byte[blockSize];
 			is[i].readFully(check);
 			is[i].close();

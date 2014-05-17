@@ -106,31 +106,31 @@ public class RealNodeULPRTest extends RealNodeTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
+        for(int i=0;i < NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, testName, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false, true, false, null);
-            Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, testName, true, MAX_HTL, 20 /* 5% */, random, executor, 500 * NUMBER_OF_NODES, 1024 * 1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false, true, false, null);
+            Logger.normal(RealNodeRoutingTest.class, "Created node " + i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
-        for(int i=0;i<NUMBER_OF_NODES;i++)
+        for(int i=0;i < NUMBER_OF_NODES;i++)
             refs[i] = nodes[i].exportDarknetPublicFieldSet();
-        Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
+        Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
         // Now link them up
         // Connect the set
-        for(int i=0;i<NUMBER_OF_NODES;i++) {
-            int next = (i+1) % NUMBER_OF_NODES;
-            int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
+        for(int i=0;i < NUMBER_OF_NODES;i++) {
+            int next = (i + 1) % NUMBER_OF_NODES;
+            int prev = (i + NUMBER_OF_NODES - 1) % NUMBER_OF_NODES;
             nodes[i].connect(nodes[next], trust, visibility);
             nodes[i].connect(nodes[prev], trust, visibility);
         }
         Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
         // Now add some random links
-        for(int i=0;i<NUMBER_OF_NODES*5;i++) {
+        for(int i=0;i < NUMBER_OF_NODES * 5;i++) {
             if(i % NUMBER_OF_NODES == 0)
                 Logger.normal(RealNodeRoutingTest.class, String.valueOf(i));
             int length = (int)Math.pow(NUMBER_OF_NODES, random.nextDouble());
             int nodeA = random.nextInt(NUMBER_OF_NODES);
-            int nodeB = (nodeA+length)%NUMBER_OF_NODES;
+            int nodeB = (nodeA + length) % NUMBER_OF_NODES;
             //System.out.println(""+nodeA+" -> "+nodeB);
             Node a = nodes[nodeA];
             Node b = nodes[nodeB];
@@ -147,7 +147,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         long totalPropagationTime = 0;
         
-        for(int totalCount=0;totalCount<NUMBER_OF_TESTS;totalCount++) {
+        for(int totalCount=0;totalCount < NUMBER_OF_TESTS;totalCount++) {
         
         final boolean isSSK;
         isSSK = (totalCount & 0x1) == 1;
@@ -179,9 +179,9 @@ public class RealNodeULPRTest extends RealNodeTest {
         final Key nodeKey = fetchKey.getNodeKey(false);
         
         System.err.println();
-        System.err.println("Created random test key "+testKey+" = "+nodeKey);
+        System.err.println("Created random test key " + testKey + " = " + nodeKey);
         System.err.println();
-        Logger.error(RealNodeULPRTest.class, "Starting ULPR test #"+successfulTests+": "+testKey+" = "+fetchKey+" = "+nodeKey);
+        Logger.error(RealNodeULPRTest.class, "Starting ULPR test #" + successfulTests + ": " + testKey + " = " + fetchKey + " = " + nodeKey);
         
         waitForAllConnected(nodes);
         
@@ -213,10 +213,10 @@ public class RealNodeULPRTest extends RealNodeTest {
         	node.setDispatcherHook(cb);
         }
         
-        for(int i=0;i<nodes.length;i++) {
-        	System.out.println("Searching from node "+i);
+        for(int i=0;i < nodes.length;i++) {
+        	System.out.println("Searching from node " + i);
         	try {
-        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
+        		nodes[i % nodes.length].clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {
@@ -224,13 +224,13 @@ public class RealNodeULPRTest extends RealNodeTest {
         		case LowLevelGetException.DATA_NOT_FOUND:
         		case LowLevelGetException.ROUTE_NOT_FOUND:
         			// Expected
-        			System.err.println("Node "+i%nodes.length+" : key not found (expected behaviour)");
+        			System.err.println("Node " + i % nodes.length + " : key not found (expected behaviour)");
         			continue;
         		case LowLevelGetException.RECENTLY_FAILED:
-       				System.err.println("Node "+i%nodes.length+" : recently failed (expected behaviour on later tests)");
+       				System.err.println("Node " + i % nodes.length + " : recently failed (expected behaviour on later tests)");
        				continue;
         		default:
-        			System.err.println("Node "+i%nodes.length+" : UNEXPECTED ERROR: "+e.toString());
+        			System.err.println("Node " + i % nodes.length + " : UNEXPECTED ERROR: " + e.toString());
         			System.exit(EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST);
         		}
         	}
@@ -239,23 +239,23 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Now we should have a good web of subscriptions set up.
         
         int visitedCount = 0;
-        StringBuilder sb = new StringBuilder(3*nodes.length+1);
+        StringBuilder sb = new StringBuilder(3 * nodes.length + 1);
         boolean first = true;
-        for(int i=0;i<visited.length;i++) {
+        for(int i=0;i < visited.length;i++) {
         	if(!visited[i]) continue;
         	visitedCount++;
         	if(!first) sb.append(' ');
         	first = false;
         	sb.append(i);
         }
-        System.err.println("Nodes which were asked for the key by another node: "+visitedCount+" : "+sb.toString());
+        System.err.println("Nodes which were asked for the key by another node: " + visitedCount + " : " + sb.toString());
         
         // Store the key to ONE node.
         
-        Logger.normal(RealNodeULPRTest.class, "Inserting to node "+(nodes.length-1));
+        Logger.normal(RealNodeULPRTest.class, "Inserting to node " + (nodes.length - 1));
 		long tStart = System.currentTimeMillis();
-		nodes[nodes.length-1].store(block.getBlock(), false, false, true, false); // Write to datastore
-        Logger.normal(RealNodeULPRTest.class, "Inserted to node "+(nodes.length-1));
+		nodes[nodes.length - 1].store(block.getBlock(), false, false, true, false); // Write to datastore
+        Logger.normal(RealNodeULPRTest.class, "Inserted to node " + (nodes.length - 1));
 		
 		int x = -1;
 		while(true) {
@@ -266,8 +266,8 @@ public class RealNodeULPRTest extends RealNodeTest {
 				if(node.hasKey(fetchKey.getNodeKey(false), true, true))
 					count++;
 			}
-			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
-			Logger.normal(RealNodeULPRTest.class, "T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
+			System.err.println("T=" + x + " : " + count + '/' + nodes.length + " have the data on test " + successfulTests + ".");
+			Logger.normal(RealNodeULPRTest.class, "T=" + x + " : " + count + '/' + nodes.length + " have the data on test " + successfulTests + ".");
 			if(x > 300) {
 				System.err.println();
 				System.err.println("TEST FAILED");
@@ -276,25 +276,25 @@ public class RealNodeULPRTest extends RealNodeTest {
 			if(count == nodes.length) {
 				successfulTests++;
 				long tEnd = System.currentTimeMillis();
-				long propagationTime = tEnd-tStart;
-				System.err.println("SUCCESSFUL TEST # "+successfulTests+" in "+propagationTime+"ms!!!");
+				long propagationTime = tEnd - tStart;
+				System.err.println("SUCCESSFUL TEST # " + successfulTests + " in " + propagationTime + "ms!!!");
 				totalPropagationTime += propagationTime;
-		        System.err.println("Average propagation time: "+(totalPropagationTime / successfulTests)+"ms");
+		        System.err.println("Average propagation time: " + (totalPropagationTime / successfulTests) + "ms");
 				System.err.println();
 				break;
 			}
 			if(x % nodes.length == 0) {
 				System.err.print("Nodes that do have the data: ");
-				for(int i=0;i<nodes.length;i++)
+				for(int i=0;i < nodes.length;i++)
 					if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true)) {
-						System.err.print(i+" ");
+						System.err.print(i + " ");
 					}
 				System.err.println();
 			}
 		}
 		
         }
-        System.err.println("Overall average propagation time: "+(totalPropagationTime / successfulTests)+"ms");
+        System.err.println("Overall average propagation time: " + (totalPropagationTime / successfulTests) + "ms");
         System.exit(0);
     }
     

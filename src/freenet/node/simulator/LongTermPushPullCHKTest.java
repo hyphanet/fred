@@ -114,7 +114,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 					if(i == 0) todaysInsert = uri;
 					t2 = System.currentTimeMillis();
 
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri);
+					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1) + " for " + uri);
 					csvLine.add(String.valueOf(t2 - t1));
 					csvLine.add(uri.toASCIIString());
 				} catch (InsertException e) {
@@ -162,7 +162,7 @@ public class LongTermPushPullCHKTest extends LongTermTest {
 				}
 				
 				if(uri == null) {
-					System.out.println("SKIPPING PULL FOR "+i);
+					System.out.println("SKIPPING PULL FOR " + i);
 					continue;
 				}
 				

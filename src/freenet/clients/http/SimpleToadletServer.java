@@ -400,7 +400,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		public String[] getPossibleValues() {
 			REFILTER_POLICY[] possible = REFILTER_POLICY.values();
 			String[] ret = new String[possible.length];
-			for(int i=0;i<possible.length;i++)
+			for(int i=0;i < possible.length;i++)
 				ret[i] = possible[i].name();
 			return ret;
 		}
@@ -432,7 +432,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, node, node.config, this);
 		} catch (IOException e) {
-			Logger.error(this, "Could not start fproxy: "+e, e);
+			Logger.error(this, "Could not start fproxy: " + e, e);
 			System.err.println("Could not start fproxy:");
 			e.printStackTrace();
 		}
@@ -651,7 +651,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		FProxyToadlet.MAX_LENGTH_NO_PROGRESS = fproxyConfig.getLong("passthroughMaxSize");
 		fproxyConfig.register("passthroughMaxSizeProgress", FProxyToadlet.MAX_LENGTH_WITH_PROGRESS, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSizeProgress", "SimpleToadletServer.passthroughMaxSizeProgressLong", new FProxyPassthruMaxSizeProgress(), true);
 		FProxyToadlet.MAX_LENGTH_WITH_PROGRESS = fproxyConfig.getLong("passthroughMaxSizeProgress");
-		System.out.println("Set fproxy max length to "+FProxyToadlet.MAX_LENGTH_NO_PROGRESS+" and max length with progress to "+FProxyToadlet.MAX_LENGTH_WITH_PROGRESS+" = "+fproxyConfig.getLong("passthroughMaxSizeProgress"));
+		System.out.println("Set fproxy max length to " + FProxyToadlet.MAX_LENGTH_NO_PROGRESS + " and max length with progress to " + FProxyToadlet.MAX_LENGTH_WITH_PROGRESS + " = " + fproxyConfig.getLong("passthroughMaxSizeProgress"));
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
@@ -814,7 +814,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	private void maybeGetNetworkInterface() throws IOException {
-		if (this.networkInterface!=null) return;
+		if (this.networkInterface != null) return;
 		if(ssl) {
 			this.networkInterface = SSLNetworkInterface.create(port, this.bindTo, allowedHosts, executor, true);
 		} else {
@@ -836,8 +836,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if(myThread != null) try {
 			maybeGetNetworkInterface();
 			myThread.start();
-			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
-			System.out.println("Starting FProxy on "+bindTo+ ':' +port);
+			Logger.normal(this, "Starting FProxy on " + bindTo + ':' + port);
+			System.out.println("Starting FProxy on " + bindTo + ':' + port);
 		} catch (IOException e) {
 			Logger.error(this, "Could not bind network port for FProxy?", e);
 		}
@@ -955,8 +955,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			for(ToadletElement te: toadlets) {
 				if(path.startsWith(te.prefix))
 					return te.t;
-				if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
-					if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
+				if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length() - 1) == '/') {
+					if(path.equals(te.prefix.substring(0, te.prefix.length() - 1))) {
 						URI newURI;
 						try {
 							newURI = new URI(te.prefix);
@@ -1016,7 +1016,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		void start() {
 			if(finishedStartup)
-				executor.execute(this, "HTTP socket handler@"+hashCode());
+				executor.execute(this, "HTTP socket handler@" + hashCode());
 			else
 				new Thread(this).start();
             synchronized(SimpleToadletServer.this) {
@@ -1035,9 +1035,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				System.err.println("SimpleToadletServer request above failed.");
 				Logger.error(this, "OOM in SocketHandler");
 			} catch (Throwable t) {
-				System.err.println("Caught in SimpleToadletServer: "+t);
+				System.err.println("Caught in SimpleToadletServer: " + t);
 				t.printStackTrace();
-				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
+				Logger.error(this, "Caught in SimpleToadletServer: " + t, t);
 			} finally {
 	            synchronized(SimpleToadletServer.this) {
 	            	fproxyConnections--;
@@ -1049,7 +1049,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 		@Override
 		public int getPriority() {
-			return NativeThread.HIGH_PRIORITY-1;
+			return NativeThread.HIGH_PRIORITY - 1;
 		}
 
 	}
@@ -1122,11 +1122,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	}
 	
 	private static String l10n(String key, String pattern, String value) {
-		return NodeL10n.getBase().getString("SimpleToadletServer."+key, pattern, value);
+		return NodeL10n.getBase().getString("SimpleToadletServer." + key, pattern, value);
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("SimpleToadletServer."+key);
+		return NodeL10n.getBase().getString("SimpleToadletServer." + key);
 	}
 
 	@Override
@@ -1240,9 +1240,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if(host == null)
 			host = "127.0.0.1";
 		sb.append(host);
-		sb.append(":");
+		sb.append(':');
 		sb.append(this.port);
-		sb.append("/");
+		sb.append('/');
 		return sb.toString();
 	}
 

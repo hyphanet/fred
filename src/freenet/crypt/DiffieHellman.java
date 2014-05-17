@@ -105,7 +105,7 @@ public class DiffieHellman {
 		NativeBigInteger[] params = getParams();
 		long time2 = System.currentTimeMillis();
 		if((time2 - time1) > 300) {
-			Logger.error(null, "DiffieHellman.generateLightContext(): time2 is more than 300ms after time1 ("+(time2 - time1)+ ')');
+			Logger.error(null, "DiffieHellman.generateLightContext(): time2 is more than 300ms after time1 (" + (time2 - time1) + ')');
 		}
 		return new DiffieHellmanLightContext(group, params[0], params[1]);
 	}
@@ -154,8 +154,8 @@ public class DiffieHellman {
 				onesCount++;
 			else
 				zerosCount++;
-		if((onesCount<16) || (zerosCount<16)) {
-			Logger.error(caller, "The provided exponential contains "+zerosCount+" zeros and "+onesCount+" ones wich is unacceptable!");
+		if((onesCount < 16) || (zerosCount < 16)) {
+			Logger.error(caller, "The provided exponential contains " + zerosCount + " zeros and " + onesCount + " ones wich is unacceptable!");
 			return false;
 		}
 		

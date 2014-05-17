@@ -112,8 +112,8 @@ public class Base64
    */
   private static String encode(byte[] in, boolean equalsPad, char[] alphabet)
   {
-    char[] out = new char[((in.length+2)/3)*4];
-    int rem = in.length%3;
+    char[] out = new char[((in.length + 2) / 3) * 4];
+    int rem = in.length % 3;
     int o = 0;
     for (int i = 0; i < in.length;) {
       int val = (in[i++] & 0xFF) << 16;
@@ -121,9 +121,9 @@ public class Base64
         val |= (in[i++] & 0xFF) << 8;
       if (i < in.length)
         val |= (in[i++] & 0xFF);
-      out[o++] = alphabet[(val>>18) & 0x3F];
-      out[o++] = alphabet[(val>>12) & 0x3F];
-      out[o++] = alphabet[(val>>6) & 0x3F];
+      out[o++] = alphabet[(val >> 18) & 0x3F];
+      out[o++] = alphabet[(val >> 12) & 0x3F];
+      out[o++] = alphabet[(val >> 6) & 0x3F];
       out[o++] = alphabet[val & 0x3F];
     }
     int outLen = out.length;
@@ -176,20 +176,20 @@ public class Base64
       int inLength = in.length;
 
         // Strip trailing equals signs.
-      while ((inLength > 0) && (in[inLength-1] == '='))
+      while ((inLength > 0) && (in[inLength - 1] == '='))
         inLength--;
 
-      int blocks = inLength/4;
+      int blocks = inLength / 4;
       int remainder = inLength & 3;
         // wholeInLen and wholeOutLen are the the length of the input and output
         // sequences respectively, not including any partial block at the end.
-      int wholeInLen  = blocks*4;
-      int wholeOutLen = blocks*3;
+      int wholeInLen  = blocks * 4;
+      int wholeOutLen = blocks * 3;
       int outLen = wholeOutLen;
       switch (remainder) {
         case 1: throw new IllegalBase64Exception("illegal Base64 length");
-        case 2:  outLen = wholeOutLen+1; break;
-        case 3:  outLen = wholeOutLen+2; break;
+        case 2:  outLen = wholeOutLen + 1; break;
+        case 3:  outLen = wholeOutLen + 2; break;
         default: outLen = wholeOutLen;
       }
       byte[] out = new byte[outLen];
@@ -197,16 +197,16 @@ public class Base64
       int i;
       for (i = 0; i < wholeInLen;) {
         int in1 = reverseAlphabet[in[i]];
-        int in2 = reverseAlphabet[in[i+1]];
-        int in3 = reverseAlphabet[in[i+2]];
-        int in4 = reverseAlphabet[in[i+3]];
-        int orValue = in1|in2|in3|in4;
+        int in2 = reverseAlphabet[in[i + 1]];
+        int in3 = reverseAlphabet[in[i + 2]];
+        int in4 = reverseAlphabet[in[i + 3]];
+        int orValue = in1 | in2 | in3 | in4;
         if ((orValue & 0x80) != 0)
           throw new IllegalBase64Exception("illegal Base64 character");
         int outVal = (in1 << 18) | (in2 << 12) | (in3 << 6) | in4;
-        out[o] = (byte) (outVal>>16);
-        out[o+1] = (byte) (outVal>>8);
-        out[o+2] = (byte) outVal;
+        out[o] = (byte) (outVal >> 16);
+        out[o + 1] = (byte) (outVal >> 8);
+        out[o + 2] = (byte) outVal;
         i += 4;
         o += 3;
       }
@@ -215,21 +215,21 @@ public class Base64
         case 2:
           {
             int in1 = reverseAlphabet[in[i]];
-            int in2 = reverseAlphabet[in[i+1]];
-            orValue = in1|in2;
+            int in2 = reverseAlphabet[in[i + 1]];
+            orValue = in1 | in2;
             int outVal = (in1 << 18) | (in2 << 12);
-            out[o] = (byte) (outVal>>16);
+            out[o] = (byte) (outVal >> 16);
           }
           break;
         case 3:
           {
             int in1 = reverseAlphabet[in[i]];
-            int in2 = reverseAlphabet[in[i+1]];
-            int in3 = reverseAlphabet[in[i+2]];
-            orValue = in1|in2|in3;
+            int in2 = reverseAlphabet[in[i + 1]];
+            int in3 = reverseAlphabet[in[i + 2]];
+            orValue = in1 | in2 | in3;
             int outVal = (in1 << 18) | (in2 << 12) | (in3 << 6);
-            out[o] = (byte) (outVal>>16);
-            out[o+1] = (byte) (outVal>>8);
+            out[o] = (byte) (outVal >> 16);
+            out[o + 1] = (byte) (outVal >> 8);
           }
           break;
         default:

@@ -130,7 +130,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("th", l10n("localRemoteTitle"));
 			row.addChild("th", l10n("firstSendLeadTime"));
 			row.addChild("th", l10n("firstReceiveLeadTime"));
-			for(int j=0;j<AddressTrackerItem.TRACK_GAPS;j++) {
+			for(int j=0;j < AddressTrackerItem.TRACK_GAPS;j++) {
 				row.addChild("th", " "); // FIXME is <th/> valid??
 			}
 			for(PeerAddressTrackerItem item: items) {
@@ -147,9 +147,9 @@ public class ConnectivityToadlet extends Toadlet {
 				// Lead in time to first packet received
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
 				Gap[] gaps = item.getGaps();
-				for(int k=0;k<AddressTrackerItem.TRACK_GAPS;k++) {
+				for(int k=0;k < AddressTrackerItem.TRACK_GAPS;k++) {
 					row.addChild("td", gaps[k].receivedPacketAt == 0 ? "" : 
-						(TimeUtil.formatTime(gaps[k].gapLength)+" @ "+TimeUtil.formatTime(now - gaps[k].receivedPacketAt)+" ago" /* fixme l10n */));
+						(TimeUtil.formatTime(gaps[k].gapLength) + " @ " + TimeUtil.formatTime(now - gaps[k].receivedPacketAt) + " ago" /* fixme l10n */));
 				}
 			}
 
@@ -163,7 +163,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("th", l10n("localRemoteTitle"));
 			row.addChild("th", l10n("firstSendLeadTime"));
 			row.addChild("th", l10n("firstReceiveLeadTime"));
-			for(int j=0;j<AddressTrackerItem.TRACK_GAPS;j++) {
+			for(int j=0;j < AddressTrackerItem.TRACK_GAPS;j++) {
 				row.addChild("th", " "); // FIXME is <th/> valid??
 			}
 			for(InetAddressAddressTrackerItem item: ipItems) {
@@ -180,9 +180,9 @@ public class ConnectivityToadlet extends Toadlet {
 				// Lead in time to first packet received
 				row.addChild("td", TimeUtil.formatTime(item.timeFromStartupToFirstReceivedPacket()));
 				Gap[] gaps = item.getGaps();
-				for(int k=0;k<AddressTrackerItem.TRACK_GAPS;k++) {
+				for(int k=0;k < AddressTrackerItem.TRACK_GAPS;k++) {
 					row.addChild("td", gaps[k].receivedPacketAt == 0 ? "" : 
-						(TimeUtil.formatTime(gaps[k].gapLength)+" @ "+TimeUtil.formatTime(now - gaps[k].receivedPacketAt)+" ago" /* fixme l10n */));
+						(TimeUtil.formatTime(gaps[k].gapLength) + " @ " + TimeUtil.formatTime(now - gaps[k].receivedPacketAt) + " ago" /* fixme l10n */));
 				}
 			}
 
@@ -194,11 +194,11 @@ public class ConnectivityToadlet extends Toadlet {
 	}
 	
 	private String l10nConn(String string) {
-		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+string);
+		return NodeL10n.getBase().getString("DarknetConnectionsToadlet." + string);
 	}
 
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("ConnectivityToadlet."+key);
+		return NodeL10n.getBase().getString("ConnectivityToadlet." + key);
 	}
 
 	public static final String PATH = "/connectivity/";

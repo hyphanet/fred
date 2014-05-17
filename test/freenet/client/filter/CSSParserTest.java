@@ -42,17 +42,17 @@ public class CSSParserTest extends TestCase {
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<String,String>();
 	static
 	{
-		CSS1_SELECTOR.put("h1 {}","h1");
-		CSS1_SELECTOR.put("h1:link {}","h1:link");
-		CSS1_SELECTOR.put("h1:visited {}","h1:visited");
-		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
-		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
-		CSS1_SELECTOR.put("h1 h2 {}","h1 h2");
-		CSS1_SELECTOR.put("h1:active {}","h1:active");
-		CSS1_SELECTOR.put("h1:hover {}","h1:hover");
-		CSS1_SELECTOR.put("h1:focus {}" ,"h1:focus");
-		CSS1_SELECTOR.put("h1:first-line {}" ,"h1:first-line");
-		CSS1_SELECTOR.put("h1:first-letter {}" ,"h1:first-letter");
+		CSS1_SELECTOR.put("h1 {}", "h1");
+		CSS1_SELECTOR.put("h1:link {}", "h1:link");
+		CSS1_SELECTOR.put("h1:visited {}", "h1:visited");
+		CSS1_SELECTOR.put("h1.warning {}", "h1.warning");
+		CSS1_SELECTOR.put("h1#myid {}", "h1#myid");
+		CSS1_SELECTOR.put("h1 h2 {}", "h1 h2");
+		CSS1_SELECTOR.put("h1:active {}", "h1:active");
+		CSS1_SELECTOR.put("h1:hover {}", "h1:hover");
+		CSS1_SELECTOR.put("h1:focus {}", "h1:focus");
+		CSS1_SELECTOR.put("h1:first-line {}", "h1:first-line");
+		CSS1_SELECTOR.put("h1:first-letter {}", "h1:first-letter");
 
 
 
@@ -64,16 +64,16 @@ public class CSSParserTest extends TestCase {
 	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<String,String>();
 	static
 	{
-		CSS2_SELECTOR.put("* {}","*");
-		CSS2_SELECTOR.put("h1[foo] {}","h1[foo]");
+		CSS2_SELECTOR.put("* {}", "*");
+		CSS2_SELECTOR.put("h1[foo] {}", "h1[foo]");
 		CSS2_SELECTOR.put("h1[foo=\"bar\"] {}", "h1[foo=\"bar\"]");
 		CSS2_SELECTOR.put("h1[foo=bar] {}", "h1[foo=bar] {}");
 		CSS2_SELECTOR.put("h1[foo~=\"bar\"] {}", "h1[foo~=\"bar\"]");
-		CSS2_SELECTOR.put("h1[foo|=\"en\"] {}","h1[foo|=\"en\"]");
-		CSS2_SELECTOR.put("[foo|=\"en\"] {}","[foo|=\"en\"]");
-		CSS2_SELECTOR.put("h1:first-child {}","h1:first-child");
-		CSS2_SELECTOR.put("h1:lang(fr) {}","h1:lang(fr)");
-		CSS2_SELECTOR.put("h1>h2 {}","h1>h2");
+		CSS2_SELECTOR.put("h1[foo|=\"en\"] {}", "h1[foo|=\"en\"]");
+		CSS2_SELECTOR.put("[foo|=\"en\"] {}", "[foo|=\"en\"]");
+		CSS2_SELECTOR.put("h1:first-child {}", "h1:first-child");
+		CSS2_SELECTOR.put("h1:lang(fr) {}", "h1:lang(fr)");
+		CSS2_SELECTOR.put("h1>h2 {}", "h1>h2");
 		CSS2_SELECTOR.put("h1+h2 {}", "h1+h2");
 		CSS2_SELECTOR.put("div.foo {}", "div.foo");
 		CSS2_SELECTOR.put("p.marine.pastoral { color: green }", "p.marine.pastoral");
@@ -156,37 +156,37 @@ public class CSSParserTest extends TestCase {
 	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<String,String>();
 	static
 	{
-		CSS3_SELECTOR.put("tr:nth-child(odd) { background-color: red; }","tr:nth-child(odd) { background-color: red; }");
-		CSS3_SELECTOR.put("tr:nth-child(even) { background-color: yellow; }","tr:nth-child(even) { background-color: yellow; }");
-		CSS3_SELECTOR.put("tr:nth-child(1) {}","tr:nth-child(1)");
-		CSS3_SELECTOR.put("tr:nth-child(-1) {}","tr:nth-child(-1)");
-		CSS3_SELECTOR.put("tr:nth-child(+1) {}","tr:nth-child(+1)");
-		CSS3_SELECTOR.put("tr:nth-child(10) {}","tr:nth-child(10)");
-		CSS3_SELECTOR.put("tr:nth-child(100) {}","tr:nth-child(100)");
-		CSS3_SELECTOR.put("tr:nth-child(n) {}","tr:nth-child(n)");
-		CSS3_SELECTOR.put("tr:nth-child(-n) {}","tr:nth-child(-n)");
-		CSS3_SELECTOR.put("tr:nth-child(-n+1) {}","tr:nth-child(-n+1)");
-		CSS3_SELECTOR.put("tr:nth-child(n-1) {}","tr:nth-child(n-1)");
-		CSS3_SELECTOR.put("tr:nth-child(-n-1) {}","tr:nth-child(-n-1)");
-		CSS3_SELECTOR.put("tr:nth-child(-2n+1) {}","tr:nth-child(-2n+1)");
-		CSS3_SELECTOR.put("tr:nth-child(-2n-1) {}","tr:nth-child(-2n-1)");
-		CSS3_SELECTOR.put("tr:nth-child(2n) {}","tr:nth-child(2n)");
-		CSS3_SELECTOR.put("tr:nth-child(10n) {}","tr:nth-child(10n)");
-		CSS3_SELECTOR.put("tr:nth-child(n+1) {}","tr:nth-child(n+1)");
-		CSS3_SELECTOR.put("tr:nth-child(n+10) {}","tr:nth-child(n+10)");
-		CSS3_SELECTOR.put("tr:nth-child(2n+1) {}","tr:nth-child(2n+1)");
-		CSS3_SELECTOR.put("tr:nth-child(2n-1) {}","tr:nth-child(2n-1)");
-		CSS3_SELECTOR.put("tr:nth-child(999999) {}","tr:nth-child(999999)");  // FilterUtils.MAX_NTH
-		CSS3_SELECTOR.put("tr:nth-child(-999999) {}","tr:nth-child(-999999)");  // -FilterUtils.MAX_NTH
-		CSS3_SELECTOR.put("tr:nth-last-child(1) {}","tr:nth-last-child(1)");
-		CSS3_SELECTOR.put("tr:nth-last-child(odd) {}","tr:nth-last-child(odd)");
-		CSS3_SELECTOR.put("tr:nth-last-child(even) {}","tr:nth-last-child(even)");
-		CSS3_SELECTOR.put("h1:nth-of-type(1) {}","h1:nth-of-type(1)");
-		CSS3_SELECTOR.put("h1:nth-of-type(odd) {}","h1:nth-of-type(odd)");
-		CSS3_SELECTOR.put("h1:nth-of-type(even) {}","h1:nth-of-type(even)");
-		CSS3_SELECTOR.put("h1:nth-last-of-type(1) {}","h1:nth-last-of-type(1)");
-		CSS3_SELECTOR.put("h1:nth-last-of-type(odd) {}","h1:nth-last-of-type(odd)");
-		CSS3_SELECTOR.put("h1:nth-last-of-type(even) {}","h1:nth-last-of-type(even)");
+		CSS3_SELECTOR.put("tr:nth-child(odd) { background-color: red; }", "tr:nth-child(odd) { background-color: red; }");
+		CSS3_SELECTOR.put("tr:nth-child(even) { background-color: yellow; }", "tr:nth-child(even) { background-color: yellow; }");
+		CSS3_SELECTOR.put("tr:nth-child(1) {}", "tr:nth-child(1)");
+		CSS3_SELECTOR.put("tr:nth-child(-1) {}", "tr:nth-child(-1)");
+		CSS3_SELECTOR.put("tr:nth-child(+1) {}", "tr:nth-child(+1)");
+		CSS3_SELECTOR.put("tr:nth-child(10) {}", "tr:nth-child(10)");
+		CSS3_SELECTOR.put("tr:nth-child(100) {}", "tr:nth-child(100)");
+		CSS3_SELECTOR.put("tr:nth-child(n) {}", "tr:nth-child(n)");
+		CSS3_SELECTOR.put("tr:nth-child(-n) {}", "tr:nth-child(-n)");
+		CSS3_SELECTOR.put("tr:nth-child(-n+1) {}", "tr:nth-child(-n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(n-1) {}", "tr:nth-child(n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(-n-1) {}", "tr:nth-child(-n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(-2n+1) {}", "tr:nth-child(-2n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(-2n-1) {}", "tr:nth-child(-2n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(2n) {}", "tr:nth-child(2n)");
+		CSS3_SELECTOR.put("tr:nth-child(10n) {}", "tr:nth-child(10n)");
+		CSS3_SELECTOR.put("tr:nth-child(n+1) {}", "tr:nth-child(n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(n+10) {}", "tr:nth-child(n+10)");
+		CSS3_SELECTOR.put("tr:nth-child(2n+1) {}", "tr:nth-child(2n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(2n-1) {}", "tr:nth-child(2n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(999999) {}", "tr:nth-child(999999)");  // FilterUtils.MAX_NTH
+		CSS3_SELECTOR.put("tr:nth-child(-999999) {}", "tr:nth-child(-999999)");  // -FilterUtils.MAX_NTH
+		CSS3_SELECTOR.put("tr:nth-last-child(1) {}", "tr:nth-last-child(1)");
+		CSS3_SELECTOR.put("tr:nth-last-child(odd) {}", "tr:nth-last-child(odd)");
+		CSS3_SELECTOR.put("tr:nth-last-child(even) {}", "tr:nth-last-child(even)");
+		CSS3_SELECTOR.put("h1:nth-of-type(1) {}", "h1:nth-of-type(1)");
+		CSS3_SELECTOR.put("h1:nth-of-type(odd) {}", "h1:nth-of-type(odd)");
+		CSS3_SELECTOR.put("h1:nth-of-type(even) {}", "h1:nth-of-type(even)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(1) {}", "h1:nth-last-of-type(1)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(odd) {}", "h1:nth-last-of-type(odd)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(even) {}", "h1:nth-last-of-type(even)");
 	}
 	
 	private final static HashSet<String> CSS3_BAD_SELECTOR= new HashSet<String>();
@@ -532,12 +532,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { color: red\0 }", "h2 { color: red }");
 
 		// Lengths must have a unit
-		propertyTests.put("h2 { border-width: 1.5em;}\n","h2 { border-width: 1.5em;}\n");
-		propertyTests.put("h2 { border-width: 12px;}\n","h2 { border-width: 12px;}\n");
-		propertyTests.put("h2 { border-width: -12px;}\n","h2 { border-width: -12px;}\n");
-		propertyTests.put("h2 { border-width: 1.5;}\n","h2 {}\n");
-		propertyTests.put("h2 { border-width: 0;}\n","h2 { border-width: 0;}\n");
-		propertyTests.put("h2 { border-width: 10;}\n","h2 {}\n");
+		propertyTests.put("h2 { border-width: 1.5em;}\n", "h2 { border-width: 1.5em;}\n");
+		propertyTests.put("h2 { border-width: 12px;}\n", "h2 { border-width: 12px;}\n");
+		propertyTests.put("h2 { border-width: -12px;}\n", "h2 { border-width: -12px;}\n");
+		propertyTests.put("h2 { border-width: 1.5;}\n", "h2 {}\n");
+		propertyTests.put("h2 { border-width: 0;}\n", "h2 { border-width: 0;}\n");
+		propertyTests.put("h2 { border-width: 10;}\n", "h2 {}\n");
 		propertyTests.put("h1 { margin: 0.5em;}", "h1 { margin: 0.5em;}");
 		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
 		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
@@ -548,12 +548,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font-family: Times New Roman;}\n", "h2 { font-family: Times New Roman;}\n");
 		propertyTests.put("h2 { font-family: \"Times New Roman\";}\n", "h2 { font-family: \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font-family: inherit;}\n", "h2 { font-family: inherit;}\n");
-		propertyTests.put("h2 { font-family: \"Times New Roman\" , \"Arial\";}\n","h2 { font-family: \"Times New Roman\" , \"Arial\";}\n");
-		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\";}\n","h2 { font-family: \"Times New Roman\", \"Arial\";}\n");
-		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\", \"Helvetica\";}\n","h2 { font-family: \"Times New Roman\", \"Arial\", \"Helvetica\";}\n");
-		propertyTests.put("h2 { font-family: \"Times New Roman\", Arial;}\n","h2 { font-family: \"Times New Roman\", Arial;}\n");
-		propertyTests.put("h2 { font-family: Times New Roman, Arial;}\n","h2 { font-family: Times New Roman, Arial;}\n");
-		propertyTests.put("h2 { font-family: serif, Times New Roman, Arial;}\n","h2 { font-family: serif, Times New Roman, Arial;}\n");
+		propertyTests.put("h2 { font-family: \"Times New Roman\" , \"Arial\";}\n", "h2 { font-family: \"Times New Roman\" , \"Arial\";}\n");
+		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\";}\n", "h2 { font-family: \"Times New Roman\", \"Arial\";}\n");
+		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\", \"Helvetica\";}\n", "h2 { font-family: \"Times New Roman\", \"Arial\", \"Helvetica\";}\n");
+		propertyTests.put("h2 { font-family: \"Times New Roman\", Arial;}\n", "h2 { font-family: \"Times New Roman\", Arial;}\n");
+		propertyTests.put("h2 { font-family: Times New Roman, Arial;}\n", "h2 { font-family: Times New Roman, Arial;}\n");
+		propertyTests.put("h2 { font-family: serif, Times New Roman, Arial;}\n", "h2 { font-family: serif, Times New Roman, Arial;}\n");
 		propertyTests.put("h2 { font: Times New Roman;}\n", "h2 { font: Times New Roman;}\n");
 		propertyTests.put("h2 { font: \"Times New Roman\";}\n", "h2 { font: \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font: medium \"Times New Roman\";}\n", "h2 { font: medium \"Times New Roman\";}\n");
@@ -738,7 +738,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
 		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:visited,a:link { text-decoration: underline }");
-		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
+		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }", "blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
 		propertyTests.put("h1 { word-spacing: 1em }", "h1 { word-spacing: 1em }");
@@ -781,14 +781,14 @@ public class CSSParserTest extends TestCase {
 				"@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}");
 		propertyTests.put("@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}", "@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}");
 		propertyTests.put("@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") } }", "@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") }}");
-		propertyTests.put("@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}","@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}");
+		propertyTests.put("@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}", "@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}");
 		propertyTests.put("@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}", "@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}");
 		propertyTests.put("@media speech { h1 {cue: url(\"pop.au\") }}", "@media speech { h1 {cue: url(\"pop.au\") }}");
 		propertyTests.put("@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}");
-		propertyTests.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}","@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
+		propertyTests.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
 		propertyTests.put("@media speech { span.quiet     { play-during: none }}", "@media speech { span.quiet { play-during: none }}");
 		propertyTests.put("@media speech { h1   { elevation: above } tr.a { elevation: 60deg } tr.b { elevation: 30deg } tr.c { elevation: level }}", "@media speech { h1 { elevation: above } tr.a { elevation: 60deg } tr.b { elevation: 30deg } tr.c { elevation: level }}");
-		propertyTests.put("@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}","@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}");
+		propertyTests.put("@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}", "@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}");
 		propertyTests.put("@media speech { body { pitch: x-low } i { pitch: 5kHz } b { pitch: 500Hz }}", "@media speech { body { pitch: x-low } i { pitch: 5kHz } b { pitch: 500Hz }}");
 		propertyTests.put("@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}", "@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}");
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
@@ -818,11 +818,11 @@ public class CSSParserTest extends TestCase {
 
 			String key=itr.next();
 			String value=CSS1_SELECTOR.get(key);
-			assertTrue("key=\""+key+"\" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			assertTrue("key=\"" + key + "\" value=\"" + filter(key) + "\" should be \"" + value + "\"", filter(key).contains(value));
 		}
 
-		assertTrue("key=\""+CSS_DELETE_INVALID_SELECTOR+"\" value=\""+filter(CSS_DELETE_INVALID_SELECTOR)+"\" should be \""+CSS_DELETE_INVALID_SELECTORC+"\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
-		assertTrue("key=\""+CSS_INVALID_MEDIA_CASCADE+"\" value=\""+filter(CSS_INVALID_MEDIA_CASCADE)+"\"", "".equals(filter(CSS_INVALID_MEDIA_CASCADE)));
+		assertTrue("key=\"" + CSS_DELETE_INVALID_SELECTOR + "\" value=\"" + filter(CSS_DELETE_INVALID_SELECTOR) + "\" should be \"" + CSS_DELETE_INVALID_SELECTORC + "\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
+		assertTrue("key=\"" + CSS_INVALID_MEDIA_CASCADE + "\" value=\"" + filter(CSS_INVALID_MEDIA_CASCADE) + "\"", "".equals(filter(CSS_INVALID_MEDIA_CASCADE)));
 	}
 
 	public void testCSS2Selector() throws IOException, URISyntaxException {
@@ -833,13 +833,13 @@ public class CSSParserTest extends TestCase {
 		{
 			String key=itr.next();
 			String value=CSS2_SELECTOR.get(key);
-			System.err.println("Test "+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			System.err.println("Test " + (i++) + " : " + key + " -> " + value);
+			assertTrue("key=" + key + " value=\"" + filter(key) + "\" should be \"" + value + "\"", filter(key).contains(value));
 		}
 
 		i=0;
 		for(String key : CSS2_BAD_SELECTOR) {
-			System.err.println("Bad selector test "+(i++));
+			System.err.println("Bad selector test " + (i++));
 			assertTrue("".equals(filter(key)));
 		}
 
@@ -853,61 +853,61 @@ public class CSSParserTest extends TestCase {
 		{
 			String key=itr.next();
 			String value=CSS3_SELECTOR.get(key);
-			System.err.println("CSS3 test"+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			System.err.println("CSS3 test" + (i++) + " : " + key + " -> " + value);
+			assertTrue("key=" + key + " value=\"" + filter(key) + "\" should be \"" + value + "\"", filter(key).contains(value));
 		}
 
 		i=0;
 		for(String key : CSS3_BAD_SELECTOR) {
-			System.err.println("CSS3 bad selector test "+(i++));
+			System.err.println("CSS3 bad selector test " + (i++));
 			assertTrue("".equals(filter(key)));
 		}
 
 	}
 
 	public void testNewlines() throws IOException, URISyntaxException {
-		assertTrue("key=\""+CSS_STRING_NEWLINES+"\" value=\""+filter(CSS_STRING_NEWLINES)+"\" should be: \""+CSS_STRING_NEWLINESC+"\"", CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
+		assertTrue("key=\"" + CSS_STRING_NEWLINES + "\" value=\"" + filter(CSS_STRING_NEWLINES) + "\" should be: \"" + CSS_STRING_NEWLINESC + "\"", CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
 	}
 
 	public void testBackgroundURL() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_BACKGROUND_URL+" value=\""+filter(CSS_BACKGROUND_URL)+"\" should be \""+CSS_BACKGROUND_URLC+"\"", CSS_BACKGROUND_URLC.equals(filter(CSS_BACKGROUND_URL)));
+		assertTrue("key=" + CSS_BACKGROUND_URL + " value=\"" + filter(CSS_BACKGROUND_URL) + "\" should be \"" + CSS_BACKGROUND_URLC + "\"", CSS_BACKGROUND_URLC.equals(filter(CSS_BACKGROUND_URL)));
 
-		assertTrue("key="+CSS_LCASE_BACKGROUND_URL+" value=\""+filter(CSS_LCASE_BACKGROUND_URL)+"\"", CSS_LCASE_BACKGROUND_URLC.equals(filter(CSS_LCASE_BACKGROUND_URL)));
+		assertTrue("key=" + CSS_LCASE_BACKGROUND_URL + " value=\"" + filter(CSS_LCASE_BACKGROUND_URL) + "\"", CSS_LCASE_BACKGROUND_URLC.equals(filter(CSS_LCASE_BACKGROUND_URL)));
 	}
 
 	public void testImports() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
-		assertTrue("key="+CSS_IMPORT2+" value=\""+filter(CSS_IMPORT2)+"\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA)+"\"", CSS_IMPORT_MULTI_MEDIAC.equals(filter(CSS_IMPORT_MULTI_MEDIA)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_BOGUS+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)+"\"", CSS_IMPORT_MULTI_MEDIA_BOGUSC.equals(filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)));
-		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_ALL+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_ALL)+"\"", CSS_IMPORT_MULTI_MEDIA_ALLC.equals(filter(CSS_IMPORT_MULTI_MEDIA_ALL)));
-		assertTrue("key="+CSS_IMPORT_TYPE+" value=\""+filter(CSS_IMPORT_TYPE)+"\"", CSS_IMPORT_TYPEC.equals(filter(CSS_IMPORT_TYPE)));
-		assertTrue("key="+CSS_IMPORT_SPACE_IN_STRING+" value=\""+filter(CSS_IMPORT_SPACE_IN_STRING)+"\"", CSS_IMPORT_SPACE_IN_STRINGC.equals(filter(CSS_IMPORT_SPACE_IN_STRING)));
-		assertTrue("key="+CSS_IMPORT_QUOTED_STUFF+" value=\""+filter(CSS_IMPORT_QUOTED_STUFF)+"\"", CSS_IMPORT_QUOTED_STUFFC.equals(filter(CSS_IMPORT_QUOTED_STUFF)));
-		assertTrue("key="+CSS_IMPORT_QUOTED_STUFF2+" value=\""+filter(CSS_IMPORT_QUOTED_STUFF2)+"\"", CSS_IMPORT_QUOTED_STUFF2C.equals(filter(CSS_IMPORT_QUOTED_STUFF2)));
-		assertTrue("key="+CSS_IMPORT_NOURL_TWOMEDIAS+" value=\""+filter(CSS_IMPORT_NOURL_TWOMEDIAS)+"\"", CSS_IMPORT_NOURL_TWOMEDIASC.equals(filter(CSS_IMPORT_NOURL_TWOMEDIAS)));
-		assertTrue("key="+CSS_IMPORT_UNQUOTED+" should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
-		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
-		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
-		assertTrue("key="+CSS_LATE_IMPORT+" value=\""+filter(CSS_LATE_IMPORT)+"\"", CSS_LATE_IMPORTC.equals(filter(CSS_LATE_IMPORT)));
-		assertTrue("key="+CSS_LATE_IMPORT2+" value=\""+filter(CSS_LATE_IMPORT2)+"\"", CSS_LATE_IMPORT2C.equals(filter(CSS_LATE_IMPORT2)));
-		assertTrue("key="+CSS_LATE_IMPORT3+" value=\""+filter(CSS_LATE_IMPORT3)+"\"", CSS_LATE_IMPORT3C.equals(filter(CSS_LATE_IMPORT3)));
-		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", CSS_BOGUS_AT_RULEC.equals(filter(CSS_BOGUS_AT_RULE)));
-		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
-		assertTrue("key="+BROKEN_BEFORE_IMPORT+" value=\""+filter(BROKEN_BEFORE_IMPORT)+"\"", BROKEN_BEFORE_IMPORTC.equals(filter(BROKEN_BEFORE_IMPORT)));
-		assertTrue("key="+BROKEN_BEFORE_MEDIA+" value=\""+filter(BROKEN_BEFORE_MEDIA)+"\"", BROKEN_BEFORE_MEDIAC.equals(filter(BROKEN_BEFORE_MEDIA)));
+		assertTrue("key=" + CSS_IMPORT + " value=\"" + filter(CSS_IMPORT) + "\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
+		assertTrue("key=" + CSS_IMPORT2 + " value=\"" + filter(CSS_IMPORT2) + "\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
+		assertTrue("key=" + CSS_IMPORT_MULTI_MEDIA + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA) + "\"", CSS_IMPORT_MULTI_MEDIAC.equals(filter(CSS_IMPORT_MULTI_MEDIA)));
+		assertTrue("key=" + CSS_IMPORT_MULTI_MEDIA_BOGUS + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA_BOGUS) + "\"", CSS_IMPORT_MULTI_MEDIA_BOGUSC.equals(filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)));
+		assertTrue("key=" + CSS_IMPORT_MULTI_MEDIA_ALL + " value=\"" + filter(CSS_IMPORT_MULTI_MEDIA_ALL) + "\"", CSS_IMPORT_MULTI_MEDIA_ALLC.equals(filter(CSS_IMPORT_MULTI_MEDIA_ALL)));
+		assertTrue("key=" + CSS_IMPORT_TYPE + " value=\"" + filter(CSS_IMPORT_TYPE) + "\"", CSS_IMPORT_TYPEC.equals(filter(CSS_IMPORT_TYPE)));
+		assertTrue("key=" + CSS_IMPORT_SPACE_IN_STRING + " value=\"" + filter(CSS_IMPORT_SPACE_IN_STRING) + "\"", CSS_IMPORT_SPACE_IN_STRINGC.equals(filter(CSS_IMPORT_SPACE_IN_STRING)));
+		assertTrue("key=" + CSS_IMPORT_QUOTED_STUFF + " value=\"" + filter(CSS_IMPORT_QUOTED_STUFF) + "\"", CSS_IMPORT_QUOTED_STUFFC.equals(filter(CSS_IMPORT_QUOTED_STUFF)));
+		assertTrue("key=" + CSS_IMPORT_QUOTED_STUFF2 + " value=\"" + filter(CSS_IMPORT_QUOTED_STUFF2) + "\"", CSS_IMPORT_QUOTED_STUFF2C.equals(filter(CSS_IMPORT_QUOTED_STUFF2)));
+		assertTrue("key=" + CSS_IMPORT_NOURL_TWOMEDIAS + " value=\"" + filter(CSS_IMPORT_NOURL_TWOMEDIAS) + "\"", CSS_IMPORT_NOURL_TWOMEDIASC.equals(filter(CSS_IMPORT_NOURL_TWOMEDIAS)));
+		assertTrue("key=" + CSS_IMPORT_UNQUOTED + " should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
+		assertTrue("key=" + CSS_IMPORT_NOURL + " value=\"" + filter(CSS_IMPORT_NOURL) + "\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
+		assertTrue("key=" + CSS_IMPORT_BRACKET + " value=\"" + filter(CSS_IMPORT_BRACKET) + "\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
+		assertTrue("key=" + CSS_LATE_IMPORT + " value=\"" + filter(CSS_LATE_IMPORT) + "\"", CSS_LATE_IMPORTC.equals(filter(CSS_LATE_IMPORT)));
+		assertTrue("key=" + CSS_LATE_IMPORT2 + " value=\"" + filter(CSS_LATE_IMPORT2) + "\"", CSS_LATE_IMPORT2C.equals(filter(CSS_LATE_IMPORT2)));
+		assertTrue("key=" + CSS_LATE_IMPORT3 + " value=\"" + filter(CSS_LATE_IMPORT3) + "\"", CSS_LATE_IMPORT3C.equals(filter(CSS_LATE_IMPORT3)));
+		assertTrue("key=" + CSS_BOGUS_AT_RULE + " value=\"" + filter(CSS_BOGUS_AT_RULE) + "\"", CSS_BOGUS_AT_RULEC.equals(filter(CSS_BOGUS_AT_RULE)));
+		assertTrue("key=" + PRESERVE_CDO_CDC + " value=\"" + filter(PRESERVE_CDO_CDC) + "\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
+		assertTrue("key=" + BROKEN_BEFORE_IMPORT + " value=\"" + filter(BROKEN_BEFORE_IMPORT) + "\"", BROKEN_BEFORE_IMPORTC.equals(filter(BROKEN_BEFORE_IMPORT)));
+		assertTrue("key=" + BROKEN_BEFORE_MEDIA + " value=\"" + filter(BROKEN_BEFORE_MEDIA) + "\"", BROKEN_BEFORE_MEDIAC.equals(filter(BROKEN_BEFORE_MEDIA)));
 	}
 
 	public void testEscape() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_ESCAPED_LINK+" value=\""+filter(CSS_ESCAPED_LINK)+"\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
-		assertTrue("key="+CSS_ESCAPED_LINK2+" value=\""+filter(CSS_ESCAPED_LINK2)+"\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
+		assertTrue("key=" + CSS_ESCAPED_LINK + " value=\"" + filter(CSS_ESCAPED_LINK) + "\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
+		assertTrue("key=" + CSS_ESCAPED_LINK2 + " value=\"" + filter(CSS_ESCAPED_LINK2) + "\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
 	}
 
 	public void testProperties() throws IOException, URISyntaxException {
 		for(Entry<String, String> entry : propertyTests.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
-			assertTrue("key=\""+key+"\" encoded=\""+filter(key)+"\" should be \""+value+"\"", value.equals(filter(key)));
+			assertTrue("key=\"" + key + "\" encoded=\"" + filter(key) + "\" should be \"" + value + "\"", value.equals(filter(key)));
 		}
 	}
 
@@ -922,15 +922,15 @@ public class CSSParserTest extends TestCase {
 	public void testCharset() throws IOException, URISyntaxException {
 		// Test whether @charset is passed through when it is correct.
 		String test = "@charset \"UTF-8\";\nh2 { color: red;}";
-		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(test).equals(test));
+		assertTrue("key=\"" + test + "\" value=\"" + filter(test) + "\"", filter(test).equals(test));
 		// No quote marks
 		String testUnquoted = "@charset UTF-8;\nh2 { color: red;}";
-		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(testUnquoted).equals(test));
+		assertTrue("key=\"" + test + "\" value=\"" + filter(test) + "\"", filter(testUnquoted).equals(test));
 		// Test whether the parse fails when @charset is not correct.
 		String testFail = "@charset ISO-8859-1;\nh2 { color: red;};";
 		try {
 			filter(test).equals("");
-			assertFalse("Bogus @charset should have been deleted, but result is \""+filter(testFail)+"\"", false);
+			assertFalse("Bogus @charset should have been deleted, but result is \"" + filter(testFail) + "\"", false);
 		} catch (IOException e) {
 			// Ok.
 		}
@@ -966,23 +966,23 @@ public class CSSParserTest extends TestCase {
 		charsetTestUnsupported("IBM01149");
 
 		// Late charset is invalid
-		assertTrue("key="+LATE_CHARSET+" value=\""+filter(LATE_CHARSET)+"\"", LATE_CHARSETC.equals(filter(LATE_CHARSET)));
+		assertTrue("key=" + LATE_CHARSET + " value=\"" + filter(LATE_CHARSET) + "\"", LATE_CHARSETC.equals(filter(LATE_CHARSET)));
 		try {
 			String output = filter(WRONG_CHARSET);
-			assertFalse("Should complain that detected charset differs from real charset, but returned \""+output+"\"", true);
+			assertFalse("Should complain that detected charset differs from real charset, but returned \"" + output + "\"", true);
 		} catch (IOException e) {
 			// Ok.
 			// FIXME should have a dedicated exception.
 		}
 		try {
 			String output = filter(NONSENSE_CHARSET);
-			assertFalse("wrong charset output is \""+output+"\" but it should throw!", true);
+			assertFalse("wrong charset output is \"" + output + "\" but it should throw!", true);
 		} catch (UnsupportedCharsetInFilterException e) {
 			// Ok.
 		}
 
 		assertTrue(BOM.equals(filter(BOM)));
-		assertTrue("output=\""+filter(LATE_BOM)+"\"",LATE_BOMC.equals(filter(LATE_BOM)));
+		assertTrue("output=\"" + filter(LATE_BOM) + "\"", LATE_BOMC.equals(filter(LATE_BOM)));
 	}
 
 	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {
@@ -990,7 +990,7 @@ public class CSSParserTest extends TestCase {
 	}
 
 	private void getCharsetTest(String charset, String family) throws DataFilterException, IOException, URISyntaxException {
-		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
+		String original = "@charset \"" + charset + "\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
 		ArrayBucket inputBucket = new ArrayBucket(bytes);
@@ -999,23 +999,23 @@ public class CSSParserTest extends TestCase {
 		OutputStream outputStream = outputBucket.getOutputStream();
 		// Detect with original charset.
 		String detectedCharset = filter.getCharset(bytes, bytes.length, charset);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
+		assertTrue("Charset detected \"" + detectedCharset + "\" should be \"" + charset + "\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
 		BOMDetection bom = filter.getCharsetByBOM(bytes, bytes.length);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
-		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
+		assertTrue("Charset detected \"" + detectedCharset + "\" should be \"" + charset + "\" or \"" + family + "\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
+		assertTrue("Charset detected \"" + detectedCharset + "\" should be \"" + charset + "\" from ContentFilter.detectCharset bom=\"" + bomCharset + "\"", charset.equalsIgnoreCase(detectedCharset));
 		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 		inputStream.close();
 		outputStream.close();
 		assertEquals("text/css", filterStatus.mimeType);
 		assertEquals(charset, filterStatus.charset);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
+		assertTrue("ContentFilter.filter() returns \"" + filtered + "\" not original \"" + original + "\" for charset \"" + charset + "\"", original.equals(filtered));
 	}
 
 	private void charsetTestUnsupported(String charset) throws DataFilterException, IOException, URISyntaxException {
-		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
+		String original = "@charset \"" + charset + "\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
 		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
@@ -1025,16 +1025,16 @@ public class CSSParserTest extends TestCase {
 		String detectedCharset;
 		BOMDetection bom = filter.getCharsetByBOM(bytes, bytes.length);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
-		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
+		assertTrue("Charset detected \"" + detectedCharset + "\" should be unknown testing unsupported charset \"" + charset + "\" from getCharsetByBOM", detectedCharset == null);
 		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
+		assertTrue("Charset detected \"" + detectedCharset + "\" should be unknown testing unsupported charset \"" + charset + "\" from ContentFilter.detectCharset bom=\"" + bomCharset + "\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
 			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
-			assertTrue("ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
+			assertTrue("ContentFilter.filter() returned charset \"" + filterStatus.charset + "\" should be unknown testing  unsupported charset \"" + charset + "\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
 			assertEquals("text/css", filterStatus.mimeType);
 			String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
+			assertTrue("ContentFilter.filter() returns something: \"" + filtered + "\" should be empty as unsupported charset, original: \"" + original + "\" for charset \"" + charset + "\"", filtered.equals(""));
 		} catch (UnsupportedCharsetInFilterException e) {
 			// Ok.
 		} catch (IOException e) {
@@ -1067,14 +1067,14 @@ public class CSSParserTest extends TestCase {
 		assertEquals(charset, filterStatus.charset);
 		assertEquals("text/css", filterStatus.mimeType);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
-		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
+		assertTrue("ContentFilter.filter() returns \"" + filtered + "\" not original \"" + original + "\" with maybeCharset \"" + charset + "\"", original.equals(filtered));
 	}
 
 	public void testComment() throws IOException, URISyntaxException {
-		assertTrue("value=\""+filter(COMMENT)+"\"",COMMENTC.equals(filter(COMMENT)));
+		assertTrue("value=\"" + filter(COMMENT) + "\"", COMMENTC.equals(filter(COMMENT)));
 	}
 
 	public void testWhitespace() throws IOException, URISyntaxException {
-		assertTrue("value=\""+filter(CSS_COMMA_WHITESPACE)+"\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
+		assertTrue("value=\"" + filter(CSS_COMMA_WHITESPACE) + "\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
 	}
 }

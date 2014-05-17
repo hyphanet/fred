@@ -145,7 +145,7 @@ public class TimeUtil {
 	 */
 	public static String makeHTTPDate(long time) {
 		// For HTTP, GMT == UTC
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.format(new Date(time));
 	}

@@ -15,7 +15,7 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue("Didn't contain 0->1 after adding range 0->1", s.contains(0, 1));
 		assertFalse("Contained 2 after adding range 0->1", s.contains(2, 2));
 
-		s.add(3,3);
+		s.add(3, 3);
 		assertFalse(s.contains(2, 2));
 		assertTrue(s.contains(3, 3));
 		assertFalse(s.contains(4, 4));
@@ -47,7 +47,7 @@ public class SparseBitmapTest extends TestCase {
 	public void testRemove() {
 		SparseBitmap s = new SparseBitmap();
 
-		s.add(0,4);
+		s.add(0, 4);
 		s.add(10, 14);
 		assertTrue(s.contains(0, 4));
 		assertFalse(s.contains(5, 9));
@@ -66,13 +66,13 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(12, 14));
 
 		//Remove empty range
-		s.remove(4,11);
+		s.remove(4, 11);
 		assertTrue(s.contains(0, 3));
 		assertFalse(s.contains(4, 11));
 		assertTrue(s.contains(12, 14));
 
 		//Remove from two ranges
-		s.remove(3,12);
+		s.remove(3, 12);
 		assertTrue(s.contains(0, 2));
 		assertFalse(s.contains(3, 12));
 		assertTrue(s.contains(13, 14));

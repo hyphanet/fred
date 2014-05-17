@@ -84,12 +84,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		boolean complete = true;
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished but got onSuccess() for "+state+" on "+this);
+				Logger.error(this, "Already finished but got onSuccess() for " + state + " on " + this);
 				return;
 			}
-			ListUtils.removeBySwapLast(waitingFor,state);
-			ListUtils.removeBySwapLast(waitingForBlockSet,state);
-			ListUtils.removeBySwapLast(waitingForFetchable,state);
+			ListUtils.removeBySwapLast(waitingFor, state);
+			ListUtils.removeBySwapLast(waitingForBlockSet, state);
+			ListUtils.removeBySwapLast(waitingForFetchable, state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(persistent) {
 					container.ext().store(waitingFor, 1);
@@ -128,12 +128,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		boolean doCancel = false;
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished but got onFailure() for "+state+" on "+this);
+				Logger.error(this, "Already finished but got onFailure() for " + state + " on " + this);
 				return;
 			}
-			ListUtils.removeBySwapLast(waitingFor,state);
-			ListUtils.removeBySwapLast(waitingForBlockSet,state);
-			ListUtils.removeBySwapLast(waitingForFetchable,state);
+			ListUtils.removeBySwapLast(waitingFor, state);
+			ListUtils.removeBySwapLast(waitingForBlockSet, state);
+			ListUtils.removeBySwapLast(waitingForFetchable, state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(this.e != null) {
 					if(persistent) {
@@ -144,7 +144,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				this.e = e;
 				if(persistent)
 					container.store(this);
-				if(logMINOR) Logger.minor(this, "Still running: "+waitingFor.size()+" started = "+started);
+				if(logMINOR) Logger.minor(this, "Still running: " + waitingFor.size() + " started = " + started);
 				complete = false;
 			}
 			if(state == generator) {
@@ -233,7 +233,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void arm(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Arming "+this);
+		if(logMINOR) Logger.minor(this, "Arming " + this);
 		boolean allDone;
 		boolean allGotBlocks;
 		boolean doCancel;
@@ -280,10 +280,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			states = waitingFor.toArray(states);
 		}
 		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-		for(int i=0;i<states.length;i++) {
+		for(int i=0;i < states.length;i++) {
 			if(persistent)
 				container.activate(states[i], 1);
-			if(logDEBUG) Logger.minor(this, "Cancelling state "+i+" of "+states.length+" : "+states[i]);
+			if(logDEBUG) Logger.minor(this, "Cancelling state " + i + " of " + states.length + " : " + states[i]);
 			states[i].cancel(container, context);
 		}
 	}
@@ -293,19 +293,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(generator == oldState)
 			generator = newState;
 		if(oldState == newState) return;
-		for(int i=0;i<waitingFor.size();i++) {
+		for(int i=0;i < waitingFor.size();i++) {
 			if(waitingFor.get(i) == oldState) {
 				waitingFor.set(i, newState);
 				if(persistent) container.ext().store(waitingFor, 2);
 			}
 		}
-		for(int i=0;i<waitingForBlockSet.size();i++) {
+		for(int i=0;i < waitingForBlockSet.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
 				if(persistent) container.ext().store(waitingForBlockSet, 2);
 			}
 		}
-		for(int i=0;i<waitingForFetchable.size();i++) {
+		for(int i=0;i < waitingForFetchable.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
 				if(persistent) container.ext().store(waitingForFetchable, 2);
@@ -321,7 +321,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(generator == state) {
 			cb.onMetadata(m, this, container, context);
 		} else {
-			Logger.error(this, "Got metadata for "+state);
+			Logger.error(this, "Got metadata for " + state);
 		}
 	}
 	
@@ -332,7 +332,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(generator == state) {
 			cb.onMetadata(metadata, this, container, context);
 		} else {
-			Logger.error(this, "Got metadata for "+state);
+			Logger.error(this, "Got metadata for " + state);
 		}
 	}
 
@@ -341,7 +341,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent)
 			container.activate(waitingForBlockSet, 2);
 		synchronized(this) {
-			ListUtils.removeBySwapLast(this.waitingForBlockSet,state);
+			ListUtils.removeBySwapLast(this.waitingForBlockSet, state);
 			if(persistent)
 				container.ext().store(waitingForBlockSet, 2);
 			if(!started) return;
@@ -367,7 +367,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent)
 			container.activate(waitingForFetchable, 2);
 		synchronized(this) {
-			ListUtils.removeBySwapLast(this.waitingForFetchable,state);
+			ListUtils.removeBySwapLast(this.waitingForFetchable, state);
 			if(persistent)
 				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;
@@ -392,11 +392,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		container.activate(waitingForFetchable, 2);
 		// Should have been cleared by now
 		if(!waitingFor.isEmpty())
-			Logger.error(this, "waitingFor not empty in removeFrom() on "+this+" : "+waitingFor);
+			Logger.error(this, "waitingFor not empty in removeFrom() on " + this + " : " + waitingFor);
 		if(!waitingForBlockSet.isEmpty())
-			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on "+this+" : "+waitingForBlockSet);
+			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on " + this + " : " + waitingForBlockSet);
 		if(!waitingForFetchable.isEmpty())
-			Logger.error(this, "waitingForFetchable not empty in removeFrom() on "+this+" : "+waitingForFetchable);
+			Logger.error(this, "waitingForFetchable not empty in removeFrom() on " + this + " : " + waitingForFetchable);
 		container.delete(waitingFor);
 		container.delete(waitingForBlockSet);
 		container.delete(waitingForFetchable);

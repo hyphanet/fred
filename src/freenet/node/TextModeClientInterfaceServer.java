@@ -54,8 +54,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     }
 
     void start() {
-		Logger.normal(core, "TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
-		System.out.println("TMCI started on "+networkInterface.getAllowedHosts()+ ':' +port);
+		Logger.normal(core, "TMCI started on " + networkInterface.getAllowedHosts() + ':' + port);
+		System.out.println("TMCI started on " + networkInterface.getAllowedHosts() + ':' + port);
 
 		n.executor.execute(this, "Text mode client interface");
     }
@@ -67,7 +67,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		SubConfig TMCIConfig = new SubConfig("console", config);
 
 		TMCIConfig.register("enabled", false, 1, true, true /* FIXME only because can't be changed on the fly */, "TextModeClientInterfaceServer.enabled", "TextModeClientInterfaceServer.enabledLong", new TMCIEnabledCallback(core));
-		TMCIConfig.register("ssl", false, 1, true, true , "TextModeClientInterfaceServer.ssl", "TextModeClientInterfaceServer.sslLong", new TMCISSLCallback());
+		TMCIConfig.register("ssl", false, 1, true, true, "TextModeClientInterfaceServer.ssl", "TextModeClientInterfaceServer.sslLong", new TMCISSLCallback());
 		TMCIConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core), false);
@@ -198,7 +198,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 				// This is an advanced option for reasons of reducing clutter,
 				// but it is expected to be used by regular users, not devs.
 				// So we translate the error messages.
-				throw new InvalidConfigValueException("could not change bind to: "+Arrays.toString(failedAddresses));
+				throw new InvalidConfigValueException("could not change bind to: " + Arrays.toString(failedAddresses));
 			}
 			core.getTextModeClientInterface().bindTo = val;
     	}
@@ -247,7 +247,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     	@Override
 		public Integer get() {
-    		if(core.getTextModeClientInterface()!=null)
+    		if(core.getTextModeClientInterface() != null)
     			return core.getTextModeClientInterface().port;
     		else
     			return 2323;
@@ -274,8 +274,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     		try {
     			networkInterface.setSoTimeout(1000);
     		} catch (SocketException e1) {
-    			Logger.error(this, "Could not set timeout: "+e1, e1);
-    			System.err.println("Could not start TMCI: "+e1);
+    			Logger.error(this, "Could not set timeout: " + e1, e1);
+    			System.err.println("Could not start TMCI: " + e1);
     			e1.printStackTrace();
     			return;
     		}
@@ -293,11 +293,11 @@ public class TextModeClientInterfaceServer implements Runnable {
     				TextModeClientInterface tmci =
 					new TextModeClientInterface(this, in, out);
 
-    				n.executor.execute(tmci, "Text mode client interface handler for "+s.getPort());
+    				n.executor.execute(tmci, "Text mode client interface handler for " + s.getPort());
     			} catch (SocketException e){
-    				Logger.error(this, "Socket error : "+e, e);
+    				Logger.error(this, "Socket error : " + e, e);
     			} catch (IOException e) {
-    				Logger.error(this, "TMCI failed to accept socket: "+e, e);
+    				Logger.error(this, "TMCI failed to accept socket: " + e, e);
     			}
     		}
     		try{

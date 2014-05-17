@@ -118,7 +118,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: " + e.getMessage(), identifier, global);
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
@@ -129,7 +129,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: " + e.getMessage(), identifier, global);
 			}
 		}
 		getCHKOnly = fs.getBoolean("GetCHKOnly", false);
@@ -141,9 +141,9 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString);
 				if(!RequestStarter.isValidPriorityClass(priorityClass))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class " + priorityClass + " - range is " + RequestStarter.MINIMUM_PRIORITY_CLASS + " to " + RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: " + e.getMessage(), identifier, global);
 			}
 		}
 		dontCompress = fs.getBoolean("DontCompress", false);
@@ -159,7 +159,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: " + persistenceString, identifier, global);
 		}
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
@@ -199,7 +199,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		} else if("default".equalsIgnoreCase(manifestPutter)) {
 			manifestType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
 		} else if(manifestPutter != null) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: " + manifestPutter, identifier, global);
 		}
 		manifestPutterType = manifestType;
 		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && (persistenceType != ClientRequest.PERSIST_CONNECTION && persistenceType != ClientRequest.PERSIST_REBOOT)) {

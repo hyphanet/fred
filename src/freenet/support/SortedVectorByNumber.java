@@ -37,7 +37,7 @@ public class SortedVectorByNumber {
 
 	public synchronized IntNumberedItem get(int retryCount, ObjectContainer container) {
 		if(persistent) {
-			for(int i=0;i<length;i++)
+			for(int i=0;i < length;i++)
 				container.activate(data[i], 1);
 		}
 		int x = Arrays.binarySearch(data, retryCount, comparator);
@@ -48,17 +48,17 @@ public class SortedVectorByNumber {
 
 	public synchronized void remove(int item, ObjectContainer container) {
 		if(persistent) {
-			for(int i=0;i<length;i++)
+			for(int i=0;i < length;i++)
 				container.activate(data[i], 1);
 		}
 		int x = Arrays.binarySearch(data, item, comparator);
 		if(x >= 0) {
-			if(x < length-1)
-				System.arraycopy(data, x+1, data, x, length-x-1);
+			if(x < length - 1)
+				System.arraycopy(data, x + 1, data, x, length - x - 1);
 			data[--length] = null;
 		}
-		if((length*4 < data.length) && (length > MIN_SIZE)) {
-			data = Arrays.copyOf(data, Math.max(length*2, MIN_SIZE));
+		if((length * 4 < data.length) && (length > MIN_SIZE)) {
+			data = Arrays.copyOf(data, Math.max(length * 2, MIN_SIZE));
 		}
 		if(persistent) container.store(this);
 		
@@ -67,19 +67,19 @@ public class SortedVectorByNumber {
 
 	private synchronized boolean verify(ObjectContainer container) {
 		IntNumberedItem lastItem = null;
-		for(int i=0;i<length;i++) {
+		for(int i=0;i < length;i++) {
 			IntNumberedItem item = data[i];
 			if(persistent)
 				container.activate(data[i], 1);
-			if(i>0) {
+			if(i > 0) {
 				if(item.getNumber() <= lastItem.getNumber())
-					throw new IllegalStateException("Verify failed! at "+i+" this="+item.getNumber()+" but last="+lastItem.getNumber());
+					throw new IllegalStateException("Verify failed! at " + i + " this=" + item.getNumber() + " but last=" + lastItem.getNumber());
 			}
 			lastItem = item;
 		}
-		for(int i=length;i<data.length;i++)
+		for(int i=length;i < data.length;i++)
 			if(data[i] != null)
-				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != null");
+				throw new IllegalStateException("length=" + length + ", data.length=" + data.length + " but [" + i + "] != null");
 		
 		return true;
 	}
@@ -90,20 +90,20 @@ public class SortedVectorByNumber {
 	 */
 	public synchronized boolean push(IntNumberedItem grabber, ObjectContainer container) {
 		if(persistent) {
-			for(int i=0;i<length;i++)
+			for(int i=0;i < length;i++)
 				container.activate(data[i], 1);
 		}
 		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
 		if(x >= 0) return false;
 		// insertion point
-		x = -x-1;
+		x = -x - 1;
 		push(grabber, x, container);
 		return true;
 	}
 	
 	public synchronized void add(IntNumberedItem grabber, ObjectContainer container) {
 		if(persistent) {
-			for(int i=0;i<length;i++)
+			for(int i=0;i < length;i++)
 				container.activate(data[i], 1);
 		}
 		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
@@ -113,24 +113,24 @@ public class SortedVectorByNumber {
 			else return;
 		}
 		// insertion point
-		x = -x-1;
+		x = -x - 1;
 		push(grabber, x, container);
 	}
 
 	private synchronized void push(IntNumberedItem grabber, int x, ObjectContainer container) {
 		if(persistent) {
-			for(int i=0;i<length;i++)
+			for(int i=0;i < length;i++)
 				container.activate(data[i], 1);
 		}
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Insertion point: "+x);
+		if(logMINOR) Logger.minor(this, "Insertion point: " + x);
 		// Move the data
 		if(length == data.length) {
-			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
-			data = Arrays.copyOf(data, length*2);
+			if(logMINOR) Logger.minor(this, "Expanding from " + length + " to " + length * 2);
+			data = Arrays.copyOf(data, length * 2);
 		}
 		if(x < length)
-			System.arraycopy(data, x, data, x+1, length-x);
+			System.arraycopy(data, x, data, x + 1, length - x);
 		data[x] = grabber;
 		length++;
 		if(persistent)
@@ -158,8 +158,8 @@ public class SortedVectorByNumber {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		for(int i=0;i<data.length;i++) {
-			if(data[i] != null) throw new IllegalStateException("Still have contents: "+i);
+		for(int i=0;i < data.length;i++) {
+			if(data[i] != null) throw new IllegalStateException("Still have contents: " + i);
 		}
 		container.delete(this);
 	}

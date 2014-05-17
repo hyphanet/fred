@@ -107,8 +107,8 @@ public class PCFBModeTest extends TestCase {
 	}
 	
 	public void testRandom() throws UnsupportedCipherException {
-		for(int i=0;i<1024;i++) {
-			byte[] plaintext = new byte[mt.nextInt(4096)+1];
+		for(int i=0;i < 1024;i++) {
+			byte[] plaintext = new byte[mt.nextInt(4096) + 1];
 			byte[] key = new byte[32];
 			byte[] iv = new byte[32];
 			mt.nextBytes(plaintext);

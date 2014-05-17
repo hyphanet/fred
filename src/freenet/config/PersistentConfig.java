@@ -27,7 +27,7 @@ public class PersistentConfig extends Config {
 		Iterator<String> i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
 			String key = i.next();
-			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+ ')');
+			Logger.error(this, "Unknown option: " + key + " (value=" + origConfigFileContents.get(key) + ')');
 		}
 		origConfigFileContents = null;
 		super.finishedInit();
@@ -60,9 +60,9 @@ public class PersistentConfig extends Config {
 		String val, name;
 		synchronized(this) {
 			if(finishedInit)
-				throw new IllegalStateException("onRegister("+config+ ':' +o+") called after finishedInit() !!");
+				throw new IllegalStateException("onRegister(" + config + ':' + o + ") called after finishedInit() !!");
 			if(origConfigFileContents == null) return;
-			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
+			name = config.prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + o.name;
 			val = origConfigFileContents.get(name);
 			origConfigFileContents.removeValue(name);
 			if(val == null) return;
@@ -70,7 +70,7 @@ public class PersistentConfig extends Config {
 		try {
 			o.setInitialValue(val.trim());
 		} catch (InvalidConfigValueException e) {
-			Logger.error(this, "Could not parse config option "+name+": "+e, e);
+			Logger.error(this, "Could not parse config option " + name + ": " + e, e);
 		}
 	}
         

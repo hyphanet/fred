@@ -58,8 +58,8 @@ public class ImageCreatorToadlet extends Toadlet {
 			// The text that will be drawn
 			String text = req.getParam("text");
 			// If width or height is specified, we use it, if not, then we use the default
-			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width").endsWith("px")?req.getParam("width").substring(0, req.getParam("width").length()-2):req.getParam("width")) : DEFAULT_WIDTH;
-			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height").endsWith("px")?req.getParam("height").substring(0, req.getParam("height").length()-2):req.getParam("height")) : DEFAULT_HEIGHT;
+			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width").endsWith("px")?req.getParam("width").substring(0, req.getParam("width").length() - 2):req.getParam("width")) : DEFAULT_WIDTH;
+			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height").endsWith("px")?req.getParam("height").substring(0, req.getParam("height").length() - 2):req.getParam("height")) : DEFAULT_HEIGHT;
 			// This is the image we are making
 			BufferedImage buffer = new BufferedImage(requiredWidth, requiredHeight, BufferedImage.TYPE_INT_RGB);
 			Graphics2D g2 = buffer.createGraphics();

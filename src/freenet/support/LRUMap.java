@@ -70,13 +70,13 @@ public class LRUMap<K, V> {
         QItem<K,V> insert = hash.get(key);
         if (insert == null) {
             insert = new QItem<K, V>(key, value);
-            hash.put(key,insert);
+            hash.put(key, insert);
         } else {
         	insert.value = value;
             list.remove(insert);
         }
         if(logMINOR)
-        	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
+        	Logger.minor(this, "Pushed " + insert + " ( " + key + ' ' + value + " )");
 
         list.unshift(insert);
     } 
@@ -213,7 +213,7 @@ public class LRUMap<K, V> {
         
 		@Override
         public String toString() {
-        	return super.toString()+": "+obj+ ' ' +value;
+        	return super.toString() + ": " + obj + ' ' + value;
         }
     }
 

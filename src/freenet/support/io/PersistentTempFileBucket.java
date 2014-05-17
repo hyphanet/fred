@@ -32,7 +32,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 	public Bucket createShadow() {
 		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
-		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: " + getFile());
 		return ret;
 	}
 	

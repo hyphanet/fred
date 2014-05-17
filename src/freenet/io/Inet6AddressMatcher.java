@@ -103,14 +103,14 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		if(netmask == FULL_MASK)
 			return convertToString(address);
 		else
-			return convertToString(address)+'/'+convertToString(netmask);
+			return convertToString(address) + '/' + convertToString(netmask);
 	}
 
 	private String convertToString(byte[] addr) {
-		StringBuilder sb = new StringBuilder(4*8+7);
-		for(int i=0;i<8;i++) {
+		StringBuilder sb = new StringBuilder(4 * 8 + 7);
+		for(int i=0;i < 8;i++) {
 			if(i != 0) sb.append(':');
-			int token = ((addr[i*2] & 0xff) << 8) + (addr[i*2+1] & 0xff);
+			int token = ((addr[i * 2] & 0xff) << 8) + (addr[i * 2 + 1] & 0xff);
 			sb.append(Integer.toHexString(token));
 		}
 		return sb.toString();

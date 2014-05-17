@@ -81,7 +81,7 @@ public class ClientGetWorkerThread extends Thread {
 	public ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
 			String mimeType, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
-		super("ClientGetWorkerThread-"+counter());
+		super("ClientGetWorkerThread-" + counter());
 		this.input = input;
 		if(uri != null) this.uri = uri.toURI("/");
 		else this.uri = null;
@@ -94,12 +94,12 @@ public class ClientGetWorkerThread extends Thread {
 		this.prefetchHook = prefetchHook;
 		this.tagReplacer = tagReplacer;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
-		if(logMINOR) Logger.minor(this, "Created worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
+		if(logMINOR) Logger.minor(this, "Created worker thread for " + uri + " mime type " + mimeType + " filter data = " + filterData + " charset " + charset);
 	}
 
 	@Override
 	public void run() {
-		if(logMINOR) Logger.minor(this, "Starting worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
+		if(logMINOR) Logger.minor(this, "Starting worker thread for " + uri + " mime type " + mimeType + " filter data = " + filterData + " charset " + charset);
 		try {
 			//Validate the hash of the now decompressed data
 			input = new BufferedInputStream(input);
@@ -110,12 +110,12 @@ public class ClientGetWorkerThread extends Thread {
 			}
 			//Filter the data, if we are supposed to
 			if(filterData){
-				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
+				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: " + prefetchHook + " tagReplacer: " + tagReplacer);
 				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri, prefetchHook, tagReplacer, charset, linkFilterExceptionProvider);
 
-				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
+				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset=" + filterStatus.charset);
 				synchronized(this) {
 					clientMetadata = new ClientMetadata(detectedMIMEType);
 				}
@@ -146,7 +146,7 @@ public class ClientGetWorkerThread extends Thread {
 			if(hashes != null) {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
-					Logger.error(this, "Hashes failed verification (length read is "+hashStream.getReadBytes()+") "+" for "+uri);
+					Logger.error(this, "Hashes failed verification (length read is " + hashStream.getReadBytes() + ") " + " for " + uri);
 					throw new FetchException(FetchException.CONTENT_HASH_FAILED);
 				}
 			}
@@ -154,9 +154,9 @@ public class ClientGetWorkerThread extends Thread {
 			onFinish();
 		} catch(Throwable t) {
 			if(!(t instanceof FetchException || t instanceof UnsafeContentTypeException || t instanceof CompressionOutputSizeException))
-				Logger.error(this, "Exception caught while processing fetch: "+t,t);
+				Logger.error(this, "Exception caught while processing fetch: " + t, t);
 			else if(logMINOR)
-				Logger.minor(this, "Exception caught while processing fetch: "+t,t);
+				Logger.minor(this, "Exception caught while processing fetch: " + t, t);
 			setError(t);
 		} finally {
 			Closer.close(input);

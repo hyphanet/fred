@@ -17,7 +17,7 @@ public class IPUtil {
 	public static boolean isSiteLocalAddress(InetAddress i) {
 	    if(i instanceof Inet6Address) {
 			byte [] addr = i.getAddress();
-			assert(addr.length == 128/8);
+			assert(addr.length == 128 / 8);
 			// XXX what about ipv6-mapped ipv4 site-local addresses?
 			// (weird/insane/not-sure-if-possible-but)
 			/*

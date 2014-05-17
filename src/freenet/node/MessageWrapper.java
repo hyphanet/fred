@@ -68,7 +68,7 @@ public class MessageWrapper {
 					}
 					alreadyAcked = true;
 					if(logMINOR)
-						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends"+(pn == null ? "" : " for "+pn.shortToString()));
+						Logger.minor(this, "Total round trip time for message " + messageID + " : " + item + " : " + (System.currentTimeMillis() - created) + " in " + resends + " resends" + (pn == null ? "" : " for " + pn.shortToString()));
 				}
 				return true;
 			}
@@ -84,7 +84,7 @@ public class MessageWrapper {
 	 * @return The number of bytes lost
 	 */
 	public int lost(int start, int end) {
-		if(logDEBUG) Logger.debug(this, "Lost from "+start+" to "+end+" on "+this.messageID);
+		if(logDEBUG) Logger.debug(this, "Lost from " + start + " to " + end + " on " + this.messageID);
 		int size = end - start + 1;
 		synchronized(sent) {
 		synchronized(acks) {
@@ -190,10 +190,10 @@ public class MessageWrapper {
 			dataLength = Math.min(end - start + 1, dataLength);
 			if(dataLength <= 0) return null;
 
-			fragmentData = Arrays.copyOfRange(item.buf, start, start+dataLength);
+			fragmentData = Arrays.copyOfRange(item.buf, start, start + dataLength);
 
 			sent.add(start, start + dataLength - 1);
-			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent+" on "+messageID);
+			if(logDEBUG) Logger.debug(this, "Using range " + start + " to " + (start + dataLength - 1) + " gives " + sent + " on " + messageID);
 		}
 
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
@@ -215,7 +215,7 @@ public class MessageWrapper {
 	 */
 	public boolean allSent() {
 		synchronized(sent) {
-			return sent.contains(0, item.buf.length-1);
+			return sent.contains(0, item.buf.length - 1);
 		}
 	}
 
@@ -246,7 +246,7 @@ public class MessageWrapper {
 				}
 			}
 			everSent.add(start, end);
-			if(everSent.contains(0, item.buf.length-1)) {
+			if(everSent.contains(0, item.buf.length - 1)) {
 				// Maybe completed
 				if(reportedSent)
 					completed = false;

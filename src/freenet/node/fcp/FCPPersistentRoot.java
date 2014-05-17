@@ -47,7 +47,7 @@ public class FCPPersistentRoot {
 				return root.nodeDBHandle == nodeDBHandle;
 			}
 		});
-		System.err.println("Count of roots: "+set.size());
+		System.err.println("Count of roots: " + set.size());
 		if(set.hasNext()) {
 			System.err.println("Loaded FCP persistent root.");
 			FCPPersistentRoot root = set.next();
@@ -70,7 +70,7 @@ public class FCPPersistentRoot {
 	}
 
 	public FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server, ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
+		if(logMINOR) Logger.minor(this, "Registering forever-client for " + name);
 		/**
 		 * FIXME DB4O:
 		 * Native queries involving strings seem to do wierd things. I was getting
@@ -94,8 +94,8 @@ public class FCPPersistentRoot {
 			}
 			client.setConnection(handler);
 			if(!(name.equals(client.name)))
-				Logger.error(this, "Returning "+client+" for "+name);
-			if(logMINOR) Logger.minor(this, "Returning "+client+" for "+name);
+				Logger.error(this, "Returning " + client + " for " + name);
+			if(logMINOR) Logger.minor(this, "Returning " + client + " for " + name);
 			client.init(container);
 			return client;
 		}

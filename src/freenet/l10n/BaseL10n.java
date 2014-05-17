@@ -588,26 +588,26 @@ public class BaseL10n {
 			value = value.substring(x);
 			int y = value.indexOf('}');
 			if(y == -1) {
-				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
+				Logger.error(this, "Unclosed braces in l10n value \"" + value + "\" for " + key);
 				return;
 			}
 			String lookup = value.substring(2, y);
-			value = value.substring(y+1);
+			value = value.substring(y + 1);
 			if(lookup.startsWith("/")) {
-				Logger.error(this, "Starts with / in "+key);
+				Logger.error(this, "Starts with / in " + key);
 				return;
 			}
 			
 			HTMLNode subnode = null;
 			
-			for(int i=0;i<patterns.length;i++) {
+			for(int i=0;i < patterns.length;i++) {
 				if(patterns[i].equals(lookup)) {
 					subnode = values[i];
 					break;
 				}
 			}
 
-			String searchFor = "${/"+lookup+"}";
+			String searchFor = "${/" + lookup + "}";
 			x = value.indexOf(searchFor);
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.
@@ -633,7 +633,7 @@ public class BaseL10n {
 	}
 	
 	public String[] getAllNamesWithPrefix(String prefix){
-		if(fallbackTranslation==null){
+		if(fallbackTranslation == null){
 			return new String[]{};
 		}
 		List<String> toReturn=new ArrayList<String>();

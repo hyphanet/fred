@@ -45,10 +45,10 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 			(NativeBigInteger) peerExponential.modPow(myExponent, P);
 
 		if(logMINOR) {
-			Logger.minor(this, "P: "+HexUtil.biToHex(P));
-			Logger.minor(this, "My exponent: "+HexUtil.toHexString(myExponent));
-			Logger.minor(this, "My exponential: "+HexUtil.toHexString(myExponential));
-			Logger.minor(this, "Peer's exponential: "+HexUtil.toHexString(peerExponential));
+			Logger.minor(this, "P: " + HexUtil.biToHex(P));
+			Logger.minor(this, "My exponent: " + HexUtil.toHexString(myExponent));
+			Logger.minor(this, "My exponential: " + HexUtil.toHexString(myExponential));
+			Logger.minor(this, "Peer's exponential: " + HexUtil.toHexString(peerExponential));
 			Logger.minor(this, "g^ir mod p = " + HexUtil.toHexString(sharedSecret));
 		}
 		
@@ -67,11 +67,11 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 
         if(data.length != targetLength) {
             byte[] newData = new byte[targetLength];
-            if((data.length == targetLength+1) && (data[0] == 0)) {
+            if((data.length == targetLength + 1) && (data[0] == 0)) {
                 // Sign bit
                 System.arraycopy(data, 1, newData, 0, targetLength);
             } else if(data.length < targetLength) {
-                System.arraycopy(data, 0, newData, targetLength-data.length, data.length);
+                System.arraycopy(data, 0, newData, targetLength - data.length, data.length);
             } else {
                 throw new IllegalStateException("Too long!");
             }

@@ -102,15 +102,15 @@ public class N2NTMToadlet extends Toadlet {
 	 */
 	private static long maxSize(){
 		long memory = NodeStarter.getMemoryLimitBytes();
-		if(memory == Long.MAX_VALUE || memory <= 0) return 1024*1024;
-		long maxMem = Math.round(0.05*memory);
-		long limit = Math.max(maxMem, 1024*1024);
+		if(memory == Long.MAX_VALUE || memory <= 0) return 1024 * 1024;
+		long maxMem = Math.round(0.05 * memory);
+		long limit = Math.max(maxMem, 1024 * 1024);
 		return limit;
 	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
 			String header, String message) {
-		HTMLNode infobox = new HTMLNode("div", "class", "infobox "+infoboxType);
+		HTMLNode infobox = new HTMLNode("div", "class", "infobox " + infoboxType);
 		infobox.addChild("div", "class", "infobox-header", header);
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		infoboxContent.addChild("#", message);
@@ -289,7 +289,7 @@ public class N2NTMToadlet extends Toadlet {
 		messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.mayAttachFile"));
 		if(ctx.isAllowedFullAccess()) {
 			messageForm.addChild("br");
-			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel") + ": ");
 			messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "n2nm-browse", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
 			messageForm.addChild("br");
 		}

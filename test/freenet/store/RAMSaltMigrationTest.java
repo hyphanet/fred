@@ -110,7 +110,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			
 			// Encode a block
 			String test = "test" + i;
@@ -158,7 +158,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	private void checkBlocks(CHKStore store,
 			boolean write, boolean expectFailure) throws CHKEncodeException, IOException, CHKVerifyException, CHKDecodeException {
 		
-		for(int i=0;i<5;i++) {
+		for(int i=0;i < 5;i++) {
 			
 			// Encode a block
 			String test = "test" + i;
@@ -245,14 +245,14 @@ public class RAMSaltMigrationTest extends TestCase {
 	
 	public void checkSaltedStoreOldBlocks(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore<CHKBlock> saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-" + keycount + "-" + size + "-" + bloomSize + "-" + useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
 		String[] test = new String[keycount];
 		ClientCHKBlock[] block = new ClientCHKBlock[keycount];
 
-		for(int i=0;i<keycount;i++) {
+		for(int i=0;i < keycount;i++) {
 			
 			// Encode a block
 			test[i] = "test" + i;
@@ -262,7 +262,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			keys[i] = block[i].getClientKey();
 		}
 		
-		for(int i=0;i<keycount;i++) {
+		for(int i=0;i < keycount;i++) {
 			
 			ClientCHK key = keys[i];
 			
@@ -288,17 +288,17 @@ public class RAMSaltMigrationTest extends TestCase {
 		checkSaltedStoreResize(5, 10, 20, false, -1, false, true);
 		checkSaltedStoreResize(5, 10, 20, true, -1, false, true);
 		// Will write to disk on shutdown.
-		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60 * 60 * 1000, false, true);
 		// Using the old size causes it to resize on startup back to the old size. This needs testing too, and revealed some odd bugs.
-		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, false, false);
+		checkSaltedStoreResize(5, 10, 20, true, 60 * 60 * 1000, false, false);
 		// It will force to disk after resizing, so should still work even with a long write time.
-		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, true, true);
-		checkSaltedStoreResize(5, 10, 20, true, 60*60*1000, true, false);
+		checkSaltedStoreResize(5, 10, 20, true, 60 * 60 * 1000, true, true);
+		checkSaltedStoreResize(5, 10, 20, true, 60 * 60 * 1000, true, false);
 	}
 	
 	public void checkSaltedStoreResize(int keycount, int size, int newSize, boolean useSlotFilter, int persistenceTime, boolean abort, boolean openNewSize) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		
-		File f = new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+useSlotFilter);
+		File f = new File(tempDir, "saltstore-" + keycount + "-" + size + "-" + useSlotFilter);
 		FileUtil.removeAll(f);
 		
 		ResizablePersistentIntBuffer.setPersistenceTime(persistenceTime);
@@ -312,7 +312,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		String[] test = new String[keycount];
 		ClientCHKBlock[] block = new ClientCHKBlock[keycount];
 
-		for(int i=0;i<keycount;i++) {
+		for(int i=0;i < keycount;i++) {
 			
 			// Encode a block
 			test[i] = "test" + i;
@@ -324,7 +324,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		saltStore.setMaxKeys(newSize, true);
 		
-		for(int i=0;i<keycount;i++) {
+		for(int i=0;i < keycount;i++) {
 			
 			ClientCHK key = keys[i];
 			
@@ -340,7 +340,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		saltStore = SaltedHashFreenetStore.construct(f, "teststore", store, weakPRNG, openNewSize ? newSize : size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(ticker, true);
 		
-		for(int i=0;i<keycount;i++) {
+		for(int i=0;i < keycount;i++) {
 			
 			ClientCHK key = keys[i];
 			

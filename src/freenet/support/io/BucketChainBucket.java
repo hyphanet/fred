@@ -401,7 +401,7 @@ public class BucketChainBucket implements Bucket {
 	@Override
 	public Bucket createShadow() {
 		Vector<Bucket> newBuckets = new Vector<Bucket>();
-		for(int i=0;i<buckets.size();i++) {
+		for(int i=0;i < buckets.size();i++) {
 			Bucket data = buckets.get(i);
 			Bucket shadow = data.createShadow();
 			if(shadow == null) {

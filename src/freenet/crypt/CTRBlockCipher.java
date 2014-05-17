@@ -37,7 +37,7 @@ public class CTRBlockCipher
     public CTRBlockCipher(BlockCipher c)
     {
         this.cipher = c;
-        this.blockSize = cipher.getBlockSize()/8;
+        this.blockSize = cipher.getBlockSize() / 8;
         this.IV = new byte[blockSize];
         this.counter = new byte[blockSize];
         this.counterOut = new byte[blockSize];

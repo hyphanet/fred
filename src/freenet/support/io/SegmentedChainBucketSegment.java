@@ -32,7 +32,7 @@ public class SegmentedChainBucketSegment {
 	public void free() {
 		for(Bucket bucket : buckets) {
 			if(bucket == null) {
-				Logger.error(this, "Bucket is null on "+this);
+				Logger.error(this, "Bucket is null on " + this);
 				continue;
 			}
 			bucket.free();
@@ -41,7 +41,7 @@ public class SegmentedChainBucketSegment {
 
 	public void storeTo(ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Storing segment "+this);
+			Logger.minor(this, "Storing segment " + this);
 		for(Bucket bucket : buckets)
 			bucket.storeTo(container);
 		container.ext().store(buckets, 1);
@@ -51,13 +51,13 @@ public class SegmentedChainBucketSegment {
 	public synchronized Bucket[] shallowCopyBuckets() {
 		int sz = buckets.size();
 		Bucket[] out = new Bucket[sz];
-		for(int i=0;i<sz;i++) out[i] = buckets.get(i);
+		for(int i=0;i < sz;i++) out[i] = buckets.get(i);
 		return out;
 	}
 
 	public synchronized void shallowCopyBuckets(Bucket[] out, int index) {
 		int sz = buckets.size();
-		for(int i=0;i<sz;i++) out[index++] = buckets.get(i);
+		for(int i=0;i < sz;i++) out[index++] = buckets.get(i);
 	}
 
 	public OutputStream makeBucketStream(int bucketNo, SegmentedBucketChainBucket bcb) throws IOException {
@@ -66,7 +66,7 @@ public class SegmentedChainBucketSegment {
 		Bucket b = bcb.bf.makeBucket(bcb.bucketSize);
 		synchronized(this) {
 			if(buckets.size() != bucketNo)
-				throw new IllegalArgumentException("Next bucket should be "+buckets.size()+" but is "+bucketNo);
+				throw new IllegalArgumentException("Next bucket should be " + buckets.size() + " but is " + bucketNo);
 			buckets.add(b);
 		}
 		return b.getOutputStream();

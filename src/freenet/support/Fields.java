@@ -220,7 +220,7 @@ public abstract class Fields {
 		}
 		// assert(sb.length() > 0); -- always true as ls.length != 0
 		// remove last ch
-		sb.deleteCharAt(sb.length()-1);
+		sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
 	}
 
@@ -251,7 +251,7 @@ public abstract class Fields {
 		}
 		// assert(listBuf.length() > 0); -- always true as ls.length != 0
 		// remove last comma
-		listBuf.deleteCharAt(listBuf.length()-1);
+		listBuf.deleteCharAt(listBuf.length() - 1);
 		return listBuf.toString();
 	}
 
@@ -476,7 +476,7 @@ public abstract class Fields {
 		}
 		// assert(sb.length() > 0); -- always true as addr.length != 0
 		// remove last comma
-		sb.deleteCharAt(sb.length()-1);
+		sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
 	}
 
@@ -866,12 +866,12 @@ public abstract class Fields {
 			String xDigits = null, yDigits = null;
 			int digits = getDigits(x, i, wantDigits);
 			if(digits > 0) {
-				xDigits = x.substring(i, i+digits);
+				xDigits = x.substring(i, i + digits);
 				i += digits;
 			}
 			digits = getDigits(y, j, wantDigits);
 			if(digits > 0) {
-				yDigits = y.substring(j, j+digits);
+				yDigits = y.substring(j, j + digits);
 				j += digits;
 			}
 			if(xDigits != null && yDigits == null)
@@ -907,7 +907,7 @@ public abstract class Fields {
 
 	static int getDigits(String x, int i, boolean wantDigits) {
 		int origI = i;
-		for(;i<x.length();i++) {
+		for(;i < x.length();i++) {
 			if(Character.isDigit(x.charAt(i)) != wantDigits)
 				break;
 		}

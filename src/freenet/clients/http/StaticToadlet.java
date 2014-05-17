@@ -85,7 +85,7 @@ public class StaticToadlet extends Toadlet {
 			}
 		}
 		
-		InputStream strm = getClass().getResourceAsStream(ROOT_PATH+path);
+		InputStream strm = getClass().getResourceAsStream(ROOT_PATH + path);
 		if (strm == null) {
 			this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
 			return;
@@ -104,7 +104,7 @@ public class StaticToadlet extends Toadlet {
 			os.close();
 		}
 		
-		URL url = getClass().getResource(ROOT_PATH+path);
+		URL url = getClass().getResource(ROOT_PATH + path);
 		Date mTime = getUrlMTime(url);
 		
 		ctx.sendReplyHeadersStatic(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size(), mTime);
@@ -130,7 +130,7 @@ public class StaticToadlet extends Toadlet {
 	}
 	
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("StaticToadlet."+key);
+		return NodeL10n.getBase().getString("StaticToadlet." + key);
 	}
 
 	@Override
@@ -143,7 +143,7 @@ public class StaticToadlet extends Toadlet {
 	 * @param The path to the file, relative to the staticfiles directory.
 	 */
 	public static boolean haveFile(String path) {
-		URL url = StaticToadlet.class.getResource(ROOT_PATH+path);
+		URL url = StaticToadlet.class.getResource(ROOT_PATH + path);
 		return url != null;
 	}
 

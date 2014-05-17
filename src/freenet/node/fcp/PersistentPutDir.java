@@ -88,7 +88,7 @@ public class PersistentPutDir extends FCPMessage {
 		//                 Is it really necessary to include the file list here?
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
 		fs.putSingle("DefaultName", defaultName);
-		for(int i=0;i<elements.length;i++) {
+		for(int i=0;i < elements.length;i++) {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
 			String mimeOverride = e.getMimeTypeOverride();
@@ -117,14 +117,14 @@ public class PersistentPutDir extends FCPMessage {
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
 				if(data == null) {
-					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+e.getName()+" for "+identifier);
+					Logger.error(this, "Bucket already freed: " + e.getData() + " for " + e + " for " + e.getName() + " for " + identifier);
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
 				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket || data instanceof TempBucketFactory.TempBucket) {
 					subset.putSingle("UploadFrom", "direct");
 				} else {
-					throw new IllegalStateException("Don't know what to do with bucket: "+data);
+					throw new IllegalStateException("Don't know what to do with bucket: " + data);
 				}
 				if(deactivate)
 					container.deactivate(origData, 1);

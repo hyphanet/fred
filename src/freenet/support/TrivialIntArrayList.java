@@ -24,7 +24,7 @@ public class TrivialIntArrayList implements List<Integer> {
 	}
 	
 	public boolean insert(int arg0) {
-		int[] newList = Arrays.copyOf(list, list.length+1);
+		int[] newList = Arrays.copyOf(list, list.length + 1);
 		newList[list.length] = arg0;
 		list = newList;
 		return true;
@@ -36,12 +36,12 @@ public class TrivialIntArrayList implements List<Integer> {
 	}
 	
 	public void insert(int index, int arg1) {
-		int[] newList = new int[list.length+1];
+		int[] newList = new int[list.length + 1];
 		if(index > 0)
 			System.arraycopy(list, 0, newList, 0, index);
 		newList[index] = arg1;
 		if(index < list.length)
-			System.arraycopy(list, index, newList, index+1, list.length-index);
+			System.arraycopy(list, index, newList, index + 1, list.length - index);
 	}
 
 	@Override
@@ -93,14 +93,14 @@ public class TrivialIntArrayList implements List<Integer> {
 	}
 
 	public int search(int x) {
-		for(int i=0;i<list.length;i++) {
+		for(int i=0;i < list.length;i++) {
 			if(list[i] == x) return i;
 		}
 		return -1;
 	}
 
 	public int backwardsSearch(int x) {
-		for(int i=list.length-1;i>=0;i--) {
+		for(int i=list.length - 1;i >= 0;i--) {
 			if(list[i] == x) return i;
 		}
 		return -1;
@@ -199,7 +199,7 @@ public class TrivialIntArrayList implements List<Integer> {
 		
 		@Override
 		public int previousIndex() {
-			return index-1;
+			return index - 1;
 		}
 		
 		@Override
@@ -236,17 +236,17 @@ public class TrivialIntArrayList implements List<Integer> {
 		if(index == list.length)
 			return removeEnd();
 		int retval = list[index];
-		int[] newList = new int[list.length-1];
+		int[] newList = new int[list.length - 1];
 		if(index > 0)
 			System.arraycopy(list, 0, newList, 0, index);
 		// Unconditional thanks to removeEnd() above.
-		System.arraycopy(list, index+1, newList, index, list.length-index-1);
+		System.arraycopy(list, index + 1, newList, index, list.length - index - 1);
 		list = newList;
 		return retval;
 	}
 	
 	public int removeEnd() {
-		int newLength = list.length-1;
+		int newLength = list.length - 1;
 		int[] newList = Arrays.copyOf(list, newLength);
 		int ret = list[newLength];
 		list = newList;
@@ -302,7 +302,7 @@ public class TrivialIntArrayList implements List<Integer> {
 	@Override
 	public Object[] toArray() {
 		Object[] ret = new Object[list.length];
-		for(int i=0;i<list.length;i++)
+		for(int i=0;i < list.length;i++)
 			ret[i] = list[i];
 		return ret;
 	}

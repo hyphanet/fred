@@ -60,7 +60,7 @@ public class ModifyPeerNote extends FCPMessage {
 		try {
 			peerNoteType = fs.getInt("PeerNoteType");
 		} catch (FSParseException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Error parsing PeerNoteType field: "+e.getMessage(), identifier, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Error parsing PeerNoteType field: " + e.getMessage(), identifier, false);
 		}
 		String encodedNoteText = fs.get("NoteText");
 		if( encodedNoteText == null ) {

@@ -220,7 +220,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
-		if(logDEBUG) Logger.debug(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Copied: " + toString() + " from " + uri.toString(), new Exception("debug"));
 	}
 	
 	boolean noCacheURI = false;
@@ -237,7 +237,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		String[] newMetaStr = null;
 		if(metaStr != null) {
 			newMetaStr = new String[metaStr.length];
-			for(int i=0;i<metaStr.length;i++) {
+			for(int i=0;i < metaStr.length;i++) {
 				newMetaStr[i] = metaStr[i].intern();
 				if(metaStr[i] != newMetaStr[i]) changedAnything = true;
 			}
@@ -299,7 +299,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
 		this.extra = extra2;
 		this.suggestedEdition = -1;
-		if (logDEBUG) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components: " + toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(
@@ -321,7 +321,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			throw new IllegalArgumentException("Bad URI: Crypto key should be 32 bytes");
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
-		if (logDEBUG) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components (B): " + toString(), new Exception("debug"));
 	}
 
 	// Strip http:// and freenet: prefix
@@ -480,7 +480,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
-		if (logDEBUG) Logger.debug(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
+		if (logDEBUG) Logger.debug(this, "Created from parse: " + toString() + " from " + URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
@@ -496,7 +496,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
-		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components (USK): " + toString(), new Exception("debug"));
 	}
 
 	/** Dump the individual components of the key to System.out. */
@@ -617,7 +617,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		if (metaStr != null) {
 			final int metaStrLength = metaStr.length;
 			if (metaStrLength > 1) {
-				newMetaStr = Arrays.copyOf(metaStr, metaStr.length-1);
+				newMetaStr = Arrays.copyOf(metaStr, metaStr.length - 1);
 			}
 		}
 		return setMetaString(newMetaStr);
@@ -742,7 +742,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	public String toString(boolean prefix, boolean pureAscii) {
 		if(keyType == null) {
 			// Not activated or something...
-			if(logMINOR) Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
+			if(logMINOR) Logger.minor(this, "Not activated?? in toString(" + prefix + "," + pureAscii + ")");
 			return null;
 		}
 		StringBuilder b;
@@ -974,7 +974,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 					names.add(Long.toString(suggestedEdition));
 			} else if(!keyType.equals("SSK")) {
 				// "SSK@" is legal for an upload.
-				throw new IllegalStateException("No docName for key of type "+keyType);
+				throw new IllegalStateException("No docName for key of type " + keyType);
 			}
 		}
 		if(metaStr != null)
@@ -1013,7 +1013,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
-		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+"\"";
+		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \"" + out.toString() + "\" -> \"" + FileUtil.sanitize(out.toString())) + "\"";
 		return out.toString();
 	}
 
@@ -1134,7 +1134,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
 		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
-		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+		return new FreenetURI("SSK", docName + "-" + suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
 	private static final Pattern docNameWithEditionPattern;
@@ -1217,7 +1217,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		if(metaStr != null && o.metaStr != null) {
 			if(metaStr.length > o.metaStr.length) return 1;
 			if(metaStr.length < o.metaStr.length) return -1;
-			for(int i=0;i<metaStr.length;i++) {
+			for(int i=0;i < metaStr.length;i++) {
 				cmp = metaStr[i].compareTo(o.metaStr[i]);
 				if(cmp != 0) return cmp;
 			}

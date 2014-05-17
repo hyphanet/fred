@@ -115,7 +115,7 @@ public class FECQueue implements OOMHook {
 		this.clientContext = clientContext;
 		transientQueue = new LinkedList[priorities];
 		persistentQueueCache = new LinkedList[priorities];
-		for(int i=0;i<priorities;i++) {
+		for(int i=0;i < priorities;i++) {
 			transientQueue[i] = new LinkedList<FECJob>();
 			persistentQueueCache[i] = new LinkedList<FECJob>();
 		}
@@ -143,7 +143,7 @@ public class FECQueue implements OOMHook {
 		}
 		final boolean logMINOR = FECQueue.logMINOR;
 		if(logMINOR)
-			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
+			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: " + job + ".");
 		int maxThreads = getMaxRunningFECThreads();
 		if(job.persistent) {
 			job.activateForExecution(container);
@@ -154,7 +154,7 @@ public class FECQueue implements OOMHook {
 				transientQueue[job.priority].addLast(job);
 			} else {
 				int totalAbove = 0;
-				for(int i=0;i<job.priority;i++) {
+				for(int i=0;i < job.priority;i++) {
 					totalAbove += persistentQueueCache[i].size();
 				}
 				if(totalAbove >= maxPersistentQueueCacheSize) {
@@ -169,11 +169,11 @@ public class FECQueue implements OOMHook {
 					} else {
 						persistentQueueCache[job.priority].addLast(job);
 						int total = totalAbove + persistentQueueCache[job.priority].size();
-						for(int i=job.priority+1;i<priorities;i++) {
+						for(int i=job.priority + 1;i < priorities;i++) {
 							total += persistentQueueCache[i].size();
 							while(total >= maxPersistentQueueCacheSize && !persistentQueueCache[i].isEmpty()) {
 								if(logMINOR)
-									Logger.minor(this, "Removing low priority job from cache, total now "+total);
+									Logger.minor(this, "Removing low priority job from cache, total now " + total);
 								persistentQueueCache[i].removeLast();
 								total--;
 							}
@@ -212,14 +212,14 @@ public class FECQueue implements OOMHook {
 							return;
 						}
 						if(job.running) {
-							Logger.error(this, "Job already running: "+job);
+							Logger.error(this, "Job already running: " + job);
 							continue;
 						}
 						job.running = true;
 					}
 
 					if(logMINOR)
-						Logger.minor(this, "Running job "+job);
+						Logger.minor(this, "Running job " + job);
 					// Encode it
 					try {
 						if (job.isADecodingJob)
@@ -246,11 +246,11 @@ public class FECQueue implements OOMHook {
 							}
 						}
 					} catch (final Throwable t) {
-						Logger.error(this, "Caught: "+t, t);
+						Logger.error(this, "Caught: " + t, t);
 						if(job.persistent) {
 							if(logMINOR)
-								Logger.minor(this, "Scheduling callback for "+job+" after "+t, t);
-							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
+								Logger.minor(this, "Scheduling callback for " + job + " after " + t, t);
+							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY + 1 : NativeThread.NORM_PRIORITY;
 							// Run at a fairly high priority so we get the blocks out of memory and onto disk.
 							databaseJobRunner.queue(new DBJob() {
 
@@ -259,21 +259,21 @@ public class FECQueue implements OOMHook {
 									try {
 										job.storeBlockStatuses(container, true);
 									} catch (Throwable t) {
-										Logger.error(this, "Caught storing block statuses for "+job+" : "+t, t);
+										Logger.error(this, "Caught storing block statuses for " + job + " : " + t, t);
 										// Fail with the original error.
 									}
 									// Don't activate the job itself.
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
 									// they can't be stored on the FEC thread.
-									Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+									Logger.minor(this, "Activating " + job.callback + " is active=" + container.ext().isActive(job.callback));
 									container.activate(job.callback, 1);
 									if(logMINOR)
-										Logger.minor(this, "Running callback for "+job);
+										Logger.minor(this, "Running callback for " + job);
 									try {
 										job.callback.onFailed(t, container, context);
 									} catch (Throwable t1) {
-										Logger.error(this, "Caught "+t1+" in FECQueue callback failure", t1);
+										Logger.error(this, "Caught " + t1 + " in FECQueue callback failure", t1);
 									} finally {
 										// Always delete the job, even if the callback throws.
 										container.delete(job);
@@ -285,12 +285,12 @@ public class FECQueue implements OOMHook {
 								
 								@Override
 								public String toString() {
-									return "FECQueueJobFailedCallback@"+Integer.toHexString(super.hashCode());
+									return "FECQueueJobFailedCallback@" + Integer.toHexString(super.hashCode());
 								}
 								
 							}, prio, false);
 							if(logMINOR)
-								Logger.minor(this, "Scheduled callback for "+job+"...");
+								Logger.minor(this, "Scheduled callback for " + job + "...");
 						} else {
 							job.callback.onFailed(t, null, clientContext);
 						}
@@ -306,8 +306,8 @@ public class FECQueue implements OOMHook {
 								job.callback.onEncodedSegment(null, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 						} else {
 							if(logMINOR)
-								Logger.minor(this, "Scheduling callback for "+job+"...");
-							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
+								Logger.minor(this, "Scheduling callback for " + job + "...");
+							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY + 1 : NativeThread.NORM_PRIORITY;
 							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
 								prio--;
 							if(job.priority >= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS)
@@ -319,19 +319,19 @@ public class FECQueue implements OOMHook {
 									try {
 										job.storeBlockStatuses(container, false);
 									} catch (Throwable t) {
-										Logger.error(this, "Caught storing block statuses on "+this+" : "+t, t);
+										Logger.error(this, "Caught storing block statuses on " + this + " : " + t, t);
 										// Don't activate the job itself.
 										// It MUST already be activated, because it is carrying the status blocks.
 										// The status blocks have been set on the FEC thread but *not stored* because
 										// they can't be stored on the FEC thread.
-										Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+										Logger.minor(this, "Activating " + job.callback + " is active=" + container.ext().isActive(job.callback));
 										container.activate(job.callback, 1);
 										if(logMINOR)
-											Logger.minor(this, "Running callback for "+job);
+											Logger.minor(this, "Running callback for " + job);
 										try {
 											job.callback.onFailed(t, container, context);
 										} catch (Throwable t1) {
-											Logger.error(this, "Caught "+t1+" in FECQueue callback failure", t1);
+											Logger.error(this, "Caught " + t1 + " in FECQueue callback failure", t1);
 										} finally {
 											// Always delete the job, even if the callback throws.
 											container.delete(job);
@@ -344,17 +344,17 @@ public class FECQueue implements OOMHook {
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
 									// they can't be stored on the FEC thread.
-									if(logMINOR) Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+									if(logMINOR) Logger.minor(this, "Activating " + job.callback + " is active=" + container.ext().isActive(job.callback));
 									container.activate(job.callback, 1);
 									if(logMINOR)
-										Logger.minor(this, "Running callback for "+job);
+										Logger.minor(this, "Running callback for " + job);
 									try {
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									else
 										job.callback.onEncodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									} catch (Throwable t) {
-										Logger.error(this, "Caught "+t+" in FECQueue callback", t);
+										Logger.error(this, "Caught " + t + " in FECQueue callback", t);
 									} finally {
 										// Always delete the job, even if the callback throws.
 										container.delete(job);
@@ -366,12 +366,12 @@ public class FECQueue implements OOMHook {
 								
 								@Override
 								public String toString() {
-									return "FECQueueJobCompletedCallback@"+Integer.toHexString(super.hashCode());
+									return "FECQueueJobCompletedCallback@" + Integer.toHexString(super.hashCode());
 								}
 								
 							}, prio, false);
 							if(logMINOR)
-								Logger.minor(this, "Scheduled callback for "+job+"...");
+								Logger.minor(this, "Scheduled callback for " + job + "...");
 							
 						}
 					} catch (Throwable e) {
@@ -379,7 +379,7 @@ public class FECQueue implements OOMHook {
 					}
 				}
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in "+this, t);
+				Logger.error(this, "Caught " + t + " in " + this, t);
 			}
 			finally {
 				synchronized (FECQueue.this) {
@@ -411,7 +411,7 @@ public class FECQueue implements OOMHook {
 			while(true) {
 				boolean addedAny = false;
 				int totalCached = 0;
-				for(short prio=0;prio<priorities;prio++) {
+				for(short prio=0;prio < priorities;prio++) {
 					int grab = 0;
 					synchronized(FECQueue.this) {
 						int newCached = totalCached + persistentQueueCache[prio].size();
@@ -419,7 +419,7 @@ public class FECQueue implements OOMHook {
 						grab = maxPersistentQueueCacheSize - newCached;
 						totalCached = newCached;
 					}
-					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs at priority "+prio);
+					if(logMINOR) Logger.minor(this, "Grabbing up to " + grab + " jobs at priority " + prio);
 					Query query = container.query();
 					query.constrain(FECJob.class);
 					Constraint con = query.descend("priority").constrain(Short.valueOf(prio));
@@ -431,12 +431,12 @@ public class FECQueue implements OOMHook {
 					@SuppressWarnings("unchecked")
 					ObjectSet<FECJob> results = query.execute();
 					if(results.hasNext()) {
-						for(int j=0;j<grab && results.hasNext();j++) {
+						for(int j=0;j < grab && results.hasNext();j++) {
 							FECJob job = results.next();
 							synchronized(FECQueue.this) {
 								if(job.running) {
 									j--;
-									if(logMINOR) Logger.minor(this, "Not adding, already running (1): "+job);
+									if(logMINOR) Logger.minor(this, "Not adding, already running (1): " + job);
 									continue;
 								}
 							}
@@ -447,7 +447,7 @@ public class FECQueue implements OOMHook {
 										job.callback.onFailed(new NullPointerException("Not all data blocks present"), container, context);
 									} catch (Throwable t) {
 										try {
-											Logger.error(this, "Caught "+t+" while calling failure callback on "+job, t);
+											Logger.error(this, "Caught " + t + " while calling failure callback on " + job, t);
 										} catch (Throwable t1) {
 											// Ignore
 										}
@@ -460,16 +460,16 @@ public class FECQueue implements OOMHook {
 								container.delete(job);
 								continue;
 							}
-							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
+							if(logMINOR) Logger.minor(this, "Maybe adding " + job);
 							synchronized(FECQueue.this) {
 								if(job.running) {
 									j--;
-									if(logMINOR) Logger.minor(this, "Not adding, already running (2): "+job);
+									if(logMINOR) Logger.minor(this, "Not adding, already running (2): " + job);
 									continue;
 								}
 								if(persistentQueueCache[prio].contains(job)) {
 									j--;
-									if(logMINOR) Logger.minor(this, "Not adding as on persistent queue cache for "+prio+" : "+job);
+									if(logMINOR) Logger.minor(this, "Not adding as on persistent queue cache for " + prio + " : " + job);
 									continue;
 								}
 								boolean added = false;
@@ -479,12 +479,12 @@ public class FECQueue implements OOMHook {
 										it.previous();
 										it.add(job);
 										added = true;
-										if(logMINOR) Logger.minor(this, "Adding "+job+" before "+it);
+										if(logMINOR) Logger.minor(this, "Adding " + job + " before " + it);
 										break;
 									}
 								}
 								if(!added) persistentQueueCache[prio].addLast(job);
-								if(logMINOR) Logger.minor(this, "Added "+job);
+								if(logMINOR) Logger.minor(this, "Added " + job);
 								addedAny = true;
 							}
 						}
@@ -500,14 +500,14 @@ public class FECQueue implements OOMHook {
 						int maxRunningThreads = maxRunningFECThreads;
 						if(runningFECThreads < maxRunningThreads) {
 							int queueSize = 0;
-							for(int i=0;i<priorities;i++) {
+							for(int i=0;i < priorities;i++) {
 								queueSize += persistentQueueCache[i].size();
 								if(queueSize + runningFECThreads > maxRunningThreads) break;
 							}
 							if(queueSize + runningFECThreads < maxRunningThreads)
 								maxRunningThreads = queueSize + runningFECThreads;
 							while(runningFECThreads < maxRunningThreads) {
-								executor.execute(runner, "FEC Pool "+fecPoolCounter++);
+								executor.execute(runner, "FEC Pool " + fecPoolCounter++);
 								runningFECThreads++;
 							}
 						}
@@ -535,17 +535,17 @@ public class FECQueue implements OOMHook {
 			Runtime r = Runtime.getRuntime();
 			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
 			long maxMemory = r.maxMemory();
-			if(maxMemory < 256*1024*1024) {
+			if(maxMemory < 256 * 1024 * 1024) {
 				max = 1;
 			} else {
 				// Measured 11MB decode 8MB encode on amd64.
 				// No more than 10% of available RAM, so 110MB for each extra processor.
 				// No more than 3 so that we don't reach any FileDescriptor related limit
-				max = Math.min(3, Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024)))));
+				max = Math.min(3, Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128 * 1024 * 1024)))));
 			}
 			maxRunningFECThreads = max;
 		}
-		Logger.minor(FECCodec.class, "Maximum FEC threads: "+maxRunningFECThreads);
+		Logger.minor(FECCodec.class, "Maximum FEC threads: " + maxRunningFECThreads);
 		return maxRunningFECThreads;
 	}
 
@@ -557,7 +557,7 @@ public class FECQueue implements OOMHook {
 		while(true) {
 			if(runningFECThreads > getMaxRunningFECThreads())
 				return null;
-			for(int i=0;i<priorities;i++) {
+			for(int i=0;i < priorities;i++) {
 				if(!transientQueue[i].isEmpty())
 					return transientQueue[i].removeFirst();
 				if(!persistentQueueCache[i].isEmpty())
@@ -599,7 +599,7 @@ public class FECQueue implements OOMHook {
 			if(proxy != null) {
 				return proxy.cancel(job, container, context);
 			}
-			for(int i=0;i<priorities;i++) {
+			for(int i=0;i < priorities;i++) {
 				transientQueue[i].remove(job);
 				persistentQueueCache[i].remove(job);
 			}
@@ -615,13 +615,13 @@ public class FECQueue implements OOMHook {
 	@SuppressWarnings("unchecked")
 	public static void dump(ObjectContainer container, int priorities) {
 		ObjectSet<FECQueue> queues = container.query(FECQueue.class);
-		System.out.println("Queues: "+queues.size());
-		for(short prio=0;prio<priorities;prio++) {
+		System.out.println("Queues: " + queues.size());
+		for(short prio=0;prio < priorities;prio++) {
 			Query query = container.query();
 			query.constrain(FECJob.class);
 			query.descend("priority").constrain(Short.valueOf(prio));
 			ObjectSet<FECJob> results = query.execute();
-			System.err.println("FEC jobs at priority "+prio+" : "+results.size());
+			System.err.println("FEC jobs at priority " + prio + " : " + results.size());
 		}
 	}
 }

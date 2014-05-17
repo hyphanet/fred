@@ -43,7 +43,7 @@ public class SimpleBlockSet implements BlockSet {
 		try {
 			return Key.createKeyBlock(key, block);
 		} catch (KeyVerifyException e) {
-			Logger.error(this, "Caught decoding block with "+key+" : "+e, e);
+			Logger.error(this, "Caught decoding block with " + key + " : " + e, e);
 			return null;
 		}
 	}

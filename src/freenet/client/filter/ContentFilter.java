@@ -79,7 +79,7 @@ public class ContentFilter {
 
 		// BMP - has a filter
 		// Reference: http://filext.com/file-extension/BMP
-		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
+		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp", "image/x-bitmap", "image/x-xbitmap", "image/x-win-bitmap", "image/x-windows-bmp", "image/ms-bmp", "image/x-ms-bmp", "application/bmp", "application/x-bmp", "application/x-win-bitmap"  }, new String[0],
 				true, false, new BMPFilter(), null, false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
 				l10n("imageBMPWriteAdvice"), false, null, null, false));	
@@ -112,7 +112,7 @@ public class ContentFilter {
 				false, null, null, false));
 		
 		// HTML - dangerous if not filtered
-		register(new FilterMIMEType(HTML_MIME_TYPES[0], "html", Arrays.asList(HTML_MIME_TYPES).subList(1, HTML_MIME_TYPES.length).toArray(new String[HTML_MIME_TYPES.length-1]), new String[] { "htm" },
+		register(new FilterMIMEType(HTML_MIME_TYPES[0], "html", Arrays.asList(HTML_MIME_TYPES).subList(1, HTML_MIME_TYPES.length).toArray(new String[HTML_MIME_TYPES.length - 1]), new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
@@ -130,7 +130,7 @@ public class ContentFilter {
 	}
 	
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("ContentFilter."+key);
+		return NodeL10n.getBase().getString("ContentFilter." + key);
 	}
 
 	public static void register(FilterMIMEType mimeType) {
@@ -178,7 +178,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc, String maybeCharset) throws UnsafeContentTypeException, IOException {
 		return filter(input, output, typeName, baseURI, cb, trc, maybeCharset, null);
 	}
 
@@ -202,8 +202,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc, linkFilterExceptionProvider));
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc, String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
 	}
 
 	/**
@@ -226,7 +226,7 @@ public class ContentFilter {
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
-		if(logMINOR) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
+		if(logMINOR) Logger.minor(ContentFilter.class, "Filtering data of type" + typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
@@ -237,7 +237,7 @@ public class ContentFilter {
 		
 		int idx = type.indexOf(';');
 		if(idx != -1) {
-			options = type.substring(idx+1);
+			options = type.substring(idx + 1);
 			type = type.substring(0, idx);
 			// Parse options
 			// Format: <type>/<subtype>[ optional white space ];[ optional white space ]<param>=<value>; <param2>=<value2>; ...
@@ -245,11 +245,11 @@ public class ContentFilter {
 			for(String raw: rawOpts) {
 				idx = raw.indexOf('=');
 				if(idx == -1) {
-					Logger.error(ContentFilter.class, "idx = -1 for '=' on option: "+raw+" from "+typeName);
+					Logger.error(ContentFilter.class, "idx = -1 for '=' on option: " + raw + " from " + typeName);
 					continue;
 				}
 				String before = raw.substring(0, idx).trim();
-				String after = raw.substring(idx+1).trim();
+				String after = raw.substring(idx + 1).trim();
 				if(before.equals("charset")) {
 					charset = after;
 				} else {
@@ -295,7 +295,7 @@ public class ContentFilter {
 					if(filterCallback != null)
 						filterCallback.onFinished();
 				}
-				if(charset != null) type = type + "; charset="+charset;
+				if(charset != null) type = type + "; charset=" + charset;
 				output.flush();
 				return new FilterStatus(charset, typeName);
 			}
@@ -324,7 +324,7 @@ public class ContentFilter {
 					try {
 						if((charset = handler.charsetExtractor.getCharset(input, length, charset)) != null) {
 							if(logMINOR)
-								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
+								Logger.minor(ContentFilter.class, "Returning charset: " + charset);
 							return charset;
 						} else if(bom.mustHaveCharset)
 							throw new UndetectableCharsetException(bom.charset);
@@ -342,7 +342,7 @@ public class ContentFilter {
 				try {
 					if((charset = handler.charsetExtractor.getCharset(input, length, handler.defaultCharset)) != null) {
 				        if(logMINOR)
-				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
+				        	Logger.minor(ContentFilter.class, "Returning charset: " + charset);
 						return charset;
 					}
 				} catch (DataFilterException e) {
@@ -452,7 +452,7 @@ public class ContentFilter {
 
 	public static boolean startsWith(byte[] data, byte[] cmp, int length) {
 		if(cmp.length > length) return false;
-		for(int i=0;i<cmp.length;i++) {
+		for(int i=0;i < cmp.length;i++) {
 			if(data[i] != cmp[i]) return false;
 		}
 		return true;
@@ -476,11 +476,11 @@ public class ContentFilter {
 		FilterMIMEType handler = getMIMEType(expectedMIME);
 		if(handler == null || (handler.readFilter == null && !handler.safeToRead)) {
 			if(handler == null) {
-				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to get filter handler for MIME type "+expectedMIME);
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to get filter handler for MIME type " + expectedMIME);
 				return new UnknownContentTypeException(expectedMIME);
 			}
 			else {
-				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to filter unsafe MIME type "+expectedMIME);
+				if(logMINOR) Logger.minor(ContentFilter.class, "Unable to filter unsafe MIME type " + expectedMIME);
 				return new KnownUnsafeContentTypeException(handler);
 			}
 		}

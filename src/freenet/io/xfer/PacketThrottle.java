@@ -56,7 +56,7 @@ public class PacketThrottle {
 
 	public synchronized void setRoundTripTime(long rtt) {
 		_roundTripTime = Math.max(rtt, 10);
-		if(logMINOR) Logger.minor(this, "Set round trip time to "+rtt+" on "+this);
+		if(logMINOR) Logger.minor(this, "Set round trip time to " + rtt + " on " + this);
 	}
 
     public synchronized void notifyOfPacketLost() {
@@ -66,7 +66,7 @@ public class PacketThrottle {
 		if(_windowSize < 1.0F) _windowSize = 1.0F;
 		slowStart = false;
 		if(logMINOR)
-			Logger.minor(this, "notifyOfPacketLost(): "+this);
+			Logger.minor(this, "notifyOfPacketLost(): " + this);
     }
 
     /**
@@ -101,7 +101,7 @@ public class PacketThrottle {
     	if(_windowSize > (windowSize + 1))
     		notifyAll();
     	if(logMINOR)
-    		Logger.minor(this, "notifyOfPacketAcked(): "+this);
+    		Logger.minor(this, "notifyOfPacketAcked(): " + this);
     }
     
     /** Only used for diagnostics. We actually maintain a real window size. So we don't
@@ -115,7 +115,7 @@ public class PacketThrottle {
 	public synchronized String toString() {
 		return Double.toString(getBandwidth()) + " k/sec, (w: "
 				+ _windowSize + ", r:" + _roundTripTime + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total="+_totalPackets+" : "+super.toString();
+				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total=" + _totalPackets + " : " + super.toString();
 	}
 
 	public synchronized long getRoundTripTime() {

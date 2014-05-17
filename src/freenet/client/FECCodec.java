@@ -33,7 +33,7 @@ public abstract class FECCodec {
 	protected final int k, n;
 	// Striping is very costly I/O wise.
 	// So set a maximum buffer size and calculate the stripe size accordingly.
-	static final int MAX_MEMORY_BUFFER = 8*1024*1024;
+	static final int MAX_MEMORY_BUFFER = 8 * 1024 * 1024;
 
         private static volatile boolean logMINOR;
 	static {
@@ -51,7 +51,7 @@ public abstract class FECCodec {
 		this.k = k;
 		this.n = n;
 		if(n == 0 || n < k)
-			throw new IllegalArgumentException("Invalid: k="+k+" n="+n);
+			throw new IllegalArgumentException("Invalid: k=" + k + " n=" + n);
 	}
 	
 	/**
@@ -60,7 +60,7 @@ public abstract class FECCodec {
 	 */
 	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
 		if(logMINOR)
-			Logger.minor(FECCodec.class, "getCodec: splitfileType="+splitfileType+" dataBlocks="+dataBlocks+" checkBlocks="+checkBlocks);
+			Logger.minor(FECCodec.class, "getCodec: splitfileType=" + splitfileType + " dataBlocks=" + dataBlocks + " checkBlocks=" + checkBlocks);
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
@@ -143,7 +143,7 @@ public abstract class FECCodec {
 		// Must be even if 16-bit code.
 		if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 			stripeSize++;
-		if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is "+stripeSize);
+		if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is " + stripeSize);
 
 		try {
 
@@ -274,10 +274,10 @@ public abstract class FECCodec {
 		for(int i = 0; i < dataBlockStatus.length; i++) {
 			Bucket data = buckets[i];
 			if(data.size() != blockLength)
-				throw new IllegalStateException("Block " + i + ": " + data + " : " + dataBlockStatus[i] + " length " + data.size() + " whereas blockLength="+blockLength);
+				throw new IllegalStateException("Block " + i + ": " + data + " : " + dataBlockStatus[i] + " length " + data.size() + " whereas blockLength=" + blockLength);
 			Bucket existingData = dataBlockStatus[i].trySetData(data);
 			if(existingData != null && existingData != data) {
-				if(logMINOR) Logger.minor(this, "Discarding block "+i+" as now unneeded");
+				if(logMINOR) Logger.minor(this, "Discarding block " + i + " as now unneeded");
 				data.free();
 			}
 		}
@@ -334,7 +334,7 @@ public abstract class FECCodec {
 			// Must be even if 16-bit code.
 			if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 				stripeSize++;
-			if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is "+stripeSize);
+			if(logMINOR && stripeSize != 32768) Logger.minor(this, "Stripe size is " + stripeSize);
 
 			byte[] realBuffer = new byte[(k + numberToEncode) * stripeSize];
 			
@@ -356,7 +356,7 @@ public abstract class FECCodec {
 			for(int i = 0; i < dataBlockStatus.length; i++) {
 				buckets[i] = dataBlockStatus[i];
 				if(buckets[i] == null)
-					throw new NullPointerException("Data bucket "+i+" is null!");
+					throw new NullPointerException("Data bucket " + i + " is null!");
 				long sz = buckets[i].size();
 				if(sz < blockLength) {
 					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
@@ -366,7 +366,7 @@ public abstract class FECCodec {
 			}
 
 			if(logMINOR)
-				Logger.minor(this, "Created "+created+" check buckets");
+				Logger.minor(this, "Created " + created + " check buckets");
 
 			//			Runtime.getRuntime().gc();
 //			Runtime.getRuntime().runFinalization();
@@ -464,7 +464,7 @@ public abstract class FECCodec {
 	}
 	
 	public void objectCanDeactivate(ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Deactivating " + this, new Exception("debug"));
 	}
 
 	public abstract short getAlgorithm();

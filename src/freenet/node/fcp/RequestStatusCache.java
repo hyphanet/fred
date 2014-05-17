@@ -41,7 +41,7 @@ public class RequestStatusCache {
 	synchronized void addDownload(DownloadRequestStatus status) {
 		RequestStatus old = 
 			requestsByIdentifier.put(status.getIdentifier(), status);
-		if(logMINOR) Logger.minor(this, "Starting download "+status.getIdentifier());
+		if(logMINOR) Logger.minor(this, "Starting download " + status.getIdentifier());
 		if(old == status) return;
 		assert(old == null);
 		downloads.add(status);
@@ -52,7 +52,7 @@ public class RequestStatusCache {
 		RequestStatus old = 
 			requestsByIdentifier.put(status.getIdentifier(), status);
 		if(old == status) return;
-		if(logMINOR) Logger.minor(this, "Starting upload "+status.getIdentifier());
+		if(logMINOR) Logger.minor(this, "Starting upload " + status.getIdentifier());
 		assert(old == null);
 		uploads.add(status);
 		FreenetURI uri = status.getURI();

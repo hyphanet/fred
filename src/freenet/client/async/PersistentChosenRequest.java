@@ -74,7 +74,7 @@ public class PersistentChosenRequest {
 			ignoreStore = false;
 			forkOnCacheable = sg.forkOnCacheable(container);
 			realTimeFlag = sg.realTimeFlag();
-		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
+		} else throw new IllegalStateException("Creating a PersistentChosenRequest for " + req);
 
 		this.scheduler = sched;
 		// Fill up blocksNotStarted
@@ -107,24 +107,24 @@ public class PersistentChosenRequest {
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "onFinished() on "+this+" for "+block, new Exception("debug"));
+			Logger.minor(this, "onFinished() on " + this + " for " + block, new Exception("debug"));
 		synchronized(this) {
 			// Remove by pointer
 			
 			while(blocksNotStarted.remove(block)) { // It's an ArrayList so we must loop.
-				Logger.error(this, "Block finished but was in blocksNotStarted: "+block+" for "+this, new Exception("error"));
+				Logger.error(this, "Block finished but was in blocksNotStarted: " + block + " for " + this, new Exception("error"));
 			}
 
 			blocksStarted.remove(block);
 			
 			if(blocksFinished.contains(block)) {
-					Logger.error(this, "Block already in blocksFinished: "+block+" for "+this);
+					Logger.error(this, "Block already in blocksFinished: " + block + " for " + this);
 					return;
 				}
 			blocksFinished.add(block);
 			if(!(blocksNotStarted.isEmpty() && blocksStarted.isEmpty())) {
 				if(logMINOR)
-					Logger.minor(this, "Not finishing yet: blocks not started: "+blocksNotStarted.size()+" started: "+blocksStarted.size()+" finished: "+blocksFinished.size()+" for "+this);
+					Logger.minor(this, "Not finishing yet: blocks not started: " + blocksNotStarted.size() + " started: " + blocksStarted.size() + " finished: " + blocksFinished.size() + " for " + this);
 				return;
 			}
 		}
@@ -147,15 +147,15 @@ public class PersistentChosenRequest {
 
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
 		if(!container.ext().isStored(request)) {
-			if(logMINOR) Logger.minor(this, "Request apparently already deleted: "+request+" on "+this);
+			if(logMINOR) Logger.minor(this, "Request apparently already deleted: " + request + " on " + this);
 			scheduler.removeRunningRequest(request, container);
 			return;
 		}
 		if((!alreadyActive) && container.ext().isActive(request))
-			Logger.warning(this, "ALREADY ACTIVATED: "+request, new Exception("debug"));
+			Logger.warning(this, "ALREADY ACTIVATED: " + request, new Exception("debug"));
 		if(!alreadyActive)
 			container.activate(request, 1);
-		Logger.normal(this, "Finishing "+this+" for "+request);
+		Logger.normal(this, "Finishing " + this + " for " + request);
 		// Call all the callbacks.
 		PersistentChosenBlock[] finishedBlocks;
 		int startedSize;
@@ -168,13 +168,13 @@ public class PersistentChosenRequest {
 					// Don't removeRunningRequest, because we've already done that.
 					return;
 				} else {
-					Logger.error(this, "Finished but blocksFinished not empty on "+this, new Exception("debug"));
+					Logger.error(this, "Finished but blocksFinished not empty on " + this, new Exception("debug"));
 					// Process the blocks...
 				}
 			}
 			startedSize = blocksStarted.size();
 			if(startedSize > 0) {
-				Logger.error(this, "Still waiting for callbacks on "+this+" for "+startedSize+" blocks");
+				Logger.error(this, "Still waiting for callbacks on " + this + " for " + startedSize + " blocks");
 				// Wait... if we set finished, we have to process them now, and
 				// we can't process them now because we haven't had the callbacks,
 				// we don't know what the outcome will be.
@@ -186,9 +186,9 @@ public class PersistentChosenRequest {
 		}
 		if(finishedBlocks.length == 0) {
 			if(!dumping)
-				Logger.error(this, "No finished blocks in finish() on "+this);
+				Logger.error(this, "No finished blocks in finish() on " + this);
 			else if(logMINOR)
-				Logger.minor(this, "No finished blocks in finish() on "+this);
+				Logger.minor(this, "No finished blocks in finish() on " + this);
 			// Remove from running requests, we won't be called.
 			scheduler.removeRunningRequest(request, container);
 			if(!alreadyActive)
@@ -274,7 +274,7 @@ public class PersistentChosenRequest {
 
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container, boolean reqAlreadyActive) {
 		if(logMINOR)
-			Logger.minor(this, "Dumping "+this);
+			Logger.minor(this, "Dumping " + this);
 		scheduler.removeRunningRequest(request, container);
 		boolean wasStarted;
 		PersistentChosenBlock[] blocks;
@@ -286,7 +286,7 @@ public class PersistentChosenRequest {
 		for(PersistentChosenBlock block : blocks)
 			block.onDumped();
 		if(!wasStarted) {
-			if(logMINOR) Logger.minor(this, "Finishing immediately in onDumped() as nothing pending: "+this);
+			if(logMINOR) Logger.minor(this, "Finishing immediately in onDumped() as nothing pending: " + this);
 			finish(container, core.sched.clientContext, true, reqAlreadyActive);
 		}
 	}
@@ -298,7 +298,7 @@ public class PersistentChosenRequest {
 			if(key == null) continue;
 			if(sched.hasFetchingKey(key, null, false, null)) {
 				iter.remove();
-				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
+				if(logMINOR) Logger.minor(this, "Pruned duplicate " + block + " from " + this);
 			}
 		}
 	}

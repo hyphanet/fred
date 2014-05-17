@@ -66,8 +66,8 @@ public class SimpleEventProducer implements ClientEventProducer {
             		container.activate(cel, 1);
                 cel.receive(ce, container, context);
             } catch (NoSuchElementException ne) {
-		Logger.normal(this, "Concurrent modification in "+
-				"produceEvent!: "+this);
+		Logger.normal(this, "Concurrent modification in " +
+				"produceEvent!: " + this);
 	    } catch (Exception ue) {
                 System.err.println("---Unexpected Exception------------------");
                 ue.printStackTrace();

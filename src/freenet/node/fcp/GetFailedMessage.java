@@ -43,7 +43,7 @@ public class GetFailedMessage extends FCPMessage {
 
 	public GetFailedMessage(FetchException e, String identifier, boolean global) {
 		if(logMINOR)
-			Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
+			Logger.minor(this, "Creating get failed from " + e + " for " + identifier, e);
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);

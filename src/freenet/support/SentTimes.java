@@ -29,7 +29,7 @@ public class SentTimes {
 	}
 	
 	public synchronized long removeTime(int seqnum) {
-		for(int i=0;i<seqnums.length;i++) {
+		for(int i=0;i < seqnums.length;i++) {
 			if(seqnums[i] == seqnum && times[i] > 0) {
 				long t = times[i];
 				seqnums[i] = 0;

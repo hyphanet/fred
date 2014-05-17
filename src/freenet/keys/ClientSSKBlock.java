@@ -57,8 +57,8 @@ public class ClientSSKBlock implements ClientKeyBlock {
 		System.arraycopy(block.headers, block.headersOffset, decryptedHeaders, 0, SSKBlock.ENCRYPTED_HEADERS_LENGTH);
 		Rijndael aes;
 		try {
-			Logger.minor(this, "cryptoAlgorithm="+key.cryptoAlgorithm+" for "+getClientKey().getURI());
-			aes = new Rijndael(256,256);
+			Logger.minor(this, "cryptoAlgorithm=" + key.cryptoAlgorithm + " for " + getClientKey().getURI());
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
@@ -75,17 +75,17 @@ public class ClientSSKBlock implements ClientKeyBlock {
 		pcfb.blockDecipher(dataOutput, 0, dataOutput.length);
 		// 2 bytes - data length
 		int dataLength = ((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH] & 0xff) << 8) +
-			(decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+1] & 0xff);
+			(decryptedHeaders[DATA_DECRYPT_KEY_LENGTH + 1] & 0xff);
 		// Metadata flag is top bit
 		if((dataLength & 32768) != 0) {
 			dataLength = dataLength & ~32768;
 			isMetadata = true;
 		}
 		if(dataLength > dataOutput.length) {
-			throw new SSKDecodeException("Data length: "+dataLength+" but data.length="+dataOutput.length);
+			throw new SSKDecodeException("Data length: " + dataLength + " but data.length=" + dataOutput.length);
 		}
 		
-        compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
+        compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH + 2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH + 3] & 0xff));
         decoded = true;
         
         if(dontDecompress) {
@@ -128,7 +128,7 @@ public class ClientSSKBlock implements ClientKeyBlock {
      */
 	public byte[] memoryDecode(boolean dontDecompress) throws KeyDecodeException {
 		try {
-			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, dontDecompress);
+			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32 * 1024, dontDecompress);
 			return BucketTools.toByteArray(a); // FIXME
 		} catch (IOException e) {
 			throw new Error(e);

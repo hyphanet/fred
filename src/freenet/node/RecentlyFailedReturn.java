@@ -16,7 +16,7 @@ public class RecentlyFailedReturn {
 	private long wakeup;
 
 	public synchronized void fail(int countWaiting, long wakeupTime) {
- 		if(logMINOR) Logger.minor(this, "RecentlyFailed until "+TimeUtil.formatTime(wakeupTime - System.currentTimeMillis()));
+ 		if(logMINOR) Logger.minor(this, "RecentlyFailed until " + TimeUtil.formatTime(wakeupTime - System.currentTimeMillis()));
 		this.wakeup = wakeupTime;
 		this.recentlyFailed = true;
 	}

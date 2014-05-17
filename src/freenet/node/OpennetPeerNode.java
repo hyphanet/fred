@@ -244,7 +244,7 @@ public class OpennetPeerNode extends PeerNode {
 				isDroppableWithReason(false);
 			}
 			
-		}, OpennetManager.DROP_MIN_AGE+1);
+		}, OpennetManager.DROP_MIN_AGE + 1);
 	}
 
 	@Override
@@ -261,7 +261,7 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public void fatalTimeout() {
 		if(node.isStopping()) return;
-		Logger.error(this, "Disconnecting "+this+" because of fatal timeout");
+		Logger.error(this, "Disconnecting " + this + " because of fatal timeout");
 		// Disconnect.
 		forceDisconnect();
 	}

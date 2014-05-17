@@ -122,7 +122,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		synchronized (this) {
 			if(lastInsertedPeers != null) {
 				if(p.length != lastInsertedPeers.length) return true;
-				for(int i=0;i<p.length;i++)
+				for(int i=0;i < p.length;i++)
 					if(!p[i].strictEquals(lastInsertedPeers[i]))
 						return true;
 			} else {
@@ -185,13 +185,13 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 					try {
 						String[] all = fs.getAll("physical.udp");
 						Peer[] peers = new Peer[all.length];
-						for(int i=0;i<all.length;i++)
+						for(int i=0;i < all.length;i++)
 							peers[i] = new Peer(all[i], false);
 						lastInsertedPeers = peers;
 					} catch (PeerParseException e1) {
-						Logger.error(this, "Error parsing own " + darknetOpennetString + " ref: "+e1+" : "+fs.get("physical.udp"), e1);
+						Logger.error(this, "Error parsing own " + darknetOpennetString + " ref: " + e1 + " : " + fs.get("physical.udp"), e1);
 					} catch (UnknownHostException e1) {
-						Logger.error(this, "Error parsing own " + darknetOpennetString + " ref: "+e1+" : "+fs.get("physical.udp"), e1);
+						Logger.error(this, "Error parsing own " + darknetOpennetString + " ref: " + e1 + " : " + fs.get("physical.udp"), e1);
 					}
 				}
 			}
@@ -216,7 +216,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
 	@Override
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert failed: "+e);
+		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert failed: " + e);
 		synchronized(this) {
 			lastInsertedPeers = null;
 		}
@@ -233,12 +233,12 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
 	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: "+uri);
+		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: " + uri);
 		long l = uri.getSuggestedEdition();
 		if(l < crypto.myARKNumber) {
-			Logger.error(this, "Inserted " + darknetOpennetString + " ARK edition # lower than attempted: "+l+" expected "+crypto.myARKNumber);
+			Logger.error(this, "Inserted " + darknetOpennetString + " ARK edition # lower than attempted: " + l + " expected " + crypto.myARKNumber);
 		} else if(l > crypto.myARKNumber) {
-			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from "+crypto.myARKNumber+" to "+l);
+			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from " + crypto.myARKNumber + " to " + l);
 			crypto.myARKNumber = l;
 			if(crypto.isOpennet)
 				node.writeOpennetFile();
@@ -294,7 +294,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	@Override
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
 			ObjectContainer container) {
-		Logger.error(this, "Bogus onGeneratedMetadata() on "+this+" from "+state, new Exception("error"));
+		Logger.error(this, "Bogus onGeneratedMetadata() on " + this + " from " + state, new Exception("error"));
 		metadata.free();
 	}
 

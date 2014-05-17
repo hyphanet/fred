@@ -54,9 +54,9 @@ public class SimpleSendableInsert extends SendableInsert {
 		else if(block instanceof SSKBlock)
 			scheduler = core.requestStarters.sskPutSchedulerBulk;
 		else
-			throw new IllegalArgumentException("Don't know what to do with "+block);
+			throw new IllegalArgumentException("Don't know what to do with " + block);
 		if(!scheduler.isInsertScheduler())
-			throw new IllegalStateException("Scheduler "+scheduler+" is not an insert scheduler!");
+			throw new IllegalStateException("Scheduler " + scheduler + " is not an insert scheduler!");
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
@@ -71,13 +71,13 @@ public class SimpleSendableInsert extends SendableInsert {
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
 		if(logMINOR)
-			Logger.minor(this, "Finished insert of "+block);
+			Logger.minor(this, "Finished insert of " + block);
 	}
 
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "Failed insert of "+block+": "+e);
+			Logger.minor(this, "Failed insert of " + block + ": " + e);
 	}
 
 	@Override
@@ -93,17 +93,17 @@ public class SimpleSendableInsert extends SendableInsert {
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since this is a single block
 				try {
-					if(logMINOR) Logger.minor(this, "Starting request: "+this);
+					if(logMINOR) Logger.minor(this, "Starting request: " + this);
 					// FIXME bulk flag
 					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
-					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
+					if(logMINOR) Logger.minor(this, "Request failed: " + this + " for " + e);
 					return true;
 				} finally {
 					finished = true;
 				}
-				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
+				if(logMINOR) Logger.minor(this, "Request succeeded: " + this);
 				onSuccess(req.token, null, context);
 				return true;
 			}

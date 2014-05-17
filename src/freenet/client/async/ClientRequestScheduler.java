@@ -125,7 +125,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(!results.hasNext()) break;
 				l = results.next();
 			} catch (RuntimeException e) {
-				throw new Db4oException("Something is broken: "+e, e);
+				throw new Db4oException("Something is broken: " + e, e);
 				// Allow caller to terminate database.
 				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
 			}
@@ -138,16 +138,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 						context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					else
 						context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
-					if(logMINOR) Logger.minor(ClientRequestScheduler.class, "Loaded request key listener: "+listener+" for "+l);
+					if(logMINOR) Logger.minor(ClientRequestScheduler.class, "Loaded request key listener: " + listener + " for " + l);
 				}
 			} catch (KeyListenerConstructionException e) {
 				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
 				e.printStackTrace();
-				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: " + e, e);
 			} catch (Throwable t) {
 				// Probably an error on last startup???
-				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST: "+t, t);
-				System.err.println("FAILED TO LOAD REQUEST: "+t);
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST: " + t, t);
+				System.err.println("FAILED TO LOAD REQUEST: " + t);
 				t.printStackTrace();
 			}
 			container.deactivate(l, 1);
@@ -183,7 +183,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					final RegisterMe regme = new RegisterMe(req, req.getPriorityClass(container), schedCore, null, bootID);
 					container.store(regme);
 					if(logMINOR)
-						Logger.minor(this, "Added insert RegisterMe: "+regme);
+						Logger.minor(this, "Added insert RegisterMe: " + regme);
 					if(!queueFull) {
 					try {
 						jobRunner.queue(new DBJob() {
@@ -196,7 +196,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 									return false;
 								}
 								if(container.ext().isActive(req))
-									Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
+									Logger.error(this, "ALREADY ACTIVE: " + req + " in delayed insert register");
 								container.activate(req, 1);
 								registerInsert(req, true, false, container);
 								container.deactivate(req, 1);
@@ -240,7 +240,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
-			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
+			Logger.minor(this, "register(" + persistent + "," + hasListener + "," + Fields.commaList(getters));
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
@@ -254,7 +254,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(listener != null)
 					schedTransient.addPendingKeys(listener);
 				else
-					Logger.normal(this, "No KeyListener for "+hasListener);
+					Logger.normal(this, "No KeyListener for " + hasListener);
 			} else
 				listener = null;
 			if(getters != null && !noCheckStore) {
@@ -276,7 +276,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final KeyListener listener;
 		if(hasListener != null) {
 			if(hasListener.isCancelled(container)) {
-				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: "+hasListener);
+				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: " + hasListener);
 				return;
 			}
 			container.store(hasListener);
@@ -310,7 +310,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
-		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "finishRegister for " + Fields.commaList(getters) + " anyValid=" + anyValid + " reg=" + reg + " persistent=" + persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(SendableGet getter : getters) {
@@ -330,7 +330,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(persistent)
 					container.activate(getters, 1);
 				if(logMINOR)
-					Logger.minor(this, "finishRegister() for "+Fields.commaList(getters));
+					Logger.minor(this, "finishRegister() for " + Fields.commaList(getters));
 				if(anyValid) {
 					boolean wereAnyValid = false;
 					for(SendableGet getter : getters) {
@@ -405,7 +405,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			if(runningPersistentRequests.remove(request)) {
 				if(logMINOR)
-					Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
+					Logger.minor(this, "Removed running request " + request + " size now " + runningPersistentRequests.size());
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
@@ -452,7 +452,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				short bestPriority = Short.MAX_VALUE;
 				for(PersistentChosenRequest req : starterQueue) {
 					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
-					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio);
+					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: " + req + " prio: " + req.prio);
 					     continue; //Ignore paused requests
 					}
 					if(req.prio < bestPriority) {
@@ -463,13 +463,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(reqGroup != null) {
 				// Try to find a better non-persistent request
-				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio);
+				if(logMINOR) Logger.minor(this, "Persistent request: " + reqGroup + " prio " + reqGroup.prio);
 				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio);
 				if(better != null) {
 					if(better.getPriority() > reqGroup.prio) {
-						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
+						Logger.error(this, "Selected " + better + " as better than " + reqGroup + " but isn't better!");
 					}
-					if(logMINOR) Logger.minor(this, "Returning better: "+better);
+					if(logMINOR) Logger.minor(this, "Returning better: " + better);
 					return better;
 				}
 			}
@@ -481,7 +481,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			synchronized(starterQueue) {
 				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
 				if(block == null) {
-					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
+					if(logMINOR) Logger.minor(this, "No block found on " + reqGroup);
 					int finalLength = 0;
 					Iterator<PersistentChosenRequest> it = starterQueue.iterator();
 					while(it.hasNext()) {
@@ -489,7 +489,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(req == reqGroup) {
 							it.remove();
 							if(logMINOR)
-								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
+								Logger.minor(this, "Removed " + reqGroup + " from starter queue because is empty");
 						} else {
 							finalLength += req.sizeNotStarted();
 						}
@@ -506,7 +506,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(needsRefill)
 				queueFillRequestStarterQueue();
 			if(logMINOR)
-				Logger.minor(this, "grabRequest() returning "+block+" for "+reqGroup);
+				Logger.minor(this, "grabRequest() returning " + block + " for " + reqGroup);
 			return block;
 		}
 	}
@@ -551,7 +551,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	boolean addToStarterQueue(SendableRequest request, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Adding to starter queue: "+request);
+			Logger.minor(this, "Adding to starter queue: " + request);
 		container.activate(request, 1);
 		PersistentChosenRequest chosen;
 		try {
@@ -560,14 +560,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return false;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Created PCR: "+chosen);
+			Logger.minor(this, "Created PCR: " + chosen);
 		container.deactivate(request, 1);
 		boolean dumpNew = false;
 		synchronized(starterQueue) {
 			int length = 0;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) {
-					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
+					Logger.error(this, "Already on starter queue: " + req + " for " + request, new Exception("debug"));
 					dumpNew = true;
 					break;
 				}
@@ -579,7 +579,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				length += chosen.sizeNotStarted();
 				runningPersistentRequests.add(request);
 				if(logMINOR)
-					Logger.minor(this, "Added to running persistent requests, size now "+runningPersistentRequests.size()+" : "+request);
+					Logger.minor(this, "Added to running persistent requests, size now " + runningPersistentRequests.size() + " : " + request);
 				return length > MAX_STARTER_QUEUE_SIZE;
 			}
 		}
@@ -632,7 +632,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		long now = System.currentTimeMillis();
 		try {
-		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK=" + isSSKScheduler + " insert=" + isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
 		boolean checkCooldownQueue = now > nextQueueFillRequestStarterQueue;
 		if((!isInsertScheduler) && checkCooldownQueue) {
@@ -653,7 +653,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(SendableRequest req : runningPersistentRequests) {
 					boolean wasActive = container.ext().isActive(req);
 					if(!wasActive) container.activate(req, 1);
-					Logger.minor(this, "Running persistent request: "+req);
+					Logger.minor(this, "Running persistent request: " + req);
 					if(!wasActive) container.deactivate(req, 1);
 				}
 			}
@@ -662,25 +662,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 			PersistentChosenRequest old = null;
 			for(PersistentChosenRequest req : starterQueue) {
 				if(old == req)
-					Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
+					Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: " + req);
 				if(old != null && old.request == req.request)
-					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
+					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: " + old + " vs " + req + " both " + req.request);
 				boolean ignoreActive = false;
 				if(!ignoreActive) {
 					if(container.ext().isActive(req.request))
-						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: " + req.request + " for " + req + " while checking request queue in filling request queue");
 					else if(logMINOR)
-						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
+						Logger.minor(this, "Not already activated for " + req + " in while checking request queue in filling request queue");
 				} else if(logMINOR)
-					Logger.minor(this, "Ignoring active because just registered: "+req.request);
+					Logger.minor(this, "Ignoring active because just registered: " + req.request);
 				req.pruneDuplicates(ClientRequestScheduler.this);
 				old = req;
 				length += req.sizeNotStarted();
 			}
-			if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+			if(logMINOR) Logger.minor(this, "Queue size: " + length + " SSK=" + isSSKScheduler + " insert=" + isInsertScheduler);
 			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
 				if(length >= WARNING_STARTER_QUEUE_SIZE)
-					Logger.error(this, "Queue already full: "+length);
+					Logger.error(this, "Queue already full: " + length);
 				return;
 			}
 		}
@@ -700,7 +700,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			else {
 				if(r != null && r.wakeupTime > 0 && noLaterThan > r.wakeupTime) {
 					noLaterThan = r.wakeupTime;
-					if(logMINOR) Logger.minor(this, "Waking up in "+TimeUtil.formatTime(noLaterThan - now)+" for cooldowns");
+					if(logMINOR) Logger.minor(this, "Waking up in " + TimeUtil.formatTime(noLaterThan - now) + " for cooldowns");
 				}
 			}
 			if(request == null) {
@@ -743,7 +743,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container, SendableRequest[] mightBeActive) {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR)
-			Logger.minor(this, "Maybe adding to starter queue: prio="+prio);
+			Logger.minor(this, "Maybe adding to starter queue: prio=" + prio);
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
@@ -753,7 +753,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					// requests. Note that this happens with persistent SBI's:
 					// they are added at the new retry count before being
 					// removed at the old retry count.
-					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
+					if(logMINOR) Logger.minor(this, "Already on starter queue: " + old + " for " + req);
 					return;
 				}
 				boolean ignoreActive = false;
@@ -763,11 +763,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(old.request))
-						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: " + old.request + " for " + old + " while checking request queue in maybeAddToStarterQueue for " + req);
 					else if(logDEBUG)
-						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
+						Logger.debug(this, "Not already activated for " + old + " in while checking request queue in maybeAddToStarterQueue for " + req);
 				} else if(logMINOR)
-					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
+					Logger.minor(this, "Ignoring active because just registered: " + old.request + " in maybeAddToStarterQueue for " + req);
 				size += old.sizeNotStarted();
 				if(old.prio > prio)
 					betterThanSome = true;
@@ -845,7 +845,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(schedCore != null)
 			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
-			Logger.error(this, "Listener not found when removing: "+getter);
+			Logger.error(this, "Listener not found when removing: " + getter);
 	}
 
 	/**
@@ -858,7 +858,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(schedCore != null)
 			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
-			Logger.error(this, "Listener not found when removing: "+getter);
+			Logger.error(this, "Listener not found when removing: " + getter);
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container, short oldPrio) {
@@ -872,7 +872,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
-	static final int TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
+	static final int TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY - 1;
 	
 	@Override
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
@@ -883,7 +883,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(succeeded))
-							Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
+							Logger.error(this, "ALREADY ACTIVE in succeeded(): " + succeeded);
 						container.activate(succeeded, 1);
 						schedCore.succeeded(succeeded, container);
 						container.deactivate(succeeded, 1);
@@ -904,7 +904,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
-		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
+		if(logMINOR) Logger.minor(this, "tripPendingKey(" + block.getKey() + ")");
 		
 		if(offeredKeys != null) {
 			offeredKeys.remove(block.getKey());
@@ -932,7 +932,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
-						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
+						if(logMINOR) Logger.minor(this, "tripPendingKey for " + key);
 						if(schedCore.tripPendingKey(key, block, container, clientContext))
 							context.jobRunner.setCommitSoon();
 						return false;
@@ -962,7 +962,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/** Queue the offered key */
 	public void queueOfferedKey(final Key key, boolean realTime) {
 		if(logMINOR)
-			Logger.minor(this, "queueOfferedKey("+key);
+			Logger.minor(this, "queueOfferedKey(" + key);
 		offeredKeys.queueKey(key);
 		starter.wakeUp();
 	}
@@ -985,7 +985,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final boolean logMINOR = ClientRequestScheduler.logMINOR;
 		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent=" + persistent);
 		/*
 		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
 		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database
@@ -1019,7 +1019,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		for(Key key: keys) {
 			if(persistent)
 				container.activate(key, 5);
-			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
+			if(logMINOR) Logger.minor(this, "Restoring key: " + key);
 			if(key instanceof NodeSSK == isSSKScheduler)
 				restoreKey(key, container, now);
 			else
@@ -1035,7 +1035,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
 		if(reqs == null && transientReqs == null) {
 			// Not an error as this can happen due to race conditions etc.
-			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
+			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for " + key);
 		}
 		if(reqs != null) {
 			for(SendableGet req: reqs) {
@@ -1086,7 +1086,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get))
-							Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
+							Logger.error(this, "ALREADY ACTIVE: " + get + " in callFailure(request)");
 						container.activate(get, 1);
 						get.onFailure(e, null, container, clientContext);
 						container.deactivate(get, 1);
@@ -1115,7 +1115,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					@Override
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(insert))
-							Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
+							Logger.error(this, "ALREADY ACTIVE: " + insert + " in callFailure(insert)");
 						container.activate(insert, 1);
 						insert.onFailure(e, null, container, context);
 						container.deactivate(insert, 1);

@@ -65,7 +65,7 @@ public abstract class UIDTag {
 		this.tracker = node.tracker;
 		this.uid = uid;
 		if(logMINOR)
-			Logger.minor(this, "Created "+this);
+			Logger.minor(this, "Created " + this);
 		if(wasLocal) accepted = true; // FIXME remove, but it's always true at the moment.
 	}
 
@@ -88,7 +88,7 @@ public abstract class UIDTag {
 	 */
 	public synchronized boolean addRoutedTo(PeerNode peer, boolean offeredKey) {
 		if(logMINOR)
-			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
+			Logger.minor(this, "Routing to " + peer + " on " + this + (offeredKey ? " (offered)" : ""), new Exception("debug"));
 		if(routedTo == null) routedTo = new HashSet<PeerNode>();
 		routedTo.add(peer);
 		if(offeredKey) {
@@ -139,7 +139,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
-		if(logMINOR) Logger.minor(this, "Unlocking "+this);
+		if(logMINOR) Logger.minor(this, "Unlocking " + this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -159,12 +159,12 @@ public abstract class UIDTag {
 	 */
 	public void removeRoutingTo(PeerNode next) {
 		if(logMINOR)
-			Logger.minor(this, "No longer routing to "+next+" on "+this, new Exception("debug"));
+			Logger.minor(this, "No longer routing to " + next + " on " + this, new Exception("debug"));
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
 			if(!currentlyRoutingTo.remove(next)) {
-				Logger.warning(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
+				Logger.warning(this, "Removing wrong node or removing twice? on " + this + " : " + next, new Exception("debug"));
 			}
 			if(handlingTimeouts != null) {
 				handlingTimeouts.remove(next);
@@ -172,7 +172,7 @@ public abstract class UIDTag {
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
-		if(logMINOR) Logger.minor(this, "Unlocking "+this);
+		if(logMINOR) Logger.minor(this, "Unlocking " + this);
 		innerUnlock(noRecordUnlock);
 	}
 	
@@ -267,7 +267,7 @@ public abstract class UIDTag {
 					expected = true;
 					for(PeerNode pn : currentlyRoutingTo) {
 						if(handlingTimeouts.contains(pn)) {
-							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
+							if(logMINOR) Logger.debug(this, "Still waiting for " + pn.shortToString() + " but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
 							break;
 						}
 						expected = false;
@@ -275,9 +275,9 @@ public abstract class UIDTag {
 				}
 				if(!expected) {
 					if(handlingTimeouts != null)
-						Logger.normal(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" - expected because have timed out so a fork might have succeeded and we might be waiting for the original");
+						Logger.normal(this, "Unlocked handler but still routing to " + currentlyRoutingTo + " - expected because have timed out so a fork might have succeeded and we might be waiting for the original");
 					else
-						Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
+						Logger.error(this, "Unlocked handler but still routing to " + currentlyRoutingTo + " yet not reassigned on " + this, new Exception("debug"));
 				} else
 					reassignToSelf();
 			}
@@ -290,7 +290,7 @@ public abstract class UIDTag {
 					expected = true;
 					for(PeerNode pn : fetchingOfferedKeyFrom) {
 						if(handlingTimeouts.contains(pn)) {
-							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
+							if(logMINOR) Logger.debug(this, "Still waiting for " + pn.shortToString() + " but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
 							break;
 						}
 						expected = false;
@@ -298,13 +298,13 @@ public abstract class UIDTag {
 				}
 				if(!expected)
 					// Fork succeeds can't happen for fetch-offered-keys.
-					Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
+					Logger.error(this, "Unlocked handler but still fetching offered keys from " + fetchingOfferedKeyFrom + " yet not reassigned on " + this, new Exception("debug"));
 				else
 					reassignToSelf();
 			}
 			return false;
 		}
-		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
+		Logger.normal(this, "Unlocking " + this, new Exception("debug"));
 		hasUnlocked = true;
 		return true;
 	}
@@ -344,7 +344,7 @@ public abstract class UIDTag {
 	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());
-		sb.append(":");
+		sb.append(':');
 		sb.append(uid);
 		if(unlockedHandler)
 			sb.append(" (unlocked handler)");
@@ -356,13 +356,13 @@ public abstract class UIDTag {
 			sb.append(" (routing to ");
 			for(PeerNode pn : currentlyRoutingTo) {
 				sb.append(pn.shortToString());
-				sb.append(",");
+				sb.append(',');
 			}
-			sb.setLength(sb.length()-1);
-			sb.append(")");
+			sb.setLength(sb.length() - 1);
+			sb.append(')');
 		}
 		if(fetchingOfferedKeyFrom != null)
-			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(')');
 		if(sourceRestarted)
 			sb.append(" (source restarted)");
 		if(timedOutButContinued)

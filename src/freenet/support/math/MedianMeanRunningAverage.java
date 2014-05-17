@@ -84,7 +84,7 @@ public final class MedianMeanRunningAverage implements RunningAverage, Cloneable
 	
 	@Override
 	public synchronized String toString() {
-		return "Median "+currentValue()+" mean "+mean.currentValue();
+		return "Median " + currentValue() + " mean " + mean.currentValue();
 	}
 	
         /**

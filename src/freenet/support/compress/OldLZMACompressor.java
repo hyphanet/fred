@@ -45,7 +45,7 @@ public class OldLZMACompressor implements Compressor {
 			is = data.getInputStream();
 			os = output.getOutputStream();
 			if(logMINOR)
-				Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
+				Logger.minor(this, "Compressing " + data + " size " + data.size() + " to new bucket " + output);
 			compress(is, os, maxReadLength, maxWriteLength);
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
@@ -72,7 +72,7 @@ public class OldLZMACompressor implements Compressor {
         // 5d 00 00 10 00
         encoder.Code( cis, cos, -1, -1, null );
 		if(logMINOR)
-			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
+			Logger.minor(this, "Read " + cis.count() + " written " + cos.written());
 		if(cos.written() > maxWriteLength)
 			throw new CompressionOutputSizeException();
 		cos.flush();
@@ -86,7 +86,7 @@ public class OldLZMACompressor implements Compressor {
 		else
 			output = bf.makeBucket(maxLength);
 		if(logMINOR)
-			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
+			Logger.minor(this, "Decompressing " + data + " size " + data.size() + " to new bucket " + output);
 		CountedInputStream is = null;
 		BufferedOutputStream os = null;
 		try {
@@ -94,7 +94,7 @@ public class OldLZMACompressor implements Compressor {
 			os = new BufferedOutputStream(output.getOutputStream(), 32768);
 			decompress(is, os, maxLength, maxCheckSizeLength);
 			if(logMINOR)
-				Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
+				Logger.minor(this, "Output: " + output + " size " + output.size() + " read " + is.count());
 			// It is essential that the close()'s throw if there is any problem.
 			is.close(); is = null;
 			os.close(); os = null;

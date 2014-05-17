@@ -32,7 +32,7 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 		try {
 			store.put(b, b.getRawData(), b.getRawHeaders(), false, isOldBlock);
 		} catch (KeyCollisionException e) {
-			Logger.error(this, "Impossible for CHKStore: "+e, e);
+			Logger.error(this, "Impossible for CHKStore: " + e, e);
 		}
 	}
 	

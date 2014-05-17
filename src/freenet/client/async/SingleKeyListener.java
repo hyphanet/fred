@@ -65,7 +65,7 @@ public class SingleKeyListener implements KeyListener {
 		try {
 			fetcher.onGotKey(key, found, container, context);
 		} catch (Throwable t) {
-			Logger.error(this, "Failed: "+t, t);
+			Logger.error(this, "Failed: " + t, t);
 			fetcher.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), null, container, context);
 		}
 		if(persistent)

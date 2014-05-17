@@ -312,12 +312,12 @@ public class BucketTools {
 				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
 				int bytes = (int) Math.min(buf.length, truncateLength - moved);
 				if(bytes <= 0)
-					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+					throw new IllegalStateException("bytes=" + bytes + ", truncateLength=" + truncateLength + ", moved=" + moved);
 				bytes = is.read(buf, 0, bytes);
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					IOException ioException = new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+					IOException ioException = new IOException("Could not move required quantity of data in copyTo: " + bytes + " (moved " + moved + " of " + truncateLength + "): unable to read from " + is);
 					ioException.printStackTrace();
 					throw ioException; 
 				}
@@ -342,7 +342,7 @@ public class BucketTools {
 				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
 				int bytes = (int) Math.min(buf.length, truncateLength - moved);
 				if(bytes <= 0)
-					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+					throw new IllegalStateException("bytes=" + bytes + ", truncateLength=" + truncateLength + ", moved=" + moved);
 				bytes = is.read(buf, 0, bytes);
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
@@ -398,7 +398,7 @@ public class BucketTools {
 					data.clear();
 				return buckets;
 			} else {
-				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
+				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is " + data.bucketSize + " but mine is " + splitSize + " - we will copy the data, but this suggests a bug", new Exception("debug"));
 			}
 		}
 		if(origData instanceof SegmentedBucketChainBucket) {
@@ -412,16 +412,16 @@ public class BucketTools {
 				// Buckets have already been stored, no need to storeTo().
 				return buckets;
 			} else {
-				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
+				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is " + data.bucketSize + " but mine is " + splitSize + " - we will copy the data, but this suggests a bug", new Exception("debug"));
 			}
 		}
 		long length = origData.size();
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
-			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
+			throw new IllegalArgumentException("Way too big!: " + length + " for " + splitSize);
 		int bucketCount = (int) (length / splitSize);
 		if(length % splitSize > 0) bucketCount++;
 		if(logMINOR)
-			Logger.minor(BucketTools.class, "Splitting bucket "+origData+" of size "+length+" into "+bucketCount+" buckets");
+			Logger.minor(BucketTools.class, "Splitting bucket " + origData + " of size " + length + " into " + bucketCount + " buckets");
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
 		DataInputStream dis = null;
@@ -429,7 +429,7 @@ public class BucketTools {
 			dis = new DataInputStream(is);
 			long remainingLength = length;
 			byte[] buf = new byte[splitSize];
-			for(int i=0;i<bucketCount;i++) {
+			for(int i=0;i < bucketCount;i++) {
 				int len = (int) Math.min(splitSize, remainingLength);
 				Bucket bucket = bf.makeBucket(len);
 				buckets[i] = bucket;
@@ -477,7 +477,7 @@ public class BucketTools {
 		try {
 			BucketTools.copyTo(oldBucket, os, length);
 			byte[] buf = new byte[BUFFER_SIZE];
-			for(int x=length;x<blockLength;) {
+			for(int x=length;x < blockLength;) {
 				int remaining = blockLength - x;
 				int thisCycle = Math.min(remaining, buf.length);
 				mt.nextBytes(buf); // FIXME??
@@ -487,7 +487,7 @@ public class BucketTools {
 			os.close();
 			os = null;
 			if(b.size() != blockLength)
-				throw new IllegalStateException("The bucket's size is "+b.size()+" whereas it should be "+blockLength+'!');
+				throw new IllegalStateException("The bucket's size is " + b.size() + " whereas it should be " + blockLength + '!');
 			return b;
 		} finally { Closer.close(os); }
 	}

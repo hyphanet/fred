@@ -51,7 +51,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		super(token, key, ckey, parent.localRequestOnly, parent.ignoreStore, parent.canWriteClientCache, parent.forkOnCacheable, parent.realTimeFlag, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;
-		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
+		if(logMINOR) Logger.minor(this, "Created " + this + " for " + parent + " ckey=" + ckey);
 	}
 	
 	@Override
@@ -59,7 +59,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		assert(!isInsert);
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished in onSuccess() on "+this, new Exception("debug"));
+				Logger.error(this, "Already finished in onSuccess() on " + this, new Exception("debug"));
 				return;
 			}
 			finished = true;
@@ -74,7 +74,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		assert(!isInsert);
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished in onFailure() on "+this, new Exception("debug"));
+				Logger.error(this, "Already finished in onFailure() on " + this, new Exception("debug"));
 				return;
 			}
 			if(e == null)
@@ -90,13 +90,13 @@ public class PersistentChosenBlock extends ChosenBlock {
 		assert(isInsert);
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished in onSuccess() on "+this, new Exception("debug"));
+				Logger.error(this, "Already finished in onSuccess() on " + this, new Exception("debug"));
 				return;
 			}
 			insertSucceeded = true;
 			finished = true;
 			if(getGeneratedKey() == null)
-				Logger.error(this, "Insert completed but no generated key on "+this, new Exception("debug"));
+				Logger.error(this, "Insert completed but no generated key on " + this, new Exception("debug"));
 		}
 		parent.onFinished(this, context);
 	}
@@ -106,7 +106,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		assert(isInsert);
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Already finished in onFailure() on "+this, new Exception("debug"));
+				Logger.error(this, "Already finished in onFailure() on " + this, new Exception("debug"));
 				return;
 			}
 			if(e == null)

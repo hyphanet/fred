@@ -47,9 +47,9 @@ public class ModifyPersistentRequest extends FCPMessage {
 			try {
 				priorityClass = Short.parseShort(prio);
 				if(!RequestStarter.isValidPriorityClass(priorityClass))
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class "+priorityClass+" - range is "+RequestStarter.MINIMUM_PRIORITY_CLASS+" to "+RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid priority class " + priorityClass + " - range is " + RequestStarter.MINIMUM_PRIORITY_CLASS + " to " + RequestStarter.MAXIMUM_PRIORITY_CLASS, identifier, global);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse PriorityClass: "+e.getMessage(), identifier, global);
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Could not parse PriorityClass: " + e.getMessage(), identifier, global);
 			}
 		} else
 			priorityClass = -1;
@@ -84,7 +84,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 					public boolean run(ObjectContainer container, ClientContext context) {
 						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
 						container.activate(req, 1);
-						if(req==null){
+						if(req == null){
 							Logger.error(this, "Huh ? the request is null!");
 							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
 							handler.outputHandler.queue(msg);

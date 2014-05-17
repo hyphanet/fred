@@ -23,12 +23,12 @@ public class UnknownCharsetException extends DataFilterException {
 
 	private static String l10nDF(String key) {
 		// All the strings here are generic
-		return NodeL10n.getBase().getString("ContentDataFilter."+key);
+		return NodeL10n.getBase().getString("ContentDataFilter." + key);
 	}
 
 	private static String l10nDF(String key, String pattern, String value) {
 		// All the strings here are generic
-		return NodeL10n.getBase().getString("ContentDataFilter."+key, pattern, value);
+		return NodeL10n.getBase().getString("ContentDataFilter." + key, pattern, value);
 	}
 
 }

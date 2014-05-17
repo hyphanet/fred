@@ -70,7 +70,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	@Override
 	void innerClose() {
 		if(logMINOR)
-			Logger.minor(this, "innerClose(): "+this+" : "+bucket);
+			Logger.minor(this, "innerClose(): " + this + " : " + bucket);
 		if(bucket == null) {
 			// This still happens. It is clearly impossible as we check in the constructor and throw if it is null.
 			// Nonetheless there is little we can do here ...

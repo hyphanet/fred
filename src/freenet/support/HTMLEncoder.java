@@ -41,7 +41,7 @@ public class HTMLEncoder {
 			String entity;
 			if(Character.isLetterOrDigit(c)){ //only special characters need checking
 				sb.append(c);
-			} else if((entity = charTable.get(c))!=null){
+			} else if((entity = charTable.get(c)) != null){
                 sb.append('&');
                 sb.append(entity);
                 sb.append(';');
@@ -91,13 +91,13 @@ public class HTMLEncoder {
 			}
 			
 			modulo = map.size();
-			int[] collisionTable = new int[max+1]; //using integers instead of booleans (no cleanup)
+			int[] collisionTable = new int[max + 1]; //using integers instead of booleans (no cleanup)
 			boolean ok=false;
 			while (!ok) {
 			    ++modulo; //try a higher modulo
 			    ok = true;
 			    for (int i = 0; ok && i < keys.length; ++i){
-			    	keyIndex = keys[i]%modulo; //try this modulo
+			    	keyIndex = keys[i] % modulo; //try this modulo
 			    	if (collisionTable[keyIndex] == modulo){ //is this value already used
 			    		ok = false;
 			    	}
@@ -112,7 +112,7 @@ public class HTMLEncoder {
 			strings = new String[modulo];
 			for (Map.Entry<Character,String> entry : map.entrySet()) {
 				Character character = entry.getKey();
-				keyIndex = character.charValue()%modulo;
+				keyIndex = character.charValue() % modulo;
 				chars[keyIndex] = character.charValue();
 				strings[keyIndex] = entry.getValue();
 			}
@@ -120,7 +120,7 @@ public class HTMLEncoder {
 		}
 		
 		public String get(char key){
-			return chars[key%modulo] == key? strings[key%modulo]:null;
+			return chars[key % modulo] == key? strings[key % modulo]:null;
 		}
 	}
 }
