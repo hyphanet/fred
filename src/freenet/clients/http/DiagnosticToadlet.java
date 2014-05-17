@@ -180,13 +180,13 @@ public class DiagnosticToadlet extends Toadlet {
 		} else {
 			if (numCHKInserts > 0 || numSSKInserts > 0) {
 				text += l10n("activityInserts", 
-						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { "CHKhandlers", "SSKhandlers", "local" }, 
 						new String[] { Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts) + "/" + Integer.toString(numLocalSSKInserts)})
 						+ "\n";
 			}
 			if (numCHKRequests > 0 || numSSKRequests > 0) {
 				text += l10n("activityRequests", 
-						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { "CHKhandlers", "SSKhandlers", "local" }, 
 						new String[] { Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests) + "/" + Integer.toString(numLocalSSKRequests)})
 						+ "\n";
 			}

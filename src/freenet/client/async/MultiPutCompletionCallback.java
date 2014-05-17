@@ -87,9 +87,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				Logger.error(this, "Already finished but got onSuccess() for " + state + " on " + this);
 				return;
 			}
-			ListUtils.removeBySwapLast(waitingFor,state);
-			ListUtils.removeBySwapLast(waitingForBlockSet,state);
-			ListUtils.removeBySwapLast(waitingForFetchable,state);
+			ListUtils.removeBySwapLast(waitingFor, state);
+			ListUtils.removeBySwapLast(waitingForBlockSet, state);
+			ListUtils.removeBySwapLast(waitingForFetchable, state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(persistent) {
 					container.ext().store(waitingFor, 1);
@@ -131,9 +131,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				Logger.error(this, "Already finished but got onFailure() for " + state + " on " + this);
 				return;
 			}
-			ListUtils.removeBySwapLast(waitingFor,state);
-			ListUtils.removeBySwapLast(waitingForBlockSet,state);
-			ListUtils.removeBySwapLast(waitingForFetchable,state);
+			ListUtils.removeBySwapLast(waitingFor, state);
+			ListUtils.removeBySwapLast(waitingForBlockSet, state);
+			ListUtils.removeBySwapLast(waitingForFetchable, state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(this.e != null) {
 					if(persistent) {
@@ -341,7 +341,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent)
 			container.activate(waitingForBlockSet, 2);
 		synchronized(this) {
-			ListUtils.removeBySwapLast(this.waitingForBlockSet,state);
+			ListUtils.removeBySwapLast(this.waitingForBlockSet, state);
 			if(persistent)
 				container.ext().store(waitingForBlockSet, 2);
 			if(!started) return;
@@ -367,7 +367,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent)
 			container.activate(waitingForFetchable, 2);
 		synchronized(this) {
-			ListUtils.removeBySwapLast(this.waitingForFetchable,state);
+			ListUtils.removeBySwapLast(this.waitingForFetchable, state);
 			if(persistent)
 				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;

@@ -322,7 +322,7 @@ public final class PageMaker {
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
 		//To make something only rendered when javascript is on, then add the jsonly class to it
-		headNode.addChild("noscript").addChild("style"," .jsonly {display:none;}");
+		headNode.addChild("noscript").addChild("style", " .jsonly {display:none;}");
 		if(override != null)
 			headNode.addChild(getOverrideContent());
 		else 
@@ -357,7 +357,7 @@ public final class PageMaker {
 		        new String[] { "fproxy-page", filterCSSIdentifier("page-" + activePath) });
 		//Add a hidden input that has the request's id
 		if(webPushingEnabled)
-			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
+			bodyNode.addChild("input", new String[]{"type", "name", "value", "id"}, new String[]{"hidden", "requestId", ctx.getUniqueId(), "requestId"});
 		
 		// Add the client-side localization only when pushing is enabled
 		if (webPushingEnabled) {
@@ -448,7 +448,7 @@ public final class PageMaker {
 
 				HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
 				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionalClass, "width: " +
-						Math.min(100,Math.floor(100 * connectedRatio)) + "%;" });
+						Math.min(100, Math.floor(100 * connectedRatio)) + "%;" });
 
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
 						new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },

@@ -154,9 +154,9 @@ public class ClientGetWorkerThread extends Thread {
 			onFinish();
 		} catch(Throwable t) {
 			if(!(t instanceof FetchException || t instanceof UnsafeContentTypeException || t instanceof CompressionOutputSizeException))
-				Logger.error(this, "Exception caught while processing fetch: " + t,t);
+				Logger.error(this, "Exception caught while processing fetch: " + t, t);
 			else if(logMINOR)
-				Logger.minor(this, "Exception caught while processing fetch: " + t,t);
+				Logger.minor(this, "Exception caught while processing fetch: " + t, t);
 			setError(t);
 		} finally {
 			Closer.close(input);

@@ -89,12 +89,12 @@ public class URLEncoderDecoderTest extends TestCase {
 		String[] encoded = new String[toEncode.length];
 		//encoding
 		for (int i = 0; i < encoded.length; i++)
-			encoded[i] = URLEncoder.encode(toEncode[i],withLetters);
+			encoded[i] = URLEncoder.encode(toEncode[i], withLetters);
 		//decoding
 		for (int i = 0; i < encoded.length; i++) {
 			final String orig = toEncode[i];
 			final String coded = encoded[i];
-			final String decoded = URLDecoder.decode(coded,withLetters);
+			final String decoded = URLDecoder.decode(coded, withLetters);
 			if(orig.equals(decoded) == false) {
 				for(int c = 0; c < orig.length(); ++c) {
 					final char origChar = orig.charAt(c);
@@ -115,7 +115,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * with both true and false ascii-flag.
 	 */
 	public void testEncodeForced() {
-		String toEncode,expectedResult;
+		String toEncode, expectedResult;
 		char eachChar;
 		for(int i=0; i < URLEncoder.safeURLCharacters.length(); i++) {
 			eachChar = URLEncoder.safeURLCharacters.charAt(i);
@@ -124,9 +124,9 @@ public class URLEncoderDecoderTest extends TestCase {
 				expectedResult = "%" + HexUtil.bytesToHex(
 						//since safe chars are only US-ASCII
 						toEncode.getBytes("US-ASCII")); 
-				assertEquals(URLEncoder.encode(toEncode,toEncode,false),
+				assertEquals(URLEncoder.encode(toEncode, toEncode, false),
 						expectedResult);
-				assertEquals(URLEncoder.encode(toEncode,toEncode,true),
+				assertEquals(URLEncoder.encode(toEncode, toEncode, true),
 						expectedResult);
 			} catch (UnsupportedEncodingException anException) {
 				fail("Not expected exception thrown : " + anException.getMessage()); }
@@ -144,7 +144,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	private boolean isDecodeRaisingEncodedException(String toDecode, boolean tolerant) {
 		boolean retValue = false;
 		try {
-			System.out.println(URLDecoder.decode(toDecode,false));
+			System.out.println(URLDecoder.decode(toDecode, false));
 		} catch (URLEncodedFormatException anException) {
 			retValue = true; }
 		return retValue;
@@ -157,7 +157,7 @@ public class URLEncoderDecoderTest extends TestCase {
 	 */
 	public void testDecodeWrongString() {
 		String toDecode = "%00";
-		assertTrue(isDecodeRaisingEncodedException(toDecode,false));
+		assertTrue(isDecodeRaisingEncodedException(toDecode, false));
 	}
 	
 	/**
@@ -170,7 +170,7 @@ public class URLEncoderDecoderTest extends TestCase {
 		
 		for (int i = 0; i < toDecode.length(); i++)
 			assertTrue(
-					isDecodeRaisingEncodedException("%" + toDecode.substring(i,i + 1),false));
+					isDecodeRaisingEncodedException("%" + toDecode.substring(i, i + 1), false));
 	}
 	
 	/**
@@ -183,7 +183,7 @@ public class URLEncoderDecoderTest extends TestCase {
 		String toDecode = "%%%";
 		
 		try {
-			assertEquals(URLDecoder.decode(toDecode,true),toDecode);
+			assertEquals(URLDecoder.decode(toDecode, true), toDecode);
 		} catch (URLEncodedFormatException anException) {
 			fail("Not expected exception thrown : " + anException.getMessage()); }
 	}

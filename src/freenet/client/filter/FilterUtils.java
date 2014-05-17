@@ -31,18 +31,18 @@ public class FilterUtils {
 		try
 		{
 			boolean containsE=false;
-			String strDecimal,strInteger=null;
+			String strDecimal, strInteger=null;
 			if(strNumber.indexOf('e') > 0)
 			{
 				containsE=true;
-				strDecimal=strNumber.substring(0,strNumber.indexOf('e'));
-				strInteger=strNumber.substring(strDecimal.indexOf('e') + 1,strNumber.length());
+				strDecimal=strNumber.substring(0, strNumber.indexOf('e'));
+				strInteger=strNumber.substring(strDecimal.indexOf('e') + 1, strNumber.length());
 			}
 			else if(strNumber.indexOf('E') > 0)
 			{
 				containsE=true;
-				strDecimal=strNumber.substring(0,strNumber.indexOf('E'));
-				strInteger=strNumber.substring(strDecimal.indexOf('E') + 1,strNumber.length());
+				strDecimal=strNumber.substring(0, strNumber.indexOf('E'));
+				strInteger=strNumber.substring(strDecimal.indexOf('E') + 1, strNumber.length());
 			}
 			else
 				strDecimal=strNumber;
@@ -77,13 +77,13 @@ public class FilterUtils {
 			// That means they can be positive, negative, zero, >100%, and they can contain decimal points.
 			try
 			{
-				Integer.parseInt(value.substring(0,value.length() - 1));
+				Integer.parseInt(value.substring(0, value.length() - 1));
 				return true;
 			}
 			catch(Exception e) { }
 			try
 			{
-				Double.parseDouble(value.substring(0,value.length() - 1));
+				Double.parseDouble(value.substring(0, value.length() - 1));
 				return true;
 			}
 			catch(Exception e) { }
@@ -91,27 +91,27 @@ public class FilterUtils {
 		return false;
 	}
 
-	public static boolean isLength(String value,boolean isSVG) //SVG lengths allow % values
+	public static boolean isLength(String value, boolean isSVG) //SVG lengths allow % values
 	{
 		String lengthValue=null;
 		value=value.trim();
 		if(isSVG)
 		{
 		if(value.charAt(value.length() - 1) == '%')
-			lengthValue=value.substring(0,value.length() - 2);
+			lengthValue=value.substring(0, value.length() - 2);
 		}
 		boolean units = false;
 		if(lengthValue == null && value.length() > 2) //Valid unit Vxx where xx is unit or V
 		{
 			String unit=value.substring(value.length() - 2, value.length());
 			if(allowedUnits.contains(unit)) {
-				lengthValue=value.substring(0,value.length() - 2);
+				lengthValue=value.substring(0, value.length() - 2);
 				units = true;
 			} else
-				lengthValue=value.substring(0,value.length());
+				lengthValue=value.substring(0, value.length());
 		}
 		else
-			lengthValue=value.substring(0,value.length());
+			lengthValue=value.substring(0, value.length());
 		try
 		{
 			int x = Integer.parseInt(lengthValue);
@@ -136,14 +136,14 @@ public class FilterUtils {
 		if(value.indexOf("deg") > -1)
 		{
 			index=value.indexOf("deg");
-			String secondpart=value.substring(index,value.length()).trim();
+			String secondpart=value.substring(index, value.length()).trim();
 			if(!("deg".equals(secondpart)))
 				isValid=false;
 		}
 		else if(value.indexOf("grad") > -1)
 		{
 			index=value.indexOf("grad");
-			String secondpart=value.substring(index,value.length()).trim();
+			String secondpart=value.substring(index, value.length()).trim();
 
 			if(!("grad".equals(secondpart)))
 				isValid=false;
@@ -151,14 +151,14 @@ public class FilterUtils {
 		else if(value.indexOf("rad") > -1)
 		{
 			index=value.indexOf("rad");
-			String secondpart=value.substring(index,value.length()).trim();
+			String secondpart=value.substring(index, value.length()).trim();
 
 			if(!("rad".equals(secondpart)))
 				isValid=false;
 		}
 		if(index != -1 && isValid)
 		{
-			String firstPart=value.substring(0,index);
+			String firstPart=value.substring(0, index);
 			try
 			{
 				Float.parseFloat(firstPart);
@@ -331,7 +331,7 @@ public class FilterUtils {
 	{
 		if(value.indexOf("rect(") == 0 && value.indexOf(')') == value.length() - 1)
 		{
-			String[] shapeParts=value.substring(5,value.length() - 1).split(",");
+			String[] shapeParts=value.substring(5, value.length() - 1).split(",");
 			if(shapeParts.length == 4)
 			{
 				for(String s : shapeParts)
@@ -366,9 +366,9 @@ public class FilterUtils {
 			if(value.length() == 4)
 			{
 				try{
-					Integer.valueOf(value.substring(1,2),16).intValue();
-					Integer.valueOf(value.substring(2,3),16).intValue();
-					Integer.valueOf(value.substring(3,4),16).intValue();
+					Integer.valueOf(value.substring(1, 2), 16).intValue();
+					Integer.valueOf(value.substring(2, 3), 16).intValue();
+					Integer.valueOf(value.substring(3, 4), 16).intValue();
 					return true;
 				}
 				catch(Exception e)
@@ -380,9 +380,9 @@ public class FilterUtils {
 			{
 
 				try{
-					Integer.valueOf(value.substring(1,3),16).intValue();
-					Integer.valueOf(value.substring(3,5),16).intValue();
-					Integer.valueOf(value.substring(5,7),16).intValue();
+					Integer.valueOf(value.substring(1, 3), 16).intValue();
+					Integer.valueOf(value.substring(3, 5), 16).intValue();
+					Integer.valueOf(value.substring(5, 7), 16).intValue();
 					return true;
 				}
 				catch(Exception e)
@@ -392,7 +392,7 @@ public class FilterUtils {
 		}
 		if(value.indexOf("rgb(") == 0 && value.indexOf(')') == value.length() - 1)
 		{
-			String[] colorParts=value.substring(4,value.length() - 1).split(",");
+			String[] colorParts=value.substring(4, value.length() - 1).split(",");
 			if(colorParts.length != 3)
 				return false;
 			boolean isValidColorParts=true;
@@ -406,7 +406,7 @@ public class FilterUtils {
 		}
 		if(value.indexOf("rgba(") == 0 && value.indexOf(')') == value.length() - 1)
 		{
-			String[] colorParts=value.substring(5,value.length() - 1).split(",");
+			String[] colorParts=value.substring(5, value.length() - 1).split(",");
 			if(colorParts.length != 4)
 				return false;
 			boolean isValidColorParts=true;
@@ -577,8 +577,8 @@ public class FilterUtils {
 		if(value.indexOf("khz") != -1)
 		{
 			int index=value.indexOf("khz");
-			firstPart=value.substring(0,index).trim();
-			if(!("khz".equals(value.substring(index,value.length()).trim())))
+			firstPart=value.substring(0, index).trim();
+			if(!("khz".equals(value.substring(index, value.length()).trim())))
 			{
 				isValidFrequency=false;
 			}
@@ -587,8 +587,8 @@ public class FilterUtils {
 		else if(value.indexOf("hz") != -1)
 		{
 			int index=value.indexOf("hz");
-			firstPart=value.substring(0,index).trim();
-			if(!("hz".equals(value.substring(index,value.length()).trim())))
+			firstPart=value.substring(0, index).trim();
+			if(!("hz".equals(value.substring(index, value.length()).trim())))
 			{
 				isValidFrequency=false;
 			}
@@ -615,9 +615,9 @@ public class FilterUtils {
 		value=value.toLowerCase();
 		String intValue;
 		if(value.indexOf("ms") > -1 && value.length() > 2)
-			intValue=value.substring(0,value.length() - 2);
+			intValue=value.substring(0, value.length() - 2);
 		else if(value.indexOf('s') > -1 && value.length() > 1)
-			intValue=value.substring(0,value.length() - 1);
+			intValue=value.substring(0, value.length() - 1);
 		else
 			return false;
 		return isNumber(intValue);
@@ -636,7 +636,7 @@ public class FilterUtils {
 		}
 		return arrayToReturn.toArray(new String[0]);
 	}
-	public static String sanitizeURI(FilterCallback cb,String URI)
+	public static String sanitizeURI(FilterCallback cb, String URI)
 	{
 		try
 		{
@@ -647,11 +647,11 @@ public class FilterUtils {
 			return "";
 		}
 	}
-	public static boolean isURI(FilterCallback cb,String URI)
+	public static boolean isURI(FilterCallback cb, String URI)
 	{
-		return URI.equals(sanitizeURI(cb,URI));
+		return URI.equals(sanitizeURI(cb, URI));
 	}
-	public static String[] splitOnCharArray(String value,String splitOn)
+	public static String[] splitOnCharArray(String value, String splitOn)
 	{
 		ArrayList<String> pointPairs=new ArrayList<String>();
 		//Creating HashMap for faster search operation
@@ -661,7 +661,7 @@ public class FilterUtils {
 		{
 			if(splitOn.indexOf(value.charAt(i)) != -1)
 			{
-				pointPairs.add(value.substring(prev,i));
+				pointPairs.add(value.substring(prev, i));
 				while(i < value.length() && splitOn.indexOf(value.charAt(i)) != -1)
 				{
 					i++;
@@ -681,13 +681,13 @@ public class FilterUtils {
 		}
 		if(isLastElement)
 		{
-			pointPairs.add(value.substring(prev,value.length()));
+			pointPairs.add(value.substring(prev, value.length()));
 		}
 		return pointPairs.toArray(new String[0]);
 	}
 	public static boolean isPointPair(String value)
 	{
-		String[] pointPairs=splitOnCharArray(value," \n\t");
+		String[] pointPairs=splitOnCharArray(value, " \n\t");
 		for(String pointPair: pointPairs)
 		{
 			String[] strParts=pointPair.split(",");
@@ -712,7 +712,7 @@ public class FilterUtils {
 			// Strip any leading '+' character, because Integer.parseInt handles it differently between Java 6 (fails) and 7 (succeeds).
 			if(strValue.length() > 1 && strValue.charAt(0) == '+' && Character.isDigit(strValue.charAt(1)))
 			{
-				strValue = strValue.substring(1,strValue.length());
+				strValue = strValue.substring(1, strValue.length());
 			}
 			
 			int value = Integer.parseInt(strValue);
@@ -736,11 +736,11 @@ public class FilterUtils {
 			if(nIndex != -1)
 			{
 				int aLength=nIndex;
-				if(aLength == 0 || (aLength == 1 && value.charAt(0) == '-') || isIntegerInRange(value.substring(0,aLength), -MAX_NTH, MAX_NTH))
+				if(aLength == 0 || (aLength == 1 && value.charAt(0) == '-') || isIntegerInRange(value.substring(0, aLength), -MAX_NTH, MAX_NTH))
 				{
 					int bIndex=nIndex + 1;
 					int bLength=value.length() - bIndex;
-					if(bLength == 0 || ((value.charAt(bIndex) == '+' || value.charAt(bIndex) == '-') && isIntegerInRange(value.substring(bIndex,value.length()), -MAX_NTH, MAX_NTH)))
+					if(bLength == 0 || ((value.charAt(bIndex) == '+' || value.charAt(bIndex) == '-') && isIntegerInRange(value.substring(bIndex, value.length()), -MAX_NTH, MAX_NTH)))
 					{
 						return true;
 					}

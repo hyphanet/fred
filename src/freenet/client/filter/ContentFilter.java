@@ -79,7 +79,7 @@ public class ContentFilter {
 
 		// BMP - has a filter
 		// Reference: http://filext.com/file-extension/BMP
-		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
+		register(new FilterMIMEType("image/bmp", "bmp", new String[] { "image/x-bmp", "image/x-bitmap", "image/x-xbitmap", "image/x-win-bitmap", "image/x-windows-bmp", "image/ms-bmp", "image/x-ms-bmp", "application/bmp", "application/x-bmp", "application/x-win-bitmap"  }, new String[0],
 				true, false, new BMPFilter(), null, false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
 				l10n("imageBMPWriteAdvice"), false, null, null, false));	
@@ -178,7 +178,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc, String maybeCharset) throws UnsafeContentTypeException, IOException {
 		return filter(input, output, typeName, baseURI, cb, trc, maybeCharset, null);
 	}
 
@@ -202,8 +202,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc, linkFilterExceptionProvider));
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc, String maybeCharset, LinkFilterExceptionProvider linkFilterExceptionProvider) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb, trc, linkFilterExceptionProvider));
 	}
 
 	/**

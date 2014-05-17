@@ -164,7 +164,7 @@ public class NodeCrypto {
 
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
-		anonSetupCipher = new Rijndael(256,256);
+		anonSetupCipher = new Rijndael(256, 256);
 
 		} catch (NodeInitException e) {
 			config.stopping(this);

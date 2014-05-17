@@ -830,7 +830,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
-							ph = new PutHandler(this,name, data, cm, getCHKOnly, persistent);
+							ph = new PutHandler(this, name, data, cm, getCHKOnly, persistent);
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
@@ -1051,7 +1051,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP), getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey, -1);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: " + metadataInserter + " for " + baseMetadata + " for " + this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1762,7 +1762,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				manifestEntries.put(name, o);
 			} else if(o instanceof Bucket) {
 				Bucket data = (Bucket) o;
-				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
+				manifestEntries.put(name, new ManifestElement(name, data, null, data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
 			} else

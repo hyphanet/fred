@@ -378,7 +378,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						threadLimit = val;
 					}
-		},false);
+		}, false);
 		
 		threadLimit = statsConfig.getInt("threadLimit");
 
@@ -396,7 +396,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 						Logger.normal(this, "Changing aggressiveGCModificator to " + val);
 						aggressiveGCModificator = val;
 					}
-		},false);
+		}, false);
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 
 		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
@@ -810,8 +810,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit, peers);
 			
 			maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
-			maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-			maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(peer, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
+			maxTransfersOutLowerLimit = (int)Math.max(1, getLowerLimit(maxTransfersOutUpperLimit, peers));
+			maxTransfersOutPeerLimit = (int)Math.max(1, getPeerLimit(peer, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.expectedTransfersOutCHKSR + runningLocal.expectedTransfersOutSSKSR));
 			maxTransfersOut = calculateMaxTransfersOut(peer, realTime, nonOverheadFraction, maxTransfersOutUpperLimit);
 			
 			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, transfersPerInsert, realTimeFlag, peers, runningLocal.calculateSR(ignoreLocalVsRemote, false));
@@ -1259,8 +1259,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			peerRequestsSnapshot.log(source);
 		
 		int maxTransfersOutUpperLimit = getMaxTransfersUpperLimit(realTimeFlag, nonOverheadFraction);
-		int maxTransfersOutLowerLimit = (int)Math.max(1,getLowerLimit(maxTransfersOutUpperLimit, peers));
-		int maxTransfersOutPeerLimit = (int)Math.max(1,getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
+		int maxTransfersOutLowerLimit = (int)Math.max(1, getLowerLimit(maxTransfersOutUpperLimit, peers));
+		int maxTransfersOutPeerLimit = (int)Math.max(1, getPeerLimit(source, maxTransfersOutUpperLimit - maxTransfersOutLowerLimit, false, transfersPerInsert, realTimeFlag, peers, (peerRequestsSnapshot.expectedTransfersOutCHKSR + peerRequestsSnapshot.expectedTransfersOutSSKSR)));
 		/** Per-peer limit based on current state of the connection. */
 		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction, maxTransfersOutUpperLimit);
 		
@@ -1857,8 +1857,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		//These are not really part of the 'throttling' data, but are also running averages which should be persisted
 		fs.put("AverageCacheCHKLocation", avgCacheCHKLocation.exportFieldSet(true));
 		fs.put("AverageStoreCHKLocation", avgStoreCHKLocation.exportFieldSet(true));
-		fs.put("AverageSlashdotCacheCHKLocation",avgSlashdotCacheCHKLocation.exportFieldSet(true));
-		fs.put("AverageClientCacheCHKLocation",avgClientCacheCHKLocation.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheCHKLocation", avgSlashdotCacheCHKLocation.exportFieldSet(true));
+		fs.put("AverageClientCacheCHKLocation", avgClientCacheCHKLocation.exportFieldSet(true));
 
 		fs.put("AverageCacheCHKSuccessLocation", avgCacheCHKSuccess.exportFieldSet(true));
 		fs.put("AverageSlashdotCacheCHKSuccessLocation", avgSlashdotCacheCHKSucess.exportFieldSet(true));
@@ -1867,8 +1867,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		fs.put("AverageCacheSSKLocation", avgCacheSSKLocation.exportFieldSet(true));
 		fs.put("AverageStoreSSKLocation", avgStoreSSKLocation.exportFieldSet(true));
-		fs.put("AverageSlashdotCacheSSKLocation",avgSlashdotCacheSSKLocation.exportFieldSet(true));
-		fs.put("AverageClientCacheSSKLocation",avgClientCacheSSKLocation.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheSSKLocation", avgSlashdotCacheSSKLocation.exportFieldSet(true));
+		fs.put("AverageClientCacheSSKLocation", avgClientCacheSSKLocation.exportFieldSet(true));
 
 		fs.put("AverageCacheSSKSuccessLocation", avgCacheSSKSuccess.exportFieldSet(true));
 		fs.put("AverageSlashdotCacheSSKSuccessLocation", avgSlashdotCacheSSKSuccess.exportFieldSet(true));
@@ -2085,10 +2085,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("delayTimeRemoteBulk", nlmDelayBulkRemote.currentValue());
 		synchronized(slotTimeoutsSync) {
 		    // timeoutFractions = fatalTimeouts/(fatalTimeouts+allocatedSlot)
-		    fs.put("fatalTimeoutsLocal",fatalTimeoutsInWaitLocal);
-		    fs.put("fatalTimeoutsRemote",fatalTimeoutsInWaitRemote);
-		    fs.put("allocatedSlotLocal",allocatedSlotLocal);
-		    fs.put("allocatedSlotRemote",allocatedSlotRemote);
+		    fs.put("fatalTimeoutsLocal", fatalTimeoutsInWaitLocal);
+		    fs.put("fatalTimeoutsRemote", fatalTimeoutsInWaitRemote);
+		    fs.put("allocatedSlotLocal", allocatedSlotLocal);
+		    fs.put("allocatedSlotRemote", allocatedSlotRemote);
 		}
 
 		WaitingForSlots waitingSlots = tracker.countRequestsWaitingForSlots();

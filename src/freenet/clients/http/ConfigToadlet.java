@@ -90,11 +90,11 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
-						new String[] { "type", "name" },//
-						new String[] { "hidden", "restart" });
+						        new String[] { "type", "name" },//
+						        new String[] { "hidden", "restart" });
 				restartForm.addChild("input", //
 						new String[] { "type", "name", "value" },//
-						new String[] { "submit", "restart2",
+						        new String[] { "submit", "restart2",
 								l10n("restartNode") });
 			}
 
@@ -379,12 +379,12 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					HTMLNode restartForm = ctx.addFormChild(content, "/",
 							"restartForm");
 					restartForm.addChild("input",//
-							new String[] { "type", "name" },//
-							new String[] { "hidden", "restart" });
+							        new String[] { "type", "name" },//
+							        new String[] { "hidden", "restart" });
 					restartForm.addChild("input", //
 							new String[] { "type", "name", "value" },//
-							new String[] { "submit", "restart2",//
-									l10n("restartNode") });
+							        new String[] { "submit", "restart2",//
+									        l10n("restartNode") });
 				}
 
 				if (needRestartUserAlert == null) {

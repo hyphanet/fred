@@ -18,7 +18,7 @@ import freenet.support.Logger.LogLevel;
  */
 public class HexUtil {
 	final
-	private static boolean logDEBUG =Logger.shouldLog(LogLevel.DEBUG,HexUtil.class);
+	private static boolean logDEBUG =Logger.shouldLog(LogLevel.DEBUG, HexUtil.class);
 	private HexUtil() {		
 	}	
 	
@@ -220,7 +220,7 @@ public class HexUtil {
 	    if(i < 0) throw new IOException("Invalid BigInteger length: " + i);
 	    byte[] buf = new byte[i];
 	    dis.readFully(buf);
-	    return new BigInteger(1,buf);
+	    return new BigInteger(1, buf);
 	}
 
 

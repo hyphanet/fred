@@ -210,7 +210,7 @@ public class BitArray implements WritableToDataOutputStream {
 			System.err.println("Start byte is " + startByte + " _bits.length is " + _bits.length);
 			assert(false);
 		}
-		for(int i=startByte;i >= 0;i--,startBit=7) {
+		for(int i=startByte;i >= 0;i--, startBit=7) {
 			byte b = _bits[i];
 			if(b == (byte)0) continue;
 			for(int j=startBit;j >= 0;j--) {

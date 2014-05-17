@@ -37,7 +37,7 @@ public class BitArrayTest extends TestCase {
 		BitArray methodBitArray = new BitArray(arraySize);
 		//setting all bits true
 		for (int i=0; i < methodBitArray.getSize();i++)
-			methodBitArray.setBit(i,value);
+			methodBitArray.setBit(i, value);
 		return methodBitArray;
 	}
 	
@@ -65,7 +65,7 @@ public class BitArrayTest extends TestCase {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		for(int i=0;i < sampleBitsNumber;i++)
 			assertFalse(methodBitArray.bitAt(i));
-		assertEquals(methodBitArray.getSize(),sampleBitsNumber);
+		assertEquals(methodBitArray.getSize(), sampleBitsNumber);
 	}
 	
 	/**
@@ -73,12 +73,12 @@ public class BitArrayTest extends TestCase {
 	 * creating BitArrays with same value bits.
 	 */
 	public void testToStringAllEquals() {
-		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber,true);
-		String expectedString = createAllOneString(sampleBitsNumber,"1");
-		assertEquals(methodBitArray.toString(),expectedString);
-		methodBitArray = createAllEqualsBitArray(sampleBitsNumber,false);
-		expectedString = createAllOneString(sampleBitsNumber,"0");
-		assertEquals(methodBitArray.toString(),expectedString);
+		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber, true);
+		String expectedString = createAllOneString(sampleBitsNumber, "1");
+		assertEquals(methodBitArray.toString(), expectedString);
+		methodBitArray = createAllEqualsBitArray(sampleBitsNumber, false);
+		expectedString = createAllOneString(sampleBitsNumber, "0");
+		assertEquals(methodBitArray.toString(), expectedString);
 	}
 	
 	/**
@@ -87,7 +87,7 @@ public class BitArrayTest extends TestCase {
 	 */
 	public void testToStringEmpty() {
 		BitArray methodBitArray = new BitArray(0);
-		assertEquals(methodBitArray.toString().length(),0);
+		assertEquals(methodBitArray.toString().length(), 0);
 	}
 	
 	/**
@@ -97,7 +97,7 @@ public class BitArrayTest extends TestCase {
 	public void testSetBit_OutOfBounds() {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		try {
-			methodBitArray.setBit(sampleBitsNumber,true); 
+			methodBitArray.setBit(sampleBitsNumber, true); 
 			//fail("Expected Exception Error Not Thrown!");
 			} 
 		catch (ArrayIndexOutOfBoundsException anException) { 
@@ -113,7 +113,7 @@ public class BitArrayTest extends TestCase {
 		BitArray methodBitArray = new BitArray(sampleBitsNumber);
 		//setting true even bits
 		for (int i=0; i < methodBitArray.getSize();i=i + 2)
-			methodBitArray.setBit(i,true);
+			methodBitArray.setBit(i, true);
 		//checking even bits
 		for (int i=0; i < methodBitArray.getSize();i=i + 2)
 			assertTrue(methodBitArray.bitAt(i));
@@ -131,7 +131,7 @@ public class BitArrayTest extends TestCase {
 		byte sampleByte;
 		for (int i =0; i < 256; i++) {
 			sampleByte = (byte)i;
-			assertEquals(i,BitArray.unsignedByteToInt(sampleByte)); }
+			assertEquals(i, BitArray.unsignedByteToInt(sampleByte)); }
 	}
 
 	/**
@@ -139,9 +139,9 @@ public class BitArrayTest extends TestCase {
 	 */
 	public void testGetSize() {
 		BitArray methodBitArray = new BitArray(0);
-		assertEquals(methodBitArray.getSize(),0);
-		methodBitArray = createAllEqualsBitArray(sampleBitsNumber,true);
-		assertEquals(methodBitArray.getSize(),sampleBitsNumber);
+		assertEquals(methodBitArray.getSize(), 0);
+		methodBitArray = createAllEqualsBitArray(sampleBitsNumber, true);
+		assertEquals(methodBitArray.getSize(), sampleBitsNumber);
 	}
 
 	/**
@@ -151,10 +151,10 @@ public class BitArrayTest extends TestCase {
 	 * set.
 	 */
 	public void testSetAllOnes() {
-		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber,true);
+		BitArray methodBitArray = createAllEqualsBitArray(sampleBitsNumber, true);
 		BitArray methodBitArrayToVerify = new BitArray(sampleBitsNumber);
 		methodBitArrayToVerify.setAllOnes();
-		assertEquals(methodBitArray,methodBitArrayToVerify);
+		assertEquals(methodBitArray, methodBitArrayToVerify);
 	}
 
 	/**
@@ -168,17 +168,17 @@ public class BitArrayTest extends TestCase {
 		//only one "1"
 		for(int i=0; i < oneByteBits; i++) {
 			methodBitArray = new BitArray(oneByteBits);
-			methodBitArray.setBit(i,true);
-			assertEquals(methodBitArray.firstOne(),i);}
+			methodBitArray.setBit(i, true);
+			assertEquals(methodBitArray.firstOne(), i);}
 		
 		methodBitArray.setAllOnes();
 		//augmenting zeros
 		for(int i=0; i < oneByteBits - 1; i++) {
-			methodBitArray.setBit(i,false);
-			assertEquals(methodBitArray.firstOne(),i + 1);}
+			methodBitArray.setBit(i, false);
+			assertEquals(methodBitArray.firstOne(), i + 1);}
 		//all zeros
-		methodBitArray.setBit(oneByteBits - 1,false);
-		assertEquals(methodBitArray.firstOne(),-1);
+		methodBitArray.setBit(oneByteBits - 1, false);
+		assertEquals(methodBitArray.firstOne(), -1);
 	}
 	
 	public void testLastOne() {

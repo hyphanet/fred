@@ -44,7 +44,7 @@ public class LoggerHookChain extends LoggerHook {
     @Override
 	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, LogLevel priority) {
         for(LoggerHook hook: hooks) {
-            hook.log(o,c,msg,e,priority);
+            hook.log(o, c, msg, e, priority);
         }
     }
 

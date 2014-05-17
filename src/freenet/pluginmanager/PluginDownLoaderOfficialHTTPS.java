@@ -66,9 +66,9 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 			return new String(bos.toByteArray(), "ISO-8859-1").split(" ")[0];
 	
 		} catch (MalformedURLException e) {
-			throw new PluginNotFoundException("impossible: " + e,e);
+			throw new PluginNotFoundException("impossible: " + e, e);
 		} catch (IOException e) {
-			throw new PluginNotFoundException("Error while fetching sha1 for plugin: " + e,e);
+			throw new PluginNotFoundException("Error while fetching sha1 for plugin: " + e, e);
 		}
 	}
 

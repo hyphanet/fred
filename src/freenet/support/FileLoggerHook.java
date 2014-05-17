@@ -843,7 +843,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException, IntervalParseException{
-		this(rotate,baseFilename,fmt,dfmt,logRotateInterval,LogLevel.valueOf(threshold.toUpperCase()),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
+		this(rotate, baseFilename, fmt, dfmt, logRotateInterval, LogLevel.valueOf(threshold.toUpperCase()), assumeWorking, logOverwrite, maxOldLogFilesDiskUsage, maxListSize);
 	}
 
 	private FileLoggerHook(String fmt, String dfmt, LogLevel threshold, String logRotateInterval, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) throws IntervalParseException {

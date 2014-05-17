@@ -67,7 +67,7 @@ public class CodeTest extends TestCase {
 		}
 
 		int[] indexBackup = new int[index.length];
-		System.arraycopy(index,0,indexBackup,0,index.length);
+		System.arraycopy(index, 0, indexBackup, 0, index.length);
 
 		System.out.println("Getting ready for benchmarking encode()");
 		long t1 = System.currentTimeMillis();

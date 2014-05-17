@@ -270,7 +270,7 @@ public class Version {
 		if ((lgv == null || lgv.length < 3) || !goodProtocol(lgv[2])) {
 			return false;
 		}
-		if (sameArbitraryVersion(v,lgv)) {
+		if (sameArbitraryVersion(v, lgv)) {
 			try {
 				int build = Integer.parseInt(v[3]);
 				int min_build = Integer.parseInt(lgv[3]);

@@ -114,7 +114,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			fec = fec2;
 			}
 		} else 	{
-			fec2 = new PureCode(k,n);
+			fec2 = new PureCode(k, n);
 			synchronized(this) {
 				fec = fec2;
 			}

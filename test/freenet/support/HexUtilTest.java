@@ -48,7 +48,7 @@ public class HexUtilTest extends TestCase {
 			expectedResult = (i <= 15?
 					"0" + (Integer.toHexString(i)):
 					(Integer.toHexString(i)));
-			assertEquals(expectedResult,HexUtil.bytesToHex(methodByteArray));}
+			assertEquals(expectedResult, HexUtil.bytesToHex(methodByteArray));}
 	}
 	
 	/**
@@ -67,7 +67,7 @@ public class HexUtilTest extends TestCase {
 			methodHexString = (i <= 15?
 					"0" + (Integer.toHexString(i)):
 					(Integer.toHexString(i)));
-			assertTrue(Arrays.equals(expectedByteArray,HexUtil.hexToBytes(methodHexString)));}
+			assertTrue(Arrays.equals(expectedByteArray, HexUtil.hexToBytes(methodHexString)));}
 	}
 	
 	/**
@@ -86,7 +86,7 @@ public class HexUtilTest extends TestCase {
 			methodHexString = (i <= 15?
 					"0" + (Integer.toHexString(i)):
 					(Integer.toHexString(i)));
-			assertTrue(Arrays.equals(expectedByteArray,HexUtil.hexToBytes(methodHexString,0)));}
+			assertTrue(Arrays.equals(expectedByteArray, HexUtil.hexToBytes(methodHexString, 0)));}
 	}
 	
 	/**
@@ -105,8 +105,8 @@ public class HexUtilTest extends TestCase {
 			methodHexString = (i <= 15?
 					"0" + (Integer.toHexString(i)):
 					(Integer.toHexString(i)));
-			HexUtil.hexToBytes(methodHexString,outputArray,0);
-			assertTrue(Arrays.equals(expectedByteArray,outputArray));}
+			HexUtil.hexToBytes(methodHexString, outputArray, 0);
+			assertTrue(Arrays.equals(expectedByteArray, outputArray));}
 	}
 	
 	/**
@@ -121,7 +121,7 @@ public class HexUtilTest extends TestCase {
 		for (int i = 0; i < 256; i++) {
 			outputArray = HexUtil.bitsToBytes(methodBitSet, 8);
 			expectedByteArray[0] = (byte)i;
-			assertTrue(Arrays.equals(expectedByteArray,outputArray));
+			assertTrue(Arrays.equals(expectedByteArray, outputArray));
 			addOne(methodBitSet);
 		}
 	}
@@ -145,10 +145,10 @@ public class HexUtilTest extends TestCase {
 	 */
 	public void testCountBytesForBits_int() {
 		//border case
-		assertEquals(HexUtil.countBytesForBits(0),0);
+		assertEquals(HexUtil.countBytesForBits(0), 0);
 		for (int expectedBytesCount = 1; expectedBytesCount < 256; expectedBytesCount++)
 			for (int bits = (expectedBytesCount - 1) * 8 + 1; bits <= (expectedBytesCount) * 8; bits++)
-				assertEquals(HexUtil.countBytesForBits(bits),expectedBytesCount);
+				assertEquals(HexUtil.countBytesForBits(bits), expectedBytesCount);
 	}
 	
 	/**
@@ -162,8 +162,8 @@ public class HexUtilTest extends TestCase {
 		BitSet methodBitSet = new BitSet(8);
 		for (int i = 0; i < 255; i++) {
 			methodByteArray[0] = (byte)i;
-			HexUtil.bytesToBits(methodByteArray,methodBitSet,7);
-			assertTrue(Arrays.equals(methodByteArray,HexUtil.bitsToBytes(methodBitSet,8)));}
+			HexUtil.bytesToBits(methodByteArray, methodBitSet, 7);
+			assertTrue(Arrays.equals(methodByteArray, HexUtil.bitsToBytes(methodBitSet, 8)));}
 	}
 	
 	/**
@@ -174,13 +174,13 @@ public class HexUtilTest extends TestCase {
 	public void testBiToHex_BigInteger() {
 		BigInteger methodBigInteger = new BigInteger("999999999999999");
 		String expectedHexValue = "038d7ea4c67fff";
-		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+		assertEquals(HexUtil.biToHex(methodBigInteger), expectedHexValue);
 		methodBigInteger = BigInteger.ZERO;
 		expectedHexValue = "00";
-		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+		assertEquals(HexUtil.biToHex(methodBigInteger), expectedHexValue);
 		methodBigInteger = new BigInteger("72057594037927935");
 		expectedHexValue = "00ffffffffffffff";
-		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
+		assertEquals(HexUtil.biToHex(methodBigInteger), expectedHexValue);
 	}
 	
 	/**
@@ -191,13 +191,13 @@ public class HexUtilTest extends TestCase {
 	public void testBitsToHexString() {
 		BitSet methodBitSet = new BitSet(8);
 		String expectedString = "00";
-		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
-		methodBitSet.set(0,7,true); /*0x7f*/
+		assertEquals(HexUtil.bitsToHexString(methodBitSet, 8), expectedString);
+		methodBitSet.set(0, 7, true); /*0x7f*/
 		expectedString = "7f";
-		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
-		methodBitSet.set(0,9,true); /*0xff*/
+		assertEquals(HexUtil.bitsToHexString(methodBitSet, 8), expectedString);
+		methodBitSet.set(0, 9, true); /*0xff*/
 		expectedString = "ff";
-		assertEquals(HexUtil.bitsToHexString(methodBitSet,8),expectedString);
+		assertEquals(HexUtil.bitsToHexString(methodBitSet, 8), expectedString);
 	}
 	
 	/**
@@ -206,18 +206,18 @@ public class HexUtilTest extends TestCase {
 	public void testHexToBits() {
 		String methodStringToStore = "00";
 		BitSet methodBitSet = new BitSet(8);
-		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		HexUtil.hexToBits(methodStringToStore, methodBitSet, methodBitSet.size());
 		assertTrue(methodBitSet.cardinality() == 0);		
 		BitSet expectedBitSet = new BitSet(8);
-		expectedBitSet.set(0,7,true); /*0x7f*/
+		expectedBitSet.set(0, 7, true); /*0x7f*/
 		methodStringToStore = "7f";
 		methodBitSet = new BitSet(8);
-		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		HexUtil.hexToBits(methodStringToStore, methodBitSet, methodBitSet.size());
 		assertTrue(methodBitSet.intersects(expectedBitSet));
-		expectedBitSet.set(0,9,true); /*0xff*/
+		expectedBitSet.set(0, 9, true); /*0xff*/
 		methodStringToStore = "ff";
 		methodBitSet = new BitSet(8);
-		HexUtil.hexToBits(methodStringToStore,methodBitSet,methodBitSet.size());
+		HexUtil.hexToBits(methodStringToStore, methodBitSet, methodBitSet.size());
 		assertTrue(methodBitSet.intersects(expectedBitSet));
 	}
 	
@@ -232,7 +232,7 @@ public class HexUtilTest extends TestCase {
 		ByteArrayOutputStream methodByteArrayOutStream = new ByteArrayOutputStream();
 		DataOutputStream methodDataOutStream = new DataOutputStream(methodByteArrayOutStream);
 		try {
-			HexUtil.writeBigInteger(methodBigInteger,methodDataOutStream);
+			HexUtil.writeBigInteger(methodBigInteger, methodDataOutStream);
 			ByteArrayInputStream methodByteArrayInStream = 
 				new ByteArrayInputStream(methodByteArrayOutStream.toByteArray());
 			DataInputStream methodDataInStream = new DataInputStream(methodByteArrayInStream);
@@ -250,7 +250,7 @@ public class HexUtilTest extends TestCase {
         try {
         	int arrayLength = 3;
         	byte[] methodBytesArray = new byte[arrayLength];
-    		HexUtil.bytesToHex(methodBytesArray,arrayLength + 1,1);
+    		HexUtil.bytesToHex(methodBytesArray, arrayLength + 1, 1);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (IllegalArgumentException anException) {
             assertNotNull(anException); }
@@ -265,7 +265,7 @@ public class HexUtilTest extends TestCase {
         try {
         	int arrayLength = 3;
         	byte[] methodBytesArray = new byte[arrayLength];
-    		HexUtil.bytesToHex(methodBytesArray,0,arrayLength + 1);
+    		HexUtil.bytesToHex(methodBytesArray, 0, arrayLength + 1);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (IllegalArgumentException anException) {
             assertNotNull(anException); }
@@ -277,8 +277,8 @@ public class HexUtilTest extends TestCase {
 	 */
 	public void testBytesToHex_byteIntInt_WithZeroLength() {
 		int length = 0;
-		byte[] methodBytesArray = {1,2,3};		//a non-zero bytes array
-		assertEquals("",HexUtil.bytesToHex(methodBytesArray,0,length));
+		byte[] methodBytesArray = {1, 2, 3};		//a non-zero bytes array
+		assertEquals("", HexUtil.bytesToHex(methodBytesArray, 0, length));
 	}
 	
 	/**
@@ -290,7 +290,7 @@ public class HexUtilTest extends TestCase {
         try {
         	String methodString = "0";
         	byte[] methodByteArray = new byte[1];
-    		HexUtil.hexToBytes(methodString,methodByteArray,methodByteArray.length);
+    		HexUtil.hexToBytes(methodString, methodByteArray, methodByteArray.length);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (ArrayIndexOutOfBoundsException anException) {
             assertNotNull(anException); }
@@ -305,7 +305,7 @@ public class HexUtilTest extends TestCase {
         try {
         	String methodString = "0000";
         	byte[] methodByteArray = new byte[1];
-    		HexUtil.hexToBytes(methodString,methodByteArray,0);
+    		HexUtil.hexToBytes(methodString, methodByteArray, 0);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (IndexOutOfBoundsException anException) {
             assertNotNull(anException); }
@@ -320,12 +320,12 @@ public class HexUtilTest extends TestCase {
 		String methodString = "00%0";
 		try {
         	byte[] methodByteArray = new byte[methodString.length()];
-    		HexUtil.hexToBytes(methodString,methodByteArray,0);
+    		HexUtil.hexToBytes(methodString, methodByteArray, 0);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (NumberFormatException anException) {
             assertNotNull(anException); }
         try {
-    		HexUtil.hexToBytes(methodString,0);
+    		HexUtil.hexToBytes(methodString, 0);
             fail("Expected Exception Error Not Thrown!"); } 
         catch (NumberFormatException anException) {
             assertNotNull(anException); }
@@ -350,11 +350,11 @@ public class HexUtilTest extends TestCase {
 		methodBitSet.flip(0);
 		expectedByteArray[0] = (byte)1;
 		/* 0x01 & 0x00 == 0x01 */
-		outputArray = HexUtil.bitsToBytes(methodBitSet,0);
-		assertFalse(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet, 0);
+		assertFalse(Arrays.equals(expectedByteArray, outputArray));
 		/* 0x01 & 0x01 == 0x01 */
-		outputArray = HexUtil.bitsToBytes(methodBitSet,1);
-		assertTrue(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet, 1);
+		assertTrue(Arrays.equals(expectedByteArray, outputArray));
 		
 		/* 0x80 */
 		methodBitSet.flip(7);
@@ -362,11 +362,11 @@ public class HexUtilTest extends TestCase {
 		methodBitSet.flip(3);
 		expectedByteArray[0] = (byte)128 + 8 + 1;
 		/* 0x89 & 0x08 == 0x89 */
-		outputArray = HexUtil.bitsToBytes(methodBitSet,3);
-		assertFalse(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet, 3);
+		assertFalse(Arrays.equals(expectedByteArray, outputArray));
 		/* 0x89 & 0xff == 0x89 */
-		outputArray = HexUtil.bitsToBytes(methodBitSet,8);
-		assertTrue(Arrays.equals(expectedByteArray,outputArray));
+		outputArray = HexUtil.bitsToBytes(methodBitSet, 8);
+		assertTrue(Arrays.equals(expectedByteArray, outputArray));
 	}
 
 	/* Checks that offset == array length is allowed, which is needed for

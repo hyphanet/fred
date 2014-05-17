@@ -132,8 +132,8 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
             keys[i] = chk;
             Logger.minor(RealNodeRequestInsertTest.class, "Decoded: " + new String(newBlock.memoryDecode(), "UTF-8"));
-            Logger.normal(RealNodeRequestInsertTest.class,"CHK: " + chk.getURI());
-            Logger.minor(RealNodeRequestInsertTest.class,"Headers: " + HexUtil.bytesToHex(block.getHeaders()));
+            Logger.normal(RealNodeRequestInsertTest.class, "CHK: " + chk.getURI());
+            Logger.minor(RealNodeRequestInsertTest.class, "Headers: " + HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
 				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);

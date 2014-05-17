@@ -551,7 +551,7 @@ public class DarknetPeerNode extends PeerNode {
 				gotError = true;
 			}
 		} catch (FSParseException e2) {
-			Logger.error(this, "Could not parse extra peer data: " + e2 + '\n' + fs.toString(),e2);
+			Logger.error(this, "Could not parse extra peer data: " + e2 + '\n' + fs.toString(), e2);
 			gotError = true;
 		}
 		return !gotError;

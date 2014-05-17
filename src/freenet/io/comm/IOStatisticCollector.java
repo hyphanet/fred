@@ -120,7 +120,7 @@ public class IOStatisticCollector {
 			String key = entry.getKey();
 			int inres[] = entry.getValue().getRecieved();
 			int outres[] = entry.getValue().getSent();
-			System.err.print((key + "          ").substring(0,22) + ": ");
+			System.err.print((key + "          ").substring(0, 22) + ": ");
 			int tin = 0;
 			int tout = 0;
 			

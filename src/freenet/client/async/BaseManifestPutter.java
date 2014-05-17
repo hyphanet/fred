@@ -1849,7 +1849,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				throw new IllegalStateException("Item '" + name + "' already exist!");
 			}
 			HashMap<String, Object> newDir = new HashMap<String, Object>();
-			parentDir.put(name , newDir);
+			parentDir.put(name, newDir);
 			return newDir;
 		}
 
@@ -1969,7 +1969,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		public ContainerBuilder makeSubContainer(String name) {
 			ContainerBuilder subCon = new ContainerBuilder(selfHandle, name);
-			currentDir.put(name , subCon.selfHandle);
+			currentDir.put(name, subCon.selfHandle);
 			putHandlersTransformMap.put(subCon.selfHandle, currentDir);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(subCon.selfHandle);
 			return subCon;

@@ -61,7 +61,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		});
 	}
 
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb, TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		this.baseURI = uri;
 		this.cb = cb;
 		this.trc=trc;
@@ -69,7 +69,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb, TagReplacerCallback trc, LinkFilterExceptionProvider linkFilterExceptionProvider) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
@@ -362,7 +362,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(u.getFragment() != null){
 				try{
 				// FIXME encode it properly
-					p += URLEncoder.encode(u.getFragment(),"UTF-8");
+					p += URLEncoder.encode(u.getFragment(), "UTF-8");
 				}catch (UnsupportedEncodingException e1){
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
@@ -454,7 +454,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	@Override
 	public String processTag(ParsedTag pt) {
 		if(trc != null){
-			return trc.processTag(pt,this);
+			return trc.processTag(pt, this);
 		}else{
 			return null;
 		}

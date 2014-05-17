@@ -633,7 +633,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							pc.currentStyleScriptChunk = "";
 						}
 						
-						t.write(w,pc);
+						t.write(w, pc);
 						if (pc.writeAfterTag.length() > 0) {
 							w.write(pc.writeAfterTag.toString());
 							pc.writeAfterTag = new StringBuilder(1024);
@@ -714,7 +714,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		 * this.startSlash = t.startSlash; this.endSlash = t.endSlash; }
 		 */
 		
-		public ParsedTag(String elementName,Map<String,String> attributes){
+		public ParsedTag(String elementName, Map<String,String> attributes){
 			this.element=elementName;
 			startSlash=false;
 			endSlash=true;
@@ -818,20 +818,20 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public Map<String,String> getAttributesAsMap(){
 			Map<String,String> map=new HashMap<String, String>();
 			for(String attr: unparsedAttrs) {
-				String name=attr.substring(0,attr.indexOf('='));
-				String value=attr.substring(attr.indexOf('=') + 2,attr.length() - 1);
+				String name=attr.substring(0, attr.indexOf('='));
+				String value=attr.substring(attr.indexOf('=') + 2, attr.length() - 1);
 				map.put(name, value);
 			}
 			return map;
 		}
 
-		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
+		public void htmlwrite(Writer w, HTMLParseContext pc) throws IOException {
 			String s = toString();
 			if(pc.getisXHTML())
 			{
 				if(ElementInfo.isVoidElement(element) && s.charAt(s.length() - 2) != '/')
 				{
-					s=s.substring(0,s.length() - 1) + " />";
+					s=s.substring(0, s.length() - 1) + " />";
 				}
 			}
 			if (s != null) {
@@ -839,14 +839,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		public void write(Writer w,HTMLParseContext pc) throws IOException {
+		public void write(Writer w, HTMLParseContext pc) throws IOException {
 			if(!startSlash)
 			{
 				if(ElementInfo.tryAutoClose(element) && element.equals(pc.peekTopElement()))
 					pc.closeXHTMLTag(element, w);
 				if(pc.getisXHTML() &&  !ElementInfo.isVoidElement(element))
 					pc.pushElementInStack(element);
-				htmlwrite(w,pc);
+				htmlwrite(w, pc);
 			}
 			else
 			{
@@ -856,7 +856,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 				else
 				{
-					htmlwrite(w,pc);
+					htmlwrite(w, pc);
 				}
 			}
 		}

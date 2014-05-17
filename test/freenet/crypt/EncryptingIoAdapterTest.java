@@ -87,7 +87,7 @@ public class EncryptingIoAdapterTest extends TestCase {
 		for(int written=0;written < size;) {
 			int write = Math.min(writeStep, size - written);
 			byte[] data = new byte[write];
-			System.arraycopy(bigBuffer,written,data,0,write);
+			System.arraycopy(bigBuffer, written, data, 0, write);
 			a.write(data);
 			written += write;
 		}
@@ -96,9 +96,9 @@ public class EncryptingIoAdapterTest extends TestCase {
 		for(int read=0;read < size;) {
 			int toRead = Math.min(readStep, size - read);
 			int readBytes = a.read(readBuffer, toRead);
-			assertTrue("Read " + readBytes + " bytes at " + read + "/" + size + " toRead=" + toRead + " readStep=" + readStep,readBytes > 0);
+			assertTrue("Read " + readBytes + " bytes at " + read + "/" + size + " toRead=" + toRead + " readStep=" + readStep, readBytes > 0);
 			byte[] compareBuf = new byte[readBytes];
-			System.arraycopy(bigBuffer,read,compareBuf,0,readBytes);
+			System.arraycopy(bigBuffer, read, compareBuf, 0, readBytes);
 			for(int i=0;i < compareBuf.length;i++)
                                 assertTrue("Byte " + (i + read) + " is wrong for buffered test size=" + size + " write=" + writeStep + " read=" + readStep + " seed=" + seed, readBuffer[i] == compareBuf[i]);               
 

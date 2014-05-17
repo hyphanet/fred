@@ -33,37 +33,37 @@ public class DSATest extends TestCase{
     private static final BigInteger FIPS_P = new NativeBigInteger(
                                 "8df2a494492276aa3d25759bb06869cbeac0d83afb8d0cf7" +
                                 "cbb8324f0d7882e5d0762fc5b7210eafc2e9adac32ab7aac" +
-                                "49693dfbf83724c2ec0736ee31c80291",16);
+                                "49693dfbf83724c2ec0736ee31c80291", 16);
     private static final BigInteger FIPS_Q = new NativeBigInteger(
-                                "c773218c737ec8ee993b4f2ded30f48edace915f",16);
+                                "c773218c737ec8ee993b4f2ded30f48edace915f", 16);
     private static final BigInteger FIPS_G = new NativeBigInteger(
                                 "626d027839ea0a13413163a55b4cb500299d5522956cefcb" +
                                 "3bff10f399ce2c2e71cb9de5fa24babf58e5b79521925c9c" +
-                                "c42e9f6f464b088cc572af53e6d78802",16);
+                                "c42e9f6f464b088cc572af53e6d78802", 16);
     private static final BigInteger FIPS_X = new NativeBigInteger(
-                                "2070b3223dba372fde1c0ffc7b2e3b498b260614",16);
+                                "2070b3223dba372fde1c0ffc7b2e3b498b260614", 16);
     private static final BigInteger FIPS_Y = new NativeBigInteger(
                                 "19131871d75b1612a819f29d78d1b0d7346f7aa77bb62a85" +
                                 "9bfd6c5675da9d212d3a36ef1672ef660b8c7c255cc0ec74" +
-                                "858fba33f44c06699630a76b030ee333",16);
+                                "858fba33f44c06699630a76b030ee333", 16);
     private static final BigInteger FIPS_K = new NativeBigInteger(
-                                "358dad571462710f50e254cf1a376b2bdeaadfbf",16);
+                                "358dad571462710f50e254cf1a376b2bdeaadfbf", 16);
     private static final BigInteger FIPS_K_INV = new NativeBigInteger(
-                                "0d5167298202e49b4116ac104fc3f415ae52f917",16);
+                                "0d5167298202e49b4116ac104fc3f415ae52f917", 16);
     private static final BigInteger FIPS_SHA1_M = new NativeBigInteger(
-                                "a9993e364706816aba3e25717850c26c9cd0d89d",16);
+                                "a9993e364706816aba3e25717850c26c9cd0d89d", 16);
     private static final BigInteger FIPS_R = new NativeBigInteger(
-                                "8bac1ab66410435cb7181f95b16ab97c92b341c0",16);
+                                "8bac1ab66410435cb7181f95b16ab97c92b341c0", 16);
     private static final BigInteger FIPS_S = new NativeBigInteger(
-                                "41e2345f1f56df2458f426d155b4ba2db6dcd8c8",16);
+                                "41e2345f1f56df2458f426d155b4ba2db6dcd8c8", 16);
     private static final DSAGroup FIPS_DSA_GROUP = 
-                    new DSAGroup(FIPS_P,FIPS_Q,FIPS_G);
+                    new DSAGroup(FIPS_P, FIPS_Q, FIPS_G);
     private static final DSAPrivateKey FIPS_DSA_PRIVATE_KEY = 
                     new DSAPrivateKey(FIPS_X, FIPS_DSA_GROUP);
     private static final DSAPublicKey FIPS_DSA_PUBLIC_KEY =
-                    new DSAPublicKey(FIPS_DSA_GROUP,FIPS_Y);
+                    new DSAPublicKey(FIPS_DSA_GROUP, FIPS_Y);
     private static final DSASignature FIPS_DSA_SIGNATURE = 
-                    new DSASignature(FIPS_R,FIPS_S);
+                    new DSASignature(FIPS_R, FIPS_S);
     /*------------------------------------------------------------------------*/
     
     private RandomSource randomSource;
@@ -86,7 +86,7 @@ public class DSATest extends TestCase{
         DSASignature aSignature = 
                 DSA.sign(FIPS_DSA_GROUP, FIPS_DSA_PRIVATE_KEY, FIPS_K, FIPS_SHA1_M, randomSource);
         
-        assertTrue(DSA.verify(FIPS_DSA_PUBLIC_KEY,aSignature,FIPS_SHA1_M,false));
+        assertTrue(DSA.verify(FIPS_DSA_PUBLIC_KEY, aSignature, FIPS_SHA1_M, false));
     }
     
     /** Test of verify(DSAPublicKey kp,
@@ -95,7 +95,7 @@ public class DSATest extends TestCase{
      * method comparing it with the DSA values
      * based on FIPS examples */
     public void testVerify() {
-        assertTrue(DSA.verify(FIPS_DSA_PUBLIC_KEY,FIPS_DSA_SIGNATURE,FIPS_SHA1_M,false));
+        assertTrue(DSA.verify(FIPS_DSA_PUBLIC_KEY, FIPS_DSA_SIGNATURE, FIPS_SHA1_M, false));
     }
     
     /**
@@ -109,8 +109,8 @@ public class DSATest extends TestCase{
         DSASignature secondSignature = 
                 DSA.sign(FIPS_DSA_GROUP, FIPS_DSA_PRIVATE_KEY, FIPS_K, FIPS_SHA1_M, randomSource);
         
-        assertEquals(firstSignature.getR(),secondSignature.getR());
-        assertEquals(firstSignature.getS(),secondSignature.getS());
+        assertEquals(firstSignature.getR(), secondSignature.getR());
+        assertEquals(firstSignature.getS(), secondSignature.getS());
     }
 
     /**
@@ -119,7 +119,7 @@ public class DSATest extends TestCase{
      * to generate a correct k value */
     public void testSignSmallQValue(){
         try {
-            DSA.sign(FIPS_DSA_GROUP,FIPS_DSA_PRIVATE_KEY,FIPS_SHA1_M,randomSource);
+            DSA.sign(FIPS_DSA_GROUP, FIPS_DSA_PRIVATE_KEY, FIPS_SHA1_M, randomSource);
             fail("Exception Error Not Thrown!");
         } catch (IllegalArgumentException anException) {
             assertNotNull(anException);
@@ -134,10 +134,10 @@ public class DSATest extends TestCase{
      * based on FIPS examples */
     public void testSign_grp_pvtKey_r_kInv_m_rand() {
         DSASignature aSignature =
-                DSA.sign(FIPS_DSA_GROUP,FIPS_DSA_PRIVATE_KEY,FIPS_R,FIPS_K_INV,FIPS_SHA1_M,randomSource);
+                DSA.sign(FIPS_DSA_GROUP, FIPS_DSA_PRIVATE_KEY, FIPS_R, FIPS_K_INV, FIPS_SHA1_M, randomSource);
         
-        assertEquals(aSignature.getR(),FIPS_R);
-        assertEquals(aSignature.getS(),FIPS_S);
+        assertEquals(aSignature.getR(), FIPS_R);
+        assertEquals(aSignature.getS(), FIPS_S);
     }
     
     /**
@@ -154,20 +154,20 @@ public class DSATest extends TestCase{
         DSASignature anotherSignature;
         
         DSASignature aSignature =
-                DSA.sign(FIPS_DSA_GROUP,FIPS_DSA_PRIVATE_KEY,FIPS_K,FIPS_SHA1_M,randomSource);
+                DSA.sign(FIPS_DSA_GROUP, FIPS_DSA_PRIVATE_KEY, FIPS_K, FIPS_SHA1_M, randomSource);
         
         BigInteger generatedR = aSignature.getR();
         BigInteger generatedS = aSignature.getS();
         
-        assertEquals(generatedR,FIPS_R);
-        assertEquals(generatedS,FIPS_S);
+        assertEquals(generatedR, FIPS_R);
+        assertEquals(generatedS, FIPS_S);
         
         
         for(int i = 0; i <= FIPS_X.bitCount(); i++) {
             x = x.flipBit(i);
             if (x.compareTo(FIPS_X) != 0) {
                 aTestPrivateKey = new DSAPrivateKey(x, FIPS_DSA_GROUP);
-                anotherSignature = DSA.sign(FIPS_DSA_GROUP,aTestPrivateKey,FIPS_K,FIPS_SHA1_M,randomSource);
+                anotherSignature = DSA.sign(FIPS_DSA_GROUP, aTestPrivateKey, FIPS_K, FIPS_SHA1_M, randomSource);
                 assertFalse(generatedR.compareTo(anotherSignature.getR()) == 0 && 
                             generatedS.compareTo(anotherSignature.getS()) == 0);
             }
@@ -187,12 +187,12 @@ public class DSATest extends TestCase{
     public void testSign_grp_pvtKey_m_rand() {
         DSAGroup aDSAgroup = Global.DSAgroupBigA;
         
-        DSAPrivateKey aDSAPrivKey=new DSAPrivateKey(aDSAgroup,randomSource);
-        DSAPublicKey aDSAPubKey=new DSAPublicKey(aDSAgroup,aDSAPrivKey);
+        DSAPrivateKey aDSAPrivKey=new DSAPrivateKey(aDSAgroup, randomSource);
+        DSAPublicKey aDSAPubKey=new DSAPublicKey(aDSAgroup, aDSAPrivKey);
         DSASignature aSignature=
-                DSA.sign(aDSAgroup,aDSAPrivKey,aDSAPrivKey.getX(),randomSource);
+                DSA.sign(aDSAgroup, aDSAPrivKey, aDSAPrivKey.getX(), randomSource);
         
-        assertTrue(DSA.verify(aDSAPubKey,aSignature,aDSAPrivKey.getX(),false));
+        assertTrue(DSA.verify(aDSAPubKey, aSignature, aDSAPrivKey.getX(), false));
     }
     
     /* The following tests still generates problem,

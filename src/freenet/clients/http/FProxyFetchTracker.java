@@ -77,7 +77,7 @@ public class FProxyFetchTracker implements Runnable {
 		}
 	}
 	
-	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize, FetchContext fctx){
+	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
 		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize, fctx);
 		if(progress != null){
 			return progress.getWaiter();
@@ -150,7 +150,7 @@ public class FProxyFetchTracker implements Runnable {
 			if(toRemove != null)
 			for(FProxyFetchInProgress r : toRemove) {
 				if(logMINOR){
-					Logger.minor(this,"Removed fetchinprogress:" + r);
+					Logger.minor(this, "Removed fetchinprogress:" + r);
 				}
 				fetchers.removeElement(r.uri, r);
 			}

@@ -32,7 +32,7 @@ public class JceLoader {
 		Provider p;
 		// NSS is preferred over BC, add it first
 		p = null;
-		if (checkUse("use.NSS","false")) {
+		if (checkUse("use.NSS", "false")) {
 			try {
 				p = (new NSSLoader()).load(checkUse("prefer.NSS"));
 			} catch(Throwable e) {
@@ -95,7 +95,7 @@ public class JceLoader {
 				}
 			}
 			if(nssProvider == null) {
-				File nssFile = File.createTempFile("nss",".cfg");
+				File nssFile = File.createTempFile("nss", ".cfg");
 				nssFile.deleteOnExit();
 				OutputStream os = null;
 				try {

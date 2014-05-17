@@ -202,8 +202,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         byte[] data = dataString.getBytes("UTF-8");
         Logger.minor(RealNodeRequestInsertTest.class, "Decoded: " + new String(block.memoryDecode(), "UTF-8"));
-        Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: " + insertKey.getURI());
-        Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: " + fetchKey.getURI());
+        Logger.normal(RealNodeRequestInsertTest.class, "Insert Key: " + insertKey.getURI());
+        Logger.normal(RealNodeRequestInsertTest.class, "Fetch Key: " + fetchKey.getURI());
 		try {
 			insertAttempts++;
 			randomNode.clientCore.realPut(block.getBlock(), false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);

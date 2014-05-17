@@ -219,7 +219,7 @@ public class StatisticsToadlet extends Toadlet {
 		if(advancedMode) {
 			// store size box
 			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
-             HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
+             HTMLNode storeSizeInfobox = contentNode.addChild("div", "class", "infobox");
 			
 			drawStoreSizeBox(storeSizeInfobox, myLocation, nodeUptimeSeconds);
            
@@ -1226,12 +1226,12 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode activityList = activityInfoboxContent.addChild("ul");
 			if (numCHKInserts > 0 || numSSKInserts > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityInserts", 
-						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { "CHKhandlers", "SSKhandlers", "local" }, 
 						new String[] { Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts) + "/" + Integer.toString(numLocalSSKInserts)}));
 			}
 			if (numCHKRequests > 0 || numSSKRequests > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityRequests", 
-						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { "CHKhandlers", "SSKhandlers", "local" }, 
 						new String[] { Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests) + "/" + Integer.toString(numLocalSSKRequests)}));
 			}
 			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {

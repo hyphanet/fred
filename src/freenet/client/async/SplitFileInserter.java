@@ -822,7 +822,7 @@ public class SplitFileInserter implements ClientPutState {
 		System.out.println("Data length: " + dataLength);
 		System.out.println("Segment count: " + segments.length);
 		System.out.println("Fetchable: " + fetchable);
-		container.activate(parent,1);
+		container.activate(parent, 1);
 		System.out.println("Parent: " + parent);
 		parent.dump(container);
 		container.deactivate(parent, 1);

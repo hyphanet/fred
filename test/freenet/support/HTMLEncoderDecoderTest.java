@@ -38,7 +38,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 */
 	public void testDecodeSingleEntities() {
 		for (int i =0; i < UTFUtil.HTML_ENTITIES_UTF.length; i++)
-			assertEquals(HTMLDecoder.decode(UTFUtil.HTML_ENTITIES_UTF[i][1]),UTFUtil.HTML_ENTITIES_UTF[i][0]);
+			assertEquals(HTMLDecoder.decode(UTFUtil.HTML_ENTITIES_UTF[i][1]), UTFUtil.HTML_ENTITIES_UTF[i][0]);
 	}
 	
 	/**
@@ -53,7 +53,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 			toDecode.append(UTFUtil.HTML_ENTITIES_UTF[i][1]);
 			expected.append(UTFUtil.HTML_ENTITIES_UTF[i][0]);
 		}
-		assertEquals(HTMLDecoder.decode(toDecode.toString()),expected.toString());
+		assertEquals(HTMLDecoder.decode(toDecode.toString()), expected.toString());
 	}
 	
 	/**
@@ -64,16 +64,16 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 */
 	public void testDecodeIncomplete() {
 		//without ending semicolon
-		assertEquals(HTMLDecoder.decode("&Phi"),"&Phi");
+		assertEquals(HTMLDecoder.decode("&Phi"), "&Phi");
 		//an Entity without a char, 
 		//which means a not existing Entity 
-		assertEquals(HTMLDecoder.decode("&Ph;"),"&Ph;");
+		assertEquals(HTMLDecoder.decode("&Ph;"), "&Ph;");
 		//without ash
-		assertEquals(HTMLDecoder.decode("&1234;"),"&1234;");
+		assertEquals(HTMLDecoder.decode("&1234;"), "&1234;");
 		//without ampersand
-		assertEquals(HTMLDecoder.decode("Phi;"),"Phi;");
+		assertEquals(HTMLDecoder.decode("Phi;"), "Phi;");
 		//emtpy String
-		assertEquals(HTMLDecoder.decode(""),"");
+		assertEquals(HTMLDecoder.decode(""), "");
 	}
 	
 	/**
@@ -108,7 +108,7 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 */
 	public void testCompactMixed(){
 		String toCompact = "\u0020" + "\t" + "\n" + "\r" + "\u200b" + "\u000c";
-		assertEquals(HTMLDecoder.compact(toCompact)," ");
+		assertEquals(HTMLDecoder.compact(toCompact), " ");
 	}
 	
 	/**

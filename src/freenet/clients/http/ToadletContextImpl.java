@@ -448,7 +448,7 @@ public class ToadletContextImpl implements ToadletContext {
     static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
 	
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.parse(httpDate);
 	}

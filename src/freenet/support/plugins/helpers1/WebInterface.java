@@ -46,6 +46,6 @@ public class WebInterface {
 	}
 
 	public void registerInvisible(Toadlet toadlet) {
-		_container.register(toadlet , null, toadlet.path(), true, false);
+		_container.register(toadlet, null, toadlet.path(), true, false);
 	}
 }

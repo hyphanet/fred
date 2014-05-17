@@ -210,7 +210,7 @@ public class FCPClient {
 			reqs = completedUnackedRequests.toArray();
 		}
 		int i = 0;
-		for(i=offset;i < Math.min(reqs.length,offset + max);i++) {
+		for(i=offset;i < Math.min(reqs.length, offset + max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);
@@ -232,7 +232,7 @@ public class FCPClient {
 			reqs = runningPersistentRequests.toArray();
 		}
 		int i = 0;
-		for(i=offset;i < Math.min(reqs.length,offset + max);i++) {
+		for(i=offset;i < Math.min(reqs.length, offset + max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);

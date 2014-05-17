@@ -75,7 +75,7 @@ public class FCPConnectionInputHandler implements Runnable {
 		while(true) {
 			SimpleFieldSet fs;
 			if(WrapperManager.hasShutdownHookBeenTriggered()) {
-				FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
+				FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN, true, "The node is shutting down", "Node", false);
 				handler.outputHandler.queue(msg);
 				Closer.close(is);
 				return;

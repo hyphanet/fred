@@ -70,7 +70,7 @@ public class LRUMap<K, V> {
         QItem<K,V> insert = hash.get(key);
         if (insert == null) {
             insert = new QItem<K, V>(key, value);
-            hash.put(key,insert);
+            hash.put(key, insert);
         } else {
         	insert.value = value;
             list.remove(insert);

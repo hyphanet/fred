@@ -100,7 +100,7 @@ public class ECDSATest extends TestCase {
     }
     
     public static String toHex(byte[] arg) {
-        return String.format("%040x", new BigInteger(1,arg));
+        return String.format("%040x", new BigInteger(1, arg));
     }
     
     public static String toHex(String arg) throws UnsupportedEncodingException {

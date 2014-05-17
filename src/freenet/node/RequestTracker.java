@@ -102,8 +102,8 @@ public class RequestTracker {
 			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
 			return innerLock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
-			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk,false, realTimeFlag);
-			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk, local, realTimeFlag) : null;
 			return innerLock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
 	}
@@ -155,11 +155,11 @@ public class RequestTracker {
 			innerUnlock(map, null, (OfferReplyTag)tag, uid, ssk, insert, offerReply, false, canFail);
 		} else if(insert) {
 			HashMap<Long,InsertTag> overallMap = getInsertTracker(ssk, false, realTimeFlag);
-			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,InsertTag> localMap = local ? getInsertTracker(ssk, local, realTimeFlag) : null;
 			innerUnlock(overallMap, localMap, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else {
 			HashMap<Long,RequestTag> overallMap = getRequestTracker(ssk, false, realTimeFlag);
-			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk,local, realTimeFlag) : null;
+			HashMap<Long,RequestTag> localMap = local ? getRequestTracker(ssk, local, realTimeFlag) : null;
 			innerUnlock(overallMap, localMap, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 	}

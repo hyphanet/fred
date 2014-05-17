@@ -732,17 +732,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
 			//Header of the table
-			detailedStatusBox.addChild(new HTMLNode("tr")).addChildren(new HTMLNode[]{new HTMLNode("th",l10n("resultName")),new HTMLNode("th",l10n("numOfResults"))});
+			detailedStatusBox.addChild(new HTMLNode("tr")).addChildren(new HTMLNode[]{new HTMLNode("th", l10n("resultName")), new HTMLNode("th", l10n("numOfResults"))});
 			HTMLNode statusBoxTable=detailedStatusBox.addChild(new HTMLNode("tbody"));
 			//Iterate through the return codes
 			for(PeerAdditionReturnCodes returnCode:PeerAdditionReturnCodes.values()){
 				if(results.containsKey(returnCode)){
 					//Add a <tr> and 2 <td> with the name of the code and the number of occasions it happened. If the code is OK, we use green, red elsewhere.
-					statusBoxTable.addChild(new HTMLNode("tr","style","color:" + (returnCode == PeerAdditionReturnCodes.OK?"green":"red"))).addChildren(new HTMLNode[]{new HTMLNode("td",l10n("peerAdditionCode." + returnCode.toString())),new HTMLNode("td",results.get(returnCode).toString())});
+					statusBoxTable.addChild(new HTMLNode("tr", "style", "color:" + (returnCode == PeerAdditionReturnCodes.OK?"green":"red"))).addChildren(new HTMLNode[]{new HTMLNode("td", l10n("peerAdditionCode." + returnCode.toString())), new HTMLNode("td", results.get(returnCode).toString())});
 				}
 			}
 
-			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode, "node-added", true);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox", l10n("reportOfNodeAddition"), contentNode, "node-added", true);
 			infoboxContent.addChild(detailedStatusBox);
 			if(!isOpennet())
 				infoboxContent.addChild("p").addChild("a", "href", "/addfriend/", l10n("addAnotherFriend"));
@@ -761,7 +761,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param trust 
 	 * @param request To pull any extra fields from
 	 * @return The result of the addition*/
-	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
+	private PeerAdditionReturnCodes addNewNode(String nodeReference, String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
 		SimpleFieldSet fs;
 		
 		try {

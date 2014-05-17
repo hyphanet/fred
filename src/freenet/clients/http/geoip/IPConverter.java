@@ -318,7 +318,7 @@ public class IPConverter {
 			/* Convert some special IPv6 addresses to IPv4 */
 			if(ip[0] == (byte)0x20 && ip[1] == (byte)0x02) {
 				// 2002::/16, 6to4 tunnels
-				ip = Arrays.copyOfRange(ip, 2,6);
+				ip = Arrays.copyOfRange(ip, 2, 6);
 			} else if((	ip[ 0] == (byte)0 && ip[ 1] == (byte)0 &&
 						ip[ 2] == (byte)0 && ip[ 3] == (byte)0 &&
 						ip[ 4] == (byte)0 && ip[ 5] == (byte)0 &&
@@ -326,7 +326,7 @@ public class IPConverter {
 						ip[ 8] == (byte)0 && ip[ 9] == (byte)0 &&
 						ip[10] == (byte)0 && ip[11] == (byte)0)) {
 				// ::/96, deprecated IPv4-compatible IPv6
-				ip = Arrays.copyOfRange(ip, 12,16);
+				ip = Arrays.copyOfRange(ip, 12, 16);
 			} else if(( ip[0] == (byte)0x20 && ip[1] == (byte)0x01 &&
 						ip[2] == (byte)0x00 && ip[3] == (byte)0x00)) {
 				// 2001:0::/32, Teredo tunnels

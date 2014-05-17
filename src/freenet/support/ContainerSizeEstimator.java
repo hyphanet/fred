@@ -65,7 +65,7 @@ public final class ContainerSizeEstimator {
 		return result;
 	}
 
-	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
+	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize, int maxDeep) {
 		// files
 		for(Map.Entry<String,Object> entry:metadata.entrySet()) {
 			Object o = entry.getValue();

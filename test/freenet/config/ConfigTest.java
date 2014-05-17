@@ -63,7 +63,7 @@ public class ConfigTest extends TestCase {
 	public void testGetConfigs() {
 		assertNotNull(conf.getConfigs());
 		assertFalse(new Config().getConfigs().equals(conf));
-		assertEquals(1 , conf.getConfigs().length);
+		assertEquals(1, conf.getConfigs().length);
 		assertSame(sc, conf.getConfigs()[0]);
 	}
 

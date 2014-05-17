@@ -518,7 +518,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * @param listener - The listener to be added*/
 	public synchronized void addListener(FProxyFetchListener listener){
 		if(logMINOR){
-			Logger.minor(this,"Registered listener:" + listener);
+			Logger.minor(this, "Registered listener:" + listener);
 		}
 		this.listener.add(listener);
 	}
@@ -527,11 +527,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * @param listener - The listener to be removed*/
 	public synchronized void removeListener(FProxyFetchListener listener){
 		if(logMINOR){
-			Logger.minor(this,"Removed listener:" + listener);
+			Logger.minor(this, "Removed listener:" + listener);
 		}
 		this.listener.remove(listener);
 		if(logMINOR){
-			Logger.minor(this,"can cancel now?:" + canCancel());
+			Logger.minor(this, "can cancel now?:" + canCancel());
 		}
 	}
 	

@@ -1312,7 +1312,7 @@ public class SimpleFieldSet {
 			try {
 				ret[i] = Double.valueOf(strings[i]);
 			} catch(NumberFormatException e) {
-				Logger.error(this, "Cannot parse " + strings[i] + " : " + e,e);
+				Logger.error(this, "Cannot parse " + strings[i] + " : " + e, e);
 				return null;
 			}
 		}
@@ -1328,7 +1328,7 @@ public class SimpleFieldSet {
 			try {
 				ret[i] = Float.valueOf(strings[i]);
 			} catch(NumberFormatException e) {
-				Logger.error(this, "Cannot parse " + strings[i] + " : " + e,e);
+				Logger.error(this, "Cannot parse " + strings[i] + " : " + e, e);
 				return null;
 			}
 		}
@@ -1344,7 +1344,7 @@ public class SimpleFieldSet {
             try {
                 ret[i] = Boolean.valueOf(strings[i]);
             } catch(NumberFormatException e) {
-                Logger.error(this, "Cannot parse " + strings[i] + " : " + e,e);
+                Logger.error(this, "Cannot parse " + strings[i] + " : " + e, e);
                 return null;
             }
         }

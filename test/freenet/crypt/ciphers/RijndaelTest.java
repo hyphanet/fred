@@ -1119,7 +1119,7 @@ public class RijndaelTest extends TestCase {
 						", PLAIN=" + HexUtil.bytesToHex(plain) + //
 						", CIPHER=" + HexUtil.bytesToHex(cipher) + //
 						", PLAIN2=" + HexUtil.bytesToHex(plain2),//
-						Arrays.equals(plain, plain2));
+						        Arrays.equals(plain, plain2));
 			}
 		}
 	}

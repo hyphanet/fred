@@ -144,10 +144,10 @@ public class ECDH {
                 kg = KeyPairGenerator.getInstance("EC", kgProvider);
                 kg.initialize(spec);
             } catch (NoSuchAlgorithmException e) {
-                Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(),e);
+                Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(), e);
                 e.printStackTrace();
             } catch (InvalidAlgorithmParameterException e) {
-                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : " + e.getMessage(),e);
+                Logger.error(ECDH.class, "InvalidAlgorithmParameterException : " + e.getMessage(), e);
                 e.printStackTrace();
             }
             keygenCached = kg;
@@ -188,10 +188,10 @@ public class ECDH {
 
             return ka.generateSecret();
         } catch (InvalidKeyException e) {
-            Logger.error(this, "InvalidKeyException : " + e.getMessage(),e);
+            Logger.error(this, "InvalidKeyException : " + e.getMessage(), e);
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(this, "NoSuchAlgorithmException : " + e.getMessage(),e);
+            Logger.error(this, "NoSuchAlgorithmException : " + e.getMessage(), e);
             e.printStackTrace();
         }
         return null;
@@ -214,7 +214,7 @@ public class ECDH {
             remotePublicKey = (ECPublicKey)kf.generatePublic(ks);
             
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(),e);
+            Logger.error(ECDH.class, "NoSuchAlgorithmException : " + e.getMessage(), e);
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
             Logger.error(ECDH.class, "InvalidKeySpecException : " + e.getMessage(), e);

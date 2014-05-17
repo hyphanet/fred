@@ -63,7 +63,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 		this.deleteOnFree = deleteOnFree;
 
             if (logDEBUG) {
-                Logger.debug(this,"Initializing TempFileBucket(" + getFile());
+                Logger.debug(this, "Initializing TempFileBucket(" + getFile());
             }
 	}
 

@@ -47,7 +47,7 @@ public class CPUID {
 		final int EBX;
 		final int ECX;
 		final int EDX;
-		CPUIDResult(int EAX,int EBX,int ECX, int EDX)
+		CPUIDResult(int EAX, int EBX, int ECX, int EDX)
 		{
 			this.EAX = EAX;
 			this.EBX = EBX;
@@ -540,7 +540,7 @@ public class CPUID {
     
     private static String getResourceName()
     {
-    	String pname = CPUID.class.getPackage().getName().replace('.','/');
+    	String pname = CPUID.class.getPackage().getName().replace('.', '/');
     	return pname + '/' + getLibraryPrefix() + getLibraryMiddlePart() + '.' + getLibrarySuffix();
     }
     

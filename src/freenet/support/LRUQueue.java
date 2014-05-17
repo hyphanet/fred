@@ -37,7 +37,7 @@ public class LRUQueue<T> {
 		QItem<T> insert = hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
-            hash.put(obj,insert);
+            hash.put(obj, insert);
         } else {
             list.remove(insert);
         }
@@ -55,7 +55,7 @@ public class LRUQueue<T> {
 		QItem<T> insert = hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
-            hash.put(obj,insert);
+            hash.put(obj, insert);
         } else {
             list.remove(insert);
         }

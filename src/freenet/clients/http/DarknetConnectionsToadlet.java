@@ -209,7 +209,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	 */
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
-		if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("send_n2ntm")) {
+		if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("send_n2ntm")) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -227,20 +227,20 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			N2NTMToadlet.createN2NTMSendForm( pageNode, ctx.isAdvancedModeEnabled(), contentNode, ctx, peers);
 			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("update_notes")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("update_notes")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			for(DarknetPeerNode pn: peerNodes) {
 				if (request.isPartSet("peerPrivateNote_" + pn.hashCode())) {
-					if(!request.getPartAsStringFailsafe("peerPrivateNote_" + pn.hashCode(),250).equals(pn.getPrivateDarknetCommentNote())) {
-						pn.setPrivateDarknetCommentNote(request.getPartAsStringFailsafe("peerPrivateNote_" + pn.hashCode(),250));
+					if(!request.getPartAsStringFailsafe("peerPrivateNote_" + pn.hashCode(), 250).equals(pn.getPrivateDarknetCommentNote())) {
+						pn.setPrivateDarknetCommentNote(request.getPartAsStringFailsafe("peerPrivateNote_" + pn.hashCode(), 250));
 					}
 				}
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("enable")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("enable")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -251,7 +251,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("disable")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("disable")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -262,7 +262,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("set_burst_only")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("set_burst_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -273,7 +273,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("clear_burst_only")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("clear_burst_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -284,7 +284,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("set_ignore_source_port")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("set_ignore_source_port")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -295,7 +295,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("clear_ignore_source_port")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("clear_ignore_source_port")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -306,7 +306,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("clear_dont_route")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("clear_dont_route")) {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			for(DarknetPeerNode pn: peerNodes) {
 				if (request.isPartSet("node_" + pn.hashCode())) {
@@ -315,7 +315,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("set_dont_route")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("set_dont_route")) {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			for(DarknetPeerNode pn: peerNodes) {
 				if(request.isPartSet("node_" + pn.hashCode())) {
@@ -324,7 +324,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("set_listen_only")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("set_listen_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -335,7 +335,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("clear_listen_only")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("clear_listen_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -346,7 +346,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("set_allow_local")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("set_allow_local")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -357,7 +357,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("clear_allow_local")) {
+		} else if (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("clear_allow_local")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -388,7 +388,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			}
 			redirectHere(ctx);
 			return;
-		} else if (request.isPartSet("remove") || (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action",25).equals("remove"))) {			
+		} else if (request.isPartSet("remove") || (request.isPartSet("doAction") && request.getPartAsStringFailsafe("action", 25).equals("remove"))) {			
 			if(logMINOR) Logger.minor(this, "Remove node");
 			
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();

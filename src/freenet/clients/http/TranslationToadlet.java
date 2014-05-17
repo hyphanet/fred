@@ -132,7 +132,7 @@ public class TranslationToadlet extends Toadlet {
 					new String[] { "type", "name", "value" }, 
 					new String[] { "submit", "translation_update", l10n("updateTranslationCommand")
 			});
-			updateForm.addChild("input", new String[] { "type", "name" , (gotoNext ? "checked" : "unchecked") } , new String[] { "checkbox", "gotoNext", ""}, l10n("gotoNext"));
+			updateForm.addChild("input", new String[] { "type", "name", (gotoNext ? "checked" : "unchecked") }, new String[] { "checkbox", "gotoNext", ""}, l10n("gotoNext"));
 			if(!showEverything)
 				updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
 			

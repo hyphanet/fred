@@ -94,7 +94,7 @@ public class Message {
 		try {
 			mspec = MessageType.getSpec(bb.readInt(), veryLax);
 		} catch (IOException e1) {
-			if (logMINOR) Logger.minor(Message.class,"Failed to read message type: " + e1, e1);
+			if (logMINOR) Logger.minor(Message.class, "Failed to read message type: " + e1, e1);
 			return null;
 		}
 		if (mspec == null) {

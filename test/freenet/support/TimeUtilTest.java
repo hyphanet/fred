@@ -40,7 +40,7 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongIntBoolean_MaxValue() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55.807s";
-		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6,true),
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE, 6, true),
 				expectedForMaxLongValue);
 	}
 
@@ -50,7 +50,7 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongInt() {
 		String expectedForMaxLongValue = "15250284452w3d7h12m55s";
-		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE,6),
+		assertEquals(TimeUtil.formatTime(Long.MAX_VALUE, 6),
 				expectedForMaxLongValue);
 	}
 	
@@ -75,15 +75,15 @@ public class TimeUtilTest extends TestCase {
 		Long methodLong;
 		String[][] valAndExpected = {
 				//one week
-				{"604800000","1w"},	
+				{"604800000", "1w"},	
 				//one day
-				{"86400000","1d"},	
+				{"86400000", "1d"},	
 				//one hour
-				{"3600000","1h"},	
+				{"3600000", "1h"},	
 				//one minute
-				{"60000","1m"},		
+				{"60000", "1m"},		
 				//one second
-				{"1000","1s"}		
+				{"1000", "1s"}		
 		};
 		for(int i = 0; i < valAndExpected.length; i++) {
 			methodLong = Long.valueOf(valAndExpected[i][0]);
@@ -115,7 +115,7 @@ public class TimeUtilTest extends TestCase {
 				"1w1d1h1m1.001s"	
 		};
 		for(int i = 0; i < valAndExpected.length; i++)
-			assertEquals(TimeUtil.formatTime(oneForTermLong,i,true),
+			assertEquals(TimeUtil.formatTime(oneForTermLong, i, true),
 					valAndExpected[i]);
 	}
 	
@@ -127,8 +127,8 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongIntBoolean_milliseconds() {
 		long methodValue = 1;	//1ms
-		assertEquals(TimeUtil.formatTime(methodValue,6,false),"0s");
-		assertEquals(TimeUtil.formatTime(methodValue,6,true),"0.001s");
+		assertEquals(TimeUtil.formatTime(methodValue, 6, false), "0s");
+		assertEquals(TimeUtil.formatTime(methodValue, 6, true), "0.001s");
 	}
 	
 	/**
@@ -139,7 +139,7 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongIntBoolean_tooManyTerms() {	
 		try {
-			TimeUtil.formatTime(oneForTermLong,7);
+			TimeUtil.formatTime(oneForTermLong, 7);
 			fail("Expected IllegalArgumentException not thrown"); }
 		catch (IllegalArgumentException anException) {
 			assertNotNull(anException); }

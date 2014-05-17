@@ -387,7 +387,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Accept it.
 		
 		try {
-			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
+			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag, realTimeFlag);
 		} catch (NotConnectedException e) {
 			// Too bad.
 		}

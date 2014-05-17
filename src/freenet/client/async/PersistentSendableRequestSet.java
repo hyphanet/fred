@@ -78,7 +78,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 			if(success)
 				Logger.error(this, "Request is in " + this + " twice or more : " + req);
 			success = true;
-			ListUtils.removeBySwapLast(list,idx);
+			ListUtils.removeBySwapLast(list, idx);
 		}
 		if(!success) return false;
 		container.ext().store(list, 1);

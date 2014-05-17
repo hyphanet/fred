@@ -4,7 +4,7 @@ public class Cache {
 	short[] codes;
 	int[] ips;
 	
-	public Cache(short[] codes,int[] ips) {
+	public Cache(short[] codes, int[] ips) {
 		this.codes=codes;
 		this.ips=ips;
 	}

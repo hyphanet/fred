@@ -846,7 +846,7 @@ final public class FileUtil {
 	                rng.nextBytes(iv);
 	                AESFastEngine e = new AESFastEngine();
 	                SICBlockCipher ctr = new SICBlockCipher(e);
-	                ctr.init(true, new ParametersWithIV(new KeyParameter(key),iv));
+	                ctr.init(true, new ParametersWithIV(new KeyParameter(key), iv));
 	                cis = new CipherInputStream(zis, new BufferedBlockCipher(ctr));
 	                cisCounter = 0;
 	            }

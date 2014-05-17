@@ -168,7 +168,7 @@ public class LRUQueueTest extends TestCase {
 			methodLRUQueue.push(sampleObjects[i]);
 		//getting objects
 		for (int i=0; i < sampleObjects.length; i++)		
-			assertEquals(sampleObjects[i],methodLRUQueue.pop());
+			assertEquals(sampleObjects[i], methodLRUQueue.pop());
 		//the queue must be empty
 		assertNull(methodLRUQueue.pop());				
 	}

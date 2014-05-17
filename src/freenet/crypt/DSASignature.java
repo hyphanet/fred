@@ -31,7 +31,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		int x=sig.indexOf(',');
 		if (x <= 0)
 	    	throw new NumberFormatException("DSA Signatures have two values");
-		r = new NativeBigInteger(sig.substring(0,x), 16);
+		r = new NativeBigInteger(sig.substring(0, x), 16);
 		s = new NativeBigInteger(sig.substring(x + 1), 16);
 		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
     }
@@ -40,7 +40,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 		BigInteger r, s;
 		r=Util.readMPI(in);
 		s=Util.readMPI(in);
-		return new DSASignature(r,s);
+		return new DSASignature(r, s);
     }
 
     public void write(OutputStream o) throws IOException {

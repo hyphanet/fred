@@ -105,17 +105,17 @@ public class ElementInfo {
 		LANGUAGES.add("zh-hant");
 	}
 	
-	public final static String[] MEDIAARRAY= new String[]{"all","aural","braille","embossed","handheld","print","projection","screen","speech","tty","tv"};
-	public final static String[] VISUALMEDIA= new String[]{"handheld","print","projection","screen","tty","tv"};
-	public final static String[] AURALMEDIA=new String[]{"speech","aural"};
-	public final static String[] VISUALPAGEDMEDIA=new String[]{"embossed","handheld","print","projection","screen","tty","tv"};
-	public final static String[] VISUALINTERACTIVEMEDIA=new String[]{"braille","handheld","print","projection","screen","speech","tty","tv"};	
+	public final static String[] MEDIAARRAY= new String[]{"all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"};
+	public final static String[] VISUALMEDIA= new String[]{"handheld", "print", "projection", "screen", "tty", "tv"};
+	public final static String[] AURALMEDIA=new String[]{"speech", "aural"};
+	public final static String[] VISUALPAGEDMEDIA=new String[]{"embossed", "handheld", "print", "projection", "screen", "tty", "tv"};
+	public final static String[] VISUALINTERACTIVEMEDIA=new String[]{"braille", "handheld", "print", "projection", "screen", "speech", "tty", "tv"};	
 	
 	
 	public final static int UPPERLIMIT=10;
 	
-	public final static String[] FONT_LIST=new String[]{"arial", "helvetica","arial black","gadget", "comic sans ms", "comic sans ms5","courier new", "courier6", "monospace georgia1", "georgia","impact", "impact5", "charcoal6","lucida console", "monaco5","lucida sans unicode", "lucida grande","palatino linotype", "book antiqua3", "palatino6","tahoma", "geneva","times new roman", "times","trebuchet ms1", "helvetica","verdana", "webdings", "webdings2", "wingdings", "zapf dingbats", "wingdings2", "zapf dingbats2","ms sans serif4", "ms serif4", "new york6"};
-	public final static String[] GENERIC_FONT_KEYWORDS = new String[] { "serif","sans-serif","cursive","fantasy","monospace" };
+	public final static String[] FONT_LIST=new String[]{"arial", "helvetica", "arial black", "gadget", "comic sans ms", "comic sans ms5", "courier new", "courier6", "monospace georgia1", "georgia", "impact", "impact5", "charcoal6", "lucida console", "monaco5", "lucida sans unicode", "lucida grande", "palatino linotype", "book antiqua3", "palatino6", "tahoma", "geneva", "times new roman", "times", "trebuchet ms1", "helvetica", "verdana", "webdings", "webdings2", "wingdings", "zapf dingbats", "wingdings2", "zapf dingbats2", "ms sans serif4", "ms serif4", "new york6"};
+	public final static String[] GENERIC_FONT_KEYWORDS = new String[] { "serif", "sans-serif", "cursive", "fantasy", "monospace" };
 	public final static String[] GENERIC_VOICE_KEYWORDS = new String[] { "male", "female", "child" };
 	public final static HashSet<String> PSEUDOCLASS=new HashSet<String>();
 	static {
@@ -359,9 +359,9 @@ public class ElementInfo {
 			int cnameIndex=cname.indexOf(cname_sans_arg);
 			int firstIndex=cname.indexOf('(');
 			int secondIndex=cname.lastIndexOf(')');
-			if(cname.substring(cnameIndex + cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex + 1,cname.length()).trim().equals(""))
+			if(cname.substring(cnameIndex + cname_sans_arg.length(), firstIndex).trim().equals("") && cname.substring(0, cnameIndex).trim().equals("") && cname.substring(secondIndex + 1, cname.length()).trim().equals(""))
 			{
-				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex + 1,secondIndex).trim());
+				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex + 1, secondIndex).trim());
 			}
 			return arg;
 		}

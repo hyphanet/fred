@@ -75,7 +75,7 @@ public class DSA {
 			Logger.warning(DSA.class, "R or S equals 0 : Weird behaviour detected, please report if seen too often.");
 			return sign(g, x, generateK(g, random), m, random);
 		}
-		return new DSASignature(r,s);
+		return new DSASignature(r, s);
 	}
 
 	private static BigInteger generateK(DSAGroup g, Random r){

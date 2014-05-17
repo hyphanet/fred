@@ -201,7 +201,7 @@ public abstract class Option<T> {
 	/** Get the localised short description as an HTMLNode, possibly with translation link */
 	public HTMLNode getShortDescNode(FredPluginConfigurable plugin) {
 		return (plugin == null) ? NodeL10n.getBase()
-				.getHTMLNode(getShortDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
+				.getHTMLNode(getShortDesc(), new String[] { "default" }, new String[] { getDefault() }) : new HTMLNode("#",
 				plugin.getString(getShortDesc()));
 	}
 	
@@ -212,7 +212,7 @@ public abstract class Option<T> {
 	/** Get the localised long description as an HTMLNode, possibly with translation link */
 	public HTMLNode getLongDescNode(FredPluginConfigurable plugin) {
 		return (plugin == null) ? NodeL10n.getBase()
-				.getHTMLNode(getLongDesc(), new String[] { "default" } , new String[] { getDefault() }) : new HTMLNode("#",
+				.getHTMLNode(getLongDesc(), new String[] { "default" }, new String[] { getDefault() }) : new HTMLNode("#",
 				plugin.getString(getLongDesc()));
 	}
 	

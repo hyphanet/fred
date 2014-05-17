@@ -58,7 +58,7 @@ public class ClientSSKBlock implements ClientKeyBlock {
 		Rijndael aes;
 		try {
 			Logger.minor(this, "cryptoAlgorithm=" + key.cryptoAlgorithm + " for " + getClientKey().getURI());
-			aes = new Rijndael(256,256);
+			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}

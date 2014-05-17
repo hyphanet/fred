@@ -34,7 +34,7 @@ public class Loader {
 	throws InvocationTargetException, NoSuchMethodException, 
 	       InstantiationException, IllegalAccessException,
 	       ClassNotFoundException {
-	return getInstance(classname,new Class[] {}, new Object[] {});
+	return getInstance(classname, new Class[] {}, new Object[] {});
 
     }
 
@@ -50,7 +50,7 @@ public class Loader {
 	throws InvocationTargetException, NoSuchMethodException, 
 	       InstantiationException, IllegalAccessException,
 	       ClassNotFoundException {
-	return getInstance(load(classname),argtypes,args);
+	return getInstance(load(classname), argtypes, args);
     }
 
     /**

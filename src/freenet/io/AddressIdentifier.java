@@ -67,7 +67,7 @@ public class AddressIdentifier {
 	 *         otherwise
 	 */
 	public static AddressType getAddressType(String address) {
-		return AddressIdentifier.getAddressType(address,true);
+		return AddressIdentifier.getAddressType(address, true);
 	}
 
 	/**

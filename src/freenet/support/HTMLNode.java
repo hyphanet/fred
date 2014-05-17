@@ -365,7 +365,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 
 	public StringBuilder generate(StringBuilder tagBuffer) {
-		return generate(tagBuffer,0);
+		return generate(tagBuffer, 0);
 	}
 
 	public StringBuilder generate(StringBuilder tagBuffer, int indentDepth ) {
@@ -418,7 +418,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
-				childNode.generate(tagBuffer,indentDepth + 1);
+				childNode.generate(tagBuffer, indentDepth + 1);
 			}
 		}
 		/* add a closing tag */

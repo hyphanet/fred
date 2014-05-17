@@ -77,7 +77,7 @@ public class SplitFileSegmentKeys implements Cloneable {
 			if(commonDecryptKey != null) {
 				if(!Arrays.equals(commonDecryptKey, ckey)) continue;
 			} else {
-				if(!Fields.byteArrayEqual(decryptKeys,ckey,oldX,0,NodeCHK.KEY_LENGTH))
+				if(!Fields.byteArrayEqual(decryptKeys, ckey, oldX, 0, NodeCHK.KEY_LENGTH))
 					continue;
 			}
 			if(extra == null) extra = key.getExtra();

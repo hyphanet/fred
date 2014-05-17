@@ -423,7 +423,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
 			if (fromStore) {
 				// That's odd...
-				Logger.error(this,"Verify failed on next node "
+				Logger.error(this, "Verify failed on next node "
 						+ next + " for DataInsert but we were sending from the store!");
 			}
 		}

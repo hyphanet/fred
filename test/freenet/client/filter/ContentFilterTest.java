@@ -165,11 +165,11 @@ public class ContentFilterTest extends TestCase {
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div { }"));
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div { }"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
-		assertEquals(XHTML_VOIDELEMENTC,HTMLFilter(XHTML_VOIDELEMENT));
-		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
-		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
+		assertEquals(XHTML_VOIDELEMENTC, HTMLFilter(XHTML_VOIDELEMENT));
+		assertEquals(XHTML_INCOMPLETEDOCUMENTC, HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
+		assertEquals(XHTML_IMPROPERNESTINGC, HTMLFilter(XHTML_IMPROPERNESTING));
 
-		assertEquals(CSS_STRING_NEWLINESC,HTMLFilter(CSS_STRING_NEWLINES));
+		assertEquals(CSS_STRING_NEWLINESC, HTMLFilter(CSS_STRING_NEWLINES));
 
 		assertEquals(HTML_STYLESHEET_MAYBECHARSETC, HTMLFilter(HTML_STYLESHEET_MAYBECHARSET, true));
 		assertEquals(HTML_STYLESHEET_CHARSETC, HTMLFilter(HTML_STYLESHEET_CHARSET, true));
@@ -418,8 +418,8 @@ public class ContentFilterTest extends TestCase {
 			tagname = "meta";
 			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-			attributes.put("http-equiv","Content-type");
-			attributes.put("content","text/html; charset=UTF-8");
+			attributes.put("http-equiv", "Content-type");
+			attributes.put("content", "text/html; charset=UTF-8");
 			HTMLTag = new ParsedTag(tagname, attributes);
 
 			assertEquals("Meta tag describing HTML content-type", HTMLTag.toString(), verifier.sanitize(HTMLTag, pc).toString());
@@ -429,8 +429,8 @@ public class ContentFilterTest extends TestCase {
 			tagname = "meta";
 			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-			attributes.put("http-equiv","Content-type");
-			attributes.put("content","application/xhtml+xml; charset=UTF-8");
+			attributes.put("http-equiv", "Content-type");
+			attributes.put("content", "application/xhtml+xml; charset=UTF-8");
 			HTMLTag = new ParsedTag(tagname, attributes);
 
 			assertEquals("Meta tag describing XHTML content-type", HTMLTag.toString(), verifier.sanitize(HTMLTag, pc).toString());
@@ -440,8 +440,8 @@ public class ContentFilterTest extends TestCase {
 			tagname = "meta";
 			verifier = HTMLFilter.allowedTagsVerifiers.get(tagname);
 
-			attributes.put("http-equiv","Content-type");
-			attributes.put("content","want/fishsticks; charset=UTF-8");
+			attributes.put("http-equiv", "Content-type");
+			attributes.put("content", "want/fishsticks; charset=UTF-8");
 			HTMLTag = new ParsedTag(tagname, attributes);
 
 			try {

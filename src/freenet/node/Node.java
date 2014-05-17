@@ -1831,8 +1831,7 @@ public class Node implements TimeSkewDetectorCallback {
 						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess", "maxpeers", Integer.toString(OpennetManager.MAX_PEERS_FOR_SCALING)));
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
-					}
-		, false);
+					}, false);
 
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
 		if(maxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) {
@@ -3213,7 +3212,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 
-		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
+		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(), backupFile.getPath(), new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
 		config.db4oConfig(getNewDatabaseConfiguration(databaseKey));
 		try {
@@ -3739,7 +3738,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// If we are running a Sun/Oracle or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 
 		String jvmVendor = System.getProperty("java.vm.vendor");
-		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
+		String jvmSpecVendor = System.getProperty("java.specification.vendor", "");
 		String javaVersion = System.getProperty("java.version");
 		String jvmName = System.getProperty("java.vm.name");
 		String osName = System.getProperty("os.name");
@@ -3789,7 +3788,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				// GCJ/GIJ.
 				try {
-					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
+					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]", "");
 					int jvmVersionInt = Integer.parseInt(javaVersion);
 
 					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
@@ -4191,7 +4190,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		map.put(new DataStoreInstanceType(CHK, STORE), new StoreCallbackStats(chkDatastore, nodeStats.chkStoreStats()));
 		map.put(new DataStoreInstanceType(CHK, CACHE), new StoreCallbackStats(chkDatacache, nodeStats.chkCacheStats()));
-		map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache,nodeStats.chkSlashDotCacheStats()));
+		map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache, nodeStats.chkSlashDotCacheStats()));
 		map.put(new DataStoreInstanceType(CHK, CLIENT), new StoreCallbackStats(chkClientcache, nodeStats.chkClientCacheStats()));
 
 		map.put(new DataStoreInstanceType(SSK, STORE), new StoreCallbackStats(sskDatastore, nodeStats.sskStoreStats()));
@@ -4380,7 +4379,7 @@ public class Node implements TimeSkewDetectorCallback {
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender(" + key + ',' + htl + ',' + uid + ',' + source + ",...," + fromStore);
 		CHKInsertSender is = null;
-		is = new CHKInsertSender(key, uid, tag, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff,realTimeFlag);
+		is = new CHKInsertSender(key, uid, tag, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 		is.start();
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -4863,7 +4862,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Connect this node to another node (for purposes of testing)
 	 */
 	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.addPeer(node,false,false);
+		peers.addPeer(node, false, false);
 	}
 	public void connect(Node node, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust, visibility);

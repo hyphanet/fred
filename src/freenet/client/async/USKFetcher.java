@@ -765,7 +765,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					else
 						c.onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
-					Logger.error(this, "An exception occured while dealing with a callback:" + c.toString() + "\n" + e.getMessage(),e);
+					Logger.error(this, "An exception occured while dealing with a callback:" + c.toString() + "\n" + e.getMessage(), e);
 				}
 			}
 		}
@@ -819,7 +819,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				data = null;
 			} catch (IOException e) {
 				data = null;
-				Logger.error(this, "An IOE occured while decoding: " + e.getMessage(),e);
+				Logger.error(this, "An IOE occured while decoding: " + e.getMessage(), e);
 			}
 		}
 		synchronized(this) {
@@ -1398,7 +1398,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		}
 		try {
-			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
+			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker }, false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
 			synchronized(this) {

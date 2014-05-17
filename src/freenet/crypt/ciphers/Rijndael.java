@@ -160,7 +160,7 @@ public class Rijndael implements BlockCipher {
 			sessionKey=Rijndael_Algorithm.makeKey(nkey, blocksize / 8);
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
-			Logger.error(this,"Invalid key");
+			Logger.error(this, "Invalid key");
 		}
 	}
 

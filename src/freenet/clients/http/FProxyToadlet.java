@@ -181,7 +181,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "bold" },
 						new HTMLNode[] {
-						HTMLNode.link(basePath + key.toString() + "?type=text/plain&force=" + getForceValue(key,now) + extrasNoMime),
+						HTMLNode.link(basePath + key.toString() + "?type=text/plain&force=" + getForceValue(key, now) + extrasNoMime),
 						HTMLNode.STRONG
 				});
 				// 	FIXME: is this safe? See bug #131
@@ -664,7 +664,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		String requestedMimeType = httprequest.getParam("type", null);
 		fctx.overrideMIME = requestedMimeType;
-		String override = (requestedMimeType == null) ? "" : "?type=" + URLEncoder.encode(requestedMimeType,true);
+		String override = (requestedMimeType == null) ? "" : "?type=" + URLEncoder.encode(requestedMimeType, true);
 		String maybeCharset = httprequest.isParameterSet("maybecharset") ? httprequest.getParam("maybecharset", null) : null;
 		fctx.charset = maybeCharset;
 		if(override.equals("") && maybeCharset != null)
@@ -754,7 +754,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,fctx,maxSize,ctx, isWebPushingEnabled));
+					progressCell.addChild(new ProgressBarElement(fetchTracker, key, fctx, maxSize, ctx, isWebPushingEnabled));
 				}
 
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -1057,7 +1057,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		sb.append(uri.toASCIIString());
 		char c = '?';
 		if(requestedMimeType != null && requestedMimeType.length() != 0) {
-			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
+			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType, false)); c = '&';
 		}
 		if(maxSize > 0 && appendMaxSize) {
 			sb.append(c).append("max-size=").append(maxSize); c = '&';
