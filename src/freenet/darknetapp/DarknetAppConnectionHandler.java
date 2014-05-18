@@ -5,6 +5,7 @@
  */
 package freenet.darknetapp;
 
+import freenet.node.Node;
 import freenet.support.io.LineReadingInputStream;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class DarknetAppConnectionHandler {
     private Socket socket;
+    private Node node;
     private static String REQUEST_HOME_REFERENCE = "HomeReference";
     private static String REQUEST_PUSH_REFERENCE = "PushReference";
     private static String REQUEST_CLOSE_CONNECTION = "CloseConnection";
@@ -35,9 +37,10 @@ public class DarknetAppConnectionHandler {
     private LineReadingInputStream input;
     private DarknetAppServer server;
     
-    public DarknetAppConnectionHandler(Socket sock, DarknetAppServer server) {
+    public DarknetAppConnectionHandler(Socket sock, DarknetAppServer server,Node node) {
       this.socket = sock; 
       this.server = server;
+      this.node = node;
     }
     
     /**
@@ -60,8 +63,7 @@ public class DarknetAppConnectionHandler {
             out.write((ASSERT_NODE_REFERENCES_RECEIVED+'\n').getBytes("UTF-8"));
             done = true;
         }     
-        else if (command.equals(REQUEST_CLOSE_CONNECTION)) {            
-            System.out.println("done");
+        else if (command.equals(REQUEST_CLOSE_CONNECTION)) { 
             done = false;
         }
         return done;
@@ -106,8 +108,8 @@ public class DarknetAppConnectionHandler {
     }
     
     // Entry Point. For each call(connection), an instance of this class is created and connection is handled
-    public static void handle(Socket sock, DarknetAppServer server) {
-        DarknetAppConnectionHandler context = new DarknetAppConnectionHandler(sock,server);
+    public static void handle(Socket sock, DarknetAppServer server, Node node) {
+        DarknetAppConnectionHandler context = new DarknetAppConnectionHandler(sock,server,node);
         context.processConnection();
         context.finish();
     }
@@ -119,13 +121,12 @@ public class DarknetAppConnectionHandler {
      *  Once the user authorizes or rejects, they are deleted
      */
     private void processNewRefernces(int nFriendsRefs) throws IOException {
-        System.out.println("command" + nFriendsRefs);
         synchronized(DarknetAppServer.class) {
             //hold lock to make sure that file is opened only here at this point of time
             File file = new File(DarknetAppServer.filename);
             Properties prop = new Properties();
             prop.load(new FileInputStream(file));
-            int iniCount = DarknetAppServer.newDarknetPeersCount;
+            int iniCount = DarknetAppServer.numPendingPeersCount;
             int finCount = iniCount+nFriendsRefs;
             for (int i=iniCount+1; i<=finCount; i++) {
                 int maxLinesPerRef = 50;
@@ -138,11 +139,9 @@ public class DarknetAppConnectionHandler {
                     if (count>maxLinesPerRef) throw new IOException();
                 }            
                 prop.setProperty("newPeer"+i, noderef);
-                System.out.println("newPeer"+i+"added");
             }
             prop.store(new FileOutputStream(new File(DarknetAppServer.filename)), null);
-            System.out.println(DarknetAppServer.filename+finCount);
-            server.changeNewDarknetPeersCount(finCount);
+            server.changeNumPendingPeersCount(finCount,node);
         }
     }
           

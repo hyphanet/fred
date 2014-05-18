@@ -729,7 +729,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                     infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
                     addHomepageLink(infoboxContent.addChild("p"));
                     synchronized(DarknetAppServer.class) {
-                        DarknetAppServer.changeNewDarknetPeersCount(0, node);
+                        DarknetAppServer.changeNumPendingPeersCount(0,node);
                     }
                     writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
                 }
@@ -1064,7 +1064,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                 } catch (IOException ex) {
                     //File in Use..i.e. Synchronize with mobile is happening presently
                 } 
-                newTempDarknetRefs = DarknetAppServer.newDarknetPeersCount;
+                newTempDarknetRefs = DarknetAppServer.numPendingPeersCount;
                 for (int i=1;i<=newTempDarknetRefs;i++) {
                     String noderef = prop.getProperty("newPeer"+i);
                     if (noderef==null || noderef.isEmpty()) continue;
@@ -1100,7 +1100,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                     peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote"+i, "16", "250", "" });
                     peerAdditionForm.addChild("br");
                 }
-                 peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addNew", l10n("addNew") });
+                 peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addNew", l10n("add") });
             }
         }
         

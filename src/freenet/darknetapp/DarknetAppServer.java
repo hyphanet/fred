@@ -43,7 +43,7 @@ public class DarknetAppServer implements Runnable {
     private int port = DEFAULT_PORT;
     private Thread myThread;
     private final Executor executor;
-    private Node node;
+    private static Node node;
     private NetworkInterface networkInterface;
     private int maxDarknetAppConnections =10;	
     private int darknetAppConnections;
@@ -51,7 +51,7 @@ public class DarknetAppServer implements Runnable {
     public static String noderef;
     
     // Newly exchanged peers that are neither accepted nor rejected
-    public static int newDarknetPeersCount = 0;
+    public static int numPendingPeersCount = 0;
     
     public static String filename = "TempPeersFromDarknetApp.prop";
     private static volatile boolean logMINOR;
@@ -91,9 +91,9 @@ public class DarknetAppServer implements Runnable {
         int configItemOrder = 0;
    
         //  allowedHosts - "*" to allow all, bindTo - "0.0.0.0" to accept on all interfaces
-        darknetAppConfig.register("newDarknetPeersCount",0, configItemOrder++, true, true, "DarknetAppServer.newPeersCount", "DarknetAppServer.newPeersCountLong",
-				new newDarknetPeersCallback(), false);
-        DarknetAppServer.newDarknetPeersCount = darknetAppConfig.getInt("newDarknetPeersCount");
+        darknetAppConfig.register("numPendingPeersCount",0, configItemOrder++, true, true, "DarknetAppServer.newPeersCount", "DarknetAppServer.newPeersCountLong",
+				new numPendingPeersCallback(), false);
+        DarknetAppServer.numPendingPeersCount = darknetAppConfig.getInt("numPendingPeersCount");
         darknetAppConfig.register("enabled", true, configItemOrder++, true, true, "DarknetAppServer.enabled", "DarknetAppServer.enabledLong",
 				new  darknetAppEnabledCallback());
         this.enabled = darknetAppConfig.getBoolean("enabled");
@@ -113,7 +113,7 @@ public class DarknetAppServer implements Runnable {
             java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        configureFile();
+        loadTempRefsFile();
         if (!enabled) {
             myThread=null;
         }
@@ -128,36 +128,30 @@ public class DarknetAppServer implements Runnable {
      * These references are yet to be approved by the node
      * As soon as user takes an action about these new peers, their reference would be removed
      */
-    private void configureFile() {
+    private void loadTempRefsFile() {
         File file = new File(filename);
         if (!file.exists()) try {
             file.createNewFile();
         } catch (IOException ex) {
-            Logger.error(this,"Error Creating File To Save Excahnged Nodereferences"+ex);
+            Logger.error(this,"Error Creating File To Save Exchanged Nodereferences"+ex);
         }
     }
-    public synchronized void changeNewDarknetPeersCount(int count) {
-        changeNewDarknetPeersCount(count,node);
-    }
-    /**
+     /**
      * To change the temporary peers count. Mostly used by DarknetAppConnectionhandler and ConnectionsToadlet
      * @param count
-     * @param node 
      */
-    public static void changeNewDarknetPeersCount(int count,Node node) {
+    public static synchronized void changeNumPendingPeersCount(int count, Node node) {
         try {
             SubConfig darknetAppConfig = node.config.get("darknetApp");
-            darknetAppConfig.set("newDarknetPeersCount", String.valueOf(count));
+            darknetAppConfig.set("numPendingPeersCount", String.valueOf(count));
             node.config.store();
-            newDarknetPeersCount = count;
-            Logger.normal(DarknetAppServer.class,"Unsynchronized Peers Count" +darknetAppConfig.getInt("newDarknetPeersCount"));
+            numPendingPeersCount = count;
         } catch (InvalidConfigValueException ex) {
             java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NodeNeedRestartException ex) {
             java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
     //Modified from SimpleToadletServer to use BCSSLNetworkInterface instead of SSLNetworkInterface
     private void maybeGetNetworkInterface(boolean ssl) throws IOException {
         if (this.networkInterface!=null) return;
@@ -183,16 +177,16 @@ public class DarknetAppServer implements Runnable {
      * In case of an attack where our homeNode is bombarded with new references, the user can shift this to 0 and/or disable this server (using other config option)
      * Unnecessary changing of this value might cause instability in this app and/or losing temporary peer node references and so for advanced users
      */
-    private class newDarknetPeersCallback extends IntCallback {
+    private class numPendingPeersCallback extends IntCallback {
         @Override
         public Integer get() {
-            return newDarknetPeersCount;
+            return numPendingPeersCount;
         }
 
         @Override
         public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
             synchronized(DarknetAppServer.class) {
-                newDarknetPeersCount = val;
+                numPendingPeersCount = val;
             }
         }
     }
@@ -370,7 +364,7 @@ public class DarknetAppServer implements Runnable {
                 if(logMINOR) Logger.minor(this, "Handling connection");
                 try {
                     // Handle request here
-                    DarknetAppConnectionHandler.handle(sock,DarknetAppServer.this);
+                    DarknetAppConnectionHandler.handle(sock,DarknetAppServer.this,node);
                 } catch (OutOfMemoryError e) {
                         OOMHandler.handleOOM(e);
                         System.err.println("SimpleToadletServer request above failed.");
