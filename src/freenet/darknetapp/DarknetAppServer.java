@@ -47,7 +47,6 @@ public class DarknetAppServer implements Runnable {
     private NetworkInterface networkInterface;
     private int maxDarknetAppConnections =10;	
     private int darknetAppConnections;
-    private boolean finishedStartup;
     public static String noderef;
     
     // Newly exchanged peers that are neither accepted nor rejected
@@ -81,7 +80,6 @@ public class DarknetAppServer implements Runnable {
             }
                 myThread.start();
                 Logger.normal(this, "Starting DarknetAppServer on "+bindTo+ ':' +port);
-                System.out.println("Starting DarknetAppServer on "+bindTo+ ':' +port);
         }
     }
 
@@ -158,18 +156,9 @@ public class DarknetAppServer implements Runnable {
         if(ssl) {
             if (!BCModifiedSSL.available()) throw new IOException();
             Logger.normal(this,"Certificate Pin-->>" + BCModifiedSSL.getSelfSignedCertificatePin());
-            System.out.println("Certificate Pin-->>" + BCModifiedSSL.getSelfSignedCertificatePin());
             this.networkInterface = BCSSLNetworkInterface.create(port, this.bindTo, allowedHosts, executor, false);
         } else {
             this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts, executor, true);
-        }
-    }
-    
-    public void finishStart() {
-        synchronized(DarknetAppServer.class) {                
-            //TODO: Change this 
-            this.noderef = node.exportDarknetPublicFieldSet().toString();
-            finishedStartup = true;
         }
     }
     /**
@@ -259,7 +248,7 @@ public class DarknetAppServer implements Runnable {
                                myThread.interrupt();
                                myThread = new Thread(DarknetAppServer.this, "DarknetAppServer");
                                myThread.setDaemon(true);
-                               myThread.start();
+                               myThread.start(); 
                                Logger.normal(this,"Restarting DarknetAppServer on "+bindTo+ ':' +port);
                           }
                       }
@@ -284,13 +273,11 @@ public class DarknetAppServer implements Runnable {
                         if(val) {
                                 // Start it
                                 enabled = true;
-                                System.out.println("Starting DarknetAppServer on "+bindTo+ ':' +port);
                                 myThread = new Thread(DarknetAppServer.this, "DarknetAppServer");
                         } else {
                                 enabled = false;
                                 myThread.interrupt();
                                 myThread = null;
-                                System.out.println("Closing DarknetAppServer on "+bindTo+ ':' +port);
                                 return;
                         }
                 }
@@ -307,7 +294,6 @@ public class DarknetAppServer implements Runnable {
     public void run() {
     	if (networkInterface==null) {
     		Logger.error(this, "Could not start DarknetAppServer");
-                System.err.println("Could not start DarknetAppServer");
     		return;
     	}
         try {
@@ -315,7 +301,6 @@ public class DarknetAppServer implements Runnable {
 	} catch (SocketException e1) {
             Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
 	}
-    boolean finishedStartup = false;
     while(true) {
         synchronized(DarknetAppServer.class) {
                 while(darknetAppConnections > maxDarknetAppConnections) {
@@ -325,54 +310,46 @@ public class DarknetAppServer implements Runnable {
                                 // Ignore
                         }
                 }
-                if((!finishedStartup) && this.finishedStartup)
-                        finishedStartup = true;
                 if(myThread == null) return;
         }
         Socket conn = networkInterface.accept();
         if (WrapperManager.hasShutdownHookBeenTriggered())
-                return;
         if(conn == null)
             continue; // timeout
         if(logMINOR)
             Logger.minor(this, "Accepted connection");
-        SocketHandler sh = new SocketHandler(conn, finishedStartup);
+        SocketHandler sh = new SocketHandler(conn);
         sh.start();
         }
     }
     //Modified to suit needs from SimpleToadletServer
     public class SocketHandler implements PrioRunnable {
         Socket sock;
-        final boolean finishedStartup;
 
-        public SocketHandler(Socket conn, boolean finishedStartup) {
+        public SocketHandler(Socket conn) {
                 this.sock = conn;
-                this.finishedStartup = finishedStartup;
         }
 
         // A thread starts for each accepted socket connection
         void start() {
-            new Thread(this).start();
-            synchronized(DarknetAppServer.class) {
-                darknetAppConnections++;
-            }   
+            new Thread(this).start();   
         }
         
         @Override
         public void run() {
             freenet.support.Logger.OSThread.logPID(this);
+            synchronized(DarknetAppServer.class) {
+                darknetAppConnections++;
+            } 
                 if(logMINOR) Logger.minor(this, "Handling connection");
                 try {
-                    // Handle request here
+                    // Handle the connected socket here. The data transfer to/from the mobile occurs in the following function
                     DarknetAppConnectionHandler.handle(sock,DarknetAppServer.this,node);
                 } catch (OutOfMemoryError e) {
                         OOMHandler.handleOOM(e);
-                        System.err.println("SimpleToadletServer request above failed.");
                         Logger.error(this, "OOM in SocketHandler");
                 } catch (Throwable t) {
-                        System.err.println("Caught in SimpleToadletServer: "+t);
-                        t.printStackTrace();
-                        Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
+                        Logger.error(this, "Caught in DarknetAppServer: "+t, t);
                 } finally {
                     synchronized(DarknetAppServer.class) {
                         darknetAppConnections--;
@@ -384,7 +361,7 @@ public class DarknetAppServer implements Runnable {
 
         @Override
         public int getPriority() {
-                return NativeThread.HIGH_PRIORITY-1;
+                return NativeThread.HIGH_PRIORITY-3;
         }
     }   
 }

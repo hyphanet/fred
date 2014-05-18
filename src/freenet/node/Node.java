@@ -2649,10 +2649,6 @@ public class Node implements TimeSkewDetectorCallback {
 			toadlets.createFproxy();
 			toadlets.removeStartupToadlet();
 		}
-
-		if (darknetAppServer.isEnabled()) {
-			darknetAppServer.finishStart();
-		}
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
