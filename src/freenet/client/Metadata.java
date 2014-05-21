@@ -820,7 +820,7 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
-				if(key.equals("")) {
+				if(key.isEmpty()) {
 					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
 				}
 				HashMap<String, Object> hm = Metadata.forceMap(o);

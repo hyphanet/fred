@@ -184,7 +184,7 @@ public class BookmarkItem extends Bookmark {
 
     @Override
 	public String getName() {
-        return ("".equals(name) ? l10n("unnamedBookmark") : name);
+        return (name != null && name.isEmpty() ? l10n("unnamedBookmark") : name);
     }
 
     @Override

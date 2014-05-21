@@ -397,7 +397,7 @@ public class BookmarkManager implements RequestClient {
 
 	private synchronized void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
 		boolean hasBeenParsedWithoutAnyProblem = true;
-		boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
+		boolean isRoot = (prefix != null && prefix.isEmpty() && MAIN_CATEGORY.equals(category));
 		synchronized(bookmarks) {
 			if(!isRoot)
 				putPaths(prefix + category.name + '/', category);

@@ -631,7 +631,7 @@ public class FilterUtils {
 			value = value.trim();
 			if(stripQuotes)
 				value = CSSTokenizerFilter.removeOuterQuotes(value).trim();
-			if(value!=null && !("".equals(value.trim())))
+			if(value!=null && !(value.trim() != null && value.trim().isEmpty()))
 				arrayToReturn.add(value);
 		}
 		return arrayToReturn.toArray(new String[0]);

@@ -230,7 +230,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							line.addChild("#", filename);
 						}
 					}
-					if(type != null && !type.equals("")) {
+					if(type != null && !type.isEmpty()) {
 						HTMLNode line = infoList.addChild("li");
 						boolean finalized = request.isPartSet("finalizedType");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
@@ -440,7 +440,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsStringFailsafe("bulkDownloads", 262144);
 				String[] keys = bulkDownloadsAsString.split("\n");
-				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
+				if((bulkDownloadsAsString != null && bulkDownloadsAsString.isEmpty()) || (keys.length < 1)) {
 					writePermanentRedirect(ctx, "Done", path());
 					return;
 				}
@@ -559,13 +559,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -659,13 +659,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -765,7 +765,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -857,7 +857,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					String key = request.getPartAsStringFailsafe("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
-					if(key == null || key.equals("")) continue;
+					if(key == null || key.isEmpty()) continue;
 					form.addChild("#", l10n("key") + ":");
 					form.addChild("br");
 					form.addChild("#", key);

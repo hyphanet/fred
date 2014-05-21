@@ -186,7 +186,7 @@ public class N2NTMToadlet extends Toadlet {
 					} else if(request.isPartSet("n2nm-upload")) {
 						try{
 							HTTPUploadedFile file = request.getUploadedFile("n2nm-upload");
-							if(!file.getFilename().equals("")) {
+							if(!file.getFilename().isEmpty()) {
 								long size = request.getUploadedFile("n2nm-upload").getData().size();
 								if(size > 0) {
 									long limit = maxSize();

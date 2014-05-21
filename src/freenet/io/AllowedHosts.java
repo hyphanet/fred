@@ -40,7 +40,7 @@ public class AllowedHosts {
 	 *            The new list of allowed hosts s
 	 */
 	public void setAllowedHosts(String allowedHosts) {
-                if(allowedHosts == null || allowedHosts.equals("")) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
+                if(allowedHosts == null || allowedHosts.isEmpty()) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
 		List<AddressMatcher> newAddressMatchers = new ArrayList<AddressMatcher>();
 		while (allowedHostsTokens.hasMoreTokens()) {

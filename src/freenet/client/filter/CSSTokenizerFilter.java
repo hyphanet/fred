@@ -1571,22 +1571,22 @@ class CSSTokenizerFilter {
 		}
 
 		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
-				("".equals(HTMLelement.trim()) && 
-						((!className.equals("")) || (!id.equals("")) || attSelections!=null || !pseudoClass.equals(""))))
+				(HTMLelement.trim() != null && HTMLelement.trim().isEmpty() &&
+						((!className.isEmpty()) || (!id.isEmpty()) || attSelections!=null || !pseudoClass.isEmpty())))
 		{
-			if(!className.equals(""))
+			if(!className.isEmpty())
 			{
 				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
 				if(!ElementInfo.isValidName(className))
 					isValid=false;
 			}
-			else if(!id.equals(""))
+			else if(!id.isEmpty())
 			{
 				if(!ElementInfo.isValidName(id))
 					isValid=false;
 			}
 
-			if(isValid && !pseudoClass.equals(""))
+			if(isValid && !pseudoClass.isEmpty())
 			{
 				if(!ElementInfo.isValidPseudoClass(pseudoClass))
 					isValid=false;
@@ -1645,14 +1645,14 @@ class CSSTokenizerFilter {
 			if(isValid)
 			{
 				fBuffer.append(HTMLelement);
-				if(!className.equals("")) {
+				if(!className.isEmpty()) {
 					fBuffer.append('.');
 					fBuffer.append(className);
-				} else if(!id.equals("")) {
+				} else if(!id.isEmpty()) {
 					fBuffer.append('#');
 					fBuffer.append(id);
 				}
-				if(!pseudoClass.equals("")) {
+				if(!pseudoClass.isEmpty()) {
 					fBuffer.append(':');
 					fBuffer.append(pseudoClass);
 				}
@@ -2071,7 +2071,7 @@ class CSSTokenizerFilter {
 
 						String strbuffer=buffer.toString().trim();
 						int importIndex=strbuffer.toLowerCase().indexOf("@import");
-						if("".equals(strbuffer.substring(0,importIndex).trim()))
+						if(strbuffer.substring(0, importIndex).trim() != null && strbuffer.substring(0, importIndex).trim().isEmpty())
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
 							ParsedWord[] strparts=split(str1, false);
@@ -2154,7 +2154,7 @@ class CSSTokenizerFilter {
 				if(!isState1Present)
 				{
 					String s = buffer.toString().trim();
-					if(!(s.equals("") || s.equals("/") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
+					if(!(s.isEmpty() || s.equals("/") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
 						currentState=STATE2;
 				}
 				if(logDEBUG) Logger.debug(this, "STATE1 default CASE: "+c);
@@ -2243,7 +2243,7 @@ class CSSTokenizerFilter {
 					}
 
 					openBraces++;
-					if(!buffer.toString().trim().equals(""))
+					if(!buffer.toString().trim().isEmpty())
 					{
 						String filtered=recursiveSelectorVerifier(buffer.toString());
 						if(filtered!=null)
@@ -3595,7 +3595,7 @@ class CSSTokenizerFilter {
 			{
 				//if(debug) Logger.debug(this, "CSSPropertyVerifier isVaildURI "+cb.processURI(URI, null));
 				String s = cb.processURI(w, null);
-				if(s == null || s.equals("")) return false;
+				if(s == null || s.isEmpty()) return false;
 				if(s.equals(w)) return true;
 				if(logDEBUG) Logger.debug(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
 				word.setNewURL(s);
@@ -3807,7 +3807,7 @@ class CSSTokenizerFilter {
 		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words, FilterCallback cb)
 		{
 			if(logDEBUG) Logger.debug(this, "1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words));
-			if((expression==null || ("".equals(expression.trim()))))
+			if((expression==null || (expression.trim() != null && expression.trim().isEmpty())))
 			{
 				if(words==null || words.length == 0)
 					return true;
@@ -3839,7 +3839,7 @@ class CSSTokenizerFilter {
 					if(endIndex!=expression.length())
 						secondPart=expression.substring(endIndex+1,expression.length());
 					int j = 1;
-					if((secondPart.equals(""))) {
+					if((secondPart.isEmpty())) {
 						// This is an optimisation: If no second part, there cannot be any words assigned to the second part, so the first part must match everything.
 						// It is equivalent to running the loop, because each time the second part will fail, because it is trying to match "" to a nonzero number of words.
 						// This happens every time we have "1a2a3" with nothing after it, so it is tested by the unit tests already.
@@ -4072,7 +4072,7 @@ class CSSTokenizerFilter {
 			{
 				if(i == expression.length() || expression.charAt(i)=='a')
 				{
-					if(!firstPart.equals("")) {
+					if(!firstPart.isEmpty()) {
 						if(ignoredParts.length() == 0)
 							ignoredParts = firstPart;
 						else
@@ -4106,9 +4106,9 @@ class CSSTokenizerFilter {
 							}
 							// Against the rest of the pattern: the part that we've tried and failed plus the part that we haven't tried yet.
 							// NOT against the verifier we were just considering, because the double-bar operator expects no more than one match from each component of the pattern.
-							String pattern = ignoredParts+((("".equals(ignoredParts))||("".equals(secondPart)))?"":"a")+secondPart;
+							String pattern = ignoredParts+(((ignoredParts != null && ignoredParts.isEmpty())||(secondPart != null && secondPart.isEmpty()))?"":"a")+secondPart;
 							if(logDEBUG) Logger.debug(this, "14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
-							if(pattern.equals("")) return false;
+							if(pattern.isEmpty()) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
 							if(result)
 							{

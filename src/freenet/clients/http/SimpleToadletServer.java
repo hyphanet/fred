@@ -277,7 +277,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		public void set(String val) throws InvalidConfigValueException {
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if(core == null) return;
-			if(val.equals(get()) || val.equals(""))
+			if(val.equals(get()) || val.isEmpty())
 				cssOverride = null;
 			else {
 				File tmp = new File(val.trim());

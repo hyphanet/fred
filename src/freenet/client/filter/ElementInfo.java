@@ -359,7 +359,7 @@ public class ElementInfo {
 			int cnameIndex=cname.indexOf(cname_sans_arg);
 			int firstIndex=cname.indexOf('(');
 			int secondIndex=cname.lastIndexOf(')');
-			if(cname.substring(cnameIndex+cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
+			if(cname.substring(cnameIndex + cname_sans_arg.length(), firstIndex).trim().isEmpty() && cname.substring(0, cnameIndex).trim().isEmpty() && cname.substring(secondIndex + 1, cname.length()).trim().isEmpty())
 			{
 				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());
 			}

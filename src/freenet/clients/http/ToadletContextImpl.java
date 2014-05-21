@@ -486,7 +486,7 @@ public class ToadletContextImpl implements ToadletContext {
 				if (firstLine == null) {
 					sock.close();
 					return;
-				} else if (firstLine.equals("")) {
+				} else if (firstLine.isEmpty()) {
 					continue;
 				}
 				

@@ -129,7 +129,7 @@ public class Cookie {
 		
 		String path = domain.getPath();
 		
-		if(!"".equals(path) && !"/".equals(path))
+		if(path != null && !path.isEmpty() && !"/".equals(path))
 			throw new IllegalArgumentException("Illegal cookie domain, contains a path: " + domain);
 		
 		return domain;
@@ -162,7 +162,7 @@ public class Cookie {
 	 * TODO: Read the RFCs in depth and make this function fully compatible.
 	 */
 	public static String validateName(String name) {
-		if("".equals(name))
+		if(name != null && name.isEmpty())
 			throw new IllegalArgumentException("Name is empty.");
 		
 		if(!isUSASCII(name))

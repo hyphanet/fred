@@ -335,7 +335,7 @@ public class PproxyToadlet extends Toadlet {
 		if(logMINOR)
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
-			if (path.equals("")) {
+			if (path.isEmpty()) {
 		        if(!ctx.checkFullAccess(this))
 		            return;
 

@@ -401,7 +401,7 @@ loopOverLines:
 					int totalSuccesses = 0;
 					int totalFetches = 0;
 					for(int i=0;i<INSERTED_BLOCKS;i++) {
-						if(split[token].equals(""))
+						if(split[token].isEmpty())
 							continue;
 						int mhkFetchTime = -1;
 						totalFetches++;

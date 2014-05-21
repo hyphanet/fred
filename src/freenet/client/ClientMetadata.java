@@ -38,13 +38,13 @@ public class ClientMetadata implements Cloneable {
 	 * existing information.
 	 */
 	public void mergeNoOverwrite(ClientMetadata clientMetadata) {
-		if((mimeType == null) || mimeType.equals(""))
+		if((mimeType == null) || mimeType.isEmpty())
 			mimeType = clientMetadata.mimeType;
 	}
 
 	/** Is there no MIME type? */
 	public boolean isTrivial() {
-		return ((mimeType == null) || mimeType.equals(""));
+		return ((mimeType == null) || mimeType.isEmpty());
 	}
 	
 	@Override

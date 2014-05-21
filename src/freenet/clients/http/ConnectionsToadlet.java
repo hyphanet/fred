@@ -638,12 +638,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
-			if(trustS != null && !trustS.equals(""))
+			if(trustS != null && !trustS.isEmpty())
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
 			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null && !visibilityS.equals(""))
+			if(visibilityS != null && !visibilityS.isEmpty())
 				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
 			
 			if(trust == null && !isOpennet()) {

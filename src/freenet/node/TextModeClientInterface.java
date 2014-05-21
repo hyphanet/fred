@@ -388,7 +388,7 @@ public class TextModeClientInterface implements Runnable {
                 if(fnam.length() == 0) {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
-                    if((ext != null) && !ext.equals(""))
+                    if((ext != null) && !ext.isEmpty())
                     	fnam += '.' + ext;
                 }
                 File f = new File(downloadsDir, fnam);
@@ -795,7 +795,7 @@ public class TextModeClientInterface implements Runnable {
                 content = readLines(reader, true);
             }
             if(content == null) return false;
-            if(content.equals("")) return false;
+            if(content.isEmpty()) return false;
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
