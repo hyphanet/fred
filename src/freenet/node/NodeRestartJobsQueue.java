@@ -182,7 +182,7 @@ public class NodeRestartJobsQueue {
 			for(Iterator<DBJob> it = dbJobs[i].iterator();it.hasNext();) {
 				DBJob job = it.next();
 				if(job == null) {
-					Logger.error(this, "Late restart job removed without telling the NodeRestartJobsQueue on priority "+i+"!");
+					Logger.error(this, "Late restart job removed without telling the NodeRestartJobsQueue on priority "+i+ '!');
 					it.remove();
 					container.ext().store(dbJobs[i], 2);
 					continue;

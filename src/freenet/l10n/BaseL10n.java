@@ -607,7 +607,7 @@ public class BaseL10n {
 				}
 			}
 
-			String searchFor = "${/"+lookup+"}";
+			String searchFor = "${/"+lookup+ '}';
 			x = value.indexOf(searchFor);
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.

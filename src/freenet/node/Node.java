@@ -418,7 +418,7 @@ public class Node implements TimeSkewDetectorCallback {
 							}
 							throw new InvalidConfigValueException("You must enter the password");
 						} catch (MasterKeysFileSizeException e1) {
-							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
+							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ')');
 						} catch (IOException e1) {
 							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
 						}
@@ -1329,7 +1329,7 @@ public class Node implements TimeSkewDetectorCallback {
 				System.out.println("Client database node.db4o is encrypted!");
 				databaseAwaitingPassword = true;
 			} catch (MasterKeysFileSizeException e2) {
-				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
+				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + '!');
 			} catch (IOException e2) {
 				System.err.println("Unable to access master.keys file to decrypt database: "+e2);
 				e2.printStackTrace();
@@ -2670,7 +2670,7 @@ public class Node implements TimeSkewDetectorCallback {
 			String name = f.getName();
 			if(f.isFile() && 
 					name.toLowerCase().matches("((chk)|(ssk)|(pubkey))-[0-9]*\\.((store)|(cache))(\\.((keys)|(lru)))?")) {
-				System.out.println("Deleting old datastore file \""+f+"\"");
+				System.out.println("Deleting old datastore file \""+f+ '"');
 				try {
 					FileUtil.secureDelete(f);
 				} catch (IOException e) {
@@ -3071,7 +3071,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			// Activated to depth 1
 			try {
-				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
+				Logger.minor(this, "DATABASE: "+o.getClass()+ ':' +o+ ':' +database.ext().getID(o));
 			} catch (Throwable t) {
 				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
 			}
@@ -3623,7 +3623,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
-		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
+		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+ '-' +store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		if(cachingFreenetStoreMaxSize > 0)
@@ -4631,7 +4631,7 @@ public class Node implements TimeSkewDetectorCallback {
 				return;
 			}
 			DarknetPeerNode darkSource = (DarknetPeerNode) src;
-			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
+			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+ '\'');
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);

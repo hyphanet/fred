@@ -90,8 +90,8 @@ public class Rijndael implements BlockCipher {
 						long time_bcastle = benchmark(bcastle_cipher, k, IV);
 						System.out.println(algo + " (" + provider + "): " + time_def + "ns");
 						System.out.println(algo + " (" + bcastle_provider + "): " + time_bcastle + "ns");
-						Logger.minor(clazz, algo + "/" + provider + ": " + time_def + "ns");
-						Logger.minor(clazz, algo + "/" + bcastle_provider + ": " + time_bcastle + "ns");
+						Logger.minor(clazz, algo + '/' + provider + ": " + time_def + "ns");
+						Logger.minor(clazz, algo + '/' + bcastle_provider + ": " + time_bcastle + "ns");
 						if (time_bcastle < time_def) {
 							provider = bcastle_provider;
 							c = bcastle_cipher;
@@ -99,11 +99,11 @@ public class Rijndael implements BlockCipher {
 					}
 				} catch(GeneralSecurityException e) {
 					// ignore
-					Logger.warning(clazz, algo + "@" + bcastle + " benchmark failed", e);
+					Logger.warning(clazz, algo + '@' + bcastle + " benchmark failed", e);
 
 				} catch(Throwable e) {
 					// ignore
-					Logger.error(clazz, algo + "@" + bcastle + " benchmark failed", e);
+					Logger.error(clazz, algo + '@' + bcastle + " benchmark failed", e);
 				}
 			}
 			c = Cipher.getInstance(algo, provider);

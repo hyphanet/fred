@@ -118,7 +118,7 @@ public class DelayedFreeBucket implements Bucket {
 
 	@Override
 	public String toString() {
-		return super.toString()+":"+bucket;
+		return super.toString()+ ':' +bucket;
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {

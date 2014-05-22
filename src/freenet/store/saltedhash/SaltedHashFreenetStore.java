@@ -229,7 +229,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		// finish all resizing before continue
 		if (resizeOnStart && prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
-			System.out.println("Resizing datastore (" + name + ")");
+			System.out.println("Resizing datastore (" + name + ')');
 			try {
 				cleanerThread.resizeStore(prevStoreSize, false);
 			} finally {
@@ -416,7 +416,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		byte[] fullKey = block.getFullKey();
 
 		if (logMINOR)
-			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
+			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ')');
 
 		try {
 			int retry = 0;
@@ -1107,7 +1107,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						if (starting) {
 							WrapperManager.signalStarting((int) MINUTES.toMillis(5));
 							if ( x++ % 32 == 0 )
-								System.err.println("Preallocating space for " + name + ": " + currentHdLen + "/" + newHdLen);
+								System.err.println("Preallocating space for " + name + ": " + currentHdLen + '/' + newHdLen);
 						}
 					}
 					storeFileOffsetReady = currentHdLen / (headerBlockLength + dataBlockLength + hdPadding);
@@ -1461,7 +1461,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						if (oldEntryList.size() > RESIZE_MEMORY_ENTRIES)
 							oldEntryList.poll();
 					} catch (IOException e) {
-						Logger.error(this, "error reading entry (offset=" + entry.curOffset + ")", e);
+						Logger.error(this, "error reading entry (offset=" + entry.curOffset + ')', e);
 					}
 					return null;
 				}
@@ -1512,7 +1512,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						configLock.writeLock().unlock();
 					}
 
-					Logger.normal(this, "Finish resizing (" + name + ")");
+					Logger.normal(this, "Finish resizing (" + name + ')');
 				}
 
 				public boolean wantFreeEntries() {
@@ -1528,7 +1528,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		 */
 		private void rebuildBloom(boolean sleep) {
 			if(slotFilterDisabled) return;
-			Logger.normal(this, "Start rebuilding slot filter (" + name + ")");
+			Logger.normal(this, "Start rebuilding slot filter (" + name + ')');
 			
 			BatchProcessor<T> rebuildBloomProcessor = new BatchProcessor<T>() {
 				@Override
@@ -1595,7 +1595,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						configLock.writeLock().unlock();
 					}
 					System.out.println(name + " cleaner finished successfully.");
-					Logger.normal(this, "Finish rebuilding bloom filter (" + name + ")");
+					Logger.normal(this, "Finish rebuilding bloom filter (" + name + ')');
 				}
 				
 				public boolean wantFreeEntries() {
@@ -1634,7 +1634,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					}
 
 					if (i++ % 64 == 0)
-						System.err.println(name + " cleaner in progress: " + (entriesTotal - entriesLeft) + "/"
+						System.err.println(name + " cleaner in progress: " + (entriesTotal - entriesLeft) + '/'
 						        + entriesTotal);
 
 					batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, processor);
@@ -1924,7 +1924,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	@Override
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
-		Logger.normal(this, "[" + name + "] Resize newStoreSize=" + newStoreSize + ", shinkNow=" + shrinkNow);
+		Logger.normal(this, '[' + name + "] Resize newStoreSize=" + newStoreSize + ", shinkNow=" + shrinkNow);
 
 		if(newStoreSize > Integer.MAX_VALUE) // FIXME 64-bit.
 			throw new IllegalArgumentException("Store size over MAXINT not supported due to ResizablePersistentIntBuffer limitations.");
@@ -1936,7 +1936,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				return;
 
 			if (prevStoreSize != 0) {
-				Logger.normal(this, "[" + name + "] resize already in progress, ignore resize request");
+				Logger.normal(this, '[' + name + "] resize already in progress, ignore resize request");
 				return;
 			}
 
@@ -1962,7 +1962,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				while(prevStoreSize == old) {
 					resizeCompleteCondition.awaitUninterruptibly();
 				}
-				System.err.println("Completed shrink, old size was "+old+" new size was "+newStoreSize+" size is now "+storeSize+" (prev="+prevStoreSize+")");
+				System.err.println("Completed shrink, old size was "+old+" new size was "+newStoreSize+" size is now "+storeSize+" (prev="+prevStoreSize+ ')');
 			} finally {
 				configLock.writeLock().unlock();
 			}
@@ -2218,7 +2218,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	@Override
 	public String toString() {
-		return super.toString()+":"+name;
+		return super.toString()+ ':' +name;
 	}
 	
 	@Override

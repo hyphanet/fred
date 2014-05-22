@@ -489,7 +489,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 			// The node will now propagate the new data. There is no need to move to the next node yet.
 			return DO.WAIT;
 		} catch (SSKVerifyException e) {
-			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ':' +block);
 			finish(INTERNAL_ERROR, next);
 			return DO.FINISHED;
 		}
@@ -674,7 +674,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 
 	@Override
 	public String toString() {
-		return "SSKInsertSender:" + myKey+":"+uid;
+		return "SSKInsertSender:" + myKey+ ':' +uid;
 	}
 
 	public PeerNode[] getRoutedTo() {

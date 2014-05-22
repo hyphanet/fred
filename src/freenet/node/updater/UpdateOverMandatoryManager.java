@@ -167,7 +167,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		// Log it
 
 		if(logMINOR) {
-			Logger.minor(this, "Update Over Mandatory offer from node " + source.getPeer() + " : " + source.userToString() + ":");
+			Logger.minor(this, "Update Over Mandatory offer from node " + source.getPeer() + " : " + source.userToString() + ':');
 			Logger.minor(this, "Main jar key: " + mainJarKey + " version=" + mainJarVersion + " length=" + mainJarFileLength);
 			Logger.minor(this, "Revocation key: " + revocationKey + " found=" + haveRevocationKey + " length=" + revocationKeyFileLength + " last had 3 DNFs " + revocationKeyLastTried + " ms ago, " + revocationKeyDNFs + " DNFs so far");
 			Logger.minor(this, "Load stats: " + pingTime + "ms ping, " + delayTime + "ms bwlimit delay time");
@@ -400,7 +400,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final String name = "Main";
 		String lname = "main";
 		if(logMINOR)
-			Logger.minor(this, "sendUOMRequest"+name+"(" + source + "," + addOnFail + ")");
+			Logger.minor(this, "sendUOMRequest"+name+ '(' + source + ',' + addOnFail + ')');
 		if(!source.isConnected() || source.isSeed()) {
                     if(logMINOR) Logger.minor(this, "Not sending UOM "+lname+" request to "+source+" (disconnected or seednode)");
                     return;
@@ -563,7 +563,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				div.addChild("p").addChild("#", l10n("connectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(PeerNode pn: nodesSayBlownConnected) {
-					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ')');
 				}
 			}
 
@@ -571,7 +571,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				div.addChild("p").addChild("#", l10n("disconnectedSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(PeerNode pn: nodesSayBlownDisconnected) {
-					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ')');
 				}
 			}
 
@@ -579,7 +579,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				div.addChild("p").addChild("#", l10n("failedTransferSayBlownLabel"));
 				HTMLNode list = div.addChild("ul");
 				for(PeerNode pn: nodesSayBlownFailedTransfer) {
-					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ")");
+					list.addChild("li", pn.userToString() + " (" + pn.getPeer() + ')');
 				}
 			}
 
@@ -611,27 +611,27 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			if(nodesSayBlownConnected.length > 0) {
 				sb.append(l10n("connectedSayBlownLabel")).append("\n\n");
 				for(PeerNode pn: nodesSayBlownConnected) {
-					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ')').append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			if(nodesSayBlownDisconnected.length > 0) {
 				sb.append(l10n("disconnectedSayBlownLabel"));
 
 				for(PeerNode pn: nodesSayBlownDisconnected) {
-					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append("\n");
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ')').append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			if(nodesSayBlownFailedTransfer.length > 0) {
 				sb.append(l10n("failedTransferSayBlownLabel"));
 
 				for(PeerNode pn: nodesSayBlownFailedTransfer) {
-					sb.append(pn.userToString() + " (" + pn.getPeer() + ")").append('\n');
+					sb.append(pn.userToString() + " (" + pn.getPeer() + ')').append('\n');
 				}
-				sb.append("\n");
+				sb.append('\n');
 			}
 
 			return sb.toString();
@@ -779,7 +779,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 				@Override
 				public String toString() {
-					return super.toString() + "(" + uid + ":" + source.getPeer() + ")";
+					return super.toString() + '(' + uid + ':' + source.getPeer() + ')';
 				}
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {
@@ -815,8 +815,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		if(!revocationURI.equals(updateManager.getRevocationURI())) {
 			System.err.println("Node sending us a revocation certificate from the wrong URI:\n" +
-				"Node: " + source.userToString() + "\n" +
-				"Our   URI: " + updateManager.getRevocationURI() + "\n" +
+				"Node: " + source.userToString() + '\n' +
+				"Our   URI: " + updateManager.getRevocationURI() + '\n' +
 				"Their URI: " + revocationURI);
 			synchronized(this) {
 				// Wierd case of a failed transfer
@@ -831,7 +831,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		if(updateManager.isBlown()) {
 			if(logMINOR)
-				Logger.minor(this, "Already blown, so not receiving from " + source + "(" + uid + ")");
+				Logger.minor(this, "Already blown, so not receiving from " + source + '(' + uid + ')');
 			cancelSend(source, uid);
 			return true;
 		}
@@ -987,21 +987,21 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			dis = new DataInputStream(new BufferedInputStream(temp.getInputStream()));
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
-			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");
-			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");
+			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + '!');
+			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + '!');
 			if(!fromDisk)
-				updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!", true);
+				updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + '!', true);
 			return;
 		} catch (EOFException e) {
-			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
-			System.err.println("Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
+			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ')', e);
+			System.err.println("Peer " + source + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ')');
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
 			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
-			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
-			System.err.println("Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
+			Logger.error(this, "Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ')', e);
+			System.err.println("Peer " + source + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ')');
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
 			// FIXME file will be kept until exit for debugging purposes
@@ -1292,7 +1292,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 				@Override
 				public String toString() {
-					return super.toString() + "(" + uid + ":" + source.getPeer() + ")";
+					return super.toString() + '(' + uid + ':' + source.getPeer() + ')';
 				}
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {
@@ -1329,8 +1329,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		if(!jarURI.equals(updateManager.getURI().setSuggestedEdition(version))) {
 			System.err.println("Node sending us a main jar update (" + version + ") from the wrong URI:\n" +
-				"Node: " + source.userToString() + "\n" +
-				"Our   URI: " + updateManager.getURI() + "\n" +
+				"Node: " + source.userToString() + '\n' +
+				"Our   URI: " + updateManager.getURI() + '\n' +
 				"Their URI: " + jarURI);
 			cancelSend(source, uid);
 			synchronized(this) {
@@ -1341,7 +1341,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		if(updateManager.isBlown()) {
 			if(logMINOR)
-				Logger.minor(this, "Key blown, so not receiving main jar from " + source + "(" + uid + ")");
+				Logger.minor(this, "Key blown, so not receiving main jar from " + source + '(' + uid + ')');
 			cancelSend(source, uid);
 			synchronized(this) {
 				this.nodesAskedSendMainJar.remove(source);
@@ -1435,8 +1435,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(temp)));
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
-			Logger.error(this, "Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + "!");
-			System.err.println("Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + "!");
+			Logger.error(this, "Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + '!');
+			System.err.println("Somebody deleted " + temp + " ? We lost the main jar (" + version + ") from " + toString + '!');
 			return;
 		} catch(IOException e) {
 			Logger.error(this, "Could not read main jar (" + version + ") from temp file " + temp + " from node " + toString + " !");

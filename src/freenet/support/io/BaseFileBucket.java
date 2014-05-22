@@ -254,7 +254,7 @@ public abstract class BaseFileBucket implements Bucket {
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString()+ ':' +BaseFileBucket.this.toString();
 		}
 	}
 
@@ -277,7 +277,7 @@ public abstract class BaseFileBucket implements Bucket {
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString()+ ':' +BaseFileBucket.this.toString();
 		}
 	}
 

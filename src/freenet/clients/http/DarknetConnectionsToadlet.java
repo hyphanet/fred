@@ -103,7 +103,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled) {
 		String content = ((DarknetPeerNodeStatus)peerNodeStatus).getOurVisibility().name();
 		if(advancedModeEnabled)
-			content += " ("+((DarknetPeerNodeStatus)peerNodeStatus).getTheirVisibility().name()+")";
+			content += " ("+((DarknetPeerNodeStatus)peerNodeStatus).getTheirVisibility().name()+ ')';
 		peerRow.addChild("td", "class", "peer-trust").addChild("#", content);
 	}
 

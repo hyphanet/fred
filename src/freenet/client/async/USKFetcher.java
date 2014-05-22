@@ -286,11 +286,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			String[] split = line.split("\n");
 			if(split.length < 3) {
-				Logger.error(this, "Unable to parse hint (not enough lines): \""+line+"\"");
+				Logger.error(this, "Unable to parse hint (not enough lines): \""+line+ '"');
 				return;
 			}
 			if(!split[0].startsWith("HINT")) {
-				Logger.error(this, "Unable to parse hint (first line doesn't start with HINT): \""+line+"\"");
+				Logger.error(this, "Unable to parse hint (first line doesn't start with HINT): \""+line+ '"');
 				return;
 			}
 			String value = split[1];
@@ -298,7 +298,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			try {
 				hint = Long.parseLong(value);
 			} catch (NumberFormatException e) {
-				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
+				Logger.error(this, "Unable to parse hint \""+value+ '"', e);
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
@@ -765,7 +765,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					else
 						c.onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
-					Logger.error(this, "An exception occured while dealing with a callback:"+c.toString()+"\n"+e.getMessage(),e);
+					Logger.error(this, "An exception occured while dealing with a callback:"+c.toString()+ '\n' +e.getMessage(),e);
 				}
 			}
 		}
@@ -1848,7 +1848,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			private long checkedDatastoreTo = -1;
 			
 			public KeyList(long slot) {
-				if(logMINOR) Logger.minor(this, "Creating KeyList from "+slot+" on "+USKFetcher.this+" "+this, new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Creating KeyList from "+slot+" on "+USKFetcher.this+ ' ' +this, new Exception("debug"));
 				firstSlot = slot;
 				RemoveRangeArrayList<byte[]> ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 				cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);

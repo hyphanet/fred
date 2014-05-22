@@ -712,7 +712,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			Object o = manifestElements.get(defaultName);
 			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
 			if(!(o instanceof HashMap))
-				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
+				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+ '"');
 			manifestElements = (HashMap<String, Object>)o;
 			defaultName = subname;
 		}
@@ -835,7 +835,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
 						if(logMINOR)
-							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
+							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+ ':' +ph.persistent+ ' ' +persistent());
 						numberOfFiles++;
 						totalSize += data.size();
 					}
@@ -2030,7 +2030,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			putHandlersWaitingForMetadata.add(ph);
 			putHandlersWaitingForFetchable.add(ph);
 			if(logMINOR)
-				Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
+				Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+ ':' +ph.persistent+ ' ' +persistent());
 			numberOfFiles++;
 			totalSize += data.size();
 		}

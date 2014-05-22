@@ -254,9 +254,9 @@ public class PersistentBlobTempBucketFactory {
 				if(!tag.isFree)
 					used++;
 				if(tag.bucket == null && !tag.isFree)
-					Logger.error(this, "No bucket but flagged as not free: index "+l+" "+tag.bucket);
+					Logger.error(this, "No bucket but flagged as not free: index "+l+ ' ' +tag.bucket);
 				if(tag.bucket != null && tag.isFree)
-					Logger.error(this, "Has bucket but flagged as free: index "+l+" "+tag.bucket);
+					Logger.error(this, "Has bucket but flagged as free: index "+l+ ' ' +tag.bucket);
 				if(!tag.isFree) {
 					if(rangeStart == Long.MIN_VALUE) {
 						rangeStart = l;
@@ -715,7 +715,7 @@ outer:		while(true) {
 				}
 				double full = (double)lastNotCommitted / (double)blocks;
 				if((full > 0.8 && !DISABLE_SANITY_CHECKS_DEFRAG) || lastNotCommitted == blocks) {
-					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
+					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+ ')');
 					lastCheckedEnd = now;
 					queueMaybeShrink();
 					return false;
@@ -767,14 +767,14 @@ outer:				while(true) {
 				if(lastCommitted == -1) {
 					// No used slots at all?!
 					// There may be some not committed though
-					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+ ')');
 					lastCommitted = 0;
 					query = null;
 				}
 				full = (double) lastCommitted / (double) blocks;
 				if(full > 0.8 || DISABLE_SANITY_CHECKS_DEFRAG) {
 					if(full > 0.8) {
-						if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
+						if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+ '%');
 						lastCheckedEnd = now;
 						queueMaybeShrink();
 					}

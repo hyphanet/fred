@@ -116,7 +116,7 @@ public class Peer implements WritableToDataOutputStream {
     public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
         int offset = physical.lastIndexOf(':'); // ipv6
         if(offset < 0) 
-        	throw new PeerParseException("No port number: \""+physical+"\"");
+        	throw new PeerParseException("No port number: \""+physical+ '"');
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
         String strport = physical.substring(offset+1);

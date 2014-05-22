@@ -254,10 +254,10 @@ public class Util {
 						}
 					} catch(GeneralSecurityException e) {
 						// ignore
-						Logger.warning(clazz, algo + "@" + sun + " benchmark failed", e);
+						Logger.warning(clazz, algo + '@' + sun + " benchmark failed", e);
 					} catch(Throwable e) {
 						// ignore
-						Logger.error(clazz, algo + "@" + sun + " benchmark failed", e);
+						Logger.error(clazz, algo + '@' + sun + " benchmark failed", e);
 					}
 				}
 				Provider mdProvider = md.getProvider();

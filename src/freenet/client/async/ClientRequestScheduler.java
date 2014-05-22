@@ -240,7 +240,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
-			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
+			Logger.minor(this, "register("+persistent+ ',' +hasListener+ ',' +Fields.commaList(getters));
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
@@ -904,7 +904,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
-		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
+		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+ ')');
 		
 		if(offeredKeys != null) {
 			offeredKeys.remove(block.getKey());

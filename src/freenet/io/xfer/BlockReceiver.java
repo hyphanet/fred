@@ -445,7 +445,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			callback.blockReceiveFailed(new RetrievalException(reason, description));
 		} else {
-			Logger.error(this, "Succeeded in complete("+reason+","+description+") on "+this, new Exception("error"));
+			Logger.error(this, "Succeeded in complete("+reason+ ',' +description+") on "+this, new Exception("error"));
 			callback.blockReceived(block);
 		}
 		decRunningBlockReceives();
@@ -608,7 +608,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":"+_uid+":"+_sender.shortToString();
+		return super.toString()+ ':' +_uid+ ':' +_sender.shortToString();
 	}
 	
 }

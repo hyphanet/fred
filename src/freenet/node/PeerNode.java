@@ -501,7 +501,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 
 		if(fs.getBoolean("opennet", false) != isOpennet)
-			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
+			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+ '"');
 
 		/* Read the DSA key material for the peer */
 		try {
@@ -2551,7 +2551,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				if(b != (isOpennet() || isSeed()))
 					throw new FSParseException("Changed opennet status?!?!?!? expected="+isOpennet()+" but got "+b+" ("+s+") on "+this);
 			} catch (NumberFormatException e) {
-				throw new FSParseException("Cannot parse opennet=\""+s+"\"", e);
+				throw new FSParseException("Cannot parse opennet=\""+s+ '"', e);
 			}
 		}
 		if(!generateIdentityFromPubkey()) {
@@ -3278,7 +3278,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	public void reportThrottledPacketSendTime(long timeDiff, boolean realTime) {
 		// FIXME do we need this?
 		if(logMINOR)
-			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+")");
+			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+ ')');
 	}
 
 	public void setRemoteDetectedPeer(Peer p) {
@@ -4177,7 +4177,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		// FIXME remove when make peerECDSA* final.
 		fs.putOverwrite("ecdsa.P256.pub", nfs.get("ecdsa.P256.pub"));
 		if(!fs.isEmpty()) {
-			if(logMINOR) Logger.minor(this, "fs is '" + fs.toString() + "'");
+			if(logMINOR) Logger.minor(this, "fs is '" + fs.toString() + '\'');
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
 		} else {
 			if(logMINOR) Logger.minor(this, "fs is empty");
@@ -4941,7 +4941,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+counter+":"+requestType+":"+realTime;
+			return super.toString()+ ':' +counter+ ':' +requestType+ ':' +realTime;
 		}
 		
 		public synchronized int waitingForCount() {
@@ -5110,7 +5110,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			synchronized(routedToLock) {
 				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
-					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+")");
+					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+ ')');
 					if(tag.addRoutedTo(PeerNode.this, offeredKey)) {
 						// FIXME maybe wait a bit, check the other side's version first???
 						return RequestLikelyAcceptedState.UNKNOWN;
@@ -5602,7 +5602,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				int length, int overhead) {
 			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
 			if(m == null) {
-				if(logMINOR) Logger.minor(this, "Message not decoded from "+PeerNode.this+" ("+PeerNode.this.getVersionNumber()+")");
+				if(logMINOR) Logger.minor(this, "Message not decoded from "+PeerNode.this+" ("+PeerNode.this.getVersionNumber()+ ')');
 				return;
 			}
 			if(DMT.isPeerLoadStatusMessage(m)) {

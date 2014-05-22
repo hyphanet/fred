@@ -60,7 +60,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 			if (maskPart.indexOf('.') == -1) {
 				int bits = Integer.parseInt(maskPart);
 				if (bits > 32 || bits < 0)
-					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ")");
+					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ')');
 				networkMask = 0xffffffff << (32 - bits);
 				if (Integer.parseInt(maskPart) == 0) {
 					networkMask = 0;

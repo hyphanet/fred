@@ -100,7 +100,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
 		}
-		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
+		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+ ')', e);
 		if(parent.isCancelled() || cancelled) {
 			if(logMINOR) Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);

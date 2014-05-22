@@ -49,7 +49,7 @@ public class DATASTORE_SIZE implements Step {
 			long current = sizeOption.getValue();
 			result.addChild("option",
 			        new String[] { "value", "selected" },
-			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
+			        new String[] { SizeUtil.formatSize(current), "on" }, WizardL10n.l10n("currentPrefix")+ ' ' +SizeUtil.formatSize(current));
 		} else if(autodetectedSize != -1) {
 			result.addChild("option",
 			        new String[] { "value", "selected" },

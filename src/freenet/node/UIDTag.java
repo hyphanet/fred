@@ -344,7 +344,7 @@ public abstract class UIDTag {
 	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(super.toString());
-		sb.append(":");
+		sb.append(':');
 		sb.append(uid);
 		if(unlockedHandler)
 			sb.append(" (unlocked handler)");
@@ -356,13 +356,13 @@ public abstract class UIDTag {
 			sb.append(" (routing to ");
 			for(PeerNode pn : currentlyRoutingTo) {
 				sb.append(pn.shortToString());
-				sb.append(",");
+				sb.append(',');
 			}
 			sb.setLength(sb.length()-1);
-			sb.append(")");
+			sb.append(')');
 		}
 		if(fetchingOfferedKeyFrom != null)
-			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(')');
 		if(sourceRestarted)
 			sb.append(" (source restarted)");
 		if(timedOutButContinued)

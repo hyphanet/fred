@@ -788,7 +788,7 @@ public class NodeUpdateManager {
 			minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri,
-				(int) minVer, -1, Integer.MAX_VALUE, name + "-", name,
+				(int) minVer, -1, Integer.MAX_VALUE, name + '-', name,
 				node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized (this) {
 			if (pluginUpdaters == null) {
@@ -1336,7 +1336,7 @@ public class NodeUpdateManager {
 				}
 				// Try the hard way
 			} else {
-				System.err.println("Completed writing new Freenet jar to "+mainJar+".");
+				System.err.println("Completed writing new Freenet jar to "+mainJar+ '.');
 				return false;
 			}
 		}
@@ -1346,7 +1346,7 @@ public class NodeUpdateManager {
 
 	public void writeJarTo(File fNew) throws IOException {
 		if (!fNew.delete() && fNew.exists()) {
-			System.err.println("Can't delete " + fNew + "!");
+			System.err.println("Can't delete " + fNew + '!');
 		}
 
 		FileOutputStream fos = null;

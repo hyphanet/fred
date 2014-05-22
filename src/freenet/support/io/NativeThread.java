@@ -137,7 +137,7 @@ public class NativeThread extends Thread {
 	 * Rescale java priority and set linux priority.
 	 */
 	private boolean setNativePriority(int prio) {
-		Logger.minor(this, "setNativePriority("+prio+")");
+		Logger.minor(this, "setNativePriority("+prio+ ')');
 		setPriority(prio);
 		if(!_loadNative) {
 			Logger.minor(this, "_loadNative is false");

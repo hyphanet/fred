@@ -173,7 +173,7 @@ public class ClientPutDir extends ClientPutBase {
 					if(logMINOR)
 						Logger.minor(this, "Add dir : " + f.getAbsolutePath());
 					
-					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + "/", allowUnreadableFiles, includeHiddenFiles));
+					map.put(f.getName(), makeDiskDirManifest(f, prefix + f.getName() + '/', allowUnreadableFiles, includeHiddenFiles));
 				} else {
 					if(!allowUnreadableFiles)
 						throw new FileNotFoundException("Not a file and not a directory : " + f);

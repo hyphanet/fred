@@ -125,10 +125,10 @@ public interface Compressor {
 					}
 				}
 				if (ct == null) {
-					throw new InvalidCompressionCodecException("Unknown compression codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Unknown compression codec identifier: '"+codec+ '\'');
 				}
 				if (result.contains(ct)) {
-					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+ '\'');
 				}
 				result.add(ct);
 			}

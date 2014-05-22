@@ -282,7 +282,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 				Bucket data = status.getData();
 				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in writeDecodedData on "+this+" status = "+status+" number "+status.getNumber()+" data "+status.getData()+" persistence = "+persistent+(persistent ? (" (block active = "+container.ext().isActive(status)+" block ID = "+container.ext().getID(status)+" seg active="+container.ext().isActive(this)+")"):""));
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in writeDecodedData on "+this+" status = "+status+" number "+status.getNumber()+" data "+status.getData()+" persistence = "+persistent+(persistent ? (" (block active = "+container.ext().isActive(status)+" block ID = "+container.ext().getID(status)+" seg active="+container.ext().isActive(this)+ ')'):""));
 				if(persistent) container.activate(data, 1);
 				long copy;
 				if(truncateLength < 0)
@@ -302,7 +302,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				totalCopied += buf.length;
 				if(!blockActive) container.deactivate(status, 1);
 			}
-			if(logMINOR) Logger.minor(this, "Copied data ("+totalCopied+")");
+			if(logMINOR) Logger.minor(this, "Copied data ("+totalCopied+ ')');
 			return totalCopied;
 		}
 	}
@@ -435,7 +435,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// we don't need to FEC decode.
 				if(wasDataBlock)
 					fetchedDataBlocks++;
-				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
+				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+ ')');
 				boolean haveDataBlocks = fetchedDataBlocks == dataBuckets.length;
 				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
@@ -1067,7 +1067,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					Logger.error(this, "Data block "+i+" : ours is "+dataBuckets[i]+" codec's is "+dataBlockStatus[i]);
 					if(persistent) {
 						if(container.ext().getID(dataBuckets[i]) == container.ext().getID(dataBlockStatus[i]))
-							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+dataBuckets[i]+"="+container.ext().getID(dataBuckets[i])+" and "+dataBlockStatus[i]+"="+container.ext().getID(dataBlockStatus[i])+" ... attempting workaround ...");
+							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+dataBuckets[i]+ '=' +container.ext().getID(dataBuckets[i])+" and "+dataBlockStatus[i]+ '=' +container.ext().getID(dataBlockStatus[i])+" ... attempting workaround ...");
 						Logger.error(this, "Ours is "+(container.ext().isStored(dataBuckets[i])?"stored ":"")+(container.ext().isActive(dataBuckets[i])?"active ":"")+" UUID "+container.ext().getID(dataBuckets[i]));
 						Logger.error(this, "Theirs is "+(container.ext().isStored(dataBlockStatus[i])?"stored ":"")+(container.ext().isActive(dataBlockStatus[i])?"active ":"")+" UUID "+container.ext().getID(dataBlockStatus[i]));
 					}
@@ -1119,7 +1119,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					Logger.error(this, "Check block "+i+" : ours is "+checkBuckets[i]+" codec's is "+checkBlockStatus[i]);
 					if(persistent) {
 						if(container.ext().getID(checkBuckets[i]) == container.ext().getID(checkBlockStatus[i]))
-							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+checkBuckets[i]+"="+container.ext().getID(checkBuckets[i])+" and "+checkBlockStatus[i]+"="+container.ext().getID(checkBlockStatus[i])+" ... attempting workaround ...");
+							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+checkBuckets[i]+ '=' +container.ext().getID(checkBuckets[i])+" and "+checkBlockStatus[i]+ '=' +container.ext().getID(checkBlockStatus[i])+" ... attempting workaround ...");
 						Logger.error(this, "Ours is "+(container.ext().isStored(checkBuckets[i])?"stored ":"")+(container.ext().isActive(checkBuckets[i])?"active ":"")+" UUID "+container.ext().getID(checkBuckets[i]));
 						Logger.error(this, "Theirs is "+(container.ext().isStored(checkBlockStatus[i])?"stored ":"")+(container.ext().isActive(checkBlockStatus[i])?"active ":"")+" UUID "+container.ext().getID(checkBlockStatus[i]));
 					}
@@ -1500,7 +1500,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(failed) {
 			onFatalFailure(e, blockNo, container, context);
 			if(logMINOR)
-				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
+				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+ '/' +maxTries);
 			return false;
 		}
 		boolean mustSchedule = false;
@@ -1512,7 +1512,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// If we are here we are going to retry
 			mustSchedule = true;
 			if(logMINOR)
-				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
+				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+ '/' +maxTries);
 		}
 		if(persistent) {
 			if(callStore) container.store(this);
@@ -1738,7 +1738,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 				if(foundKeys[i]) continue;
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+getRetries(i, container, context)+"/"+maxTries);
+					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+getRetries(i, container, context)+ '/' +maxTries);
 				
 				notFound = false;
 			} else {

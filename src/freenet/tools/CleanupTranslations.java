@@ -41,13 +41,13 @@ public class CleanupTranslations {
 				if(idx == -1) {
 					// Last line
 					if(!line.equals("End")) {
-						System.err.println("Line with no equals (file does not end in End???): "+f+" - \""+line+"\"");
+						System.err.println("Line with no equals (file does not end in End???): "+f+" - \""+line+ '"');
 						System.exit(1);
 					}
-					sw.append(line+"\n");
+					sw.append(line+ '\n');
 					line = br.readLine();
 					if(line != null) {
-						System.err.println("Content after End: \""+line+"\"");
+						System.err.println("Content after End: \""+line+ '"');
 						System.exit(2);
 					}
 					break;
@@ -60,7 +60,7 @@ public class CleanupTranslations {
 					changed = true;
 					continue;
 				}
-				sw.append(line+"\n");
+				sw.append(line+ '\n');
 			}
 			if(!changed) continue;
 			br.close();

@@ -390,7 +390,7 @@ loopOverLines:
 					try {
 						delta = Integer.parseInt(split[token]);
 					} catch (NumberFormatException e) {
-						System.err.println("Unable to parse token "+token+" = \""+token+"\"");
+						System.err.println("Unable to parse token "+token+" = \""+token+ '"');
 						System.err.println("This is supposed to be a delta");
 						System.err.println("Skipping the rest of the line for date "+dateFormat.format(calendar.getTime()));
 						continue loopOverLines;

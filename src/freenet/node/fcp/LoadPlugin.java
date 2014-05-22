@@ -51,7 +51,7 @@ public class LoadPlugin extends FCPMessage {
 					TYPENAME_FREENET.equalsIgnoreCase(urlType) ||
 					TYPENAME_OFFICIAL.equalsIgnoreCase(urlType) ||
 					TYPENAME_URL.equalsIgnoreCase(urlType)))
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown URL type: '"+urlType+"'", identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown URL type: '"+urlType+ '\'', identifier, false);
 		}
 		String officialSource = fs.get("OfficialSource");
 		if(officialSource != null) {
@@ -62,7 +62,7 @@ public class LoadPlugin extends FCPMessage {
 				force = true;
 				forceHTTPS = false;
 			} else {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown OfficialSource '"+officialSource+"'", identifier, false);
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown OfficialSource '"+officialSource+ '\'', identifier, false);
 			}
 		} else {
 			force = false;

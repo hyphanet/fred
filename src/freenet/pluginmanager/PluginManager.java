@@ -1126,7 +1126,7 @@ public class PluginManager {
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
 		boolean pluginIsLocal = pdl instanceof PluginDownLoaderFile;
-		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
+		File pluginFile = new File(pluginDirectory, filename + '-' + System.currentTimeMillis());
 
 		/* check for previous instances and delete them. */
 		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
@@ -1341,7 +1341,7 @@ public class PluginManager {
 				pluginFile.delete();
 				if(!downloaded) continue;
 				throw new PluginNotFoundException(
-					"could not find plugin class: \"" + cnfe1.getMessage() + "\"", cnfe1);
+					"could not find plugin class: \"" + cnfe1.getMessage() + '"', cnfe1);
 			} catch(InstantiationException ie1) {
 				Logger.error(this, "could not instantiate plugin", ie1);
 				pluginFile.delete();
@@ -1544,12 +1544,12 @@ public class PluginManager {
 		 */
 		@Override
 		public String toString() {
-			return "PluginProgress[name=" + name + ",startingTime=" + startingTime + ",progress=" + pluginProgress + "]";
+			return "PluginProgress[name=" + name + ",startingTime=" + startingTime + ",progress=" + pluginProgress + ']';
 		}
 
 		public String toLocalisedString() {
 			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0)
-				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+"%";
+				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+ '%';
 			else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
 				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading");
 			else if(pluginProgress == PROGRESS_STATE.STARTING)

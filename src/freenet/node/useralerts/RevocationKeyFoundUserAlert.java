@@ -30,10 +30,10 @@ public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
 
 	private static String getText(boolean disabledNotBlown, String msg) {
 		if(disabledNotBlown) {
-			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.textDisabled") + " " +
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.textDisabled") + ' ' +
 				NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.textDisabledDetail", "message", msg);
 		} else {
-			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.text") + " " +
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.text") + ' ' +
 				NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.textDetail", "message", msg);
 		}
 	}

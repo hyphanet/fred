@@ -217,15 +217,15 @@ public class UpdateDeployContext {
 		int count = 1; // Classpath is 1-based.
 		for(Dependency d : deps.dependencies) {
 		    System.out.println("Writing dependency "+d.newFilename()+" priority "+d.order());
-			bw.write("wrapper.java.classpath."+count+"="+d.newFilename()+'\n');
+			bw.write("wrapper.java.classpath."+count+ '=' +d.newFilename()+'\n');
 			count++;
 		}
 		
 		// Write the main jar.
-		bw.write("wrapper.java.classpath."+count+"="+mainRHS+'\n');
+		bw.write("wrapper.java.classpath."+count+ '=' +mainRHS+'\n');
 		count++;
 		for(String s : classpath) {
-			bw.write("wrapper.java.classpath."+count+"="+s+'\n');
+			bw.write("wrapper.java.classpath."+count+ '=' +s+'\n');
 			count++;
 		}
 		
@@ -337,7 +337,7 @@ public class UpdateDeployContext {
 		
 		while((line = br.readLine()) != null) {
 			
-			if(line.equals("#" + markerComment))
+			if(line.equals('#' + markerComment))
 				return CHANGED.ALREADY;
 			
 			if(line.startsWith("wrapper.java.maxmemory=")) {

@@ -423,7 +423,7 @@ public class OpennetManager {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
+		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+ ',' +justChecking+ ',' +oldOpennetPeer+ ',' +connectionType+ ')');
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
 		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: "+nodeToAddNow.getVersionNumber()+" for "+connectionType);
 		if(outdated) {
@@ -547,7 +547,7 @@ public class OpennetManager {
 				}
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
-						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
+						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+ ':' +getSize());
 					peersLRU.remove(toDrop);
 					dropList.add(toDrop);
 				}
@@ -757,7 +757,7 @@ public class OpennetManager {
 					continue;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
+					Logger.minor(this, "Possibly dropping opennet peer "+pn+ ' ' +
 							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
 				pn.setWasDropped();
 				return pn;

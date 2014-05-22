@@ -40,7 +40,7 @@ public class ListUtils {
 	 */
 	public static <E> E removeBySwapLast(List<E> a, int idx) {
 		int size = a.size();
-		if (idx < 0 || idx >= size) throw new IndexOutOfBoundsException(idx+" out of range [0;"+size+")");
+		if (idx < 0 || idx >= size) throw new IndexOutOfBoundsException(idx+" out of range [0;"+size+ ')');
 		E moved = a.remove(size-1);
 		if (idx != size-1)
 			a.set(idx, moved);

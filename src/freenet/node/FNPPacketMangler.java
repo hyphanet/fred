@@ -1419,7 +1419,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(oldOpennetPeer) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet == null) {
-				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
+				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+ '.');
 				return;
 			}
 			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't
@@ -1658,7 +1658,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if(oldOpennetPeer) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet == null) {
-				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
+				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+ '.');
 				return true;
 			}
 			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't

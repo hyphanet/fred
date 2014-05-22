@@ -388,7 +388,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		ArrayList<String> sv = null;
 		int slash2;
 		sv = new ArrayList<String>();
-		if (isKSK) URI = "/" + URI; // ensure that KSK docNames are decoded
+		if (isKSK) URI = '/' + URI; // ensure that KSK docNames are decoded
 		while ((slash2 = URI.lastIndexOf('/')) != -1) {
 			String s;
 			try {
@@ -742,7 +742,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	public String toString(boolean prefix, boolean pureAscii) {
 		if(keyType == null) {
 			// Not activated or something...
-			if(logMINOR) Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
+			if(logMINOR) Logger.minor(this, "Not activated?? in toString("+prefix+ ',' +pureAscii+ ')');
 			return null;
 		}
 		StringBuilder b;
@@ -985,7 +985,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 					continue;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Adding metaString \"" + s + "\"");
+					Logger.minor(this, "Adding metaString \"" + s + '"');
 				names.add(s);
 			}
 		StringBuilder out = new StringBuilder();
@@ -1013,7 +1013,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 			// FIXME return null in this case, localise in a wrapper.
 			return "unknown";
 		}
-		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+"\"";
+		assert out.toString().equals(FileUtil.sanitize(out.toString())) : ("Not sanitized? \""+out.toString()+"\" -> \""+FileUtil.sanitize(out.toString()))+ '"';
 		return out.toString();
 	}
 
@@ -1134,7 +1134,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
 		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
-		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+		return new FreenetURI("SSK", docName+ '-' +suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
 	private static final Pattern docNameWithEditionPattern;

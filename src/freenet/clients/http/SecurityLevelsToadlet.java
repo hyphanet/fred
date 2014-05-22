@@ -541,7 +541,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		        "operatingSystem",
 		        NodeL10n.getBase().getString("OperatingSystemName."+os.name())));
 		if(os == FileUtil.OperatingSystem.Windows) {
-			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
+			swapWarning.addChild("#", ' ' + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
 
 		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
@@ -563,17 +563,17 @@ public class SecurityLevelsToadlet extends Toadlet {
 					new HTMLNode[] { HTMLNode.STRONG });
 			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
+					inner.addChild("b", ' ' +l10nSec("warningWillEncrypt"));
 				else
-					inner.addChild("b", " "+l10nSec("warningWontEncrypt"));
+					inner.addChild("b", ' ' +l10nSec("warningWontEncrypt"));
 			} else if(level == PHYSICAL_THREAT_LEVEL.LOW && physicalLevel != PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
+					inner.addChild("b", ' ' +l10nSec("warningWillDecrypt"));
 				else
-					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
+					inner.addChild("b", ' ' +l10nSec("warningWontDecrypt"));
 			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
-				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
+				inner.addChild("b", ' ' +l10nSec("warningMaximumWillDeleteQueue"));
 			}
 			if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
 				if(physicalLevel == level) {

@@ -172,15 +172,15 @@ public class JPEGFilter implements ContentDataFilter {
 					// File header
 					int majorVersion = dis.readUnsignedByte();
 					if(majorVersion != 1)
-						throwError("Invalid header", "Unrecognized major version "+majorVersion+".");
+						throwError("Invalid header", "Unrecognized major version "+majorVersion+ '.');
 					dos.write(majorVersion);
 					int minorVersion = dis.readUnsignedByte();
 					if(minorVersion > 2)
-						throwError("Invalid header", "Unrecognized version 1."+minorVersion+".");
+						throwError("Invalid header", "Unrecognized version 1."+minorVersion+ '.');
 					dos.write(minorVersion);
 					int units = dis.readUnsignedByte();
 					if(units > 2)
-						throwError("Invalid header", "Unrecognized units type "+units+".");
+						throwError("Invalid header", "Unrecognized units type "+units+ '.');
 					dos.write(units);
 					dos.writeShort(dis.readShort()); // Copy Xdensity
 					dos.writeShort(dis.readShort()); // Copy Ydensity

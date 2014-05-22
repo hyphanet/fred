@@ -188,7 +188,7 @@ public class ElementInfo {
 	}
 	
 	public static boolean isWordPrefixOrMatchOfSpecificFontFamily(String prefix) {
-		String extraSpace = prefix + " ";
+		String extraSpace = prefix + ' ';
 		for(String s : FONT_LIST)
 			if(s.equals(prefix) || s.startsWith(extraSpace)) return true;
 		return false;

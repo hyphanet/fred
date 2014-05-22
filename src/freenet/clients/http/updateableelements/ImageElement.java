@@ -136,7 +136,7 @@ public class ImageElement extends BaseUpdateableElement {
 	}
 
 	public static String getId(FreenetURI uri, int randomNumber) {
-		return Base64.encodeStandardUTF8(("image[URI:" + uri.toString() + ",random:" + randomNumber + "]"));
+		return Base64.encodeStandardUTF8(("image[URI:" + uri.toString() + ",random:" + randomNumber + ']'));
 	}
 
 	@Override
@@ -163,7 +163,7 @@ public class ImageElement extends BaseUpdateableElement {
 				if (attr.containsKey("width") && attr.containsKey("height")) {
 					sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
 				}
-				attr.put("src", "/imagecreator/?text=+"+FProxyToadlet.l10n("imageinitializing")+"+" + sizePart);
+				attr.put("src", "/imagecreator/?text=+"+FProxyToadlet.l10n("imageinitializing")+ '+' + sizePart);
 				whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(0) });
 				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(1) });
@@ -234,7 +234,7 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public String toString() {
-		return "ImageElement[key:" + key + ",maxSize:" + maxSize + ",originalImg:" + originalImg + ",updaterId:" + getUpdaterId(null) + "]";
+		return "ImageElement[key:" + key + ",maxSize:" + maxSize + ",originalImg:" + originalImg + ",updaterId:" + getUpdaterId(null) + ']';
 	}
 
 }

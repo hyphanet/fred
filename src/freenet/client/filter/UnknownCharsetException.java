@@ -18,7 +18,7 @@ public class UnknownCharsetException extends DataFilterException {
 		String expl = l10nDF("unknownCharset");
 
 		String warning = l10nDF("warningUnknownCharsetTitle", "charset", charset);
-		return new UnknownCharsetException(warning, warning, explTitle + " " + expl, charset);
+		return new UnknownCharsetException(warning, warning, explTitle + ' ' + expl, charset);
 	}
 
 	private static String l10nDF(String key) {

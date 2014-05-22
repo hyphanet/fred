@@ -975,7 +975,7 @@ public class TextModeClientInterface implements Runnable {
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {
         			try {
-        				w.write(("ANNOUNCE:"+target+":"+msg+"\r\n"));
+        				w.write(("ANNOUNCE:"+target+ ':' +msg+"\r\n"));
         				w.flush();
         			} catch (IOException e) {
         				// Ignore
@@ -998,7 +998,7 @@ public class TextModeClientInterface implements Runnable {
 
 				@Override
 				public void nodeFailed(PeerNode pn, String reason) {
-					write("Node failed: "+pn+" "+reason);
+					write("Node failed: "+pn+ ' ' +reason);
 				}
 
 				@Override

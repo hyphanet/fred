@@ -87,7 +87,7 @@ public class TokenBucket {
 	 */
 	public synchronized void forceGrab(long tokens) {
 		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
-		if(logMINOR) Logger.minor(this, "forceGrab("+tokens+")");
+		if(logMINOR) Logger.minor(this, "forceGrab("+tokens+ ')');
 		addTokens();
 		current -= tokens;
 		if(logMINOR) Logger.minor(this, "Removed tokens, balance now "+current);

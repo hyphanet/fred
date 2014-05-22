@@ -130,7 +130,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		if (isEmptyElement(name)) {
 			return "";
 		} else {
-			return "</" + name + ">";
+			return "</" + name + '>';
 		}
 	}
 

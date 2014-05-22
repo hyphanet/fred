@@ -201,7 +201,7 @@ public class WelcomeToadlet extends Toadlet {
                 String u = key.toString();
                 NodeL10n.getBase().addL10nSubstitution(content, "WelcomeToadlet.keyInsertedSuccessfullyWithKeyAndName",
                         new String[]{"link", "name"},
-                        new HTMLNode[] { HTMLNode.link("/"+u), HTMLNode.text(u) });
+                        new HTMLNode[] { HTMLNode.link('/' +u), HTMLNode.text(u) });
             } catch (InsertException e) {
             	content = ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle"), contentNode, "failed-insert", false);
                 content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));

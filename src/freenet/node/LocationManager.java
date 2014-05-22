@@ -674,7 +674,7 @@ public class LocationManager implements ByteCounter {
 					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "ISO-8859-1"));
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
-					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
+					bw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+ ')' : "")+'\n');
 					bw.close();
 					os = null;
 				} catch (IOException e) {

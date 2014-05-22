@@ -86,7 +86,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				return;
 			}
 			if(totalFound < dataBlocks) {
-				Logger.normal(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlocks+" (total "+segments.length+")");
+				Logger.normal(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlocks+" (total "+segments.length+ ')');
 				return;
 			}
 		}

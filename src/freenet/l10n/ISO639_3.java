@@ -161,7 +161,7 @@ public final class ISO639_3 {
 		
 		@Override
 		public String toString() {
-			return new String(id) + " = " + referenceName + " (scope: " + scope + "; type: " + type + ")";
+			return new String(id) + " = " + referenceName + " (scope: " + scope + "; type: " + type + ')';
 		}
 
 	}

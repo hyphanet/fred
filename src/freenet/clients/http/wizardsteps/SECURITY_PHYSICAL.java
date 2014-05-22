@@ -67,7 +67,7 @@ public class SECURITY_PHYSICAL implements Step {
 		        "operatingSystem",
 		        NodeL10n.getBase().getString("OperatingSystemName."+os.name())));
 		if(os == FileUtil.OperatingSystem.Windows) {
-			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
+			swapWarning.addChild("#", ' ' + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
 		for(SecurityLevels.PHYSICAL_THREAT_LEVEL level : SecurityLevels.PHYSICAL_THREAT_LEVEL.values()) {
 			HTMLNode input;
@@ -81,7 +81,7 @@ public class SECURITY_PHYSICAL implements Step {
 			        core.node.securityLevels.getPhysicalThreatLevel() != level) {
 				// Add password form on high security if not already at high security.
 				HTMLNode p = div.addChild("p");
-				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+":");
+				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+ ':');
 				p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
 			}
 		}

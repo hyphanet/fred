@@ -200,7 +200,7 @@ public class FetchException extends Exception implements Cloneable {
 	}
 
 	public FetchException(long expectedSize, DataFilterException t, String expectedMimeType) {
-		super(getMessage(CONTENT_VALIDATION_FAILED)+" "+NodeL10n.getBase().getString("FetchException.unsafeContentDetails")+" "+t.getMessage());
+		super(getMessage(CONTENT_VALIDATION_FAILED)+ ' ' +NodeL10n.getBase().getString("FetchException.unsafeContentDetails")+ ' ' +t.getMessage());
 		extraMessage = t.getMessage();
 		this.mode = CONTENT_VALIDATION_FAILED;
 		this.expectedSize = expectedSize;

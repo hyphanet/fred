@@ -55,9 +55,9 @@ public interface XMLCharacterClasses {
 	 * [4] NameChar - due to regex rules this must be the first expression
 	 * within square parantheses
 	 */
-	public static final String NAME_CHAR = "-" + LETTER + DIGIT + "." + "_" + ":" + COMBINING_CHAR + EXTENDER;
+	public static final String NAME_CHAR = '-' + LETTER + DIGIT + '.' + '_' + ':' + COMBINING_CHAR + EXTENDER;
 
 	/** [5] Name. */
-	public static final String NAME = LETTER + "_" + ":" + "][" + NAME_CHAR;
+	public static final String NAME = LETTER + '_' + ':' + "][" + NAME_CHAR;
 
 }

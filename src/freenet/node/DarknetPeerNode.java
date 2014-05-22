@@ -952,7 +952,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+"-"+filename;
+			final String baseFilename = "direct-"+FileUtil.sanitize(getName())+ '-' +filename;
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
@@ -991,7 +991,7 @@ public class DarknetPeerNode extends PeerNode {
 					if(logMINOR)
 						Logger.minor(this, "Received file");
 				}
-			}, "Receiver for bulk transfer "+uid+":"+filename);
+			}, "Receiver for bulk transfer "+uid+ ':' +filename);
 			sendFileOfferAccepted(uid);
 		}
 
@@ -1028,7 +1028,7 @@ public class DarknetPeerNode extends PeerNode {
 						Logger.minor(this, "Sent file");
 				}
 
-			}, "Sender for bulk transfer "+uid+":"+filename);
+			}, "Sender for bulk transfer "+uid+ ':' +filename);
 		}
 
 		public void reject() {
@@ -1561,7 +1561,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			fo.send();
 		} catch (DisconnectedException e) {
-			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+":"+fo.filename, e);
+			Logger.error(this, "Cannot send because node disconnected: "+e+" for "+uid+ ':' +fo.filename, e);
 		}
 	}
 

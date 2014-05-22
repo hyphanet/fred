@@ -109,13 +109,13 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	//                / "*" / "+" / "," / ";" / "="
 	protected static final String SUB_DELIMS  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
 	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	protected static final String PCHAR      = "(?>" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
+	protected static final String PCHAR      = "(?>" + UNRESERVED + '|' + PCT_ENCODED + '|' + SUB_DELIMS + "|[:@])";
 	//  fragment      = *( pchar / "/" / "?" )
 	protected static final String FRAGMENT   = "(?>" + PCHAR + "|\\/|\\?)*";
 
 	private static final Pattern anchorRegex;
 	static {
-	    anchorRegex = Pattern.compile("^#" + FRAGMENT + "$");
+	    anchorRegex = Pattern.compile("^#" + FRAGMENT + '$');
 	}
 
 	@Override
@@ -178,7 +178,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				return path;
 			} else if (linkFilterExceptionProvider != null) {
 				if (linkFilterExceptionProvider.isLinkExcepted(uri)) {
-					return path + ((uri.getQuery() != null) ? ("?" + uri.getQuery()) : "");
+					return path + ((uri.getQuery() != null) ? ('?' + uri.getQuery()) : "");
 				}
 			}
 		}
@@ -203,14 +203,14 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 		
 		String rpath = uri.getPath();
-		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+"\"");
+		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+ '"');
 		
 		if(host == null) {
 		
 			boolean isAbsolute = false;
 			
 			if(rpath != null) {
-				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): \""+rpath+"\"");
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): \""+rpath+ '"');
 				
 				// Valid FreenetURI?
 				try {

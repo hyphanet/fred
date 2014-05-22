@@ -33,7 +33,7 @@ public class DecodeToadlet extends Toadlet {
 		final String requestPath = request.getPath().substring(path().length());
 
 		//Without this it'll try to look in the current directory which will be /decode and won't work.
-		String keyToFetch = "/" + requestPath;
+		String keyToFetch = '/' + requestPath;
 
 		// This is for when a browser can't handle 301s, should very rarely (never?) be seen.
 		ctx.getPageMaker().getInfobox("infobox-warning", "Decode Link", contentNode, "decode-not-redirected", true).

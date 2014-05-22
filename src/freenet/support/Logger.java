@@ -94,7 +94,7 @@ public abstract class Logger {
 								return procFields[ fieldNumber ];
 							}
 						} catch (PatternSyntaxException e) {
-							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+"'", e);
+							error(o, "Caught PatternSyntaxException in readLine.trim().split(\" \") of OSThread.getFieldFromProcSelfStat() while parsing '"+readLine+ '\'', e);
 						}
 					}
 				} else {
@@ -126,7 +126,7 @@ public abstract class Logger {
 			try {
 				pid = Integer.parseInt( pidString.trim() );
 			} catch (NumberFormatException e) {
-				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+"'", e);
+				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPIDFromProcSelfStat() while parsing '"+pidString+ '\'', e);
 			}
 			return pid;
 		}
@@ -153,7 +153,7 @@ public abstract class Logger {
 			try {
 				ppid = Integer.parseInt( ppidString.trim() );
 			} catch (NumberFormatException e) {
-				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+"'", e);
+				error(o, "Caught NumberFormatException in Integer.parseInt() of OSThread.getPPIDFromProcSelfStat() while parsing '"+ppidString+ '\'', e);
 			}
 			return ppid;
 		}

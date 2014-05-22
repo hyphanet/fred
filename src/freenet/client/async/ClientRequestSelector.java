@@ -135,7 +135,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							if(cooldownTime == Long.MAX_VALUE)
 								Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
 							else
-								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+ ' ' +TimeUtil.formatTime(cooldownTime - now));
 						}
 						result = null;
 					} else {
@@ -154,7 +154,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							if(cooldownTime == Long.MAX_VALUE)
 								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
 							else
-								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+ ' ' +TimeUtil.formatTime(cooldownTime - now));
 						}
 						result = null;
 					}
@@ -340,7 +340,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, false, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+ ' ' +TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 					persistent = false;
@@ -350,7 +350,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(perm, true, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+ ' ' +TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 					container.activate(perm, 1);
@@ -372,7 +372,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+ ' ' +TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 				}
@@ -464,7 +464,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					}
 					if(altReq != null && (l = altReq.getCooldownTime(container, context, now)) != 0) {
 						if(logMINOR) {
-							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
+							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+ ')' : ""));
 							altReq = null;
 						}
 					}
@@ -501,7 +501,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							val = altRGA.removeRandom(starter, container, context, now);
 							if(val != null) {
 								if(val.item == null) {
-									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+")" : ""));
+									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+ ')' : ""));
 								} else {
 									altReq = (SendableRequest) val.item;
 								}

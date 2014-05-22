@@ -75,7 +75,7 @@ public enum Error {
 			case 5:
 				return CANNOT_FORWARD;
 			default:
-				throw new IllegalArgumentException("There is no ProbeError with code " + code + ".");
+				throw new IllegalArgumentException("There is no ProbeError with code " + code + '.');
 		}
 	}
 }

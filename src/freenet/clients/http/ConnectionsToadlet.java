@@ -768,7 +768,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			nodeReference = Fields.trimLines(nodeReference);
 			fs = new SimpleFieldSet(nodeReference, false, true, true);
 			if(!fs.getEndMarker().endsWith("End")) {
-				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+"\"");
+				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+ '"');
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
@@ -1060,7 +1060,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			long sent = peerNodeStatus.getTotalOutputBytes();
 			long resent = peerNodeStatus.getResendBytesSent();
 			long received = peerNodeStatus.getTotalInputBytes();
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(received)+" / "+SizeUtil.formatSize(sent)+"/"+SizeUtil.formatSize(resent)+" ("+fix1.format(((double)resent) / ((double)sent))+")");
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(received)+" / "+SizeUtil.formatSize(sent)+ '/' +SizeUtil.formatSize(resent)+" ("+fix1.format(((double)resent) / ((double)sent))+ ')');
 			// total traffic column startup
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputSinceStartup())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputSinceStartup()));
 			// congestion control
@@ -1075,17 +1075,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// time delta
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+ ':' +TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
 			IncomingLoadSummaryStats loadStatsBulk = peerNodeStatus.incomingLoadStatsBulk;
 			if(loadStatsBulk == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
 			IncomingLoadSummaryStats loadStatsRT = peerNodeStatus.incomingLoadStatsRealTime;
 			if(loadStatsRT == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {

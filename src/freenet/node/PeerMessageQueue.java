@@ -76,7 +76,7 @@ public class PeerMessageQueue {
 			}
 			@Override
 			public String toString() {
-				return super.toString()+":"+id+":"+items.size()+":"+timeLastSent;
+				return super.toString()+ ':' +id+ ':' +items.size()+ ':' +timeLastSent;
 			}
 		}
 		

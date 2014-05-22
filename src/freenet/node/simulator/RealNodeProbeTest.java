@@ -111,7 +111,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			public void onError(Error error, Byte code, boolean local) {
 				System.out.print("Probe error: " + error.name());
 				if (local) System.out.print(" (local)");
-				System.out.println(code == null ? "" : " (" + code + ")");
+				System.out.println(code == null ? "" : " (" + code + ')');
 			}
 
 			@Override
@@ -127,12 +127,12 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 			@Override
 			public void onBuild(int build) {
-				System.out.println("Probe got build " + build + ".");
+				System.out.println("Probe got build " + build + '.');
 			}
 
 			@Override
 			public void onIdentifier(long identifier, byte uptimePercentage) {
-				System.out.println("Probe got identifier " + identifier + " with uptime percentage " + uptimePercentage + ".");
+				System.out.println("Probe got identifier " + identifier + " with uptime percentage " + uptimePercentage + '.');
 			}
 
 			@Override
@@ -144,7 +144,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 
 			@Override
 			public void onLocation(float location) {
-				System.out.println("Probe got location " + location + ".");
+				System.out.println("Probe got location " + location + '.');
 			}
 
 			@Override
@@ -170,7 +170,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 			public void onOverallBulkOutputCapacity(
 					byte bandwidthClassForCapacityUsage, float outputBulkCapacityUsed) {
 				System.out.println("Probe got output capacity "+nf.format(outputBulkCapacityUsed)+
-						"% (bandwidth class "+bandwidthClassForCapacityUsage+")");
+						"% (bandwidth class "+bandwidthClassForCapacityUsage+ ')');
 			}
 		};
 
@@ -196,7 +196,7 @@ public class RealNodeProbeTest extends RealNodeRoutingTest {
 		else
 			r = new BufferedReader(new InputStreamReader(System.in)); // Use the system locale here.
 		while (true) {
-			System.err.println("Sending probes from node " + index + " with HTL " + htl + ".");
+			System.err.println("Sending probes from node " + index + " with HTL " + htl + '.');
 			System.err.println("0) BANDWIDTH");
 			System.err.println("1) BUILD");
 			System.err.println("2) IDENTIFIER");

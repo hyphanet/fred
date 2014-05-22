@@ -530,17 +530,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					encodedBlock = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
 					b = encodedBlock.getBlock();
 				} catch (CHKEncodeException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				} catch (SSKEncodeException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				} catch (MalformedURLException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				} catch (InsertException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				} catch (IOException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				} catch (InvalidCompressionCodecException e) {
-					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ':' + e.getMessage(), e);
 				}
 				if (b==null) {
 					Logger.error(this, "Asked to send empty block", new Exception("error"));

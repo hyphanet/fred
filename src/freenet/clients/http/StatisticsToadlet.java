@@ -804,18 +804,18 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			
 			row = storeSizeTable.addChild("tr");
-			row.addChild("th", l10n(instance.store.name()) + "\n" + " (" + l10n(instance.key.name()) + ")");
+			row.addChild("th", l10n(instance.store.name()) + '\n' + " (" + l10n(instance.key.name()) + ')');
 
 			row.addChild("td", thousandPoint.format(stats.keys()));
 			row.addChild("td", thousandPoint.format(stats.capacity()));
 			row.addChild("td", SizeUtil.formatSize(stats.dataSize()));
 			row.addChild("td", fix3p1pct.format(stats.utilization()));
 			row.addChild("td", thousandPoint.format(sessionAccess.readRequests()) +
-					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.readRequests())+")")));
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.readRequests())+ ')')));
 			row.addChild("td", thousandPoint.format(sessionAccess.successfulReads()) +
-					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.successfulReads())+")")));
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.successfulReads())+ ')')));
 			try {
-				String rate = fix1p4.format(sessionAccess.successRate()) + "%";
+				String rate = fix1p4.format(sessionAccess.successRate()) + '%';
 				if(totalAccess != null) {
 					try {
 						rate += " (" + fix1p4.format(totalAccess.successRate()) + "%)";
@@ -828,7 +828,7 @@ public class StatisticsToadlet extends Toadlet {
 				row.addChild("td", "N/A");
 			}
 			row.addChild("td", thousandPoint.format(sessionAccess.writes()) +
-					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.writes())+")")));
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.writes())+ ')')));
 			String access = fix1p2.format(sessionAccess.accessRate(nodeUptimeSeconds)) + " /s";
 			if(totalAccess != null)
 				access += " (" + fix1p2.format(totalAccess.accessRate(totalUptimeSeconds)) + " /s)";
@@ -838,7 +838,7 @@ public class StatisticsToadlet extends Toadlet {
 				access += " (" + fix1p2.format(totalAccess.writeRate(totalUptimeSeconds)) + " /s)";
 			row.addChild("td", access);
 			row.addChild("td", thousandPoint.format(sessionAccess.falsePos()) +
-					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.falsePos())+")")));
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.falsePos())+ ')')));
 			try {
 				row.addChild("td", fix1p4.format(stats.avgLocation()));
 			} catch (StatsNotAvailableException e) {
@@ -1227,12 +1227,12 @@ public class StatisticsToadlet extends Toadlet {
 			if (numCHKInserts > 0 || numSSKInserts > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityInserts", 
 						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
-						new String[] { Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts)+"/" + Integer.toString(numLocalSSKInserts)}));
+						new String[] { Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts)+ '/' + Integer.toString(numLocalSSKInserts)}));
 			}
 			if (numCHKRequests > 0 || numSSKRequests > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityRequests", 
 						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
-						new String[] { Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests)+"/" + Integer.toString(numLocalSSKRequests)}));
+						new String[] { Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests)+ '/' + Integer.toString(numLocalSSKRequests)}));
 			}
 			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.transferringRequests", 
@@ -1327,7 +1327,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		long[] decoded = IncomingPacketFilterImpl.getDecodedPackets();
 		if(decoded != null) {
-			overviewList.addChild("li", "packetsDecoded:\u00a0"+fix3p1pct.format(((double)decoded[0])/((double)decoded[1]))+"\u00a0("+decoded[1]+")");
+			overviewList.addChild("li", "packetsDecoded:\u00a0"+fix3p1pct.format(((double)decoded[0])/((double)decoded[1]))+"\u00a0("+decoded[1]+ ')');
 		}
 		
 	}

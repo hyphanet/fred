@@ -350,7 +350,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
     			@Override
     			public void onTimeout() {
-    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this+" from "+source+" ("+source.getVersionNumber()+")");
+    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this+" from "+source+" ("+source.getVersionNumber()+ ')');
     				// Fatal timeout. Something is seriously busted.
     				// We've waited long enough that we know it's not just a connectivity problem - if it was we'd have disconnected by now.
     	    		source.fatalTimeout();
@@ -617,7 +617,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.normal(this, "Failed to retrieve (disconnect): "+e+" for "+CHKInsertHandler.this, e);
         			else
         				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
-        				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" for "+CHKInsertHandler.this, e);
+        				Logger.normal(this, "Failed to retrieve ("+e.getReason()+ '/' +RetrievalException.getErrString(e.getReason())+"): "+e+" for "+CHKInsertHandler.this, e);
         			
         			if(!prb.abortedLocally())
         				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);

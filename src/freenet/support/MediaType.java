@@ -245,7 +245,7 @@ public class MediaType {
 			if (parameter.getValue() == null) {
 				continue;
 			}
-			mediaType.append("; ").append(parameter.getKey()).append("=\"").append(parameter.getValue()).append("\"");
+			mediaType.append("; ").append(parameter.getKey()).append("=\"").append(parameter.getValue()).append('"');
 		}
 		return mediaType.toString();
 	}

@@ -100,9 +100,9 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		int darknetPort = node.getDarknetPortNumber();
 		int opennetPort = node.getOpennetFNPPort();
 		if(opennetPort <= 0) {
-			textNode.addChild("#", " "+l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
+			textNode.addChild("#", ' ' +l10n("suggestForwardPort", "port", Integer.toString(darknetPort)));
 		} else {
-			textNode.addChild("#", " "+l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+			textNode.addChild("#", ' ' +l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" },
 					new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) }));
 		}
 	}
@@ -114,7 +114,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		if(opennetPort <= 0) {
 			return l10n("suggestForwardPort", "port", Integer.toString(darknetPort));
 		} else {
-			return " "+l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
+			return ' ' +l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" },
 					new String[] { Integer.toString(darknetPort), Integer.toString(opennetPort) });
 		}
 	}

@@ -517,7 +517,7 @@ public class NewPacketFormat implements PacketFormat {
 				for(MessageFragment frag : packet.getFragments()) {
 					if(fragments == null) fragments = String.valueOf(frag.messageID);
 					else fragments = fragments + ", " + frag.messageID;
-					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+")";
+					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+ ')';
 				}
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
@@ -1256,7 +1256,7 @@ addOldLoop:			for(int i = 0; i < startedByPrio.size(); i++) {
 			this.messageLength = messageLength;
 
 			if(buffer.length > messageLength) {
-				Logger.warning(this, "Buffer is larger than set message length! (" + buffer.length + ">" + messageLength + ")");
+				Logger.warning(this, "Buffer is larger than set message length! (" + buffer.length + '>' + messageLength + ')');
 			}
 
 			return resize(messageLength);

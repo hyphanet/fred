@@ -59,7 +59,7 @@ public class IOStatisticCollector {
 				totalbytesout += (outbytes>0)?outbytes:0;
 				totalbytesin += (inbytes>0)?inbytes:0;
 				if(logDEBUG)
-					Logger.debug(IOStatisticCollector.class, "Add("+addr+":"+port+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+					Logger.debug(IOStatisticCollector.class, "Add("+addr+ ':' +port+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 			}
 		}
 	}

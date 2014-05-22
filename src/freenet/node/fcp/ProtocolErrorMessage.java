@@ -189,7 +189,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;
+		return super.toString()+ ':' +code+ ':' +extra+ ':' +fatal+ ':' +ident+ ':' +global;
 	}
 
 }

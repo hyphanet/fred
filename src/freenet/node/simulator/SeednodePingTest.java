@@ -71,7 +71,7 @@ public class SeednodePingTest extends RealNodeTest {
 			node.connectToSeednode(seednode);
 			seedNodes.add(seednode);
 		} catch (Exception fse) {
-			System.out.println("ERROR adding "+seednode.toString()+ " "+fse.getMessage());
+			System.out.println("ERROR adding "+seednode.toString()+ ' ' +fse.getMessage());
 		}
 	}
 	// Start it
@@ -152,7 +152,7 @@ public class SeednodePingTest extends RealNodeTest {
     	File logFile = new File(STATUS_DIR, peer.getIdentityString());
     	FileOutputStream fos = new FileOutputStream(logFile, true);
     	OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-    	osw.write(status+"\n");
+    	osw.write(status+ '\n');
     	osw.close();
     	FileInputStream fis = new FileInputStream(logFile);
     	InputStreamReader isr = new InputStreamReader(fis, "UTF-8");

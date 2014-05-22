@@ -104,7 +104,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						return;
 					}
 					if(block.reqs[j] == null) {
-						Logger.error(this, "reqs["+i+"."+j+"] = null on "+this);
+						Logger.error(this, "reqs["+i+ '.' +j+"] = null on "+this);
 					}
 					x++;
 				}
@@ -461,7 +461,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				return new RemoveRandomReturn(ret);
 			} else {
 				random = context.fastWeakRandom.nextInt(valid);
-				if(logMINOR) Logger.minor(this, "Looping to choose valid item "+random+" of "+valid+" (excluded "+exclude+")");
+				if(logMINOR) Logger.minor(this, "Looping to choose valid item "+random+" of "+valid+" (excluded "+exclude+ ')');
 				// Loop
 				if(persistent && blockNumReading != 0) {
 					if(changedMe) container.store(blocks[blockNumReading]);

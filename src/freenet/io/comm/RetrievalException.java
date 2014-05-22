@@ -64,7 +64,7 @@ public class RetrievalException extends Exception {
 	
 	@Override
 	public String toString() {
-		return getErrString(_reason)+":"+_cause;
+		return getErrString(_reason)+ ':' +_cause;
 	}
 
 	/** Guaranteed not to have any spaces in it. */
@@ -99,7 +99,7 @@ public class RetrievalException extends Exception {
 			case TURTLE_KILLED:
 				return "TURTLE_KILLED";
 			default:
-				return "UNKNOWN ("+reason+")";
+				return "UNKNOWN ("+reason+ ')';
 		}
 	}
 	

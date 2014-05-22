@@ -779,7 +779,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public String toString() {
 			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
 				"in:"+expectedTransfersInCHK+"chk/"+expectedTransfersInSSK+"ssk:out:"+
-				expectedTransfersOutCHK+"chk/"+expectedTransfersOutSSK+"ssk transfers="+maxTransfersOut+"/"+maxTransfersOutPeerLimit+"/"+maxTransfersOutLowerLimit+"/"+maxTransfersOutUpperLimit;
+				expectedTransfersOutCHK+"chk/"+expectedTransfersOutSSK+"ssk transfers="+maxTransfersOut+ '/' +maxTransfersOutPeerLimit+ '/' +maxTransfersOutLowerLimit+ '/' +maxTransfersOutUpperLimit;
 		}
 		
 		public PeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
@@ -1120,7 +1120,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		@Override
 		public String toString() {
-			return (soft ? "SOFT" : "HARD") + ":" + name;
+			return (soft ? "SOFT" : "HARD") + ':' + name;
 		}
 	}
 	
@@ -1326,7 +1326,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		
 		synchronized(this) {
-			if(logMINOR) Logger.minor(this, "Accepting request? (isSSK="+isSSK+")");
+			if(logMINOR) Logger.minor(this, "Accepting request? (isSSK="+isSSK+ ')');
 			lastAcceptedRequest = now;
 		}
 		
@@ -1500,7 +1500,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal, isInsert, isSSK, isOfferReply, realTimeFlag);
-				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
+				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+ ')';
 			// FIXME slowdown
 //			} else {
 //				double slowDownLimit = thisAllocation * SOFT_REJECT_MAX_BANDWIDTH_USAGE;
@@ -1531,7 +1531,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot peerRequestsSnapshot, boolean isLocal, boolean realTime,
 			boolean isInsert, boolean isSSK, boolean isOfferReply, UIDTag tag) {
 		if(logMINOR) Logger.minor(this, "Max transfers: congestion control limit "+maxOutputTransfers+
-				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+" "+(realTime ? "(rt)" : "(bulk)"));
+				" upper "+maxTransfersOutUpperLimit+" lower "+maxTransfersOutLowerLimit+" peer "+maxTransfersOutPeerLimit+ ' ' +(realTime ? "(rt)" : "(bulk)"));
 		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
 		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
 		if(peerOutTransfers > maxOutputTransfers && !isLocal) {
@@ -1634,7 +1634,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	private void rejected(String reason, boolean isLocal, boolean isInsert, boolean isSSK, boolean isOfferReply, boolean isRealTime) {
-		reason += " "+(isRealTime?" (rt)":" (bulk)");
+		reason += ' ' +(isRealTime?" (rt)":" (bulk)");
 		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") isSSK="+isSSK+" isInsert="+isInsert+" : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
@@ -2401,7 +2401,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public synchronized void insertSentBytes(boolean ssk, int x) {
 		if(logDEBUG)
-			Logger.debug(this, "insertSentBytes("+ssk+", "+x+")");
+			Logger.debug(this, "insertSentBytes("+ssk+", "+x+ ')');
 		if(ssk)
 			sskInsertSentBytes += x;
 		else

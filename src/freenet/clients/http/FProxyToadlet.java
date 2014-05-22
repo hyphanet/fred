@@ -267,7 +267,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					Closer.close(os);
 				}
 				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
-				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + size);
+				retHdr.put("Content-Range", "bytes " + range[0] + '-' + range[1] + '/' + size);
 				context.sendReplyHeadersFProxy(206, "Partial content", retHdr, mimeType, tmpRange.size());
 				context.writeData(tmpRange);
 			} else {
@@ -1053,7 +1053,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force,
 			boolean forceDownload, int maxRetries, boolean appendMaxSize) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("/");
+		sb.append('/');
 		sb.append(uri.toASCIIString());
 		char c = '?';
 		if(requestedMimeType != null && requestedMimeType.length() != 0) {
@@ -1086,7 +1086,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				FreenetURI furi = new FreenetURI(path);
 				HTTPRequest req = new HTTPRequestImpl(refererURI, "GET");
 				String type = req.getParam("type");
-				referer = "/" + furi.toString();
+				referer = '/' + furi.toString();
 				if(type != null && type.length() > 0)
 					referer += "?type=" + type;
 			} catch (MalformedURLException e) {

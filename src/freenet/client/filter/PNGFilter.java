@@ -147,7 +147,7 @@ public class PNGFilter implements ContentDataFilter {
 						sb.append(val);
 					} else {
 						String chunkName = HexUtil.bytesToHex(lengthBytes, 0, 4);
-						throwError("Unknown Chunk", "The name of the chunk is invalid! (" + chunkName + ")");
+						throwError("Unknown Chunk", "The name of the chunk is invalid! (" + chunkName + ')');
 					}
 				}
 				chunkTypeString = sb.toString();

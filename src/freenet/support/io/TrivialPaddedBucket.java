@@ -99,7 +99,7 @@ public class TrivialPaddedBucket implements Bucket {
         }
         
         public String toString() {
-            return "TrivialPaddedBucketOutputStream:"+out+"("+TrivialPaddedBucket.this+")";
+            return "TrivialPaddedBucketOutputStream:"+out+ '(' +TrivialPaddedBucket.this+ ')';
         }
 
     }

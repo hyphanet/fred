@@ -49,9 +49,9 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			return;
 		}
 		
-		addChild("#", FProxyToadlet.l10n("filenameLabel")+ " ");
-		addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
-		if(fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel")+" "+fr.mimeType);
+		addChild("#", FProxyToadlet.l10n("filenameLabel")+ ' ');
+		addChild("a", "href", '/' +key.toString(false, false), key.getPreferredFilename());
+		if(fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel")+ ' ' +fr.mimeType);
 		if(fr.size > 0) addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
 		if(isAdvancedMode) {
 			addChild("br", FProxyToadlet.l10n("blocksDetail", 
@@ -60,7 +60,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		}
 		long elapsed = System.currentTimeMillis() - fr.timeStarted;
 		addChild("br");
-		addChild(new SecondCounterNode(elapsed, true, FProxyToadlet.l10n("timeElapsedLabel") + " "));
+		addChild(new SecondCounterNode(elapsed, true, FProxyToadlet.l10n("timeElapsedLabel") + ' '));
 		long eta = fr.eta - elapsed;
 		if (eta > 0) {
 			addChild("br");
@@ -93,7 +93,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	}
 
 	public static String getId(FreenetURI uri) {
-		return Base64.encodeStandardUTF8(("progressinfo[URI:" + uri.toString() + "]"));
+		return Base64.encodeStandardUTF8(("progressinfo[URI:" + uri.toString() + ']'));
 	}
 
 	@Override
@@ -111,7 +111,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 
 	@Override
 	public String toString() {
-		return "ProgressInfoElement[key:" + key + ",maxSize:" + maxSize + ",updaterId:" + getUpdaterId(null) + "]";
+		return "ProgressInfoElement[key:" + key + ",maxSize:" + maxSize + ",updaterId:" + getUpdaterId(null) + ']';
 	}
 
 }

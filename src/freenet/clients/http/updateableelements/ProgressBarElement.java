@@ -96,7 +96,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	}
 
 	public static String getId(FreenetURI uri) {
-		return Base64.encodeStandardUTF8(("progressbar[URI:" + uri.toString() + "]"));
+		return Base64.encodeStandardUTF8(("progressbar[URI:" + uri.toString() + ']'));
 	}
 
 	@Override
@@ -115,7 +115,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 
 	@Override
 	public String toString() {
-		return "ProgressBarElement[key:" + key + ",maxSize:" + maxSize + ",updaterId:" + getUpdaterId(null) + "]";
+		return "ProgressBarElement[key:" + key + ",maxSize:" + maxSize + ",updaterId:" + getUpdaterId(null) + ']';
 	}
 
 }

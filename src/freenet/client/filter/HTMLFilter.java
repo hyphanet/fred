@@ -480,7 +480,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(getisXHTML())
 			{
 				while(openElements.size()>0)
-					w.write("</"+openElements.pop()+">");
+					w.write("</"+openElements.pop()+ '>');
 			}
 			w.flush();
 			return;
@@ -509,13 +509,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			// Assume that missing closes are way more common than extra closes.
 			if(openElements.isEmpty()) return;
 			if(element.equals(openElements.peek())) {
-				w.write("</"+openElements.pop()+">");
+				w.write("</"+openElements.pop()+ '>');
 			}
 			else {
 				if(openElements.contains(element)) {
 					while(true) {
 						String top = openElements.pop();
-						w.write("</"+top+">");
+						w.write("</"+top+ '>');
 						if(top.equals(element)) return;
 					}
 				} // Else it has already been closed.
@@ -721,7 +721,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] attrs=new String[attributes.size()];
 			int pos=0;
 			for(Entry<String,String> entry:attributes.entrySet()){
-				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+ '"';
 			}
 			this.unparsedAttrs = attrs;
 		}
@@ -737,7 +737,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] attrs=new String[attributes.size()];
 			int pos=0;
 			for(Entry<String,String> entry:attributes.entrySet()){
-				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+ '"';
 			}
 			this.element = t.element;
 			this.unparsedAttrs = attrs;
@@ -3022,7 +3022,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (!charset.equalsIgnoreCase(pc.charset)) {
 				if(pc.charset != null && !charset.equalsIgnoreCase(pc.charset)) {
 					if (logMINOR) Logger.minor(this, "Deleting xml declaration (invalid charset "
-							+ charset + " should be "+pc.charset + ")");
+							+ charset + " should be "+pc.charset + ')');
 					return null;
 				} else if(pc.detectedCharset != null) {
 					throwFilterException(l10n("multipleCharsetsInMeta"));

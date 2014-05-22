@@ -247,7 +247,7 @@ public class FailureTable implements OOMHook {
 		
 		@Override
 		public String toString() {
-			return super.toString()+"("+offers.length+")";
+			return super.toString()+ '(' +offers.length+ ')';
 		}
 	}
 	

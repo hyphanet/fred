@@ -145,7 +145,7 @@ public class ECDSA {
             this.maxSigSize = maxSigSize;
             Logger.normal(this, name +": using "+kgProvider+" for KeyPairGenerator(EC)");
             Logger.normal(this, name +": using "+kfProvider+" for KeyFactory(EC)");
-            Logger.normal(this, name +": using "+sigProvider+" for Signature("+defaultHashAlgorithm+")");
+            Logger.normal(this, name +": using "+sigProvider+" for Signature("+defaultHashAlgorithm+ ')');
 
         }
         

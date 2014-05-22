@@ -547,7 +547,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 
 			if (persistent && !container.ext().isActive(putHandlerWaitingForBlockSets)) {
-				new Error("why deactivated? putHandlerWaitingForBlockSets "+this+" ["+BaseManifestPutter.this+"]").printStackTrace();
+				new Error("why deactivated? putHandlerWaitingForBlockSets "+this+" ["+BaseManifestPutter.this+ ']').printStackTrace();
 				container.activate(putHandlerWaitingForBlockSets, 2);
 			}
 
