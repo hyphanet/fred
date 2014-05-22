@@ -8,16 +8,17 @@ import freenet.support.Logger;
 /**
  * @author amphibian
  *
- * Location of a node in the keyspace. ~= specialization.
- * Simply a number from 0.0 to 1.0.
+ * Location of a node in the circular keyspace. ~= specialization.
+ * Any number between 0.0 and 1.0 (inclusive) is considered a valid location.
  */
 public class Location {
 
 	public static final double LOCATION_INVALID = -1.0;
 
 	/**
-	 * Parses a location string.
-	 * Returns LOCATION_INVALID for all invalid locations and on parse errors.
+	 * Parses a location.
+	 * @param init a location string
+	 * @return the location, or LOCATION_INVALID for all invalid locations and on parse errors.
 	 */
 	public static double getLocation(String init) {
 		try {
@@ -34,23 +35,33 @@ public class Location {
 		}
 	}
 	
+	/**
+	 * Distance between a peer and a location.
+	 * @param p   a peer with a valid location
+	 * @param loc a valid location
+	 * @return the absolute distance between the peer and the location in the circular location space.
+	 */
 	public static double distance(PeerNode p, double loc) {
 		return distance(p.getLocation(), loc);
 	}
 
 	/**
-	 * Distance between two locations.
-	 * Both parameters must be in [0.0, 1.0].
+	 * Distance between two locations. 
+	 * @param a a valid location
+	 * @param b a valid location
+	 * @return the absolute distance between the two locations in the circular location space.
 	 */
 	public static double distance(double a, double b) {
 		return distance(a, b, false);
 	}
 
 	/**
-	 * Distance between two locations.
-	 * If allowCrazy is false, passing any location outside [0.0, 1.0] will result in an exception.
-	 * If allowCrazy is true, invalid locations are considered to be at 2.0, and the result is
-	 * calculated accordingly.
+	 * Distance between two locations, possibly accepting invalid locations.
+	 * @param a a location (must be valid if allowCrazy is false)
+	 * @param b a location (must be valid if allowCrazy is false)
+	 * @param allowCrazy whether to allow invalid locations in a crazy way
+	 * @return the absolute distance between the locations. When allowCrazy is true, invalid locations
+	 *		  are considered to be at 2.0, and the result is returned accordingly.
 	 */
 	public static double distance(double a, double b, boolean allowCrazy) {
 		if (!allowCrazy) {
@@ -76,8 +87,11 @@ public class Location {
 	}
 
 	/**
-	 * Distance between two locations without bounds check.
-	 * The behaviour is undefined for locations outside [0.0, 1.0].
+	 * Distance between two valid locations without bounds check.
+	 * The behaviour is undefined for invalid locations.
+	 * @param a a valid location
+	 * @param b a valid location
+	 * @return the absolute distance between the two locations in the circular location space.
 	 */
 	private static double simpleDistance(double a, double b) {
 		return Math.abs(change(a, b));
@@ -86,7 +100,10 @@ public class Location {
 	/**
 	 * Distance between two locations, including direction of the change (positive/negative).
 	 * When given two values on opposite ends of the keyspace, it will return +0.5.
-	 * The behaviour is undefined for locations outside [0.0, 1.0].
+	 * The behaviour is undefined for invalid locations.
+	 * @param from a valid starting location
+	 * @param to   a valid end location
+	 * @return the signed distance from the first to the second location in the circular location space
 	 */
 	public static double change(double from, double to) {
 		double change = to - from;
@@ -100,9 +117,12 @@ public class Location {
 	}
 	
 	/**
+	 * Normalize a location to within the valid range.
 	 * Given an arbitrary double (not bound to [0.0, 1.0)) return the normalized double [0.0, 1.0) which would result in simple
 	 * wrapping/overflowing. e.g. normalize(0.3+1.0)==0.3, normalize(0.3-1.0)==0.3, normalize(x)==x with x in [0.0, 1.0)
 	 * @bug: if given double has wrapped too many times, the return value may be not be precise.
+	 * @param rough any location
+	 * @return the normalized location
 	 */
 	public static double normalize(double rough) {
 		double normal = rough % 1.0;
@@ -114,12 +134,21 @@ public class Location {
 
 	/**
 	 * Tests for equality of two locations.
-	 * Locations are considered equal if their distance is (almost) zero, e.g. equals(0.0, 1.0) is true.
+	 * Locations are considered equal if their distance is (almost) zero, e.g. equals(0.0, 1.0) is true,
+	 * or if both locations are invalid.
+	 * @param a any location
+	 * @param b any location
+	 * @return whether the two locations are considered equal
 	 */
 	public static boolean equals(double a, double b) {
-		return simpleDistance(a, b) < Double.MIN_VALUE * 2;
+		return distance(a, b, true) < Double.MIN_VALUE * 2;
 	}
 
+	/**
+	 * Tests whether a location is valid, e.g. within [0.0, 1.0]
+	 * @param loc any location
+	 * @return whether the location is valid
+	 */
 	public static boolean isValid(double loc) {
 		return loc >= 0.0 && loc <= 1.0;
 	}
