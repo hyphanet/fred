@@ -68,7 +68,7 @@ public class Location {
 			if (!isValid(a) || !isValid(b)) {
 				Logger.error(PeerManager.class, "Invalid Location ! a = " + a + " b = " + b +
 						"Please report this bug!", new Exception("error"));
-				throw new NullPointerException();
+				throw new IllegalArgumentException();
 			}
 			return simpleDistance(a, b);	
 		} else {
