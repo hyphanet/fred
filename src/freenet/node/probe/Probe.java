@@ -645,6 +645,7 @@ public class Probe implements ByteCounter {
 				}
 			}
 			linkLengths = java.util.Arrays.copyOf(linkLengths, i);
+			java.util.Arrays.sort(linkLengths);
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
