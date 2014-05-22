@@ -66,9 +66,9 @@ public class Location {
 	public static double distance(double a, double b, boolean allowCrazy) {
 		if (!allowCrazy) {
 			if (!isValid(a) || !isValid(b)) {
-				Logger.error(PeerManager.class, "Invalid Location ! a = " + a + " b = " + b +
-						"Please report this bug!", new Exception("error"));
-				throw new IllegalArgumentException();
+				String errMsg = "Invalid Location ! a = " + a + " b = " + b + " Please report this bug!";
+				Logger.error(Location.class, errMsg, new Exception("error"));
+				throw new IllegalArgumentException(errMsg);
 			}
 			return simpleDistance(a, b);	
 		} else {
