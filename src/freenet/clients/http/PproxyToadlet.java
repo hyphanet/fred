@@ -300,7 +300,7 @@ public class PproxyToadlet extends Toadlet {
 	 *            The plugin manager
 	 * @param pluginThreadName
 	 *            The thread name of the plugin
-	 * @return The plugin specification of the plugin, or <code>null</code> if
+	 * @return The plugin specification of the plugin, or {@code null} if
 	 *         no plugin was found
 	 */
 	private String getPluginSpecification(PluginManager pluginManager, String pluginThreadName) {

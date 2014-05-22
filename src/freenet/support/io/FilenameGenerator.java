@@ -36,7 +36,7 @@ public class FilenameGenerator {
     /**
      * @param random
      * @param wipeFiles
-     * @param dir if <code>null</code> then use the default temporary directory
+     * @param dir if {@code null} then use the default temporary directory
      * @param prefix
      * @throws IOException
      */

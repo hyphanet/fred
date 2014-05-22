@@ -25,8 +25,8 @@ import java.util.regex.Matcher;
  * href="http://www.w3.org/TR/REC-xml/">XML 1.0 specification, 4th edition</a>.
  * 
  * The constants in this class are written in a form that allows easy conclusion
- * in a {@link Matcher} pattern within square parantheses (<code>'['</code>
- * and <code>']'</code>).
+ * in a {@link Matcher} pattern within square parantheses ({@code '['}
+ * and {@code ']'}).
  * 
  * @author David Roden &lt;bombe@freenetproject.org&gt;
  * @version $Id$

@@ -291,7 +291,7 @@ public final class SessionManager {
 	 * 
 	 * If the session was valid, then its validity is extended by {@link MAX_SESSION_IDLE_TIME}.
 	 * 
-	 * If the session did not exist or is not valid anymore, <code>null</code> is returned.
+	 * If the session did not exist or is not valid anymore, {@code null} is returned.
 	 */
 	public synchronized Session useSession(ToadletContext context) {
 		UUID sessionID = getSessionID(context);

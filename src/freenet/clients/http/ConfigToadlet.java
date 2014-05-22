@@ -31,7 +31,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.
+ * Node Configuration Toadlet. Accessible from {@code http://.../config/}.
  */
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {

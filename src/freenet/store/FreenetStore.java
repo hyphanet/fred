@@ -33,11 +33,11 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * Store a block.
 	 * 
 	 * @throws KeyCollisionException
-	 *             If the key already exists and <code>callback.collisionPossible()</code> is
-	 *             <code>true</code>.
+	 *             If the key already exists and {@code callback.collisionPossible()} is
+	 *             {@code true}.
 	 * @param overwrite
 	 *            If true, overwrite old content rather than throwing a
-	 *            <code>KeyCollisionException</code>.
+	 *            {@code KeyCollisionException}.
 	 * @param oldBlock
 	 *            If true, the block really shouldn't be in the datastore, but we are storing
 	 *            it anyway; it should not have the new block flag, so it should be excluded 
@@ -71,7 +71,7 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * Check if a routing key probably
 	 * 
 	 * @param routingkey
-	 * @return <code>false</code> <b>only</b> if the key does not exist in store.
+	 * @return {@code false} <b>only</b> if the key does not exist in store.
 	 */
 	public boolean probablyInStore(byte[] routingKey);
 

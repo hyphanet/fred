@@ -47,7 +47,7 @@ import freenet.support.io.FileUtil;
  * 
  * <p>
  * This class push a series of keys in the format of
- * <code>KSK@&lt;unique identifier&gt;-DATE-n</code>. It will then try to pull them after (2^n - 1)
+ * {@code KSK@&lt;unique identifier&gt;-DATE-n}. It will then try to pull them after (2^n - 1)
  * days.
  * <p>
  * The result is recorded as a CSV file in the format of:

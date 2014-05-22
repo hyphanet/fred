@@ -43,8 +43,8 @@ public class BucketTools {
 		});
 	}
 	/**
-	 * Copy from the input stream of <code>src</code> to the output stream of
-	 * <code>dest</code>.
+	 * Copy from the input stream of {@code src} to the output stream of
+	 * {@code dest}.
 	 * 
 	 * @param src
 	 * @param dst

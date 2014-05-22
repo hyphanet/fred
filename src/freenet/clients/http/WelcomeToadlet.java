@@ -524,8 +524,8 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     /**
-     * Reads and returns the content of <code>logfile</code>. At most <code>byteLimit</code>
-     * bytes will be read. If <code>byteLimit</code> is less than the size of <code>logfile</code>,
+     * Reads and returns the content of {@code logfile}. At most {@code byteLimit}
+     * bytes will be read. If {@code byteLimit} is less than the size of {@code logfile},
      * the first part of the file will be skipped. If this leaves a partial line at the beginning
      * of the content to return, that partial line will also be skipped.
      * @param logfile The file to read

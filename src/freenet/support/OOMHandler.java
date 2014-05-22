@@ -14,7 +14,7 @@ public class OOMHandler {
 	private static volatile boolean isOOM = false;
 	
 	/**
-	 * Emergency memory, freed when OOM occur. Marked <code>volatile</code> to make sure gc thread
+	 * Emergency memory, freed when OOM occur. Marked {@code volatile} to make sure gc thread
 	 * see it's free'd.
 	 */
 	private static volatile byte[] emergencyPool = new byte[8192];

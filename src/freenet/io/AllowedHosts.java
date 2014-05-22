@@ -33,7 +33,7 @@ public class AllowedHosts {
 	}
 
 	/**
-	 * Sets the list of allowed hosts to <code>allowedHosts</code>. The new
+	 * Sets the list of allowed hosts to {@code allowedHosts}. The new
 	 * list is in effect immediately after this method has finished.
 	 * 
 	 * @param allowedHosts

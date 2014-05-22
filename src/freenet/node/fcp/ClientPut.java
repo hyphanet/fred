@@ -103,10 +103,10 @@ public class ClientPut extends ClientPutBase {
 	 * @param contentType
 	 *            The content type of the data
 	 * @param data
-	 *            The data (may be <code>null</code> if
-	 *            <code>uploadFromType</code> is UPLOAD_FROM_REDIRECT)
+	 *            The data (may be {@code null} if
+	 *            {@code uploadFromType} is UPLOAD_FROM_REDIRECT)
 	 * @param redirectTarget
-	 *            The URI to redirect to (if <code>uploadFromType</code> is
+	 *            The URI to redirect to (if {@code uploadFromType} is
 	 *            UPLOAD_FROM_REDIRECT)
 	 * @param handler
 	 *            The FCP connection handler

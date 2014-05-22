@@ -116,7 +116,7 @@ public class CipherManager {
 	 * Verify and decrypt this entry
 	 * 
 	 * @param routingKey
-	 * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
+	 * @return {@code true} if the {@code routeKey} match and the entry is decrypted.
 	 */
 	boolean decrypt(SaltedHashFreenetStore.Entry entry, byte[] routingKey) {
 		assert entry.header != null;

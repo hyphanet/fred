@@ -84,7 +84,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	/**
-	 * Counts the peers in <code>peerNodes</code> that have the specified
+	 * Counts the peers in {@code peerNodes} that have the specified
 	 * status.
 	 * @param peerNodeStatuses The peer nodes' statuses
 	 * @param status The status to count

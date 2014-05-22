@@ -9,7 +9,7 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Decode URL Toadlet. Accessible from <code>http://.../decode/</code>.
+ * Decode URL Toadlet. Accessible from {@code http://.../decode/}.
  * 
  * Allow for Firefox about:config option keyword.URL to work properly.
  */

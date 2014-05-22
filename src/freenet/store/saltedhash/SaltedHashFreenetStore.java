@@ -370,7 +370,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 *
 	 * @param routingKey
 	 * @param withData
-	 * @return <code>Entry</code> object
+	 * @return {@code Entry} object
 	 * @throws IOException
 	 */
 	private Entry probeEntry(byte[] digestedKey, byte[] routingKey, boolean withData) throws IOException {
@@ -823,7 +823,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * @param baseDir
 	 * @param name
 	 * @throws IOException
-	 * @return <code>true</code> iff this is a new datastore
+	 * @return {@code true} iff this is a new datastore
 	 */
 	private boolean openStoreFiles(File baseDir, String name) throws IOException {
 		metaFile = new File(baseDir, name + ".metadata");
@@ -845,7 +845,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * Read entry from disk. Before calling this function, you should acquire all required locks.
 	 *
-	 * @return <code>null</code> if and only if <code>routingKey</code> is not <code>null</code> and
+	 * @return {@code null} if and only if {@code routingKey} is not {@code null} and
 	 *         the key does not match the entry.
 	 */
 	private Entry readEntry(long offset, byte[] digestedRoutingKey, byte[] routingKey, boolean withData) throws IOException {
@@ -1153,7 +1153,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * Load config file
 	 * @param masterKey
 	 *
-	 * @return <code>true</code> iff this is a new datastore
+	 * @return {@code true} iff this is a new datastore
 	 */
 	private boolean loadConfigFile(byte[] masterKey) throws IOException {
 		assert cipherManager == null; // never load the configuration twice
@@ -1669,7 +1669,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		 *            excess store size, read as much as possible.
 		 * @param processor
 		 *            batch processor
-		 * @return <code>true</code> if operation complete successfully; <code>false</code>
+		 * @return {@code true} if operation complete successfully; {@code false}
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
 		private boolean batchProcessEntries(long offset, int length, BatchProcessor<T> processor) {
@@ -1781,7 +1781,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		 * Put back an old entry to store file
 		 *
 		 * @param entry
-		 * @return <code>true</code> if the entry have put back successfully.
+		 * @return {@code true} if the entry have put back successfully.
 		 */
 		private boolean resolveOldEntry(Entry entry) {
 			Map<Long, Condition> lockMap = lockDigestedKey(entry.getDigestedRoutingKey(), false);
@@ -1980,7 +1980,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * operation failed.
 	 *
 	 * @param digestedKey
-	 * @return <code>true</code> if all the offsets are locked.
+	 * @return {@code true} if all the offsets are locked.
 	 */
 	private Map<Long, Condition> lockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
 		// use a set to prevent duplicated offsets,

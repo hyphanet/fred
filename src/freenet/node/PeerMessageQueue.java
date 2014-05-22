@@ -416,8 +416,8 @@ public class PeerMessageQueue {
 		}
 
 		/**
-		 * Add the size of messages in this queue to <code>length</code> until
-		 * length is larger than <code>maxSize</code>, or all messages have
+		 * Add the size of messages in this queue to {@code length} until
+		 * length is larger than {@code maxSize}, or all messages have
 		 * been added.
 		 * @param length the starting length
 		 * @param maxSize the size at which to stop
@@ -508,13 +508,13 @@ public class PeerMessageQueue {
 		}
 
 		/**
-		 * Add messages to <code>messages</code> until there are no more
+		 * Add messages to {@code messages} until there are no more
 		 * messages to add.
 		 *
 		 * @param now the current time
 		 * @param messages the list that messages will be added to
 		 * @param maxMessages 
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
+		 * @return the size of {@code messages}, multiplied by -1 if there were
 		 * messages that didn't fit
 		 */
 		private MessageItem addUrgentMessages(long now, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
@@ -728,11 +728,11 @@ public class PeerMessageQueue {
 	}
 
 	/**
-	 * Queue a <code>MessageItem</code> and return an estimate of the size of
+	 * Queue a {@code MessageItem} and return an estimate of the size of
 	 * this queue. The value returned is the estimated number of bytes
 	 * needed for sending the all messages in this queue. Note that if the
 	 * returned estimate is higher than 1024, it might not cover all messages.
-	 * @param item the <code>MessageItem</code> to queue
+	 * @param item the {@code MessageItem} to queue
 	 * @return an estimate of the size of this queue
 	 */
 	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
@@ -828,23 +828,23 @@ public class PeerMessageQueue {
 	}
 
 	/**
-	 * Returns <code>true</code> if there are messages that will timeout before
-	 * <code>now</code>.
+	 * Returns {@code true} if there are messages that will timeout before
+	 * {@code now}.
 	 * @param now the timeout for messages waiting to be sent
-	 * @return <code>true</code> if there are messages that will timeout before
-	 * <code>now</code>
+	 * @return {@code true} if there are messages that will timeout before
+	 * {@code now}
 	 */
 	public boolean mustSendNow(long now) {
 		return getNextUrgentTime(Long.MAX_VALUE, now) <= now;
 	}
 
 	/**
-	 * Returns <code>true</code> if <code>minSize</code> + the length of all
-	 * messages in this queue is greater than <code>maxSize</code>.
+	 * Returns {@code true} if {@code minSize} + the length of all
+	 * messages in this queue is greater than {@code maxSize}.
 	 * @param minSize the starting size
 	 * @param maxSize the maximum size
-	 * @return <code>true</code> if <code>minSize</code> + the length of all
-	 * messages in this queue is greater than <code>maxSize</code>
+	 * @return {@code true} if {@code minSize} + the length of all
+	 * messages in this queue is greater than {@code maxSize}
 	 */
 	public synchronized boolean mustSendSize(int minSize, int maxSize) {
 		int length = minSize;

@@ -212,7 +212,7 @@ public class NetworkInterface implements Closeable {
 	 * Sets the SO_TIMEOUT value on the server sockets.
 	 * 
 	 * @param timeout
-	 *            The timeout in milliseconds, <code>0</code> to disable
+	 *            The timeout in milliseconds, {@code 0} to disable
 	 * @throws SocketException
 	 *             if the SO_TIMEOUT value can not be set
 	 * @see ServerSocket#setSoTimeout(int)
@@ -353,7 +353,7 @@ public class NetworkInterface implements Closeable {
 		 * Sets the SO_TIMEOUT value on this acceptor's server socket.
 		 * 
 		 * @param timeout
-		 *            The timeout in milliseconds, or <code>0</code> to
+		 *            The timeout in milliseconds, or {@code 0} to
 		 *            disable
 		 * @throws SocketException
 		 *             if the SO_TIMEOUT value can not be set

@@ -145,7 +145,7 @@ public class DecompressorThreadManager {
 
 	/**Represents a thread which invokes a decompressor upon an
 	 * input stream. These threads should be instantiated by a
-	 * <code>DecompressorThreadManager</code>
+	 * {@code DecompressorThreadManager}
 	 * @author sajack
 	 */
 	class DecompressorThread implements Runnable {

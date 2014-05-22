@@ -43,9 +43,9 @@ final public class FileUtil {
 	private static final int BUFFER_SIZE = 32*1024;
 
 	/**
-	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
-	 * contain at most <code>byteLimit</code> bytes. If <code>byteLimit</code> is less than the
-	 * size of <code>logfile</code>, the first part of the file will be skipped. If this leaves a
+	 * Returns a line reading stream for the content of {@code logfile}. The stream will
+	 * contain at most {@code byteLimit} bytes. If {@code byteLimit} is less than the
+	 * size of {@code logfile}, the first part of the file will be skipped. If this leaves a
 	 * partial line at the beginning of the content to read, that partial line will also be
 	 * skipped.
 	 * @param logfile The file to open
@@ -292,8 +292,8 @@ final public class FileUtil {
     /**
      * Reads the entire content of a file as UTF-8 and returns it.
      * @param file The file to read
-     * @return The content of <code>file</code>
-     * @throws FileNotFoundException if <code>file</code> cannot be opened
+     * @return The content of {@code file}
+     * @throws FileNotFoundException if {@code file} cannot be opened
      * @throws IOException if an I/O error occurs
      */
     public static StringBuilder readUTF(File file) throws FileNotFoundException, IOException {
@@ -303,9 +303,9 @@ final public class FileUtil {
     /**
      * Reads the content of a file as UTF-8, starting at a specified offset, and returns it.
      * @param file The file to read
-     * @param offset The point in <code>file</code> at which to start reading
-     * @return The content of <code>file</code>, starting at <code>offset</code>
-     * @throws FileNotFoundException if <code>file</code> cannot be opened
+     * @param offset The point in {@code file} at which to start reading
+     * @return The content of {@code file}, starting at {@code offset}
+     * @throws FileNotFoundException if {@code file} cannot be opened
      * @throws IOException if an I/O error occurs
      */
 	public static StringBuilder readUTF(File file, long offset) throws FileNotFoundException, IOException {
@@ -338,7 +338,7 @@ final public class FileUtil {
 	/**
 	 * Reads the entire content of a stream as UTF-8 and returns it.
 	 * @param stream The stream to read
-	 * @return The content of <code>stream</code>
+	 * @return The content of {@code stream}
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static StringBuilder readUTF(InputStream stream) throws IOException {
@@ -348,8 +348,8 @@ final public class FileUtil {
 	/**
 	 * Reads the content of a stream as UTF-8, starting at a specified offset, and returns it.
 	 * @param stream The stream to read
-	 * @param offset The point in <code>stream</code> at which to start reading
-	 * @return The content of <code>stream</code>, starting at <code>offset</code>
+	 * @param offset The point in {@code stream} at which to start reading
+	 * @return The content of {@code stream}, starting at {@code offset}
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static StringBuilder readUTF(InputStream stream, long offset) throws IOException {
@@ -583,7 +583,7 @@ final public class FileUtil {
 	/**
 	 * Find the length of an input stream. This method will consume the complete
 	 * input stream until its {@link InputStream#read(byte[])} method returns
-	 * <code>-1</code>, thus signalling the end of the stream.
+	 * {@code -1}, thus signalling the end of the stream.
 	 *
 	 * @param source
 	 *            The input stream to find the length of
@@ -605,10 +605,10 @@ final public class FileUtil {
 	}
 
 	/**
-	 * Copies <code>length</code> bytes from the source input stream to the
-	 * destination output stream. If <code>length</code> is <code>-1</code>
+	 * Copies {@code length} bytes from the source input stream to the
+	 * destination output stream. If {@code length} is {@code -1}
 	 * as much bytes as possible will be copied (i.e. until
-	 * {@link InputStream#read()} returns <code>-1</code> to signal the end of
+	 * {@link InputStream#read()} returns {@code -1} to signal the end of
 	 * the stream).
 	 *
 	 * @param source

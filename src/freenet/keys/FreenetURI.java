@@ -43,7 +43,7 @@ import freenet.support.io.FileUtil;
  * FreenetURI handles parsing and creation of the Freenet URI format, defined
  * as follows:
  * <p>
- * <code>freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][/metastring]</code>
+ * {@code freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][/metastring]}
  * </p>
  * <p>
  * where KeyType is the TLA of the key (currently USK, SSK, KSK, or CHK). If
@@ -62,8 +62,8 @@ import freenet.support.io.FileUtil;
  * modified Base64 encoded decryption key.
  * </p>
  * <p>
- * Following the RoutingKey and CryptoKey there may be a series of <code>
- * name=value</code> pairs representing URI meta-information.
+ * Following the RoutingKey and CryptoKey there may be a series of {@code
+ * name=value} pairs representing URI meta-information.
  * </p>
  * <p>
  * The docname is only meaningful for SSKs, and is hashed with the PK

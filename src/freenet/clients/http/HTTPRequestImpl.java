@@ -228,7 +228,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * 
 	 * @param name
 	 *            the name of the parameter to get
-	 * @return the first value or <code>null</code> if the parameter was not
+	 * @return the first value or {@code null} if the parameter was not
 	 *         set
 	 */
 	private String getParameterValue(String name) {

@@ -38,17 +38,17 @@ public class SortedLongSet {
 	 * Check if this set is empty.
 	 * 
 	 * @param num
-	 * @return <code>true</code>, if the set is empty.
+	 * @return {@code true}, if the set is empty.
 	 */
 	public synchronized boolean isEmpty() {
 		return length == 0;
 	}
 
 	/**
-	 * Check if <code>num</code> exist in this set.
+	 * Check if {@code num} exist in this set.
 	 * 
 	 * @param num
-	 * @return <code>true</code>, if <code>num</code> exist.
+	 * @return {@code true}, if {@code num} exist.
 	 */
 	public synchronized boolean contains(long num) {
 		int x = binarySearch(num);
@@ -106,7 +106,7 @@ public class SortedLongSet {
 	 * Add the item, if it (or an item of the same number) is not already
 	 * present.
 	 * 
-	 * @return <code>true</code>, if we added the item.
+	 * @return {@code true}, if we added the item.
 	 */ 
 	public synchronized boolean push(long num) {
 		int x = binarySearch(num);
@@ -122,7 +122,7 @@ public class SortedLongSet {
 	 * 
 	 * @throws {@link IllegalArgumentException}
 	 *             if the item already exist
-	 * @return <code>true</code>, if we added the item.
+	 * @return {@code true}, if we added the item.
 	 */ 
 	public synchronized void add(long num) {
 		int x = binarySearch(num);

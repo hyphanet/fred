@@ -46,9 +46,9 @@ public interface HTTPRequest {
 	 * so its safe to do things like
 	 * 
 	 * <p>
-	 * <code>
+	 * {@code
 	 *   if (request.getParam(&quot;abc&quot;).equals(&quot;def&quot;))
-	 * </code>
+	 * }
 	 * </p>
 	 * 
 	 * @param name
@@ -84,7 +84,7 @@ public interface HTTPRequest {
 	public int getIntParam(String name);
 
 	/**
-	 * Get the value of a request parameter converted to an <code>int</code>,
+	 * Get the value of a request parameter converted to an {@code int},
 	 * using the specified default value. If there are multiple values for this
 	 * parameter, the first value is used.
 	 * 
@@ -103,7 +103,7 @@ public interface HTTPRequest {
 	/**
 	 * Get all values of a request parameter as a string array. If the parameter
 	 * was not set at all, an empty array is returned, so this method will never
-	 * return <code>null</code>.
+	 * return {@code null}.
 	 * 
 	 * @param name
 	 *            the name of the parameter to get
@@ -114,7 +114,7 @@ public interface HTTPRequest {
 	/**
 	 * Get all values of a request parameter as int array, ignoring all values
 	 * that can not be parsed. If the parameter was not set at all, an empty
-	 * array is returned, so this method will never return <code>null</code>.
+	 * array is returned, so this method will never return {@code null}.
 	 * 
 	 * @param name
 	 *            the name of the parameter to get

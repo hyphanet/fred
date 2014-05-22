@@ -72,7 +72,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 * @param fileUrl
 	 *            The URL to load the jar file from
 	 * @param length
-	 *            The length of the jar file if known, <code>-1</code>
+	 *            The length of the jar file if known, {@code -1}
 	 *            otherwise
 	 * @throws IOException
 	 *             if an I/O error occurs
@@ -101,7 +101,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 	 * @param inputStream
 	 *            The input stream to read from
 	 * @param length
-	 *            The length of the stream if known, <code>-1</code> if the
+	 *            The length of the stream if known, {@code -1} if the
 	 *            length is not known
 	 * @throws IOException
 	 *             if an I/O error occurs

@@ -28,8 +28,8 @@ import freenet.support.io.TempBucketFactory;
 /**
  * A thread which periodically wakes up and iterates to start fetches and/or inserts.
  * 
- * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
- * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
+ * When calling {@code start()}, the thread will iterate the first time after {@code getStartupDelay()} milliseconds.
+ * After each iteration, it will sleep for {@code getSleepTime()} milliseconds.
  * 
  * @author xor
  */

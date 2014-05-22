@@ -717,7 +717,7 @@ public class PluginManager {
 
 	/**
 	 * Returns the translation of the given key, replacing each occurence of
-	 * <code>${<em>pattern</em>}</code> with <code>value</code>.
+	 * {@code ${<em>pattern</em>}} with {@code value}.
 	 *
 	 * @param key
 	 *            The key to fetch
