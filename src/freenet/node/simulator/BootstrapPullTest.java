@@ -146,7 +146,7 @@ public class BootstrapPullTest {
         osw.flush();
        	String name = lis.readLine(65536, 128, true);
        	SimpleFieldSet fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
-       	if(!name.equals("NodeHello")) {
+       	if(!"NodeHello".equals(name)) {
        		System.err.println("No NodeHello from insertor node!");
        		System.exit(EXIT_INSERTER_PROBLEM);
        	}
@@ -161,15 +161,15 @@ public class BootstrapPullTest {
            	fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
        		System.out.println("Got FCP message: \n"+name);
        		System.out.print(fs.toOrderedString());
-       		if(name.equals("ProtocolError")) {
+       		if("ProtocolError".equals(name)) {
        			System.err.println("Protocol error when inserting data.");
        			System.exit(EXIT_INSERTER_PROBLEM);
        		}
-       		if(name.equals("PutFailed")) {
+       		if("PutFailed".equals(name)) {
        			System.err.println("Insert failed");
        			System.exit(EXIT_INSERT_FAILED);
        		}
-       		if(name.equals("PutSuccessful")) {
+       		if("PutSuccessful".equals(name)) {
        	        long endInsertTime = System.currentTimeMillis();
        			FreenetURI uri = new FreenetURI(fs.get("URI"));
        	        System.out.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");

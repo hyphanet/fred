@@ -154,7 +154,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
 		this.getCHKOnly = getCHKOnly;
-		isSSK = uri.getKeyType().toUpperCase().equals("SSK");
+		isSSK = "SSK".equals(uri.getKeyType().toUpperCase());
 		if(addToParent) {
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
@@ -190,9 +190,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	
 	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
 		String uriType = uri.getKeyType();
-		if(uriType.equals("CHK")) {
+		if("CHK".equals(uriType)) {
 			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm);
-		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
+		} else if("SSK".equals(uriType) || "KSK".equals(uriType)) {
 			InsertableClientSSK ik = InsertableClientSSK.create(uri);
 			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random, compressorDescriptor, pre1254);
 		} else {
@@ -720,7 +720,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			Bucket data = sourceData.createShadow();
 			FreenetURI u = uri;
-			if(u.getKeyType().equals("CHK") && !persistent) u = FreenetURI.EMPTY_CHK_URI;
+			if("CHK".equals(u.getKeyType()) && !persistent) u = FreenetURI.EMPTY_CHK_URI;
 			else u = u.clone();
 			if(data == null) {
 				data = context.tempBucketFactory.makeBucket(sourceData.size());

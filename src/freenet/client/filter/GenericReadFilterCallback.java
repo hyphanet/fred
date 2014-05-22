@@ -152,7 +152,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if (path != null) {
-			if (path.equals("/") && req.isParameterSet("newbookmark") && !forBaseHref) {
+			if ("/".equals(path) && req.isParameterSet("newbookmark") && !forBaseHref) {
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
@@ -169,7 +169,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				}
 
 				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-				if (bookmark_activelink.equals("true")) {
+				if ("true".equals(bookmark_activelink)) {
 					url = url + "&hasAnActivelink=true";
 				}
 				return url;
@@ -192,7 +192,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		// Convert localhost uri's to relative internal ones.
 		
 		String host = uri.getHost();
-		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
+		if(host != null && ("localhost".equals(host) || "127.0.0.1".equals(host)) && uri.getPort() == 8888) {
 			try {
 				uri = new URI(null, null, null, -1, uri.getPath(), uri.getQuery(), uri.getFragment());
 			} catch (URISyntaxException e) {
@@ -423,11 +423,11 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		if(action == null) return null;
 		if(method == null) method = "GET";
 		method = method.toUpperCase();
-		if(!(method.equals("POST") || method.equals("GET"))) 
+		if(!("POST".equals(method) || "GET".equals(method)))
 			return null; // no irregular form sending methods
 		// FIXME what about /downloads/ /friends/ etc?
 		// Allow access to Library for searching, form passwords are used for actions such as adding bookmarks
-		if(action.equals("/library/"))
+		if("/library/".equals(action))
 			return action;
 		try {
 			URI uri = URIPreEncoder.encodeURI(action);

@@ -188,7 +188,7 @@ public class WelcomeToadlet extends Toadlet {
             HTMLNode contentNode = page.content;
             HTMLNode content;
             String filenameHint = null;
-            if (key.getKeyType().equals("CHK")) {
+            if ("CHK".equals(key.getKeyType())) {
                 String[] metas = key.getAllMetaStrings();
                 if ((metas != null) && (metas.length > 1)) {
                     filenameHint = metas[0];

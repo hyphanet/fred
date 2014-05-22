@@ -331,7 +331,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
-								if(s != null && (allowNoHTMLTag || (s.equals("html") || (!isXHTML) && s.equalsIgnoreCase("html"))))
+								if(s != null && (allowNoHTMLTag || ("html".equals(s) || (!isXHTML) && "html".equalsIgnoreCase(s))))
 									textAllowed = true;
 							} else if (
 								(b.length() == 2)
@@ -445,7 +445,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
-								if(currentTag != null && (allowNoHTMLTag || (currentTag.equals("html") || (!isXHTML) && currentTag.equalsIgnoreCase("html"))))
+								if(currentTag != null && (allowNoHTMLTag || ("html".equals(currentTag) || (!isXHTML) && "html".equalsIgnoreCase(currentTag))))
 									textAllowed = true;
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
@@ -2041,7 +2041,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			//Remove any blank entries
 			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
 				Map.Entry<String, Object> entry = it.next();
-				if(entry.getValue() == null || entry.getValue().equals("") && pc.isXHTML){
+				if(entry.getValue() == null || "".equals(entry.getValue()) && pc.isXHTML){
 					it.remove();
 				}
 			}
@@ -2121,7 +2121,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (o instanceof String) && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
+				if ("xml:lang".equals(x) || "lang".equals(x) || ("dir".equals(x) && (o instanceof String) && ("ltr".equalsIgnoreCase((String) o) || "rtl".equalsIgnoreCase((String) o)))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
@@ -2222,7 +2222,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			setStyle(true, pc);
 			String type = getHashString(h, "type");
 			if (type != null) {
-				if (!type.equalsIgnoreCase("text/css") /* FIXME */
+				if (!"text/css".equalsIgnoreCase(type) /* FIXME */
 					) {
 					pc.killStyle = true;
 					pc.expectingBadComment = true;
@@ -2520,10 +2520,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				StringBuffer sb = new StringBuffer(rel.length());
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
-					if(token.equalsIgnoreCase("stylesheet")) {
-						if(token.equalsIgnoreCase("stylesheet")) {
+					if("stylesheet".equalsIgnoreCase(token)) {
+						if("stylesheet".equalsIgnoreCase(token)) {
 							isStylesheet = true;
-							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
+							if(!((i == 0 || i == 1 && prevToken != null && "alternate".equalsIgnoreCase(prevToken))))
 								return null;
 							if(tok.hasMoreTokens())
 								return null; // Disallow extra tokens after "stylesheet"
@@ -2576,7 +2576,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				hn.put("rev", parsedRev);
 			
 			if(rel != null) {
-				if(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))
+				if("stylesheet".equals(rel) || "alternate stylesheet".equals(rel))
 					isStylesheet = true;
 			} else {
 				// Not a stylesheet.
@@ -2774,18 +2774,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(logMINOR) Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
 			if (content != null) {
 				if ((name != null) && (http_equiv == null)) {
-					if (name.equalsIgnoreCase("Author")) {
+					if ("Author".equalsIgnoreCase(name)) {
 						hn.put("name", name);
 						hn.put("content", content);
-					} else if (name.equalsIgnoreCase("Keywords")) {
+					} else if ("Keywords".equalsIgnoreCase(name)) {
 						hn.put("name", name);
 						hn.put("content", content);
-					} else if (name.equalsIgnoreCase("Description")) {
+					} else if ("Description".equalsIgnoreCase(name)) {
 						hn.put("name", name);
 						hn.put("content", content);
 					}
 				} else if ((http_equiv != null) && (name == null)) {
-					if (http_equiv.equalsIgnoreCase("Expires")) {
+					if ("Expires".equalsIgnoreCase(http_equiv)) {
 						try {
 							ToadletContextImpl.parseHTTPDate(content);
 							hn.put("http-equiv", http_equiv);
@@ -2795,12 +2795,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							return null;
 						}
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
+                            "Content-Script-Type".equalsIgnoreCase(http_equiv)) {
 						// We don't support script at this time.
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Style-Type")) {
+                            "Content-Style-Type".equalsIgnoreCase(http_equiv)) {
 						// FIXME: charsets
-						if (content.equalsIgnoreCase("text/css")) {
+						if ("text/css".equalsIgnoreCase(content)) {
 							// FIXME: selectable style languages - only matters
 							// when we have implemented more than one
 							// FIXME: if we ever do allow it... the spec
@@ -2812,7 +2812,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							hn.put("content", content);
 						}
 						// FIXME: add some more headers - Dublin Core?
-					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
+					} else if ("Content-Type".equalsIgnoreCase(http_equiv)) {
 						if(logMINOR) Logger.minor(this, "Found http-equiv content-type="+content);
 						String[] typesplit = splitType(content);
 						if(logDEBUG) {
@@ -2842,12 +2842,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						if(!detected)
 							throwFilterException(l10n("invalidMetaType"));
 					} else if (
-						http_equiv.equalsIgnoreCase("Content-Language")) {
+                            "Content-Language".equalsIgnoreCase(http_equiv)) {
 						if(content.matches("((?>[a-zA-Z0-9]*)(?>-[A-Za-z0-9]*)*(?>,\\s*)?)*") && (!content.trim().isEmpty())) {
 							hn.put("http-equiv", "Content-Language");
 							hn.put("content", content);
 						}
-					} else if (http_equiv.equalsIgnoreCase("refresh")) {
+					} else if ("refresh".equalsIgnoreCase(http_equiv)) {
 						int idx = content.indexOf(';');
 						if(idx == -1 && metaRefreshSamePageMinInterval >= 0) {
 							try {
@@ -2948,22 +2948,22 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			// HTML5 is just <!doctype html>
 			if(t.unparsedAttrs.length == 1) {
-				if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
+				if (!"html".equalsIgnoreCase(t.unparsedAttrs[0]))
 					return null;
 				return t;
 			}
 			if (!((t.unparsedAttrs.length == 3) || (t.unparsedAttrs.length == 4)))
 				return null;
-			if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
+			if (!"html".equalsIgnoreCase(t.unparsedAttrs[0]))
 				return null;
-			if(t.unparsedAttrs[1].equalsIgnoreCase("system") && t.unparsedAttrs.length == 3) {
+			if("system".equalsIgnoreCase(t.unparsedAttrs[1]) && t.unparsedAttrs.length == 3) {
 				// HTML5 allows <!DOCTYPE html SYSTEM "about:legacy-compat"> (either kind of quotes)
 				String s = stripQuotes(t.unparsedAttrs[2]);
-				if(s.equals("about:legacy-compat") && t.unparsedAttrs.length == 3) {
+				if("about:legacy-compat".equals(s) && t.unparsedAttrs.length == 3) {
 					return t;
 				} else return null;
 			}
-			if (!t.unparsedAttrs[1].equalsIgnoreCase("public"))
+			if (!"public".equalsIgnoreCase(t.unparsedAttrs[1]))
 				return null;
 			String s = stripQuotes(t.unparsedAttrs[2]);
 			if (!DTDs.containsKey(s))
@@ -2989,7 +2989,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid length");
 				return null;
 			}
-			if (t.unparsedAttrs.length == 3 && !t.unparsedAttrs[2].equals("?")) {
+			if (t.unparsedAttrs.length == 3 && !"?".equals(t.unparsedAttrs[2])) {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 2)");
 				return null;
 			}
@@ -2997,7 +2997,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 3)");
 				return null;
 			}
-			if (!(t.unparsedAttrs[0].equals("version=\"1.0\"") || t.unparsedAttrs[0].equals("version='1.0'"))) {
+			if (!("version=\"1.0\"".equals(t.unparsedAttrs[0]) || "version='1.0'".equals(t.unparsedAttrs[0]))) {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid version");
 				return null;
 			}
@@ -3049,7 +3049,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
-			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml")) {
+			if ((xmlns != null) && "http://www.w3.org/1999/xhtml".equals(xmlns)) {
 				hn.put("xmlns", xmlns);
 				pc.setisXHTML(true);
 			}
@@ -3104,7 +3104,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				HTMLFilter.class,
 				"IOException parsing inline CSS!");
 		} catch (Error e) {
-			if (e.getMessage().equals("Error: could not match input")) {
+			if ("Error: could not match input".equals(e.getMessage())) {
 				// this sucks, it should be a proper exception
 				Logger.normal(
 					HTMLFilter.class,
@@ -3162,7 +3162,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (x != -1) {
 				name = param.substring(0, x).trim();
 				value = param.substring(x + 1).trim();
-				if (name.equals("charset"))
+				if ("charset".equals(name))
 					charset = value;
 			}
 		}

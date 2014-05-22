@@ -112,33 +112,33 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
+			if("address".equals(sortBy)){
 				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
+			}else if("location".equals(sortBy)){
 				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
+			}else if("version".equals(sortBy)){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoffRT")){
+			}else if("backoffRT".equals(sortBy)){
 				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
-			}else if(sortBy.equals("backoffBulk")){
+			}else if("backoffBulk".equals(sortBy)){
 				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
 			}else if(sortBy.equals(("overload_p"))){
 				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
 			}else if(sortBy.equals(("idle"))){
 				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
+			}else if("time_routable".equals(sortBy)){
 				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
+			}else if("total_traffic".equals(sortBy)){
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
+				}else if("total_traffic_since_startup".equals(sortBy)){
 					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
 					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
 					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
+			}else if("selection_percentage".equals(sortBy)){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
+			}else if("time_delta".equals(sortBy)){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
 			}else if(sortBy.equals(("uptime"))){
 				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
@@ -700,7 +700,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
 				boolean first = true;
 				for(String s : split) {
-					if(s.equals("End")) break;
+					if("End".equals(s)) break;
 					if(s.indexOf('=') > -1) {
 						if(!first)
 							sb.append('\n');

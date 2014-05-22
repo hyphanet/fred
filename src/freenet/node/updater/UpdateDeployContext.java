@@ -60,7 +60,7 @@ public class UpdateDeployContext {
 			boolean isAbsolute = f.isAbsolute();
 			String name = f.getName().toLowerCase();
 			if(mainJar == null) {
-				if(name.equals("freenet-ext.jar") || name.equals("freenet-ext.jar.new") || (name.startsWith("freenet-ext") && name.endsWith(".jar")))
+				if("freenet-ext.jar".equals(name) || "freenet-ext.jar.new".equals(name) || (name.startsWith("freenet-ext") && name.endsWith(".jar")))
 					// Don't match freenet-ext.jar!
 					continue;
 				// Try to match it
@@ -172,9 +172,9 @@ public class UpdateDeployContext {
 					// Ignore the numbers.
 					String rhs = line.substring(idx+1);
 					dontWrite = true;
-					if(rhs.equals("freenet.jar") || rhs.equals("freenet.jar.new") || 
-							rhs.equals("freenet-stable-latest.jar") || rhs.equals("freenet-stable-latest.jar.new") ||
-							rhs.equals("freenet-testing-latest.jar") || rhs.equals("freenet-testing-latest.jar.new")) {
+					if("freenet.jar".equals(rhs) || "freenet.jar.new".equals(rhs) ||
+                            "freenet-stable-latest.jar".equals(rhs) || "freenet-stable-latest.jar.new".equals(rhs) ||
+                            "freenet-testing-latest.jar".equals(rhs) || "freenet-testing-latest.jar.new".equals(rhs)) {
 						if(writtenNewJar)
 							mainRHS = newMain;
 						else
@@ -194,7 +194,7 @@ public class UpdateDeployContext {
 						}
 					}
 				}
-			} else if(lowcaseLine.equals("wrapper.restart.reload_configuration=true")) {
+			} else if("wrapper.restart.reload_configuration=true".equals(lowcaseLine)) {
 				writtenReload = true;
 			} else if(lowcaseLine.startsWith("wrapper.anchorfile=")) {
 			    writtenAnchor = true;

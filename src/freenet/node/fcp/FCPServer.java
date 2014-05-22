@@ -734,7 +734,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * @throws IOException
 	 */
 	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container, File downloadsDir) throws NotAllowedException, IOException {
-		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
+		boolean persistence = "reboot".equalsIgnoreCase(persistenceTypeString);
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {

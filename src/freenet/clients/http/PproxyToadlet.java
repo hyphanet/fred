@@ -362,7 +362,7 @@ public class PproxyToadlet extends Toadlet {
 					 * The "Freemail" plugin is show on "Aviliable Plugin" even
 					 * if it is loaded. However fixing the plugin itself may break
 					 * running it as standalone application. */
-					if (shortPluginName.equals("FreemailPlugin")) shortPluginName = "Freemail"; // DOH!
+					if ("FreemailPlugin".equals(shortPluginName)) shortPluginName = "Freemail"; // DOH!
 
 					availablePlugins.remove(pm.isOfficialPlugin(shortPluginName));
 				}

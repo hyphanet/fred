@@ -113,7 +113,7 @@ public class Yarrow extends RandomSource {
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
 
-		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways
+		if(updateSeed && !"/dev/urandom".equals(seed.toString())) //Dont try to update the seedfile if we know that it wont be possible anyways
 			seedfile = seed;
 		else
 			seedfile = null;
@@ -691,7 +691,7 @@ public class Yarrow extends RandomSource {
 
 		byte[] b = new byte[1024];
 
-		if((args.length == 0) || args[0].equalsIgnoreCase("latency")) {
+		if((args.length == 0) || "latency".equalsIgnoreCase(args[0])) {
 			if(args.length == 2)
 				b = new byte[Integer.parseInt(args[1])];
 			long start = System.currentTimeMillis();
@@ -709,13 +709,13 @@ public class Yarrow extends RandomSource {
 				r.nextLong();
 			System.out.println(
 				(double) (System.currentTimeMillis() - start) / 1000 + " ms/long");
-		} else if(args[0].equalsIgnoreCase("randomness")) {
+		} else if("randomness".equalsIgnoreCase(args[0])) {
 			int kb = Integer.parseInt(args[1]);
 			for(int i = 0; i < kb; i++) {
 				r.nextBytes(b);
 				System.out.write(b);
 			}
-		} else if(args[0].equalsIgnoreCase("gathering")) {
+		} else if("gathering".equalsIgnoreCase(args[0])) {
 			System.gc();
 			EntropySource t = new EntropySource();
 			long start = System.currentTimeMillis();
@@ -729,7 +729,7 @@ public class Yarrow extends RandomSource {
 				r.acceptTimerEntropy(t);
 			System.err.println(
 				(double) (System.currentTimeMillis() - start) / 100000);
-		} else if(args[0].equalsIgnoreCase("volume")) {
+		} else if("volume".equalsIgnoreCase(args[0])) {
 			b = new byte[1020];
 			long duration =
 				System.currentTimeMillis() + Integer.parseInt(args[1]);
@@ -746,7 +746,7 @@ public class Yarrow extends RandomSource {
 //				r.nextBytes(buffer);
 //				System.out.write(buffer);
 //			}
-		} else if(args[0].equalsIgnoreCase("bitstream"))
+		} else if("bitstream".equalsIgnoreCase(args[0]))
 			while(true) {
 				int v = r.nextInt();
 				for(int i = 0; i < 32; i++) {
@@ -756,8 +756,8 @@ public class Yarrow extends RandomSource {
 						System.out.print('0');
 				}
 			}
-		else if(args[0].equalsIgnoreCase("sample"))
-			if((args.length == 1) || args[1].equals("general")) {
+		else if("sample".equalsIgnoreCase(args[0]))
+			if((args.length == 1) || "general".equals(args[1])) {
 				System.out.println("nextInt(): ");
 				for(int i = 0; i < 3; i++)
 					System.out.println(r.nextInt());
@@ -776,7 +776,7 @@ public class Yarrow extends RandomSource {
 				System.out.println("nextFullDouble(): ");
 				for(int i = 0; i < 3; i++)
 					System.out.println(r.nextFullDouble());
-			} else if(args[1].equals("normalized"))
+			} else if("normalized".equals(args[1]))
 				for(int i = 0; i < 20; i++)
 					System.out.println(r.nextDouble());
 	}

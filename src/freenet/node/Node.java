@@ -300,7 +300,7 @@ public class Node implements TimeSkewDetectorCallback {
 			synchronized(this) {
 				name = myName;
 			}
-			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode") || name.startsWith("Freenet node with no name #")){
+			if(name.startsWith("Node id|")|| "MyFirstFreenetNode".equals(name) || name.startsWith("Freenet node with no name #")){
 				clientCore.alerts.register(nodeNameUserAlert);
 			}else{
 				clientCore.alerts.unregister(nodeNameUserAlert);
@@ -353,7 +353,7 @@ public class Node implements TimeSkewDetectorCallback {
 			synchronized(Node.this) {
 				type = storeType;
 			}
-			if(type.equals("ram")) {
+			if("ram".equals(type)) {
 				synchronized(this) { // Serialise this part.
 					makeStore(val);
 				}
@@ -394,7 +394,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 			synchronized(this) { // Serialise this part.
 				String suffix = getStoreSuffix();
-				if (val.equals("salt-hash")) {
+				if ("salt-hash".equals(val)) {
 					byte[] key;
 					synchronized(Node.this) {
 						key = cachedClientCacheKey;
@@ -434,7 +434,7 @@ public class Node implements TimeSkewDetectorCallback {
 					} finally {
 						MasterKeys.clear(key);
 					}
-				} else if(val.equals("ram")) {
+				} else if("ram".equals(val)) {
 					initRAMClientCacheFS();
 				} else /*if(val.equals("none")) */{
 					initNoClientCacheFS();
@@ -891,7 +891,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void makeStore(String val) throws InvalidConfigValueException {
 		String suffix = getStoreSuffix();
-		if (val.equals("salt-hash")) {
+		if ("salt-hash".equals(val)) {
 			try {
 				initSaltHashFS(suffix, true, null);
 			} catch (NodeInitException e) {
@@ -1208,7 +1208,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		String value = nodeConfig.getString("masterKeyFile");
 		File f;
-		if (value.equalsIgnoreCase("none")) {
+		if ("none".equalsIgnoreCase(value)) {
 			f = null;
 		} else {
 			f = new File(value);
@@ -2021,7 +2021,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 
-		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !storeType.equals("ram")) { // totally arbitrary minimum!
+		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !"ram".equals(storeType)) { // totally arbitrary minimum!
 			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
@@ -2111,7 +2111,7 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
                     public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 						storePreallocate = val;
-						if (storeType.equals("salt-hash")) {
+						if ("salt-hash".equals(storeType)) {
 							setPreallocate(chkDatastore, val);
 							setPreallocate(chkDatacache, val);
 							setPreallocate(pubKeyDatastore, val);
@@ -2242,7 +2242,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean shouldWriteConfig = false;
 
-		if(storeType.equals("bdb-index")) {
+		if("bdb-index".equals(storeType)) {
 			System.err.println("Old format Berkeley DB datastore detected.");
 			System.err.println("This datastore format is no longer supported.");
 			System.err.println("The old datastore will be securely deleted.");
@@ -2250,7 +2250,7 @@ public class Node implements TimeSkewDetectorCallback {
 			shouldWriteConfig = true;
 			deleteOldBDBIndexStoreFiles();
 		}
-		if (storeType.equals("salt-hash")) {
+		if ("salt-hash".equals(storeType)) {
 			initRAMFS();
 			// FIXME remove migration code
 			final int lastVersionWithBloom = 1384;
@@ -2338,7 +2338,7 @@ public class Node implements TimeSkewDetectorCallback {
 		MasterKeys keys = null;
 
 		for(int i=0;i<2 && !startedClientCache; i++) {
-		if (clientCacheType.equals("salt-hash")) {
+		if ("salt-hash".equals(clientCacheType)) {
 
 			byte[] clientCacheKey = null;
 			try {
@@ -2374,7 +2374,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} finally {
 				MasterKeys.clear(clientCacheKey);
 			}
-		} else if(clientCacheType.equals("none")) {
+		} else if("none".equals(clientCacheType)) {
 			initNoClientCacheFS();
 			startedClientCache = true;
 			break;
@@ -5198,11 +5198,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void activatePasswordedClientCache(MasterKeys keys) {
 		synchronized(this) {
-			if(clientCacheType.equals("ram")) {
+			if("ram".equals(clientCacheType)) {
 				System.err.println("RAM client cache cannot be passworded!");
 				return;
 			}
-			if(!clientCacheType.equals("salt-hash")) {
+			if(!"salt-hash".equals(clientCacheType)) {
 				System.err.println("Unknown client cache type, cannot activate passworded store: "+clientCacheType);
 				return;
 			}

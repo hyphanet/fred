@@ -32,7 +32,7 @@ public class MergeSFS {
 		// Force output to UTF-8. A PrintStream is still an OutputStream.
 		// These files are always UTF-8, and stdout is likely to be redirected into one.
 		final OutputStream os;
-		if (args.length == 3 && args[2].equals("--stdout")) {
+		if (args.length == 3 && "--stdout".equals(args[2])) {
 			os = System.out;
 		} else {
 			os = new FileOutputStream(f1);

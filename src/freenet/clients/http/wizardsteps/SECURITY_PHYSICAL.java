@@ -105,7 +105,7 @@ public class SECURITY_PHYSICAL implements Step {
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");
 
-		if (error.equals("pass")) {
+		if ("pass".equals(error)) {
 			//Password prompt requested
 			PASSWORD_PROMPT type;
 			try {
@@ -161,11 +161,11 @@ public class SECURITY_PHYSICAL implements Step {
 
 			addBackToPhysicalSeclevelsButton(form);
 			return true;
-		} else if (error.equals("corrupt")) {
+		} else if ("corrupt".equals(error)) {
 			//Password file corrupt
 			SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.node.getMasterPasswordFile().getPath());
 			return true;
-		} else if (error.equals("delete")) {
+		} else if ("delete".equals(error)) {
 			SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.node.getMasterPasswordFile().getPath(), newThreatLevel.name());
 			return true;
 		}

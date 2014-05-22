@@ -56,11 +56,11 @@ abstract class DirPutFile {
 			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
 		}
 		String type = subset.get("UploadFrom");
-		if((type == null) || type.equalsIgnoreCase("direct")) {
+		if((type == null) || "direct".equalsIgnoreCase(type)) {
 			return DirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global, bf);
-		} else if(type.equalsIgnoreCase("disk")) {
+		} else if("disk".equalsIgnoreCase(type)) {
 			return DiskDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
-		} else if(type.equalsIgnoreCase("redirect")) {
+		} else if("redirect".equalsIgnoreCase(type)) {
 			return RedirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);

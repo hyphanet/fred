@@ -65,9 +65,9 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Scope fromTabFile(String abbreviation) {
-				if(abbreviation.equals("I")) return Scope.Individual;
-				else if(abbreviation.equals("M")) return Scope.Macrolanguage;
-				else if(abbreviation.equals("S")) return Scope.Special;
+				if("I".equals(abbreviation)) return Scope.Individual;
+				else if("M".equals(abbreviation)) return Scope.Macrolanguage;
+				else if("S".equals(abbreviation)) return Scope.Special;
 				else throw new IllegalArgumentException("Unknown scope abbreviation: " + abbreviation);
 			}
 		};
@@ -86,12 +86,12 @@ public final class ISO639_3 {
 			Special;
 			
 			private static Type fromTabFile(String abbreviation) {
-				if(abbreviation.equals("A")) return Type.Ancient;
-				else if(abbreviation.equals("C")) return Type.Constructed;
-				else if(abbreviation.equals("E")) return Type.Extinct;
-				else if(abbreviation.equals("H")) return Type.Historical;
-				else if(abbreviation.equals("L")) return Type.Living;
-				else if(abbreviation.equals("S")) return Type.Special;
+				if("A".equals(abbreviation)) return Type.Ancient;
+				else if("C".equals(abbreviation)) return Type.Constructed;
+				else if("E".equals(abbreviation)) return Type.Extinct;
+				else if("H".equals(abbreviation)) return Type.Historical;
+				else if("L".equals(abbreviation)) return Type.Living;
+				else if("S".equals(abbreviation)) return Type.Special;
 				else throw new IllegalArgumentException("Unknwon type abbreviation: " + abbreviation); 
 			}
 		}
@@ -186,14 +186,14 @@ public final class ISO639_3 {
 			{
 				String[] headerTokens = br.readLine().split("[\t]");
 				if(
-						!headerTokens[0].equals("﻿Id")
-						|| !headerTokens[1].equals("Part2B")
-						|| !headerTokens[2].equals("Part2T")
-						|| !headerTokens[3].equals("Part1")
-						|| !headerTokens[4].equals("Scope")
-						|| !headerTokens[5].equals("Language_Type")
-						|| !headerTokens[6].equals("Ref_Name")
-						|| !headerTokens[7].equals("Comment")
+						!"﻿Id".equals(headerTokens[0])
+						|| !"Part2B".equals(headerTokens[1])
+						|| !"Part2T".equals(headerTokens[2])
+						|| !"Part1".equals(headerTokens[3])
+						|| !"Scope".equals(headerTokens[4])
+						|| !"Language_Type".equals(headerTokens[5])
+						|| !"Ref_Name".equals(headerTokens[6])
+						|| !"Comment".equals(headerTokens[7])
 				)
 					throw new RuntimeException("File header does not match the expected header.");
 			}

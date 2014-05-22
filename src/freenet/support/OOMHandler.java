@@ -88,7 +88,7 @@ public class OOMHandler {
 			System.err.println(e.getClass());
 			System.err.println(e.getMessage());
 			e.printStackTrace();
-			if(e.getMessage().equals("Java heap space")) {
+			if("Java heap space".equals(e.getMessage())) {
 				Thread.dumpStack();
 			}
 			long usedNow = r.totalMemory() - r.freeMemory();

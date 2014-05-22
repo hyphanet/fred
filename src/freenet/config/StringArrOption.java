@@ -25,7 +25,7 @@ public class StringArrOption extends Option<String[]> {
 
 		try {
 			for (int i = 0; i < out.length; i++) {
-				if (out[i].equals(":"))
+				if (":".equals(out[i]))
 					out[i] = "";
 				else
 					out[i] = URLDecoder.decode(out[i], true /* FIXME false */);

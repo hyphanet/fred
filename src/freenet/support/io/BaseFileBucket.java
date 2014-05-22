@@ -376,11 +376,11 @@ public abstract class BaseFileBucket implements Bucket {
 				String[] candidates = null;
 
 				// XXX: Add more possible OSes here.
-				if (os.equalsIgnoreCase("Linux")
-					|| os.equalsIgnoreCase("FreeBSD")) {
+				if ("Linux".equalsIgnoreCase(os)
+					|| "FreeBSD".equalsIgnoreCase(os)) {
 					String[] linuxCandidates = { "/tmp", "/var/tmp" };
 					candidates = linuxCandidates;
-				} else if (os.equalsIgnoreCase("Windows")) {
+				} else if ("Windows".equalsIgnoreCase(os)) {
 					String[] windowsCandidates =
 						{ "C:\\TEMP", "C:\\WINDOWS\\TEMP" };
 					candidates = windowsCandidates;

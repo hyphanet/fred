@@ -252,10 +252,10 @@ class SingleFileInserter implements ClientPutState {
 		if(persistent) container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
 		boolean isUSK = false;
-		if(type.equals("SSK") || type.equals("KSK") || (isUSK = type.equals("USK"))) {
+		if("SSK".equals(type) || "KSK".equals(type) || (isUSK = "USK".equals(type))) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
-		} else if(type.equals("CHK")) {
+		} else if("CHK".equals(type)) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 			isCHK = true;
@@ -478,10 +478,10 @@ class SingleFileInserter implements ClientPutState {
 		if(persistent)
 			container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType().toUpperCase();
-		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
+		if("SSK".equals(type) || "KSK".equals(type) || "USK".equals(type)) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
-		} else if(type.equals("CHK")) {
+		} else if("CHK".equals(type)) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else {
@@ -586,7 +586,7 @@ class SingleFileInserter implements ClientPutState {
 		uri.checkInsertURI(); // will throw an exception if needed
 		
 		if(persistent) container.activate(ctx, 1);
-		if(uri.getKeyType().equals("USK")) {
+		if("USK".equals(uri.getKeyType())) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, realTimeFlag, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);

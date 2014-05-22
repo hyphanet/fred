@@ -54,7 +54,7 @@ public class RetrievalException extends Exception {
 	public RetrievalException(int reason, String cause) {
 		_reason = reason;
 		_cause = cause;
-		if (cause==null || cause.length()==0 || cause.equals("null"))
+		if (cause==null || cause.length()==0 || "null".equals(cause))
 			_cause=getErrString(reason);
 	}
 	

@@ -735,8 +735,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		downloadAllowedDirs = new File[val.length];
 		for(i = 0; i < downloadAllowedDirs.length; i++) {
 			String s = val[i];
-			if(s.equals("downloads")) includeDownloadDir = true;
-			else if(s.equals("all")) downloadAllowedEverywhere = true;
+			if("downloads".equals(s)) includeDownloadDir = true;
+			else if("all".equals(s)) downloadAllowedEverywhere = true;
 			else downloadAllowedDirs[x++] = new File(val[i]);
 		}
 		if(x != i) {
@@ -754,7 +754,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		uploadAllowedDirs = new File[val.length];
 		for(i = 0; i < uploadAllowedDirs.length; i++) {
 			String s = val[i];
-			if(s.equals("all"))
+			if("all".equals(s))
 				uploadAllowedEverywhere = true;
 			else
 				uploadAllowedDirs[x++] = new File(val[i]);

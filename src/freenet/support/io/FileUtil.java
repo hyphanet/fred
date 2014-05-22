@@ -179,17 +179,17 @@ final public class FileUtil {
 	private static CPUArchitecture detectCPUArchitecture() { // TODO Move to the proper class
 	    try {
 	        final String name = System.getProperty("os.arch").toLowerCase();
-	        if(name.equals("x86") || name.equals("i386") || name.matches("i[3-9]86"))
+	        if("x86".equals(name) || "i386".equals(name) || name.matches("i[3-9]86"))
 	            return CPUArchitecture.X86;
-	        if(name.equals("amd64") || name.equals("x86-64") || name.equals("x86_64") ||
-	                name.equals("x86") || name.equals("em64t") || name.equals("x8664") ||
-	                name.equals("8664"))
+	        if("amd64".equals(name) || "x86-64".equals(name) || "x86_64".equals(name) ||
+                    "x86".equals(name) || "em64t".equals(name) || "x8664".equals(name) ||
+                    "8664".equals(name))
 	            return CPUArchitecture.X86_64;
 	        if(name.startsWith("arm"))
 	            return CPUArchitecture.ARM; // FIXME arm64 support?
-	        if(name.equals("ppc") || name.equals("powerpc"))
+	        if("ppc".equals(name) || "powerpc".equals(name))
 	            return CPUArchitecture.PPC_32;
-	        if(name.equals("ppc64"))
+	        if("ppc64".equals(name))
 	            return CPUArchitecture.PPC_64;
 	        if(name.startsWith("ia64"))
 	            return CPUArchitecture.IA64;

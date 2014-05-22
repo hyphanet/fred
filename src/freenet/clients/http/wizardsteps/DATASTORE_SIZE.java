@@ -121,11 +121,11 @@ public class DATASTORE_SIZE implements Step {
 
 			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
-			if(config.get("node").getString("storeType").equals("ram"))
+			if("ram".equals(config.get("node").getString("storeType")))
 				config.get("node").set("storeType", "salt-hash");
 			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
-			if(config.get("node").getString("clientCacheType").equals("ram"))
+			if("ram".equals(config.get("node").getString("clientCacheType")))
 				config.get("node").set("clientCacheType", "salt-hash");
 			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));

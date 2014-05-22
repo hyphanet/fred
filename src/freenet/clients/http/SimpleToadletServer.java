@@ -944,7 +944,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 				path.startsWith(StaticToadlet.ROOT_URL) ||
 				path.startsWith(ExternalLinkToadlet.PATH) ||
-				path.equals("/favicon.ico"))) {
+                    "/favicon.ico".equals(path))) {
 				try {
 					throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
 				} catch(URISyntaxException e) { throw new Error(e); }

@@ -96,7 +96,7 @@ public class ClientCHK extends ClientKey {
      * Create from a URI.
      */
     public ClientCHK(FreenetURI uri) throws MalformedURLException {
-        if(!uri.getKeyType().equals("CHK"))
+        if(!"CHK".equals(uri.getKeyType()))
             throw new MalformedURLException("Not CHK");
         routingKey = uri.getRoutingKey();
         cryptoKey = uri.getCryptoKey();

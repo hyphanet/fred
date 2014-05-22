@@ -570,7 +570,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				else
 					overrideSplitfileKey = null;
 				final String fnam;
-				if(insertURI.getKeyType().equals("CHK") || keyType.equals("SSK"))
+				if("CHK".equals(insertURI.getKeyType()) || "SSK".equals(keyType))
 					fnam = file.getFilename();
 				else
 					fnam = null;
@@ -1061,9 +1061,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		boolean listFetchKeys = false;
 
 		if (requestPath.length() > 0) {
-			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
+			if("countRequests.html".equals(requestPath) || "/countRequests.html".equals(requestPath)) {
 				countRequests = true;
-			} else if(requestPath.equals("listFetchKeys.txt")) {
+			} else if("listFetchKeys.txt".equals(requestPath)) {
 				listFetchKeys = true;
 			}
 		}
@@ -1332,13 +1332,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(request.isParameterSet("sortBy")){
 					final String sortBy = request.getParam("sortBy");
 
-					if(sortBy.equals("id")){
+					if("id".equals(sortBy)){
 						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
 						if(result == 0)
 							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
-					}else if(sortBy.equals("size")){
+					}else if("size".equals(sortBy)){
 						result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
-					}else if(sortBy.equals("progress")){
+					}else if("progress".equals(sortBy)){
 						boolean firstFinalized = firstRequest.isTotalFinalized();
 						boolean secondFinalized = secondRequest.isTotalFinalized();
 						if(firstFinalized && !secondFinalized)
@@ -1350,7 +1350,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
 							result = Fields.compare(firstProgress, secondProgress);
 						}
-					} else if (sortBy.equals("lastActivity")) {
+					} else if ("lastActivity".equals(sortBy)) {
 						result = Fields.compare(firstRequest.getLastActivity(), secondRequest.getLastActivity());
 					}else
 						isSet=false;

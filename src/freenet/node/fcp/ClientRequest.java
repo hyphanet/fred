@@ -211,11 +211,11 @@ public abstract class ClientRequest {
 	}
 
 	public static short parsePersistence(String string) {
-		if((string == null) || string.equalsIgnoreCase("connection"))
+		if((string == null) || "connection".equalsIgnoreCase(string))
 			return PERSIST_CONNECTION;
-		if(string.equalsIgnoreCase("reboot"))
+		if("reboot".equalsIgnoreCase(string))
 			return PERSIST_REBOOT;
-		if(string.equalsIgnoreCase("forever"))
+		if("forever".equalsIgnoreCase(string))
 			return PERSIST_FOREVER;
 		return Short.parseShort(string);
 	}

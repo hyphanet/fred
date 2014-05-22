@@ -54,7 +54,7 @@ public class AllowedHosts {
 				newAddressMatchers.add(new Inet4AddressMatcher(allowedHost));
 			} else if (addressType == AddressType.IPv6) {
 				newAddressMatchers.add(new Inet6AddressMatcher(allowedHost));
-			} else if (allowedHost.equals("*")) {
+			} else if ("*".equals(allowedHost)) {
 				newAddressMatchers.add(new EverythingMatcher());
 			} else {
 				Logger.error(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);

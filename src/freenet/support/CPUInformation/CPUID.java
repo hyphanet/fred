@@ -123,9 +123,9 @@ public class CPUID {
 			throw new UnknownCPUException("Failed to read CPU information from the system. Please verify the existence of the jcpuid dll/so.");
 		if(!isX86)
 			throw new UnknownCPUException("Failed to read CPU information from the system. The CPUID instruction exists on x86 CPU's only");
-		if(getCPUVendorID().equals("AuthenticAMD"))
+		if("AuthenticAMD".equals(getCPUVendorID()))
 			return new AMDInfoImpl();
-		if(getCPUVendorID().equals("GenuineIntel"))
+		if("GenuineIntel".equals(getCPUVendorID()))
 			return new IntelInfoImpl();
 		throw new UnknownCPUException("Unknown CPU type: '"+getCPUVendorID()+ '\'');
 	}

@@ -176,12 +176,12 @@ public interface Compressor {
 		// Really the solution is probably to store the codes only.
 
 		private Compressor getOfficial() {
-			if(name.equals("GZIP")) return GZIP;
-			if(name.equals("BZIP2")) return BZIP2;
-			if(name.equals("LZMA")) return LZMA;
-			if(name.equals("LZMA_OLD")) return LZMA;
-			if(name.equals("LZMA_NEW")) return LZMA_NEW;
-			if(name.equals("LZMA")) return LZMA_NEW;
+			if("GZIP".equals(name)) return GZIP;
+			if("BZIP2".equals(name)) return BZIP2;
+			if("LZMA".equals(name)) return LZMA;
+			if("LZMA_OLD".equals(name)) return LZMA;
+			if("LZMA_NEW".equals(name)) return LZMA_NEW;
+			if("LZMA".equals(name)) return LZMA_NEW;
 			return null;
 		}
 

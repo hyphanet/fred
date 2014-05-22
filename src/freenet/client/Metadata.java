@@ -967,7 +967,7 @@ public class Metadata implements Cloneable {
 			}
 			if(uri == null) throw new NullPointerException();
 			simpleRedirectKey = uri;
-			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
+			if(!("CHK".equals(uri.getKeyType()) && !uri.hasMetaStrings()))
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();

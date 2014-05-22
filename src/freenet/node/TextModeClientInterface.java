@@ -1087,12 +1087,12 @@ public class TextModeClientInterface implements Runnable {
                 System.err.println("Bye... ("+e1+ ')');
                 return null;
             }
-            if((!isFieldSet) && line.equals(".")) break;
+            if((!isFieldSet) && ".".equals(line)) break;
             if(isFieldSet) {
                 // Mangling
                 // First trim
                 line = line.trim();
-                if(line.equals("End")) {
+                if("End".equals(line)) {
                     breakflag = true;
                 } else {
                     if(line.endsWith("End") && 

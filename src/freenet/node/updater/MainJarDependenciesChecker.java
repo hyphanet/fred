@@ -139,7 +139,7 @@ public class MainJarDependenciesChecker {
 					break;
 				}
 				if(File.pathSeparatorChar == ':' &&
-						d.oldFilename != null && d.oldFilename.getName().equalsIgnoreCase("freenet-ext.jar.new")) {
+						d.oldFilename != null && "freenet-ext.jar.new".equalsIgnoreCase(d.oldFilename.getName())) {
 					// If wrapper.conf currently contains freenet-ext.jar.new, we need to update wrapper.conf even
 					// on unix. Reason: freenet-ext.jar.new won't be read if it's not the first item on the classpath,
 					// because freenet.jar includes freenet-ext.jar implicitly via its manifest.
@@ -375,7 +375,7 @@ public class MainJarDependenciesChecker {
 				String name = arg0.getName().toLowerCase();
 				if(!(name.endsWith(".jar") || name.endsWith(".jar.new"))) return false;
 				// FIXME similar checks elsewhere, factor out?
-				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
+				if("freenet.jar".equals(name) || "freenet.jar.new".equals(name) || "freenet-stable-latest.jar".equals(name) || "freenet-stable-latest.jar.new".equals(name))
 					return false;
 				return true;
 			}
@@ -611,15 +611,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(myOS.toString().equalsIgnoreCase(os)) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_WINDOWS") &&
+			if("ALL_WINDOWS".equalsIgnoreCase(os) &&
 					myOS.isWindows) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_UNIX") &&
+			if("ALL_UNIX".equalsIgnoreCase(os) &&
 					myOS.isUnix) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_MAC") &&
+			if("ALL_MAC".equalsIgnoreCase(os) &&
 					myOS.isMac) {
 				return true;
 			}
@@ -663,7 +663,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// Ignore non-jars regardless of what the regex says.
 				if(!name.endsWith(".jar")) return false;
 				// FIXME similar checks elsewhere, factor out?
-				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
+				if("freenet.jar".equals(name) || "freenet.jar.new".equals(name) || "freenet-stable-latest.jar".equals(name) || "freenet-stable-latest.jar.new".equals(name))
 					return false;
 				return true;
 			}
@@ -978,8 +978,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	        // namefordeploy.nameforfile.filename=...
 	        // nameforfile is not necessarily the filename, which might contain . / etc.
 	        if(!split[0].equals(name)) continue;
-	        if(!split[1].equals("files")) continue;
-	        if(!split[3].equals("filename")) continue;
+	        if(!"files".equals(split[1])) continue;
+	        if(!"filename".equals(split[3])) continue;
 	        String fileBase = name+".files."+split[2];
 	        // Filename.
 	        File filename = null;
@@ -1587,7 +1587,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         		if(ze.isDirectory()) continue;
         		String name = ze.getName();
         		
-        		if(name.equals("META-INF/MANIFEST.MF")) {
+        		if("META-INF/MANIFEST.MF".equals(name)) {
         			final String key = "Implementation-Version";
         			BufferedInputStream bis = new BufferedInputStream(zis);
         			Manifest m = new Manifest(bis);

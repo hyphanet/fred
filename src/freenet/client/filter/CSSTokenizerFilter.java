@@ -1500,11 +1500,11 @@ class CSSTokenizerFilter {
 	private int checkImportant(ParsedWord[] words) {
 		if(words.length == 0) return 0;
 		if(words.length >= 1 && words[words.length-1] instanceof SimpleParsedWord) {
-			if(((SimpleParsedWord)words[words.length-1]).original.equalsIgnoreCase("!important")) return 1;
+			if("!important".equalsIgnoreCase(((SimpleParsedWord) words[words.length - 1]).original)) return 1;
 		}
 		if(words.length >= 2 && words[words.length-1] instanceof ParsedIdentifier && words[words.length-2] instanceof SimpleParsedWord) {
-			if(((SimpleParsedWord)words[words.length-2]).original.equals("!") &&
-				((ParsedIdentifier)words[words.length-1]).original.equalsIgnoreCase("important"))
+			if("!".equals(((SimpleParsedWord) words[words.length - 2]).original) &&
+                    "important".equalsIgnoreCase(((ParsedIdentifier) words[words.length - 1]).original))
 				return 2;
 		}
 		return 0;
@@ -1912,7 +1912,7 @@ class CSSTokenizerFilter {
 					}
 					String braceSpace = buffer.substring(0, i);
 					buffer.delete(0, i);
-					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+					if(buffer.length() > 4 && "<!--".equals(buffer.substring(0, 4))) {
 						braceSpace +=buffer.substring(0, 4);
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
 							Logger.error(this, "<!-- not followed by whitespace!");
@@ -1994,7 +1994,7 @@ class CSSTokenizerFilter {
 									break;
 								} else {
 									String s = ((SimpleParsedWord)parts[j]).original;
-									if(!(s.equalsIgnoreCase(":left") || s.equalsIgnoreCase(":right") || s.equals(":first"))) {
+									if(!(":left".equalsIgnoreCase(s) || ":right".equalsIgnoreCase(s) || ":first".equals(s))) {
 										valid = false;
 										break;
 									}
@@ -2047,7 +2047,7 @@ class CSSTokenizerFilter {
 					w.write(buffer.substring(0, i));
 					buffer.delete(0, i);
 
-					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+					if(buffer.length() > 4 && "<!--".equals(buffer.substring(0, 4))) {
 						w.write(buffer.substring(0, 4));
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
 							Logger.error(this, "<!-- not followed by whitespace!");
@@ -2154,7 +2154,7 @@ class CSSTokenizerFilter {
 				if(!isState1Present)
 				{
 					String s = buffer.toString().trim();
-					if(!(s.isEmpty() || s.equals("/") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
+					if(!(s.isEmpty() || "/".equals(s) || "<".equals(s) || "<!".equals(s) || "<!-".equals(s) || "<!--".equals(s)))
 						currentState=STATE2;
 				}
 				if(logDEBUG) Logger.debug(this, "STATE1 default CASE: "+c);
@@ -2225,7 +2225,7 @@ class CSSTokenizerFilter {
 					String ws = buffer.substring(0, i);
 					buffer.delete(0, i);
 
-					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+					if(buffer.length() > 4 && "<!--".equals(buffer.substring(0, 4))) {
 						ws+=buffer.substring(0, 4);
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
 							Logger.error(this, "<!-- not followed by whitespace!");
@@ -2299,7 +2299,7 @@ class CSSTokenizerFilter {
 					buffer.delete(0, i);
 
 					if(!s2Comma) {
-						if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+						if(buffer.length() > 4 && "<!--".equals(buffer.substring(0, 4))) {
 							filteredTokens.append(buffer.substring(0, 4));
 							if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
 								Logger.error(this, "<!-- not followed by whitespace!");
@@ -2709,7 +2709,7 @@ class CSSTokenizerFilter {
 		w.write(buffer.substring(0, i));
 		buffer.delete(0, i);
 
-		while(buffer.toString().trim().equals("-->")) {
+		while("-->".equals(buffer.toString().trim())) {
 			w.write("-->");
 			buffer.delete(0, 3);
 			for(i=0;i<buffer.length();i++) {

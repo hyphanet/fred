@@ -1245,9 +1245,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(key != null) {
 						if(!(key.equals(block.getClientKey()))) {
-							if(ignoreLastDataBlock && blockNo == dataBuckets.length-1 && dataSource.equals("FEC DECODE")) {
+							if(ignoreLastDataBlock && blockNo == dataBuckets.length-1 && "FEC DECODE".equals(dataSource)) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
-							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataBuckets.length && dataSource.equals("FEC ENCODE")) {
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataBuckets.length && "FEC ENCODE".equals(dataSource)) {
 								// We padded the last block. The inserter might have used a different padding algorithm.
 								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
 							} else {
@@ -1258,8 +1258,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
 						}
 					} else {
-						if((dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")
-								|| dataSource.equals("CROSS-SEGMENT FEC")) && haveBlock(blockNo, container)) {
+						if(("FEC ENCODE".equals(dataSource) || "FEC DECODE".equals(dataSource)
+								|| "CROSS-SEGMENT FEC".equals(dataSource)) && haveBlock(blockNo, container)) {
 							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
 							if(logMINOR) Logger.minor(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
 						} else {
