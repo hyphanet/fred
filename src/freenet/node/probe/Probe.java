@@ -14,6 +14,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
@@ -636,10 +637,14 @@ public class Probe implements ByteCounter {
 			 * assumption that a change of 0.002 is enough to make it still useful for statistics but not
 			 * useful for identification, 0.002 change / 0.2 link length = 0.01 sigma.
 			 */
+			double myLoc = node.getLocation();
 			for (PeerNode peer : peers) {
-				linkLengths[i++] = (float)randomNoise(Math.min(Math.abs(peer.getLocation() - node.getLocation()),
-				                                         1.0 - Math.abs(peer.getLocation() - node.getLocation())), 0.01);
+				double peerLoc = peer.getLocation();
+				if (Location.isValid(peerLoc)) {
+					linkLengths[i++] = (float)randomNoise(Location.distance(myLoc, peerLoc, true), 0.01);
+				}
 			}
+			linkLengths = java.util.Arrays.copyOf(linkLengths, i);
 			listener.onLinkLengths(linkLengths);
 			break;
 		case LOCATION:
