@@ -39,7 +39,7 @@ public class NewPacketFormat implements PacketFormat {
 	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
-	static final long NUM_SEQNUMS = 2147483648l;
+	static final long NUM_SEQNUMS = 2147483648L;
 	private static final long MAX_MSGID_BLOCK_TIME = MINUTES.toMillis(10);
 	private static final int MAX_ACKS = 500;
 	static boolean DO_KEEPALIVES = true;
@@ -334,7 +334,7 @@ public class NewPacketFormat implements PacketFormat {
 			highestReceivedSeqNum = keyContext.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + keyContext.watchListOffset + (keyContext.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0L + keyContext.watchListOffset + (keyContext.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
 			if(highestReceivedSeqNum > oldHighestReceived) {
@@ -352,14 +352,14 @@ public class NewPacketFormat implements PacketFormat {
 				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
-			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
+			int seqNum = (int) ((0L + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
 				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum < 0) seqNum = 0;
 			}
 
 			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
-			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
+			keyContext.watchListOffset = (int) ((0L + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
@@ -370,7 +370,7 @@ public class NewPacketFormat implements PacketFormat {
 						keyContext.seqNumWatchList[index].length))
 				continue;
 			
-			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
+			int sequenceNumber = (int) ((0L + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) {

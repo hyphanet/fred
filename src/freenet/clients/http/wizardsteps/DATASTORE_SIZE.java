@@ -60,7 +60,7 @@ public class DATASTORE_SIZE implements Step {
 		}
 		// We always allow at least 1GB
 		result.addChild("option", "value", "1G", "1 GiB");
-		if(maxSize >= 2l*1024*1024*1024) {
+		if(maxSize >= 2L *1024*1024*1024) {
 			if(autodetectedSize != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "2G", "2 GiB");
 			} else {
@@ -69,16 +69,16 @@ public class DATASTORE_SIZE implements Step {
 				        new String[] { "2G", "on" }, "2GiB");
 			}
 		}
-		if(maxSize >= 3l*1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");
-		if(maxSize >= 5l*1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
-		if(maxSize >= 10l*1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
-		if(maxSize >= 20l*1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
-		if(maxSize >= 30l*1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
-		if(maxSize >= 50l*1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
-		if(maxSize >= 100l*1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
-		if(maxSize >= 200l*1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
-		if(maxSize >= 300l*1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
-		if(maxSize >= 500l*1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
+		if(maxSize >= 3L *1024*1024*1024) result.addChild("option", "value", "3G", "3 GiB");
+		if(maxSize >= 5L *1024*1024*1024) result.addChild("option", "value", "5G", "5 GiB");
+		if(maxSize >= 10L *1024*1024*1024) result.addChild("option", "value", "10G", "10 GiB");
+		if(maxSize >= 20L *1024*1024*1024) result.addChild("option", "value", "20G", "20 GiB");
+		if(maxSize >= 30L *1024*1024*1024) result.addChild("option", "value", "30G", "30 GiB");
+		if(maxSize >= 50L *1024*1024*1024) result.addChild("option", "value", "50G", "50 GiB");
+		if(maxSize >= 100L *1024*1024*1024) result.addChild("option", "value", "100G", "100 GiB");
+		if(maxSize >= 200L *1024*1024*1024) result.addChild("option", "value", "200G", "200GiB");
+		if(maxSize >= 300L *1024*1024*1024) result.addChild("option", "value", "300G", "300GiB");
+		if(maxSize >= 500L *1024*1024*1024) result.addChild("option", "value", "500G", "500GiB");
 
 		//Put buttons below dropdown.
 		HTMLNode below = bandwidthForm.addChild("div");
