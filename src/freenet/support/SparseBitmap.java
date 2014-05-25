@@ -38,35 +38,36 @@ public class SparseBitmap implements Iterable<int[]> {
 	public void add(int start, int end) {
 		validateRange(start, end);
 		
-		// Query for the highest existing range, starting at our start position or before
-		Range lowerQuery = new Range(start, 0);
-        Range lower = ranges.floor(lowerQuery);
-        if (lower != null)
-        {
-            if (lower.end >= end) {
-                // The range to add is inside an existing range, nothing to do
-                return;
+		if (!ranges.isEmpty()) {
+		    // Query for the highest existing range, starting at our start position or before
+		    Range lowerQuery = new Range(start, 0);
+            Range lower = ranges.floor(lowerQuery);
+            if (lower != null) {
+                if (lower.end >= end) {
+                    // The range to add is inside an existing range, nothing to do
+                    return;
+                }
+                if (lower.end >= start - 1) {
+                    // Overlapping/appending at our start, extend range to add
+                    // Note: lower.start <= start by definition of floor() and lowerQuery
+                    start = lower.start;
+                }
             }
-            if (lower.end >= start - 1) {
-                // Overlapping/appending at our start, extend range to add
-                // Note: lower.start <= start by definition of floor() and lowerQuery
-                start = lower.start;
+            
+            // Query for the highest existing range, starting directly after our end position or before
+            Range higherQuery = new Range(end + 1, 0);
+            Range higher = ranges.floor(higherQuery);
+            if (higher != null && higher.end > end) {
+                // Overlapping/appending at our end, extend range to add
+                end = higher.end;
             }
-        }
-        
-        // Query for the highest existing range, starting directly after our end position or before
-        Range higherQuery = new Range(end + 1, 0);
-        Range higher = ranges.floor(higherQuery);
-        if (higher != null && higher.end > end) {
-            // Overlapping/appending at our end, extend range to add
-            end = higher.end;
-        }
-        
-        // Remove all ranges inside our range to add
-        lowerQuery.start = start;
-        higherQuery.start = end;
-        removeSubSet(lowerQuery, higherQuery);
-        
+            
+            // Remove all ranges inside our range to add
+            lowerQuery.start = start;
+            higherQuery.start = end;
+            removeSubSet(lowerQuery, higherQuery);
+        }        
+
         ranges.add(new Range(start, end));
 	}
 
@@ -77,7 +78,11 @@ public class SparseBitmap implements Iterable<int[]> {
      */
 	public void remove(int start, int end) {
 		validateRange(start, end);
-
+        
+        if (ranges.isEmpty()) {
+            return;
+        }
+        
         // Adjust overlapping Range at start
         Range lowerQuery = new Range(start, 0);
         Range strictlyLower = ranges.lower(lowerQuery);
@@ -126,6 +131,10 @@ public class SparseBitmap implements Iterable<int[]> {
 	public boolean contains(int start, int end) {
 		validateRange(start, end);
 
+        if (ranges.isEmpty()) {
+            return false;
+        }
+
 		Range lower = ranges.floor(new Range(start, 0));
 		// Note: lower != null implies lower.start <= start, by definition of floor()
 		return lower != null && lower.end >= end;
@@ -138,7 +147,13 @@ public class SparseBitmap implements Iterable<int[]> {
 	 * @return the number of slots between start and end that are not marked as present
 	 */
 	public int notOverlapping(int start, int end) {
-		int remaining = end - start + 1;
+	    validateRange(start, end);
+	
+		int remaining = end - start + 1;    
+	    if (ranges.isEmpty()) {
+	        return remaining;
+	    }
+	
 		Range query = new Range(start, 0);
 		// Special case for the first overlap
 		Range strictlyLower = ranges.lower(query);
