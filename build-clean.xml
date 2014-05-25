@@ -46,6 +46,14 @@ maintainers may prefer to use this instead of build.xml.
 		<fileset dir="${pmd.dir}" erroronmissingdir="false" includes="lib/*.jar"/>
 	</path>
 
+	<property environment="env"/>
+	<property name="keystore" value="${env.jarsignerStoreLocation}"/>
+	<property name="keystore_alias" value="${env.jarsignerAlias}"/>
+	<property name="keystore_pass" value="${env.jarsignerStorePassword}"/>
+	<property name="key_pass" value="${env.jarsignerCodeSigningKeyPassword}"/>
+
+	<property name="jar.dst" value="${main.dst}/freenet.jar"/>
+
 	<assertions><enable/></assertions>
 
 	<!-- set version string based on git-describe -->
@@ -68,6 +76,13 @@ maintainers may prefer to use this instead of build.xml.
 	<!-- =================================================================== -->
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
+
+	<target name="sign" description="Sign the distribution" depends="package">
+		<echo message="Signing the distribution"/>
+		<signjar jar="${jar.dst}" strict="false" tsaurl="http://timestamp.comodoca.com/rfc3161" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}" sigalg="SHA256withRSA" digestalg="SHA-256"/>
+		<!-- TODO: Should have strict="true", but it was introduced in Java 7, which we cannot yet require. -->
+		<verifyjar jar="${jar.dst}" alias="${keystore_alias}" keystore="${keystore}" storepass="${keystore_pass}" keypass="${key_pass}"/>
+	</target>
 
 	<target name="all" depends="package, doc, findbugs, pmd, cpd" description="build everything, incl. docs, GWT js"/>
 
@@ -100,7 +115,7 @@ maintainers may prefer to use this instead of build.xml.
 		jvmargs="-Xmx1536m -XX:MaxPermSize=384m -XX:ReservedCodeCacheSize=128m" >
 		<auxClasspath refid="lib.path" />
 		<sourcePath path="${main.src}" />
-		<class location="${main.dst}/freenet.jar" />
+		<class location="${jar.dst}" />
 		</findbugs>
 	</target>
 
@@ -264,7 +279,7 @@ maintainers may prefer to use this instead of build.xml.
 			<map from="${lib.contrib.loc}/" to="${lib.contrib.dir.rel}/"/>
 			<map from="${lib.loc}/" to=""/>
 		</pathconvert>
-		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
+		<jar jarfile="${jar.dst}" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet.node.Node"/>
 				<attribute name="Required-Ext-Version" value="29"/>

@@ -210,7 +210,9 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
-				if(closed) throw new IOException("Already closed");
+				if (closed) {
+					return;
+				}
 				if(isRAMBucket()) {
 					boolean shouldMigrate = false;
 					boolean isOversized = false;

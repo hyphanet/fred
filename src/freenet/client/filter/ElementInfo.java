@@ -121,6 +121,10 @@ public class ElementInfo {
 	static {
 		PSEUDOCLASS.add("first-child");
 		PSEUDOCLASS.add("last-child");
+		PSEUDOCLASS.add("nth-child");
+		PSEUDOCLASS.add("nth-last-child");
+		PSEUDOCLASS.add("nth-of-type");
+		PSEUDOCLASS.add("nth-last-of-type");
 		PSEUDOCLASS.add("link");
 		PSEUDOCLASS.add("visited");
 		PSEUDOCLASS.add("hover");
@@ -333,23 +337,33 @@ public class ElementInfo {
 				return true;
 
 			
-			else if(cname.indexOf("lang")!=-1)
+			else if(cname.indexOf("lang")!=-1 && LANGUAGES.contains(getPseudoClassArg(cname, "lang")))
 			{
-				int langIndex=cname.indexOf("lang");
-				int firstIndex=cname.indexOf("(");
-				int secondIndex=cname.lastIndexOf(")");
-				if(cname.substring(langIndex+4,firstIndex).trim().equals("") && cname.substring(0,langIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
-				{
-					String language=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());
-					
-					// FIXME accept unknown languages as long as they are [a-z-]
-					if(LANGUAGES.contains(language))
-						return true;
-				}
-				
+				// FIXME accept unknown languages as long as they are [a-z-]
+				return true;
 			}
 			
+			else if(cname.indexOf("nth-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-child")))
+				return true;
+			else if(cname.indexOf("nth-last-child")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-child")))
+				return true;
+			else if(cname.indexOf("nth-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-of-type")))
+				return true;
+			else if(cname.indexOf("nth-last-of-type")!=-1 && FilterUtils.isNth(getPseudoClassArg(cname, "nth-last-of-type")))
+				return true;
+			
 			return false;
+		} 
+		public static String getPseudoClassArg(String cname, String cname_sans_arg) {
+			String arg="";
+			int cnameIndex=cname.indexOf(cname_sans_arg);
+			int firstIndex=cname.indexOf("(");
+			int secondIndex=cname.lastIndexOf(")");
+			if(cname.substring(cnameIndex+cname_sans_arg.length(),firstIndex).trim().equals("") && cname.substring(0,cnameIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
+			{
+				arg=CSSTokenizerFilter.removeOuterQuotes(cname.substring(firstIndex+1,secondIndex).trim());
+			}
+			return arg;
 		}
 
 		/** Is the string valid and safe?

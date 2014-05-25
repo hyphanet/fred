@@ -1,9 +1,9 @@
-QUICK START:
+## QUICK START
 
 If the installer did not do it for you, start Freenet and open a browser pointing
 to http://127.0.0.1:8888/
 
-INTRODUCTION:
+## INTRODUCTION
 
 The Freenet Project is very pleased to announce the release of Freenet 0.7.0.
 
@@ -48,7 +48,7 @@ http://freenetproject.org/donate.html
 
 Press enquiries should be directed to Ian Clarke.
 
-ALWAYS ON:
+## ALWAYS ON
 On OSX, Freenet will create a configuration file at 
 ~/Library/LaunchAgents/com.freenet.startup.plist. On other unix-based systems,
 Freenet will create a cron job to run Freenet on startup. On Windows, Freenet is
@@ -57,7 +57,7 @@ run Freenet as close to 24x7 as possible for good performance. It is however
 possible to remove the plist, to remove the cron job (with the remove cron job
 script in bin/), or to remove the startup shortcut (edit the start menu).
 
-BASIC SECURITY:
+## BASIC SECURITY
 The easiest option is to use the system tray applet to launch Freenet. This will try to
 load a browser (Chrome or Firefox) in privacy/incognito mode. If the browser is in privacy
 mode it will tell you. Browser bugs might result in it not being in privacy mode so be
@@ -113,7 +113,7 @@ asking it to - mostly these are the kind of files that Freenet will warn you abo
 but there might be exceptions depending on what you are using; it's always going to be
 safest to encrypt everything.
 
-MORE SECURITY:
+## MORE SECURITY
 If your life or liberty depends on Freenet protecting your anonymity, you should
 seriously evaluate your options, including the option of not posting whatever
 controversial content it is you are thinking of posting. Freenet has not yet
@@ -135,12 +135,12 @@ of the page asking whether to connect to strangers or just to friends. Mouse ove
 it to read it. If you have already installed Freenet you can still see it here:
 http://127.0.0.1:8888/wizard/?step=OPENNET
 
-CHANGES FROM 0.5:
+## CHANGES FROM 0.5
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
 although it pulls in a load of code from Dijjer, and most of the crypto and a 
 few other classes from the 0.5 source.
 
-Major changes:
+### Major changes
 - Darknet mode: connect only to your friends, they connect to theirs, this forms
   a small-world network, which Freenet makes routable by location swapping. This
   greatly increases the network's robustness as it makes it much harder to find
@@ -155,7 +155,7 @@ Major changes:
   http://wiki.freenetproject.org/FreenetFCPSpec2Point0
 - Many more changes...
 
-LICENSING:
+## LICENSING
 Freenet is under the GPL, version 2 or later - see LICENSE.Freenet. We use some
 code under the Apache license version 2 (mostly apache commons stuff), and some
 modified BSD code (Mantissa). All of which is compatible with the GPL, although

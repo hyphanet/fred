@@ -292,7 +292,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 				// Because of the .. check above, any malicious thing cannot break out of the dir anyway.
 				if(parent.getParentFile() == null)
 					throw new InvalidConfigValueException(l10n("cssOverrideCantUseRootDir", "filename", parent.toString()));
-				cssOverride = tmp.getAbsoluteFile();
+				cssOverride = tmp;
 			}
 			if(cssOverride == null)
 				pageMaker.setOverride(null);

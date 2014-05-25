@@ -380,6 +380,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
+	/** Acknowledging mode */
+	private boolean useCumulativeAcks;
 
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -4202,7 +4204,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// Clock generally has 20ms granularity or better, right?
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
-
+	
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
@@ -5461,6 +5463,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeCheckForLostPackets();
 	}
+	
+	public void setAcknowledgeType(int negType) {
+		useCumulativeAcks = (negType >= 10);
+	}
+	
+	@Override
+	public boolean isUseCumulativeAcksSet() {
+		return useCumulativeAcks;
+	}
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
 	public void dumpTracker(SessionKey brokenKey) {
@@ -5771,7 +5782,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeSendAcks();
 	}
-
+	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {

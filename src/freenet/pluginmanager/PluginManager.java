@@ -1097,11 +1097,16 @@ public class PluginManager {
 	static {
 		try {
 		addOfficialPlugin("Freemail", "communication", false, 15, true, new FreenetURI("CHK@6dfMgGf7YEfJhF0W~K0HUv0fnbuRwYH6iMqrLIbTI7k,huYBf8oBevwW6lRQnz-0jDP1dl5ej7FKeyVZ3CnH0Ec,AAMC--8/Freemail.jar"), true, false, false);
-		addOfficialPlugin("Freemail_wot", "communication", false, 23, false, new FreenetURI("CHK@RL2twhvr2E7snE~rB0pSRzs178d4AF4Js2C6finxw8Y,dOfAtMTqkxdR2yC8l0bp4B-PzwHWj-9hdXmhcFOgm8M,AAMC--8/Freemail_wot.jar"));
+		addOfficialPlugin("Freemail_wot", "communication", false, 24, false, new FreenetURI("CHK@3quK1QnUrXS1KqVrc87lAy87boNiNUt83RIza0eAfLQ,J4tzwpdDuJKZJV22r6nBPgO5CGAwCWP~p7Xt~kzCDKY,AAMC--8/Freemail_wot.jar"));
 		addOfficialPlugin("HelloWorld", "example", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
 		addOfficialPlugin("HelloFCP", "example", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
-		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", "technical", false, 5020, false, new FreenetURI("CHK@llroMhtxumQZG1~3g3YEE8sK7ceJUIZ8Jl6Gqg~5RXk,CKf~Qxcf1ouLOIs3yjT7Re2DZ9GqGNC3HB-TiVEXgQ4,AAMC--8/KeyUtils.jar"), false, false, true);
+		/*
+		 * TODO: Updating plugins required for connectivity is currently poorly defined. If the node refuses
+		 * to load the old version that is now below the minimum and cannot connect without the plugin then
+		 * it cannot download the new one and connectivity will remain broken. See https://bugs.freenetproject.org/view.php?id=4490
+		 */
+		addOfficialPlugin("JSTUN", "connectivity", true, 2, false, new FreenetURI("CHK@USIujVBZaukbHyabPiPu7I6BtK4neW-Ky9J1hTBrcmY,FU9HCD5F4RZBwZLLUPKvS2U2Ts2dGiyoEiH-SGDQ9~U,AAMC--8/JSTUN.jar"));
+		addOfficialPlugin("KeyUtils", "technical", false, 5021, false, new FreenetURI("CHK@AJ4MTxURy0ouvGeVaHoCGh59K7rUHpH7EvKD4Yqy7sY,TwT~eA4MwSTniZXuSBps4VECy2y9fHtHEA~zT-KQKSk,AAMC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", "connectivity", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", "connectivity", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
 		addOfficialPlugin("TestGallery", "example", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"), false, true, false);
@@ -1113,7 +1118,7 @@ public class PluginManager {
 		addOfficialPlugin("Library", "index", false, 35, true, new FreenetURI("CHK@VhhWe6sT41pPei4SBwxcmRXrJpMfPDXTFhtJ4rFxfsk,MrPki7hU35x2MHvV~8am~CdF-B4xzqxjMwDtqFVYJLQ,AAMC--8/Library.jar"));
 		addOfficialPlugin("Spider", "index", false, 51, false, new FreenetURI("CHK@CcJfB~uOTgbzdpVr8htrhLXs0uNsVW6KFRpEvHGjXDU,BPr2fm9Cq9gj7BQeJdLbkCmcmXRx-e-b6aerDzSK4zk,AAMC--8/Spider.jar"), false, false, true);
 		addOfficialPlugin("WebOfTrust", "communication", false, 13, true, new FreenetURI("CHK@dSfeVmjFX15QVyFCTUQmZItrJi8XnoYpiapxLTxaQeg,wizfFOtkKSBEdjUYgjCUJczjl74r0CjRBfzvaRvKUMo,AAMC--8/WebOfTrust.jar"), false, false, false);
-		addOfficialPlugin("FlogHelper", "communication", false, 30, true, new FreenetURI("CHK@4Ey1hDbEPTTJ1AVKkrq3h0QaeMWFETzPaBYFkoauYvs,SNmqkFnxgOdy7Qu8vOoibQORJFIa8su1Hc3U9DRUa9E,AAMC--8/FlogHelper.jar"), false, false, false);
+		addOfficialPlugin("FlogHelper", "communication", false, 31, true, new FreenetURI("CHK@HHay15aKpO2W7zpLYeh7lYIyG56MPEIsnugwJNGVJ9s,krPxNuxG9~9grOm9y4V2gAo3dbhiW0EKIKeMLsk5ntY,AAMC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}

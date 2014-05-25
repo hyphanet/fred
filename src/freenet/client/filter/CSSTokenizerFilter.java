@@ -1687,11 +1687,12 @@ class CSSTokenizerFilter {
 		char c;
 		char quoting = 0;
 		boolean escaping = false;
+		int bracketing = 0;
 		boolean eatLF = false;
 		int escapedDigits = 0;
 		for(int i=0;i<selectorString.length();i++) {
 			c = selectorString.charAt(i);
-			if(c == '+' && quoting == 0 && !escaping) {
+			if(c == '+' && quoting == 0 && !escaping && bracketing == 0) {
 				if(index == -1 || index == i-1 && selector == ' ') {
 					index = i;
 					selector = c;
@@ -1706,6 +1707,10 @@ class CSSTokenizerFilter {
 					index = i;
 					selector = c;
 				}
+			} else if(c == '(' && quoting == 0 && !escaping) {
+				bracketing += 1;
+			} else if(c == ')' && quoting == 0 && !escaping) {
+				bracketing -= 1;
 			} else if(c == '\'' && quoting == 0 && !escaping) {
 				quoting = c;
 			} else if(c == '\"' && quoting == 0 && !escaping) {
@@ -1754,6 +1759,7 @@ class CSSTokenizerFilter {
 		if(logDEBUG) Logger.debug(this, "index="+index+" quoting="+quoting+" selector="+selector+" for \""+selectorString+"\"");
 
 		if(quoting != 0) return null; // Mismatched quotes
+		if(bracketing != 0) return null; // Mismatched brackets
 
 		if(index == -1)
 			return HTMLelementVerifier(selectorString);
