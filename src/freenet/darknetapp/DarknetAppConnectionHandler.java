@@ -51,22 +51,22 @@ public class DarknetAppConnectionHandler {
      * @throws IOException 
      */
     private boolean process(String command) throws IOException {
-        boolean done = false;
-        if (command==null) return done;
+        boolean continueDatatransfer = false;
+        if (command==null) return continueDatatransfer;
         else if (command.equals(REQUEST_HOME_REFERENCE)) {
-            out.write((DarknetAppServer.noderef+'\n').getBytes("UTF-8"));
-            done = true;
+            out.write((server.getNodeRef()+'\n').getBytes("UTF-8"));
+            continueDatatransfer = true;
         }
         else if (command.equals(REQUEST_PUSH_REFERENCE)) {
-            int nFriendsRef = Integer.parseInt(input.readLine(32768, 128, true)); // Number of references the mobile is trying to push
-            processNewRefernces(nFriendsRef);
+            int numReferences = Integer.parseInt(input.readLine(32768, 128, true)); // Number of references the mobile is trying to push
+            receiveRefernces(numReferences);
             out.write((ASSERT_NODE_REFERENCES_RECEIVED+'\n').getBytes("UTF-8"));
-            done = true;
+            continueDatatransfer = true;
         }     
         else if (command.equals(REQUEST_CLOSE_CONNECTION)) { 
-            done = false;
+            continueDatatransfer = false;
         }
-        return done;
+        return continueDatatransfer;
     }
     // Extract input, output streams and get the request
     // Request is passed to process(String)
@@ -75,15 +75,13 @@ public class DarknetAppConnectionHandler {
             InputStream is = new BufferedInputStream(socket.getInputStream(), 4096);
             input = new LineReadingInputStream(is);
             out = socket.getOutputStream();
-            String command;
-            boolean done = true;
-            while (done) {
-                // Null pointer handled in process function
-                command = input.readLine(32768, 128, true);
-                done = process(command);
+            boolean continueDatatransfer = true;
+            while (continueDatatransfer) {
+                continueDatatransfer = process(input.readLine(32768, 128, true));
             }
         } catch (IOException ex) {
             // Socket is closed whenever there is an IOException
+            Logger.getLogger(DarknetAppConnectionHandler.class.getName()).log(Level.SEVERE, "IO Error while handling socket", ex);
             finish();
         }
 
@@ -93,17 +91,12 @@ public class DarknetAppConnectionHandler {
     public void finish() {
         try {
             if (socket!=null && !socket.isClosed()) {
-                //socket.shutdownInput();
-                //socket.shutdownOutput();
                 socket.close();
             }
             if(input!=null) input.close();
             if (out!=null) out.close();
-            //socket = null;
-            input =null;
-            out = null;
         } catch (IOException ex) {
-            Logger.getLogger(DarknetAppConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DarknetAppConnectionHandler.class.getName()).log(Level.SEVERE, "IO Error while handling socket", ex);
         }
     }
     
@@ -120,14 +113,14 @@ public class DarknetAppConnectionHandler {
      *  The temporary noderefs are loaded by the "add a friend" page (DarknetAddRefToadlet.java) to be authorized by the user. 
      *  Once the user authorizes or rejects, they are deleted
      */
-    private void processNewRefernces(int nFriendsRefs) throws IOException {
+    private void receiveRefernces(int numReferencess) throws IOException {
         synchronized(DarknetAppServer.class) {
             //hold lock to make sure that file is opened only here at this point of time
             File file = new File(DarknetAppServer.filename);
             Properties prop = new Properties();
             prop.load(new FileInputStream(file));
             int iniCount = DarknetAppServer.numPendingPeersCount;
-            int finCount = iniCount+nFriendsRefs;
+            int finCount = iniCount+numReferencess;
             for (int i=iniCount+1; i<=finCount; i++) {
                 int maxLinesPerRef = 50;
                 String noderef = "";

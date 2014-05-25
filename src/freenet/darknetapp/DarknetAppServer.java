@@ -47,8 +47,7 @@ public class DarknetAppServer implements Runnable {
     private NetworkInterface networkInterface;
     private int maxDarknetAppConnections =10;	
     private int darknetAppConnections;
-    public static String noderef;
-    
+    private boolean finishedStartup = false;
     // Newly exchanged peers that are neither accepted nor rejected
     public static int numPendingPeersCount = 0;
     
@@ -82,7 +81,18 @@ public class DarknetAppServer implements Runnable {
                 Logger.normal(this, "Starting DarknetAppServer on "+bindTo+ ':' +port);
         }
     }
-
+    /*
+     * To be called by the node
+     */
+    public void finishStartup() {
+        synchronized(DarknetAppServer.class) {
+            this.finishedStartup = true;
+        }
+    }
+    public String getNodeRef() {
+        if (!finishedStartup) return "";
+        return node.exportDarknetPublicFieldSet().toString();
+    }
     public DarknetAppServer(SubConfig darknetAppConfig, Node node, Executor executor) {
         this.executor = executor;
         this.node = node;
