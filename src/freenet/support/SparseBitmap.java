@@ -6,109 +6,175 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
+/**
+ * Bitmap class containing ranges of marked bits.
+ */
 public class SparseBitmap implements Iterable<int[]> {
 	private final TreeSet<Range> ranges;
 
+    /**
+     * Construct an empty SparseBitmap.
+     */
 	public SparseBitmap() {
-		ranges = new TreeSet<Range>(new RangeComparator());
+		ranges = new TreeSet<Range>(new RangeStartComparator());
 	}
 
+    /**
+     * Constructs a clone of the given SparseBitmap, containing all its ranges.
+     */
 	public SparseBitmap(SparseBitmap original) {
-		ranges = new TreeSet<Range>(new RangeComparator());
+		ranges = new TreeSet<Range>(new RangeStartComparator());
 
 		for(int[] range : original) {
 			add(range[0], range[1]);
 		}
 	}
 
+    /**
+     * Adds the given range to this SparseBitmap.
+     * @param start the start index, inclusive
+     * @param end   the end index, inclusive, greater than or equal to the start index
+     */
 	public void add(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Tried adding bad range. Start: " + start + ", end: " + end);
-		}
-
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
-			Range range = it.next();
-			if(range.start <= start && range.end >= end) {
-				// Equal or inside
-				return;
-			} else if((range.start <= start && range.end >= (start - 1))
-			                || (range.start <= (end + 1) && range.end >= end)) {
-				// Overlapping
-				it.remove();
-
-				start = Math.min(start, range.start);
-				end = Math.max(end, range.end);
-			}
-		}
-		ranges.add(new Range(start, end));
+		validateRange(start, end);
+		
+		// Query for the highest existing range, starting at our start position or before
+		Range lowerQuery = new Range(start, 0);
+        Range lower = ranges.floor(lowerQuery);
+        if (lower != null)
+        {
+            if (lower.end >= end) {
+                // The range to add is inside an existing range, nothing to do
+                return;
+            }
+            if (lower.end >= start - 1) {
+                // Overlapping/appending at our start, extend range to add
+                // Note: lower.start <= start by definition of floor() and lowerQuery
+                start = lower.start;
+            }
+        }
+        
+        // Query for the highest existing range, starting directly after our end position or before
+        Range higherQuery = new Range(end + 1, 0);
+        Range higher = ranges.floor(higherQuery);
+        if (higher != null && higher.end > end) {
+            // Overlapping/appending at our end, extend range to add
+            end = higher.end;
+        }
+        
+        // Remove all ranges inside our range to add
+        lowerQuery.start = start;
+        higherQuery.start = end;
+        removeSubSet(lowerQuery, higherQuery);
+        
+        ranges.add(new Range(start, end));
 	}
 
+    /**
+     * Removes the given range from this SparseBitmap.
+     * @param start the start index, inclusive
+     * @param end   the end index, inclusive, greater than or equal to the start index
+     */
+	public void remove(int start, int end) {
+		validateRange(start, end);
+
+        // Adjust overlapping Range at start
+        Range lowerQuery = new Range(start, 0);
+        Range strictlyLower = ranges.lower(lowerQuery);
+        if (strictlyLower != null && strictlyLower.end >= start) {
+            // Since the Ranges are ordered by start index, and Ranges are not exposed
+            // externally, we can safely adjust the end index in place
+            // Note: we never remove strictlyLower, since lower() guarantees
+            // strictlyLower.start <= start - 1, hence it will be non-empty.
+            if (strictlyLower.end > end) {
+                // The range to remove is entirely inside an existing range
+                ranges.add(new Range(end + 1, strictlyLower.end));
+                strictlyLower.end = start - 1;
+                return;
+            } else {
+                strictlyLower.end = start - 1;
+            }
+        }
+        
+        // Adjust overlapping Range at end
+        Range higherQuery = new Range(end, 0);
+        Range higher = ranges.floor(higherQuery);
+        if (higher != null && higher.end > end) {
+            // Replace higher with an adjusted version
+            ranges.remove(higher);
+            higher.start = end + 1;
+            ranges.add(higher);
+        }
+        
+        // Remove everything in between
+        removeSubSet(lowerQuery, higherQuery);
+	}
+
+    /**
+     * Removes all ranges from this SparseBitmap.
+     */
 	public void clear() {
 		ranges.clear();
 	}
 
+    /**
+     * Tests whether this SparseBitmap entirely contains the given range.
+     * @param start the start index, inclusive
+     * @param end   the end index, inclusive, greater than or equal to the start index
+     * @return true if the entire range is in this bitmap, false otherwise
+     */
 	public boolean contains(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Tried checking bad range. Start: " + start + ", end: " + end);
-		}
+		validateRange(start, end);
 
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
-			Range r = it.next();
-			if(r.start > r.end) Logger.error(this, "Bad Range: " + r);
-
-			if((r.start <= start) && (r.end >= end)) {
-				return true;
-			}
-		}
-		return false;
+		Range lower = ranges.floor(new Range(start, 0));
+		// Note: lower != null implies lower.start <= start, by definition of floor()
+		return lower != null && lower.end >= end;
 	}
 
-	public void remove(int start, int end) {
-		if(start > end) {
-			throw new IllegalArgumentException("Removing bad range. Start: " + start + ", end: " + end);
+	/**
+	 * Calculates the number of slots in the given range that are not in this SpareBitmap.
+     * @param start the start index, inclusive
+     * @param end   the end index, inclusive, greater than or equal to the start index
+	 * @return the number of slots between start and end that are not marked as present
+	 */
+	public int notOverlapping(int start, int end) {
+		int remaining = end - start + 1;
+		Range query = new Range(start, 0);
+		// Special case for the first overlap
+		Range strictlyLower = ranges.lower(query);
+		if (strictlyLower != null && strictlyLower.end >= start) {
+		    if (strictlyLower.end >= end) {
+		        return 0;
+	        }
+		    remaining -= strictlyLower.end - start + 1;
 		}
-
-		List<Range> toAdd = new ArrayList<Range>();
-
-		Iterator<Range> it = ranges.iterator();
-		while(it.hasNext()) {
-			Range range = it.next();
-
-			if(range.start < start) {
-				if(range.end < start) {
-					//Outside
-					continue;
-				} else if(range.end <= end) {
-					//Overlaps beginning
-					toAdd.add(new Range(range.start, start - 1));
-				} else /* (range[1] > end) */{
-					//Overlaps entire range
-					toAdd.add(new Range(range.start, start - 1));
-					toAdd.add(new Range(end + 1, range.end));
-				}
-			} else if(range.start >= start && range.start <= end) {
-				if(range.end > end) {
-					// Overlaps end
-					toAdd.add(new Range(end + 1, range.end));
-				}
-				//Else it is equal or inside
-			} else /* (range[0] > end) */ {
-				//Outside
-				continue;
-			}
-			it.remove();
+		for (Range r : ranges.tailSet(query)) {
+		    if (r.end > end) {
+		        // Special case for the last overlap
+		        if (r.start <= end) {
+		            remaining -= end - r.start + 1;
+		        }
+		        break;
+		    } else {
+		        remaining -= r.end - r.start + 1;
+	        }
 		}
-
-		ranges.addAll(toAdd);
+		return remaining;
 	}
 
+    /**
+     * Yields an iterator over this SparseBitmap.
+     * @return an iterator over the ranges contained in this SparseBitmap
+     */
 	@Override
 	public Iterator<int[]> iterator() {
 		return new SparseBitmapIterator(this);
 	}
 
+    /**
+     * Tests whether this SparseBitmap is empty.
+     * @return true if this SparseBitmap contains no ranges, false otherwise.
+     */
 	public boolean isEmpty() {
 		return ranges.isEmpty();
 	}
@@ -123,6 +189,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		return s.toString();
 	}
 
+    /* Iterator over SparseBitmaps */
 	private static class SparseBitmapIterator implements Iterator<int[]> {
 		Iterator<Range> it;
 
@@ -147,6 +214,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		}
 	}
 
+    /* Container class for simple ranges with start and end indices, both inclusive */
 	private static class Range {
 		int start; // inclusive
 		int end;   // inclusive
@@ -162,21 +230,29 @@ public class SparseBitmap implements Iterable<int[]> {
 		}
 	}
 
-	private static class RangeComparator implements Comparator<Range> {
+    /* Compares Ranges based on their start index */
+	private static class RangeStartComparator implements Comparator<Range> {
 		@Override
 		public int compare(Range r1, Range r2) {
 			return r1.start - r2.start;
 		}
 	}
 
-	/** @return The number of slots between start and end that are not marked as present */
-	public int notOverlapping(int start, int end) {
-		// FIXME OPTIMIZE: this is an incredibly stupid and inefficient but demonstrably correct way to evaluate this. Implement something better!
-		int total = 0;
-		for(int i=start;i<=end;i++) {
-			if(!contains(i, i))
-				total++;
+    /* Helper for validating start and end indices (e.g. start <= end) */
+    private void validateRange(int start, int end) {
+        if (start > end) {
+			throw new IllegalArgumentException(String.format("Invalid range: start=%d, end=%d", start, end));
 		}
-		return total;
 	}
+
+    /* Helper for low-level removal of all Ranges r with lQ.start <= r.start <= hQ.start */
+    private void removeSubSet(Range lowerQuery, Range higherQuery) {
+        Iterator<Range> it = ranges.subSet(lowerQuery, true, higherQuery, true).iterator();
+        while (it.hasNext())
+        {
+            it.next();
+            it.remove();
+        }
+    }
 }
+
