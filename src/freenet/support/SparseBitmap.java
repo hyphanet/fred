@@ -1,9 +1,7 @@
 package freenet.support;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 import java.util.TreeSet;
 
 /**
@@ -65,7 +63,7 @@ public class SparseBitmap implements Iterable<int[]> {
 			// Remove all ranges inside our range to add
 			lowerQuery.start = start;
 			higherQuery.start = end;
-			ranges.subSet(lowerQuery, true, higherQuery, true).clear();
+			removeSubSet(lowerQuery, higherQuery);
 		}		
 
 		ranges.add(new Range(start, end));
@@ -112,7 +110,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		}
 		
 		// Remove everything in between
-		ranges.subSet(lowerQuery, true, higherQuery, true).clear();
+		removeSubSet(lowerQuery, higherQuery);
 	}
 
 	/**
@@ -257,6 +255,34 @@ public class SparseBitmap implements Iterable<int[]> {
 	private void validateRange(int start, int end) {
 		if (start > end) {
 			throw new IllegalArgumentException(String.format("Invalid range: start=%d, end=%d", start, end));
+		}
+	}
+	
+	 /* Helper for low-level removal of all Ranges r with lQ.start <= r.start <= hQ.start */
+	private void removeSubSet(Range lowerQuery, Range higherQuery) {
+		Range lower = ranges.ceiling(lowerQuery);
+		if (lower == null) {
+			return;
+		}
+		Range upper = ranges.floor(higherQuery);
+		if (upper == null) {
+			return;
+		}
+		if (upper == lower) {
+			ranges.remove(upper);
+			return;
+		}
+		// Fallback to linear algorithm, subSets are too expensive for small SparseBitmaps.
+		Iterator<Range> it = ranges.iterator();
+		while (it.hasNext()) {
+			Range r = it.next();
+			if (r.start < lowerQuery.start) {
+				continue;
+			}
+			if (r.start > higherQuery.start) {
+				break;
+			}
+			it.remove();
 		}
 	}
 }
