@@ -65,7 +65,7 @@ public class SparseBitmap implements Iterable<int[]> {
 			// Remove all ranges inside our range to add
 			lowerQuery.start = start;
 			higherQuery.start = end;
-			removeSubSet(lowerQuery, higherQuery);
+			ranges.subSet(lowerQuery, true, higherQuery, true).clear();
 		}		
 
 		ranges.add(new Range(start, end));
@@ -112,7 +112,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		}
 		
 		// Remove everything in between
-		removeSubSet(lowerQuery, higherQuery);
+		ranges.subSet(lowerQuery, true, higherQuery, true).clear();
 	}
 
 	/**
@@ -257,16 +257,6 @@ public class SparseBitmap implements Iterable<int[]> {
 	private void validateRange(int start, int end) {
 		if (start > end) {
 			throw new IllegalArgumentException(String.format("Invalid range: start=%d, end=%d", start, end));
-		}
-	}
-
-	/* Helper for low-level removal of all Ranges r with lQ.start <= r.start <= hQ.start */
-	private void removeSubSet(Range lowerQuery, Range higherQuery) {
-		Iterator<Range> it = ranges.subSet(lowerQuery, true, higherQuery, true).iterator();
-		while (it.hasNext())
-		{
-			it.next();
-			it.remove();
 		}
 	}
 }
