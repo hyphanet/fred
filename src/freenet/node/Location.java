@@ -46,44 +46,39 @@ public class Location {
 	}
 
 	/**
-	 * Distance between two locations. 
+	 * Distance between two valid locations.
 	 * @param a a valid location
 	 * @param b a valid location
-	 * @return the absolute distance between the two locations in the circular location space.
+	 * @return the absolute distance between the locations in the circular location space.
 	 */
 	public static double distance(double a, double b) {
-		return distance(a, b, false);
+		if (!isValid(a) || !isValid(b)) {
+			String errMsg = "Invalid Location ! a = " + a + " b = " + b + " Please report this bug!";
+			Logger.error(Location.class, errMsg, new Exception("error"));
+			throw new IllegalArgumentException(errMsg);
+		}
+		return simpleDistance(a, b);	
 	}
 
 	/**
-	 * Distance between two locations, possibly accepting invalid locations.
-	 * @param a a location (must be valid if allowCrazy is false)
-	 * @param b a location (must be valid if allowCrazy is false)
-	 * @param allowCrazy whether to allow invalid locations in a crazy way
-	 * @return the absolute distance between the locations. When allowCrazy is true, invalid locations
-	 *		  are considered to be at 2.0, and the result is returned accordingly.
+	 * Distance between two potentially invalid locations.
+ 	 * @param a a valid location
+	 * @param b a valid location
+	 * @return the absolute distance between the locations in the circular location space.
+	 * Invalid locations are considered to be at 2.0, and the result is returned accordingly.
 	 */
-	public static double distance(double a, double b, boolean allowCrazy) {
-		if (!allowCrazy) {
-			if (!isValid(a) || !isValid(b)) {
-				String errMsg = "Invalid Location ! a = " + a + " b = " + b + " Please report this bug!";
-				Logger.error(Location.class, errMsg, new Exception("error"));
-				throw new IllegalArgumentException(errMsg);
-			}
-			return simpleDistance(a, b);	
-		} else {
-			if (!isValid(a) && !isValid(b)) {
-				return 0.0; // Both are out of range so both are equal.
-			}
-			if (!isValid(a)) {
-				return 2.0 - b;
-			}
-			if (!isValid(b)) {
-				return 2.0 - a;
-			}
-			// Both values are valid.
-			return simpleDistance(a, b);
+	public static double distanceAllowInvalid(double a, double b) {
+		if (!isValid(a) && !isValid(b)) {
+			return 0.0; // Both are out of range so both are equal.
 		}
+		if (!isValid(a)) {
+			return 2.0 - b;
+		}
+		if (!isValid(b)) {
+			return 2.0 - a;
+		}
+		// Both values are valid.
+		return simpleDistance(a, b);
 	}
 
 	/**
@@ -141,7 +136,7 @@ public class Location {
 	 * @return whether the two locations are considered equal
 	 */
 	public static boolean equals(double a, double b) {
-		return distance(a, b, true) < Double.MIN_VALUE * 2;
+		return distanceAllowInvalid(a, b) < Double.MIN_VALUE * 2;
 	}
 
 	/**
