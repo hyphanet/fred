@@ -16,7 +16,6 @@ import freenet.crypt.AEADCryptBucket;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
-import freenet.node.NodeStarter;
 import freenet.node.ProgramDirectory;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;

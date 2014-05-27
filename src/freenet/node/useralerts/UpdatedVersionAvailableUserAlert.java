@@ -5,7 +5,6 @@ package freenet.node.useralerts;
 
 import java.io.File;
 
-import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;

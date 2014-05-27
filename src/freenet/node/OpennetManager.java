@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import freenet.crypt.Util;
 import freenet.io.comm.ByteCounter;

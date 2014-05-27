@@ -39,7 +39,6 @@ import freenet.clients.http.ajaxpush.PushKeepaliveToadlet;
 import freenet.clients.http.ajaxpush.PushLeavingToadlet;
 import freenet.clients.http.ajaxpush.PushNotificationToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
-import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
 import freenet.config.Config;

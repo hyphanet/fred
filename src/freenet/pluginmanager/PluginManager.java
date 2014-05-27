@@ -51,8 +51,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.SecurityLevelListener;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.fcp.ClientPut;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;

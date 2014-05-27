@@ -5,12 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.filter.FilterCallback;
 import freenet.clients.http.PageMaker;
@@ -21,7 +16,6 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
-import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
 	private static final ArrayList<SessionManager> sessionManagers = new ArrayList<SessionManager>(4);

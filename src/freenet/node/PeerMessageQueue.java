@@ -1,7 +1,5 @@
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;

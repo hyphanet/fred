@@ -2,7 +2,6 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;

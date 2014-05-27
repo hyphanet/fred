@@ -29,7 +29,6 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
 import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
