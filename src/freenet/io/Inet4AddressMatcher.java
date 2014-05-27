@@ -27,9 +27,9 @@ import java.util.StringTokenizer;
  * Inet4AddressMatcher can match the following kinds of IP addresses or address
  * ranges:
  * <ul>
- * <li>IP address only (<code>192.168.1.2</code>)</li>
- * <li>IP address and network mask (<code>192.168.1.2/255.255.255.0</code>)</li>
- * <li>IP address and network mask bits (<code>192.168.1.2/24</code>)</li>
+ * <li>IP address only ({@code 192.168.1.2})</li>
+ * <li>IP address and network mask ({@code 192.168.1.2/255.255.255.0})</li>
+ * <li>IP address and network mask bits ({@code 192.168.1.2/24})</li>
  * </ul>
  * 
  * @author David Roden &lt;droden@gmail.com&gt;
@@ -44,7 +44,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 
 	/**
 	 * Creates a new address matcher that matches InetAddress objects to the
-	 * address specification given by <code>cidrHostname</code>.
+	 * address specification given by {@code cidrHostname}.
 	 * 
 	 * @param cidrHostname
 	 *            The address range this matcher matches
@@ -60,7 +60,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 			if (maskPart.indexOf('.') == -1) {
 				int bits = Integer.parseInt(maskPart);
 				if (bits > 32 || bits < 0)
-					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ")");
+					throw new IllegalArgumentException("Mask bits out of range: " + bits + " (" + maskPart + ')');
 				networkMask = 0xffffffff << (32 - bits);
 				if (Integer.parseInt(maskPart) == 0) {
 					networkMask = 0;
@@ -108,14 +108,14 @@ public class Inet4AddressMatcher implements AddressMatcher {
 
 	/**
 	 * Shortcut method for creating a new Inet4AddressMatcher and matching
-	 * <code>address</code> to it.
+	 * {@code address} to it.
 	 * 
 	 * @param cidrHostname
 	 *            The host specification to match
 	 * @param address
 	 *            The address to match
-	 * @return <code>true</code> if <code>address</code> matches the
-	 *         specification in <code>cidrHostname</code>, <code>false</code>
+	 * @return {@code true} if {@code address} matches the
+	 *         specification in {@code cidrHostname}, {@code false}
 	 *         otherwise
 	 * @see #Inet4AddressMatcher(String)
 	 * @see #matches(InetAddress)

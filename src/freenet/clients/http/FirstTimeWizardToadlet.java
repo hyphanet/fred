@@ -233,7 +233,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			} catch (IOException e) {
 				String title;
-				if (e.getMessage().equals("cantWriteNewMasterKeysFile")) {
+				if ("cantWriteNewMasterKeysFile".equals(e.getMessage())) {
 					//Recognized as being unable to write to the master keys file.
 					title = NodeL10n.getBase().getString("SecurityLevels.cantWriteNewMasterKeysFileTitle");
 				} else {

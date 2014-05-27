@@ -45,10 +45,10 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	@Override
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(l10n("peerName")).append(" ").append(name).append("\n");
-		sb.append(l10n("bookmarkURI")).append(" ").append(uri).append("\n");
+		sb.append(l10n("peerName")).append(' ').append(name).append('\n');
+		sb.append(l10n("bookmarkURI")).append(' ').append(uri).append('\n');
 		if(description != null && description.length() != 0)
-			sb.append(l10n("bookmarkDescription")).append(" ").append(description);
+			sb.append(l10n("bookmarkDescription")).append(' ').append(description);
 		return sb.toString();
 	}
 

@@ -31,7 +31,7 @@ import freenet.support.io.FileUtil;
 
 /**A thread which does postprocessing of decompressed data, in particular,
  * writing it to its final destination. This thread also handles hashing and
- * filtering. If these are not required, <code>null</code> may be passed through
+ * filtering. If these are not required, {@code null} may be passed through
  * the relevant constructor arguments.*/
 public class ClientGetWorkerThread extends Thread {
 

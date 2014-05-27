@@ -143,7 +143,7 @@ public class FECQueue implements OOMHook {
 		}
 		final boolean logMINOR = FECQueue.logMINOR;
 		if(logMINOR)
-			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
+			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+ '.');
 		int maxThreads = getMaxRunningFECThreads();
 		if(job.persistent) {
 			job.activateForExecution(container);
@@ -185,7 +185,7 @@ public class FECQueue implements OOMHook {
 			// Two jobs may overlap in cross-segment decoding, resulting in very bad things.
 			// Plus, if we didn't add it to the cache, it will disappear when the parent is deactivated anyway.
 			if(runningFECThreads < maxThreads) {
-				executor.execute(runner, "FEC Pool(" + (fecPoolCounter++) + ")");
+				executor.execute(runner, "FEC Pool(" + (fecPoolCounter++) + ')');
 				runningFECThreads++;
 			}
 			notifyAll();

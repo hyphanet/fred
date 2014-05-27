@@ -20,8 +20,8 @@ import freenet.support.Logger.LogLevel;
  * behaviour when, eg. creating a class that reports statistics.
  *
  * A final static field can be made "non-constant" in the eyes of the compiler
- * by initialising it with the results of a method, eg <code>T identity(T o)
- * { T o; }</code>; however the "constant" behaviour might be required in some
+ * by initialising it with the results of a method, eg {@code T identity(T o)
+ * { T o; }}; however the "constant" behaviour might be required in some
  * cases. A more flexible solution is to add a method that returns the field,
  * eg {@link #publicVersion()}, and choose between the method and the field
  * as necessary.

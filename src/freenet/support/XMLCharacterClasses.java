@@ -25,8 +25,8 @@ import java.util.regex.Matcher;
  * href="http://www.w3.org/TR/REC-xml/">XML 1.0 specification, 4th edition</a>.
  * 
  * The constants in this class are written in a form that allows easy conclusion
- * in a {@link Matcher} pattern within square parantheses (<code>'['</code>
- * and <code>']'</code>).
+ * in a {@link Matcher} pattern within square parantheses ({@code '['}
+ * and {@code ']'}).
  * 
  * @author David Roden &lt;bombe@freenetproject.org&gt;
  * @version $Id$
@@ -55,9 +55,9 @@ public interface XMLCharacterClasses {
 	 * [4] NameChar - due to regex rules this must be the first expression
 	 * within square parantheses
 	 */
-	public static final String NAME_CHAR = "-" + LETTER + DIGIT + "." + "_" + ":" + COMBINING_CHAR + EXTENDER;
+	public static final String NAME_CHAR = '-' + LETTER + DIGIT + '.' + '_' + ':' + COMBINING_CHAR + EXTENDER;
 
 	/** [5] Name. */
-	public static final String NAME = LETTER + "_" + ":" + "][" + NAME_CHAR;
+	public static final String NAME = LETTER + '_' + ':' + "][" + NAME_CHAR;
 
 }

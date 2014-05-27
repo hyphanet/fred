@@ -328,7 +328,7 @@ public class PushDataManager {
 
 		@Override
 		public String toString() {
-			return "UpdateEvent[requestId=" + requestId + ",elementId=" + elementId + "]";
+			return "UpdateEvent[requestId=" + requestId + ",elementId=" + elementId + ']';
 		}
 	}
 

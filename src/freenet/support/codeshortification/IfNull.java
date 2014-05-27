@@ -6,9 +6,9 @@ package freenet.support.codeshortification;
 
 /**
  * Class for reducing the amount of code to type with regards to null pointers: <br>
- * <code>if(value == null) throw new NullPointerException(message);</code><br>
+ * {@code if(value == null) throw new NullPointerException(message);}<br>
  * becomes:<br>
- * <code>IfNull.thenThrow(value, message);</code>
+ * {@code IfNull.thenThrow(value, message);}
  * 
  * @author xor (xor@freenetproject.org)
  */

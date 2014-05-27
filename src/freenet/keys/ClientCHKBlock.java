@@ -210,19 +210,19 @@ public class ClientCHKBlock implements ClientKeyBlock {
 						System.out.println(algo + " (" + hmac.getProvider() + "): " + time_def + "ns");
 						System.out.println(algo + " (" + sun_hmac.getProvider() + "): " + time_sun + "ns");
 						if(logMINOR) {
-							Logger.minor(clazz, algo + "/" + hmac.getProvider() + ": " + time_def + "ns");
-							Logger.minor(clazz, algo + "/" + sun_hmac.getProvider() + ": " + time_sun + "ns");
+							Logger.minor(clazz, algo + '/' + hmac.getProvider() + ": " + time_def + "ns");
+							Logger.minor(clazz, algo + '/' + sun_hmac.getProvider() + ": " + time_sun + "ns");
 						}
 						if (time_sun < time_def) {
 							hmac = sun_hmac;
 						}
 					}
 				} catch(GeneralSecurityException e) {
-					Logger.warning(clazz, algo + "@" + sun + " benchmark failed", e);
+					Logger.warning(clazz, algo + '@' + sun + " benchmark failed", e);
 					// ignore
 
 				} catch(Throwable e) {
-					Logger.error(clazz, algo + "@" + sun + " benchmark failed", e);
+					Logger.error(clazz, algo + '@' + sun + " benchmark failed", e);
 					// ignore
 				}
 			}

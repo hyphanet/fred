@@ -137,7 +137,7 @@ public class NetworkInterface implements Closeable {
 	 * @return List of addresses that we failed to bind to, or null if completely successful.
 	 */
 	public String[] setBindTo(String bindTo, boolean ignoreUnbindableIP6) {
-                if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
+                if(bindTo == null || bindTo.isEmpty()) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List<String> bindToTokenList = new ArrayList<String>();
 		List<String> brokenList = null;
@@ -212,7 +212,7 @@ public class NetworkInterface implements Closeable {
 	 * Sets the SO_TIMEOUT value on the server sockets.
 	 * 
 	 * @param timeout
-	 *            The timeout in milliseconds, <code>0</code> to disable
+	 *            The timeout in milliseconds, {@code 0} to disable
 	 * @throws SocketException
 	 *             if the SO_TIMEOUT value can not be set
 	 * @see ServerSocket#setSoTimeout(int)
@@ -353,7 +353,7 @@ public class NetworkInterface implements Closeable {
 		 * Sets the SO_TIMEOUT value on this acceptor's server socket.
 		 * 
 		 * @param timeout
-		 *            The timeout in milliseconds, or <code>0</code> to
+		 *            The timeout in milliseconds, or {@code 0} to
 		 *            disable
 		 * @throws SocketException
 		 *             if the SO_TIMEOUT value can not be set

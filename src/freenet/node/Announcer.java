@@ -302,7 +302,7 @@ public class Announcer {
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceDisabledTooOld"));
-			sb.append(" ");
+			sb.append(' ');
 			if(!node.nodeUpdater.isEnabled()) {
 				sb.append(l10n("announceDisabledTooOldUpdateDisabled", new String[] { "config", "/config" }, new String[] { "", "" }));
 			}

@@ -62,7 +62,7 @@ public class AddressIdentifier {
 	 * 
 	 * @param address
 	 *            The address to determine the type of
-	 * @return {@link AddressType#OTHER} if <code>address</code> is a
+	 * @return {@link AddressType#OTHER} if {@code address} is a
 	 *         hostname, {@link AddressType#IPv4} or {@link AddressType#IPv6}
 	 *         otherwise
 	 */
@@ -77,7 +77,7 @@ public class AddressIdentifier {
 	 *            The address to determine the type of
 	 * @param allowIPv6PercentScopeID
 	 *            If true, match %<scope-id> suffixed IPv6 IP addresses
-	 * @return {@link AddressType#OTHER} if <code>address</code> is a
+	 * @return {@link AddressType#OTHER} if {@code address} is a
 	 *         hostname, {@link AddressType#IPv4} or {@link AddressType#IPv6}
 	 *         otherwise
 	 */

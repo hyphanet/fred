@@ -27,7 +27,7 @@ import freenet.support.api.Bucket;
 
 /**
  * Closes various resources. The resources are checked for being
- * <code>null</code> before being closed, and every possible execption is
+ * {@code null} before being closed, and every possible execption is
  * swallowed. That makes this class perfect for use in the finally blocks of
  * try-catch-finally blocks.
  * 

@@ -86,7 +86,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				Closer.close(is);
 				return;
 			}
-			if(messageType.equals(""))
+			if(messageType.isEmpty())
 				continue;
 			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true);
 

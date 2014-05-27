@@ -390,7 +390,7 @@ loopOverLines:
 					try {
 						delta = Integer.parseInt(split[token]);
 					} catch (NumberFormatException e) {
-						System.err.println("Unable to parse token "+token+" = \""+token+"\"");
+						System.err.println("Unable to parse token "+token+" = \""+token+ '"');
 						System.err.println("This is supposed to be a delta");
 						System.err.println("Skipping the rest of the line for date "+dateFormat.format(calendar.getTime()));
 						continue loopOverLines;
@@ -401,7 +401,7 @@ loopOverLines:
 					int totalSuccesses = 0;
 					int totalFetches = 0;
 					for(int i=0;i<INSERTED_BLOCKS;i++) {
-						if(split[token].equals(""))
+						if(split[token].isEmpty())
 							continue;
 						int mhkFetchTime = -1;
 						totalFetches++;

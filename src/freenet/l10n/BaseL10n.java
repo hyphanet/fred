@@ -307,7 +307,7 @@ public class BaseL10n {
 
 		// If there is no need to keep it in the override, remove it...
 		// unless the original/default is the same as the translation
-		if ("".equals(value) || (currentTranslation != null && value.equals(this.currentTranslation.get(key)))) {
+		if (value != null && value.isEmpty() || (currentTranslation != null && value.equals(this.currentTranslation.get(key)))) {
 			this.translationOverride.removeValue(key);
 		} else {
 			value = value.replaceAll("(\r|\n|\t)+", "");
@@ -581,7 +581,7 @@ public class BaseL10n {
 	 */
 	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
 		int x;
-		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
+		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
 			if(before.length() > 0)
 				node.addChild("#", before);
@@ -607,7 +607,7 @@ public class BaseL10n {
 				}
 			}
 
-			String searchFor = "${/"+lookup+"}";
+			String searchFor = "${/"+lookup+ '}';
 			x = value.indexOf(searchFor);
 			if(x == -1) {
 				// It goes up to the end of the tag. It has no contents.
@@ -628,7 +628,7 @@ public class BaseL10n {
 				value = rest;
 			}
 		}
-		if(!value.equals(""))
+		if(!value.isEmpty())
 			node.addChild("#", value);
 	}
 	

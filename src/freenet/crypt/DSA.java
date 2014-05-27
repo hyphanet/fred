@@ -137,7 +137,7 @@ public class DSA {
 		if (fs != null)
 			g = DSAGroup.create(fs.subset("dsaGroup"));
 		RandomSource y = new DummyRandomSource();
-		if (args.length >= 2 && args[1].equals("yarrow")) y = new Yarrow();
+		if (args.length >= 2 && "yarrow".equals(args[1])) y = new Yarrow();
 		DSAPrivateKey pk=new DSAPrivateKey(g, y);
 		DSAPublicKey pub=new DSAPublicKey(g, pk);
 		if (fs != null) {

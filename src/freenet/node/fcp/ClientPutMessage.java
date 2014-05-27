@@ -183,7 +183,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		// We do *NOT* check that FileHash is valid here for backward compatibility... and to make the override work
 		this.fileHash = fs.get(ClientPutBase.FILE_HASH);
 		String uploadFrom = fs.get("UploadFrom");
-		if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
+		if((uploadFrom == null) || "direct".equalsIgnoreCase(uploadFrom)) {
 			uploadFromType = UPLOAD_FROM_DIRECT;
 			String dataLengthString = fs.get("DataLength");
 			if(dataLengthString == null)
@@ -195,7 +195,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			}
 			this.origFilename = null;
 			redirectTarget = null;
-		} else if(uploadFrom.equalsIgnoreCase("disk")) {
+		} else if("disk".equalsIgnoreCase(uploadFrom)) {
 			uploadFromType = UPLOAD_FROM_DISK;
 			String filename = fs.get("Filename");
 			if(filename == null)
@@ -210,7 +210,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			redirectTarget = null;
 			if(fnam == null)
 				fnam = origFilename.getName();
-		} else if(uploadFrom.equalsIgnoreCase("redirect")) {
+		} else if("redirect".equalsIgnoreCase(uploadFrom)) {
 			uploadFromType = UPLOAD_FROM_REDIRECT;
 			String target = fs.get("TargetURI");
 			if(target == null)
@@ -227,14 +227,14 @@ public class ClientPutMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier, global);
 		dontCompress = fs.getBoolean("DontCompress", false);
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || "connection".equalsIgnoreCase(persistenceString)) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+		} else if("reboot".equalsIgnoreCase(persistenceString)) {
 			// Reports to client by name; persists over connection loss.
 			// Not saved to disk, so dies on reboot.
 			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
+		} else if("forever".equalsIgnoreCase(persistenceString)) {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {

@@ -154,7 +154,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 					if(!(killed || kill))
-						Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+","+kill+")", new Exception("error"));
+						Logger.error(this, "Finished waiting already yet receivedNotice("+success+ ',' +timeout+ ',' +kill+ ')', new Exception("error"));
 					return false;
 				}
 				if(killed) {
@@ -167,7 +167,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 				} else {
 					if (receivedCompletionNotice) {
 						// Two stage timeout.
-						if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+						if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+ ')');
 						if(timeout) {
 							// Fatal timeout.
 							finishedWaiting = true;
@@ -283,7 +283,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+uid+":"+pn;
+			return super.toString()+ ':' +uid+ ':' +pn;
 		}
 
 		/** Called when we have received an InsertReply, RouteNotFound or other

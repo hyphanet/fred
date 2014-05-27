@@ -300,7 +300,7 @@ public class PproxyToadlet extends Toadlet {
 	 *            The plugin manager
 	 * @param pluginThreadName
 	 *            The thread name of the plugin
-	 * @return The plugin specification of the plugin, or <code>null</code> if
+	 * @return The plugin specification of the plugin, or {@code null} if
 	 *         no plugin was found
 	 */
 	private String getPluginSpecification(PluginManager pluginManager, String pluginThreadName) {
@@ -335,7 +335,7 @@ public class PproxyToadlet extends Toadlet {
 		if(logMINOR)
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
-			if (path.equals("")) {
+			if (path.isEmpty()) {
 		        if(!ctx.checkFullAccess(this))
 		            return;
 
@@ -362,7 +362,7 @@ public class PproxyToadlet extends Toadlet {
 					 * The "Freemail" plugin is show on "Aviliable Plugin" even
 					 * if it is loaded. However fixing the plugin itself may break
 					 * running it as standalone application. */
-					if (shortPluginName.equals("FreemailPlugin")) shortPluginName = "Freemail"; // DOH!
+					if ("FreemailPlugin".equals(shortPluginName)) shortPluginName = "Freemail"; // DOH!
 
 					availablePlugins.remove(pm.isOfficialPlugin(shortPluginName));
 				}
@@ -503,7 +503,7 @@ public class PproxyToadlet extends Toadlet {
 					pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
 				if(ver != -1)
-					pluginRow.addChild("td", pi.getPluginVersion()+" ("+ver+")");
+					pluginRow.addChild("td", pi.getPluginVersion()+" ("+ver+ ')');
 				else
 					pluginRow.addChild("td", pi.getPluginVersion());
 				if(advancedMode) {
@@ -546,7 +546,7 @@ public class PproxyToadlet extends Toadlet {
 		
 		// Over Freenet or over HTTP??
 		
-		p.addChild("#", " " + l10n("pluginSourceChoice"));
+		p.addChild("#", ' ' + l10n("pluginSourceChoice"));
 		
 		boolean loadFromWeb = pm.loadOfficialPluginsFromWeb();
 		
@@ -583,11 +583,11 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode option = pluginNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "plugin-name", pluginDescription.name });
 				option.addChild("i", pluginDescription.getLocalisedPluginName());
 				if(pluginDescription.deprecated)
-					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
+					option.addChild("b", " ("+l10n("loadLabelDeprecated")+ ')');
 				if(pluginDescription.experimental)
-					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+					option.addChild("b", " ("+l10n("loadLabelExperimental")+ ')');
 				if (advancedModeEnabled && pluginDescription.minimumVersion >= 0) {
-					option.addChild("#", " ("+l10n("pluginVersion")+" " + pluginDescription.minimumVersion + ")");
+					option.addChild("#", " ("+l10n("pluginVersion")+ ' ' + pluginDescription.minimumVersion + ')');
 				}
 				option.addChild("#", " - "+pluginDescription.getLocalisedPluginDescription());
 			}
@@ -618,7 +618,7 @@ public class PproxyToadlet extends Toadlet {
 		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
 		addOtherForm.addChild("br");
 		addOtherForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "fileonly", "checked" });
-		addOtherForm.addChild("#", " " + l10n("fileonly"));
+		addOtherForm.addChild("#", ' ' + l10n("fileonly"));
 	}
 	
 	private void showFreenetPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {

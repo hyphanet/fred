@@ -129,7 +129,7 @@ public class Cookie {
 		
 		String path = domain.getPath();
 		
-		if(!"".equals(path) && !"/".equals(path))
+		if(path != null && !path.isEmpty() && !"/".equals(path))
 			throw new IllegalArgumentException("Illegal cookie domain, contains a path: " + domain);
 		
 		return domain;
@@ -162,7 +162,7 @@ public class Cookie {
 	 * TODO: Read the RFCs in depth and make this function fully compatible.
 	 */
 	public static String validateName(String name) {
-		if("".equals(name))
+		if(name != null && name.isEmpty())
 			throw new IllegalArgumentException("Name is empty.");
 		
 		if(!isUSASCII(name))
@@ -309,7 +309,7 @@ public class Cookie {
 		StringBuilder sb = new StringBuilder(512); // TODO: As soon as something else besides Freetalk uses cookies, adjust this value.
 		
 		// RFC2965: Name MUST be first.
-		sb.append(name); sb.append("="); sb.append(value); sb.append(';');
+		sb.append(name); sb.append('='); sb.append(value); sb.append(';');
 		
 		sb.append("version="); sb.append(version); sb.append(';');
 		

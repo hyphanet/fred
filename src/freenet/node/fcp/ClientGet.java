@@ -1060,7 +1060,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/**
 	 * Returns the {@link Bucket} that contains the downloaded data.
 	 *
-	 * @return The data in a {@link Bucket}, or <code>null</code> if this
+	 * @return The data in a {@link Bucket}, or {@code null} if this
 	 *         isn&rsquo;t applicable
 	 */
 	public Bucket getBucket(ObjectContainer container) {

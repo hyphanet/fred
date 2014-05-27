@@ -277,7 +277,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		public void set(String val) throws InvalidConfigValueException {
 			NodeClientCore core = SimpleToadletServer.this.core;
 			if(core == null) return;
-			if(val.equals(get()) || val.equals(""))
+			if(val.equals(get()) || val.isEmpty())
 				cssOverride = null;
 			else {
 				File tmp = new File(val.trim());
@@ -944,7 +944,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			if (!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 				path.startsWith(StaticToadlet.ROOT_URL) ||
 				path.startsWith(ExternalLinkToadlet.PATH) ||
-				path.equals("/favicon.ico"))) {
+                    "/favicon.ico".equals(path))) {
 				try {
 					throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
 				} catch(URISyntaxException e) { throw new Error(e); }
@@ -1240,9 +1240,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if(host == null)
 			host = "127.0.0.1";
 		sb.append(host);
-		sb.append(":");
+		sb.append(':');
 		sb.append(this.port);
-		sb.append("/");
+		sb.append('/');
 		return sb.toString();
 	}
 

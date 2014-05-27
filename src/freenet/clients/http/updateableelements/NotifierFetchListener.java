@@ -21,6 +21,6 @@ public class NotifierFetchListener implements FProxyFetchListener {
 
 	@Override
 	public String toString() {
-		return "NotifierFetchListener[pushManager:" + pushManager + ",element;" + element + "]";
+		return "NotifierFetchListener[pushManager:" + pushManager + ",element;" + element + ']';
 	}
 }

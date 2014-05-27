@@ -1505,7 +1505,7 @@ public class PeerManager {
 			File f;
 			File full = new File(filename).getAbsoluteFile();
 			try {
-				f = File.createTempFile(full.getName()+".", ".tmp", full.getParentFile());
+				f = File.createTempFile(full.getName()+ '.', ".tmp", full.getParentFile());
 			} catch (IOException e2) {
 				Logger.error(this, "Cannot write peers to disk: Cannot create temp file - " + e2, e2);
 				Closer.close(fos);

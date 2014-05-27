@@ -375,9 +375,9 @@ public class Probe implements ByteCounter {
 		final Type type;
 		if (Type.isValid(typeCode)) {
 			type = Type.valueOf(typeCode);
-			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + type.name() + ".");
+			if (logDEBUG) Logger.debug(Probe.class, "Probe type is " + type.name() + '.');
 		} else {
-			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + ".");
+			if (logMINOR) Logger.minor(Probe.class, "Invalid probe type " + typeCode + '.');
 			listener.onError(Error.UNRECOGNIZED_TYPE, typeCode, true);
 			return;
 		}
@@ -392,7 +392,7 @@ public class Probe implements ByteCounter {
 			if (logMINOR) {
 				Logger.minor(Probe.class, "Received out-of-bounds HTL of " + htl + " from " +
 				    source.getIdentityString() + " (" + source.userToString() + "); interpreting as " +
-				    MAX_HTL + ".");
+				    MAX_HTL + '.');
 			}
 			htl = MAX_HTL;
 		}

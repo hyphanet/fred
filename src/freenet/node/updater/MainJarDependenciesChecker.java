@@ -139,7 +139,7 @@ public class MainJarDependenciesChecker {
 					break;
 				}
 				if(File.pathSeparatorChar == ':' &&
-						d.oldFilename != null && d.oldFilename.getName().equalsIgnoreCase("freenet-ext.jar.new")) {
+						d.oldFilename != null && "freenet-ext.jar.new".equalsIgnoreCase(d.oldFilename.getName())) {
 					// If wrapper.conf currently contains freenet-ext.jar.new, we need to update wrapper.conf even
 					// on unix. Reason: freenet-ext.jar.new won't be read if it's not the first item on the classpath,
 					// because freenet.jar includes freenet-ext.jar implicitly via its manifest.
@@ -375,7 +375,7 @@ public class MainJarDependenciesChecker {
 				String name = arg0.getName().toLowerCase();
 				if(!(name.endsWith(".jar") || name.endsWith(".jar.new"))) return false;
 				// FIXME similar checks elsewhere, factor out?
-				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
+				if("freenet.jar".equals(name) || "freenet.jar.new".equals(name) || "freenet-stable-latest.jar".equals(name) || "freenet-stable-latest.jar.new".equals(name))
 					return false;
 				return true;
 			}
@@ -387,7 +387,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(!processed.add(baseName)) continue;
 			String s = props.getProperty(baseName+".type");
 			if(s == null) {
-				Logger.error(this, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				Logger.error(this, "dependencies.properties broken? missing type for \""+baseName+ '"');
 				broken = true;
 				continue;
 			}
@@ -401,11 +401,11 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
 					// We don't understand it, but that's OK as it's optional.
-					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					if(logMINOR) Logger.minor(this, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+ '"');
 					continue;
 				}
 				// We don't understand it, and it's not optional, so we can't deploy the update.
-				Logger.error(this, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				Logger.error(this, "dependencies.properties broken? unrecognised type for \""+baseName+ '"');
 				broken = true;
 				continue;
 			}
@@ -494,7 +494,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			if(size < 0) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+ '"');
 				broken = true;
 				continue;
 			}
@@ -511,7 +511,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 						// But if it's present it must be correct!
 						order = Integer.parseInt(s);
 					} catch (NumberFormatException e) {
-						System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+						System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+ '"');
 						broken = true;
 						continue;
 					}
@@ -611,15 +611,15 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(myOS.toString().equalsIgnoreCase(os)) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_WINDOWS") &&
+			if("ALL_WINDOWS".equalsIgnoreCase(os) &&
 					myOS.isWindows) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_UNIX") &&
+			if("ALL_UNIX".equalsIgnoreCase(os) &&
 					myOS.isUnix) {
 				return true;
 			}
-			if(os.equalsIgnoreCase("ALL_MAC") &&
+			if("ALL_MAC".equalsIgnoreCase(os) &&
 					myOS.isMac) {
 				return true;
 			}
@@ -663,14 +663,14 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				// Ignore non-jars regardless of what the regex says.
 				if(!name.endsWith(".jar")) return false;
 				// FIXME similar checks elsewhere, factor out?
-				if(name.equals("freenet.jar") || name.equals("freenet.jar.new") || name.equals("freenet-stable-latest.jar") || name.equals("freenet-stable-latest.jar.new"))
+				if("freenet.jar".equals(name) || "freenet.jar.new".equals(name) || "freenet-stable-latest.jar".equals(name) || "freenet-stable-latest.jar.new".equals(name))
 					return false;
 				return true;
 			}
 			
 		});
 		for(File f : toDelete) {
-			System.out.println("Deleting old temp file \""+f+"\"");
+			System.out.println("Deleting old temp file \""+f+ '"');
 			f.delete();
 		}
 		for(String propName : props.stringPropertyNames()) {
@@ -679,7 +679,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 			if(!processed.add(baseName)) continue;
 			String s = props.getProperty(baseName+".type");
 			if(s == null) {
-				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \""+baseName+"\"");
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? missing type for \""+baseName+ '"');
 				continue;
 			}
 			final DEPENDENCY_TYPE type;
@@ -687,10 +687,10 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				type = DEPENDENCY_TYPE.valueOf(s);
 			} catch (IllegalArgumentException e) {
 				if(s.startsWith("OPTIONAL_")) {
-					if(logMINOR) Logger.minor(MainJarDependencies.class, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+"\"");
+					if(logMINOR) Logger.minor(MainJarDependencies.class, "Ignoring non-essential dependency type \""+s+"\" for \""+baseName+ '"');
 					continue;
 				}
-				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \""+baseName+"\"");
+				Logger.error(MainJarDependencies.class, "dependencies.properties broken? unrecognised type for \""+baseName+ '"');
 				continue;
 			}
 			
@@ -785,7 +785,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 				}
 			}
 			if(size < 0) {
-				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+"\"");
+				System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken length for "+baseName+" : \""+s+ '"');
 				return false;
 			}
 			
@@ -797,7 +797,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
 					// But if it's present it must be correct!
 					Integer.parseInt(s);
 				} catch (NumberFormatException e) {
-					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+"\"");
+					System.err.println("Unable to update to build "+build+": dependencies.properties broken: Broken order for "+baseName+" : \""+s+ '"');
 					continue;
 				}
 			}
@@ -978,8 +978,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
 	        // namefordeploy.nameforfile.filename=...
 	        // nameforfile is not necessarily the filename, which might contain . / etc.
 	        if(!split[0].equals(name)) continue;
-	        if(!split[1].equals("files")) continue;
-	        if(!split[3].equals("filename")) continue;
+	        if(!"files".equals(split[1])) continue;
+	        if(!"filename".equals(split[3])) continue;
 	        String fileBase = name+".files."+split[2];
 	        // Filename.
 	        File filename = null;
@@ -1082,7 +1082,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
             atomicDeployer.add(dependency);
 	    }
 	    if(nothingToDo) {
-	        System.out.println("Multi-file replace: Nothing to do for "+name+".");
+	        System.out.println("Multi-file replace: Nothing to do for "+name+ '.');
 	        atomicDeployer.cleanup();
 	        return false; // Valid no-op.
 	    }
@@ -1514,8 +1514,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                 //osw.write("trap true PIPE\n"); - should not be necessary
                 osw.write("while kill -0 "+WrapperManager.getWrapperPID()+" > /dev/null 2>&1; do sleep 1; done\n");
                 osw.write("./"+runshNoNice+" start > /dev/null 2>&1\n");
-                osw.write("rm "+RESTART_SCRIPT_NAME+"\n");
-                osw.write("rm "+runshNoNice+"\n");
+                osw.write("rm "+RESTART_SCRIPT_NAME+ '\n');
+                osw.write("rm "+runshNoNice+ '\n');
                 osw.close();
                 osw = null; 
                 os = null;
@@ -1548,7 +1548,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
                         writtenPrio = true;
                         line = "PRIORITY="; // = don't use nice.
                     }
-                    w.write(line+"\n");
+                    w.write(line+ '\n');
                 }
                 // We want to see exceptions on close() here.
                 br.close();
@@ -1587,7 +1587,7 @@ outer:	for(String propName : props.stringPropertyNames()) {
         		if(ze.isDirectory()) continue;
         		String name = ze.getName();
         		
-        		if(name.equals("META-INF/MANIFEST.MF")) {
+        		if("META-INF/MANIFEST.MF".equals(name)) {
         			final String key = "Implementation-Version";
         			BufferedInputStream bis = new BufferedInputStream(zis);
         			Manifest m = new Manifest(bis);

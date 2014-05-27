@@ -85,7 +85,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 			}
 			if(innerGetPriorityClass() == UserAlert.ERROR) {
-				div.addChild("#", " " + l10n("symmetricPS"));
+				div.addChild("#", ' ' + l10n("symmetricPS"));
 			}
 			return div;
 		}
@@ -137,10 +137,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
 				return l10n("forwardPort"+keySuffix, new String[] { "port", "link", "/link" }, 
-						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "", " ("+url+")" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "", " ("+url+ ')'});
 			} else if(portsNotForwarded.length == 2) {
 				return l10n("forwardTwoPorts"+keySuffix, new String[] { "port1", "port2", "link", "/link" },
-						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "", " ("+url+")" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "", " ("+url+ ')'});
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 				return "";
@@ -242,7 +242,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				sb.append(l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])) }));
 				if(portsNotForwarded.length > 2)
-					Logger.error(this, "Not able to tell user about more than 2 ports to forward! ("+portsNotForwarded.length+")");
+					Logger.error(this, "Not able to tell user about more than 2 ports to forward! ("+portsNotForwarded.length+ ')');
 			}
 			
 			return sb.toString();

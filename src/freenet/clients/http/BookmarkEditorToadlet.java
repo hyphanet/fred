@@ -34,7 +34,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	private static final int MAX_ACTION_LENGTH = 20;
 	/** Max. bookmark name length */
 	private static final int MAX_NAME_LENGTH = 500;
-	/** Max. bookmark path length (e.g. <code>Freenet related software and documentation/Freenet Message System</code> ) */
+	/** Max. bookmark path length (e.g. {@code Freenet related software and documentation/Freenet Message System} ) */
 	private static final int MAX_BOOKMARK_PATH_LENGTH = 10 * MAX_NAME_LENGTH;
 	private static final int MAX_EXPLANATION_LENGTH = 1024;
 	

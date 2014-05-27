@@ -266,8 +266,8 @@ public class RealNodeULPRTest extends RealNodeTest {
 				if(node.hasKey(fetchKey.getNodeKey(false), true, true))
 					count++;
 			}
-			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
-			Logger.normal(RealNodeULPRTest.class, "T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
+			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+ '.');
+			Logger.normal(RealNodeULPRTest.class, "T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+ '.');
 			if(x > 300) {
 				System.err.println();
 				System.err.println("TEST FAILED");

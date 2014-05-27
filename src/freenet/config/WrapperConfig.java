@@ -93,10 +93,10 @@ public class WrapperConfig {
 			
 			while((line = br.readLine()) != null) {
 				
-				if(line.startsWith(name+"=")) {
+				if(line.startsWith(name+ '=')) {
 					bw.write(name+'='+value+'\n');
 					written = true;
-				} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+				} else if("wrapper.restart.reload_configuration=TRUE".equalsIgnoreCase(line)) {
 					writtenReload = true;
 				} else {
 					bw.write(line+'\n');

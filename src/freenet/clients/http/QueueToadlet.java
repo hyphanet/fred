@@ -174,7 +174,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						String u = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 						insertURI = new FreenetURI(u);
 						if(logMINOR)
-							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
+							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+ ')');
 					} catch (MalformedURLException mue1) {
 						writeError(l10n("errorInvalidURI"),
 						           l10n("errorInvalidURIToU"), ctx, false, true);
@@ -223,21 +223,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					String size = request.getPartAsStringFailsafe("size-"+part, 50);
 					if(filename != null) {
 						HTMLNode line = infoList.addChild("li");
-						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.filenameLabel")+" ");
+						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.filenameLabel")+ ' ');
 						if(keyString != null) {
-							line.addChild("a", "href", "/"+keyString, filename);
+							line.addChild("a", "href", '/' +keyString, filename);
 						} else {
 							line.addChild("#", filename);
 						}
 					}
-					if(type != null && !type.equals("")) {
+					if(type != null && !type.isEmpty()) {
 						HTMLNode line = infoList.addChild("li");
 						boolean finalized = request.isPartSet("finalizedType");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
 					}
 					if(size != null) {
 						HTMLNode line = infoList.addChild("li");
-						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.sizeLabel") + " " + size);
+						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.sizeLabel") + ' ' + size);
 					}
 					infoList.addChild("#", l10n("deleteFileFromTemp"));
 					infoList.addChild("input", new String[] { "type", "name", "value", "checked" },
@@ -440,7 +440,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsStringFailsafe("bulkDownloads", 262144);
 				String[] keys = bulkDownloadsAsString.split("\n");
-				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
+				if((bulkDownloadsAsString != null && bulkDownloadsAsString.isEmpty()) || (keys.length < 1)) {
 					writePermanentRedirect(ctx, "Done", path());
 					return;
 				}
@@ -540,7 +540,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						String u = request.getPartAsStringFailsafe("key", MAX_KEY_LENGTH);
 						insertURI = new FreenetURI(u);
 						if(logMINOR)
-							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
+							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+ ')');
 					} catch (MalformedURLException mue1) {
 						writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx, false, true);
 						return;
@@ -559,18 +559,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
 				final String fnam;
-				if(insertURI.getKeyType().equals("CHK") || keyType.equals("SSK"))
+				if("CHK".equals(insertURI.getKeyType()) || "SSK".equals(keyType))
 					fnam = file.getFilename();
 				else
 					fnam = null;
@@ -659,13 +659,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode.equals(""))
+				if(compatibilityMode.isEmpty())
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -765,7 +765,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.isPartSet("compress");
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
-				if(s != null && !s.equals(""))
+				if(s != null && !s.isEmpty())
 					overrideSplitfileKey = HexUtil.hexToBytes(s);
 				else
 					overrideSplitfileKey = null;
@@ -857,8 +857,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					String key = request.getPartAsStringFailsafe("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
-					if(key == null || key.equals("")) continue;
-					form.addChild("#", l10n("key") + ":");
+					if(key == null || key.isEmpty()) continue;
+					form.addChild("#", l10n("key") + ':');
 					form.addChild("br");
 					form.addChild("#", key);
 					form.addChild("br");
@@ -1061,9 +1061,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		boolean listFetchKeys = false;
 
 		if (requestPath.length() > 0) {
-			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
+			if("countRequests.html".equals(requestPath) || "/countRequests.html".equals(requestPath)) {
 				countRequests = true;
-			} else if(requestPath.equals("listFetchKeys.txt")) {
+			} else if("listFetchKeys.txt".equals(requestPath)) {
 				listFetchKeys = true;
 			}
 		}
@@ -1187,7 +1187,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				DownloadRequestStatus get = (DownloadRequestStatus)req;
 				FreenetURI uri = get.getURI();
 				sb.append(uri.toString());
-				sb.append("\n");
+				sb.append('\n');
 			}
 		}
 		return sb.toString();
@@ -1332,13 +1332,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				if(request.isParameterSet("sortBy")){
 					final String sortBy = request.getParam("sortBy");
 
-					if(sortBy.equals("id")){
+					if("id".equals(sortBy)){
 						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
 						if(result == 0)
 							result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
-					}else if(sortBy.equals("size")){
+					}else if("size".equals(sortBy)){
 						result = Fields.compare(firstRequest.getTotalBlocks(), secondRequest.getTotalBlocks());
-					}else if(sortBy.equals("progress")){
+					}else if("progress".equals(sortBy)){
 						boolean firstFinalized = firstRequest.isTotalFinalized();
 						boolean secondFinalized = secondRequest.isTotalFinalized();
 						if(firstFinalized && !secondFinalized)
@@ -1350,7 +1350,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							double secondProgress = ((double)secondRequest.getFetchedBlocks()) / ((double)secondRequest.getMinBlocks());
 							result = Fields.compare(firstProgress, secondProgress);
 						}
-					} else if (sortBy.equals("lastActivity")) {
+					} else if ("lastActivity".equals(sortBy)) {
 						result = Fields.compare(firstRequest.getLastActivity(), secondRequest.getLastActivity());
 					}else
 						isSet=false;
@@ -2199,7 +2199,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			if(overrideCryptoKey != null)
 				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
 			if(get.detectedDontCompress())
-				compatCell.addChild("#", " ("+l10n("dontCompressInCompatCell")+")");
+				compatCell.addChild("#", " ("+l10n("dontCompressInCompatCell")+ ')');
 		}
 		return compatCell;
 	}
@@ -2508,7 +2508,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "origlink", "filename", "size" },
-					new HTMLNode[] { HTMLNode.link("/"+uri.toASCIIString()+"?max-size="+size), HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
+					new HTMLNode[] { HTMLNode.link('/' +uri.toASCIIString()+"?max-size="+size), HTMLNode.link('/' +uri.toASCIIString()), HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
 			return text;
 		}
 
@@ -2567,7 +2567,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "filename", "size" },
-					new HTMLNode[] { HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
+					new HTMLNode[] { HTMLNode.link('/' +uri.toASCIIString()), HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
 			return text;
 		}
 
@@ -2629,7 +2629,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "filename", "size", "files" },
-					new HTMLNode[] { HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.text(name), HTMLNode.text(SizeUtil.formatSize(size)), HTMLNode.text(files) });
+					new HTMLNode[] { HTMLNode.link('/' +uri.toASCIIString()), HTMLNode.text(name), HTMLNode.text(SizeUtil.formatSize(size)), HTMLNode.text(files) });
 			return text;
 		}
 

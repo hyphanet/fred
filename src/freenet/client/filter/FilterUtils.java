@@ -337,7 +337,7 @@ public class FilterUtils {
 				for(String s : shapeParts)
 				{
 					s = s.trim();
-					if(!(s.equalsIgnoreCase("auto") || isLength(s, false)))
+					if(!("auto".equalsIgnoreCase(s) || isLength(s, false)))
 						return false;
 				}
 				return true;
@@ -631,7 +631,7 @@ public class FilterUtils {
 			value = value.trim();
 			if(stripQuotes)
 				value = CSSTokenizerFilter.removeOuterQuotes(value).trim();
-			if(value!=null && !("".equals(value.trim())))
+			if(value!=null && !(value.trim() != null && value.trim().isEmpty()))
 				arrayToReturn.add(value);
 		}
 		return arrayToReturn.toArray(new String[0]);
@@ -725,7 +725,7 @@ public class FilterUtils {
 	}
 	public static boolean isNth(String value)
 	{
-		if(value.equals("odd") || value.equals("even") || isIntegerInRange(value, -MAX_NTH, MAX_NTH))
+		if("odd".equals(value) || "even".equals(value) || isIntegerInRange(value, -MAX_NTH, MAX_NTH))
 		{
 			return true;
 		}

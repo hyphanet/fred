@@ -108,7 +108,7 @@ public class ClientSSK extends ClientKey {
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
 		this(origURI.getDocName(), origURI.getRoutingKey(), origURI.getExtra(), null, origURI.getCryptoKey());
-		if(!origURI.getKeyType().equalsIgnoreCase("SSK"))
+		if(!"SSK".equalsIgnoreCase(origURI.getKeyType()))
 			throw new MalformedURLException();
 	}
 	

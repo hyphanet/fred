@@ -25,7 +25,7 @@ public class CleanupTranslations {
 		for(File f : translations) {
 			String name = f.getName();
 			if(!name.startsWith("freenet.l10n.")) continue;
-			if(name.equals("freenet.1l0n.en.properties")) continue;
+			if("freenet.1l0n.en.properties".equals(name)) continue;
 			FileInputStream fis = new FileInputStream(f);
 			InputStreamReader isr = new InputStreamReader(new BufferedInputStream(fis), "UTF-8");
 			BufferedReader br = new BufferedReader(isr);
@@ -40,14 +40,14 @@ public class CleanupTranslations {
 				int idx = line.indexOf('=');
 				if(idx == -1) {
 					// Last line
-					if(!line.equals("End")) {
-						System.err.println("Line with no equals (file does not end in End???): "+f+" - \""+line+"\"");
+					if(!"End".equals(line)) {
+						System.err.println("Line with no equals (file does not end in End???): "+f+" - \""+line+ '"');
 						System.exit(1);
 					}
-					sw.append(line+"\n");
+					sw.append(line+ '\n');
 					line = br.readLine();
 					if(line != null) {
-						System.err.println("Content after End: \""+line+"\"");
+						System.err.println("Content after End: \""+line+ '"');
 						System.exit(2);
 					}
 					break;
@@ -60,7 +60,7 @@ public class CleanupTranslations {
 					changed = true;
 					continue;
 				}
-				sw.append(line+"\n");
+				sw.append(line+ '\n');
 			}
 			if(!changed) continue;
 			br.close();

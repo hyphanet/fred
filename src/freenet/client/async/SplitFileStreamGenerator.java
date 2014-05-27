@@ -14,7 +14,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
-/**Writes an array of <code>SplitFileFetcherSegment</code> objects to an output
+/**Writes an array of {@code SplitFileFetcherSegment} objects to an output
  * stream.*/
 public class SplitFileStreamGenerator implements StreamGenerator {
 

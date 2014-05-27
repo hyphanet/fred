@@ -73,7 +73,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	static synchronized void getUName() {
-		if(!uname.equals("unknown")) return;
+		if(!"unknown".equals(uname)) return;
 		System.out.println("Getting uname for logging");
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
@@ -168,17 +168,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		if (intervalName.endsWith("S")) {
 			intervalName = intervalName.substring(0, intervalName.length()-1);
 		}
-		if (intervalName.equalsIgnoreCase("MINUTE"))
+		if ("MINUTE".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.MINUTE;
-		else if (intervalName.equalsIgnoreCase("HOUR"))
+		else if ("HOUR".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.HOUR;
-		else if (intervalName.equalsIgnoreCase("DAY"))
+		else if ("DAY".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.DAY_OF_MONTH;
-		else if (intervalName.equalsIgnoreCase("WEEK"))
+		else if ("WEEK".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.WEEK_OF_YEAR;
-		else if (intervalName.equalsIgnoreCase("MONTH"))
+		else if ("MONTH".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.MONTH;
-		else if (intervalName.equalsIgnoreCase("YEAR"))
+		else if ("YEAR".equalsIgnoreCase(intervalName))
 			INTERVAL = Calendar.YEAR;
 		else
 			throw new IntervalParseException("invalid interval " + intervalName);
@@ -220,7 +220,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
 		if (digit > 0) {
-			buf.append("-");
+			buf.append('-');
 			buf.append(digit);
 		}
 		buf.append(".log");

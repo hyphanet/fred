@@ -231,7 +231,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		}
 		data = result.asBucket();
 		mimeType = result.getMimeType();
-		if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+		if(mimeType == null || mimeType.isEmpty()) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 		if(fctx.overrideMIME != null && !result.alreadyFiltered)
 			mimeType = fctx.overrideMIME;
 		else if(fctx.overrideMIME != null && !mimeType.equals(fctx.overrideMIME)) {

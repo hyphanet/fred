@@ -172,10 +172,10 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public String parentPath(String path) {
-		if(path.equals("/"))
+		if("/".equals(path))
 			return "/";
 
-		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf('/')) + "/";
+		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf('/')) + '/';
 	}
 
 	public Bookmark getBookmarkByPath(String path) {
@@ -250,7 +250,7 @@ public class BookmarkManager implements RequestClient {
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
 		} else {
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK")) {
+			if("USK".equals(((BookmarkItem) bookmark).getKeyType())) {
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					if(!wantUSK(u, (BookmarkItem)bookmark)) {
@@ -397,7 +397,7 @@ public class BookmarkManager implements RequestClient {
 
 	private synchronized void _innerReadBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
 		boolean hasBeenParsedWithoutAnyProblem = true;
-		boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
+		boolean isRoot = (prefix != null && prefix.isEmpty() && MAIN_CATEGORY.equals(category));
 		synchronized(bookmarks) {
 			if(!isRoot)
 				putPaths(prefix + category.name + '/', category);

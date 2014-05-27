@@ -204,14 +204,14 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			}
 		}
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || "connection".equalsIgnoreCase(persistenceString)) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+		} else if("reboot".equalsIgnoreCase(persistenceString)) {
 			// Reports to client by name; persists over connection loss.
 			// Not saved to disk, so dies on reboot.
 			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
+		} else if("forever".equalsIgnoreCase(persistenceString)) {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
@@ -284,13 +284,13 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	public static short parseReturnType(String string) {
 		if(string == null)
 			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("direct"))
+		if("direct".equalsIgnoreCase(string))
 			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("none"))
+		if("none".equalsIgnoreCase(string))
 			return RETURN_TYPE_NONE;
-		if(string.equalsIgnoreCase("disk"))
+		if("disk".equalsIgnoreCase(string))
 			return RETURN_TYPE_DISK;
-		if(string.equalsIgnoreCase("chunked"))
+		if("chunked".equalsIgnoreCase(string))
 			return RETURN_TYPE_CHUNKED;
 		return Short.parseShort(string);
 	}

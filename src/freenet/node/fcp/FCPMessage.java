@@ -153,7 +153,7 @@ public abstract class FCPMessage {
 		if(name.equals(ProbeRequest.NAME)) return new ProbeRequest(fs);
 		if(name.equals(FilterMessage.NAME))
 			return new FilterMessage(fs, bfTemp);
-		if(name.equals("Void"))
+		if("Void".equals(name))
 			return null;
 
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);

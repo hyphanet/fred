@@ -90,7 +90,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	}
 			
 	/**
-	 * <strong>Not a public method.</strong> Changes the internally stored <code>currentValue</code> and return the old one.
+	 * <strong>Not a public method.</strong> Changes the internally stored {@code currentValue} and return the old one.
 	 * 
 	 * Used by {@link DecayingKeyspaceAverage} to normalize the stored averages. Calling this function
 	 * may (purposefully) destroy the utility of the average being kept.
@@ -157,7 +157,7 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	}
     
 	/**
-	 * Change <code>maxReports</code>.
+	 * Change {@code maxReports}.
 	 * 
 	 * @param maxReports
 	 */

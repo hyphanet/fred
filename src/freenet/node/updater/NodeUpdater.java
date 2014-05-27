@@ -105,7 +105,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		if(oldBlob.exists()) {
 			File temp;
 			try {
-				temp = File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+				temp = File.createTempFile(blobFilenamePrefix + availableVersion + '-', ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 			} catch (IOException e) {
 				Logger.error(this, "Unable to process old blob: "+e, e);
 				return;
@@ -145,7 +145,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+jarName() + " update edition "+l+": version too new (min "+minDeployVersion+" max "+maxDeployVersion+")");
+				System.err.println("Ignoring "+jarName() + " update edition "+l+": version too new (min "+minDeployVersion+" max "+maxDeployVersion+ ')');
 				found = maxDeployVersion;
 			}
 			
@@ -213,7 +213,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(availableVersion > currentVersion)
 						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
-						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+						File.createTempFile(blobFilenamePrefix + availableVersion + '-', ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
@@ -327,7 +327,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(ze.isDirectory()) continue;
 					String name = ze.getName();
 					
-					if(name.equals("META-INF/MANIFEST.MF")) {
+					if("META-INF/MANIFEST.MF".equals(name)) {
 						if(logMINOR) Logger.minor(this, "Found manifest");
 						long size = ze.getSize();
 						if(logMINOR) Logger.minor(this, "Manifest size: "+size);

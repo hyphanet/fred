@@ -365,7 +365,7 @@ public class RequestTracker {
 						count++;
 					} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 				}
-				if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
+				if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+ ' ' +(ssk?"ssk":"chk")+ ' ' +(insert?"insert":"request")+ ' ' +(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
 				counter.total += count;
 				counter.expectedTransfersIn += transfersIn;
 				counter.expectedTransfersOut += transfersOut;

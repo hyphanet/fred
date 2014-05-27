@@ -9,7 +9,7 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Browser Test Toadlet. Accessible from <code>http://.../test/</code>.
+ * Browser Test Toadlet. Accessible from {@code http://.../test/}.
  * 
  * Useful to test browser's capabilities:
  * <ul>

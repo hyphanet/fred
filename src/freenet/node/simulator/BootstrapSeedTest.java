@@ -74,7 +74,7 @@ public class BootstrapSeedTest {
         	seconds++;
         	if(opennetConns >= targetPeers) {
         		long timeTaken = System.currentTimeMillis()-startTime;
-        		System.out.println("Completed bootstrap ("+targetPeers+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+")");
+        		System.out.println("Completed bootstrap ("+targetPeers+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+ ')');
         		node.park();
         		System.exit(0);
         	}

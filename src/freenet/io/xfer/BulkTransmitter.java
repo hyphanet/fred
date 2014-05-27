@@ -476,7 +476,7 @@ outer:	while(true) {
 	
 	@Override
 	public String toString() {
-		return "BulkTransmitter:"+uid+":"+peer.shortToString();
+		return "BulkTransmitter:"+uid+ ':' +peer.shortToString();
 	}
 	
 	public String getCancelReason() {

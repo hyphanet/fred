@@ -167,20 +167,20 @@ public class JPEGFilter implements ContentDataFilter {
 				String type = readNullTerminatedAsciiString(dis);
 				if(baos != null) writeNullTerminatedString(baos, type);
 				if(logMINOR) Logger.minor(this, "Type: "+type+" length "+type.length());
-				if(type.equals("JFIF")) {
+				if("JFIF".equals(type)) {
 					Logger.minor(this, "JFIF Header");
 					// File header
 					int majorVersion = dis.readUnsignedByte();
 					if(majorVersion != 1)
-						throwError("Invalid header", "Unrecognized major version "+majorVersion+".");
+						throwError("Invalid header", "Unrecognized major version "+majorVersion+ '.');
 					dos.write(majorVersion);
 					int minorVersion = dis.readUnsignedByte();
 					if(minorVersion > 2)
-						throwError("Invalid header", "Unrecognized version 1."+minorVersion+".");
+						throwError("Invalid header", "Unrecognized version 1."+minorVersion+ '.');
 					dos.write(minorVersion);
 					int units = dis.readUnsignedByte();
 					if(units > 2)
-						throwError("Invalid header", "Unrecognized units type "+units+".");
+						throwError("Invalid header", "Unrecognized units type "+units+ '.');
 					dos.write(units);
 					dos.writeShort(dis.readShort()); // Copy Xdensity
 					dos.writeShort(dis.readShort()); // Copy Ydensity
@@ -192,7 +192,7 @@ public class JPEGFilter implements ContentDataFilter {
 					byte[] buf = new byte[thumbLen];
 					dis.readFully(buf);
 					dos.write(buf);
-				} else if(type.equals("JFXX")) {
+				} else if("JFXX".equals(type)) {
 					// JFIF extension marker
 					int extensionCode = dis.readUnsignedByte();
 					if(extensionCode == 0x10 || extensionCode == 0x11 || extensionCode == 0x13) {

@@ -175,7 +175,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 
 				@Override
 				public String toString() {
-					return super.toString() + "(" + uid + ":" + source.getPeer() + ")";
+					return super.toString() + '(' + uid + ':' + source.getPeer() + ')';
 				}
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {

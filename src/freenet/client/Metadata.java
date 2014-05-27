@@ -403,7 +403,7 @@ public class Metadata implements Cloneable {
 				mimeType = new String(toRead, "UTF-8");
 				if(logMINOR) Logger.minor(this, "Raw MIME");
 				if(!DefaultMIMETypes.isPlausibleMIMEType(mimeType))
-					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+"\"");
+					throw new MetadataParseException("Does not look like a MIME type: \""+mimeType+ '"');
 			}
 			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
 		}
@@ -662,7 +662,7 @@ public class Metadata implements Cloneable {
 			dis.readFully(buf);
 			targetName = new String(buf, "UTF-8");
 			while(true) {
-				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+"\"");
+				if(targetName.isEmpty()) throw new MetadataParseException("Invalid target name is empty: \""+new String(buf, "UTF-8")+ '"');
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
 					continue;
@@ -820,7 +820,7 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
-				if(key.equals("")) {
+				if(key.isEmpty()) {
 					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
 				}
 				HashMap<String, Object> hm = Metadata.forceMap(o);
@@ -859,7 +859,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata(Metadata.forceMap(o), prefix+key+"/");
+				target = new Metadata(Metadata.forceMap(o), prefix+key+ '/');
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
@@ -890,10 +890,10 @@ public class Metadata implements Cloneable {
 				this.setMIMEType(cm.getMIMEType());
 			targetName = arg;
 			while(true) {
-				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+arg+"\"");
+				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+arg+ '"');
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
-					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+arg+"\"", new Exception("debug"));
+					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+arg+ '"', new Exception("debug"));
 					continue;
 				} else break;
 			}
@@ -920,10 +920,10 @@ public class Metadata implements Cloneable {
 			documentType = docType;
 			targetName = name;
 			while(true) {
-				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+name+"\"");
+				if(targetName.isEmpty()) throw new IllegalArgumentException("Invalid target name is empty: \""+name+ '"');
 				if(targetName.charAt(0) == '/') {
 					targetName = targetName.substring(1);
-					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+name+"\"", new Exception("debug"));
+					Logger.error(this, "Stripped initial slash from archive internal redirect on creating metadata: \""+name+ '"', new Exception("debug"));
 					continue;
 				} else break;
 			}
@@ -967,7 +967,7 @@ public class Metadata implements Cloneable {
 			}
 			if(uri == null) throw new NullPointerException();
 			simpleRedirectKey = uri;
-			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
+			if(!("CHK".equals(uri.getKeyType()) && !uri.hasMetaStrings()))
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
@@ -1703,7 +1703,7 @@ public class Metadata implements Cloneable {
 		public void addItem(String name, Metadata item) {
 			if (name == null || item == null) throw new NullPointerException();
 			if (m == null) throw new IllegalStateException("You can't call it after getMetadata()");
-			if (m.manifestEntries.containsKey(name)) throw new IllegalStateException("You can't add a item twice: '"+name+"'");
+			if (m.manifestEntries.containsKey(name)) throw new IllegalStateException("You can't add a item twice: '"+name+ '\'');
 			m.manifestEntries.put(name, item);
 		}
 
@@ -1745,7 +1745,7 @@ public class Metadata implements Cloneable {
 
 		if(manifestEntries != null) {
 			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
-				dumpline(indent, sb, "Entry: "+entry.getKey()+":");
+				dumpline(indent, sb, "Entry: "+entry.getKey()+ ':');
 				entry.getValue().dump(indent + 1, sb);
 			}
 		}
@@ -1754,7 +1754,7 @@ public class Metadata implements Cloneable {
 	private void dumpline(int indent, StringBuffer sb, String string) {
 		for(int i=0;i<indent;i++) sb.append(' ');
 		sb.append(string);
-		sb.append("\n");
+		sb.append('\n');
 	}
 
 	/**

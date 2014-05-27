@@ -132,7 +132,7 @@ public class BANDWIDTH_RATE extends BandwidthManipulator implements Step {
 		String up = request.getPartAsStringFailsafe("customUp", 20);
 
 		// Try to parse custom limit first.
-		if(!down.equals("") && !up.equals("")) {
+		if(!down.isEmpty() && !up.isEmpty()) {
 			String failedLimits = attemptSet(up, down);
 
 			if (!failedLimits.isEmpty()) {

@@ -400,7 +400,7 @@ public class SimpleFieldSet {
 		if(value == null) return true; // valid no-op
 		if((!alwaysUseBase64) && value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
 		if(allowMultiple && (!fromRead) && value.indexOf(MULTI_VALUE_CHAR) != -1) {
-			throw new IllegalArgumentException("Appending a string to a SimpleFieldSet value should not contain the multi-value char \""+String.valueOf(MULTI_VALUE_CHAR)+"\" but it does: \"" +value+"\" for \""+key+"\"", new Exception("error"));
+			throw new IllegalArgumentException("Appending a string to a SimpleFieldSet value should not contain the multi-value char \""+String.valueOf(MULTI_VALUE_CHAR)+"\" but it does: \"" +value+"\" for \""+key+ '"', new Exception("error"));
 		}
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			if(!shortLived) key = key.intern();
@@ -591,7 +591,7 @@ public class SimpleFieldSet {
 	private void writeHeader(Writer w) throws IOException {
 		if (header != null) {
 			for (String line: header) {
-				w.write("# " + line + "\n");
+				w.write("# " + line + '\n');
 			}
 		}
 	}

@@ -158,7 +158,7 @@ public class PersistentBlobTempBucket implements Bucket {
 
 	@Override
 	public String getName() {
-		return factory.getName()+":"+index;
+		return factory.getName()+ ':' +index;
 	}
 
 	@Override

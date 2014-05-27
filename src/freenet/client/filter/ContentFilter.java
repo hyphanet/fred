@@ -250,7 +250,7 @@ public class ContentFilter {
 				}
 				String before = raw.substring(0, idx).trim();
 				String after = raw.substring(idx+1).trim();
-				if(before.equals("charset")) {
+				if("charset".equals(before)) {
 					charset = after;
 				} else {
 					if (otherParams == null)

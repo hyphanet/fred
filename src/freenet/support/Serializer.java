@@ -173,7 +173,7 @@ public class Serializer {
 			final double[] array = (double[])object;
 			if (array.length > 255) {
 				throw new IllegalArgumentException("Cannot serialize an array of more than 255 doubles; attempted to " +
-				                                   "serialize " + array.length + ".");
+				                                   "serialize " + array.length + '.');
 			}
 			dos.writeByte(array.length);
 			for (double element : array) dos.writeDouble(element);

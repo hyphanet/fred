@@ -145,18 +145,18 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 						sb.append(l10n("fetchingNewNode", "nodeVersion", Integer.toString(updater.fetchingNewMainJarVersion())));
 					}
 				}
-				sb.append(" ");
+				sb.append(' ');
 				sb.append(l10n("updateASAPQuestion"));
 				formText = l10n("updateASAPButton");
 			}
 			
 			if(updater.node.updateIsUrgent()) {
-				sb.append(" ");
+				sb.append(' ');
 				sb.append(l10n("updateIsUrgent"));
 			}
 			
 			if(updater.brokenDependencies()) {
-				sb.append(" ");
+				sb.append(' ');
 				sb.append(l10n("brokenDependencies", "version", Integer.toString(updater.newMainJarVersion())));
 			}
 			

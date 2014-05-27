@@ -31,7 +31,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.
+ * Node Configuration Toadlet. Accessible from {@code http://.../config/}.
  */
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
@@ -308,7 +308,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					// Disallow resetting fproxy port number to default as it
 					// might break the link to start fproxy on the system tray,
 					// shortcuts etc.
-					if (prefix.equals("fproxy") && configName.equals("port"))
+					if ("fproxy".equals(prefix) && "port".equals(configName))
 						continue;
 					value = o.getDefault();
 				} else {
@@ -452,7 +452,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		 * under Core configuration, provided the maximum memory property is
 		 * defined. (the wrapper is being used)
 		 */
-		if (subConfig.getPrefix().equals("node")
+		if ("node".equals(subConfig.getPrefix())
 				&& WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
@@ -648,7 +648,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		// Options whose defaults are not wise to apply include the location of
 		// the master keys file,
 		// the Darknet port number, and the datastore size.
-		if (!subConfig.getPrefix().equals("node")) {
+		if (!"node".equals(subConfig.getPrefix())) {
 			formNode.addChild("input",
 					new String[] { "type", "name", "value" }, new String[] {
 							"submit", "confirm-reset-to-defaults",

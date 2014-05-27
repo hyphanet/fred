@@ -49,7 +49,7 @@ public enum Type {
 			case 7: return UPTIME_7D;
 			case 8: return REJECT_STATS;
 			case 9: return OVERALL_BULK_OUTPUT_CAPACITY_USAGE;
-			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + ".");
+			default: throw new IllegalArgumentException("There is no ProbeType with code " + code + '.');
 		}
 	}
 }

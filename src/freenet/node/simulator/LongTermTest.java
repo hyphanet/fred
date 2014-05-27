@@ -32,7 +32,7 @@ public class LongTermTest {
 		try {
 			FileOutputStream fos = new FileOutputStream(file, true);
 			OutputStreamWriter w = new OutputStreamWriter(fos);
-			w.write(Fields.commaList(csvLine.toArray(), '!')+"\n");
+			w.write(Fields.commaList(csvLine.toArray(), '!')+ '\n');
 			w.close();
 		} catch (IOException e) {
 			System.err.println("Exiting due to IOException "+e+" writing status file");

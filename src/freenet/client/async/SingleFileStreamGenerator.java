@@ -17,7 +17,7 @@ import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-/**Writes a <code>Bucket</code> to an output stream.*/
+/**Writes a {@code Bucket} to an output stream.*/
 public class SingleFileStreamGenerator implements StreamGenerator {
 
 	final private Bucket bucket;

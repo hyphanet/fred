@@ -103,10 +103,10 @@ public class ClientPut extends ClientPutBase {
 	 * @param contentType
 	 *            The content type of the data
 	 * @param data
-	 *            The data (may be <code>null</code> if
-	 *            <code>uploadFromType</code> is UPLOAD_FROM_REDIRECT)
+	 *            The data (may be {@code null} if
+	 *            {@code uploadFromType} is UPLOAD_FROM_REDIRECT)
 	 * @param redirectTarget
-	 *            The URI to redirect to (if <code>uploadFromType</code> is
+	 *            The URI to redirect to (if {@code uploadFromType} is
 	 *            UPLOAD_FROM_REDIRECT)
 	 * @param handler
 	 *            The FCP connection handler
@@ -206,7 +206,7 @@ public class ClientPut extends ClientPutBase {
 		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
-		if(mimeType != null && mimeType.equals("")) mimeType = null;
+		if(mimeType != null && mimeType.isEmpty()) mimeType = null;
 		if(mimeType != null && !DefaultMIMETypes.isPlausibleMIMEType(mimeType)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
 		}

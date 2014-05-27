@@ -24,10 +24,10 @@ public class OPENNET implements Step {
 		HTMLNode input = p.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "opennet", "false" });
-		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectFriends")+":");
+		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectFriends")+ ':');
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));
-		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectFriendsPRO") + "¹");
+		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectFriendsPRO") + '¹');
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoiceCon"));
 		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
@@ -36,7 +36,7 @@ public class OPENNET implements Step {
 		input = p.addChild("input",
 		        new String[] { "type", "name", "value" },
 		        new String[] { "radio", "opennet", "true" });
-		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectStrangers")+":");
+		input.addChild("b", WizardL10n.l10n("opennetChoiceConnectStrangers")+ ':');
 		p.addChild("br");
 		p.addChild("i", WizardL10n.l10n("opennetChoicePro"));
 		p.addChild("#", ": "+WizardL10n.l10n("opennetChoiceConnectStrangersPRO"));
@@ -56,7 +56,7 @@ public class OPENNET implements Step {
 		HTMLNode footHidden = foot.addChild("div", "class", "hidden");
 		HTMLNode footList = footHidden.addChild("ol");
 		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetStupid"));
-		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetFriends") + "²");
+		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetFriends") + '²');
 		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetTrustworthy"));
 		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetNoSuspect"));
 		footList.addChild("li", WizardL10n.l10n("opennetChoiceHowSafeIsFreenetChangeID"));

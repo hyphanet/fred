@@ -130,7 +130,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 		if (isEmptyElement(name)) {
 			return "";
 		} else {
-			return "</" + name + ">";
+			return "</" + name + '>';
 		}
 	}
 
@@ -342,7 +342,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	 * Returns the name of the first "real" tag found in the hierarchy below
 	 * this node.
 	 * 
-	 * @return The name of the first "real" tag, or <code>null</code> if no
+	 * @return The name of the first "real" tag, or {@code null} if no
 	 *         "real" tag could be found
 	 */
 	public String getFirstTag() {

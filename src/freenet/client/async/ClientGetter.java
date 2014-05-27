@@ -276,7 +276,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		
 		if(forceCompatibleExtension != null && ctx.filterData) {
 		    if(mimeType == null) {
-		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+"\""), null, container, context);
+		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+ '"'), null, container, context);
 		        return;
 		    }
 			try {
@@ -450,7 +450,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				String mime = e.getExpectedMimeType();
 				if(ctx.overrideMIME != null)
 					mime = ctx.overrideMIME;
-				if(mime != null && !"".equals(mime)) {
+				if(mime != null && mime != null && !mime.isEmpty()) {
 					// Even if it's the default, it is set because we have the final size.
 					UnsafeContentTypeException unsafe = ContentFilter.checkMIMEType(mime);
 					if(unsafe != null) {
@@ -732,7 +732,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			mime = clientMetadata.getMIMEType();
 		if(ctx.overrideMIME != null)
 			mime = ctx.overrideMIME;
-		if(mime == null || mime.equals("")) return;
+		if(mime == null || mime.isEmpty()) return;
 		if(ctx.filterData) {
 			UnsafeContentTypeException e = ContentFilter.checkMIMEType(mime);
 			if(e != null) {

@@ -48,7 +48,7 @@ public class InsertableClientSSK extends ClientSSK {
 	}
 	
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
-		if(uri.getKeyType().equalsIgnoreCase("KSK"))
+		if("KSK".equalsIgnoreCase(uri.getKeyType()))
 			return ClientKSK.create(uri);
 
 		if(uri.getRoutingKey() == null)
@@ -59,7 +59,7 @@ public class InsertableClientSSK extends ClientSSK {
 		byte keyType;
 
 		byte[] extra = uri.getExtra();
-		if(uri.getKeyType().equals("SSK")) {
+		if("SSK".equals(uri.getKeyType())) {
 			if(extra == null)
 				throw new MalformedURLException("Inserting pre-1010 keys not supported");
 			// Formatted exactly as ,extra on fetching

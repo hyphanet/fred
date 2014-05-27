@@ -398,7 +398,7 @@ outerTAR:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(name.equals(".metadata"))
+				if(".metadata".equals(name))
 					gotMetadata = true;
 				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
@@ -478,7 +478,7 @@ outerZIP:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(name.equals(".metadata"))
+				if(".metadata".equals(name))
 					gotMetadata = true;
 				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);

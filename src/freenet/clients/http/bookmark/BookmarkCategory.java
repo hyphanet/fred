@@ -112,7 +112,7 @@ public class BookmarkCategory extends Bookmark {
         List<String> strings = new ArrayList<String>();
         List<BookmarkItem> items = getItems();
         List<BookmarkCategory> subCategories = getSubCategories();
-        prefix += this.name + "/";
+        prefix += this.name + '/';
 
         for (int i = 0; i < items.size(); i++) {
             strings.add(prefix + items.get(i).toString());

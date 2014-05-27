@@ -207,7 +207,7 @@ public class PluginJarUpdater extends NodeUpdater {
 		}
 		synchronized(writeJarSync) {
 			if (!fNew.delete() && fNew.exists()) {
-				System.err.println("Can't delete " + fNew + "!");
+				System.err.println("Can't delete " + fNew + '!');
 			}
 
 			FileOutputStream fos;

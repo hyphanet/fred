@@ -97,7 +97,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
 		if(isAdvancedModeEnabled)
-			insertForm.addChild("#", " "+l10n("insertCanonicalAdvanced"));
+			insertForm.addChild("#", ' ' +l10n("insertCanonicalAdvanced"));
 		insertForm.addChild("br");
 		input = insertForm.addChild("input",
 		        new String[] { "type", "name", "value" },
@@ -108,14 +108,14 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		insertForm.addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
 		if(isAdvancedModeEnabled)
-			insertForm.addChild("#", " "+l10n("insertRandomAdvanced"));
+			insertForm.addChild("#", ' ' +l10n("insertRandomAdvanced"));
 		if (isAdvancedModeEnabled) {
 			insertForm.addChild("br");
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "radio", "keytype", "specify" });
 			insertForm.addChild("b", l10n("insertSpecificKeyTitle"));
-			insertForm.addChild("#", ": "+l10n("insertSpecificKey")+" ");
+			insertForm.addChild("#", ": "+l10n("insertSpecificKey")+ ' ');
 			insertForm.addChild("input",
 			        new String[] { "type", "name", "value" },
 			        new String[] { "text", "key", "KSK@" });

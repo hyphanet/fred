@@ -67,7 +67,7 @@ public class SECURITY_PHYSICAL implements Step {
 		        "operatingSystem",
 		        NodeL10n.getBase().getString("OperatingSystemName."+os.name())));
 		if(os == FileUtil.OperatingSystem.Windows) {
-			swapWarning.addChild("#", " " + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
+			swapWarning.addChild("#", ' ' + WizardL10n.l10nSec("physicalThreatLevelSwapfileWindows"));
 		}
 		for(SecurityLevels.PHYSICAL_THREAT_LEVEL level : SecurityLevels.PHYSICAL_THREAT_LEVEL.values()) {
 			HTMLNode input;
@@ -81,7 +81,7 @@ public class SECURITY_PHYSICAL implements Step {
 			        core.node.securityLevels.getPhysicalThreatLevel() != level) {
 				// Add password form on high security if not already at high security.
 				HTMLNode p = div.addChild("p");
-				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+":");
+				p.addChild("label", "for", "passwordBox", WizardL10n.l10nSec("setPasswordLabel")+ ':');
 				p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
 			}
 		}
@@ -105,7 +105,7 @@ public class SECURITY_PHYSICAL implements Step {
 		SecurityLevels.PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 		String error = request.getParam("error");
 
-		if (error.equals("pass")) {
+		if ("pass".equals(error)) {
 			//Password prompt requested
 			PASSWORD_PROMPT type;
 			try {
@@ -161,11 +161,11 @@ public class SECURITY_PHYSICAL implements Step {
 
 			addBackToPhysicalSeclevelsButton(form);
 			return true;
-		} else if (error.equals("corrupt")) {
+		} else if ("corrupt".equals(error)) {
 			//Password file corrupt
 			SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(helper, core.node.getMasterPasswordFile().getPath());
 			return true;
-		} else if (error.equals("delete")) {
+		} else if ("delete".equals(error)) {
 			SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(helper, core.node.getMasterPasswordFile().getPath(), newThreatLevel.name());
 			return true;
 		}

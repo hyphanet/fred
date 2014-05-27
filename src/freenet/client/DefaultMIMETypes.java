@@ -793,8 +793,8 @@ public class DefaultMIMETypes {
 	
 	private static final String TOP_LEVEL = "(?>[a-zA-Z-]+)";
 	private static final String CHARS = "(?>[a-zA-Z0-9+_\\-\\.]+)";
-	private static final String PARAM = "(?>;\\s*"+CHARS+"="+"(("+CHARS+")|(\".*\")))";
-	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+"/"+CHARS+"\\s*"+PARAM+"*");
+	private static final String PARAM = "(?>;\\s*"+CHARS+ '=' +"(("+CHARS+")|(\".*\")))";
+	private static Pattern MIME_TYPE = Pattern.compile(TOP_LEVEL+ '/' +CHARS+"\\s*"+PARAM+ '*');
 
 	private static Pattern INFOCALYPSE_DIRTY_HACK = Pattern.compile("application/mercurial-bundle;[0-9]{1,6}");
 	

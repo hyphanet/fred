@@ -47,7 +47,7 @@ import freenet.support.io.FileUtil;
  * 
  * <p>
  * This class push a series of keys in the format of
- * <code>KSK@&lt;unique identifier&gt;-DATE-n</code>. It will then try to pull them after (2^n - 1)
+ * {@code KSK@&lt;unique identifier&gt;-DATE-n}. It will then try to pull them after (2^n - 1)
  * days.
  * <p>
  * The result is recorded as a CSV file in the format of:
@@ -79,7 +79,7 @@ public class LongTermPushPullTest extends LongTermTest {
 		}
 		String uid = args[0];
 		
-		if(args.length == 2 && (args[1].equalsIgnoreCase("--dump") || args[1].equalsIgnoreCase("-dump") || args[1].equalsIgnoreCase("dump"))) {
+		if(args.length == 2 && ("--dump".equalsIgnoreCase(args[1]) || "-dump".equalsIgnoreCase(args[1]) || "dump".equalsIgnoreCase(args[1]))) {
 			try {
 				dumpStats(uid);
 			} catch (IOException e) {
@@ -142,7 +142,7 @@ public class LongTermPushPullTest extends LongTermTest {
 			for (int i = 0; i <= MAX_N; i++) {
 				Bucket data = randomData(node);
 				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
+				FreenetURI uri = new FreenetURI("KSK@" + uid + '-' + dateFormat.format(today.getTime()) + '-' + i);
 				System.out.println("PUSHING " + uri);
 				client.addEventHook(new ClientEventListener() {
 
@@ -164,7 +164,7 @@ public class LongTermPushPullTest extends LongTermTest {
 					client.insert(block, false, null);
 					t2 = System.currentTimeMillis();
 
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1));
+					System.out.println("PUSH-TIME-" + i + ':' + (t2 - t1));
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (InsertException e) {
 					e.printStackTrace();
@@ -202,7 +202,7 @@ public class LongTermPushPullTest extends LongTermTest {
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()) + "-" + i);
+				FreenetURI uri = new FreenetURI("KSK@" + uid + '-' + dateFormat.format(targetDate.getTime()) + '-' + i);
 				System.out.println("PULLING " + uri);
 
 				try {
@@ -210,7 +210,7 @@ public class LongTermPushPullTest extends LongTermTest {
 					client.fetch(uri);
 					t2 = System.currentTimeMillis();
 
-					System.out.println("PULL-TIME-" + i + ":" + (t2 - t1));
+					System.out.println("PULL-TIME-" + i + ':' + (t2 - t1));
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
 					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND

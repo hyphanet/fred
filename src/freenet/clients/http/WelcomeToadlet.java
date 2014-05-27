@@ -188,7 +188,7 @@ public class WelcomeToadlet extends Toadlet {
             HTMLNode contentNode = page.content;
             HTMLNode content;
             String filenameHint = null;
-            if (key.getKeyType().equals("CHK")) {
+            if ("CHK".equals(key.getKeyType())) {
                 String[] metas = key.getAllMetaStrings();
                 if ((metas != null) && (metas.length > 1)) {
                     filenameHint = metas[0];
@@ -201,7 +201,7 @@ public class WelcomeToadlet extends Toadlet {
                 String u = key.toString();
                 NodeL10n.getBase().addL10nSubstitution(content, "WelcomeToadlet.keyInsertedSuccessfullyWithKeyAndName",
                         new String[]{"link", "name"},
-                        new HTMLNode[] { HTMLNode.link("/"+u), HTMLNode.text(u) });
+                        new HTMLNode[] { HTMLNode.link('/' +u), HTMLNode.text(u) });
             } catch (InsertException e) {
             	content = ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle"), contentNode, "failed-insert", false);
                 content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));
@@ -524,8 +524,8 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     /**
-     * Reads and returns the content of <code>logfile</code>. At most <code>byteLimit</code>
-     * bytes will be read. If <code>byteLimit</code> is less than the size of <code>logfile</code>,
+     * Reads and returns the content of {@code logfile}. At most {@code byteLimit}
+     * bytes will be read. If {@code byteLimit} is less than the size of {@code logfile},
      * the first part of the file will be skipped. If this leaves a partial line at the beginning
      * of the content to return, that partial line will also be skipped.
      * @param logfile The file to read

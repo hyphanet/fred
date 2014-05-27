@@ -33,7 +33,7 @@ public class ImageCreatorToadlet extends Toadlet {
 	 * client-side cache.
 	 * If anyone makes modifications to this class, this needs to be updated.
 	 */
-	public static final Date	LAST_MODIFIED	= new Date(1248256659000l);
+	public static final Date	LAST_MODIFIED	= new Date(1248256659000L);
 
 	protected ImageCreatorToadlet(HighLevelSimpleClient client) {
 		super(client);

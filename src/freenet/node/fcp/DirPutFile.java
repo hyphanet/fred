@@ -52,15 +52,15 @@ abstract class DirPutFile {
 		if(name == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
 		String contentTypeOverride = subset.get("Metadata.ContentType");
-		if(contentTypeOverride != null && (!contentTypeOverride.equals("")) && !DefaultMIMETypes.isPlausibleMIMEType(contentTypeOverride)) {
+		if(contentTypeOverride != null && (!contentTypeOverride.isEmpty()) && !DefaultMIMETypes.isPlausibleMIMEType(contentTypeOverride)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.BAD_MIME_TYPE, "Bad MIME type in Metadata.ContentType", identifier, global);
 		}
 		String type = subset.get("UploadFrom");
-		if((type == null) || type.equalsIgnoreCase("direct")) {
+		if((type == null) || "direct".equalsIgnoreCase(type)) {
 			return DirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global, bf);
-		} else if(type.equalsIgnoreCase("disk")) {
+		} else if("disk".equalsIgnoreCase(type)) {
 			return DiskDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
-		} else if(type.equalsIgnoreCase("redirect")) {
+		} else if("redirect".equalsIgnoreCase(type)) {
 			return RedirectDirPutFile.create(name, contentTypeOverride, subset, identifier, global);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);

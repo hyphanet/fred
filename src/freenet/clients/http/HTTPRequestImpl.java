@@ -228,7 +228,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * 
 	 * @param name
 	 *            the name of the parameter to get
-	 * @return the first value or <code>null</code> if the parameter was not
+	 * @return the first value or {@code null} if the parameter was not
 	 *         set
 	 */
 	private String getParameterValue(String name) {
@@ -490,7 +490,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			if(logMINOR)
 				Logger.minor(this, "Uploaded content-type: " + ctype);
 			String[] ctypeparts = ctype.split(";");
-			if(ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
+			if("application/x-www-form-urlencoded".equalsIgnoreCase(ctypeparts[0])) {
 				// Completely different encoding, but easy to handle
 				if(data.size() > 1024 * 1024)
 					throw new IOException("Too big");
@@ -498,13 +498,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 				String s = new String(buf, "us-ascii");
 				parseRequestParameters(s, true, true);
 			}
-			if(!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2))
+			if(!"multipart/form-data".equalsIgnoreCase(ctypeparts[0].trim()) || (ctypeparts.length < 2))
 				return;
 
 			String boundary = null;
 			for(String ctypepart: ctypeparts) {
 				String[] subparts = ctypepart.split("=");
-				if((subparts.length == 2) && subparts[0].trim().equalsIgnoreCase("boundary"))
+				if((subparts.length == 2) && "boundary".equalsIgnoreCase(subparts[0].trim()))
 					boundary = subparts[1];
 			}
 
@@ -551,7 +551,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 						continue;
 					String hdrname = lineparts[0].trim();
 
-					if(hdrname.equalsIgnoreCase("Content-Disposition")) {
+					if("Content-Disposition".equalsIgnoreCase(hdrname)) {
 						if(lineparts.length < 2)
 							continue;
 						String[] valueparts = lineparts[1].split(";");
@@ -564,13 +564,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 							String value = subparts[1].trim();
 							if(value.startsWith("\"") && value.endsWith("\""))
 								value = value.substring(1, value.length() - 1);
-							if(fieldname.equalsIgnoreCase("name"))
+							if("name".equalsIgnoreCase(fieldname))
 								name = value;
-							else if(fieldname.equalsIgnoreCase("filename"))
+							else if("filename".equalsIgnoreCase(fieldname))
 								filename = value;
 						}
 					}
-					else if(hdrname.equalsIgnoreCase("Content-Type")) {
+					else if("Content-Type".equalsIgnoreCase(hdrname)) {
 						contentType = lineparts[1].trim();
 						if(logMINOR)
 							Logger.minor(this, "Parsed type: " + contentType);

@@ -169,7 +169,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
 		if(input.length < inputLength)
-			throw new IndexOutOfBoundsException(""+input.length+"<"+inputLength);
+			throw new IndexOutOfBoundsException(""+input.length+ '<' +inputLength);
         if(isCompressed) {
         	if(logMINOR)
         		Logger.minor(Key.class, "Decompressing "+inputLength+" bytes in decode with codec "+compressionAlgorithm);

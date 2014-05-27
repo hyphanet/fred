@@ -144,7 +144,7 @@ public class LongTermMHKTest extends LongTermTest {
 					uri = thisURI;
 					t2 = System.currentTimeMillis();
 					
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri+" for single block");
+					System.out.println("PUSH-TIME-" + i + ':' + (t2 - t1)+" for "+uri+" for single block");
 					csvLine.add(String.valueOf(t2 - t1));
 					csvLine.add(uri.toASCIIString());
 					successes++;
@@ -177,7 +177,7 @@ public class LongTermMHKTest extends LongTermTest {
 					uri = thisURI;
 					t2 = System.currentTimeMillis();
 					
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1)+" for "+uri+" for MHK #"+i);
+					System.out.println("PUSH-TIME-" + i + ':' + (t2 - t1)+" for "+uri+" for MHK #"+i);
 					csvLine.add(String.valueOf(t2 - t1));
 					csvLine.add(uri.toASCIIString());
 					successes++;
@@ -377,7 +377,7 @@ public class LongTermMHKTest extends LongTermTest {
 						client.fetch(mhkURIs[i]);
 						t2 = System.currentTimeMillis();
 						
-						System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
+						System.out.println("PULL-TIME FOR MHK #"+i+ ':' + (t2 - t1));
 						csvLine.add(String.valueOf(t2 - t1));
 					} catch (FetchException e) {
 						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND

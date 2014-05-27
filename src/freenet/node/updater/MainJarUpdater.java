@@ -197,7 +197,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
                 System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
                 if(cb != null)
-                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
+                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+ ' '));
                 tempFile.delete();
                 return;
             }
@@ -315,7 +315,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	public void renderProperties(HTMLNode alertNode) {
 		synchronized(fetchers) {
 			if(!fetchers.isEmpty()) {
-				alertNode.addChild("p", l10n("fetchingDependencies")+":");
+				alertNode.addChild("p", l10n("fetchingDependencies")+ ':');
 				HTMLNode table = alertNode.addChild("table");
 				for(DependencyJarFetcher f : fetchers) {
 					table.addChild(f.renderRow());
@@ -333,7 +333,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	}
 
 	public void cleanupDependencies() {
-		InputStream is = getClass().getResourceAsStream("/"+DEPENDENCIES_FILE);
+		InputStream is = getClass().getResourceAsStream('/' +DEPENDENCIES_FILE);
 		if(is == null) {
 			System.err.println("Can't find dependencies file. Other nodes will not be able to use Update Over Mandatory through this one.");
 			return;

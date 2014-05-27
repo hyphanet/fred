@@ -133,7 +133,7 @@ public class NativeBigInteger extends BigInteger {
 
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")
 					// 32-bit JVM on a 64-bit system is common, in which case can't load 64-bit libraries, so ignore.
-					&& System.getProperty("sun.arch.data.model").equals("64"))
+					&& "64".equals(System.getProperty("sun.arch.data.model")))
 			{
 				return JBIGI_OPTIMIZATION_X86_64;
 				

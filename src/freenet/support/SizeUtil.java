@@ -50,7 +50,7 @@ public class SizeUtil {
 				o = o.substring(0, 3);
 			else if((o.indexOf('.') > -1) && (o.indexOf('E') == -1) && (o.length() > 4))
 				o = o.substring(0, 4);
-			if (negative) o = "-" + o;
+			if (negative) o = '-' + o;
 			if(i < SizeUtil.suffixes.length) // handle the case where the mantissa is Infinity
 				return new String[] { o , SizeUtil.suffixes[i] };
 			return new String[] { o , "" };

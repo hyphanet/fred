@@ -38,12 +38,12 @@ public enum HashType {
 
 	public MessageDigest get() throws NoSuchAlgorithmException {
 		if(javaName == null) {
-			if(this.name().equals("ED2K"))
+			if("ED2K".equals(this.name()))
 				return new Ed2MessageDigest();
-			if(this.name().equals("TTH"))
+			if("TTH".equals(this.name()))
 				return new TigerTree();
 		}
-		if(name().equals("SHA256")) {
+		if("SHA256".equals(name())) {
 			// User the pool
 			return freenet.crypt.SHA256.getMessageDigest();
 		} else {

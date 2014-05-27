@@ -109,7 +109,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
-            System.err.println("Started node "+i+"/"+nodes.length);
+            System.err.println("Started node "+i+ '/' +nodes.length);
         }
         
         waitForAllConnected(nodes);

@@ -54,7 +54,7 @@ public class RetrievalException extends Exception {
 	public RetrievalException(int reason, String cause) {
 		_reason = reason;
 		_cause = cause;
-		if (cause==null || cause.length()==0 || cause.equals("null"))
+		if (cause==null || cause.length()==0 || "null".equals(cause))
 			_cause=getErrString(reason);
 	}
 	
@@ -64,7 +64,7 @@ public class RetrievalException extends Exception {
 	
 	@Override
 	public String toString() {
-		return getErrString(_reason)+":"+_cause;
+		return getErrString(_reason)+ ':' +_cause;
 	}
 
 	/** Guaranteed not to have any spaces in it. */
@@ -99,7 +99,7 @@ public class RetrievalException extends Exception {
 			case TURTLE_KILLED:
 				return "TURTLE_KILLED";
 			default:
-				return "UNKNOWN ("+reason+")";
+				return "UNKNOWN ("+reason+ ')';
 		}
 	}
 	

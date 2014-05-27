@@ -714,7 +714,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			AnnouncementCallback cb = null;
 			if(logMINOR) {
-				final String origin = source.toString()+" (htl "+htl+")";
+				final String origin = source.toString()+" (htl "+htl+ ')';
 				// Log the progress of the announcement.
 				// This is similar to Announcer's logging.
 				cb = new AnnouncementCallback() {
@@ -997,7 +997,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	private boolean dispatchRoutedMessage(Message m, PeerNode src, long id) {
 		if(m.getSpec() == DMT.FNPRoutedPing) {
-			if(logMINOR) Logger.minor(this, "RoutedPing reached other side! ("+id+")");
+			if(logMINOR) Logger.minor(this, "RoutedPing reached other side! ("+id+ ')');
 			int x = m.getInt(DMT.COUNTER);
 			Message reply = DMT.createFNPRoutedPong(id, x);
 			if(logMINOR) Logger.minor(this, "Replying - counter = "+x+" for "+id);

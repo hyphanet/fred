@@ -300,7 +300,7 @@ public class Node implements TimeSkewDetectorCallback {
 			synchronized(this) {
 				name = myName;
 			}
-			if(name.startsWith("Node id|")|| name.equals("MyFirstFreenetNode") || name.startsWith("Freenet node with no name #")){
+			if(name.startsWith("Node id|")|| "MyFirstFreenetNode".equals(name) || name.startsWith("Freenet node with no name #")){
 				clientCore.alerts.register(nodeNameUserAlert);
 			}else{
 				clientCore.alerts.unregister(nodeNameUserAlert);
@@ -313,7 +313,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(get().equals(val)) return;
 			else if(val.length() > 128)
 				throw new InvalidConfigValueException("The given node name is too long ("+val+')');
-			else if("".equals(val))
+			else if(val != null && val.isEmpty())
 				val = "~none~";
 			synchronized(this) {
 				myName = val;
@@ -353,7 +353,7 @@ public class Node implements TimeSkewDetectorCallback {
 			synchronized(Node.this) {
 				type = storeType;
 			}
-			if(type.equals("ram")) {
+			if("ram".equals(type)) {
 				synchronized(this) { // Serialise this part.
 					makeStore(val);
 				}
@@ -394,7 +394,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 			synchronized(this) { // Serialise this part.
 				String suffix = getStoreSuffix();
-				if (val.equals("salt-hash")) {
+				if ("salt-hash".equals(val)) {
 					byte[] key;
 					synchronized(Node.this) {
 						key = cachedClientCacheKey;
@@ -418,7 +418,7 @@ public class Node implements TimeSkewDetectorCallback {
 							}
 							throw new InvalidConfigValueException("You must enter the password");
 						} catch (MasterKeysFileSizeException e1) {
-							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
+							throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ')');
 						} catch (IOException e1) {
 							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
 						}
@@ -434,7 +434,7 @@ public class Node implements TimeSkewDetectorCallback {
 					} finally {
 						MasterKeys.clear(key);
 					}
-				} else if(val.equals("ram")) {
+				} else if("ram".equals(val)) {
 					initRAMClientCacheFS();
 				} else /*if(val.equals("none")) */{
 					initNoClientCacheFS();
@@ -891,7 +891,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void makeStore(String val) throws InvalidConfigValueException {
 		String suffix = getStoreSuffix();
-		if (val.equals("salt-hash")) {
+		if ("salt-hash".equals(val)) {
 			try {
 				initSaltHashFS(suffix, true, null);
 			} catch (NodeInitException e) {
@@ -1208,7 +1208,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		String value = nodeConfig.getString("masterKeyFile");
 		File f;
-		if (value.equalsIgnoreCase("none")) {
+		if ("none".equalsIgnoreCase(value)) {
 			f = null;
 		} else {
 			f = new File(value);
@@ -1329,7 +1329,7 @@ public class Node implements TimeSkewDetectorCallback {
 				System.out.println("Client database node.db4o is encrypted!");
 				databaseAwaitingPassword = true;
 			} catch (MasterKeysFileSizeException e2) {
-				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
+				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + '!');
 			} catch (IOException e2) {
 				System.err.println("Unable to access master.keys file to decrypt database: "+e2);
 				e2.printStackTrace();
@@ -2021,7 +2021,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 
-		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !storeType.equals("ram")) { // totally arbitrary minimum!
+		if(maxTotalDatastoreSize < 0 || maxTotalDatastoreSize < (32 * 1024 * 1024) && !"ram".equals(storeType)) { // totally arbitrary minimum!
 			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
@@ -2111,7 +2111,7 @@ public class Node implements TimeSkewDetectorCallback {
 					@Override
                     public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 						storePreallocate = val;
-						if (storeType.equals("salt-hash")) {
+						if ("salt-hash".equals(storeType)) {
 							setPreallocate(chkDatastore, val);
 							setPreallocate(chkDatacache, val);
 							setPreallocate(pubKeyDatastore, val);
@@ -2242,7 +2242,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean shouldWriteConfig = false;
 
-		if(storeType.equals("bdb-index")) {
+		if("bdb-index".equals(storeType)) {
 			System.err.println("Old format Berkeley DB datastore detected.");
 			System.err.println("This datastore format is no longer supported.");
 			System.err.println("The old datastore will be securely deleted.");
@@ -2250,7 +2250,7 @@ public class Node implements TimeSkewDetectorCallback {
 			shouldWriteConfig = true;
 			deleteOldBDBIndexStoreFiles();
 		}
-		if (storeType.equals("salt-hash")) {
+		if ("salt-hash".equals(storeType)) {
 			initRAMFS();
 			// FIXME remove migration code
 			final int lastVersionWithBloom = 1384;
@@ -2338,7 +2338,7 @@ public class Node implements TimeSkewDetectorCallback {
 		MasterKeys keys = null;
 
 		for(int i=0;i<2 && !startedClientCache; i++) {
-		if (clientCacheType.equals("salt-hash")) {
+		if ("salt-hash".equals(clientCacheType)) {
 
 			byte[] clientCacheKey = null;
 			try {
@@ -2374,7 +2374,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} finally {
 				MasterKeys.clear(clientCacheKey);
 			}
-		} else if(clientCacheType.equals("none")) {
+		} else if("none".equals(clientCacheType)) {
 			initNoClientCacheFS();
 			startedClientCache = true;
 			break;
@@ -2670,7 +2670,7 @@ public class Node implements TimeSkewDetectorCallback {
 			String name = f.getName();
 			if(f.isFile() && 
 					name.toLowerCase().matches("((chk)|(ssk)|(pubkey))-[0-9]*\\.((store)|(cache))(\\.((keys)|(lru)))?")) {
-				System.out.println("Deleting old datastore file \""+f+"\"");
+				System.out.println("Deleting old datastore file \""+f+ '"');
 				try {
 					FileUtil.secureDelete(f);
 				} catch (IOException e) {
@@ -3071,7 +3071,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			// Activated to depth 1
 			try {
-				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
+				Logger.minor(this, "DATABASE: "+o.getClass()+ ':' +o+ ':' +database.ext().getID(o));
 			} catch (Throwable t) {
 				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
 			}
@@ -3623,7 +3623,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
-		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+"-"+store, cb,
+		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(getStoreDir(), type+ '-' +store, cb,
 		        random, maxKeys, storeUseSlotFilters, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		if(cachingFreenetStoreMaxSize > 0)
@@ -4631,7 +4631,7 @@ public class Node implements TimeSkewDetectorCallback {
 				return;
 			}
 			DarknetPeerNode darkSource = (DarknetPeerNode) src;
-			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
+			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+ '\'');
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true, false);
@@ -5198,11 +5198,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void activatePasswordedClientCache(MasterKeys keys) {
 		synchronized(this) {
-			if(clientCacheType.equals("ram")) {
+			if("ram".equals(clientCacheType)) {
 				System.err.println("RAM client cache cannot be passworded!");
 				return;
 			}
-			if(!clientCacheType.equals("salt-hash")) {
+			if(!"salt-hash".equals(clientCacheType)) {
 				System.err.println("Unknown client cache type, cannot activate passworded store: "+clientCacheType);
 				return;
 			}

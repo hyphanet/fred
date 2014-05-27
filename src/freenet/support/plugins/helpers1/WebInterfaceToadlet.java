@@ -22,7 +22,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected WebInterfaceToadlet(PluginContext pluginContext2, String pluginURL, String pageName) {
 		super(pluginContext2.hlsc);
 		pluginContext = pluginContext2;
-		_path = pluginURL + "/" + pageName;
+		_path = pluginURL + '/' + pageName;
 	}
 
 	@Override

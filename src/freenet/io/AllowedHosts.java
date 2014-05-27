@@ -33,14 +33,14 @@ public class AllowedHosts {
 	}
 
 	/**
-	 * Sets the list of allowed hosts to <code>allowedHosts</code>. The new
+	 * Sets the list of allowed hosts to {@code allowedHosts}. The new
 	 * list is in effect immediately after this method has finished.
 	 * 
 	 * @param allowedHosts
 	 *            The new list of allowed hosts s
 	 */
 	public void setAllowedHosts(String allowedHosts) {
-                if(allowedHosts == null || allowedHosts.equals("")) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
+                if(allowedHosts == null || allowedHosts.isEmpty()) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
 		List<AddressMatcher> newAddressMatchers = new ArrayList<AddressMatcher>();
 		while (allowedHostsTokens.hasMoreTokens()) {
@@ -54,7 +54,7 @@ public class AllowedHosts {
 				newAddressMatchers.add(new Inet4AddressMatcher(allowedHost));
 			} else if (addressType == AddressType.IPv6) {
 				newAddressMatchers.add(new Inet6AddressMatcher(allowedHost));
-			} else if (allowedHost.equals("*")) {
+			} else if ("*".equals(allowedHost)) {
 				newAddressMatchers.add(new EverythingMatcher());
 			} else {
 				Logger.error(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);

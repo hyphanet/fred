@@ -182,7 +182,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			}
 			if(logMINOR)
-				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
+				Logger.minor(this, "RGA has picked "+x+ '/' +grabArrays.length+": "+item+
 						" rga.isEmpty="+rga.isEmpty(container));
 			if(item != null) {
 				if(persistent)
@@ -242,7 +242,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
 			if(val != null && val.item != null) item = val.item;
 			if(logMINOR)
-				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
+				Logger.minor(this, "RGA has picked "+x+ '/' +grabArrays.length+": "+item+
 						" rga.isEmpty="+rga.isEmpty(container));
 			// If it is not empty but returns null we exclude it, and count the exclusion.
 			// If it is empty we remove it, and don't count the exclusion.

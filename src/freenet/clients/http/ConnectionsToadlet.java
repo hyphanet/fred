@@ -112,33 +112,33 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
+			if("address".equals(sortBy)){
 				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
+			}else if("location".equals(sortBy)){
 				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
+			}else if("version".equals(sortBy)){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoffRT")){
+			}else if("backoffRT".equals(sortBy)){
 				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
-			}else if(sortBy.equals("backoffBulk")){
+			}else if("backoffBulk".equals(sortBy)){
 				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
 			}else if(sortBy.equals(("overload_p"))){
 				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
 			}else if(sortBy.equals(("idle"))){
 				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
+			}else if("time_routable".equals(sortBy)){
 				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
+			}else if("total_traffic".equals(sortBy)){
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
+				}else if("total_traffic_since_startup".equals(sortBy)){
 					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
 					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
 					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
+			}else if("selection_percentage".equals(sortBy)){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
+			}else if("time_delta".equals(sortBy)){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
 			}else if(sortBy.equals(("uptime"))){
 				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
@@ -638,12 +638,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
-			if(trustS != null && !trustS.equals(""))
+			if(trustS != null && !trustS.isEmpty())
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
 			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
 			FRIEND_VISIBILITY visibility = null;
-			if(visibilityS != null && !visibilityS.equals(""))
+			if(visibilityS != null && !visibilityS.isEmpty())
 				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
 			
 			if(trust == null && !isOpennet()) {
@@ -700,7 +700,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				StringBuffer sb = new StringBuffer(nodesToAdd[i].length());
 				boolean first = true;
 				for(String s : split) {
-					if(s.equals("End")) break;
+					if("End".equals(s)) break;
 					if(s.indexOf('=') > -1) {
 						if(!first)
 							sb.append('\n');
@@ -768,7 +768,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			nodeReference = Fields.trimLines(nodeReference);
 			fs = new SimpleFieldSet(nodeReference, false, true, true);
 			if(!fs.getEndMarker().endsWith("End")) {
-				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+"\"");
+				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+ '"');
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
@@ -1060,7 +1060,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			long sent = peerNodeStatus.getTotalOutputBytes();
 			long resent = peerNodeStatus.getResendBytesSent();
 			long received = peerNodeStatus.getTotalInputBytes();
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(received)+" / "+SizeUtil.formatSize(sent)+"/"+SizeUtil.formatSize(resent)+" ("+fix1.format(((double)resent) / ((double)sent))+")");
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(received)+" / "+SizeUtil.formatSize(sent)+ '/' +SizeUtil.formatSize(resent)+" ("+fix1.format(((double)resent) / ((double)sent))+ ')');
 			// total traffic column startup
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputSinceStartup())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputSinceStartup()));
 			// congestion control
@@ -1075,17 +1075,17 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// time delta
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+ ':' +TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
 			IncomingLoadSummaryStats loadStatsBulk = peerNodeStatus.incomingLoadStatsBulk;
 			if(loadStatsBulk == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsBulk.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.peerCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsBulk.usedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.othersUsedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.peerCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsBulk.totalCapacityInputBytes));
 			IncomingLoadSummaryStats loadStatsRT = peerNodeStatus.incomingLoadStatsRealTime;
 			if(loadStatsRT == null)
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
 			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+ '/' +SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {

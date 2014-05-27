@@ -106,7 +106,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
 			}
 			ref = new StringBuilder(ref.toString().trim());
-			if("".equals(ref.toString())) {
+			if(ref.toString() != null && ref.toString().isEmpty()) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', identifier, false);
 			}
 			try {
@@ -134,7 +134,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), identifier, false);
 			}
 			ref = new StringBuilder(ref.toString().trim());
-			if("".equals(ref.toString())) {
+			if(ref.toString() != null && ref.toString().isEmpty()) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', identifier, false);
 			}
 			try {

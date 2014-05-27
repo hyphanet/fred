@@ -388,7 +388,7 @@ public class TextModeClientInterface implements Runnable {
                 if(fnam.length() == 0) {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
-                    if((ext != null) && !ext.equals(""))
+                    if((ext != null) && !ext.isEmpty())
                     	fnam += '.' + ext;
                 }
                 File f = new File(downloadsDir, fnam);
@@ -795,7 +795,7 @@ public class TextModeClientInterface implements Runnable {
                 content = readLines(reader, true);
             }
             if(content == null) return false;
-            if(content.equals("")) return false;
+            if(content.isEmpty()) return false;
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
@@ -975,7 +975,7 @@ public class TextModeClientInterface implements Runnable {
         	om.announce(target, new AnnouncementCallback() {
         		private void write(String msg) {
         			try {
-        				w.write(("ANNOUNCE:"+target+":"+msg+"\r\n"));
+        				w.write(("ANNOUNCE:"+target+ ':' +msg+"\r\n"));
         				w.flush();
         			} catch (IOException e) {
         				// Ignore
@@ -998,7 +998,7 @@ public class TextModeClientInterface implements Runnable {
 
 				@Override
 				public void nodeFailed(PeerNode pn, String reason) {
-					write("Node failed: "+pn+" "+reason);
+					write("Node failed: "+pn+ ' ' +reason);
 				}
 
 				@Override
@@ -1087,12 +1087,12 @@ public class TextModeClientInterface implements Runnable {
                 System.err.println("Bye... ("+e1+ ')');
                 return null;
             }
-            if((!isFieldSet) && line.equals(".")) break;
+            if((!isFieldSet) && ".".equals(line)) break;
             if(isFieldSet) {
                 // Mangling
                 // First trim
                 line = line.trim();
-                if(line.equals("End")) {
+                if("End".equals(line)) {
                     breakflag = true;
                 } else {
                     if(line.endsWith("End") && 

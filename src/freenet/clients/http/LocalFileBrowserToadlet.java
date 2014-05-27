@@ -93,7 +93,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * Otherwise, returns the first allowed directory.
 	 */
 	protected String defaultUploadDir() {
-		if ((core.getAllowedUploadDirs().length == 1 && core.getAllowedUploadDirs()[0].toString().equals("all"))
+		if ((core.getAllowedUploadDirs().length == 1 && "all".equals(core.getAllowedUploadDirs()[0].toString()))
 		        || core.getAllowedUploadDirs().length == 0) {
 			/* If all directories are allowed, or none are, go for the home directory.
 			 * If none are allowed, any directory will result in an error anyway.
@@ -110,7 +110,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * Otherwise, returns the first allowed directory.
 	 */
 	protected String defaultDownloadDir() {
-		if ((core.getAllowedDownloadDirs().length == 1 && core.getAllowedDownloadDirs()[0].toString().equals("all"))
+		if ((core.getAllowedDownloadDirs().length == 1 && "all".equals(core.getAllowedDownloadDirs()[0].toString()))
 		        || core.getAllowedDownloadDirs().length == 0) {
 			/* If all directories are allowed, or none are, go for the default download directory.
 			 * If none are allowed, any directory will result in an error anyway.

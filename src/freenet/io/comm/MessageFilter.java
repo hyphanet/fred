@@ -178,7 +178,7 @@ public final class MessageFilter {
 	public MessageFilter or(MessageFilter or) {
 		if((or != null) && (_or != null) && or != _or) {
 			throw new IllegalStateException("Setting a second .or() on the same filter will replace the " +
-			    "existing one, not add another. " + _or + " would be replaced by " + or + ".");
+			    "existing one, not add another. " + _or + " would be replaced by " + or + '.');
 		}
 		if(or._initialTimeout != _initialTimeout) {
 			Logger.error(this, "Message filters being or()ed have different timeouts! This is very dangerous! This is "+this+" or is "+or);
@@ -296,7 +296,7 @@ public final class MessageFilter {
 
     @Override
 	public String toString() {
-    	return super.toString()+":"+_type.getName();
+    	return super.toString()+ ':' +_type.getName();
     }
 
     public void clearMatched() {
