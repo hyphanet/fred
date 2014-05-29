@@ -1,220 +1,294 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client.async;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
+
 import freenet.node.LowLevelPutException;
 import freenet.node.RequestClient;
 import freenet.node.SimpleSendableInsert;
+
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.io.DataInputStream;
+import java.io.IOException;
+
+import java.util.ArrayList;
+
 public class BinaryBlobInserter implements ClientPutState {
+    final ClientPutter parent;
+    final RequestClient clientContext;
+    final MySendableInsert[] inserters;
+    final FailureCodeTracker errors;
+    final int maxRetries;
+    final int consecutiveRNFsCountAsSuccess;
+    private boolean logMINOR;
+    private int completedBlocks;
+    private int succeededBlocks;
+    private boolean fatal;
+    final InsertContext ctx;
+    final boolean realTimeFlag;
 
-	final ClientPutter parent;
-	final RequestClient clientContext;
-	final MySendableInsert[] inserters;
-	final FailureCodeTracker errors;
-	final int maxRetries;
-	final int consecutiveRNFsCountAsSuccess;
-	private boolean logMINOR;
-	private int completedBlocks;
-	private int succeededBlocks;
-	private boolean fatal;
-	final InsertContext ctx;
-	final boolean realTimeFlag;
+    BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant,
+                       short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
+            throws IOException, BinaryBlobFormatException {
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+        this.ctx = ctx;
+        this.maxRetries = ctx.maxInsertRetries;
+        this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
+        this.parent = parent;
+        this.clientContext = clientContext;
+        this.errors = new FailureCodeTracker(true);
+        this.realTimeFlag = clientContext.realTimeFlag();
 
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
-	throws IOException, BinaryBlobFormatException {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		this.ctx = ctx;
-		this.maxRetries = ctx.maxInsertRetries;
-		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
-		this.parent = parent;
-		this.clientContext = clientContext;
-		this.errors = new FailureCodeTracker(true);
-		this.realTimeFlag = clientContext.realTimeFlag();
-		DataInputStream dis = new DataInputStream(blob.getInputStream());
+        DataInputStream dis = new DataInputStream(blob.getInputStream());
+        BlockSet blocks = new SimpleBlockSet();
 
-		BlockSet blocks = new SimpleBlockSet();
+        try {
+            BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
+        } finally {
+            dis.close();
+        }
 
-		try {
-			BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
-		} finally {
-			dis.close();
-		}
+        ArrayList<MySendableInsert> myInserters = new ArrayList<MySendableInsert>();
+        int x = 0;
 
-		ArrayList<MySendableInsert> myInserters = new ArrayList<MySendableInsert>();
-		int x=0;
-		for(Key key: blocks.keys()) {
-			KeyBlock block = blocks.get(key);
-			MySendableInsert inserter =
-				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);
-			myInserters.add(inserter);
-		}
+        for (Key key : blocks.keys()) {
+            KeyBlock block = blocks.get(key);
+            MySendableInsert inserter = new MySendableInsert(x++, block, prioClass,
+                                            getScheduler(block, container, context), clientContext);
 
-		inserters = myInserters.toArray(new MySendableInsert[myInserters.size()]);
-		parent.addMustSucceedBlocks(inserters.length, container);
-		parent.notifyClients(container, context);
-	}
+            myInserters.add(inserter);
+        }
 
-	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
-		if(block instanceof CHKBlock)
-			return context.getChkInsertScheduler(realTimeFlag);
-		else if(block instanceof SSKBlock)
-			return context.getSskInsertScheduler(realTimeFlag);
-		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
-	}
+        inserters = myInserters.toArray(new MySendableInsert[myInserters.size()]);
+        parent.addMustSucceedBlocks(inserters.length, container);
+        parent.notifyClients(container, context);
+    }
 
-	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
-		for(MySendableInsert inserter: inserters) {
-			if(inserter != null)
-				inserter.cancel(container, context);
-		}
-		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
-	}
+    private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
+        if (block instanceof CHKBlock) {
+            return context.getChkInsertScheduler(realTimeFlag);
+        } else if (block instanceof SSKBlock) {
+            return context.getSskInsertScheduler(realTimeFlag);
+        } else {
+            throw new IllegalArgumentException("Unknown block type " + block.getClass() + " : " + block);
+        }
+    }
 
-	@Override
-	public BaseClientPutter getParent() {
-		return parent;
-	}
+    @Override
+    public void cancel(ObjectContainer container, ClientContext context) {
+        for (MySendableInsert inserter : inserters) {
+            if (inserter != null) {
+                inserter.cancel(container, context);
+            }
+        }
 
-	@Override
-	public Object getToken() {
-		return clientContext;
-	}
+        parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
+    }
 
-	@Override
-	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		for(MySendableInsert inserter: inserters) {
-			inserter.schedule();
-		}
-	}
+    @Override
+    public BaseClientPutter getParent() {
+        return parent;
+    }
 
-	class MySendableInsert extends SimpleSendableInsert {
+    @Override
+    public Object getToken() {
+        return clientContext;
+    }
 
-		final int blockNum;
-		private int consecutiveRNFs;
-		private int retries;
+    @Override
+    public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+        for (MySendableInsert inserter : inserters) {
+            inserter.schedule();
+        }
+    }
 
-		public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler, RequestClient client) {
-			super(block, prioClass, client, scheduler);
-			this.blockNum = i;
-		}
+    public void maybeFinish(ObjectContainer container, ClientContext context) {
+        boolean success;
+        boolean wasFatal;
 
-		@Override
-		public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
-			synchronized(this) {
-				if(inserters[blockNum] == null) return;
-				inserters[blockNum] = null;
-				completedBlocks++;
-				succeededBlocks++;
-			}
-			parent.completedBlock(false, container, context);
-			maybeFinish(container, context);
-		}
+        synchronized (this) {
+            if (completedBlocks != inserters.length) {
+                return;
+            }
 
-		// FIXME duplicated code from SingleBlockInserter
-		// FIXME combine it somehow
-		@Override
-		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
-			synchronized(BinaryBlobInserter.this) {
-				if(inserters[blockNum] == null) return;
-			}
-			if(parent.isCancelled()) {
-				fail(new InsertException(InsertException.CANCELLED), true, container, context);
-				return;
-			}
-			logMINOR = Logger.shouldLog(LogLevel.MINOR, BinaryBlobInserter.this);
-			switch(e.code) {
-			case LowLevelPutException.COLLISION:
-				fail(new InsertException(InsertException.COLLISION), false, container, context);
-				break;
-			case LowLevelPutException.INTERNAL_ERROR:
-				errors.inc(InsertException.INTERNAL_ERROR);
-				break;
-			case LowLevelPutException.REJECTED_OVERLOAD:
-				errors.inc(InsertException.REJECTED_OVERLOAD);
-				break;
-			case LowLevelPutException.ROUTE_NOT_FOUND:
-				errors.inc(InsertException.ROUTE_NOT_FOUND);
-				break;
-			case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
-				errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
-				break;
-			default:
-				Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
-				errors.inc(InsertException.INTERNAL_ERROR);
-			}
-			if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
-				consecutiveRNFs++;
-				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
-				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
-					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess(keyNum, container, context);
-					return;
-				}
-			} else
-				consecutiveRNFs = 0;
-			if(logMINOR) Logger.minor(this, "Failed: "+e);
-			retries++;
-			if((retries > maxRetries) && (maxRetries != -1)) {
-				fail(InsertException.construct(errors), false, container, context);
-				return;
-			}
-			// Retry *this block*
-			this.schedule();
-		}
+            success = completedBlocks == succeededBlocks;
+            wasFatal = fatal;
+        }
 
-		private void fail(InsertException e, boolean fatal, ObjectContainer container, ClientContext context) {
-			synchronized(BinaryBlobInserter.this) {
-				if(inserters[blockNum] == null) return;
-				inserters[blockNum] = null;
-				completedBlocks++;
-				if(fatal) BinaryBlobInserter.this.fatal = true;
-			}
-			if(fatal)
-				parent.fatallyFailedBlock(container, context);
-			else
-				parent.failedBlock(container, context);
-			maybeFinish(container, context);
-		}
+        if (success) {
+            parent.onSuccess(this, container, context);
+        } else if (wasFatal) {
+            parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this,
+                             container, context);
+        } else {
+            parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this,
+                             container, context);
+        }
+    }
 
-	}
+    @Override
+    public void removeFrom(ObjectContainer container, ClientContext context) {
 
-	public void maybeFinish(ObjectContainer container, ClientContext context) {
-		boolean success;
-		boolean wasFatal;
-		synchronized(this) {
-			if(completedBlocks != inserters.length)
-				return;
-			success = completedBlocks == succeededBlocks;
-			wasFatal = fatal;
-		}
-		if(success) {
-			parent.onSuccess(this, container, context);
-		} else if(wasFatal)
-			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, container, context);
-		else
-			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container, context);
-	}
+        // FIXME: Persistent blob inserts are not supported.
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		// FIXME: Persistent blob inserts are not supported.
-		throw new UnsupportedOperationException();
-	}
+    class MySendableInsert extends SimpleSendableInsert {
+        final int blockNum;
+        private int consecutiveRNFs;
+        private int retries;
 
+        public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler,
+                                RequestClient client) {
+            super(block, prioClass, client, scheduler);
+            this.blockNum = i;
+        }
+
+        @Override
+        public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
+            synchronized (this) {
+                if (inserters[blockNum] == null) {
+                    return;
+                }
+
+                inserters[blockNum] = null;
+                completedBlocks++;
+                succeededBlocks++;
+            }
+
+            parent.completedBlock(false, container, context);
+            maybeFinish(container, context);
+        }
+
+        // FIXME duplicated code from SingleBlockInserter
+        // FIXME combine it somehow
+        @Override
+        public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
+            synchronized (BinaryBlobInserter.this) {
+                if (inserters[blockNum] == null) {
+                    return;
+                }
+            }
+
+            if (parent.isCancelled()) {
+                fail(new InsertException(InsertException.CANCELLED), true, container, context);
+
+                return;
+            }
+
+            logMINOR = Logger.shouldLog(LogLevel.MINOR, BinaryBlobInserter.this);
+
+            switch (e.code) {
+            case LowLevelPutException.COLLISION :
+                fail(new InsertException(InsertException.COLLISION), false, container, context);
+
+                break;
+
+            case LowLevelPutException.INTERNAL_ERROR :
+                errors.inc(InsertException.INTERNAL_ERROR);
+
+                break;
+
+            case LowLevelPutException.REJECTED_OVERLOAD :
+                errors.inc(InsertException.REJECTED_OVERLOAD);
+
+                break;
+
+            case LowLevelPutException.ROUTE_NOT_FOUND :
+                errors.inc(InsertException.ROUTE_NOT_FOUND);
+
+                break;
+
+            case LowLevelPutException.ROUTE_REALLY_NOT_FOUND :
+                errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
+
+                break;
+
+            default :
+                Logger.error(this, "Unknown LowLevelPutException code: " + e.code);
+                errors.inc(InsertException.INTERNAL_ERROR);
+            }
+
+            if (e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
+                consecutiveRNFs++;
+
+                if (logMINOR) {
+                    Logger.minor(this, "Consecutive RNFs: " + consecutiveRNFs + " / " + consecutiveRNFsCountAsSuccess);
+                }
+
+                if (consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
+                    if (logMINOR) {
+                        Logger.minor(this, "Consecutive RNFs: " + consecutiveRNFs + " - counting as success");
+                    }
+
+                    onSuccess(keyNum, container, context);
+
+                    return;
+                }
+            } else {
+                consecutiveRNFs = 0;
+            }
+
+            if (logMINOR) {
+                Logger.minor(this, "Failed: " + e);
+            }
+
+            retries++;
+
+            if ((retries > maxRetries) && (maxRetries != -1)) {
+                fail(InsertException.construct(errors), false, container, context);
+
+                return;
+            }
+
+            // Retry *this block*
+            this.schedule();
+        }
+
+        private void fail(InsertException e, boolean fatal, ObjectContainer container, ClientContext context) {
+            synchronized (BinaryBlobInserter.this) {
+                if (inserters[blockNum] == null) {
+                    return;
+                }
+
+                inserters[blockNum] = null;
+                completedBlocks++;
+
+                if (fatal) {
+                    BinaryBlobInserter.this.fatal = true;
+                }
+            }
+
+            if (fatal) {
+                parent.fatallyFailedBlock(container, context);
+            } else {
+                parent.failedBlock(container, context);
+            }
+
+            maybeFinish(container, context);
+        }
+    }
 }

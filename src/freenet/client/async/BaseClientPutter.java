@@ -1,32 +1,39 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client.async;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.node.RequestClient;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+//WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseClientPutter extends ClientRequester {
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	protected BaseClientPutter() {
-	}
+    /**
+     * zero arg c'tor for db4o on jamvm
+     */
+    protected BaseClientPutter() {}
 
-	protected BaseClientPutter(short priorityClass, RequestClient context) {
-		super(priorityClass, context);
-	}
+    protected BaseClientPutter(short priorityClass, RequestClient context) {
+        super(priorityClass, context);
+    }
 
-	public abstract void onMajorProgress(ObjectContainer container);
+    public abstract void onMajorProgress(ObjectContainer container);
 
-	public void dump(ObjectContainer container) {
-		// Do nothing
-	}
+    public void dump(ObjectContainer container) {
 
-	public abstract void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container);
+        // Do nothing
+    }
 
-	public abstract int getMinSuccessFetchBlocks();
+    public abstract void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container);
+
+    public abstract int getMinSuccessFetchBlocks();
 }
