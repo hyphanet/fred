@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client;
 
 /**
@@ -9,10 +14,9 @@ package freenet.client;
  * since we last checked.
  */
 public class ArchiveRestartException extends Exception {
+    private static final long serialVersionUID = -7670838856130773012L;
 
-	private static final long serialVersionUID = -7670838856130773012L;
-
-	public ArchiveRestartException(String msg) {
-		super(msg);
-	}
+    public ArchiveRestartException(String msg) {
+        super(msg);
+    }
 }
