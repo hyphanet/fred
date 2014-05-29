@@ -8,7 +8,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;

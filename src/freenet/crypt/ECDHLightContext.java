@@ -2,8 +2,6 @@ package freenet.crypt;
 
 import java.security.interfaces.ECPublicKey;
 
-import javax.crypto.SecretKey;
-
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 

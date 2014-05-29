@@ -5,7 +5,6 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 

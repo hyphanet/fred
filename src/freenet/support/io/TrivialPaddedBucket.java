@@ -9,7 +9,6 @@ import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /** Pads a bucket to the next power of 2 file size. 

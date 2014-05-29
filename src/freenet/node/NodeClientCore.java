@@ -90,7 +90,6 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
-import freenet.support.math.MersenneTwister;
 
 /**
  * The connection between the node and the client layer.

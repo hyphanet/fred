@@ -29,7 +29,6 @@ import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
-import freenet.support.SortedVectorByNumber;
 import freenet.support.Logger.LogLevel;
 
 /**
