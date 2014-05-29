@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.PureCode;
@@ -13,131 +20,164 @@ import freenet.support.Logger;
  * FECCodec implementation using the onion code.
  */
 public class StandardOnionFECCodec extends FECCodec {
-	// REDFLAG: How big is one of these?
-	private static final int MAX_CACHED_CODECS = 8;
 
-	static boolean noNative;
+    // REDFLAG: How big is one of these?
+    private static final int MAX_CACHED_CODECS = 8;
+    private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
+    static boolean noNative;
 
-	private static final LRUMap<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = LRUMap.createSafeMap();
+    public StandardOnionFECCodec(int k, int n) {
+        super(k, n);
+        loadFEC();
+    }
 
-	private static class MyKey implements Comparable<MyKey> {
-		/** Number of input blocks */
-		int k;
-		/** Number of output blocks, including input blocks */
-		int n;
+    public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
+        if ((checkBlocks == 0) || (dataBlocks == 0)) {
+            throw new IllegalArgumentException("data blocks " + dataBlocks + " check blocks " + checkBlocks);
+        }
 
-		public MyKey(int k, int n) {
-			this.n = n;
-			this.k = k;
-		}
+        MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
+        StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
 
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof MyKey) {
-				MyKey key = (MyKey)o;
-				return (key.n == n) && (key.k == k);
-			} else return false;
-		}
+        if (codec != null) {
+            recentlyUsedCodecs.push(key, codec);
 
-		@Override
-		public int hashCode() {
-			return (n << 16) + k;
-		}
+            return codec;
+        }
 
-		@Override
-		public int compareTo(MyKey o) {
-			if(n > o.n) return 1;
-			if(n < o.n) return -1;
-			if(k > o.k) return 1;
-			if(k < o.k) return -1;
-			return 0;
-		}
-	}
+        codec = new StandardOnionFECCodec(dataBlocks, checkBlocks + dataBlocks);
+        recentlyUsedCodecs.push(key, codec);
 
-	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
-		if(checkBlocks == 0 || dataBlocks == 0)
-			throw new IllegalArgumentException("data blocks "+dataBlocks+" check blocks "+checkBlocks);
-		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
-		StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
-		if(codec != null) {
-			recentlyUsedCodecs.push(key, codec);
-			return codec;
-		}
-		codec = new StandardOnionFECCodec(dataBlocks, checkBlocks + dataBlocks);
-		recentlyUsedCodecs.push(key, codec);
-		while(recentlyUsedCodecs.size() > MAX_CACHED_CODECS) {
-			recentlyUsedCodecs.popKey();
-		}
-		return codec;
-	}
+        while (recentlyUsedCodecs.size() > MAX_CACHED_CODECS) {
+            recentlyUsedCodecs.popKey();
+        }
 
-	public StandardOnionFECCodec(int k, int n) {
-		super(k, n);
+        return codec;
+    }
 
-		loadFEC();
-	}
+    @Override
+    protected void loadFEC() {
+        synchronized (this) {
+            if (fec != null) {
+                return;
+            }
+        }
 
-	@Override
-	protected void loadFEC() {
-		synchronized(this) {
-			if(fec != null) return;
-		}
-		FECCode fec2 = null;
-		if(k >= n) throw new IllegalArgumentException("n must be >k: n = "+n+" k = "+k);
-		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = "+k+" n = "+n);
-		// native code segfaults if k < 256 and n > 256
-		// native code segfaults if n > k*2 i.e. if we have extra blocks beyond 100% redundancy
-		// FIXME: NATIVE FEC DISABLED PENDING FIXING THE SEGFAULT BUG (easily reproduced with check blocks > data blocks)
-		// AND A COMPETENT CODE REVIEW!!!
-		// SEGFAULT BUGS ARE USUALLY REMOTELY EXPLOITABLE!!!
-//		if((!noNative) && k <= 256 && n <= 256 && n <= k*2) { 
-//			System.out.println("Creating native FEC: n="+n+" k="+k);
-//			System.out.flush();
-//			try {
-//				fec2 = new Native8Code(k,n);
-//				Logger.minor(this, "Loaded native FEC.");
+        FECCode fec2 = null;
+
+        if (k >= n) {
+            throw new IllegalArgumentException("n must be >k: n = " + n + " k = " + k);
+        }
+
+        if ((k > 256) || (n > 256)) {
+            Logger.error(this, "Wierd FEC parameters? k = " + k + " n = " + n);
+        }
+
+        // native code segfaults if k < 256 and n > 256
+        // native code segfaults if n > k*2 i.e. if we have extra blocks beyond 100% redundancy
+        // FIXME: NATIVE FEC DISABLED PENDING FIXING THE SEGFAULT BUG (easily reproduced with check blocks > data blocks)
+        // AND A COMPETENT CODE REVIEW!!!
+        // SEGFAULT BUGS ARE USUALLY REMOTELY EXPLOITABLE!!!
+//      if((!noNative) && k <= 256 && n <= 256 && n <= k*2) { 
+//              System.out.println("Creating native FEC: n="+n+" k="+k);
+//              System.out.flush();
+//              try {
+//                      fec2 = new Native8Code(k,n);
+//                      Logger.minor(this, "Loaded native FEC.");
 //
-//			} catch (Throwable t) {
-//				if(!noNative) {
-//					System.err.println("Failed to load native FEC: "+t);
-//					t.printStackTrace();
-//				}
-//				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
+//              } catch (Throwable t) {
+//                      if(!noNative) {
+//                              System.err.println("Failed to load native FEC: "+t);
+//                              t.printStackTrace();
+//                      }
+//                      Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
 //
-//				if(t instanceof UnsatisfiedLinkError)
-//					noNative = true;
-//			}
-//		} // FIXME 16-bit native FEC???
+//                      if(t instanceof UnsatisfiedLinkError)
+//                              noNative = true;
+//              }
+//      } // FIXME 16-bit native FEC???
 
-		if (fec2 != null){
-			synchronized(this) {
-			fec = fec2;
-			}
-		} else 	{
-			fec2 = new PureCode(k,n);
-			synchronized(this) {
-				fec = fec2;
-			}
-		}
+        if (fec2 != null) {
+            synchronized (this) {
+                fec = fec2;
+            }
+        } else {
+            fec2 = new PureCode(k, n);
 
-		// revert to below if above causes JVM crashes
-		// Worst performance, but decode crashes
-		// fec = new PureCode(k,n);
-		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
-	}
+            synchronized (this) {
+                fec = fec2;
+            }
+        }
 
-	@Override
-	public int countCheckBlocks() {
-		return n-k;
-	}
+        // revert to below if above causes JVM crashes
+        // Worst performance, but decode crashes
+        // fec = new PureCode(k,n);
+        // Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
+    }
 
-	@Override
-	public String toString() {
-		return super.toString()+":n="+n+",k="+k;
-	}
+    @Override
+    public int countCheckBlocks() {
+        return n - k;
+    }
 
-	@Override
-	public short getAlgorithm() {
-		return Metadata.SPLITFILE_ONION_STANDARD;
-	}
+    @Override
+    public String toString() {
+        return super.toString() + ":n=" + n + ",k=" + k;
+    }
+
+    @Override
+    public short getAlgorithm() {
+        return Metadata.SPLITFILE_ONION_STANDARD;
+    }
+
+    private static class MyKey implements Comparable<MyKey> {
+
+        /** Number of input blocks */
+        int k;
+
+        /** Number of output blocks, including input blocks */
+        int n;
+
+        public MyKey(int k, int n) {
+            this.n = n;
+            this.k = k;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof MyKey) {
+                MyKey key = (MyKey) o;
+
+                return (key.n == n) && (key.k == k);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return (n << 16) + k;
+        }
+
+        @Override
+        public int compareTo(MyKey o) {
+            if (n > o.n) {
+                return 1;
+            }
+
+            if (n < o.n) {
+                return -1;
+            }
+
+            if (k > o.k) {
+                return 1;
+            }
+
+            if (k < o.k) {
+                return -1;
+            }
+
+            return 0;
+        }
+    }
 }
