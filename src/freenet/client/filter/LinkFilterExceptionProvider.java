@@ -15,13 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
 package freenet.client.filter;
 
-import java.net.URI;
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.clients.http.LinkFilterExceptedToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.Toadlet;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.net.URI;
 
 /**
  * Provides link filter exceptions to the content filter.
@@ -34,14 +40,13 @@ import freenet.clients.http.Toadlet;
  */
 public interface LinkFilterExceptionProvider {
 
-	/**
-	 * Returns whether the given should be excepted from being filtered.
-	 *
-	 * @param link
-	 *            The link to check
-	 * @return {@code true} if the link should not be filtered, {@code false} if
-	 *         it should be filtered
-	 */
-	public boolean isLinkExcepted(URI link);
-
+    /**
+     * Returns whether the given should be excepted from being filtered.
+     *
+     * @param link
+     *            The link to check
+     * @return {@code true} if the link should not be filtered, {@code false} if
+     *         it should be filtered
+     */
+    public boolean isLinkExcepted(URI link);
 }
