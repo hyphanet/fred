@@ -1,50 +1,60 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support.io;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.io.File;
 
 public class NullPersistentFileTracker implements PersistentFileTracker {
-	private static NullPersistentFileTracker instance;
-	
-	public static synchronized NullPersistentFileTracker getInstance() {
-		if (instance == null)
-			instance = new NullPersistentFileTracker();
-		return instance;
-	}
-	
-	private NullPersistentFileTracker() {		
-	}
+    private static NullPersistentFileTracker instance;
 
-	@Override
-	public void register(File file) {
-		// Do nothing
-	}
+    private NullPersistentFileTracker() {}
 
-	@Override
-	public void delayedFreeBucket(DelayedFreeBucket bucket) {
-		// Free immediately
-		bucket.free();
-	}
+    public static synchronized NullPersistentFileTracker getInstance() {
+        if (instance == null) {
+            instance = new NullPersistentFileTracker();
+        }
 
-	@Override
-	public File getDir() {
-		return new File(".");
-	}
+        return instance;
+    }
 
-	@Override
-	public boolean matches(File file) {
-		return false;
-	}
+    @Override
+    public void register(File file) {
 
-	@Override
-	public FilenameGenerator getGenerator() {
-		return null;
-	}
+        // Do nothing
+    }
 
-	@Override
-	public long getID(File file) {
-		return 0;
-	}
+    @Override
+    public void delayedFreeBucket(DelayedFreeBucket bucket) {
+
+        // Free immediately
+        bucket.free();
+    }
+
+    @Override
+    public File getDir() {
+        return new File(".");
+    }
+
+    @Override
+    public boolean matches(File file) {
+        return false;
+    }
+
+    @Override
+    public FilenameGenerator getGenerator() {
+        return null;
+    }
+
+    @Override
+    public long getID(File file) {
+        return 0;
+    }
 }
