@@ -27,8 +27,6 @@ import freenet.support.LRUMap;
 import freenet.support.ListUtils;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.SerialExecutor;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -48,7 +46,7 @@ import freenet.support.io.NativeThread;
  * LOCKING: Do not lock PeerNode before FailureTable/FailureTableEntry.
  * @author toad
  */
-public class FailureTable implements OOMHook {
+public class FailureTable {
 	
 	private static volatile boolean logMINOR;
 	//private static volatile boolean logDEBUG;
@@ -103,7 +101,6 @@ public class FailureTable implements OOMHook {
 	
 	public void start() {
 		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
-		OOMHandler.addOOMHook(this);
 	}
 	
 	/**
@@ -731,27 +728,8 @@ public class FailureTable implements OOMHook {
 		}
 		return entry.othersWant(apartFrom);
 	}
-
-	@Override
-	public void handleLowMemory() throws Exception {
-		synchronized (this) {
-			int size = entriesByKey.size();
-			while(true) {
-				int newSize = entriesByKey.size();
-				if(newSize == 0 || newSize >= size / 2) return;
-				entriesByKey.popKey();
-			}
-		}
-	}
-
-	@Override
-	public void handleOutOfMemory() throws Exception {
-		synchronized (this) {
-			entriesByKey.clear();
-		}
-	}
-
-	/** @return The lowest HTL at which any peer has requested this key recently */
+        
+        /** @return The lowest HTL at which any peer has requested this key recently */
 	public short minOfferedHTL(Key key, short htl) {
 		FailureTableEntry entry;
 		synchronized(this) {

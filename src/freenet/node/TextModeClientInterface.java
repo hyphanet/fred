@@ -53,7 +53,6 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
@@ -128,10 +127,8 @@ public class TextModeClientInterface implements Runnable {
     	try {
     		realRun();
     	} catch (IOException e) {
-    		if(logMINOR) Logger.minor(this, "Caught "+e, e);
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-    	} catch (Throwable t) {
+            if(logMINOR) Logger.minor(this, "Caught "+e, e);
+        } catch (Throwable t) {
     		Logger.error(this, "Caught "+t, t);
     	}
     }

@@ -46,8 +46,6 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
@@ -154,23 +152,4 @@ public class SHA256 {
 	
 	private static boolean noCache = false;
 	
-	static {
-		OOMHandler.addOOMHook(new OOMHook() {
-			@Override
-			public void handleLowMemory() throws Exception {
-				synchronized(digests) {
-					digests.clear();
-				}
-				noCache = true;
-			}
-
-			@Override
-			public void handleOutOfMemory() throws Exception {
-				synchronized(digests) {
-					digests.clear();
-				}
-				noCache = true;
-			}
-		});
-	}
 }

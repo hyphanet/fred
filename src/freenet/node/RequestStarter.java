@@ -16,7 +16,6 @@ import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.TokenBucket;
@@ -246,15 +245,13 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
-		while(true) {
-			try {
-				realRun();
-            } catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-			}
-		}
+            while(true) {
+                try {
+                    realRun();
+                } catch (Throwable t) {
+                        Logger.error(this, "Caught "+t, t);
+                }
+            }
 	}
 	
 	private class SenderThread implements Runnable {

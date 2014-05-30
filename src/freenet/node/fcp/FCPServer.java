@@ -43,7 +43,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
+import freenet.support.MutableBoolean;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
@@ -160,8 +160,6 @@ public class FCPServer implements Runnable, DownloadCache {
 				realRun();
 			} catch (IOException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}

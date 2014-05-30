@@ -26,7 +26,6 @@ import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -93,10 +92,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         try {
-        	realRun();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			tag.handlerThrew(e);
+            realRun();
         } catch (Throwable t) {
             Logger.error(this, "Caught in run() "+t, t);
             tag.handlerThrew(t);

@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.io.Closer;
@@ -52,9 +51,6 @@ class Persister implements Runnable {
 		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			persistThrottle();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Will restart ThrottlePersister...");
 		} catch (Throwable t) {
 			Logger.error(this, "Caught in ThrottlePersister: "+t, t);
 			System.err.println("Caught in ThrottlePersister: "+t);
