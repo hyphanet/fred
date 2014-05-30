@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client.filter;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.io.Reader;
 import java.io.Writer;
@@ -22,18 +29,11 @@ import java.io.Writer;
  * </p>
  */
 class CSSParser extends CSSTokenizerFilter {
+    final FilterCallback cb;
 
-	final FilterCallback cb;
-	
-	CSSParser(
-		Reader r,
-		Writer w,
-		boolean paranoidStringCheck,
-		FilterCallback cb,
-		String charset,
-		boolean stopAtDetectedCharset, boolean isInline) {
-		super(r, w, cb, charset, stopAtDetectedCharset, isInline);
-		this.cb = cb;
-	}
-
+    CSSParser(Reader r, Writer w, boolean paranoidStringCheck, FilterCallback cb, String charset,
+              boolean stopAtDetectedCharset, boolean isInline) {
+        super(r, w, cb, charset, stopAtDetectedCharset, isInline);
+        this.cb = cb;
+    }
 }
