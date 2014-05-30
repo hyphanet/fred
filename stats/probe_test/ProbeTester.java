@@ -1,57 +1,73 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.util.Random;
 
 class ProbeTester {
-	public static void main(String[] args) {
-		int seed = 0;
-		int nProbes = 120;
-		if (args.length > 0) {
-			//random seed
-			try {
-				seed = Integer.parseInt(args[0]);
-				System.err.println("Using random seed " + seed);
-			} catch (NumberFormatException e) {
-				System.err.println("Error parsing seed.");
-			}
-		}
-		if (args.length > 1) {
-			//nProbes
-			try {
-				nProbes = Integer.parseInt(args[1]);
-				System.err.println("Performing " + nProbes + " probes.");
-			} catch (NumberFormatException e) {
-				System.err.println("Error parsing probe count.");
-			}
-		}
+    public static void main(String[] args) {
+        int seed = 0;
+        int nProbes = 120;
 
+        if (args.length > 0) {
 
-		Random rand = new MersenneTwister(seed);
-		int sleepInterval = 30000;	//msecs
-		double[] probeLocs = new double[nProbes];
+            // random seed
+            try {
+                seed = Integer.parseInt(args[0]);
+                System.err.println("Using random seed " + seed);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing seed.");
+            }
+        }
 
-		for (int i = 0; i < nProbes; i++) {
-			probeLocs[i] = rand.nextDouble();
-		}
+        if (args.length > 1) {
 
-		//send probes
-		for (int i = 0; i < nProbes; i++) {
-			System.out.println("PROBE:" + probeLocs[i]);
-			try {
-				Thread.sleep(sleepInterval + rand.nextInt(sleepInterval / 10));
-			} catch (InterruptedException e) {
-				//do nothing
-			}
-		}
+            // nProbes
+            try {
+                nProbes = Integer.parseInt(args[1]);
+                System.err.println("Performing " + nProbes + " probes.");
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing probe count.");
+            }
+        }
 
-		try {
-			Thread.sleep(4*sleepInterval);
-		} catch (InterruptedException e) {
-			//do nothing
-		}
+        Random rand = new MersenneTwister(seed);
+        int sleepInterval = 30000;    // msecs
+        double[] probeLocs = new double[nProbes];
 
-		System.out.println("quit");
-		try {
-			Thread.sleep(10);
-		} catch (InterruptedException e) {
-		}
-	}
+        for (int i = 0; i < nProbes; i++) {
+            probeLocs[i] = rand.nextDouble();
+        }
+
+        // send probes
+        for (int i = 0; i < nProbes; i++) {
+            System.out.println("PROBE:" + probeLocs[i]);
+
+            try {
+                Thread.sleep(sleepInterval + rand.nextInt(sleepInterval / 10));
+            } catch (InterruptedException e) {
+
+                // do nothing
+            }
+        }
+
+        try {
+            Thread.sleep(4 * sleepInterval);
+        } catch (InterruptedException e) {
+
+            // do nothing
+        }
+
+        System.out.println("quit");
+
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {}
+    }
 }
