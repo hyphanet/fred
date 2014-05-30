@@ -1,13 +1,23 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.io.comm;
 
-import java.lang.ref.WeakReference;
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.io.xfer.PacketThrottle;
+
 import freenet.node.MessageItem;
 import freenet.node.OutgoingPacketMangler;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.lang.ref.WeakReference;
 
 /**
  * @author amphibian
@@ -16,51 +26,58 @@ import freenet.node.OutgoingPacketMangler;
  * Implemented by PeerNode, for example.
  */
 public interface PeerContext {
-	// Largely opaque interface for now
-	Peer getPeer();
 
-	/** Force the peer to disconnect. */
-	void forceDisconnect();
+    // Largely opaque interface for now
+    Peer getPeer();
 
-	/** Is the peer connected? Have we established the session link? */
-	boolean isConnected();
+    /** Force the peer to disconnect. */
+    void forceDisconnect();
 
-	/** Is the peer connected? are we able to route requests to it? */
-	boolean isRoutable();
+    /** Is the peer connected? Have we established the session link? */
+    boolean isConnected();
 
-	/** Peer version, if this is supported, else -1 */
-	int getVersionNumber();
+    /** Is the peer connected? are we able to route requests to it? */
+    boolean isRoutable();
 
-	/** Send a message to the node 
-	 * @return */
-	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
+    /** Peer version, if this is supported, else -1 */
+    int getVersionNumber();
 
-	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
-	public long getBootID();
+    /**
+     * Send a message to the node
+     * @return 
+     */
+    public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 
-	/** Get the PacketThrottle for the node's current address for the standard packet size (if the
-	 * address changes then we get a new throttle). */
-	public PacketThrottle getThrottle();
+    /** Get the current boot ID. This is a random number that changes every time the node starts up. */
+    public long getBootID();
 
-	/** Get the SocketHandler which handles incoming packets from this node */
-	SocketHandler getSocketHandler();
+    /**
+     * Get the PacketThrottle for the node's current address for the standard packet size (if the
+     * address changes then we get a new throttle). 
+     */
+    public PacketThrottle getThrottle();
 
-	/** Get the OutgoingPacketMangler which encrypts outgoing packets to this node */
-	OutgoingPacketMangler getOutgoingMangler();
+    /** Get the SocketHandler which handles incoming packets from this node */
+    SocketHandler getSocketHandler();
 
-	/** Get a WeakReference to this context. Hopefully there is only one of these for the whole object; they are quite
-	 * expensive. */
-	WeakReference<? extends PeerContext> getWeakRef();
+    /** Get the OutgoingPacketMangler which encrypts outgoing packets to this node */
+    OutgoingPacketMangler getOutgoingMangler();
 
-	/** Compact toString() */
-	String shortToString();
+    /**
+     * Get a WeakReference to this context. Hopefully there is only one of these for the whole object; they are quite
+     * expensive. 
+     */
+    WeakReference<? extends PeerContext> getWeakRef();
 
-	/** Report a transfer failure */
-	void transferFailed(String reason, boolean realTime);
+    /** Compact toString() */
+    String shortToString();
 
-	boolean unqueueMessage(MessageItem item);
+    /** Report a transfer failure */
+    void transferFailed(String reason, boolean realTime);
 
-	void reportThrottledPacketSendTime(long time, boolean realTime);
+    boolean unqueueMessage(MessageItem item);
 
-	int getThrottleWindowSize();
+    void reportThrottledPacketSendTime(long time, boolean realTime);
+
+    int getThrottleWindowSize();
 }
