@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,49 +18,59 @@ import java.util.Comparator;
  * @author toad
  */
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
-	
-	private final byte[] buf;
-	private int hashCode;
-	
-	public static final Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
+    public static final Comparator<ByteArrayWrapper> FAST_COMPARATOR = new Comparator<ByteArrayWrapper>() {
+        @Override
+        public int compare(ByteArrayWrapper o1, ByteArrayWrapper o2) {
+            if (o1.hashCode > o2.hashCode) {
+                return 1;
+            }
 
-		@Override
-		public int compare(ByteArrayWrapper o1, ByteArrayWrapper o2) {
-			if(o1.hashCode > o2.hashCode) return 1;
-			if(o1.hashCode < o2.hashCode) return -1;
-			return o1.compareTo(o2);
-		}
-		
-	};
-	
-	public ByteArrayWrapper(byte[] data) {
-		buf = data;
-		hashCode = Fields.hashCode(buf);
-	}
-	
-	@Override
-	public boolean equals(Object o) {
-		if(o instanceof ByteArrayWrapper) {
-			ByteArrayWrapper b = (ByteArrayWrapper) o;
-			if(b.buf == buf) return true;
-			return Arrays.equals(b.buf, buf);
-		}
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}
-	
-	/** DO NOT MODIFY THE RETURNED DATA! */
-	public byte[] get() {
-		return buf;
-	}
+            if (o1.hashCode < o2.hashCode) {
+                return -1;
+            }
 
-	@Override
-	public int compareTo(ByteArrayWrapper arg) {
-		if(this == arg) return 0;
-		return Fields.compareBytes(buf, arg.buf);
-	}
+            return o1.compareTo(o2);
+        }
+    };
+    private final byte[] buf;
+    private int hashCode;
+
+    public ByteArrayWrapper(byte[] data) {
+        buf = data;
+        hashCode = Fields.hashCode(buf);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof ByteArrayWrapper) {
+            ByteArrayWrapper b = (ByteArrayWrapper) o;
+
+            if (b.buf == buf) {
+                return true;
+            }
+
+            return Arrays.equals(b.buf, buf);
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
+    /** DO NOT MODIFY THE RETURNED DATA! */
+    public byte[] get() {
+        return buf;
+    }
+
+    @Override
+    public int compareTo(ByteArrayWrapper arg) {
+        if (this == arg) {
+            return 0;
+        }
+
+        return Fields.compareBytes(buf, arg.buf);
+    }
 }
