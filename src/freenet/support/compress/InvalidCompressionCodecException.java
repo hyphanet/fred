@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support.compress;
 
 /**
@@ -8,11 +13,9 @@ package freenet.support.compress;
  * name)
  */
 public class InvalidCompressionCodecException extends Exception {
+    private static final long serialVersionUID = -1;
 
-	private static final long serialVersionUID = -1;
-
-	public InvalidCompressionCodecException(String message) {
-		super(message);
-	}
-
+    public InvalidCompressionCodecException(String message) {
+        super(message);
+    }
 }
