@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.clients.http;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,22 +22,21 @@ import java.net.URISyntaxException;
  * @author xor <xor@freenetproject.org>
  */
 public class RedirectException extends Exception {
-	private static final long serialVersionUID = -1;
-	final URI newuri;
+    private static final long serialVersionUID = -1;
+    final URI newuri;
 
-	public RedirectException(String newURI) throws URISyntaxException {
-		this.newuri = new URI(newURI);
-	}
-	
-	public RedirectException(URI newURI) {
-		this.newuri = newURI;
-	}
-	
-	/**
-	 * @return The URI to which this Exception shall redirect.
-	 */
-	public URI getTarget() {
-	    return newuri;
-	}
+    public RedirectException(String newURI) throws URISyntaxException {
+        this.newuri = new URI(newURI);
+    }
 
+    public RedirectException(URI newURI) {
+        this.newuri = newURI;
+    }
+
+    /**
+     * @return The URI to which this Exception shall redirect.
+     */
+    public URI getTarget() {
+        return newuri;
+    }
 }
