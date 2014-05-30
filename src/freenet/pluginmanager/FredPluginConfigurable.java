@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.pluginmanager;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.config.SubConfig;
 
@@ -27,11 +34,12 @@ import freenet.config.SubConfig;
  * plugin modifes a parameter behind the user's back.
  */
 public interface FredPluginConfigurable extends FredPluginL10n {
-	/**
-	 * Setup the plugin's configuration options. This method is called
-	 * before the plugin's runPlugin method, but not in a new
-	 * thread. Plugins should register options on the supplied
-	 * SubConfig, but they should not do any other initialization.
-	 */
-	public void setupConfig(SubConfig subconfig);
+
+    /**
+     * Setup the plugin's configuration options. This method is called
+     * before the plugin's runPlugin method, but not in a new
+     * thread. Plugins should register options on the supplied
+     * SubConfig, but they should not do any other initialization.
+     */
+    public void setupConfig(SubConfig subconfig);
 }
