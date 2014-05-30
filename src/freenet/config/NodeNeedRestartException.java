@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.config;
 
 /**
@@ -10,8 +15,7 @@ package freenet.config;
  */
 @SuppressWarnings("serial")
 public class NodeNeedRestartException extends ConfigException {
-	public NodeNeedRestartException(String msg) {
-		super(msg);
-	}
-
+    public NodeNeedRestartException(String msg) {
+        super(msg);
+    }
 }
