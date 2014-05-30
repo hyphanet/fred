@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.pluginmanager;
 
 /**
@@ -9,7 +14,7 @@ package freenet.pluginmanager;
  * @author Artefact2
  */
 public class PluginStoreContainer {
-	public PluginStore pluginStore;
-	public long nodeDBHandle;
-	public String storeIdentifier;
+    public PluginStore pluginStore;
+    public long nodeDBHandle;
+    public String storeIdentifier;
 }
