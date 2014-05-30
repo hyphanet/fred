@@ -1,4 +1,5 @@
-/* Copyright 2007 Freenet Project Inc.
+/*
+ * Copyright 2007 Freenet Project Inc.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -13,41 +14,50 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
+
+
+
 package freenet.io;
 
-import java.net.UnknownHostException;
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+
 import freenet.node.FSParseException;
+
 import freenet.support.SimpleFieldSet;
 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.net.UnknownHostException;
+
 public class PeerAddressTrackerItem extends AddressTrackerItem {
-	
-	public final Peer peer;
+    public final Peer peer;
 
-	public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, 
-			long timeDefinitelyNoPacketsSent, Peer peer) {
-		super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
-		this.peer = peer;
-	}
-	
-	public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
-		super(fs);
-		try {
-			peer = new Peer(fs.getString("Address"), false);
-		} catch (UnknownHostException e) {
-			throw (FSParseException)new FSParseException("Unknown domain name in Address: "+e).initCause(e);
-		} catch (PeerParseException e) {
-			throw new FSParseException(e);
-		}
-	}
+    public PeerAddressTrackerItem(SimpleFieldSet fs) throws FSParseException {
+        super(fs);
 
-	@Override
-	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = super.toFieldSet();
-		fs.putOverwrite("Address", peer.toStringPrefNumeric());
-		return fs;
-	}
+        try {
+            peer = new Peer(fs.getString("Address"), false);
+        } catch (UnknownHostException e) {
+            throw(FSParseException) new FSParseException("Unknown domain name in Address: " + e).initCause(e);
+        } catch (PeerParseException e) {
+            throw new FSParseException(e);
+        }
+    }
 
+    public PeerAddressTrackerItem(long timeDefinitelyNoPacketsReceived, long timeDefinitelyNoPacketsSent, Peer peer) {
+        super(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent);
+        this.peer = peer;
+    }
+
+    @Override
+    public SimpleFieldSet toFieldSet() {
+        SimpleFieldSet fs = super.toFieldSet();
+
+        fs.putOverwrite("Address", peer.toStringPrefNumeric());
+
+        return fs;
+    }
 }
