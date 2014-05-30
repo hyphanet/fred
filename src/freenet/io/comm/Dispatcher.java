@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.io.comm;
 
 public interface Dispatcher {
@@ -12,5 +17,4 @@ public interface Dispatcher {
      * passed on to the next filter.
      */
     boolean handleMessage(Message m);
-
 }
