@@ -14,7 +14,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
+
 package freenet.io;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.net.InetAddress;
 
@@ -23,9 +27,8 @@ import java.net.InetAddress;
  * @version $Id$
  */
 public interface AddressMatcher {
-	public boolean matches(InetAddress address);
+    public boolean matches(InetAddress address);
 
-	/** Get the human-readable version of the Matcher */
-	public String getHumanRepresentation();
-
+    /** Get the human-readable version of the Matcher */
+    public String getHumanRepresentation();
 }
