@@ -1,11 +1,19 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 
@@ -13,101 +21,109 @@ import java.nio.channels.FileChannel.MapMode;
  * @author sdiz
  */
 public class CountingBloomFilter extends BloomFilter {
-	
-	private boolean warnOnRemoveFromEmpty;
-	
-	public void setWarnOnRemoveFromEmpty() {
-		warnOnRemoveFromEmpty = true;
-	}
-	
-	/**
-	 * Constructor
-	 * 
-	 * @param length
-	 *            length in bits
-	 */
-	public CountingBloomFilter(int length, int k) {
-		super(length, k);
-		filter = ByteBuffer.allocate(this.length / 4);
-	}
+    private boolean warnOnRemoveFromEmpty;
 
-	/**
-	 * Constructor
-	 * 
-	 * @param file
-	 *            disk file
-	 * @param length
-	 *            length in bits
-	 * @throws IOException
-	 */
-	protected CountingBloomFilter(File file, int length, int k) throws IOException {
-		super(length, k);
-		int fileLength = length / 4;
-		if (!file.exists() || file.length() != fileLength)
-			needRebuild = true;
+    /**
+     * Constructor
+     *
+     * @param length
+     *            length in bits
+     */
+    public CountingBloomFilter(int length, int k) {
+        super(length, k);
+        filter = ByteBuffer.allocate(this.length / 4);
+    }
 
-		RandomAccessFile raf = new RandomAccessFile(file, "rw");
-		raf.setLength(fileLength);
-		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, fileLength).load();
-	}
+    /**
+     * Constructor
+     *
+     * @param file
+     *            disk file
+     * @param length
+     *            length in bits
+     * @throws IOException
+     */
+    protected CountingBloomFilter(File file, int length, int k) throws IOException {
+        super(length, k);
 
-	public CountingBloomFilter(int length, int k, byte[] buffer) {
-		super(length, k);
-		assert(buffer.length == length / 4);
-		filter = ByteBuffer.wrap(buffer);
-	}
+        int fileLength = length / 4;
 
-	@Override
-	public boolean getBit(int offset) {
-		byte b = filter.get(offset / 4);
-		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
+        if (!file.exists() || (file.length() != fileLength)) {
+            needRebuild = true;
+        }
 
-		return v != 0;
-	}
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
 
-	@Override
-	public void setBit(int offset) {
-		byte b = filter.get(offset / 4);
-		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
+        raf.setLength(fileLength);
+        filter = raf.getChannel().map(MapMode.READ_WRITE, 0, fileLength).load();
+    }
 
-		if (v == 3)
-			return; // overflow
+    public CountingBloomFilter(int length, int k, byte[] buffer) {
+        super(length, k);
+        assert(buffer.length == length / 4);
+        filter = ByteBuffer.wrap(buffer);
+    }
 
-		b &= ~(3 << offset % 4 * 2); // unset bit
-		b |= (v + 1) << offset % 4 * 2; // set bit
+    public void setWarnOnRemoveFromEmpty() {
+        warnOnRemoveFromEmpty = true;
+    }
 
-		filter.put(offset / 4, b);
-	}
+    @Override
+    public boolean getBit(int offset) {
+        byte b = filter.get(offset / 4);
+        byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
-	@Override
-	public void unsetBit(int offset) {
-		byte b = filter.get(offset / 4);
-		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
+        return v != 0;
+    }
 
-		if (v == 0 && warnOnRemoveFromEmpty)
-			Logger.error(this, "Unsetting bit but already unset - probable double remove, can cause false negatives, is very bad!", new Exception("error"));
-		
-		if (v == 0 || v == 3)
-			return; // overflow / underflow
+    @Override
+    public void setBit(int offset) {
+        byte b = filter.get(offset / 4);
+        byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
-		b &= ~(3 << offset % 4 * 2); // unset bit
-		b |= (v - 1) << offset % 4 * 2; // set bit
+        if (v == 3) {
+            return;    // overflow
+        }
 
-		filter.put(offset / 4, b);
-	}
+        b &= ~(3 << offset % 4 * 2);       // unset bit
+        b |= (v + 1) << offset % 4 * 2;    // set bit
+        filter.put(offset / 4, b);
+    }
 
-	@Override
-	public void fork(int k) {
-		lock.writeLock().lock();
-		try {
-			File tempFile = File.createTempFile("bloom-", ".tmp");
-			tempFile.deleteOnExit();
-			forkedFilter = new CountingBloomFilter(tempFile, length, k);
-		} catch (IOException e) {
-			forkedFilter = new CountingBloomFilter(length, k);
-		} finally {
-			lock.writeLock().unlock();
-		}
-	}
+    @Override
+    public void unsetBit(int offset) {
+        byte b = filter.get(offset / 4);
+        byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
+        if ((v == 0) && warnOnRemoveFromEmpty) {
+            Logger.error(
+                this,
+                "Unsetting bit but already unset - probable double remove, can cause false negatives, is very bad!",
+                new Exception("error"));
+        }
+
+        if ((v == 0) || (v == 3)) {
+            return;    // overflow / underflow
+        }
+
+        b &= ~(3 << offset % 4 * 2);       // unset bit
+        b |= (v - 1) << offset % 4 * 2;    // set bit
+        filter.put(offset / 4, b);
+    }
+
+    @Override
+    public void fork(int k) {
+        lock.writeLock().lock();
+
+        try {
+            File tempFile = File.createTempFile("bloom-", ".tmp");
+
+            tempFile.deleteOnExit();
+            forkedFilter = new CountingBloomFilter(tempFile, length, k);
+        } catch (IOException e) {
+            forkedFilter = new CountingBloomFilter(length, k);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
 }

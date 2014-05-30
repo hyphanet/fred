@@ -7,22 +7,25 @@
 package freenet.support;
 
 /**
-** Note that unlike {@link java.util.concurrent.Executor}, none of these run
-** methods throw {@link java.util.concurrent.RejectedExecutionException}.
-*/
+ * Note that unlike {@link java.util.concurrent.Executor}, none of these run
+ * methods throw {@link java.util.concurrent.RejectedExecutionException}.
+ */
 public interface Executor extends java.util.concurrent.Executor {
 
-	/** Execute a job. */
-	@Override
-	public void execute(Runnable job);
-	public void execute(Runnable job, String jobName);
-	public void execute(Runnable job, String jobName, boolean fromTicker);
+    /** Execute a job. */
+    @Override
+    public void execute(Runnable job);
 
-	/** Count the number of threads waiting for work at each priority level */
-	public int[] waitingThreads();
-	/** Count the number of threads running at each priority level */
-	public int[] runningThreads();
+    public void execute(Runnable job, String jobName);
 
-	/** Fast method returning how many threads are waiting */
-	public int getWaitingThreadsCount();
+    public void execute(Runnable job, String jobName, boolean fromTicker);
+
+    /** Count the number of threads waiting for work at each priority level */
+    public int[] waitingThreads();
+
+    /** Count the number of threads running at each priority level */
+    public int[] runningThreads();
+
+    /** Fast method returning how many threads are waiting */
+    public int getWaitingThreadsCount();
 }
