@@ -1,12 +1,18 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client.events;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-
 
 /**
  * Event handling for clients.
@@ -20,7 +26,7 @@ public interface ClientEventProducer {
      * @param ce  the ClientEvent to raise
      */
     void produceEvent(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context);
-        
+
     /**
      * Adds an EventListener that will receive all events produced
      * by the implementing object.
@@ -36,7 +42,5 @@ public interface ClientEventProducer {
      */
     boolean removeEventListener(ClientEventListener cel);
 
-	void removeFrom(ObjectContainer container);
+    void removeFrom(ObjectContainer container);
 }
-
-

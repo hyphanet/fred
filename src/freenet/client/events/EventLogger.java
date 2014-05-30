@@ -1,11 +1,19 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.client.events;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -15,29 +23,29 @@ import freenet.support.Logger.LogLevel;
  * @author oskar
  */
 public class EventLogger implements ClientEventListener {
+    final LogLevel logPrio;
+    final boolean removeWithProducer;
 
-	final LogLevel logPrio;
-	final boolean removeWithProducer;
-	
-	public EventLogger(LogLevel prio, boolean removeWithProducer) {
-		logPrio = prio;
-		this.removeWithProducer = removeWithProducer;
-	}
-	
+    public EventLogger(LogLevel prio, boolean removeWithProducer) {
+        logPrio = prio;
+        this.removeWithProducer = removeWithProducer;
+    }
+
     /**
      * Logs an event
-     * 
+     *
      * @param ce
      *            The event that occured
      */
-	@Override
+    @Override
     public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
-    	Logger.logStatic(ce, ce.getDescription(), logPrio);
+        Logger.logStatic(ce, ce.getDescription(), logPrio);
     }
 
-	@Override
-	public void onRemoveEventProducer(ObjectContainer container) {
-		if(removeWithProducer)
-			container.delete(this);
-	}
+    @Override
+    public void onRemoveEventProducer(ObjectContainer container) {
+        if (removeWithProducer) {
+            container.delete(this);
+        }
+    }
 }
