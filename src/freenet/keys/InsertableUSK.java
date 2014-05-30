@@ -1,9 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.keys;
 
-import java.net.MalformedURLException;
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
@@ -11,11 +16,16 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
+
 import freenet.support.Logger;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.net.MalformedURLException;
 
 /**
  * An insertable USK.
- * 
+ *
  * Changes from an ordinary USK:
  * - It has a private key
  * - getURI() doesn't include ,extra
@@ -23,60 +33,72 @@ import freenet.support.Logger;
  * - It has a getUSK() method which gets the public USK
  */
 public class InsertableUSK extends USK {
-	
-	public final DSAPrivateKey privKey;
-	
-	public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
-		if(!uri.getKeyType().equalsIgnoreCase("USK"))
-			throw new MalformedURLException();
-		InsertableClientSSK ssk =
-			InsertableClientSSK.create(uri.setKeyType("SSK"));
-		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
-	}
-	
-	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
-		super(pubKeyHash, cryptoKey, docName, suggestedEdition, cryptoAlgorithm);
-		if(cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH)
-			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+ClientSSK.CRYPTO_KEY_LENGTH);
-		this.privKey = key;
-	}
+    public final DSAPrivateKey privKey;
 
-	public USK getUSK() {
-		return new USK(pubKeyHash, cryptoKey, siteName, suggestedEdition, cryptoAlgorithm);
-	}
+    InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, long suggestedEdition,
+                  byte cryptoAlgorithm)
+            throws MalformedURLException {
+        super(pubKeyHash, cryptoKey, docName, suggestedEdition, cryptoAlgorithm);
 
-	public InsertableClientSSK getInsertableSSK(long ver) {
-		return getInsertableSSK(siteName + SEPARATOR + ver);
-	}
-	
-	public InsertableClientSSK getInsertableSSK(String string) {
-		try {
-			return new InsertableClientSSK(string, pubKeyHash, 
-					new DSAPublicKey(getCryptoGroup(), privKey), privKey, cryptoKey, cryptoAlgorithm);
-		} catch (MalformedURLException e) {
-			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
-			throw new Error(e);
-		}
-	}
+        if (cryptoKey.length != ClientSSK.CRYPTO_KEY_LENGTH) {
+            throw new MalformedURLException("Decryption key wrong length: " + cryptoKey.length + " should be "
+                                            + ClientSSK.CRYPTO_KEY_LENGTH);
+        }
 
-	public InsertableUSK privCopy(long edition) {
-		if(edition == suggestedEdition) return this;
-		try {
-			return new InsertableUSK(siteName, pubKeyHash, cryptoKey, privKey, edition, cryptoAlgorithm);
-		} catch (MalformedURLException e) {
-			throw new Error(e);
-		}
-	}
+        this.privKey = key;
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		Logger.minor(this, "Removing "+this, new Exception("debug"));
-		container.activate(privKey, 5);
-		privKey.removeFrom(container);
-		super.removeFrom(container);
-	}
-	
-	public final DSAGroup getCryptoGroup() {
-		return Global.DSAgroupBigA;
-	}
+    public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
+        if (!uri.getKeyType().equalsIgnoreCase("USK")) {
+            throw new MalformedURLException();
+        }
+
+        InsertableClientSSK ssk = InsertableClientSSK.create(uri.setKeyType("SSK"));
+
+        return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, uri.getSuggestedEdition(),
+                                 ssk.cryptoAlgorithm);
+    }
+
+    public USK getUSK() {
+        return new USK(pubKeyHash, cryptoKey, siteName, suggestedEdition, cryptoAlgorithm);
+    }
+
+    public InsertableClientSSK getInsertableSSK(long ver) {
+        return getInsertableSSK(siteName + SEPARATOR + ver);
+    }
+
+    public InsertableClientSSK getInsertableSSK(String string) {
+        try {
+            return new InsertableClientSSK(string, pubKeyHash, new DSAPublicKey(getCryptoGroup(), privKey), privKey,
+                                           cryptoKey, cryptoAlgorithm);
+        } catch (MalformedURLException e) {
+            Logger.error(this, "Caught " + e + " should not be possible in USK.getSSK", e);
+
+            throw new Error(e);
+        }
+    }
+
+    public InsertableUSK privCopy(long edition) {
+        if (edition == suggestedEdition) {
+            return this;
+        }
+
+        try {
+            return new InsertableUSK(siteName, pubKeyHash, cryptoKey, privKey, edition, cryptoAlgorithm);
+        } catch (MalformedURLException e) {
+            throw new Error(e);
+        }
+    }
+
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        Logger.minor(this, "Removing " + this, new Exception("debug"));
+        container.activate(privKey, 5);
+        privKey.removeFrom(container);
+        super.removeFrom(container);
+    }
+
+    public final DSAGroup getCryptoGroup() {
+        return Global.DSAgroupBigA;
+    }
 }
