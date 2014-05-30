@@ -1,22 +1,33 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.store;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.support.Logger;
 
 public class KeyCollisionException extends Exception {
-	private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     private static volatile boolean logDEBUG;
-    
-    static { Logger.registerClass(KeyCollisionException.class); }
-    
+
+    static {
+        Logger.registerClass(KeyCollisionException.class);
+    }
+
     // Optimization :
     // https://blogs.oracle.com/jrose/entry/longjumps_considered_inexpensive
-	@Override
+    @Override
     public final synchronized Throwable fillInStackTrace() {
-        if(logDEBUG)
+        if (logDEBUG) {
             return super.fillInStackTrace();
+        }
+
         return null;
     }
 }
