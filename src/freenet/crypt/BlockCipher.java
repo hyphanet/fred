@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.crypt;
 
 /**
@@ -14,7 +19,7 @@ public interface BlockCipher {
      * performing pre-encryption calculation of subkeys, S-Boxes, etc.
      */
     void initialize(byte[] key);
-    
+
     /**
      * Returns the key size, in bits, of the given block-cipher
      */
@@ -30,7 +35,7 @@ public interface BlockCipher {
      * to getBlockSize()/8. The result is placed in result and, too has
      * to have length getBlockSize()/8.
      * Block and result may refer to the same array.
-     * 
+     *
      * Warning: It is not a guarantee that <b>block</b> will not be over-
      * written in the course of the algorithm
      */
@@ -41,10 +46,9 @@ public interface BlockCipher {
      * to getBlockSize()/8. The result is placed in result and, too has
      * to have length getBlockSize()/8.
      * Block and result may refer to the same array.
-     * 
+     *
      * Warning: It is not a guarantee that <b>block</b> will not be over-
      * written in the course of the algorithm
      */
     void decipher(byte[] block, byte[] result);
-
 }

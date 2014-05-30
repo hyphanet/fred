@@ -1,27 +1,41 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.crypt;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.node.NodeStarter;
+
 import freenet.support.api.Bucket;
 
-/** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
- * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import java.util.Arrays;
+
+/**
+ * Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning:
+ * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when
  * the end of the bucket is reached, which may be in read() or may be in close().
  * @author toad
  */
 public class AEADCryptBucket implements Bucket {
-    
+    static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
     private final Bucket underlying;
     private final byte[] key;
     private boolean readOnly;
-    static final int OVERHEAD = AEADOutputStream.AES_OVERHEAD;
-    
+
     public AEADCryptBucket(Bucket underlying, byte[] key) {
         this.underlying = underlying;
         this.key = Arrays.copyOf(key, key.length);
@@ -29,23 +43,27 @@ public class AEADCryptBucket implements Bucket {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        synchronized(this) {
-            if(readOnly)
+        synchronized (this) {
+            if (readOnly) {
                 throw new IOException("Read only");
+            }
         }
+
         OutputStream os = underlying.getOutputStream();
+
         return AEADOutputStream.createAES(os, key, NodeStarter.getGlobalSecureRandom());
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
         InputStream is = underlying.getInputStream();
+
         return AEADInputStream.createAES(is, key);
     }
 
     @Override
     public String getName() {
-        return "AEADEncrypted:"+underlying.getName();
+        return "AEADEncrypted:" + underlying.getName();
     }
 
     @Override
@@ -79,13 +97,14 @@ public class AEADCryptBucket implements Bucket {
         underlying.removeFrom(container);
         container.delete(this);
     }
-    
+
     @Override
     public Bucket createShadow() {
         Bucket undershadow = underlying.createShadow();
         AEADCryptBucket ret = new AEADCryptBucket(undershadow, key);
+
         ret.setReadOnly();
+
         return ret;
     }
-
 }
