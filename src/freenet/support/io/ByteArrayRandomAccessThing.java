@@ -1,45 +1,69 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support.io;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.io.IOException;
 
-
 public class ByteArrayRandomAccessThing implements RandomAccessThing {
+    private final byte[] data;
+    private boolean readOnly;
 
-	private final byte[] data;
-	private boolean readOnly;
-	
-	public ByteArrayRandomAccessThing(byte[] padded) {
-		this.data = padded;
-	}
+    public ByteArrayRandomAccessThing(byte[] padded) {
+        this.data = padded;
+    }
 
-	@Override
-	public void close() {
-		// Do nothing
-	}
+    @Override
+    public void close() {
 
-	@Override
-	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
-			throws IOException {
-		if(fileOffset < 0) throw new IOException("Cannot read before zero");
-		if(fileOffset + length > data.length) throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
-		System.arraycopy(data, (int)fileOffset, buf, bufOffset, length);
-	}
+        // Do nothing
+    }
 
-	@Override
-	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
-			throws IOException {
-		if(fileOffset < 0) throw new IOException("Cannot write before zero");
-		if(fileOffset + length > data.length) throw new IOException("Cannot write after end: trying to write from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
-		if(readOnly) throw new IOException("Read-only");
-		System.arraycopy(buf, bufOffset, data, (int)fileOffset, length);
-	}
+    @Override
+    public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
+        if (fileOffset < 0) {
+            throw new IOException("Cannot read before zero");
+        }
 
-	@Override
-	public long size() throws IOException {
-		return data.length;
-	}
+        if (fileOffset + length > data.length) {
+            throw new IOException("Cannot read after end: trying to read from " + fileOffset + " to "
+                                  + (fileOffset + length) + " on block length " + data.length);
+        }
 
-	public void setReadOnly() {
-		readOnly = true;
-	}
+        System.arraycopy(data, (int) fileOffset, buf, bufOffset, length);
+    }
+
+    @Override
+    public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
+        if (fileOffset < 0) {
+            throw new IOException("Cannot write before zero");
+        }
+
+        if (fileOffset + length > data.length) {
+            throw new IOException("Cannot write after end: trying to write from " + fileOffset + " to "
+                                  + (fileOffset + length) + " on block length " + data.length);
+        }
+
+        if (readOnly) {
+            throw new IOException("Read-only");
+        }
+
+        System.arraycopy(buf, bufOffset, data, (int) fileOffset, length);
+    }
+
+    @Override
+    public long size() throws IOException {
+        return data.length;
+    }
+
+    public void setReadOnly() {
+        readOnly = true;
+    }
 }
