@@ -1,69 +1,80 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support.io;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.support.api.Bucket;
 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 public class NoFreeBucket implements Bucket {
-	
-	final Bucket proxy;
-	
-	public NoFreeBucket(Bucket orig) {
-		proxy = orig;
-	}
+    final Bucket proxy;
 
-	@Override
-	public OutputStream getOutputStream() throws IOException {
-		return proxy.getOutputStream();
-	}
+    public NoFreeBucket(Bucket orig) {
+        proxy = orig;
+    }
 
-	@Override
-	public InputStream getInputStream() throws IOException {
-		return proxy.getInputStream();
-	}
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        return proxy.getOutputStream();
+    }
 
-	@Override
-	public String getName() {
-		return proxy.getName();
-	}
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return proxy.getInputStream();
+    }
 
-	@Override
-	public long size() {
-		return proxy.size();
-	}
+    @Override
+    public String getName() {
+        return proxy.getName();
+    }
 
-	@Override
-	public boolean isReadOnly() {
-		return proxy.isReadOnly();
-	}
+    @Override
+    public long size() {
+        return proxy.size();
+    }
 
-	@Override
-	public void setReadOnly() {
-		proxy.setReadOnly();
-	}
+    @Override
+    public boolean isReadOnly() {
+        return proxy.isReadOnly();
+    }
 
-	@Override
-	public void free() {
-		// Do nothing.
-	}
+    @Override
+    public void setReadOnly() {
+        proxy.setReadOnly();
+    }
 
-	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
+    @Override
+    public void free() {
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+        // Do nothing.
+    }
 
-	@Override
-	public Bucket createShadow() {
-		return proxy.createShadow();
-	}
+    @Override
+    public void storeTo(ObjectContainer container) {
+        container.store(this);
+    }
 
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
+
+    @Override
+    public Bucket createShadow() {
+        return proxy.createShadow();
+    }
 }
