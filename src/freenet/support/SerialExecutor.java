@@ -1,173 +1,201 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.support;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
+//~--- non-JDK imports --------------------------------------------------------
+
+import freenet.node.PrioRunnable;
+
+import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import freenet.node.PrioRunnable;
-import freenet.support.Logger.LogLevel;
-import freenet.support.io.NativeThread;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SerialExecutor implements Executor {
+    private static final long NEWJOB_TIMEOUT = MINUTES.toMillis(5);
+    private static volatile boolean logMINOR;
 
-	private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
+    private final Runnable runner = new PrioRunnable() {
+        @Override
+        public int getPriority() {
+            return priority;
+        }
+        @Override
+        public void run() {
+            synchronized (syncLock) {
+                runningThread = Thread.currentThread();
+            }
 
-	private final LinkedBlockingQueue<Runnable> jobs;
-	private final Object syncLock;
-	private final int priority;
+            try {
+                while (true) {
+                    synchronized (syncLock) {
+                        threadWaiting = true;
+                    }
 
-	private volatile boolean threadWaiting;
-	private volatile boolean threadStarted;
+                    Runnable job = null;
 
-	private String name;
-	private Executor realExecutor;
+                    try {
+                        job = jobs.poll(NEWJOB_TIMEOUT, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
 
-	private static final long NEWJOB_TIMEOUT = MINUTES.toMillis(5);
+                        // ignore
+                    }
 
-	private Thread runningThread;
+                    synchronized (syncLock) {
+                        threadWaiting = false;
+                    }
 
-	private final Runnable runner = new PrioRunnable() {
+                    if (job == null) {
+                        synchronized (syncLock) {
+                            threadStarted = false;
+                        }
 
-		@Override
-		public int getPriority() {
-			return priority;
-		}
+                        return;
+                    }
 
-		@Override
-		public void run() {
-			synchronized(syncLock) {
-				runningThread = Thread.currentThread();
-			}
-			try {
-			while(true) {
-				synchronized (syncLock) {
-						threadWaiting = true;
-				}
-				Runnable job = null;
-						try {
-					job = jobs.poll(NEWJOB_TIMEOUT, TimeUnit.MILLISECONDS);
-						} catch (InterruptedException e) {
-					// ignore
-						}
-				synchronized (syncLock) {
-						threadWaiting=false;
-						}
-				if (job == null) {
-					synchronized (syncLock) {
-						threadStarted = false;
-					}
-					return;
-				}
+                    try {
+                        job.run();
+                    } catch (Throwable t) {
+                        Logger.error(this, "Caught " + t, t);
+                        Logger.error(this, "While running " + job + " on " + this);
+                    }
+                }
+            } finally {
+                synchronized (syncLock) {
+                    runningThread = null;
+                }
+            }
+        }
+    };
+    private final LinkedBlockingQueue<Runnable> jobs;
+    private final Object syncLock;
+    private final int priority;
+    private volatile boolean threadWaiting;
+    private volatile boolean threadStarted;
+    private String name;
+    private Executor realExecutor;
+    private Thread runningThread;
 
-				try {
-					job.run();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-					Logger.error(this, "While running "+job+" on "+this);
-				}
-			}
-			} finally {
-				synchronized(syncLock) {
-					runningThread = null;
-				}
-			}
-		}
+    public SerialExecutor(int priority) {
+        this(priority, 0);
+    }
 
-	};
+    public SerialExecutor(int priority, int bound) {
+        if (bound > 0) {
+            jobs = new LinkedBlockingQueue<Runnable>(bound);
+        } else {
+            jobs = new LinkedBlockingQueue<Runnable>();
+        }
 
-	public SerialExecutor(int priority) {
-		this(priority, 0);
-	}
-	
-	public SerialExecutor(int priority, int bound) {
-		if(bound > 0)
-			jobs = new LinkedBlockingQueue<Runnable>(bound);
-		else
-			jobs = new LinkedBlockingQueue<Runnable>();
-		this.priority = priority;
-		this.syncLock = new Object();
-	}
+        this.priority = priority;
+        this.syncLock = new Object();
+    }
 
-	public void start(Executor realExecutor, String name) {
-		assert(realExecutor != this);
-		this.realExecutor=realExecutor;
-		this.name=name;
-		synchronized (syncLock) {
-			if (!jobs.isEmpty())
-				reallyStart();
-		}
-	}
+    public void start(Executor realExecutor, String name) {
+        assert(realExecutor != this);
+        this.realExecutor = realExecutor;
+        this.name = name;
 
-	private void reallyStart() {
-		synchronized (syncLock) {
-		threadStarted=true;
-		}
-		if (logMINOR)
-			Logger.minor(this, "Starting thread... " + name + " : " + runner);
-		realExecutor.execute(runner, name);
-	}
+        synchronized (syncLock) {
+            if (!jobs.isEmpty()) {
+                reallyStart();
+            }
+        }
+    }
 
-	@Override
-	public void execute(Runnable job) {
-		execute(job, "<noname>");
-	}
+    private void reallyStart() {
+        synchronized (syncLock) {
+            threadStarted = true;
+        }
 
-	@Override
-	public void execute(Runnable job, String jobName) {
-		if (logMINOR)
-			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
-			        + threadWaiting);
-		jobs.offer(job);
+        if (logMINOR) {
+            Logger.minor(this, "Starting thread... " + name + " : " + runner);
+        }
 
-		synchronized (syncLock) {
-			if (!threadStarted && realExecutor != null)
-				reallyStart();
-		}
-	}
+        realExecutor.execute(runner, name);
+    }
 
-	@Override
-	public void execute(Runnable job, String jobName, boolean fromTicker) {
-		execute(job, jobName);
-	}
+    @Override
+    public void execute(Runnable job) {
+        execute(job, "<noname>");
+    }
 
-	@Override
-	public int[] runningThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
-		if (threadStarted && !threadWaiting)
-			retval[priority] = 1;
-		return retval;
-	}
+    @Override
+    public void execute(Runnable job, String jobName) {
+        if (logMINOR) {
+            Logger.minor(this,
+                         "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
+                         + threadWaiting);
+        }
 
-	@Override
-	public int[] waitingThreads() {
-		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
-		synchronized (syncLock) {
-			if(threadStarted && threadWaiting)
-				retval[priority] = 1;
-		}
-		return retval;
-	}
+        jobs.offer(job);
 
-	@Override
-	public int getWaitingThreadsCount() {
-		synchronized (syncLock) {
-			return (threadStarted && threadWaiting) ? 1 : 0;
-		}
-	}
+        synchronized (syncLock) {
+            if (!threadStarted && (realExecutor != null)) {
+                reallyStart();
+            }
+        }
+    }
 
-	public boolean onThread() {
-		synchronized(syncLock) {
-			return Thread.currentThread() == runningThread;
-		}
-	}
+    @Override
+    public void execute(Runnable job, String jobName, boolean fromTicker) {
+        execute(job, jobName);
+    }
+
+    @Override
+    public int[] runningThreads() {
+        int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
+
+        if (threadStarted &&!threadWaiting) {
+            retval[priority] = 1;
+        }
+
+        return retval;
+    }
+
+    @Override
+    public int[] waitingThreads() {
+        int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE + 1];
+
+        synchronized (syncLock) {
+            if (threadStarted && threadWaiting) {
+                retval[priority] = 1;
+            }
+        }
+
+        return retval;
+    }
+
+    @Override
+    public int getWaitingThreadsCount() {
+        synchronized (syncLock) {
+            return (threadStarted && threadWaiting) ? 1 : 0;
+        }
+    }
+
+    public boolean onThread() {
+        synchronized (syncLock) {
+            return Thread.currentThread() == runningThread;
+        }
+    }
 }
