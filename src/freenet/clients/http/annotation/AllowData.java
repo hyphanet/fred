@@ -1,14 +1,21 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.clients.http.annotation;
 
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+//~--- JDK imports ------------------------------------------------------------
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * tag a handleMethodXXX with @AllowData(boolean force)
@@ -23,9 +30,9 @@ import java.lang.annotation.Target;
  * @author saces
  *
  */
-@Target( METHOD )
-@Retention( RUNTIME )
+@Target(METHOD)
+@Retention(RUNTIME)
 @Documented
 public @interface AllowData {
-	boolean value() default false;
+    boolean value() default false;
 }
