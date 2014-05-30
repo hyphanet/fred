@@ -1,40 +1,55 @@
-/**
- * 
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
  */
+
+
+
 package freenet.client.async;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
+
 import freenet.node.SendableGet;
+
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+//WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueueItem {
-	final SendableGet client;
-	final Key key;
-	/** Same trick as we use on PendingKeyItem. Necessary because db4o doesn't
-	 * index anything by value except for strings. */
-	final String keyAsBytes;
-	final long time;
-	final PersistentCooldownQueue parent;
-	
-	PersistentCooldownQueueItem(SendableGet client, Key key, long time, PersistentCooldownQueue parent) {
-		this.client = client;
-		this.key = key;
-		this.keyAsBytes = HexUtil.bytesToHex(key.getFullKey());
-		this.time = time;
-		this.parent = parent;
-	}
+    final SendableGet client;
+    final Key key;
 
-	public void delete(ObjectContainer container) {
-		// client not our problem.
-		// parent not our problem.
-		if(key != null)
-			key.removeFrom(container);
-		else
-			Logger.error(this, "No key to delete on "+this+" keyAsBytes="+keyAsBytes);
-		container.delete(this);
-	}
+    /**
+     * Same trick as we use on PendingKeyItem. Necessary because db4o doesn't
+     * index anything by value except for strings. 
+     */
+    final String keyAsBytes;
+    final long time;
+    final PersistentCooldownQueue parent;
+
+    PersistentCooldownQueueItem(SendableGet client, Key key, long time, PersistentCooldownQueue parent) {
+        this.client = client;
+        this.key = key;
+        this.keyAsBytes = HexUtil.bytesToHex(key.getFullKey());
+        this.time = time;
+        this.parent = parent;
+    }
+
+    public void delete(ObjectContainer container) {
+
+        // client not our problem.
+        // parent not our problem.
+        if (key != null) {
+            key.removeFrom(container);
+        } else {
+            Logger.error(this, "No key to delete on " + this + " keyAsBytes=" + keyAsBytes);
+        }
+
+        container.delete(this);
+    }
 }
