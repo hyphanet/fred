@@ -1,88 +1,104 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node;
 
-import java.util.Random;
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 
-/** Base interface for PeerNode, for purposes of the transport layer. Will be overridden
- * for unit tests to simplify testing. 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.Random;
+
+/**
+ * Base interface for PeerNode, for purposes of the transport layer. Will be overridden
+ * for unit tests to simplify testing.
  * @author toad
  */
 public interface BasePeerNode extends PeerContext {
+    SessionKey getCurrentKeyTracker();
 
-	SessionKey getCurrentKeyTracker();
+    SessionKey getPreviousKeyTracker();
 
-	SessionKey getPreviousKeyTracker();
+    SessionKey getUnverifiedKeyTracker();
 
-	SessionKey getUnverifiedKeyTracker();
+    void receivedPacket(boolean dontLog, boolean dataPacket);
 
-	void receivedPacket(boolean dontLog, boolean dataPacket);
+    void verified(SessionKey s);
 
-	void verified(SessionKey s);
+    void startRekeying();
 
-	void startRekeying();
+    void maybeRekey();
 
-	void maybeRekey();
+    void reportIncomingBytes(int length);
 
-	void reportIncomingBytes(int length);
+    void reportOutgoingBytes(int length);
 
-	void reportOutgoingBytes(int length);
-	
-	DecodingMessageGroup startProcessingDecryptedMessages(int count);
-	
-	void reportPing(long rt);
+    DecodingMessageGroup startProcessingDecryptedMessages(int count);
 
-	double averagePingTime();
+    void reportPing(long rt);
 
-	void wakeUpSender();
+    double averagePingTime();
 
-	int getMaxPacketSize();
+    void wakeUpSender();
 
-	PeerMessageQueue getMessageQueue();
+    int getMaxPacketSize();
 
-	boolean shouldPadDataPackets();
+    PeerMessageQueue getMessageQueue();
 
-	void sendEncryptedPacket(byte[] data) throws LocalAddressException;
+    boolean shouldPadDataPackets();
 
-	void sentPacket();
+    void sendEncryptedPacket(byte[] data) throws LocalAddressException;
 
-	boolean shouldThrottle();
+    void sentPacket();
 
-	void sentThrottledBytes(int length);
+    boolean shouldThrottle();
 
-	void onNotificationOnlyPacketSent(int length);
+    void sentThrottledBytes(int length);
 
-	void resentBytes(int bytesToResend);
+    void onNotificationOnlyPacketSent(int length);
 
-	Random paddingGen();
+    void resentBytes(int bytesToResend);
 
-	void handleMessage(Message msg);
+    Random paddingGen();
 
-	/** Make a load stats message.
-	 * @param realtime True for the realtime load stats, false for the bulk load stats.
-	 * @param highPriority If true, boost the priority so it gets sent fast.
-	 * @param noRemember If true, generating it for a lossy message in a packet; don't 
-	 * remember that we sent it, since it might be lost, and generate it even if the last 
-	 * one was the same, since the last one might be delayed. */
-	MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
-	
-	boolean grabSendLoadStatsASAP(boolean realtime);
+    void handleMessage(Message msg);
 
-	/** Set the load stats to be sent asap. E.g. if we grabbed it and can't actually 
-	 * execute the send for some reason. */
-	void setSendLoadStatsASAP(boolean realtime);
+    /**
+     * Make a load stats message.
+     * @param realtime True for the realtime load stats, false for the bulk load stats.
+     * @param highPriority If true, boost the priority so it gets sent fast.
+     * @param noRemember If true, generating it for a lossy message in a packet; don't
+     * remember that we sent it, since it might be lost, and generate it even if the last
+     * one was the same, since the last one might be delayed. 
+     */
+    MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
 
-	/** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
-	double averagePingTimeCorrected();
+    boolean grabSendLoadStatsASAP(boolean realtime);
 
-	/** Double the RTT when we resend a packet. */
-	void backoffOnResend();
+    /**
+     * Set the load stats to be sent asap. E.g. if we grabbed it and can't actually
+     * execute the send for some reason. 
+     */
+    void setSendLoadStatsASAP(boolean realtime);
 
-	/** Report when a packet was acked. */
-	void receivedAck(long currentTimeMillis);
+    /** Average ping time incorporating variance, calculated like TCP SRTT, as with RFC 2988. */
+    double averagePingTimeCorrected();
 
-	/** Report whether the node is capable of using cumacks. For backward compatibility issues */
-	boolean isUseCumulativeAcksSet();
+    /** Double the RTT when we resend a packet. */
+    void backoffOnResend();
+
+    /** Report when a packet was acked. */
+    void receivedAck(long currentTimeMillis);
+
+    /** Report whether the node is capable of using cumacks. For backward compatibility issues */
+    boolean isUseCumulativeAcksSet();
 }
