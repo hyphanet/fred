@@ -169,7 +169,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
 	protected boolean showTrivialFoafConnections = false;
-	private static int newTempDarknetRefs = 0;
+	private int newTempDarknetRefs = 0;
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
@@ -651,7 +651,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                     }
                     HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);;                    
                     synchronized(DarknetAppServer.class) {
-                        DarknetAppServer.changeNumPendingPeersCount(0,node);
+                        node.darknetAppServer.changeNumPendingPeersCount(0);
                     }
                     writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
                 }
@@ -930,7 +930,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawAddPeerBox(contentNode, ctx, isOpennet(), path());
 	}
 	
-	protected static void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
+	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n(isOpennet ? "addOpennetPeerTitle" : "addPeerTitle"));
@@ -983,7 +983,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
          * Ideally called by drawNodeRefBox i.e."add a friend" page 
          * Can also be displayed on a separate toadlet if need be
          */
-        protected static void drawNewDarknetPeersAuthBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
+        protected void drawNewDarknetPeersAuthBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
             if (isOpennet) return;
             HTMLNode newPeersInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
             newPeersInfobox.addChild("div", "class", "infobox-header", l10n("newPeersBoxTitle"));
@@ -1000,7 +1000,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                 } catch (IOException ex) {
                     //File in Use..i.e. Synchronize with mobile is happening presently
                 } 
-                newTempDarknetRefs = DarknetAppServer.numPendingPeersCount;
+                newTempDarknetRefs = node.darknetAppServer.getNumPendingPeersCount();
                 for (int i=1;i<=newTempDarknetRefs;i++) {
                     String noderef = prop.getProperty("newPeer"+i);
                     if (noderef==null || noderef.isEmpty()) continue;

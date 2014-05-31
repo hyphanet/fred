@@ -84,10 +84,10 @@ public class DarknetAddRefToadlet extends Toadlet {
 		else
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerNonWindowsNotYet", new String[] { "link", "shortfilename" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerNonWindowsURI().toString()), HTMLNode.text(shortFilename) });
 			
-		if (DarknetAppServer.numPendingPeersCount>0)
-                    ConnectionsToadlet.drawNewDarknetPeersAuthBox(contentNode, ctx, false, "/friends/");
+		if (node.darknetAppServer.getNumPendingPeersCount()>0)
+                    friendsToadlet.drawNewDarknetPeersAuthBox(contentNode, ctx, false, friendsToadlet.path());
                 
-		ConnectionsToadlet.drawAddPeerBox(contentNode, ctx, false, friendsToadlet.path());
+		friendsToadlet.drawAddPeerBox(contentNode, ctx, false, friendsToadlet.path());
 		
 		friendsToadlet.drawNoderefBox(contentNode, getNoderef(), pageMaker.advancedMode(request, this.container));
 		

@@ -119,7 +119,7 @@ public class DarknetAppConnectionHandler {
             File file = new File(DarknetAppServer.filename);
             Properties prop = new Properties();
             prop.load(new FileInputStream(file));
-            int iniCount = DarknetAppServer.numPendingPeersCount;
+            int iniCount = server.getNumPendingPeersCount();
             int finCount = iniCount+numReferencess;
             for (int i=iniCount+1; i<=finCount; i++) {
                 int maxLinesPerRef = 50;
@@ -134,7 +134,7 @@ public class DarknetAppConnectionHandler {
                 prop.setProperty("newPeer"+i, noderef);
             }
             prop.store(new FileOutputStream(new File(DarknetAppServer.filename)), null);
-            server.changeNumPendingPeersCount(finCount,node);
+            server.changeNumPendingPeersCount(finCount);
         }
     }
           

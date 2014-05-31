@@ -48,10 +48,9 @@ public class DarknetAppServer implements Runnable {
     private int maxDarknetAppConnections =10;	
     private int darknetAppConnections;
     private boolean finishedStartup = false;
-    // Newly exchanged peers that are neither accepted nor rejected
-    public static int numPendingPeersCount = 0;
-    
+    private int numPendingPeersCount = 0;
     public static String filename = "TempPeersFromDarknetApp.prop";
+    
     private static volatile boolean logMINOR;
 	static {
             Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -101,7 +100,7 @@ public class DarknetAppServer implements Runnable {
         //  allowedHosts - "*" to allow all, bindTo - "0.0.0.0" to accept on all interfaces
         darknetAppConfig.register("numPendingPeersCount",0, configItemOrder++, true, true, "DarknetAppServer.newPeersCount", "DarknetAppServer.newPeersCountLong",
 				new numPendingPeersCallback(), false);
-        DarknetAppServer.numPendingPeersCount = darknetAppConfig.getInt("numPendingPeersCount");
+        this.numPendingPeersCount = darknetAppConfig.getInt("numPendingPeersCount");
         darknetAppConfig.register("enabled", true, configItemOrder++, true, true, "DarknetAppServer.enabled", "DarknetAppServer.enabledLong",
 				new  darknetAppEnabledCallback());
         this.enabled = darknetAppConfig.getBoolean("enabled");
@@ -148,17 +147,18 @@ public class DarknetAppServer implements Runnable {
      * To change the temporary peers count. Mostly used by DarknetAppConnectionhandler and ConnectionsToadlet
      * @param count
      */
-    public static synchronized void changeNumPendingPeersCount(int count, Node node) {
+    public synchronized void changeNumPendingPeersCount(int count) {
         try {
             SubConfig darknetAppConfig = node.config.get("darknetApp");
             darknetAppConfig.set("numPendingPeersCount", String.valueOf(count));
             node.config.store();
             numPendingPeersCount = count;
-        } catch (InvalidConfigValueException ex) {
-            java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NodeNeedRestartException ex) {
+        } catch (InvalidConfigValueException | NodeNeedRestartException ex) {
             java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    public synchronized int getNumPendingPeersCount() {
+        return numPendingPeersCount;
     }
     //Modified from SimpleToadletServer to use BCSSLNetworkInterface instead of SSLNetworkInterface
     private void maybeGetNetworkInterface(boolean ssl) throws IOException {
