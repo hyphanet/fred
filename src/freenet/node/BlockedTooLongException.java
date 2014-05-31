@@ -1,12 +1,18 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node;
 
 public class BlockedTooLongException extends Exception {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+    public final long delta;
 
-	public final long delta;
-	
-	public BlockedTooLongException(long delta) {
-		this.delta = delta;
-	}
-
+    public BlockedTooLongException(long delta) {
+        this.delta = delta;
+    }
 }

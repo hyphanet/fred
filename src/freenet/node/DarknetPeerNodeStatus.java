@@ -1,100 +1,107 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 
 public class DarknetPeerNodeStatus extends PeerNodeStatus {
+    private final String name;
+    private final boolean burstOnly;
+    private final boolean listening;
+    private final boolean disabled;
+    private final String privateDarknetCommentNote;
+    private FRIEND_TRUST trustLevel;
+    private FRIEND_VISIBILITY ourVisibility;
+    private FRIEND_VISIBILITY theirVisibility;
+    private FRIEND_VISIBILITY overallVisibility;
 
-	private final String name;
+    public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
+        super(peerNode, noHeavy);
+        this.name = peerNode.getName();
+        this.burstOnly = peerNode.isBurstOnly();
+        this.listening = peerNode.isListenOnly();
+        this.disabled = peerNode.isDisabled();
+        this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
+        this.trustLevel = peerNode.getTrustLevel();
+        this.ourVisibility = peerNode.getOurVisibility();
+        this.theirVisibility = peerNode.getTheirVisibility();
 
-	private final boolean burstOnly;
+        if (ourVisibility.isStricterThan(theirVisibility)) {
+            this.overallVisibility = ourVisibility;
+        } else {
+            this.overallVisibility = theirVisibility;
+        }
+    }
 
-	private final boolean listening;
+    /**
+     * @return The peer's trust level.
+     */
+    public FRIEND_TRUST getTrustLevel() {
+        return trustLevel;
+    }
 
-	private final boolean disabled;
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	private final String privateDarknetCommentNote;
-	
-	private FRIEND_TRUST trustLevel;
+    /**
+     * @return the burstOnly
+     */
+    public boolean isBurstOnly() {
+        return burstOnly;
+    }
 
-	private FRIEND_VISIBILITY ourVisibility;
-	private FRIEND_VISIBILITY theirVisibility;
-	private FRIEND_VISIBILITY overallVisibility;
-	
-	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
-		super(peerNode, noHeavy);
-		this.name = peerNode.getName();
-		this.burstOnly = peerNode.isBurstOnly();
-		this.listening = peerNode.isListenOnly();
-		this.disabled = peerNode.isDisabled();
-		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
-		this.trustLevel = peerNode.getTrustLevel();
-		this.ourVisibility = peerNode.getOurVisibility();
-		this.theirVisibility = peerNode.getTheirVisibility();
-		if(ourVisibility.isStricterThan(theirVisibility))
-			this.overallVisibility = ourVisibility;
-		else
-			this.overallVisibility = theirVisibility;
-	}
-	
-	/**
-	 * @return The peer's trust level.
-	 */
-	public FRIEND_TRUST getTrustLevel() {
-		return trustLevel;
-	}
-	
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the disabled
+     */
+    public boolean isDisabled() {
+        return disabled;
+    }
 
-	/**
-	 * @return the burstOnly
-	 */
-	public boolean isBurstOnly() {
-		return burstOnly;
-	}
+    /**
+     * @return the listening
+     */
+    public boolean isListening() {
+        return listening;
+    }
 
-	/**
-	 * @return the disabled
-	 */
-	public boolean isDisabled() {
-		return disabled;
-	}
+    /**
+     * @return the privateDarknetCommentNote
+     */
+    public String getPrivateDarknetCommentNote() {
+        return privateDarknetCommentNote;
+    }
 
-	/**
-	 * @return the listening
-	 */
-	public boolean isListening() {
-		return listening;
-	}
+    @Override
+    public String toString() {
+        return name + ' ' + super.toString();
+    }
 
-	/**
-	 * @return the privateDarknetCommentNote
-	 */
-	public String getPrivateDarknetCommentNote() {
-		return privateDarknetCommentNote;
-	}
+    public FRIEND_VISIBILITY getOurVisibility() {
+        return ourVisibility;
+    }
 
-	@Override
-	public String toString() {
-		return name + ' ' + super.toString();
-	}
+    public FRIEND_VISIBILITY getTheirVisibility() {
+        if (theirVisibility == null) {
+            return FRIEND_VISIBILITY.NO;
+        }
 
-	public FRIEND_VISIBILITY getOurVisibility() {
-		return ourVisibility;
-	}
-	
-	public FRIEND_VISIBILITY getTheirVisibility() {
-		if(theirVisibility == null)
-			return FRIEND_VISIBILITY.NO;
-		return theirVisibility;
-	}
-	
-	public FRIEND_VISIBILITY getOverallVisibility() {
-		return overallVisibility;
-	}
+        return theirVisibility;
+    }
+
+    public FRIEND_VISIBILITY getOverallVisibility() {
+        return overallVisibility;
+    }
 }
