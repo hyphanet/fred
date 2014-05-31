@@ -1,47 +1,58 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.fcp;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
+
 import freenet.support.SimpleFieldSet;
 
 public class EndListPeerNotesMessage extends FCPMessage {
+    static final String name = "EndListPeerNotes";
+    final String nodeIdentifier;
+    private String identifier;
 
-	final String nodeIdentifier;
-	static final String name = "EndListPeerNotes";
-	private String identifier;
-	
-	public EndListPeerNotesMessage(String id, String identifier) {
-		this.nodeIdentifier = id;
-		this.identifier = identifier;
-	}
-	
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("NodeIdentifier", nodeIdentifier);
-		if(identifier != null)
-			sfs.putSingle("Identifier", identifier);
-		return sfs;
-	}
+    public EndListPeerNotesMessage(String id, String identifier) {
+        this.nodeIdentifier = id;
+        this.identifier = identifier;
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "EndListPeerNotes goes from server to client not the other way around", null, false);
-	}
+        sfs.putSingle("NodeIdentifier", nodeIdentifier);
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+        if (identifier != null) {
+            sfs.putSingle("Identifier", identifier);
+        }
 
+        return sfs;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
+                                          "EndListPeerNotes goes from server to client not the other way around", null,
+                                          false);
+    }
+
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 }
