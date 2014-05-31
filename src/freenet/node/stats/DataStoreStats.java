@@ -1,6 +1,11 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.stats;
 
 /**
@@ -9,26 +14,25 @@ package freenet.node.stats;
  * @author nikotyan
  */
 public interface DataStoreStats {
-	long keys();
+    long keys();
 
-	long capacity();
+    long capacity();
 
-	long dataSize();
+    long dataSize();
 
-	public double utilization();
+    public double utilization();
 
-	double avgLocation() throws StatsNotAvailableException;
+    double avgLocation() throws StatsNotAvailableException;
 
-	double avgSuccess() throws StatsNotAvailableException;
+    double avgSuccess() throws StatsNotAvailableException;
 
-	double furthestSuccess() throws StatsNotAvailableException;
+    double furthestSuccess() throws StatsNotAvailableException;
 
-	double avgDist() throws StatsNotAvailableException;
+    double avgDist() throws StatsNotAvailableException;
 
-	double distanceStats() throws StatsNotAvailableException;
-	
-	StoreAccessStats getSessionAccessStats();
-	
-	StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException;
+    double distanceStats() throws StatsNotAvailableException;
 
+    StoreAccessStats getSessionAccessStats();
+
+    StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException;
 }
