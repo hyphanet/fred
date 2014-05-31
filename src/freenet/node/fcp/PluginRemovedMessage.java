@@ -1,11 +1,19 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.fcp;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
+
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -13,39 +21,38 @@ import freenet.support.SimpleFieldSet;
  *
  */
 public class PluginRemovedMessage extends FCPMessage {
+    static final String NAME = "PluginRemoved";
+    private final String identifier;
+    private final String plugname;
 
-	static final String NAME = "PluginRemoved";
+    PluginRemovedMessage(String plugname2, String identifier2) {
+        this.identifier = identifier2;
+        this.plugname = plugname2;
+    }
 
-	private final String identifier;
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
 
-	private final String plugname;
+        sfs.putSingle("Identifier", identifier);
+        sfs.putSingle("PluginName", plugname);
 
-	PluginRemovedMessage(String plugname2, String identifier2) {
-		this.identifier = identifier2;
-		this.plugname = plugname2;
-	}
+        return sfs;
+    }
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("Identifier", identifier);
-		sfs.putSingle("PluginName", plugname);
-		return sfs;
-	}
+    @Override
+    public String getName() {
+        return NAME;
+    }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE,
+                                          NAME + " goes from server to client not the other way around", null, false);
+    }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        throw new UnsupportedOperationException();
+    }
 }
