@@ -1,76 +1,85 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.probe;
 
 /**
  * Listener for the different types of probe results.
  */
 public interface Listener {
-	/**
-	 * An error occurred.
-	 * @param error type: What error occurred. Can be one of Probe.ProbeError.
-	 * @param code Code byte value. If the error is an UNKNOWN or UNRECOGNIZED_TYPE which occurred locally this
-	 *             contains the unrecognized code from the message. Otherwise it is null.
-	 * @param local True if the error occurred locally and was not prompted by an error relayed from a remote node.
-	 *              False if the error was relayed from a remote node.
-	 */
-	void onError(Error error, Byte code, boolean local);
 
-	/**
-	 * Endpoint opted not to respond with the requested information.
-	 */
-	void onRefused();
+    /**
+     * An error occurred.
+     * @param error type: What error occurred. Can be one of Probe.ProbeError.
+     * @param code Code byte value. If the error is an UNKNOWN or UNRECOGNIZED_TYPE which occurred locally this
+     *             contains the unrecognized code from the message. Otherwise it is null.
+     * @param local True if the error occurred locally and was not prompted by an error relayed from a remote node.
+     *              False if the error was relayed from a remote node.
+     */
+    void onError(Error error, Byte code, boolean local);
 
-	/**
-	 * Output bandwidth limit result.
-	 * @param outputBandwidth endpoint's reported output bandwidth limit in KiB per second.
-	 */
-	void onOutputBandwidth(float outputBandwidth);
+    /**
+     * Endpoint opted not to respond with the requested information.
+     */
+    void onRefused();
 
-	/**
-	 * Build result.
-	 * @param build endpoint's reported build / main version.
-	 */
-	void onBuild(int build);
+    /**
+     * Output bandwidth limit result.
+     * @param outputBandwidth endpoint's reported output bandwidth limit in KiB per second.
+     */
+    void onOutputBandwidth(float outputBandwidth);
 
-	/**
-	 * Identifier result.
-	 * @param identifier identifier given by endpoint.
-	 * @param uptimePercentage quantized noisy 7-day uptime percentage
-	 */
-	void onIdentifier(long identifier, byte uptimePercentage);
+    /**
+     * Build result.
+     * @param build endpoint's reported build / main version.
+     */
+    void onBuild(int build);
 
-	/**
-	 * Link length result.
-	 * @param linkLengths endpoint's reported link lengths.
-	 */
-	void onLinkLengths(float[] linkLengths);
+    /**
+     * Identifier result.
+     * @param identifier identifier given by endpoint.
+     * @param uptimePercentage quantized noisy 7-day uptime percentage
+     */
+    void onIdentifier(long identifier, byte uptimePercentage);
 
-	/**
-	 * Location result.
-	 * @param location location given by endpoint.
-	 */
-	void onLocation(float location);
+    /**
+     * Link length result.
+     * @param linkLengths endpoint's reported link lengths.
+     */
+    void onLinkLengths(float[] linkLengths);
 
-	/**
-	 * Store size result.
-	 * @param storeSize endpoint's reported store size in GiB multiplied by Gaussian noise.
-	 */
-	void onStoreSize(float storeSize);
+    /**
+     * Location result.
+     * @param location location given by endpoint.
+     */
+    void onLocation(float location);
 
-	/**
-	 * Uptime result.
-	 * @param uptimePercentage endpoint's reported percentage uptime in the last requested period; either
-	 *                         48 hour or 7 days.
-	 */
-	void onUptime(float uptimePercentage);
+    /**
+     * Store size result.
+     * @param storeSize endpoint's reported store size in GiB multiplied by Gaussian noise.
+     */
+    void onStoreSize(float storeSize);
 
-	/**
-	 * Reject stats.
-	 * @param stats Array of 4 bytes, with the percentage rejections for (bulk only): CHK request, 
-	 * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value = 
-	 * percentage rejected.	
-	 */
-	void onRejectStats(byte[] stats);
+    /**
+     * Uptime result.
+     * @param uptimePercentage endpoint's reported percentage uptime in the last requested period; either
+     *                         48 hour or 7 days.
+     */
+    void onUptime(float uptimePercentage);
 
-	/** Capacity usage and approximate bandwidth class */
-	void onOverallBulkOutputCapacity(byte bandwidthClassForCapacityUsage, float capacityUsage);
+    /**
+     * Reject stats.
+     * @param stats Array of 4 bytes, with the percentage rejections for (bulk only): CHK request,
+     * SSK request, CHK insert, SSK insert. Negative value = insufficient data. Positive value =
+     * percentage rejected.
+     */
+    void onRejectStats(byte[] stats);
+
+    /** Capacity usage and approximate bandwidth class */
+    void onOverallBulkOutputCapacity(byte bandwidthClassForCapacityUsage, float capacityUsage);
 }
