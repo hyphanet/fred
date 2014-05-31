@@ -649,6 +649,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                         boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,prop.getProperty("newPeer"+i),"");
                         if (!noErrorWhileAdding) return;
                     }
+                    request.freeParts();
                     HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);;                    
                     synchronized(DarknetAppServer.class) {
                         node.darknetAppServer.changeNumPendingPeersCount(0);
@@ -668,7 +669,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			            //The peer's additions results
                         Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
                         boolean doneAddition = processAndTryToAddNewNode(request,ctx,results,"","peerPrivateNote","trust","visibility",reftext,urltext);
-			if (!doneAddition) return;
+                        request.freeParts();
+                        if (!doneAddition) return;
                         HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);
 			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
 		} else handleAltPost(uri, request, ctx, logMINOR);
@@ -760,7 +762,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
             }
 
             StringBuilder ref = null;
-            if (urltext.length() > 0) {
+            if (urltext!=null && urltext.length() > 0) {
                     // fetch reference from a URL
                     BufferedReader in = null;
                     try {
@@ -772,7 +774,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
                     } finally {
                             Closer.close(in);
                     }
-            } else if (reftext.length() > 0) {
+            } else if (reftext!=null && reftext.length() > 0) {
                     // read from post data or file upload
                     // this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
                     ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
@@ -782,8 +784,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
                     return false;
             }
             ref = new StringBuilder(ref.toString().trim());
-
-            request.freeParts();
 
             //Split the references string, because the peers are added individually
             // FIXME split by lines at this point rather than in addNewNode would be more efficient
@@ -990,19 +990,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
             HTMLNode peerAdditionContent = newPeersInfobox.addChild("div", "class", "infobox-content");
             HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, formTarget, "addPeerForm");
             synchronized (DarknetAppServer.class) {
-                SimpleFieldSet fs = null;  
-                Properties prop = new Properties();
-                try {
-                    File file =  new File(DarknetAppServer.filename);
-                    prop.load(new FileInputStream(file));
-                } catch (FileNotFoundException ex) {
-                    Logger.error(ctx, "Darknet App New Peers File Not Found",ex);
-                } catch (IOException ex) {
-                    //File in Use..i.e. Synchronize with mobile is happening presently
-                } 
                 newTempDarknetRefs = node.darknetAppServer.getNumPendingPeersCount();
                 for (int i=1;i<=newTempDarknetRefs;i++) {
-                    String noderef = prop.getProperty("newPeer"+i);
+                    String noderef = node.darknetAppServer.getPendingPeerNodeRef(i);
                     if (noderef==null || noderef.isEmpty()) continue;
                     peerAdditionForm.addChild("b", l10n("peerNodeReference"));
                     peerAdditionForm.addChild("pre", "id", "reference", noderef + '\n');

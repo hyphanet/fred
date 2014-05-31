@@ -22,10 +22,15 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -50,7 +55,8 @@ public class DarknetAppServer implements Runnable {
     private boolean finishedStartup = false;
     private int numPendingPeersCount = 0;
     public static String filename = "TempPeersFromDarknetApp.prop";
-    
+    public  List<String> pendingPeersNoderefList = new ArrayList<>();
+            
     private static volatile boolean logMINOR;
 	static {
             Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -128,8 +134,9 @@ public class DarknetAppServer implements Runnable {
             myThread = new Thread(this, "DarknetAppServer");
             myThread.setDaemon(true);
         }
+        updatePendingPeersNoderefList(numPendingPeersCount);
     }
-    
+
     /**
      * A properties file that stores the temporary node references
      * These references are yet to be approved by the node
@@ -143,16 +150,36 @@ public class DarknetAppServer implements Runnable {
             Logger.error(this,"Error Creating File To Save Exchanged Nodereferences"+ex);
         }
     }
+    public void updatePendingPeersNoderefList(int numPendingPeers) {
+        pendingPeersNoderefList.clear();
+        if (numPendingPeers==0) return;
+        Properties prop = new Properties();
+        try {
+            File file =  new File(DarknetAppServer.filename);
+            prop.load(new FileInputStream(file));
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            //Logger.error(ctx, "Darknet App New Peers File Not Found",ex);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            //File in Use..i.e. Synchronize with mobile is happening presently
+        }
+        for (int i=1;i<=numPendingPeers;i++) {
+            pendingPeersNoderefList.add(prop.getProperty("newPeer"+i));
+        }
+    }
      /**
      * To change the temporary peers count. Mostly used by DarknetAppConnectionhandler and ConnectionsToadlet
      * @param count
      */
     public synchronized void changeNumPendingPeersCount(int count) {
+        if (count==numPendingPeersCount) return;
         try {
             SubConfig darknetAppConfig = node.config.get("darknetApp");
             darknetAppConfig.set("numPendingPeersCount", String.valueOf(count));
             node.config.store();
             numPendingPeersCount = count;
+            updatePendingPeersNoderefList(count);
         } catch (InvalidConfigValueException | NodeNeedRestartException ex) {
             java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -170,6 +197,10 @@ public class DarknetAppServer implements Runnable {
         } else {
             this.networkInterface = NetworkInterface.create(port, this.bindTo, allowedHosts, executor, true);
         }
+    }
+
+    public String getPendingPeerNodeRef(int i) {
+        return pendingPeersNoderefList.get(i-1);
     }
     /**
      * This is necessary to be in the config for advanced users.
