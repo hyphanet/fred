@@ -1,34 +1,47 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.fcp;
 
-import java.io.UnsupportedEncodingException;
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.NullBucket;
 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.io.UnsupportedEncodingException;
+
 public class TextFeedMessage extends N2NFeedMessage {
+    public static final String NAME = "TextFeed";
 
-	public static final String NAME = "TextFeed";
+    public TextFeedMessage(String header, String shortText, String text, short priorityClass, long updatedTime,
+                           String sourceNodeName, long composed, long sent, long received, String messageText) {
+        super(header, shortText, text, priorityClass, updatedTime, sourceNodeName, composed, sent, received);
 
-	public TextFeedMessage(String header, String shortText, String text, short priorityClass, long updatedTime,
-			String sourceNodeName, long composed, long sent, long received,
-			String messageText) {
-		super(header, shortText, text, priorityClass, updatedTime, sourceNodeName, composed, sent, received);
-		final Bucket messageTextBucket;
-		try {
-			if(messageText != null)
-				messageTextBucket = new ArrayBucket(messageText.getBytes("UTF-8"));
-			else
-				messageTextBucket = new NullBucket();
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
-		buckets.put("MessageText", messageTextBucket);
-	}
+        final Bucket messageTextBucket;
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+        try {
+            if (messageText != null) {
+                messageTextBucket = new ArrayBucket(messageText.getBytes("UTF-8"));
+            } else {
+                messageTextBucket = new NullBucket();
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+        }
 
+        buckets.put("MessageText", messageTextBucket);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
 }
