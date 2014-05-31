@@ -1,7 +1,14 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
@@ -12,20 +19,20 @@ import com.db4o.ObjectContainer;
  * @author toad
  */
 public interface RequestClient {
-	
-	/**
-	 * Is this request persistent? **Must not change!**
-	 */
-	public boolean persistent();
-	
-	/** Send the request with the real time flag enabled? Real-time requests are given 
-	 * a higher priority in data transfers, but fewer of them are accepted. They are 
-	 * optimised for latency rather than throughput, and are expected to be bursty rather
-	 * than continual.
-	 * **Must not change!**
-	 */
-	public boolean realTimeFlag();
 
-	public void removeFrom(ObjectContainer container);
+    /**
+     * Is this request persistent? **Must not change!
+     */
+    public boolean persistent();
 
+    /**
+     * Send the request with the real time flag enabled? Real-time requests are given
+     * a higher priority in data transfers, but fewer of them are accepted. They are
+     * optimised for latency rather than throughput, and are expected to be bursty rather
+     * than continual.
+     * **Must not change!
+     */
+    public boolean realTimeFlag();
+
+    public void removeFrom(ObjectContainer container);
 }
