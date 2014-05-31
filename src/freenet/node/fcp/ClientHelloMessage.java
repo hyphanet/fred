@@ -1,11 +1,19 @@
-/* This code is part of Freenet. It is distributed under the GNU General
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node.fcp;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
+
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -15,45 +23,54 @@ import freenet.support.SimpleFieldSet;
  *  End
  */
 public class ClientHelloMessage extends FCPMessage {
+    public final static String NAME = "ClientHello";
+    String clientName;
+    String clientExpectedVersion;
 
-	public final static String NAME = "ClientHello";
-	String clientName;
-	String clientExpectedVersion;
-	
-	public ClientHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {
-		clientName = fs.get("Name");
-		clientExpectedVersion = fs.get("ExpectedVersion");
-		if(clientName == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a Name field", null, false);
-		if(clientExpectedVersion == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "ClientHello must contain a ExpectedVersion field", null, false);
-		// FIXME check the expected version
-	}
+    public ClientHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {
+        clientName = fs.get("Name");
+        clientExpectedVersion = fs.get("ExpectedVersion");
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putSingle("Name", clientName);
-		sfs.putSingle("ExpectedVersion", clientExpectedVersion);
-		return sfs;
-	}
+        if (clientName == null) {
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD,
+                                              "ClientHello must contain a Name field", null, false);
+        }
 
-	@Override
-	public String getName() {
-		return NAME;
-	}
+        if (clientExpectedVersion == null) {
+            throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD,
+                                              "ClientHello must contain a ExpectedVersion field", null, false);
+        }
 
-	@Override
-	public void run(FCPConnectionHandler handler, Node node) {
-		// We know the Hello is valid.
-		FCPMessage msg = new NodeHelloMessage(handler.connectionIdentifier);
-		handler.outputHandler.queue(msg);
-		handler.setClientName(clientName);
-	}
+        // FIXME check the expected version
+    }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
+    @Override
+    public SimpleFieldSet getFieldSet() {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
 
+        sfs.putSingle("Name", clientName);
+        sfs.putSingle("ExpectedVersion", clientExpectedVersion);
+
+        return sfs;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public void run(FCPConnectionHandler handler, Node node) {
+
+        // We know the Hello is valid.
+        FCPMessage msg = new NodeHelloMessage(handler.connectionIdentifier);
+
+        handler.outputHandler.queue(msg);
+        handler.setClientName(clientName);
+    }
+
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(this);
+    }
 }
