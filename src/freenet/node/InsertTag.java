@@ -1,4 +1,14 @@
+/*
+ * This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL.
+ */
+
+
+
 package freenet.node;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -8,92 +18,107 @@ import freenet.support.TimeUtil;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class InsertTag extends UIDTag {
-	
-	final boolean ssk;
-	
-	enum START {
-		LOCAL,
-		REMOTE
-	}
-	
-	final START start;
-	private Throwable handlerThrew;
-	private boolean senderStarted;
-	private boolean senderFinished;
-	
-	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
-		super(source, realTimeFlag, uid, node);
-		this.start = start;
-		this.ssk = ssk;
-	}
-	
-	public synchronized void startedSender() {
-		senderStarted = true;
-	}
-	
-	public void finishedSender() {
-		boolean noRecordUnlock;
-		synchronized(this) {
-			senderFinished = true;
-			if(!mustUnlock()) return;
-			noRecordUnlock = this.noRecordUnlock;
-		}
-		innerUnlock(noRecordUnlock);
-	}
+    final boolean ssk;
+    final START start;
+    private Throwable handlerThrew;
+    private boolean senderStarted;
+    private boolean senderFinished;
 
-	@Override
-	protected synchronized boolean mustUnlock() {
-		if(senderStarted && !senderFinished) return false;
-		return super.mustUnlock();
-	}
-	
-	public synchronized void handlerThrew(Throwable t) {
-		handlerThrew = t;
-	}
+    enum START { LOCAL, REMOTE }
 
-	@Override
-	public void logStillPresent(Long uid) {
-		StringBuffer sb = new StringBuffer();
-		sb.append("Still present after ").append(TimeUtil.formatTime(age()));
-		sb.append(" : ").append(uid).append(" : start=").append(start);
-		sb.append(" ssk=").append(ssk);
-		sb.append(" thrown=").append(handlerThrew);
-		sb.append(" : ");
-		sb.append(super.toString());
-		if(handlerThrew != null)
-			Logger.error(this, sb.toString(), handlerThrew);
-		else
-			Logger.error(this, sb.toString());
-	}
+    InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+        super(source, realTimeFlag, uid, node);
+        this.start = start;
+        this.ssk = ssk;
+    }
 
-	@Override
-	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert, boolean forAccept) {
-		if(!accepted) return 0;
-		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
-	}
+    public synchronized void startedSender() {
+        senderStarted = true;
+    }
 
-	@Override
-	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
-			int outwardTransfersPerInsert, boolean forAccept) {
-		if(!accepted) return 0;
-		if(notRoutedOnwards) return 0;
-		else return outwardTransfersPerInsert;
-	}
+    public void finishedSender() {
+        boolean noRecordUnlock;
 
-	@Override
-	public boolean isSSK() {
-		return ssk;
-	}
+        synchronized (this) {
+            senderFinished = true;
 
-	@Override
-	public boolean isInsert() {
-		return true;
-	}
+            if (!mustUnlock()) {
+                return;
+            }
 
-	@Override
-	public boolean isOfferReply() {
-		return false;
-	}
+            noRecordUnlock = this.noRecordUnlock;
+        }
 
+        innerUnlock(noRecordUnlock);
+    }
+
+    @Override
+    protected synchronized boolean mustUnlock() {
+        if (senderStarted &&!senderFinished) {
+            return false;
+        }
+
+        return super.mustUnlock();
+    }
+
+    public synchronized void handlerThrew(Throwable t) {
+        handlerThrew = t;
+    }
+
+    @Override
+    public void logStillPresent(Long uid) {
+        StringBuffer sb = new StringBuffer();
+
+        sb.append("Still present after ").append(TimeUtil.formatTime(age()));
+        sb.append(" : ").append(uid).append(" : start=").append(start);
+        sb.append(" ssk=").append(ssk);
+        sb.append(" thrown=").append(handlerThrew);
+        sb.append(" : ");
+        sb.append(super.toString());
+
+        if (handlerThrew != null) {
+            Logger.error(this, sb.toString(), handlerThrew);
+        } else {
+            Logger.error(this, sb.toString());
+        }
+    }
+
+    @Override
+    public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert,
+            boolean forAccept) {
+        if (!accepted) {
+            return 0;
+        }
+
+        return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
+    }
+
+    @Override
+    public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert,
+            boolean forAccept) {
+        if (!accepted) {
+            return 0;
+        }
+
+        if (notRoutedOnwards) {
+            return 0;
+        } else {
+            return outwardTransfersPerInsert;
+        }
+    }
+
+    @Override
+    public boolean isSSK() {
+        return ssk;
+    }
+
+    @Override
+    public boolean isInsert() {
+        return true;
+    }
+
+    @Override
+    public boolean isOfferReply() {
+        return false;
+    }
 }
