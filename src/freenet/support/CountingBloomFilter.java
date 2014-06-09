@@ -49,6 +49,7 @@ public class CountingBloomFilter extends BloomFilter {
 		RandomAccessFile raf = new RandomAccessFile(file, "rw");
 		raf.setLength(fileLength);
 		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, fileLength).load();
+		raf.close();
 	}
 
 	public CountingBloomFilter(int length, int k, byte[] buffer) {
