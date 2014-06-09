@@ -41,6 +41,7 @@ public class BinaryBloomFilter extends BloomFilter {
 		RandomAccessFile raf = new RandomAccessFile(file, "rw");
 		raf.setLength(length / 8);
 		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, length / 8).load();
+		raf.close();
 	}
 
 	public BinaryBloomFilter(ByteBuffer slice, int length, int k) {
