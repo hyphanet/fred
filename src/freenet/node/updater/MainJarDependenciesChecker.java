@@ -936,6 +936,13 @@ outer:	for(String propName : props.stringPropertyNames()) {
                         } catch (IOException e) {
                             Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
                             return false;
+                        } finally {
+	                        try {
+		                        fis.close();
+		                        dis.close();
+	                        } catch (IOException e) {
+		                        Logger.warning(this, "Failed to close stream", e);
+	                        }
                         }
                     } catch (FileNotFoundException e) {
                         // Impossible.
