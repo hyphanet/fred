@@ -938,10 +938,9 @@ outer:	for(String propName : props.stringPropertyNames()) {
                             return false;
                         } finally {
 	                        try {
-		                        fis.close();
-		                        dis.close();
-	                        } catch (IOException e) {
-		                        Logger.warning(this, "Failed to close stream", e);
+		                        Closer.close(fis);
+	                        } finally {
+		                        Closer.close(dis);
 	                        }
                         }
                     } catch (FileNotFoundException e) {
