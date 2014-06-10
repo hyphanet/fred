@@ -63,15 +63,9 @@ public class CleanupTranslations {
 				}
 				sw.append(line+"\n");
 			}
-			try {
-				Closer.close(fis);
-			} finally {
-				try {
-					Closer.close(isr);
-				} finally {
-					Closer.close(br);
-				}
-			}
+			Closer.close(fis);
+			Closer.close(isr);
+			Closer.close(br);
 			if(!changed) continue;
 			FileOutputStream fos = new FileOutputStream(f);
 			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
