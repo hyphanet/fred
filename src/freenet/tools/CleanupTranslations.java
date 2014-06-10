@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
 
 public class CleanupTranslations {
 
@@ -62,9 +63,15 @@ public class CleanupTranslations {
 				}
 				sw.append(line+"\n");
 			}
-			fis.close();
-			isr.close();
-			br.close();
+			try {
+				Closer.close(fis);
+			} finally {
+				try {
+					Closer.close(isr);
+				} finally {
+					Closer.close(br);
+				}
+			}
 			if(!changed) continue;
 			FileOutputStream fos = new FileOutputStream(f);
 			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
