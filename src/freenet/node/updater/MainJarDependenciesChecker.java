@@ -937,11 +937,8 @@ outer:	for(String propName : props.stringPropertyNames()) {
                             Logger.error(this, "Unable to read "+f+" to check whether it is a script: "+e+" - disk corruption problems???", e);
                             return false;
                         } finally {
-	                        try {
-		                        Closer.close(fis);
-	                        } finally {
-		                        Closer.close(dis);
-	                        }
+	                        Closer.close(fis);
+	                        Closer.close(dis);
                         }
                     } catch (FileNotFoundException e) {
                         // Impossible.
