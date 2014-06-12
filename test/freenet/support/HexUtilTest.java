@@ -175,7 +175,7 @@ public class HexUtilTest extends TestCase {
 		BigInteger methodBigInteger = new BigInteger("999999999999999");
 		String expectedHexValue = "038d7ea4c67fff";
 		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
-		methodBigInteger = new BigInteger("0");
+		methodBigInteger = BigInteger.ZERO;
 		expectedHexValue = "00";
 		assertEquals(HexUtil.biToHex(methodBigInteger),expectedHexValue);
 		methodBigInteger = new BigInteger("72057594037927935");

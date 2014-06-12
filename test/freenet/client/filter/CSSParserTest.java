@@ -151,6 +151,84 @@ public class CSSParserTest extends TestCase {
 		CSS2_BAD_SELECTOR.add("h1[foo=\"hello\\202\r\n\"] {}");
 	}
 
+	
+	/** CSS3 Selectors */
+	private final static HashMap<String,String> CSS3_SELECTOR= new HashMap<String,String>();
+	static
+	{
+		CSS3_SELECTOR.put("tr:nth-child(odd) { background-color: red; }","tr:nth-child(odd) { background-color: red; }");
+		CSS3_SELECTOR.put("tr:nth-child(even) { background-color: yellow; }","tr:nth-child(even) { background-color: yellow; }");
+		CSS3_SELECTOR.put("tr:nth-child(1) {}","tr:nth-child(1)");
+		CSS3_SELECTOR.put("tr:nth-child(-1) {}","tr:nth-child(-1)");
+		CSS3_SELECTOR.put("tr:nth-child(+1) {}","tr:nth-child(+1)");
+		CSS3_SELECTOR.put("tr:nth-child(10) {}","tr:nth-child(10)");
+		CSS3_SELECTOR.put("tr:nth-child(100) {}","tr:nth-child(100)");
+		CSS3_SELECTOR.put("tr:nth-child(n) {}","tr:nth-child(n)");
+		CSS3_SELECTOR.put("tr:nth-child(-n) {}","tr:nth-child(-n)");
+		CSS3_SELECTOR.put("tr:nth-child(-n+1) {}","tr:nth-child(-n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(n-1) {}","tr:nth-child(n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(-n-1) {}","tr:nth-child(-n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(-2n+1) {}","tr:nth-child(-2n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(-2n-1) {}","tr:nth-child(-2n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(2n) {}","tr:nth-child(2n)");
+		CSS3_SELECTOR.put("tr:nth-child(10n) {}","tr:nth-child(10n)");
+		CSS3_SELECTOR.put("tr:nth-child(n+1) {}","tr:nth-child(n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(n+10) {}","tr:nth-child(n+10)");
+		CSS3_SELECTOR.put("tr:nth-child(2n+1) {}","tr:nth-child(2n+1)");
+		CSS3_SELECTOR.put("tr:nth-child(2n-1) {}","tr:nth-child(2n-1)");
+		CSS3_SELECTOR.put("tr:nth-child(999999) {}","tr:nth-child(999999)");  // FilterUtils.MAX_NTH
+		CSS3_SELECTOR.put("tr:nth-child(-999999) {}","tr:nth-child(-999999)");  // -FilterUtils.MAX_NTH
+		CSS3_SELECTOR.put("tr:nth-last-child(1) {}","tr:nth-last-child(1)");
+		CSS3_SELECTOR.put("tr:nth-last-child(odd) {}","tr:nth-last-child(odd)");
+		CSS3_SELECTOR.put("tr:nth-last-child(even) {}","tr:nth-last-child(even)");
+		CSS3_SELECTOR.put("h1:nth-of-type(1) {}","h1:nth-of-type(1)");
+		CSS3_SELECTOR.put("h1:nth-of-type(odd) {}","h1:nth-of-type(odd)");
+		CSS3_SELECTOR.put("h1:nth-of-type(even) {}","h1:nth-of-type(even)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(1) {}","h1:nth-last-of-type(1)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(odd) {}","h1:nth-last-of-type(odd)");
+		CSS3_SELECTOR.put("h1:nth-last-of-type(even) {}","h1:nth-last-of-type(even)");
+	}
+	
+	private final static HashSet<String> CSS3_BAD_SELECTOR= new HashSet<String>();
+	static
+	{
+		CSS3_BAD_SELECTOR.add("tr:nth-child() {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(-) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(+) {}");
+		// an+b only - allow nothing more.
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2+n) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2n+1+1) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(+-2n) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(-+2n) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2n1) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(n3) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(n+n) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2n+-1) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2n-+1) {}");
+		// Out of Integer range.
+		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(1000000) {}");  // FilterUtils.MAX_NTH + 1
+		CSS3_BAD_SELECTOR.add("tr:nth-child(-1000000) {}");  // -FilterUtils.MAX_NTH - 1
+		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999n) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(n+999999999999999) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999n+999999999999999) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(999999999999999n-999999999999999) {}");
+		// Misbracketing.
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type(1 {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type(1)) {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type((1) {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type(n+1 {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type(n+1)) {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type((n+1) {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type)n+1( {}");
+		CSS3_BAD_SELECTOR.add("h1:nth-of-type)(n+1)( {}");
+		// Invalid whitespace.
+		CSS3_BAD_SELECTOR.add("tr:nth-child(2 n) {}");
+		// Whitespace not supported at all.
+		CSS3_BAD_SELECTOR.add("tr:nth-child( n+2) {}");
+		CSS3_BAD_SELECTOR.add("tr:nth-child(n + 2) {}");
+	}
+
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
 	private static final String CSS_STRING_NEWLINESC = "* {}\nbody { }\n";
 
@@ -738,7 +816,7 @@ public class CSSParserTest extends TestCase {
 		while(itr.hasNext())
 		{
 
-			String key=itr.next().toString();
+			String key=itr.next();
 			String value=CSS1_SELECTOR.get(key);
 			assertTrue("key=\""+key+"\" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
@@ -753,15 +831,35 @@ public class CSSParserTest extends TestCase {
 		int i=0;
 		while(itr.hasNext())
 		{
-			String key=itr.next().toString();
+			String key=itr.next();
 			String value=CSS2_SELECTOR.get(key);
 			System.err.println("Test "+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value="+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
 		i=0;
 		for(String key : CSS2_BAD_SELECTOR) {
 			System.err.println("Bad selector test "+(i++));
+			assertTrue("".equals(filter(key)));
+		}
+
+	}
+
+	public void testCSS3Selector() throws IOException, URISyntaxException {
+		Collection<String> c = CSS3_SELECTOR.keySet();
+		Iterator<String> itr = c.iterator();
+		int i=0;
+		while(itr.hasNext())
+		{
+			String key=itr.next();
+			String value=CSS3_SELECTOR.get(key);
+			System.err.println("CSS3 test"+(i++)+" : "+key+" -> "+value);
+			assertTrue("key="+key+" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
+		}
+
+		i=0;
+		for(String key : CSS3_BAD_SELECTOR) {
+			System.err.println("CSS3 bad selector test "+(i++));
 			assertTrue("".equals(filter(key)));
 		}
 

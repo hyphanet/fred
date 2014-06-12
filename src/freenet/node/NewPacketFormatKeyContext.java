@@ -187,23 +187,24 @@ public class NewPacketFormatKeyContext {
 	/** Add as many acks as possible to the packet.
 	 * @return True if there are any old acks i.e. acks that will force us to send a packet
 	 * even if there isn't anything else in it. */
-	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now) {
+	public AddedAcks addAcks(NPFPacket packet, int maxPacketSize, long now, boolean useCumulativeAcks) {
 		boolean mustSend = false;
 		HashMap<Integer, Long> moved = null;
 		int numAcks = 0;
+		packet.setAcknowledgeType(useCumulativeAcks);
 		synchronized(acks) {
 			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
 				Map.Entry<Integer, Long> entry = it.next();
 				int ack = entry.getKey();
 				// All acks must be sent within 200ms.
-				if(entry.getValue() + MAX_ACK_DELAY < now)
-					mustSend = true;
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
-				if(!packet.addAck(ack)) {
+				if(!packet.addAck(ack, maxPacketSize)) {
 					if(logDEBUG) Logger.debug(this, "Can't add ack "+ack);
 					break;
 				}
+				if(entry.getValue() + MAX_ACK_DELAY < now)
+					mustSend = true;
 				if(moved == null) {
 					// FIXME some more memory efficient representation, since this will normally be very small?
 					moved = new HashMap<Integer, Long>();
@@ -238,12 +239,13 @@ public class NewPacketFormatKeyContext {
 			}
 		}
 	}
-
+	
 	public long timeCheckForLostPackets(double averageRTT) {
 		long timeCheck = Long.MAX_VALUE;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+			
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();

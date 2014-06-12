@@ -313,13 +313,13 @@ class FailureTableEntry implements TimedOutNodesList {
 		
 		for(int i=toIndex;i<newRequestedNodes.length;i++) newRequestedNodes[i] = null;
 		if(toIndex > newRequestedNodes.length + 2) {
-			newRequestedNodes = Arrays.copyOf(newRequestedNodes, toIndex);;
-			newRequestedLocs = Arrays.copyOf(newRequestedLocs, toIndex);;
-			newRequestedBootIDs = Arrays.copyOf(newRequestedBootIDs, toIndex);;
-			newRequestedTimes = Arrays.copyOf(newRequestedTimes, toIndex);;
-			newRequestedTimeoutsRF = Arrays.copyOf(newRequestedTimeoutsRF, toIndex);;
-			newRequestedTimeoutsFT = Arrays.copyOf(newRequestedTimeoutsFT, toIndex);;
-			newRequestedTimeoutHTLs = Arrays.copyOf(newRequestedTimeoutHTLs, toIndex);;
+			newRequestedNodes = Arrays.copyOf(newRequestedNodes, toIndex);
+			newRequestedLocs = Arrays.copyOf(newRequestedLocs, toIndex);
+			newRequestedBootIDs = Arrays.copyOf(newRequestedBootIDs, toIndex);
+			newRequestedTimes = Arrays.copyOf(newRequestedTimes, toIndex);
+			newRequestedTimeoutsRF = Arrays.copyOf(newRequestedTimeoutsRF, toIndex);
+			newRequestedTimeoutsFT = Arrays.copyOf(newRequestedTimeoutsFT, toIndex);
+			newRequestedTimeoutHTLs = Arrays.copyOf(newRequestedTimeoutHTLs, toIndex);
 		}
 		requestedNodes = newRequestedNodes;
 		requestedLocs = newRequestedLocs;
@@ -421,7 +421,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		if(!anyValid) {
 			requestorNodes = EMPTY_WEAK_REFERENCE;
-			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;;
+			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;
 			requestorHTLs = EMPTY_SHORT_ARRAY;
 		}
 		return ret;
@@ -513,10 +513,10 @@ class FailureTableEntry implements TimedOutNodesList {
 			x++;
 		}
 		if(x < requestorNodes.length) {
-			requestorNodes = Arrays.copyOf(requestorNodes, x);;
-			requestorTimes = Arrays.copyOf(requestorTimes, x);;
-			requestorBootIDs = Arrays.copyOf(requestorBootIDs, x);;
-			requestorHTLs = Arrays.copyOf(requestorHTLs, x);;
+			requestorNodes = Arrays.copyOf(requestorNodes, x);
+			requestorTimes = Arrays.copyOf(requestorTimes, x);
+			requestorBootIDs = Arrays.copyOf(requestorBootIDs, x);
+			requestorHTLs = Arrays.copyOf(requestorHTLs, x);
 		}
 		
 		return empty;
@@ -551,13 +551,13 @@ class FailureTableEntry implements TimedOutNodesList {
 			x++;
 		}
 		if(x < requestedNodes.length) {
-			requestedNodes = Arrays.copyOf(requestedNodes, x);;
-			requestedTimes = Arrays.copyOf(requestedTimes, x);;
-			requestedBootIDs = Arrays.copyOf(requestedBootIDs, x);;
-			requestedLocs = Arrays.copyOf(requestedLocs, x);;
-			requestedTimeoutsRF = Arrays.copyOf(requestedTimeoutsRF, x);;
-			requestedTimeoutsFT = Arrays.copyOf(requestedTimeoutsFT, x);;
-			requestedTimeoutHTLs = Arrays.copyOf(requestedTimeoutHTLs, x);;
+			requestedNodes = Arrays.copyOf(requestedNodes, x);
+			requestedTimes = Arrays.copyOf(requestedTimes, x);
+			requestedBootIDs = Arrays.copyOf(requestedBootIDs, x);
+			requestedLocs = Arrays.copyOf(requestedLocs, x);
+			requestedTimeoutsRF = Arrays.copyOf(requestedTimeoutsRF, x);
+			requestedTimeoutsFT = Arrays.copyOf(requestedTimeoutsFT, x);
+			requestedTimeoutHTLs = Arrays.copyOf(requestedTimeoutHTLs, x);
 		}
 		return empty;
 	}
@@ -589,7 +589,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		if(!anyValid) {
 			requestorNodes = EMPTY_WEAK_REFERENCE;
-			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;;
+			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;
 			requestorHTLs = EMPTY_SHORT_ARRAY;
 		}
 		return htl;

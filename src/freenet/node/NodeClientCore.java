@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -72,7 +73,6 @@ import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
 import freenet.support.Logger;
-import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
@@ -1863,9 +1863,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(killedDatabase) throw new DatabaseDisabledException();
 		}
 		if(checkDupes)
-			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
+			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, job.toString());
 		else
-			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, ""+job);
+			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, job.toString());
 	}
 
 	private boolean killedDatabase = false;
@@ -2023,7 +2023,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(clientDatabaseExecutor.onThread()) {
 			job.run(node.db, clientContext);
 		} else {
-			final MutableBoolean finished = new MutableBoolean();
+			final CountDownLatch finished = new CountDownLatch(1);
 			queue(new DBJob() {
 
 				@Override
@@ -2031,10 +2031,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					try {
 						return job.run(container, context);
 					} finally {
-						synchronized(finished) {
-							finished.value = true;
-							finished.notifyAll();
-						}
+						finished.countDown();
 					}
 				}
 
@@ -2044,13 +2041,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 
 			}, priority, false);
-			synchronized(finished) {
-				while(!finished.value) {
-					try {
-						finished.wait();
-					} catch (InterruptedException e) {
-						// Ignore
-					}
+			while (finished.getCount() > 0) {
+				try {
+					finished.await();
+				} catch (InterruptedException e) {
+					// Ignore
 				}
 			}
 		}

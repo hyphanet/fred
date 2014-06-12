@@ -64,7 +64,7 @@ public class PluginTalker {
 			public void run() {
 				sendSyncInternalOnly(plugparams, data2);
 			}
-		}, "FCPPlugin talk runner for " + this);
+		}, "FCPPlugin talk runner for " + pluginName);
 	}
 	
 	private void sendSyncInternalOnly(final SimpleFieldSet plugparams, final Bucket data2) {

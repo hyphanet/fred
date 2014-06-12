@@ -45,9 +45,8 @@ import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.OfficialPlugins.OfficialPluginDescription;
 import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.pluginmanager.PluginManager;
-import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
@@ -750,7 +749,7 @@ public class NodeUpdateManager {
 	}
 
 	private void startPluginUpdaters() {
-		for(OfficialPluginDescription plugin : PluginManager.getOfficialPlugins()) {
+		for(OfficialPluginDescription plugin : node.getPluginManager().getOfficialPlugins()) {
 			startPluginUpdater(plugin.name);
 		}
 	}
@@ -763,7 +762,7 @@ public class NodeUpdateManager {
 	public void startPluginUpdater(String plugName) {
 		if (logMINOR)
 			Logger.minor(this, "Starting plugin updater for " + plugName);
-		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
+		OfficialPluginDescription plugin = node.getPluginManager().getOfficialPlugin(plugName);
 		if (plugin != null)
 			startPluginUpdater(plugin);
 		else
@@ -809,7 +808,7 @@ public class NodeUpdateManager {
 	}
 
 	public void stopPluginUpdater(String plugName) {
-		OfficialPluginDescription plugin = PluginManager.getOfficialPlugin(plugName);
+		OfficialPluginDescription plugin = node.getPluginManager().getOfficialPlugin(plugName);
 		if (plugin == null)
 			return; // Not an official plugin
 		PluginJarUpdater updater = null;
@@ -857,7 +856,33 @@ public class NodeUpdateManager {
 	}
 
 	/**
-	 * Set the URI freenet.jar should be updated from.
+	 * @return URI for the user-facing changelog.
+	 */
+	public synchronized FreenetURI getChangelogURI() {
+		return updateURI.setDocName("changelog");
+	}
+
+	public synchronized FreenetURI getDeveloperChangelogURI() {
+		return updateURI.setDocName("fullchangelog");
+	}
+
+	/**
+	 * Add links to the changelog for the given version to the given node.
+	 * @param version USK edition to point to
+	 * @param node to add links to
+	 */
+	public synchronized void addChangelogLinks(long version, HTMLNode node) {
+		String changelogUri = getChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		String developerDetailsUri = getDeveloperChangelogURI().setSuggestedEdition(version).sskForUSK().toASCIIString();
+		node.addChild("a", "href", '/' + changelogUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.changelog"));
+		node.addChild("br");
+		node.addChild("a", "href", '/' + developerDetailsUri + "?type=text/plain",
+			NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert.devchangelog"));
+	}
+
+	/**
+	 * Set the URfrenet.jar should be updated from.
 	 * 
 	 * @param uri
 	 *            The URI to set.

@@ -5,11 +5,13 @@ package freenet.node.useralerts;
 
 import java.io.File;
 
+import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
 public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
@@ -90,6 +92,18 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 			alertNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", updater.node.clientCore.formPassword });
 		}
+
+		int version;
+		if (updater.hasNewMainJar()) {
+			version = updater.newMainJarVersion();
+		} else if (updater.fetchingNewMainJar()) {
+			version = updater.fetchingNewMainJarVersion();
+		} else {
+			Logger.minor(this, "Showing version available notification but not fetching or fetched.");
+			// Fallback
+			version = updater.getMainVersion();
+		}
+		updater.addChangelogLinks(version, alertNode);
 		
 		updater.renderProgress(alertNode);
 		

@@ -88,7 +88,7 @@ public class BootstrapSeedTest {
 	    	try {
 	    		if(node != null)
 	    			node.park();
-	    	} catch (Throwable t1) {};
+	    	} catch (Throwable t1) {}
 	    	System.exit(EXIT_THREW_SOMETHING);
 	    }
 	}

@@ -255,7 +255,7 @@ public class Announcer {
 			BufferedReader br = new BufferedReader(isr);
 			while(true) {
 				try {
-					SimpleFieldSet fs = new SimpleFieldSet(br, false, false);
+					SimpleFieldSet fs = new SimpleFieldSet(br, false, false, true, false);
 					if(!fs.isEmpty())
 						list.add(fs);
 				} catch (EOFException e) {

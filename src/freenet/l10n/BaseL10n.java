@@ -34,7 +34,10 @@ import freenet.support.io.FileUtil;
  */
 public class BaseL10n {
 
-	/** @see "http://www.omniglot.com/language/names.htm" */
+	/**
+	 * @see "http://www.omniglot.com/language/names.htm"
+	 * @see "http://loc.gov/standards/iso639-2/php/code_list.php"
+	 */
 	public enum LANGUAGE {
 
 		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
@@ -50,13 +53,14 @@ public class BaseL10n {
 		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
 		NORWEGIAN("no", "Norsk", "nor", new String[] { "WINDOWS0414", "WINDOWS0814"}),
 		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
-		SWEDISH("se", "Svenska", "svk", new String[] { "WINDOWS041D", "WINDOWS081D"}),
+		SWEDISH("sv", "Svenska", "swe", new String[] { "WINDOWS041D", "WINDOWS081D"}),
 		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
 		// simplified chinese, used on mainland, Singapore and Malaysia
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
 		RUSSIAN("ru", "Русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		JAPANESE("ja", "日本語", "jpn", new String[] { "WINDOWS0411" }),
+		BRAZILIAN_PORTUGUESE("pt-br", "Português do Brasil", "pt-br", new String[] { "WINDOWS0416" }),
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;

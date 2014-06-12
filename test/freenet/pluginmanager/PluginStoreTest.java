@@ -25,7 +25,7 @@ public class PluginStoreTest extends TestCase {
         PluginStore store = new PluginStore();
         for(int i=0;i<invalidCharsForSFS.length();i++) {
             char c = invalidCharsForSFS.charAt(i);
-            store.strings.put(""+c, ""+c);
+            store.strings.put(String.valueOf(c), String.valueOf(c));
         }
         check(store);
     }

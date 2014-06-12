@@ -380,6 +380,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
+	/** Acknowledging mode */
+	private boolean useCumulativeAcks;
 
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
@@ -3081,7 +3083,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Local rejected overload (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3163,7 +3165,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	 */
 	@Override
 	public void transferFailed(String reason, boolean realTime) {
-		assert reason.indexOf(" ") == -1;
+		assert reason.indexOf(' ') == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3814,7 +3816,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	}
 
 	public String userToString() {
-		return "" + getPeer();
+		return  getPeer().toString();
 	}
 
 	public void setTimeDelta(long delta) {
@@ -4202,7 +4204,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	// Clock generally has 20ms granularity or better, right?
 	// FIXME determine the clock granularity.
 	private static final int CLOCK_GRANULARITY = 20;
-
+	
 	@Override
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
@@ -5461,6 +5463,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeCheckForLostPackets();
 	}
+	
+	public void setAcknowledgeType(int negType) {
+		useCumulativeAcks = (negType >= 10);
+	}
+	
+	@Override
+	public boolean isUseCumulativeAcksSet() {
+		return useCumulativeAcks;
+	}
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
 	public void dumpTracker(SessionKey brokenKey) {
@@ -5771,7 +5782,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		}
 		return pf.timeSendAcks();
 	}
-
+	
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {

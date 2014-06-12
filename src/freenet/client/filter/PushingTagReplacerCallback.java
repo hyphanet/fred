@@ -61,8 +61,8 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 			if (pt.element.toLowerCase().compareTo("img") == 0) {
 				// Img's needs to be replaced with pushed ImageElement's
 				for (String attr: pt.unparsedAttrs) {
-					String name = attr.substring(0, attr.indexOf("="));
-					String value = attr.substring(attr.indexOf("=") + 2, attr.length() - 1);
+					String name = attr.substring(0, attr.indexOf('='));
+					String value = attr.substring(attr.indexOf('=') + 2, attr.length() - 1);
 					if (name.compareTo("src") == 0) {
 						String src;
 						try {

@@ -34,6 +34,8 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
+	// FIXME This should be globally allocated according to available memory etc. For links with
+	// high bandwidth and high latency, and lots of memory, a much bigger buffer would be helpful.
 	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
@@ -467,7 +469,7 @@ public class NewPacketFormat implements PacketFormat {
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 
-		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
+		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly, pn.isUseCumulativeAcksSet());
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + hmacLength;
@@ -513,7 +515,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(logMINOR) {
 				String fragments = null;
 				for(MessageFragment frag : packet.getFragments()) {
-					if(fragments == null) fragments = "" + frag.messageID;
+					if(fragments == null) fragments = String.valueOf(frag.messageID);
 					else fragments = fragments + ", " + frag.messageID;
 					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+")";
 				}
@@ -554,7 +556,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly, boolean useCumulativeAcks) throws BlockedTooLongException {
 		
 		checkForLostPackets();
 		
@@ -566,7 +568,7 @@ public class NewPacketFormat implements PacketFormat {
 		
 		NewPacketFormatKeyContext keyContext = sessionKey.packetContext;
 		
-		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
+		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now, useCumulativeAcks);
 		if(moved != null && moved.anyUrgentAcks) {
 			if(logDEBUG) Logger.debug(this, "Must send because urgent acks");
 			mustSend = true;

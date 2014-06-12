@@ -50,7 +50,7 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1457;
+	private static final int buildNumber = 1462;
 
 	/** Oldest build of fred we will talk to *before* _cal */
 	private static final int oldLastGoodBuild = 1450;
@@ -146,13 +146,13 @@ public class Version {
 	 */
 	public static String[] getVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(buildNumber) };
 		return ret;
 	}
 
 	public static String[] getLastGoodVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
+			{ nodeName, nodeVersion, protocolVersion,  String.valueOf(lastGoodBuild()) };
 		return ret;
 	}
 
