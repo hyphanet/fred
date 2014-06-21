@@ -239,6 +239,7 @@ public class TempBucketFactory implements BucketFactory {
 			public final void write(int b) throws IOException {
 				synchronized(TempBucket.this) {
 					long futureSize = currentSize + 1;
+					if(closed) throw new IOException("Already closed"); // Must throw if already closed
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b);
 					currentSize = futureSize;
@@ -251,6 +252,7 @@ public class TempBucketFactory implements BucketFactory {
 			public final void write(byte b[], int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
 					long futureSize = currentSize + len;
+                    if(closed) throw new IOException("Already closed"); // Must throw if already closed
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
 					currentSize = futureSize;
@@ -263,7 +265,7 @@ public class TempBucketFactory implements BucketFactory {
 			public final void flush() throws IOException {
 				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
-					if(!closed)
+					if(!closed) // Like close().
 						os.flush();
 				}
 			}
@@ -271,7 +273,7 @@ public class TempBucketFactory implements BucketFactory {
 			@Override
 			public final void close() throws IOException {
 				synchronized(TempBucket.this) {
-					if(closed) return;
+					if(closed) return; // Silently return if already closed (convention with AutoCloseable).
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
