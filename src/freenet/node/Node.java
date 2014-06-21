@@ -1656,11 +1656,6 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Integer ibwLimit) throws InvalidConfigValueException {
 				synchronized(Node.this) {
 					checkInputBandwidthLimit(ibwLimit);
-					try {
-						nodeStats.setInputLimit(ibwLimit);
-					} catch (IllegalArgumentException e) {
-						throw new InvalidConfigValueException(e);
-					}
 
 					if(ibwLimit == -1) {
 						inputLimitDefault = true;
@@ -1668,6 +1663,13 @@ public class Node implements TimeSkewDetectorCallback {
 					} else {
 						inputLimitDefault = false;
 					}
+
+					try {
+						nodeStats.setInputLimit(ibwLimit);
+					} catch (IllegalArgumentException e) {
+						throw new InvalidConfigValueException(e);
+					}
+
 					inputBandwidthLimit = ibwLimit;
 				}
 			}
