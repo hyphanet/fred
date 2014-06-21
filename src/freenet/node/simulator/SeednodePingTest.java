@@ -71,7 +71,7 @@ public class SeednodePingTest extends RealNodeTest {
 			node.connectToSeednode(seednode);
 			seedNodes.add(seednode);
 		} catch (Exception fse) {
-			System.out.println("ERROR adding "+seednode.toString()+ " "+fse.getMessage());
+			System.err.println("ERROR adding "+seednode.toString()+ " "+fse.getMessage());
 		}
 	}
 	// Start it
