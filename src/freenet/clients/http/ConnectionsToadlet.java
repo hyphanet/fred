@@ -630,23 +630,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
             * Handle authorized/ rejected newly received references (from DarknetAppServer)
             */
             if (request.isPartSet("addNew")) {
-                    Properties prop = new Properties();
-                    synchronized(DarknetAppServer.class) {
-                        try {
-                            File file =  new File(DarknetAppServer.filename);
-                            prop.load(new FileInputStream(file));
-                        } catch (FileNotFoundException ex) {
-                            // Improbable to reach here.. 
-                            Logger.error(ctx, "Darknet App New Peers File Not Found",ex);
-                            return;
-                        } catch (IOException ex) {
-                            Logger.error(ctx, "IOException while trying to open properties file",ex);
-                            return;
-                        }
-                    }
                     Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
                     for(int i=1;i<=newTempDarknetRefs;i++) {
-                        boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,prop.getProperty("newPeer"+i),"");
+                        boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,node.darknetAppServer.getPendingPeerNodeRef(i),"");
                         if (!noErrorWhileAdding) return;
                     }
                     request.freeParts();
