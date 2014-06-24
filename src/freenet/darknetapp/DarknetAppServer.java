@@ -202,6 +202,9 @@ public class DarknetAppServer implements Runnable {
     public String getPendingPeerNodeRef(int i) {
         return pendingPeersNoderefList.get(i-1);
     }
+    public List<String> getPendingPeersNoderefList() {
+        return ((List<String>) ((ArrayList) pendingPeersNoderefList).clone());
+    }
     /**
      * This is necessary to be in the config for advanced users.
      * In case of an attack where our homeNode is bombarded with new references, the user can shift this to 0 and/or disable this server (using other config option)

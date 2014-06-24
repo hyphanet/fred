@@ -756,7 +756,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public final long startupTime;
 
 	private SimpleToadletServer toadlets;
-	public DarknetAppServer darknetAppServer;
+	public final DarknetAppServer darknetAppServer;
 	public final NodeClientCore clientCore;
 
 	// ULPRs, RecentlyFailed, per node failure tables, are all managed by FailureTable.

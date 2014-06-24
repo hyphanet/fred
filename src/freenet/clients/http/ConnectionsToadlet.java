@@ -169,7 +169,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
 	protected boolean showTrivialFoafConnections = false;
-	private int newTempDarknetRefs = 0;
+	private int numPendingPeers = 0;
+        private List<String> pendingPeersNoderefList;
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
@@ -631,13 +632,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
             */
             if (request.isPartSet("addNew")) {
                     Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
-                    for(int i=1;i<=newTempDarknetRefs;i++) {
-                        boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,node.darknetAppServer.getPendingPeerNodeRef(i),"");
+                    for(int i=1;i<=numPendingPeers;i++) {
+                        boolean noErrorWhileAdding = processAndTryToAddNewNode(request,ctx,results,"auth" + i,"peerPrivateNote"+i,"trust"+i,"visibility"+i,pendingPeersNoderefList.get(i-1),"");
                         if (!noErrorWhileAdding) return;
                     }
                     request.freeParts();
                     HTMLNode pageNode = buildNodeAdditionResultsPage(ctx,results);;                    
-                    synchronized(DarknetAppServer.class) {
+                    synchronized(node.darknetAppServer) {
                         node.darknetAppServer.changeNumPendingPeersCount(0);
                     }
                     writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
@@ -976,9 +977,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
             HTMLNode peerAdditionContent = newPeersInfobox.addChild("div", "class", "infobox-content");
             HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, formTarget, "addPeerForm");
             synchronized (DarknetAppServer.class) {
-                newTempDarknetRefs = node.darknetAppServer.getNumPendingPeersCount();
-                for (int i=1;i<=newTempDarknetRefs;i++) {
-                    String noderef = node.darknetAppServer.getPendingPeerNodeRef(i);
+                numPendingPeers = node.darknetAppServer.getNumPendingPeersCount();
+                pendingPeersNoderefList = node.darknetAppServer.getPendingPeersNoderefList();
+                for (int i=1;i<=numPendingPeers;i++) {
+                    String noderef = pendingPeersNoderefList.get(i-1);
                     if (noderef==null || noderef.isEmpty()) continue;
                     peerAdditionForm.addChild("b", l10n("peerNodeReference"));
                     peerAdditionForm.addChild("pre", "id", "reference", noderef + '\n');
