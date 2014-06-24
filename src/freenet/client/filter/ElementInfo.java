@@ -1,150 +1,227 @@
 package freenet.client.filter;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
+
 public class ElementInfo {
 
-	static boolean disallowUnknownSpecificFonts = false;
+	public static final boolean disallowUnknownSpecificFonts = false;
 	/** If true, and above is false, allow font names only if they consist
 	 * entirely of spaces, numbers, letters, and ._-,+~
 	 */
-	static boolean disallowNonAlnumFonts = true;
+	public static final boolean disallowNonAlnumFonts = true;
 	
-	private final static HashSet<String> VOID_ELEMENTS=new HashSet<String>();
-	static {
-		VOID_ELEMENTS.add("area");
-		VOID_ELEMENTS.add("base");
-		VOID_ELEMENTS.add("basefont");
-		VOID_ELEMENTS.add("bgsound");
-		VOID_ELEMENTS.add("br");
-		VOID_ELEMENTS.add("col");
-		VOID_ELEMENTS.add("command");
-		VOID_ELEMENTS.add("embed");
-		VOID_ELEMENTS.add("event-source");
-		VOID_ELEMENTS.add("frame");
-		VOID_ELEMENTS.add("hr");
-		VOID_ELEMENTS.add("img");
-		VOID_ELEMENTS.add("input");
-		VOID_ELEMENTS.add("keygen");
-		VOID_ELEMENTS.add("link");
-		VOID_ELEMENTS.add("meta");
-		VOID_ELEMENTS.add("param");
-		VOID_ELEMENTS.add("source");
-		VOID_ELEMENTS.add("spacer");
-		VOID_ELEMENTS.add("wbr");
-	}
-	public final static HashSet<String> HTML_ELEMENTS=new HashSet<String>();
+	public static final int UPPERLIMIT = 10;
 	
-	// Called by HTMLFilter initialisation.
-	static void addHTMLTag(String tag) {
-		HTML_ELEMENTS.add(tag.toLowerCase());
-	}
+	public static final Set<String> VOID_ELEMENTS = 
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+            "area",
+            "base",
+            "basefont",
+            "bgsound",
+            "br",
+            "col",
+            "command",
+            "embed",
+            "event-source",
+            "frame",
+            "hr",
+            "img",
+            "input",
+            "keygen",
+            "link",
+            "meta",
+            "param",
+            "source",
+            "spacer",
+            "wbr"
+    )));
+    
+	public static final Set<String> HTML_ELEMENTS = 
+        Collections.unmodifiableSet(new HashSet<String>(HTMLFilter.getAllowedHTMLTags()));
 	
-	static {
-		HTMLFilter.forceSetup();
-	}
-	
-	static final HashSet<String> REPLACED_ELEMENTS = new HashSet<String>();
-	static {
-		REPLACED_ELEMENTS.add("img");
-		REPLACED_ELEMENTS.add("object");
-		REPLACED_ELEMENTS.add("textarea");
-		REPLACED_ELEMENTS.add("select");
-		REPLACED_ELEMENTS.add("input"); // ??? Most input's aren't???
-		REPLACED_ELEMENTS.add("applet");
-		REPLACED_ELEMENTS.add("button");
-	}
-	
-	//public final static String[] HTMLELEMENTSARRAY=HTML_ELEMENTS.toArray(new String[0]);
-	//public final static String[] TABLEELEMENTS=new String[]{"table","colgroup","col","tbody","thead","tfoot","tr","td","caption"};
-	//public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= makeAllButNonReplacedInlineElements();
-	//public final static String[] BLOCKLEVELELEMENTS=new String[]{"address","blockquote","center","dir","div","dl","fieldset","form","h1","h2","h3","h4","h5","h6","hr","isindex","menu","noframes","noscript","ol","p","pre","table","ul","dd","dt","frameset","li","tbody","td","tfoot","th","thead","tr"};
-	//public final static String[] INLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","img","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var"};
-	 
-	//public final static String[] NONREPLACEDINLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var" };
-	//public final static String[] ELEMENTSFORPADDING;
-//	static
-//	{
-//		List<String> list = new ArrayList<String>(Arrays.asList(HTMLELEMENTSARRAY));
-//		list.removeAll(Arrays.asList(new String[]{"table","th","tr","td","table","thead","tfoot","tbody","colgroup","col"}));
-//		ELEMENTSFORPADDING = list.toArray(new String[0]);
-//	}
-	
+	public static final Set<String> REPLACED_ELEMENTS =
+        Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+            "img",
+            "object",
+            "textarea",
+            "select",
+            "input", // ??? Most input's aren't???
+            "applet",
+            "button"
+	)));
+		
 	// FIXME add some more languages.
-	public final static HashSet<String> LANGUAGES=new HashSet<String>();
-	static
-	{
-		LANGUAGES.add("az");
-		LANGUAGES.add("be"); 
-		LANGUAGES.add("bg");
-		LANGUAGES.add("cs");
-		LANGUAGES.add("de");
-		LANGUAGES.add("el");
-		LANGUAGES.add("en");
-		LANGUAGES.add("es");
-		LANGUAGES.add("fi");
-		LANGUAGES.add("fr");
-		LANGUAGES.add("id");
-		LANGUAGES.add("it");
-		LANGUAGES.add("ja");
-		LANGUAGES.add("ka");
-		LANGUAGES.add("kk");
-		LANGUAGES.add("ky");
-		LANGUAGES.add("lv");
-		LANGUAGES.add("mo");
-		LANGUAGES.add("nl");
-		LANGUAGES.add("no");
-		LANGUAGES.add("pl");
-		LANGUAGES.add("pt");
-		LANGUAGES.add("ro");
-		LANGUAGES.add("ru");
-		LANGUAGES.add("sv");
-		LANGUAGES.add("tl");
-		LANGUAGES.add("tr");
-		LANGUAGES.add("tt");
-		LANGUAGES.add("uk");
-		LANGUAGES.add("zh-hans");
-		LANGUAGES.add("zh-hant");
-	}
+	public static final Set<String> LANGUAGES =
+    	Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+            "az",
+            "be",
+            "bg",
+            "cs",
+            "de",
+            "el",
+            "en",
+            "es",
+            "fi",
+            "fr",
+            "id",
+            "it",
+            "ja",
+            "ka",
+            "kk",
+            "ky",
+            "lv",
+            "mo",
+            "nl",
+            "no",
+            "pl",
+            "pt",
+            "ro",
+            "ru",
+            "sv",
+            "tl",
+            "tr",
+            "tt",
+            "uk",
+            "zh-hans",
+            "zh-hant"
+	)));
 	
-	public final static String[] MEDIAARRAY= new String[]{"all","aural","braille","embossed","handheld","print","projection","screen","speech","tty","tv"};
-	public final static String[] VISUALMEDIA= new String[]{"handheld","print","projection","screen","tty","tv"};
-	public final static String[] AURALMEDIA=new String[]{"speech","aural"};
-	public final static String[] VISUALPAGEDMEDIA=new String[]{"embossed","handheld","print","projection","screen","tty","tv"};
-	public final static String[] VISUALINTERACTIVEMEDIA=new String[]{"braille","handheld","print","projection","screen","speech","tty","tv"};	
-	
-	
-	public final static int UPPERLIMIT=10;
-	
-	public final static String[] FONT_LIST=new String[]{"arial", "helvetica","arial black","gadget", "comic sans ms", "comic sans ms5","courier new", "courier6", "monospace georgia1", "georgia","impact", "impact5", "charcoal6","lucida console", "monaco5","lucida sans unicode", "lucida grande","palatino linotype", "book antiqua3", "palatino6","tahoma", "geneva","times new roman", "times","trebuchet ms1", "helvetica","verdana", "webdings", "webdings2", "wingdings", "zapf dingbats", "wingdings2", "zapf dingbats2","ms sans serif4", "ms serif4", "new york6"};
-	public final static String[] GENERIC_FONT_KEYWORDS = new String[] { "serif","sans-serif","cursive","fantasy","monospace" };
-	public final static String[] GENERIC_VOICE_KEYWORDS = new String[] { "male", "female", "child" };
-	public final static HashSet<String> PSEUDOCLASS=new HashSet<String>();
-	static {
-		PSEUDOCLASS.add("first-child");
-		PSEUDOCLASS.add("last-child");
-		PSEUDOCLASS.add("nth-child");
-		PSEUDOCLASS.add("nth-last-child");
-		PSEUDOCLASS.add("nth-of-type");
-		PSEUDOCLASS.add("nth-last-of-type");
-		PSEUDOCLASS.add("link");
-		PSEUDOCLASS.add("visited");
-		PSEUDOCLASS.add("hover");
-		PSEUDOCLASS.add("active");
-		PSEUDOCLASS.add("focus");
-		PSEUDOCLASS.add("lang");
-		PSEUDOCLASS.add("first-line");
-		PSEUDOCLASS.add("first-letter");
-		PSEUDOCLASS.add("before");
-		PSEUDOCLASS.add("after");
-		PSEUDOCLASS.add("target");
-	}
+	public final static Set<String> MEDIA = 
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "all",
+	        "aural",
+	        "braille",
+	        "embossed",
+	        "handheld",
+	        "print",
+	        "projection",
+	        "screen",
+	        "speech",
+	        "tty",
+	        "tv"
+    )));
 
-	// FIXME use HashSet<String> or even enum.
+	public final static Set<String> VISUALMEDIA =
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "handheld",
+	        "print",
+	        "projection",
+	        "screen",
+	        "tty",
+	        "tv"
+    )));
+
+	public final static Set<String> AURALMEDIA = 
+    	Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+    	    "speech",
+    	    "aural"
+    )));
+    
+	public final static Set<String> VISUALPAGEDMEDIA = 
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "embossed",
+	        "handheld",
+	        "print",
+	        "projection",
+	        "screen",
+	        "tty",
+	        "tv"
+    )));
+
+	public final static Set<String> VISUALINTERACTIVEMEDIA =
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "braille",
+	        "handheld",
+	        "print",
+	        "projection",
+	        "screen",
+	        "speech",
+	        "tty",
+	        "tv"
+    )));
 	
+	public final static Set<String> FONTS =
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "arial",
+	        "helvetica",
+	        "arial black",
+	        "gadget",
+	        "comic sans ms",
+	        "comic sans ms5",
+	        "courier new",
+	        "courier6",
+	        "monospace georgia1",
+	        "georgia",
+	        "impact",
+	        "impact5",
+	        "charcoal6",
+	        "lucida console",
+	        "monaco5",
+	        "lucida sans unicode",
+	        "lucida grande",
+	        "palatino linotype",
+	        "book antiqua3",
+	        "palatino6",
+	        "tahoma",
+	        "geneva",
+	        "times new roman",
+	        "times",
+	        "trebuchet ms1",
+	        "verdana",
+	        "webdings",
+	        "webdings2",
+	        "wingdings",
+	        "zapf dingbats",
+	        "wingdings2",
+	        "zapf dingbats2",
+	        "ms sans serif4",
+	        "ms serif4",
+	        "new york6"
+    )));
+    
+	public final static Set<String> GENERIC_FONT_KEYWORDS = 
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "serif",
+	        "sans-serif",
+	        "cursive",
+	        "fantasy",
+	        "monospace"
+    )));
+    
+	public final static Set<String> GENERIC_VOICE_KEYWORDS = 
+	    Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+	        "male",
+	        "female",
+	        "child"
+    )));
+
+    public final static Set<String> PSEUDOCLASS =
+    	Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+            "first-child",
+            "last-child",
+            "nth-child",
+            "nth-last-child",
+            "nth-of-type",
+            "nth-last-of-type",
+            "link",
+            "visited",
+            "hover",
+            "active",
+            "focus",
+            "lang",
+            "first-line",
+            "first-letter",
+            "before",
+            "after",
+            "target"
+	)));
+
 	public static boolean isSpecificFontFamily(String font) {
 		if(disallowUnknownSpecificFonts) {
-			for(String s : FONT_LIST)
-				if(s.equals(font)) return true;
-			return false;
+			return FONTS.contains(font);
 		} else if(disallowNonAlnumFonts) {
 			for(int i=0;i<font.length();i++) {
 				char c = font.charAt(i);
@@ -158,9 +235,7 @@ public class ElementInfo {
 	
 	public static boolean isSpecificVoiceFamily(String font) {
 //		if(disallowUnknownSpecificFonts) {
-//			for(String s : FONT_LIST)
-//				if(s.equals(font)) return true;
-//			return false;
+//			return FONTS.contains(font);
 		//} else 
 		if(disallowNonAlnumFonts) {
 			for(int i=0;i<font.length();i++) {
@@ -175,27 +250,22 @@ public class ElementInfo {
 	
 	/** font must be lower-case */
 	public static boolean isGenericFontFamily(String font) {
-		for(String s : GENERIC_FONT_KEYWORDS)
-			if(s.equals(font)) return true;
-		return false;
+		return GENERIC_FONT_KEYWORDS.contains(font);
 	}
 	
 	/** font must be lower-case */
 	public static boolean isGenericVoiceFamily(String font) {
-		for(String s : GENERIC_VOICE_KEYWORDS)
-			if(s.equals(font)) return true;
-		return false;
+		return GENERIC_VOICE_KEYWORDS.contains(font);
 	}
 	
 	public static boolean isWordPrefixOrMatchOfSpecificFontFamily(String prefix) {
 		String extraSpace = prefix + " ";
-		for(String s : FONT_LIST)
+		for(String s : FONTS)
 			if(s.equals(prefix) || s.startsWith(extraSpace)) return true;
 		return false;
 	}
 	
 	public static boolean isVoidElement(String element) {
-		
 		return VOID_ELEMENTS.contains(element);
 	}
 	
