@@ -79,7 +79,7 @@ public class DarknetAppServer implements Runnable {
             try {
                 maybeGetNetworkInterface(true);
             } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.error(this,"Couldn't start DarkentAppServer - IOException",ex);
                 return;
             }
                 myThread.start();
@@ -123,7 +123,7 @@ public class DarknetAppServer implements Runnable {
             //always enable SSL - false to use plaintext
             maybeGetNetworkInterface(true);
         } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.error(this,"Couldn't start DarkentAppServer - IOException",ex);
             return;
         }
         loadTempRefsFile();
@@ -158,11 +158,10 @@ public class DarknetAppServer implements Runnable {
             File file =  new File(DarknetAppServer.filename);
             prop.load(new FileInputStream(file));
         } catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-            //Logger.error(ctx, "Darknet App New Peers File Not Found",ex);
+            Logger.error(this, "Darknet App New Peers File Not Found",ex);
         } catch (IOException ex) {
-            ex.printStackTrace();
             //File in Use..i.e. Synchronize with mobile is happening presently
+            Logger.error(this, "File in Use - Synchronize with mobile is happening presently",ex);
         }
         for (int i=1;i<=numPendingPeers;i++) {
             pendingPeersNoderefList.add(prop.getProperty("newPeer"+i));
@@ -181,7 +180,7 @@ public class DarknetAppServer implements Runnable {
             numPendingPeersCount = count;
             updatePendingPeersNoderefList(count);
         } catch (InvalidConfigValueException | NodeNeedRestartException ex) {
-            java.util.logging.Logger.getLogger(DarknetAppServer.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.error(this, "Exception while trying to change pendingpeers count",ex);
         }
     }
     public synchronized int getNumPendingPeersCount() {

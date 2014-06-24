@@ -16,8 +16,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  *
@@ -36,7 +37,15 @@ public class DarknetAppConnectionHandler {
     private OutputStream out;
     private LineReadingInputStream input;
     private DarknetAppServer server;
-    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+                @Override
+                public void shouldUpdate(){
+                        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                }
+        });
+    }
     public DarknetAppConnectionHandler(Socket sock, DarknetAppServer server,Node node) {
       this.socket = sock; 
       this.server = server;
@@ -81,7 +90,7 @@ public class DarknetAppConnectionHandler {
             }
         } catch (IOException ex) {
             // Socket is closed whenever there is an IOException
-            Logger.getLogger(DarknetAppConnectionHandler.class.getName()).log(Level.SEVERE, "IO Error while handling socket", ex);
+            Logger.error(this,"IO Error while handling socket",ex);
             finish();
         }
 
@@ -96,7 +105,7 @@ public class DarknetAppConnectionHandler {
             if(input!=null) input.close();
             if (out!=null) out.close();
         } catch (IOException ex) {
-            Logger.getLogger(DarknetAppConnectionHandler.class.getName()).log(Level.SEVERE, "IO Error while handling socket", ex);
+            Logger.error(this,"IO Error while handling socket",ex);
         }
     }
     
