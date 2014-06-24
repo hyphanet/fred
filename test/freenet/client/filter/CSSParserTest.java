@@ -794,6 +794,16 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
 		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
 		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
+		
+		// Banned selectors
+		propertyTests.put(":visited { color:red }", "");
+		propertyTests.put("a:visited { color:red }", "");
+		propertyTests.put(":visited,:active { color:red }", ":active { color:red }");
+		propertyTests.put("a:visited,:active { color:red }", ":active { color:red }");
+		propertyTests.put(":active,:visited { color:red }", ":active { color:red }");
+		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
+		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
+		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
 	}
 
 	FilterMIMEType cssMIMEType;
