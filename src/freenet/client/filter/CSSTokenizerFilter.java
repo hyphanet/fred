@@ -1516,6 +1516,7 @@ class CSSTokenizerFilter {
 
 	/*
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
+	 * Returns null on failure (invalid selector), empty string on banned (but otherwise valid) selector.
 	 */
 	public String HTMLelementVerifier(String elementString)
 	{
@@ -1592,8 +1593,11 @@ class CSSTokenizerFilter {
 
 			if(isValid && !pseudoClass.equals(""))
 			{
-				if(!ElementInfo.isValidPseudoClass(pseudoClass))
+				if(!ElementInfo.isValidPseudoClass(pseudoClass)) {
 					isValid=false;
+				} else if(ElementInfo.isBannedPseudoClass(pseudoClass)) {
+			        return "";
+		        }
 			}
 
 			if(isValid && attSelections!=null)
@@ -1677,6 +1681,7 @@ class CSSTokenizerFilter {
 	 * This function works with different operators, +, >, " " and verifies each HTML element with HTMLelementVerifier(String elementString)
 	 * e.g. div > p:first-child
 	 * This would call HTMLelementVerifier with div and p:first-child
+	 * Returns null on failure (selector invalid), empty string on banned but otherwise valid selector.
 	 */
 	public String recursiveSelectorVerifier(String selectorString)
 	{
@@ -2250,7 +2255,7 @@ class CSSTokenizerFilter {
 					if(!buffer.toString().trim().equals(""))
 					{
 						String filtered=recursiveSelectorVerifier(buffer.toString());
-						if(filtered!=null)
+						if(filtered!=null && !"".equals(filtered))
 						{
 							if(s2Comma)
 							{
@@ -2261,14 +2266,22 @@ class CSSTokenizerFilter {
 							filteredTokens.append(filtered);
 							filteredTokens.append(" {");
 						}
-						else
+						else if(s2Comma && "".equals(filtered))
 						{
-							ignoreElementsS2=true;
-							// If there was a comma, filteredTokens may contain some tokens.
-							// These are invalid, as per the spec: we wipe the whole selector out.
-							// Also, not wiping filteredTokens here does bad things:
-							// we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
-							filteredTokens.setLength(0);
+						    // There was a comma, so filteredTokens already contains some tokens.
+						    // The current selector is valid, yet banned. Ignore it.
+						    s2Comma=false;
+						    filteredTokens.append(ws);
+						    filteredTokens.append(" {");
+						}
+				        else
+				        {
+                            ignoreElementsS2=true;
+                            // If there was a comma, filteredTokens may contain some tokens.
+                            // These are invalid, as per the spec: we wipe the whole selector out.
+                            // Also, not wiping filteredTokens here does bad things:
+                            // we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
+                            filteredTokens.setLength(0);
 						}
 						if(logDEBUG) Logger.debug(this, "STATE2 CASE { filtered elements"+filtered);
 					} else {
@@ -2324,7 +2337,7 @@ class CSSTokenizerFilter {
 
 					String filtered=recursiveSelectorVerifier(buffer.toString().trim());
 					if(logDEBUG) Logger.debug(this, "STATE2 CASE , filtered elements"+filtered);
-					if(filtered!=null)
+					if(filtered!=null && !"".equals(filtered))
 					{
 						if(s2Comma)
 							filteredTokens.append(",");
@@ -2332,6 +2345,11 @@ class CSSTokenizerFilter {
 							s2Comma=true;
 						filteredTokens.append(ws);
 						filteredTokens.append(filtered);
+					}
+					else if("".equals(filtered))
+					{
+					    // This selector was banned. Ignore it.
+					    filteredTokens.append(ws);
 					}
 					buffer.setLength(0);
 					break;

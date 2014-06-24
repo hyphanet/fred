@@ -868,12 +868,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
         return Collections.unmodifiableSet(allowedHTMLTags);
     }
 
-	private static final Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
-	private static final Set<String> allowedHTMLTags = new HashSet<String>();
+    private static final Set<String> allowedHTMLTags = new HashSet<String>();
+	static final Map<String, TagVerifier> allowedTagsVerifiers =
+	    Collections.unmodifiableMap(getAllowedTagVerifiers());
 	private static final String[] emptyStringArray = new String[0];
 
-	static
+	private static Map<String, TagVerifier> getAllowedTagVerifiers()
 	{
+	    Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
+	    
 		allowedTagsVerifiers.put("?xml", new XmlTagVerifier());
 		allowedTagsVerifiers.put(
 			"!doctype",
@@ -1962,6 +1965,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray));
 		// <maction> would go here though it seems a bit pointless and may require extra filtering
 		// MathML content tags would go here if anyone used them
+		
+		return allowedTagsVerifiers;
 	}
 
 	static class TagVerifier {

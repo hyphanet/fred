@@ -219,6 +219,37 @@ public class ElementInfo {
             "target"
 	)));
 
+    public final static Set<String> BANNED_PSEUDOCLASS =
+    	Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+    	    // :visited is considered harmful as it may leak browser history to an adversary.
+    	    // This may not be obvious immediately, but :visited gives an adversary the
+    	    // opportunity to tailor the page to the user's browser history, and may capture
+    	    // this information based on where the user interacts (e.g. he can alternate the
+    	    // visibility of buttons/links on the page based on browser history to encode
+    	    // exactly which sites of interest a user has visited in the past, and use the
+    	    // click to either 1) send this information somewhere through a reachable social
+    	    // networking plugin, or 2) somehow present this knowledge to the user as a scare
+    	    // tactic)
+    	    //
+    	    // The fact that CSS can do Boolean algebra[1] makes this attack easy: the attacker
+    	    // can query a large number of sites in the browser history using only a limited number
+    	    // of previously mentioned buttons or links.
+    	    //
+    	    // A general lack of :visited does not harm the user experience much; especially on
+    	    // Freenet where we often use USKs to visit sites, which are implemented through
+    	    // permanent redirects. Users should hence already expect :visited not to work
+    	    // occasionally. The downside is that some (if only a few) freesites will look
+    	    // less pretty. Given the lack of harm to the overall user experience, and the
+    	    // effectiveness of potential attacks through :visited, we disallow :visited in
+    	    // CSS selectors (by ignoring it).
+    	    //
+    	    // TL;DR: Protecting the user is the main purpose of the CSS ContentFilter, :visited 
+    	    //        is considered too much of a danger, so we scrub that pseudoclass.
+    	    //
+    	    // [1] http://lcamtuf.coredump.cx/css_calc/
+            "visited"
+    )));
+
 	public static boolean isSpecificFontFamily(String font) {
 		if(disallowUnknownSpecificFonts) {
 			return FONTS.contains(font);
@@ -392,6 +423,19 @@ public class ElementInfo {
 			return true;
 		}
 	}
+	
+    public static boolean isBannedPseudoClass(String cname)
+    {
+        if(cname.indexOf(':') != -1) {
+            // Pseudo-classes can be chained, at least dynamic ones can, see CSS2.1 section 5.11.3
+            String[] split = cname.split(":");
+            for(String s : split)
+	            if(isBannedPseudoClass(s)) return true;
+            return false;
+        }
+        cname=cname.toLowerCase();
+        return BANNED_PSEUDOCLASS.contains(cname);
+    }
 		
 		public static boolean isValidPseudoClass(String cname)
 		{
