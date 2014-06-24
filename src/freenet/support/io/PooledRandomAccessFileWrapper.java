@@ -29,7 +29,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         this.mode = mode;
         lockLevel = 0;
         // Check the parameters and get the length.
-        RAFLock lock = lock();
+        RAFLock lock = lockOpen();
         try {
             long currentLength = raf.length();
             if(forceLength >= 0) {
@@ -55,7 +55,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
-        RAFLock lock = lock();
+        RAFLock lock = lockOpen();
         try {
             // FIXME Use NIO! This is absurd!
             synchronized(this) {
@@ -69,7 +69,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
-        RAFLock lock = lock();
+        RAFLock lock = lockOpen();
         try {
             if(fileOffset + length > this.length)
                 throw new IOException("Length limit exceeded");
@@ -94,7 +94,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     }
 
     @Override
-    public RAFLock lock() throws IOException {
+    public RAFLock lockOpen() throws IOException {
         RAFLock lock = new RAFLock() {
 
             @Override

@@ -67,7 +67,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	}
 
     @Override
-    public RAFLock lock() {
+    public RAFLock lockOpen() {
         return new RAFLock() {
 
             @Override

@@ -43,7 +43,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 	}
 	
     @Override
-    public RAFLock lock() {
+    public RAFLock lockOpen() {
         return new RAFLock() {
 
             @Override

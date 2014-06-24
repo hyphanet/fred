@@ -11,7 +11,7 @@ import java.io.IOException;
 public interface LockableRandomAccessThing extends RandomAccessThing {
 	
     /** Keep the RAF open. Does not prevent others from writing to it. */
-	public RAFLock lock() throws IOException;
+	public RAFLock lockOpen() throws IOException;
 	
 	abstract class RAFLock {
 	    
