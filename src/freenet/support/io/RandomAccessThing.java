@@ -9,7 +9,8 @@ import java.io.IOException;
 /**
  * Trivial random access file base interface. Guaranteed to be thread-safe - that is, either the 
  * implementation will serialise reads, or it will support parallel reads natively. The length of
- * the file is constant.
+ * the file is constant. Many implementations will provide a nulling constructor - one that takes
+ * a size and creates a RandomAccessThing of that length whose content is all 0's.
  * @author toad
  */
 public interface RandomAccessThing extends Closeable {
@@ -17,7 +18,7 @@ public interface RandomAccessThing extends Closeable {
 	public long size() throws IOException;
 	
 	/** Read a block of data from a specific location in the file. Guaranteed to read the whole 
-	 * range or to throw, like DataInputStream.readFully().
+	 * range or to throw, like DataInputStream.readFully(). Must throw if the file is closed.
 	 * @param fileOffset The offset within the file to read from.
 	 * @param buf The buffer to write to.
 	 * @param bufOffset The offset within the buffer to the first read byte.
