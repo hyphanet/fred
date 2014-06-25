@@ -38,17 +38,13 @@ public class AEADInputStream extends FilterInputStream {
         byte[] nonce;
         if(oldOCB){
             nonce = new byte[16];
+            cipher = new OldOCBBlockCipher(hashCipher, mainCipher);
         }
         else{
             nonce = new byte[15];
-        }
-        new DataInputStream(is).readFully(nonce);
-        if(oldOCB){
             cipher = new OCBBlockCipher(hashCipher, mainCipher);
         }
-        else{
-            cipher = new OldOCBBlockCipher(hashCipher, mainCipher);
-        }
+        new DataInputStream(is).readFully(nonce);
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(false, params);
