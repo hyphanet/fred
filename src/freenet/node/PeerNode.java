@@ -2924,14 +2924,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	public boolean isRoutingBackedOff(boolean realTime) {
 		long now = System.currentTimeMillis();
-		double pingTime;
+		double pingTime; double mPeerPingTime;
 		synchronized(this) {
 			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
-			if(now < routingBackedOffUntil || now < transferBackedOffUntil) return true;
+			if(now < routingBackedOffUntil || now < transferBackedOffUntil) {
+				//oo
+				long remRoutingBackedOff = Math.max(0, routingBackedOffUntil - now);
+				long remTransferBackedOff = Math.max(0, transferBackedOffUntil - now);
+				Logger.minor(this, "remaining routingBackedOff="+remRoutingBackedOff+" remaining transferBackedOff="+remTransferBackedOff+
+							" last reason="+getLastBackoffReason(realTime));
+				return true;
+			}
 			pingTime = averagePingTime();
 		}
-		if(pingTime > maxPeerPingTime()) return true;
+		mPeerPingTime = maxPeerPingTime();
+		if(pingTime > mPeerPingTime) {
+			Logger.minor(this, "pingTime="+pingTime+" maxPeerPingTime="+mPeerPingTime);
+			return true;
+		}
 		return false;
 	}
 	
@@ -2951,21 +2962,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	long routingBackedOffUntilRT = -1;
 	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
-	static final int INITIAL_ROUTING_BACKOFF_LENGTH = (int) SECONDS.toMillis(1);
+	static final int INITIAL_ROUTING_BACKOFF_LENGTH = (int) MILLISECONDS.toMillis(200); // mm and oo: 200ms, toad: 1s
 	/** How much to multiply by during fast routing backoff */
 
 	static final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_ROUTING_BACKOFF_LENGTH = (int) MINUTES.toMillis(8); // mm: 8min, oo: 3min, toad: 3hrs
 	/** Current nominal routing backoff length */
 
 	// Transfer Backoff
 
 	long transferBackedOffUntilRT = -1;
 	long transferBackedOffUntilBulk = -1;
-	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(30); // 60 seconds, but it starts at twice this.
+	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = (int) SECONDS.toMillis(2); //mm: 4s, oo: 4ms, toad: 60s (value doubled)
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
-	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) HOURS.toMillis(3);
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = (int) MINUTES.toMillis(8); // mm: 8min, oo: 3min, toad: 3hrs
 
 	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
@@ -3143,7 +3154,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't un-backoff if still backed off
 			long until;
-			if(now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
+			if (true) { //oo (now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
 				if(realTime)
 					routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
 				else
@@ -3225,7 +3236,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		synchronized(this) {
 			// Don't un-backoff if still backed off
 			long until;
-			if(now > (until = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk)) {
+			if (true) { //oo (now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
 				if(realTime)
 					routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				else
