@@ -6,6 +6,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 
 	private final byte[] data;
 	private boolean readOnly;
+	private boolean closed;
 	
 	public ByteArrayRandomAccessThing(byte[] padded) {
 		this.data = padded;
@@ -13,12 +14,13 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 
 	@Override
 	public void close() {
-		// Do nothing
+	    closed = true;
 	}
 
 	@Override
 	public synchronized void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
+	    if(closed) throw new IOException("Closed");
 		if(fileOffset < 0) throw new IOException("Cannot read before zero");
 		if(fileOffset + length > data.length) throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
 		System.arraycopy(data, (int)fileOffset, buf, bufOffset, length);
@@ -27,6 +29,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 	@Override
 	public synchronized void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
+        if(closed) throw new IOException("Closed");
 		if(fileOffset < 0) throw new IOException("Cannot write before zero");
 		if(fileOffset + length > data.length) throw new IOException("Cannot write after end: trying to write from "+fileOffset+" to "+(fileOffset+length)+" on block length "+data.length);
 		if(readOnly) throw new IOException("Read-only");
