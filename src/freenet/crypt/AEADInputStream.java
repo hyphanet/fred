@@ -33,11 +33,22 @@ public class AEADInputStream extends FilterInputStream {
      * @param hashCipher The BlockCipher for the final hash. E.g. AES, not a block mode. This will
      * not be used very much so should be e.g. an AESLightEngine. */
     public AEADInputStream(InputStream is, byte[] key, BlockCipher hashCipher, 
-            BlockCipher mainCipher) throws IOException {
+            BlockCipher mainCipher, boolean oldOCB) throws IOException {
         super(is);
-        byte[] nonce = new byte[mainCipher.getBlockSize()];
+        byte[] nonce;
+        if(oldOCB){
+            nonce = new byte[16];
+        }
+        else{
+            nonce = new byte[15];
+        }
         new DataInputStream(is).readFully(nonce);
-        cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        if(oldOCB){
+            cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        }
+        else{
+            cipher = new OldOCBBlockCipher(hashCipher, mainCipher);
+        }
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(false, params);
@@ -193,7 +204,7 @@ public class AEADInputStream extends FilterInputStream {
     public static AEADInputStream createAES(InputStream is, byte[] key) throws IOException {
         AESEngine mainCipher = new AESEngine();
         AESLightEngine hashCipher = new AESLightEngine();
-        return new AEADInputStream(is, key, hashCipher, mainCipher);
+        return new AEADInputStream(is, key, hashCipher, mainCipher, true);
     }
 
 }

@@ -35,10 +35,14 @@ public class AEADOutputStream extends FilterOutputStream {
      * @param hashCipher The BlockCipher for the final hash. E.g. AES, not a block mode. This will
      * not be used very much so should be e.g. an AESLightEngine. */
     public AEADOutputStream(OutputStream os, byte[] key, byte[] nonce, BlockCipher hashCipher,
-            BlockCipher mainCipher) throws IOException {
+            BlockCipher mainCipher, boolean oldOCB) throws IOException {
         super(os);
         os.write(nonce);
-        cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        if(oldOCB){
+            cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        } else{
+            cipher = new OldOCBBlockCipher(hashCipher, mainCipher);
+        }
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(true, params);
@@ -90,7 +94,7 @@ public class AEADOutputStream extends FilterOutputStream {
         byte[] nonce = new byte[mainCipher.getBlockSize()];
         random.nextBytes(nonce);
         nonce[0] &= 0x7F;
-        return new AEADOutputStream(os, key, nonce, hashCipher, mainCipher);
+        return new AEADOutputStream(os, key, nonce, hashCipher, mainCipher, true);
     }
     
     @Override
