@@ -186,5 +186,21 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     public static int getOpenFDs() {
         return OPEN_FDS;
     }
+    
+    static synchronized int getClosableFDs() {
+        return closables.size();
+    }
+    
+    boolean isOpen() {
+        synchronized(PooledRandomAccessFileWrapper.class) {
+            return raf != null;
+        }
+    }
+    
+    boolean isLocked() {
+        synchronized(PooledRandomAccessFileWrapper.class) {
+            return lockLevel != 0;
+        }
+    }
 
 }
