@@ -188,7 +188,7 @@ public class NativeThread extends Thread {
 		if (name.indexOf('(') != -1)
 			name = name.substring(0, name.indexOf('('));
 		
-		return name;
+		return name.trim();
 	}
 	
 	public String getNormalizedName() {
