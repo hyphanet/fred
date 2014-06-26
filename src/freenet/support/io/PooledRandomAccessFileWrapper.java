@@ -8,6 +8,9 @@ import java.util.Deque;
 
 import freenet.support.Logger;
 
+/** Random access files with a limited number of open files, using a pool. 
+ * LOCKING OPTIMISATION: Contention on closables likely here. It's not clear how to avoid that, FIXME.
+ * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... */
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing {
     
     private static int MAX_OPEN_FDS = 100;
@@ -17,9 +20,10 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     public final File file;
     private final String mode;
     /** >0 means locked. We will wait until we get the lock if necessary, this is always accurate. 
-     * LOCKING: Synchronized on class. */
+     * LOCKING: Synchronized on closables (i.e. static, but not the class). */
     private int lockLevel;
-    /** The actual RAF. Non-null only if open. LOCKING: Synchronized on (this). */
+    /** The actual RAF. Non-null only if open. LOCKING: Synchronized on (this).
+     * LOCKING: Always take (this) last, i.e. after closables. */
     private RandomAccessFile raf;
     private final long length;
     private boolean closed;
@@ -40,7 +44,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             this.length = currentLength;
             lock.unlock();
         } catch (IOException e) {
-            synchronized(PooledRandomAccessFileWrapper.class) {
+            synchronized(this) {
                 raf.close();
                 raf = null;
             }
@@ -87,7 +91,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
     @Override
     public void close() {
-        synchronized(PooledRandomAccessFileWrapper.class) {
+        synchronized(closables) {
             if(lockLevel != 0)
                 throw new IllegalStateException("Must unlock first!");
             closed = true;
@@ -108,7 +112,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             }
             
         };
-        synchronized(PooledRandomAccessFileWrapper.class) {
+        synchronized(closables) {
             if(closed) throw new IOException("Already closed");
             if(lockLevel > 0) {
                 // Already locked. Ok.
@@ -124,7 +128,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                         continue;
                     }
                     try {
-                        PooledRandomAccessFileWrapper.class.wait();
+                        closables.wait();
                     } catch (InterruptedException e) {
                         // Ignore
                     }
@@ -157,11 +161,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     }
 
     private void unlock() {
-        synchronized(PooledRandomAccessFileWrapper.class) {
+        synchronized(closables) {
             lockLevel--;
             if(lockLevel > 0) return;
             closables.addLast(this);
-            PooledRandomAccessFileWrapper.class.notify();
+            closables.notify();
         }
     }
 
@@ -177,9 +181,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     }
     
     /** Set the size of the fd pool */
-    public static synchronized void setMaxFDs(int max) {
-        if(max <= 0) throw new IllegalArgumentException();
-        MAX_OPEN_FDS = max;
+    public static void setMaxFDs(int max) {
+        synchronized(closables) {
+            if(max <= 0) throw new IllegalArgumentException();
+            MAX_OPEN_FDS = max;
+        }
     }
 
     /** How many fd's are open right now? Mainly for tests but also for stats. */
@@ -187,18 +193,20 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         return OPEN_FDS;
     }
     
-    static synchronized int getClosableFDs() {
-        return closables.size();
+    static int getClosableFDs() {
+        synchronized(closables) {
+            return closables.size();
+        }
     }
     
     boolean isOpen() {
-        synchronized(PooledRandomAccessFileWrapper.class) {
+        synchronized(closables) {
             return raf != null;
         }
     }
     
     boolean isLocked() {
-        synchronized(PooledRandomAccessFileWrapper.class) {
+        synchronized(closables) {
             return lockLevel != 0;
         }
     }
