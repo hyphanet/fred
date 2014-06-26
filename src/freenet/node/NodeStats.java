@@ -1089,6 +1089,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	static abstract class AcceptStatus {
 	    public abstract boolean accept();
+
+        public abstract boolean slowDown();
 	}
 	
 	static class RejectReason extends AcceptStatus {
@@ -1108,6 +1110,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public boolean accept() {
 		    return false;
 		}
+        @Override
+        public boolean slowDown() {
+            return false;
+        }
 	}
 	
 	static class Accept extends AcceptStatus {
@@ -1119,6 +1125,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	    public boolean accept() {
 	        return true;
 	    }
+        @Override
+        public boolean slowDown() {
+            return slowDown;
+        }
 	}
 	
 	private final Object serializeShouldRejectRequest = new Object();
