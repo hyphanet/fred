@@ -1084,7 +1084,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * etc. */
 	static final int TRANSFER_OUT_IN_OVERHEAD = 256;
 	
-	static class RejectReason {
+	static abstract class AcceptStatus {
+	    public abstract boolean accept();
+	}
+	
+	static class RejectReason extends AcceptStatus {
 		public final String name;
 		/** If true, rejected because of preemptive bandwidth limiting, i.e. "soft", at least somewhat predictable, can be retried.
 		 * If false, hard rejection, should backoff and not retry. */
@@ -1097,6 +1101,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public String toString() {
 			return (soft ? "SOFT" : "HARD") + ":" + name;
 		}
+		@Override
+		public boolean accept() {
+		    return false;
+		}
+	}
+	
+	static class Accept extends AcceptStatus {
+	    @Override
+	    public boolean accept() {
+	        return true;
+	    }
 	}
 	
 	private final Object serializeShouldRejectRequest = new Object();
@@ -1138,7 +1153,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * separately.
 	 * @return The reason for rejecting it, or null to accept it.
 	 */
-	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag, UIDTag tag) {
+	public AcceptStatus shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag, UIDTag tag) {
 		// Serialise shouldRejectRequest.
 		// It's not always called on the same thread, and things could be problematic if they interfere with each other.
 		synchronized(serializeShouldRejectRequest) {
