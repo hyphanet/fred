@@ -21,6 +21,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.NodeStats.Accept;
 import freenet.node.NodeStats.AcceptStatus;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RejectReason;
@@ -378,6 +379,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		
+        if(status != null && status.slowDown()) {
+            Message rejected = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
+            try {
+                source.sendAsync(rejected, null, node.failureTable.senderCounter);
+            } catch (NotConnectedException e) {
+                // Ignore
+            }
+        }
+        
 		} catch (Error e) {
 			tag.unlockHandler();
 			throw e;
@@ -387,6 +397,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
 		// Accept it.
+		
+
 		
 		try {
 			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
@@ -542,6 +554,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// failure table even though we didn't accept any of them.
 			return;
 		}
+        if(status != null && status.slowDown()) {
+            Message rejected = DMT.createFNPRejectedOverload(id, false, true, realTimeFlag);
+            try {
+                source.sendAsync(rejected, null, node.failureTable.senderCounter);
+            } catch (NotConnectedException e) {
+                // Ignore
+            }
+        }
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
 		boolean needsPubKey = false;
@@ -604,6 +624,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			tag.unlockHandler(rejectReason.soft);
 			return;
 		}
+        if(status != null && status.slowDown()) {
+            Message rejected = DMT.createFNPRejectedOverload(id, false, true, realTimeFlag);
+            try {
+                source.sendAsync(rejected, null, node.failureTable.senderCounter);
+            } catch (NotConnectedException e) {
+                // Ignore
+            }
+        }
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
