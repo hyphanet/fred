@@ -1389,6 +1389,22 @@ public class StatisticsToadlet extends Toadlet {
 	private final static int PEER_CIRCLE_ADDITIONAL_FREE_SPACE = 10;
 	private final static long MAX_CIRCLE_AGE_THRESHOLD = HOURS.toMillis(24);
 	private final static int HISTOGRAM_LENGTH = 10;
+	
+	private int simpleHistogramDivisor(int[] a) {
+		int max = 1;
+		for (int i = 0; i < a.length; i++) {
+			if (a[i] > max) max = a[i];
+		}
+		return max;
+	}
+	
+	private int combinedHistogramDivisor(int[] a, int[] b) {
+		int max = 1;
+		for (int i = 0; i < a.length; i++) {
+			if (a[i] + b[i] > max) max = a[i] + b[i];
+		}
+		return max;
+	}
 
 	private void addNodeCircle (HTMLNode circleTable, double myLocation) {
 		int[] histogram = new int[HISTOGRAM_LENGTH];
@@ -1437,12 +1453,13 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//
+		int histogramDiv = simpleHistogramDivisor(histogram); // Prevent division by 0 on empty histograms.
 		double histogramPercent;
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
 			nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
 			nodeHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / HISTOGRAM_LENGTH ));
-			histogramPercent = nodeCount==0 ? 0 : ((double)histogram[ i ] / nodeCount);
+			histogramPercent = nodeCount==0 ? 0 : ((double)histogram[ i ] / histogramDiv);
 			
 			// Don't use HTMLNode here to speed things up
 			nodeHistogramGraphCell.addChild("%", "<div class=\"histogramConnected\" style=\"height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;\">\u00a0</div>");
@@ -1453,6 +1470,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode nodeHistogramLegendTableRow = table.addChild("tr");
 		HTMLNode nodeHistogramGraphTableRow = table.addChild("tr");
 		int myIndex = (int)(peerLocation * incomingRequestLocation.length);
+		int histogramDiv = simpleHistogramDivisor(incomingRequestLocation);
 		for (int i = 0; i<incomingRequestLocation.length; i++) {
 			HTMLNode nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
 			HTMLNode nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
@@ -1460,7 +1478,7 @@ public class StatisticsToadlet extends Toadlet {
 			if(i == myIndex)
 				 nodeHistogramGraphCell2 = nodeHistogramGraphCell2.addChild("span", "class", "me");
 			nodeHistogramGraphCell2.addChild("#", fix1p1.format(((double) i) / incomingRequestLocation.length ));
-			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(((double)incomingRequestLocation[i]) / incomingRequestsCount) + "; width: 100%;" }, "\u00a0");
+			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(((double)incomingRequestLocation[i]) / histogramDiv) + "; width: 100%;" }, "\u00a0");
 		}
 	}
 	
@@ -1469,6 +1487,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode nodeHistogramLegendTableRow = table.addChild("tr");
 		HTMLNode nodeHistogramGraphTableRow = table.addChild("tr");
 		int myIndex = (int)(peerLocation * locallyOriginatingRequests.length);
+		int histogramDiv = combinedHistogramDivisor(locallyOriginatingRequests, remotelyOriginatingRequests);
 		for (int i = 0; i<locallyOriginatingRequests.length; i++) {
 			HTMLNode nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
 			HTMLNode nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
@@ -1479,13 +1498,13 @@ public class StatisticsToadlet extends Toadlet {
 			nodeHistogramGraphCell.addChild("div",
 				new String[] { "class", "style" },
 				new String[] { "histogramConnected", "height: " +
-					fix3pctUS.format(((double)locallyOriginatingRequests[i]) / locallyOriginatingRequestsCount) +
+					fix3pctUS.format(((double)locallyOriginatingRequests[i]) / histogramDiv) +
 					"; width: 100%;" },
 				"\u00a0");
 			nodeHistogramGraphCell.addChild("div",
 				new String[] { "class", "style" },
 				new String[] { "histogramDisconnected", "height: " +
-					fix3pctUS.format(((double)remotelyOriginatingRequests[i]) / remotelyOriginatingRequestsCount) +
+					fix3pctUS.format(((double)remotelyOriginatingRequests[i]) / histogramDiv) +
 					"; width: 100%;" },
 				"\u00a0");
 		}
@@ -1545,16 +1564,17 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
 		//
+		int histogramDiv = combinedHistogramDivisor(histogramConnected, histogramDisconnected);
 		double histogramPercent;
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
 			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( HISTOGRAM_LENGTH * 2 )));
 			//
-			histogramPercent = ((double) histogramConnected[ i ] ) / newPeerCount;
+			histogramPercent = ((double) histogramConnected[ i ] ) / histogramDiv;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
 			//
-			histogramPercent = ((double) histogramDisconnected[ i ] ) / newPeerCount;
+			histogramPercent = ((double) histogramDisconnected[ i ] ) / histogramDiv;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramDisconnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
 		}
 	}
