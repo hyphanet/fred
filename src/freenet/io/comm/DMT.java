@@ -1763,15 +1763,12 @@ public class DMT {
 		addField(OTHER_TRANSFERS_OUT_SSK, Byte.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Byte.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Byte.class);
-		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
-		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Byte.class);
 		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Byte.class);
-		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Byte.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Byte.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
@@ -1782,15 +1779,12 @@ public class DMT {
 		addField(OTHER_TRANSFERS_OUT_SSK, Short.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Short.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Short.class);
-		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
-		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Short.class);
 		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Short.class);
-		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Short.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Short.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
@@ -1801,15 +1795,12 @@ public class DMT {
 		addField(OTHER_TRANSFERS_OUT_SSK, Integer.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Integer.class);
 		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Integer.class);
-		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
-		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT, Integer.class);
 		addField(MAX_TRANSFERS_OUT_PEER_LIMIT, Integer.class);
-		addField(MAX_TRANSFERS_OUT_LOWER_LIMIT, Integer.class);
 		addField(MAX_TRANSFERS_OUT_UPPER_LIMIT, Integer.class);
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
@@ -1819,7 +1810,7 @@ public class DMT {
 		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
 				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
 				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256 && 
-				stats.maxTransfersOutLowerLimit < 256 && stats.maxTransfersOutPeerLimit < 256 &&
+				stats.maxTransfersOutPeerLimit < 256 &&
 				stats.maxTransfersOutUpperLimit < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
@@ -1829,12 +1820,11 @@ public class DMT {
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (byte)stats.maxTransfersOutLowerLimit);
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
 		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
 				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
 				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536 && 
-				stats.maxTransfersOutLowerLimit < 65536 && stats.maxTransfersOutPeerLimit < 65536 &&
+				stats.maxTransfersOutPeerLimit < 65536 &&
 				stats.maxTransfersOutUpperLimit < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
@@ -1844,7 +1834,6 @@ public class DMT {
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, (short)stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (short)stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, (short)stats.maxTransfersOutLowerLimit);
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (short)stats.maxTransfersOutUpperLimit);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
@@ -1855,13 +1844,10 @@ public class DMT {
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
 			msg.set(MAX_TRANSFERS_OUT, stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, stats.maxTransfersOutPeerLimit);
-			msg.set(MAX_TRANSFERS_OUT_LOWER_LIMIT, stats.maxTransfersOutLowerLimit);
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, stats.maxTransfersOutUpperLimit);
 		}
-		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
 		msg.set(OUTPUT_BANDWIDTH_PEER_LIMIT, (int)stats.outputBandwidthPeerLimit);
-		msg.set(INPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.inputBandwidthLowerLimit);
 		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
 		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
 		msg.set(REAL_TIME_FLAG, stats.realTime);
@@ -1877,19 +1863,13 @@ public class DMT {
 	/** Maximum transfers out, hard limit based on congestion control; we will be rejected if our usage
 	 * is over this. */
 	public static final String MAX_TRANSFERS_OUT = "maxTransfersOut";
-	/** Maximum transfers out, peer limit. If total is over the lower limit and our usage is over the
-	 * peer limit, we will be rejected. */
+	/** Maximum transfers out, peer limit. If our usage is over the peer limit, we will be rejected. */
 	public static final String MAX_TRANSFERS_OUT_PEER_LIMIT = "maxTransfersOutPeerLimit";
-	/** Maximum transfers out, lower limit. If total is over the lower limit and our usage is over the
-	 * peer limit, we will be rejected. */
-	public static final String MAX_TRANSFERS_OUT_LOWER_LIMIT = "maxTransfersOutLowerLimit";
 	/** Maximum transfers out, upper limit. If total is over the upper limit, everything is rejected. */
 	public static final String MAX_TRANSFERS_OUT_UPPER_LIMIT = "maxTransfersOutUpperLimit";
 	
-	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
 	public static final String OUTPUT_BANDWIDTH_PEER_LIMIT = "outputBandwidthPeerLimit";
-	public static final String INPUT_BANDWIDTH_LOWER_LIMIT = "inputBandwidthLowerLimit";
 	public static final String INPUT_BANDWIDTH_UPPER_LIMIT = "inputBandwidthUpperLimit";
 	public static final String INPUT_BANDWIDTH_PEER_LIMIT = "inputBandwidthPeerLimit";
 	

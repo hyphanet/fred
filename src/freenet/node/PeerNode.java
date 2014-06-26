@@ -5312,16 +5312,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
 				PeerLoadStats stats) {
 			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, input);
-			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
 			otherRunningRequests.log(PeerNode.this);
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
-			if(ourUsage + theirUsage < stats.lowerLimit(input))
-				return RequestLikelyAcceptedState.LIKELY;
-			else
-				return RequestLikelyAcceptedState.UNLIKELY;
+			return RequestLikelyAcceptedState.UNLIKELY;
 		}
 
 		private RequestLikelyAcceptedState getRequestLikelyAcceptedStateTransfers(
@@ -5332,16 +5329,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			int ourUsage = runningRequests.totalOutTransfers();
 			int maxTransfersOutPeerLimit = Math.min(stats.maxTransfersOutPeerLimit, stats.maxTransfersOut);
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+maxTransfersOutPeerLimit
-					+" lower limit is "+stats.maxTransfersOutLowerLimit+" realtime "+realTime);
+					+" realtime "+realTime);
 			if(ourUsage < maxTransfersOutPeerLimit)
 				return RequestLikelyAcceptedState.GUARANTEED;
 			otherRunningRequests.log(PeerNode.this);
 			int theirUsage = otherRunningRequests.totalOutTransfers();
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
-			if(ourUsage + theirUsage < stats.maxTransfersOutLowerLimit)
-				return RequestLikelyAcceptedState.LIKELY;
-			else
-				return RequestLikelyAcceptedState.UNLIKELY;
+			return RequestLikelyAcceptedState.UNLIKELY;
 		}
 
 		public void setDontSendUnlessGuaranteed() {
