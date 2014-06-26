@@ -55,6 +55,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
         RAFLock lock = lockOpen();
         try {
             // FIXME Use NIO! This is absurd!
@@ -69,6 +70,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
         RAFLock lock = lockOpen();
         try {
             if(fileOffset + length > this.length)
