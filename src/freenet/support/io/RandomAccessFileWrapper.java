@@ -26,6 +26,13 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 		this.file = filename;
 	}
 
+    public RandomAccessFileWrapper(File filename, long length) throws IOException {
+        raf = new RandomAccessFile(filename, "rw");
+        raf.setLength(length);
+        this.length = length;
+        this.file = filename;
+    }
+
 	@Override
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
