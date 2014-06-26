@@ -24,8 +24,9 @@ public abstract class BaseRandomAccessThingTest extends TestCase {
         fullSizeList = bigTests;
     }
     
-    /** Construct an instance of a given size. */
-    protected abstract RandomAccessThing construct(long size);
+    /** Construct an instance of a given size. 
+     * @throws IOException */
+    protected abstract RandomAccessThing construct(long size) throws IOException;
     
     private void innerTestSize(long sz) throws IOException {
         RandomAccessThing raf = construct(sz);
