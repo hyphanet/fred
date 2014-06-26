@@ -698,8 +698,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * actually happens) - but this should be very rare. */
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
-	/** Start sending slow-down messages, without actually rejecting requests, at 80% utilisation */
-	static final double EARLY_WARNING = 0.8;
+	/** Start sending slow-down messages, without actually rejecting requests, at 75% utilisation */
+	static final double EARLY_WARNING = 0.75;
 	
 	// FIXME slowdown
 //	/** Proportion of the thread limit we can use without triggering slow-down messages */
