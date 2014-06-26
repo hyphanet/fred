@@ -698,6 +698,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * actually happens) - but this should be very rare. */
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
+	/** Start sending slow-down messages, without actually rejecting requests, at 80% utilisation */
+	static final double EARLY_WARNING = 0.8;
+	
 	// FIXME slowdown
 //	/** Proportion of the thread limit we can use without triggering slow-down messages */
 //	private static final double SOFT_REJECT_MAX_THREAD_USAGE = 0.9;
@@ -1108,6 +1111,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 	
 	static class Accept extends AcceptStatus {
+	    public final boolean slowDown;
+	    Accept(boolean slow) {
+	        slowDown = slow;
+	    }
 	    @Override
 	    public boolean accept() {
 	        return true;
@@ -1316,7 +1323,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(tag != null) tag.setAccepted();
 		
 		// Accept
-		return new Accept();
+		return new Accept(false);
 		}
 	}
 	
@@ -1481,7 +1488,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //				}
 		}
 			
-		return new Accept();
+		return new Accept(peerUsedBytes >= EARLY_WARNING * thisAllocation);
 	}
 	
 	private AcceptStatus checkMaxOutputTransfers(int maxOutputTransfers,
@@ -1510,7 +1517,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //			if(peerOutTransfers > Math.max(1, maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
 //				// Send slow-down's if we are using more than 80% of our peer limit.
 //				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
-			return new Accept();
+			return new Accept(peerOutTransfers >= EARLY_WARNING * maxTransfersOutPeerLimit);
 		}
 		rejected("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime);
 		return new RejectReason("TooManyTransfers: Fair sharing between peers", true);
