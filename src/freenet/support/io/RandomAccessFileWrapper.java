@@ -36,6 +36,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	@Override
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
+	    if(fileOffset < 0) throw new IllegalArgumentException();
         // FIXME Use NIO (which has proper pread, with concurrency)! This is absurd!
 		synchronized(this) {
 			raf.seek(fileOffset);
@@ -46,6 +47,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	@Override
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
 	    if(fileOffset + length > this.length)
 	        throw new IOException("Length limit exceeded");
         // FIXME Use NIO (which has proper pwrite, with concurrency)! This is absurd!

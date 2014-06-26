@@ -24,6 +24,7 @@ public interface RandomAccessThing extends Closeable {
 	 * @param bufOffset The offset within the buffer to the first read byte.
 	 * @param length The length of data to read.
 	 * @throws IOException If we were unable to read the required number of bytes etc.
+	 * @throws IllegalArgumentException If fileOffset is negative.
 	 */
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 	
