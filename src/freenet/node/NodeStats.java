@@ -1278,7 +1278,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Check bandwidth-based limits, with fair sharing.
 		
-		RejectReason r = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
+		AcceptStatus r = checkBandwidthLiability(getOutputBandwidthUpperLimit(limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit, tag);  
 		if(r != null) return r;
 		
@@ -1341,7 +1341,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		if(tag != null) tag.setAccepted();
 		
 		// Accept
-		return null;
+		return new Accept();
 		}
 	}
 	
@@ -1463,7 +1463,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * request.
 	 * @return A string explaining why, or null if we can accept the request.
 	 */
-	private RejectReason checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
+	private AcceptStatus checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers, int maxOutputTransfersPeerLimit, UIDTag tag) {
 		String name = input ? "Input" : "Output";
@@ -1527,10 +1527,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR)
 				Logger.minor(this, "Total usage is "+bandwidthLiabilityOutput+" below lower limit "+bandwidthAvailableOutputLowerLimit+" for "+name);
 		}
-		return null;
+		return new Accept();
 	}
 	
-	private RejectReason checkMaxOutputTransfers(int maxOutputTransfers,
+	private AcceptStatus checkMaxOutputTransfers(int maxOutputTransfers,
 			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
 			int maxTransfersOutPeerLimit,
 			RunningRequestsSnapshot requestsSnapshot,
@@ -1561,7 +1561,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //			if(peerOutTransfers > Math.max(1, maxTransfersOutPeerLimit * SOFT_REJECT_MAX_BANDWIDTH_USAGE))
 //				// Send slow-down's if we are using more than 80% of our peer limit.
 //				slowDown("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime, tag);
-			return null;
+			return new Accept();
 		}
 		rejected("TooManyTransfers: Fair sharing between peers", isLocal, isInsert, isSSK, isOfferReply, realTime);
 		return new RejectReason("TooManyTransfers: Fair sharing between peers", true);
