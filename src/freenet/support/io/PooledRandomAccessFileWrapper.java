@@ -10,7 +10,7 @@ import freenet.support.Logger;
 
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing {
     
-    static final int MAX_OPEN_FDS = 100;
+    private static int MAX_OPEN_FDS = 100;
     static int OPEN_FDS = 0;
     static final Deque<PooledRandomAccessFileWrapper> closables = new ArrayDeque<PooledRandomAccessFileWrapper>();
     
@@ -171,6 +171,17 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             Logger.error(this, "Unable to delete "+file+" : "+e, e);
             System.err.println("Unable to delete temporary file "+file);
         }
+    }
+    
+    /** Set the size of the fd pool */
+    public static synchronized void setMaxFDs(int max) {
+        if(max <= 0) throw new IllegalArgumentException();
+        MAX_OPEN_FDS = max;
+    }
+
+    /** How many fd's are open right now? Mainly for tests but also for stats. */
+    public static int getOpenFDs() {
+        return OPEN_FDS;
     }
 
 }
