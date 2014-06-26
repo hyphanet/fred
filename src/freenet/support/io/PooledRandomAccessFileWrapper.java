@@ -91,6 +91,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             if(lockLevel != 0)
                 throw new IllegalStateException("Must unlock first!");
             closed = true;
+            // Essential to avoid memory leak!
+            // Potentially slow but only happens on close(). Plus the size of closables is bounded anyway by the fd limit.
+            closables.remove(this);
             closeRAF();
         }
     }
