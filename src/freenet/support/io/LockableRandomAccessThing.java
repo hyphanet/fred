@@ -10,7 +10,8 @@ import java.io.IOException;
  */
 public interface LockableRandomAccessThing extends RandomAccessThing {
 	
-    /** Keep the RAF open. Does not prevent others from writing to it. */
+    /** Keep the RAF open. Does not prevent others from writing to it. Will block until a slot is available 
+     * if necessary. Hence can deadlock. */
 	public RAFLock lockOpen() throws IOException;
 	
 	abstract class RAFLock {
