@@ -101,7 +101,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
 
             @Override
             protected void innerUnlock() {
-                unlock();
+                PooledRandomAccessFileWrapper.this.unlock();
             }
             
         };
@@ -142,6 +142,8 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     
     /** Should be synchronized on class already */
     private void closeRAF() {
+        if(!(closed || lockLevel == 0)) throw new IllegalStateException();
+        if(raf == null) return;
         try {
             raf.close();
         } catch (IOException e) {
