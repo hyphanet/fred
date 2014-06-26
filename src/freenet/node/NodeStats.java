@@ -1346,7 +1346,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 //	}
 
 	private int getLimitSeconds(boolean realTimeFlag) {
-		return realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+		int x = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+		// Increase the limit to compensate for the early warning threshold. We want and expect load to 
+		// average around the threshold, so we target that.
+		x = (int) ((double)x / EARLY_WARNING);
+		return x;
 	}
 
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
