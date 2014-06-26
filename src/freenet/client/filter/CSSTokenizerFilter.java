@@ -1596,8 +1596,8 @@ class CSSTokenizerFilter {
 				if(!ElementInfo.isValidPseudoClass(pseudoClass)) {
 					isValid=false;
 				} else if(ElementInfo.isBannedPseudoClass(pseudoClass)) {
-			        return "";
-		        }
+					return "";
+				}
 			}
 
 			if(isValid && attSelections!=null)
@@ -2268,20 +2268,20 @@ class CSSTokenizerFilter {
 						}
 						else if(s2Comma && "".equals(filtered))
 						{
-						    // There was a comma, so filteredTokens already contains some tokens.
-						    // The current selector is valid, yet banned. Ignore it.
-						    s2Comma=false;
-						    filteredTokens.append(ws);
-						    filteredTokens.append(" {");
+							// There was a comma, so filteredTokens already contains some tokens.
+							// The current selector is valid, yet banned. Ignore it.
+							s2Comma=false;
+							filteredTokens.append(ws);
+							filteredTokens.append(" {");
 						}
-				        else
-				        {
-                            ignoreElementsS2=true;
-                            // If there was a comma, filteredTokens may contain some tokens.
-                            // These are invalid, as per the spec: we wipe the whole selector out.
-                            // Also, not wiping filteredTokens here does bad things:
-                            // we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
-                            filteredTokens.setLength(0);
+						else
+						{
+							ignoreElementsS2=true;
+							// If there was a comma, filteredTokens may contain some tokens.
+							// These are invalid, as per the spec: we wipe the whole selector out.
+							// Also, not wiping filteredTokens here does bad things:
+							// we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
+							filteredTokens.setLength(0);
 						}
 						if(logDEBUG) Logger.debug(this, "STATE2 CASE { filtered elements"+filtered);
 					} else {
@@ -2348,8 +2348,8 @@ class CSSTokenizerFilter {
 					}
 					else if("".equals(filtered))
 					{
-					    // This selector was banned. Ignore it.
-					    filteredTokens.append(ws);
+						// This selector was banned. Ignore it.
+						filteredTokens.append(ws);
 					}
 					buffer.setLength(0);
 					break;
@@ -3469,7 +3469,7 @@ class CSSTokenizerFilter {
 	 */
 	static class CSSPropertyVerifier
 	{
-	    public final boolean onlyValueVerifier;
+		public final boolean onlyValueVerifier;
 		public final boolean allowCommaDelimiters;
 		
 		public final Set<String> allowedValues; //immutable HashSet for all String constants that this CSS property can assume like "inherit"
@@ -3480,13 +3480,13 @@ class CSSTokenizerFilter {
 		 * constructor like passing in,re would set isInteger and isReal.
 		 */
 		public final boolean isInteger;    //in
-		public final boolean isReal;	   //re
+		public final boolean isReal;       //re
 		public final boolean isPercentage; //pe
-		public final boolean isLength;	   //le
+		public final boolean isLength;     //le
 		public final boolean isAngle;      //an
 		public final boolean isColor;      //co
-		public final boolean isURI;	       //ur
-		public final boolean isShape;	   //sh
+		public final boolean isURI;        //ur
+		public final boolean isShape;      //sh
 		public final boolean isString;     //st
 		public final boolean isCounter;    //co
 		public final boolean isIdentifier; //id
@@ -3542,11 +3542,11 @@ class CSSTokenizerFilter {
 			this.allowCommaDelimiters = allowCommaDelimiters;
 
 			boolean isInteger, isReal, isPercentage, isLength, isAngle, isColor,
-			        isURI, isShape, isString, isCounter, isIdentifier, isTime,
-			        isFrequency, isTransform;
-	        isInteger = isReal = isPercentage = isLength = isAngle = isColor = isURI
-                = isShape = isString = isCounter = isIdentifier = isTime
-                = isFrequency = isTransform = false;
+				isURI, isShape, isString, isCounter, isIdentifier, isTime,
+				isFrequency, isTransform;
+			isInteger = isReal = isPercentage = isLength = isAngle = isColor = isURI
+				= isShape = isString = isCounter = isIdentifier = isTime
+				= isFrequency = isTransform = false;
 			if(possibleValues != null) {
 				for(String possibleValue : possibleValues) {
 					if("in".equals(possibleValue))
@@ -3595,21 +3595,21 @@ class CSSTokenizerFilter {
 			this.isTransform = isTransform;
 			
 			if (allowedValues != null) {
-			    this.allowedValues = Collections.unmodifiableSet(new HashSet<String>(allowedValues));
-		    } else {
-		        this.allowedValues = null;
-		    }
+				this.allowedValues = Collections.unmodifiableSet(new HashSet<String>(allowedValues));
+			} else {
+				this.allowedValues = null;
+			}
 
-		    if (allowedMedia != null) {
-			    this.allowedMedia = Collections.unmodifiableSet(new HashSet<String>(allowedMedia));
-		    } else {
-		        this.allowedMedia = null;
-		    }
+			if (allowedMedia != null) {
+				this.allowedMedia = Collections.unmodifiableSet(new HashSet<String>(allowedMedia));
+			} else {
+				this.allowedMedia = null;
+			}
 
 			if (parseExpression != null) {
 				this.parserExpressions = Collections.unmodifiableList(new ArrayList<String>(parseExpression));
 			} else {
-			    this.parserExpressions = Collections.emptyList();
+				this.parserExpressions = Collections.emptyList();
 			}
 		}
 

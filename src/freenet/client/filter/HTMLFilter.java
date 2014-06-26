@@ -864,19 +864,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-    public static Set<String> getAllowedHTMLTags() {
-        return Collections.unmodifiableSet(allowedHTMLTags);
-    }
+	public static Set<String> getAllowedHTMLTags() {
+		return Collections.unmodifiableSet(allowedHTMLTags);
+	}
 
-    private static final Set<String> allowedHTMLTags = new HashSet<String>();
+	private static final Set<String> allowedHTMLTags = new HashSet<String>();
 	static final Map<String, TagVerifier> allowedTagsVerifiers =
-	    Collections.unmodifiableMap(getAllowedTagVerifiers());
+		Collections.unmodifiableMap(getAllowedTagVerifiers());
 	private static final String[] emptyStringArray = new String[0];
 
 	private static Map<String, TagVerifier> getAllowedTagVerifiers()
 	{
-	    Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
-	    
+		Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
+		
 		allowedTagsVerifiers.put("?xml", new XmlTagVerifier());
 		allowedTagsVerifiers.put(
 			"!doctype",
