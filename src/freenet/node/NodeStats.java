@@ -1953,32 +1953,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			rootThreadGroup.enumerate(threads);
 			if(threads[threads.length-1] == null) break;
 		}
-		
+
 		return threads;
-	}
-
-	/**
-	 * Get a list of threads with the given normalized name.
-	 */
-	public ArrayList<NativeThread> getNativeThreadsByNormalizedName(String normalizedThreadName) {
-		Thread[] threads = getThreads();
-		
-		ArrayList<NativeThread> result = new ArrayList<NativeThread>(threads.length);
-		
-		for(Thread thread : threads) {
-			if(thread == null)
-				break;
-		
-			if(!(thread instanceof NativeThread))
-				continue;
-			
-			final NativeThread nt = (NativeThread)thread;
-		
-			if(nt.getNormalizedName().equals(normalizedThreadName))
-				result.add(nt);
-		}
-
-		return result;
 	}
 
 	public SimpleFieldSet exportVolatileFieldSet() {
