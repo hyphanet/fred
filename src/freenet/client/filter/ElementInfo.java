@@ -89,7 +89,7 @@ public class ElementInfo {
 			"zh-hant"
 	)));
 
-	public final static Set<String> MEDIA = 
+	public static final Set<String> MEDIA = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"all",
 			"aural",
@@ -104,7 +104,7 @@ public class ElementInfo {
 			"tv"
 	)));
 
-	public final static Set<String> VISUALMEDIA =
+	public static final Set<String> VISUALMEDIA =
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"handheld",
 			"print",
@@ -114,13 +114,13 @@ public class ElementInfo {
 			"tv"
 	)));
 
-	public final static Set<String> AURALMEDIA = 
+	public static final Set<String> AURALMEDIA = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"speech",
 			"aural"
 	)));
 
-	public final static Set<String> VISUALPAGEDMEDIA = 
+	public static final Set<String> VISUALPAGEDMEDIA = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"embossed",
 			"handheld",
@@ -131,7 +131,7 @@ public class ElementInfo {
 			"tv"
 	)));
 
-	public final static Set<String> VISUALINTERACTIVEMEDIA =
+	public static final Set<String> VISUALINTERACTIVEMEDIA =
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"braille",
 			"handheld",
@@ -143,7 +143,7 @@ public class ElementInfo {
 			"tv"
 	)));
 
-	public final static Set<String> FONTS =
+	public static final Set<String> FONTS =
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"arial",
 			"helvetica",
@@ -182,7 +182,7 @@ public class ElementInfo {
 			"new york6"
 	)));
 
-	public final static Set<String> GENERIC_FONT_KEYWORDS = 
+	public static final Set<String> GENERIC_FONT_KEYWORDS = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"serif",
 			"sans-serif",
@@ -191,14 +191,14 @@ public class ElementInfo {
 			"monospace"
 	)));
 
-	public final static Set<String> GENERIC_VOICE_KEYWORDS = 
+	public static final Set<String> GENERIC_VOICE_KEYWORDS = 
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"male",
 			"female",
 			"child"
 	)));
 
-	public final static Set<String> PSEUDOCLASS =
+	public static final Set<String> PSEUDOCLASS =
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			"first-child",
 			"last-child",
@@ -219,7 +219,7 @@ public class ElementInfo {
 			"target"
 	)));
 
-	public final static Set<String> BANNED_PSEUDOCLASS =
+	public static final Set<String> BANNED_PSEUDOCLASS =
 		Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
 			// :visited is considered harmful as it may leak browser history to an adversary.
 			// This may not be obvious immediately, but :visited gives an adversary the
