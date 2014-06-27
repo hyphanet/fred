@@ -114,14 +114,22 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             
         };
         synchronized(closables) {
-            if(closed) throw new IOException("Already closed");
-            if(raf != null) {
-                lockLevel++; // Already open, may or may not be already locked.
-                return lock;
-            } else {
-                // Wait for space.
-                while(true) {
-                    if(OPEN_FDS < MAX_OPEN_FDS) break;
+            while(true) {
+                if(closed) throw new IOException("Already closed");
+                if(raf != null) {
+                    lockLevel++; // Already open, may or may not be already locked.
+                    return lock;
+                } else if(OPEN_FDS < MAX_OPEN_FDS) {
+                    lockLevel++;
+                    OPEN_FDS++;
+                    try {
+                        raf = new RandomAccessFile(file, mode);
+                    } catch (IOException e) {
+                        unlock();
+                        throw e;
+                    }
+                    return lock;
+                } else {
                     PooledRandomAccessFileWrapper closable = closables.pollFirst();
                     if(closable != null) {
                         closable.closeRAF();
@@ -133,17 +141,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                         // Ignore
                     }
                 }
-                OPEN_FDS++;
-                lockLevel++;
             }
-            if(raf != null) return lock;
-            try {
-                raf = new RandomAccessFile(file, mode);
-            } catch (IOException e) {
-                unlock();
-                throw e;
-            }
-            return lock;
         }
     }
     
