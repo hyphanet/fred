@@ -125,7 +125,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                     try {
                         raf = new RandomAccessFile(file, mode);
                     } catch (IOException e) {
-                        unlock();
+                        // Don't call unlock(), don't want to add to closables.
+                        lockLevel--;
+                        OPEN_FDS--;
                         throw e;
                     }
                     return lock;
