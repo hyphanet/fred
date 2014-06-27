@@ -33,6 +33,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         this.mode = mode;
         lockLevel = 0;
         // Check the parameters and get the length.
+        // Also, unlock() adds to the closeables queue, which is essential.
         RAFLock lock = lockOpen();
         try {
             long currentLength = raf.length();
