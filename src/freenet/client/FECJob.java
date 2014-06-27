@@ -17,6 +17,7 @@ import freenet.support.api.BucketFactory;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+@Deprecated // See NewFECCodec
 public class FECJob {
 	
 	private transient static volatile boolean logMINOR;

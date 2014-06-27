@@ -35,6 +35,7 @@ import freenet.support.io.NativeThread;
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+@Deprecated // See NewFECCodec, MemoryLimitedJobRunner, new splitfile code... (architecture is a bit different ...)
 public class FECQueue {
 	
 	private transient LinkedList<FECJob>[] transientQueue;
