@@ -86,7 +86,9 @@ public class OnionFECCodec extends NewFECCodec {
             if(o instanceof CodecKey) {
                 CodecKey key = (CodecKey)o;
                 return (key.n == n) && (key.k == k);
-            } else return false;
+            } else {
+                return false;
+            }
         }
 
         @Override
