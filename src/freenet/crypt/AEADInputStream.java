@@ -31,7 +31,9 @@ public class AEADInputStream extends FilterInputStream {
      * @param mainCipher The BlockCipher for encrypting data. E.g. AES; not a block mode. This will
      * be used for encrypting a fairly large amount of data so could be any of the 3 BC AES impl's.
      * @param hashCipher The BlockCipher for the final hash. E.g. AES, not a block mode. This will
-     * not be used very much so should be e.g. an AESLightEngine. */
+     * not be used very much so should be e.g. an AESLightEngine. 
+     * @param oldOCB States if the old depreciated OCB nonce size should be used or the new size. 
+     * BC's OCBBlockCipher class doesn't support the larger old nonce size anymore. */
     public AEADInputStream(InputStream is, byte[] key, BlockCipher hashCipher, 
             BlockCipher mainCipher, boolean oldOCB) throws IOException {
         super(is);
