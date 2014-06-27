@@ -114,9 +114,8 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         };
         synchronized(closables) {
             if(closed) throw new IOException("Already closed");
-            if(lockLevel > 0) {
-                // Already locked. Ok.
-                lockLevel++;
+            if(raf != null) {
+                lockLevel++; // Already open, may or may not be already locked.
                 return lock;
             } else {
                 // Wait for space.
