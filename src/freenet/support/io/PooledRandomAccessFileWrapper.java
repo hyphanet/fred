@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import freenet.support.Logger;
 
@@ -15,7 +17,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     
     private static int MAX_OPEN_FDS = 100;
     static int OPEN_FDS = 0;
-    static final Deque<PooledRandomAccessFileWrapper> closables = new ArrayDeque<PooledRandomAccessFileWrapper>();
+    static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
     
     public final File file;
     private final String mode;
@@ -132,7 +134,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                     }
                     return lock;
                 } else {
-                    PooledRandomAccessFileWrapper closable = closables.pollFirst();
+                    PooledRandomAccessFileWrapper closable = pollFirstClosable();
                     if(closable != null) {
                         closable.closeRAF();
                         continue;
@@ -144,6 +146,18 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                     }
                 }
             }
+        }
+    }
+    
+    private PooledRandomAccessFileWrapper pollFirstClosable() {
+        synchronized(closables) {
+            Iterator<PooledRandomAccessFileWrapper> it = closables.iterator();
+            if (it.hasNext()) {
+                PooledRandomAccessFileWrapper first = it.next();
+                it.remove();
+                return first;
+            }
+            return null;
         }
     }
     
@@ -164,7 +178,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         synchronized(closables) {
             lockLevel--;
             if(lockLevel > 0) return;
-            closables.addLast(this);
+            closables.add(this);
             closables.notify();
         }
     }
