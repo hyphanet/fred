@@ -45,7 +45,7 @@ public class OnionFECCodec extends NewFECCodec {
     /** Cache of PureCode by {k,n}. The memory usage is relatively small so we account for it in 
      * the FEC jobs, see maxMemoryOverheadDecode() etc. */
     private synchronized static PureCode getCodec(int k, int n) {
-        MyKey key = new MyKey(k, n);
+        CodecKey key = new CodecKey(k, n);
         SoftReference<PureCode> codeRef;
         while((codeRef = recentlyUsedCodecs.peekValue()) != null) {
             // Remove oldest codecs if they have been GC'ed.
@@ -68,23 +68,23 @@ public class OnionFECCodec extends NewFECCodec {
         return code;
     }
     
-    private static final LRUMap<MyKey, SoftReference<PureCode>> recentlyUsedCodecs = LRUMap.createSafeMap();
+    private static final LRUMap<CodecKey, SoftReference<PureCode>> recentlyUsedCodecs = LRUMap.createSafeMap();
 
-    private static class MyKey implements Comparable<MyKey> {
+    private static class CodecKey implements Comparable<CodecKey> {
         /** Number of input blocks */
         int k;
         /** Number of output blocks, including input blocks */
         int n;
 
-        public MyKey(int k, int n) {
+        public CodecKey(int k, int n) {
             this.n = n;
             this.k = k;
         }
 
         @Override
         public boolean equals(Object o) {
-            if(o instanceof MyKey) {
-                MyKey key = (MyKey)o;
+            if(o instanceof CodecKey) {
+                CodecKey key = (CodecKey)o;
                 return (key.n == n) && (key.k == k);
             } else return false;
         }
@@ -95,7 +95,7 @@ public class OnionFECCodec extends NewFECCodec {
         }
 
         @Override
-        public int compareTo(MyKey o) {
+        public int compareTo(CodecKey o) {
             if(n > o.n) return 1;
             if(n < o.n) return -1;
             if(k > o.k) return 1;
