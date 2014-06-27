@@ -92,6 +92,21 @@ public class PooledRandomAccessFileWrapperTest extends BaseRandomAccessThingTest
         b.free();
     }
     
+    /** Thanks bertm */
+    public void testLocksB() throws IOException {
+        PooledRandomAccessFileWrapper.setMaxFDs(1);
+        PooledRandomAccessFileWrapper a = construct(0);
+        PooledRandomAccessFileWrapper b = construct(0);
+        RAFLock lock = b.lockOpen();
+        lock.unlock();
+        a.close();
+        b.close();
+        a.free();
+        b.free();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 0);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 0);
+    }
+    
     /** Test that locking enforces limits and blocks when appropriate. 
      * @throws InterruptedException */
     public void testLockBlocking() throws IOException, InterruptedException {
