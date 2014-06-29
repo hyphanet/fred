@@ -43,6 +43,7 @@ public class MemoryLimitedJobRunner {
             MemoryLimitedJob job = jobs.peekFirst();
             if(job == null) return;
             if(job.initialAllocation + counter <= capacity) {
+                jobs.removeFirst();
                 startJob(job);
             } else return;
         }
@@ -50,7 +51,6 @@ public class MemoryLimitedJobRunner {
     
     private void startJob(final MemoryLimitedJob job) {
         counter += job.initialAllocation;
-        jobs.removeFirst();
         executor.execute(new PrioRunnable() {
 
             @Override
