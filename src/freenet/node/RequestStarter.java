@@ -80,12 +80,12 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private final boolean isSSK;
 	final boolean realTime;
 	private long lastDelay;
-	private final long ALCHEMY_DELAY_WEIGHT;
-	private final long LAST_DEALY_WEIGHT;
-	private final long TOADS_DELAY_WEIGHT;
-	private final long MIN_DELAY;
-	private final long MAX_ALCHEMY_DELAY;
-	
+	private static final long ALCHEMY_DELAY_WEIGHT = 24; // \
+	private static final long LAST_DEALY_WEIGHT = 75;    //  > Weights to give each of the delays when averaging them together.
+	private static final long TOADS_DELAY_WEIGHT = 1;    // /
+	private static final long MIN_ALCHEMY_DELAY = 5;     // shortest delay between requests, in ms.
+	private static final long MAX_ALCHEMY_DELAY = 500;   // longest delay between requests, in ms.
+
 	static final int MAX_WAITING_FOR_SLOTS = 50;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
@@ -102,11 +102,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		this.isSSK = isSSK;
 		this.realTime = realTime;
 		this.lastDelay = 4000; // start slowly
-		this.ALCHEMY_DELAY_WEIGHT = 24; // \
-		this.LAST_DEALY_WEIGHT = 75;    //  > Weights to give each of the delays when averaging them together.
-		this.TOADS_DELAY_WEIGHT = 1;    // /
-		this.MIN_ALCHEMY_DELAY = 5;     // shortest delay between requests, in ms.
-		this.MAX_ALCHEMY_DELAY = 500;   // longest delay between requests, in ms.
 	}
 
 	void setScheduler(RequestScheduler sched) {
