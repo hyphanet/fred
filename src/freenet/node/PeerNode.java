@@ -2924,7 +2924,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 	
 	public boolean isRoutingBackedOff(boolean realTime) {
 		long now = System.currentTimeMillis();
-		double pingTime; double mPeerPingTime;
+		double pingTime;
+		double mPeerPingTime;
 		synchronized(this) {
 			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
@@ -3152,20 +3153,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
 		synchronized(this) {
-			// Don't un-backoff if still backed off
 			long until;
-			if (true) { //oo (now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
-				if(realTime)
-					routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
-				else
-					routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
-				if(logMINOR)
-					Logger.minor(this, "Resetting routing backoff on " + peer);
-			} else {
-				if(logMINOR)
-					Logger.minor(this, "Ignoring successNotOverload: " + (until - now) + "ms remaining on routing backoff on " + peer);
-				return;
-			}
+			if(realTime)
+				routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
+			else
+				routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
+			if(logMINOR)
+				Logger.minor(this, "Resetting routing backoff on " + peer);
 		}
 		setPeerNodeStatus(now);
 	}
@@ -3234,20 +3228,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
 		synchronized(this) {
-			// Don't un-backoff if still backed off
 			long until;
-			if (true) { //oo (now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
-				if(realTime)
-					routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
-				else
-					routingBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
-				if(logMINOR)
-					Logger.minor(this, "Resetting transfer backoff on " + peer);
-			} else {
-				if(logMINOR)
-					Logger.minor(this, "Ignoring transfer success: " + (until - now) + "ms remaining on transfer backoff on " + peer);
-				return;
-			}
+			if(realTime)
+				routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+			else
+				routingBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
+			if(logMINOR)
+				Logger.minor(this, "Resetting transfer backoff on " + peer);
 		}
 		setPeerNodeStatus(now);
 	}
