@@ -316,7 +316,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 							+ configName, MAX_PARAM_VALUE_SIZE);
 				}
 
-				if (!(o.getValueString().equals(value))) {
+				if (!(o.getValueDisplayString().equals(value))) {
 
 					if (logMINOR) {
 						Logger.minor(this, "Changing " + prefix + '.'
@@ -517,7 +517,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				displayedConfigElements++;
 				String configName = o.getName();
 				String fullName = subConfig.getPrefix() + '.' + configName;
-				String value = o.getValueString();
+				String value = o.getValueDisplayString();
 
 				if (value == null) {
 					Logger.error(this, fullName
