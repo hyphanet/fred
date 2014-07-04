@@ -525,7 +525,7 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode foafLinkInfobox = nextTableCell.addChild("div", "class", "infobox");
 			foafLinkInfobox.addChild("div", "class", "infobox-header", "FOAF\u00a0Link-Length\u00a0Distribution");
 			HTMLNode foafLinkTable = foafLinkInfobox.addChild("div", "class", "infobox-content").addChild("table");
-			addFOAFLinkLengthHistogram(foafLinkTable, peerNodeStatuses, myLocation);
+			addFOAFLinkLengthHistogram(foafLinkTable, peerNodeStatuses);
 		}
 		
 		}
@@ -1495,7 +1495,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void addFOAFLinkLengthHistogram(HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses, double myLoc) {
+	private void addFOAFLinkLengthHistogram(HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses) {
 		int[] peersLinkHistogram = new int[HISTOGRAM_LENGTH];
 		
 		HTMLNode peerHistogramLegendTableRow = circleTable.addChild("tr");
@@ -1515,7 +1515,9 @@ public class StatisticsToadlet extends Toadlet {
 			if (foafLocs == null) continue;
 			
 			for (double foafLoc : foafLocs) {
-				int idx = (int)Math.floor(Location.distance(peerLoc, foafLoc) * HISTOGRAM_LENGTH * 2);
+				if (!Location.isValid(foafLoc)) continue;
+				
+				int idx = (int)Math.floor(Location.distance(peerLoc, foafLoc) * HISTOGRAM_LENGTH / 0.5);
 				peersLinkHistogram[idx]++;
 				peersLinkCount++;
 			}
@@ -1525,10 +1527,10 @@ public class StatisticsToadlet extends Toadlet {
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
 			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
 			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
-			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double) i) / ( HISTOGRAM_LENGTH * 2 )));
+			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double)i) / HISTOGRAM_LENGTH * 0.5));
 			if (peersLinkCount == 0) continue;
 
-			double histogramFraction = ((double) peersLinkHistogram[ i ] ) / peersLinkCount;
+			double histogramFraction = ((double)peersLinkHistogram[i]) / peersLinkCount;
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramFraction) + "; width: 100%;" }, "\u00a0");
 			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramDisconnected", "height: " + fix3pctUS.format(cumulativeFraction) + "; width: 100%;" }, "\u00a0");
 			cumulativeFraction += histogramFraction;
