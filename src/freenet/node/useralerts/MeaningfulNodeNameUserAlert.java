@@ -52,7 +52,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		itemNode.addChild("span", new String[]{ "class", "title", "style" },
 				new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o.getDefault() }), 
 				"cursor: help;" }).addChild(o.getShortDescNode());
-		itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueString() });
+		itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueDisplayString() });
 		itemNode.addChild("span", "class", "configlongdesc").addChild(o.getLongDescNode());
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("UserAlert.apply") });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", NodeL10n.getBase().getString("UserAlert.reset") });
