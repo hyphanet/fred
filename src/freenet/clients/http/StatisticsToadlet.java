@@ -515,13 +515,17 @@ public class StatisticsToadlet extends Toadlet {
 
 			// success rate per location
 			int[] locationSuccessRatesArray = stats.chkSuccessRatesByLocation.getPercentageArray(1000);
-
-			{
-				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
-				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Local\u00a0CHK\u00a0Success\u00a0Rates\u00a0By\u00a0Location");
-				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
-				addSpecialisation(nodeSpecialisationTable, myLocation, 1000, locationSuccessRatesArray);
-			}
+			HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
+			nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Local\u00a0CHK\u00a0Success\u00a0Rates\u00a0By\u00a0Location");
+			HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
+			addSpecialisation(nodeSpecialisationTable, myLocation, 1000, locationSuccessRatesArray);
+			nextTableCell = overviewTableRow.addChild("td");
+			
+			// FOAF link-length distribution box
+			HTMLNode foafLinkInfobox = nextTableCell.addChild("div", "class", "infobox");
+			foafLinkInfobox.addChild("div", "class", "infobox-header", "FOAF\u00a0Link-Length\u00a0Distribution");
+			HTMLNode foafLinkTable = foafLinkInfobox.addChild("div", "class", "infobox-content").addChild("table");
+			addFOAFLinkLengthHistogram(foafLinkTable, peerNodeStatuses);
 		}
 		
 		}
@@ -1488,6 +1492,48 @@ public class StatisticsToadlet extends Toadlet {
 					fix3pctUS.format(((double)remotelyOriginatingRequests[i]) / remotelyOriginatingRequestsCount) +
 					"; width: 100%;" },
 				"\u00a0");
+		}
+	}
+
+	private void addFOAFLinkLengthHistogram(HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses) {
+		int[] peersLinkHistogram = new int[HISTOGRAM_LENGTH];
+		
+		HTMLNode peerHistogramLegendTableRow = circleTable.addChild("tr");
+		HTMLNode peerHistogramGraphTableRow = circleTable.addChild("tr");
+		HTMLNode peerHistogramLegendCell;
+		HTMLNode peerHistogramGraphCell;
+
+		int peersLinkCount = 0;
+		for (PeerNodeStatus pns : peerNodeStatuses) {
+			if (!pns.isSearchable()) continue;
+			if (!pns.isRoutable()) continue;
+
+			double peerLoc = pns.getLocation();
+			if (!Location.isValid(peerLoc)) continue;
+
+			double[] foafLocs = pns.getPeersLocation();
+			if (foafLocs == null) continue;
+			
+			for (double foafLoc : foafLocs) {
+				if (!Location.isValid(foafLoc)) continue;
+				
+				int idx = (int)Math.floor(Location.distance(peerLoc, foafLoc) * HISTOGRAM_LENGTH / 0.5);
+				peersLinkHistogram[idx]++;
+				peersLinkCount++;
+			}
+		}
+		
+		double cumulativeFraction = 0;
+		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
+			peerHistogramLegendCell = peerHistogramLegendTableRow.addChild("td");
+			peerHistogramGraphCell = peerHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
+			peerHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p2.format(((double)i) / HISTOGRAM_LENGTH * 0.5));
+			if (peersLinkCount == 0) continue;
+
+			double histogramFraction = ((double)peersLinkHistogram[i]) / peersLinkCount;
+			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramFraction) + "; width: 100%;" }, "\u00a0");
+			peerHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramDisconnected", "height: " + fix3pctUS.format(cumulativeFraction) + "; width: 100%;" }, "\u00a0");
+			cumulativeFraction += histogramFraction;
 		}
 	}
 
