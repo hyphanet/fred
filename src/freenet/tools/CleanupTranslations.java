@@ -72,8 +72,11 @@ public class CleanupTranslations {
 			if(!changed) continue;
 			FileOutputStream fos = new FileOutputStream(f);
 			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-			osw.write(sw.toString());
-			osw.close();
+			try {
+				osw.write(sw.toString());
+			} finally {
+				osw.close();
+			}
 			System.out.println("Rewritten "+f);
 		}
 	}
