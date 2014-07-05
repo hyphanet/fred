@@ -10,6 +10,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 
+import freenet.support.Logger;
+import freenet.support.LoggerHook;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 
@@ -19,7 +21,8 @@ public class CleanupTranslations {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, LoggerHook.InvalidThresholdException {
+		Logger.setupStdoutLogging(Logger.LogLevel.ERROR, "");
 		File engFile = new File("src/freenet/l10n/freenet.l10n.en.properties");
 		SimpleFieldSet english = SimpleFieldSet.readFrom(engFile, false, true);
 		File[] translations = new File("src/freenet/l10n").listFiles();
