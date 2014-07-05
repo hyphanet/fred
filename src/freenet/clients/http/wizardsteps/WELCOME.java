@@ -48,7 +48,7 @@ public class WELCOME implements Step {
 		//Add option dropdown for languages
 		Option<?> language = config.get("node").getOption("l10n");
 		EnumerableOptionCallback l10nCallback = (EnumerableOptionCallback)language.getCallback();
-		HTMLNode dropDown = ConfigToadlet.addComboBox(language.getValueString(), l10nCallback, language.getName(), false);
+		HTMLNode dropDown = ConfigToadlet.addComboBox(language.getValueDisplayString(), l10nCallback, language.getName(), false);
 		//Submit automatically upon selection if Javascript.
 		dropDown.addAttribute("onchange", "this.form.submit()");
 		languageForm.addChild(dropDown);

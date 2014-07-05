@@ -39,9 +39,14 @@ public class LongOption extends Option<Long> {
 	private String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("LongOption." + key, pattern, value);
 	}
-	
+
+	@Override
+	protected String toDisplayString(Long val) {
+		return Fields.longToString(val, isSize);
+	}
+
 	@Override
 	protected String toString(Long val) {
-		return Fields.longToString(val, isSize);
+		return Fields.longToString(val, false);
 	}
 }
