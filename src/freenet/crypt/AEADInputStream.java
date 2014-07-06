@@ -31,13 +31,22 @@ public class AEADInputStream extends FilterInputStream {
      * @param mainCipher The BlockCipher for encrypting data. E.g. AES; not a block mode. This will
      * be used for encrypting a fairly large amount of data so could be any of the 3 BC AES impl's.
      * @param hashCipher The BlockCipher for the final hash. E.g. AES, not a block mode. This will
-     * not be used very much so should be e.g. an AESLightEngine. */
+     * not be used very much so should be e.g. an AESLightEngine. 
+     * @param oldOCB States if the old depreciated OCB nonce size should be used or the new size. 
+     * BC's OCBBlockCipher class doesn't support the larger old nonce size anymore. */
     public AEADInputStream(InputStream is, byte[] key, BlockCipher hashCipher, 
-            BlockCipher mainCipher) throws IOException {
+            BlockCipher mainCipher, boolean oldOCB) throws IOException {
         super(is);
-        byte[] nonce = new byte[mainCipher.getBlockSize()];
+        byte[] nonce;
+        if(oldOCB){
+            nonce = new byte[16];
+            cipher = new OldOCBBlockCipher(hashCipher, mainCipher);
+        }
+        else{
+            nonce = new byte[15];
+            cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        }
         new DataInputStream(is).readFully(nonce);
-        cipher = new OCBBlockCipher(hashCipher, mainCipher);
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(false, params);
@@ -193,7 +202,7 @@ public class AEADInputStream extends FilterInputStream {
     public static AEADInputStream createAES(InputStream is, byte[] key) throws IOException {
         AESEngine mainCipher = new AESEngine();
         AESLightEngine hashCipher = new AESLightEngine();
-        return new AEADInputStream(is, key, hashCipher, mainCipher);
+        return new AEADInputStream(is, key, hashCipher, mainCipher, true);
     }
 
 }
