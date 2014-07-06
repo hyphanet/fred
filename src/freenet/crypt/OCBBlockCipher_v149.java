@@ -28,6 +28,7 @@ import org.bouncycastle.util.Arrays;
  * This is a non-binding summary of a legal document (the link above). The parameters of the license
  * are specified in the license document and that document is controlling. </blockquote>
  */
+@Deprecated 
 public class OCBBlockCipher_v149
     implements AEADBlockCipher
 {
