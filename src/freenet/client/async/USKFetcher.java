@@ -1035,7 +1035,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	
 	/** Call synchronized, then call startDBRs() */
 	private DBRAttempt[] addDBRs(ClientContext context) {
-		USKDateHint date = new USKDateHint();
+		USKDateHint date = USKDateHint.now();
 		ClientSSK[] ssks = date.getRequestURIs(this.origUSK);
 		DBRAttempt[] atts = new DBRAttempt[ssks.length];
 		int x = 0;
