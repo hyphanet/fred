@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import com.sun.nio.sctp.InvalidStreamException;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -2422,19 +2424,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	
 	/** @returns the modulus length in bytes for a given negType */
 	private int getModulusLength(int negType) {
+	    if(negType < 9)
+	        throw new IllegalArgumentException();
+	    else
 	        return ecdhCurveToUse.modulusSize;
 	}
 	
 	private int getSignatureLength(int negType) {
 	    if(negType < 9)
-	       return Node.SIGNATURE_PARAMETER_LENGTH*2; // R and S
+	        throw new IllegalArgumentException();
 	    else
-	       return ECDSA.Curves.P256.maxSigSize;
+	        return ECDSA.Curves.P256.maxSigSize;
 	}
 	
 	private int getNonceSize(int negType) {
 	    if(negType < 9)
-	        return 8;
+	        throw new IllegalArgumentException();
 	    else
 	        return 16;
 	}
