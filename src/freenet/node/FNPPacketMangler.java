@@ -537,7 +537,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10)) {
+		if(!(negType == 9 || negType == 10)) {
 			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -597,7 +597,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10)) {
+		if(!(negType == 9 || negType == 10)) {
 			if(negType > 10)
 				Logger.error(this, "Unknown neg type: "+negType);
 			else
@@ -672,11 +672,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			return;
 		}
 
-		if(negType >= 0 && negType < 6) {
+		if(negType >= 0 && negType < 9) {
 			// negType 0 through 5 no longer supported, used old FNP.
 			Logger.warning(this, "Old neg type "+negType+" not supported");
 			return;
-		} else if (negType == 6 || negType == 7 || negType == 8 || negType == 9 || negType == 10) {
+		} else if (negType == 9 || negType == 10) {
 			// negType == 10 => Changes the method of ack encoding (from single-ack to cummulative range acks)
 		    // negType == 9 => Lots of changes:
 		    //      Security fixes:
@@ -2218,10 +2218,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	@Override
 	public int[] supportedNegTypes(boolean forPublic) {
-		if(forPublic)
-			return new int[] { 6, 7, 8, 9, 10 };
-		else
-			return new int[] { 7, 8, 9, 10 };
+		return new int[] { 9, 10 };
 	}
 
 	@Override
