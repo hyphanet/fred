@@ -4435,9 +4435,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	/** Length of signature parameters R and S */
-	static final int SIGNATURE_PARAMETER_LENGTH = 32;
-
 	public ClientKeyBlock fetchKey(ClientKey key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
 		if(key instanceof ClientCHK)
 			return fetch((ClientCHK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
