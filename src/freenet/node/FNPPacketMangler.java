@@ -759,8 +759,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	{
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
-		// Pre negtype 9 we were sending Ni as opposed to Ni'
-		int nonceSize = (negType < 9 ? getNonceSize(negType) : HASH_LENGTH);
+		int nonceSize = HASH_LENGTH;
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
 		// FIXME: follow the spec and send IDr' ?
 		if(payload.length < nonceSize + modulusLength + 3 + (unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)) {
@@ -894,10 +893,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				pn.jfkNoncesSent.removeFirst();
 		}
 
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		int nonceSizeHashed = HASH_LENGTH;
 		byte[] message1 = new byte[nonceSizeHashed+modulusLength+(unknownInitiator ? NodeCrypto.IDENTITY_LENGTH : 0)];
 
-		System.arraycopy((negType > 8 ? SHA256.digest(nonce) : nonce), 0, message1, offset, nonceSizeHashed);
+		System.arraycopy(SHA256.digest(nonce), 0, message1, offset, nonceSizeHashed);
 		offset += nonceSizeHashed;
 		System.arraycopy(myExponential, 0, message1, offset, modulusLength);
 
@@ -1003,9 +1002,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	{
 		long t1=System.currentTimeMillis();
 		int modulusLength = getModulusLength(negType);
-		// Pre negtype 9 we were sending Ni as opposed to Ni'
 		int nonceSize = getNonceSize(negType);
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		int nonceSizeHashed = HASH_LENGTH;
 		
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
 		// FIXME: follow the spec and send IDr' ?
@@ -1050,7 +1048,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] myNi = null;
 		synchronized (pn) {
 			for(byte[] buf : pn.jfkNoncesSent) {
-				if(MessageDigest.isEqual(nonceInitiator, (negType > 8 ?  SHA256.digest(buf) : buf)))
+				if(MessageDigest.isEqual(nonceInitiator, SHA256.digest(buf)))
 					myNi = buf;
 			}
 		}
@@ -1138,7 +1136,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		inputOffset += nonceSize;
 		if(logDEBUG) Logger.debug(this, "We are receiving Ni : " + HexUtil.bytesToHex(nonceInitiator));
 		// Before negtype 9 we didn't hash it!
-		byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
+		byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
 		    
 		// Nr
 		byte[] nonceResponder = new byte[nonceSize];
@@ -1227,23 +1225,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
 		int theirInitialMsgID, ourInitialMsgID;
-		if(negType >= 7) {
-			theirInitialMsgID =
+		theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
 					getInitialMessageID(pn.identity, crypto.myIdentity);
-			ourInitialMsgID =
+		ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
 					getInitialMessageID(crypto.myIdentity, pn.identity);
-		} else {
-			theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-			ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
-		}
+		
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
 
@@ -1528,7 +1516,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// verify the signature
 		int dataLen = hisRef.length + 8 + 9;
 		int nonceSize = getNonceSize(negType);
-		int nonceSizeHashed = (negType > 8 ? HASH_LENGTH : nonceSize);
+		int nonceSizeHashed = HASH_LENGTH;
 	    byte[] identity = crypto.getIdentity(negType, unknownInitiator);
 		byte[] locallyGeneratedText = new byte[nonceSizeHashed + nonceSize + modulusLength * 2 + identity.length + dataLen + pn.jfkMyRef.length];
 		int bufferOffset = nonceSizeHashed + nonceSize + modulusLength*2;
@@ -1652,7 +1640,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int signLength = getSignatureLength(negType);
 		int nonceSize = getNonceSize(negType);
         // Pre negtype 9 we were sending Ni as opposed to Ni'
-        byte[] nonceInitiatorHashed = (negType > 8 ? SHA256.digest(nonceInitiator) : nonceInitiator);
+        byte[] nonceInitiatorHashed = SHA256.digest(nonceInitiator);
         
 		long t1=System.currentTimeMillis();
 		BlockCipher c = null;
@@ -1703,7 +1691,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		// save parameters so that we can verify message4
 		byte[] toSign = assembleDHParams(nonceInitiatorHashed, nonceResponder, ourExponential, hisExponential, pn.getIdentity(negType), data);
 		pn.setJFKBuffer(toSign);
-		byte[] sig = (negType < 9 ? crypto.sign(SHA256.digest(toSign)) : crypto.ecdsaSign(toSign));
+		byte[] sig = crypto.ecdsaSign(toSign);
 
 		byte[] computedExponential;
 		computedExponential = ((ECDHLightContext)ctx).getHMACKey(ECDH.getPublicKey(hisExponential, ecdhCurveToUse));
@@ -1733,23 +1721,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[5] & 0xFF) << 16)
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
-		if(negType >= 7) {
-			pn.theirInitialMsgID =
+	    pn.theirInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
 					getInitialMessageID(pn.identity, crypto.myIdentity);
-			pn.ourInitialMsgID =
+		pn.ourInitialMsgID =
 				unknownInitiator ? getInitialMessageID(pn.identity) :
 					getInitialMessageID(crypto.myIdentity, pn.identity);
-		} else {
-			pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-			pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
-		}
 			
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
@@ -1875,7 +1852,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		byte[] params = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, pn.getIdentity(negType), data);
 		if(logMINOR)
 			Logger.minor(this, "Message length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
-		byte[] sig = (negType < 9 ? crypto.sign(SHA256.digest(params)) : crypto.ecdsaSign(params));
+		byte[] sig = crypto.ecdsaSign(params);
 
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
