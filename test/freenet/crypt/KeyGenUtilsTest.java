@@ -33,7 +33,7 @@ public class KeyGenUtilsTest extends TestCase {
 	};
 	
 	private static final KeyPairType[] trueKeyPairTypes = {KeyPairType.ECP256, 
-			KeyPairType.ECP384, KeyPairType.ECP512};
+			KeyPairType.ECP384, KeyPairType.ECP521};
 	@SuppressWarnings("deprecation")
 	private static final KeyPairType falseKeyPairType = KeyPairType.DSA;
 	private static final byte[][] truePublicKeys = {

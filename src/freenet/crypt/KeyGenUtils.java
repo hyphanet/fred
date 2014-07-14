@@ -34,11 +34,10 @@ public class KeyGenUtils {
 	 * and stores the keys in a KeyPair. Can not handle DSA keys.
 	 * @param type The algorithm format that the key pair should be generated for.
 	 * @return Returns the generated key pair
-	 * @throws UnsupportedTypeException 
 	 */
-	public static KeyPair genKeyPair(KeyPairType type) throws UnsupportedTypeException{
+	public static KeyPair genKeyPair(KeyPairType type) {
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(type);
+			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
 		}
 		try {
 			KeyPairGenerator kg = KeyPairGenerator.getInstance(type.alg);
@@ -55,11 +54,10 @@ public class KeyGenUtils {
 	 * @param type The type of key being passed in
 	 * @param pub Public key as byte[]
 	 * @return Public key as PublicKey
-	 * @throws UnsupportedTypeException 
 	 */
-	public static PublicKey getPublicKey(KeyPairType type, byte[] pub) throws UnsupportedTypeException{
+	public static PublicKey getPublicKey(KeyPairType type, byte[] pub){
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(type);
+			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
@@ -77,9 +75,8 @@ public class KeyGenUtils {
 	 * @param type The type of key being passed in
 	 * @param pub Public key as byte[]
 	 * @return Public key as KeyPair with a null private key
-	 * @throws UnsupportedTypeException 
 	 */
-	public static KeyPair getPublicKeyPair(KeyPairType type, byte[] pub) throws UnsupportedTypeException{
+	public static KeyPair getPublicKeyPair(KeyPairType type, byte[] pub) {
 		return getKeyPair(getPublicKey(type, pub), null);
 	}
 
@@ -90,11 +87,10 @@ public class KeyGenUtils {
 	 * @param pub Public key as byte[]
 	 * @param pri Private key as byte[]
 	 * @return The public key and private key in a KeyPair
-	 * @throws UnsupportedTypeException 
 	 */
-	public static KeyPair getKeyPair(KeyPairType type, byte[] pub, byte[] pri) throws UnsupportedTypeException{
+	public static KeyPair getKeyPair(KeyPairType type, byte[] pub, byte[] pri) {
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(type);
+			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
