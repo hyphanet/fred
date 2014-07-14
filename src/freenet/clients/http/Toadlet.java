@@ -66,10 +66,24 @@ public abstract class Toadlet {
 	 * For still being able to figure out the menu entry through which those so-called invisible Toadlets where accessed,
 	 * this function is necessary.
 	 * 
-	 * @return <code>this</code> by default. Override the function to return something else for invisible Toadlets.
+	 * @param context Can be used to decide the return value, for example to check session cookies using {@link SessionManager}.
+	 * @return The result of {@link #showAsToadlet()}, which is <code>this</code> by default. Override this function to return something else for invisible
+	 *         Toadlets as explained above.
 	 */
+	public Toadlet showAsToadlet(ToadletContext context) {
+	    return showAsToadlet();
+	}
+	
+	/**
+	 * @deprecated Use {@link #showAsToadlet(ToadletContext)} instead. Internally fred will always call that function, which calls this function by default,
+	 *             so old code which only overrides this function still works.
+	 *             TODO: When removing this deprecated function, change {@link #showAsToadlet(ToadletContext)} to return <code>this</code> by default, as
+	 *             already specified in its JavaDoc.
+	 * @return <code>this</code>
+	 */
+	@Deprecated
 	public Toadlet showAsToadlet() {
-		return this;
+		return this; // DO NOT CHANGE THIS ANYMORE: Otherwise showAsToadlet(ToadletContext) will not follow the contract of its JavaDoc.
 	}
 	
 	/**
