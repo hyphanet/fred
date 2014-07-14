@@ -56,6 +56,8 @@ public abstract class Toadlet {
 	public abstract String path();
 	
 	/**
+	 * Primary purpose of this function is being overridden in your Toadlet implementations - for the following purpose:
+	 * 
 	 * When displaying this Toadlet, the web interface should show the menu from which it was selected as opened, and mark the 
 	 * appropriate entry as selected in the menu. This function may return the Toadlet whose menu shall be opened and whose
 	 * entry shall be marked as selected in the menu.
