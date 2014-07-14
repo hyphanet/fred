@@ -19,15 +19,18 @@ import java.util.Random;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Map;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.JceLoader;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.node.NodeStarter;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
 import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
 public class Util {
+	public static final SecureRandom sRandom = NodeStarter.getGlobalSecureRandom();
 
 	// bah, i'm tired of chasing down dynamically loaded classes..
 	// this is for getCipherByName()
