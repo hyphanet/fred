@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Map;
-
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.JceLoader;
 import freenet.crypt.ciphers.Rijndael;

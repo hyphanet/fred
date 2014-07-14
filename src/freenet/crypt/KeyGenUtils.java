@@ -28,7 +28,7 @@ import freenet.support.Logger;
  * @author unixninja92
  *
  */
-public class KeyGenUtils {
+public final class KeyGenUtils {
 
 	/**
 	 * Generates a public/private key pair formated for the algorithm specified

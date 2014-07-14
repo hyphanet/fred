@@ -6,10 +6,13 @@ import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.SecretKey;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -51,6 +54,7 @@ public class KeyGenUtilsTest extends TestCase {
 	private static final byte[] trueIV = new byte[16];
 	
 	static{
+		Security.addProvider(new BouncyCastleProvider());
 		KeyPairType type;
 		KeyFactory kf;
 		X509EncodedKeySpec xks;
