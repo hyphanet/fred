@@ -28,7 +28,7 @@ import freenet.support.Logger;
  *
  */
 public class KeyGenUtils {
-	
+
 	/**
 	 * Generates a public/private key pair formated for the algorithm specified
 	 * and stores the keys in a KeyPair. Can not handle DSA keys.
@@ -46,10 +46,10 @@ public class KeyGenUtils {
 			return kg.generateKeyPair();
 		} catch (GeneralSecurityException e) {
 			Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
-        } 
+		} 
 		return null;
 	}
-	
+
 	/**
 	 * Converts a specified key for a specified algorithm to a PublicKey. Can not handle DSA keys.
 	 * @param type The type of key being passed in
@@ -63,14 +63,14 @@ public class KeyGenUtils {
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
-	        X509EncodedKeySpec xks = new X509EncodedKeySpec(pub);
-	        return kf.generatePublic(xks);
+			X509EncodedKeySpec xks = new X509EncodedKeySpec(pub);
+			return kf.generatePublic(xks);
 		} catch (GeneralSecurityException e) {
 			Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Converts a specified key for a specified algorithm to a PublicKey which is then stored in
 	 * a KeyPair. The private key of the KeyPair is null. Can not handle DSA keys.
@@ -82,7 +82,7 @@ public class KeyGenUtils {
 	public static KeyPair getPublicKeyPair(KeyPairType type, byte[] pub) throws UnsupportedTypeException{
 		return getKeyPair(getPublicKey(type, pub), null);
 	}
-	
+
 	/**
 	 * Converts the specified keys for a specified algorithm to PrivateKey and PublicKey
 	 * respectively. These are then placed in a KeyPair. Can not handle DSA keys.
@@ -98,21 +98,21 @@ public class KeyGenUtils {
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
-			
-			PublicKey pubK = getPublicKey(type, pub);
-			
-	        PKCS8EncodedKeySpec pks = new PKCS8EncodedKeySpec(pri);
-	        PrivateKey privK = kf.generatePrivate(pks);
 
-	        return getKeyPair(pubK, privK);
+			PublicKey pubK = getPublicKey(type, pub);
+
+			PKCS8EncodedKeySpec pks = new PKCS8EncodedKeySpec(pri);
+			PrivateKey privK = kf.generatePrivate(pks);
+
+			return getKeyPair(pubK, privK);
 		} catch (GeneralSecurityException e) {
 			Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
 		} catch (UnsupportedTypeException e) {
 			Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
 		}
-        return null;
+		return null;
 	}
-	
+
 	/**
 	 * Takes the PublicKey and PrivateKey and stores them in a KeyPair
 	 * @param pubK Public key as PublicKey
@@ -122,7 +122,7 @@ public class KeyGenUtils {
 	public static KeyPair getKeyPair(PublicKey pubK, PrivateKey privK){
 		return new KeyPair(pubK, privK);
 	}
-	
+
 	/**
 	 * Generates a secret key for the specified symmetric algorithm
 	 * @param type Type of key to generate
@@ -132,13 +132,13 @@ public class KeyGenUtils {
 		try{
 			KeyGenerator kg = KeyGenerator.getInstance(type.alg);
 			kg.init(type.keySize);
-	    	return kg.generateKey();
+			return kg.generateKey();
 		} catch (NoSuchAlgorithmException e) {
 			Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
 		}
-    	return null;
+		return null;
 	}
-	
+
 	/**
 	 * Converts the specified key into a SecretKey for the specified algorithm
 	 * @param key The byte[] of the key
@@ -148,7 +148,7 @@ public class KeyGenUtils {
 	public static SecretKey getSecretKey(byte[] key, KeyType type){
 		return new SecretKeySpec(key, type.alg);
 	}
-	
+
 	/**
 	 * Generates a random nonce of a specified length
 	 * @param length How long the nonce should be
@@ -159,7 +159,7 @@ public class KeyGenUtils {
 		Util.sRandom.nextBytes(nonce);
 		return nonce;
 	}
-	
+
 	/**
 	 * Generates a random iv of a specified length
 	 * @param length How long the iv should be
@@ -168,7 +168,7 @@ public class KeyGenUtils {
 	public static IvParameterSpec genIV(int length){
 		return new IvParameterSpec(genNonce(length));
 	}
-	
+
 	/**
 	 * Converts an iv in a specified portion of a byte[] and places it 
 	 * in a IvParameterSpec.
