@@ -11,8 +11,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.SecretKey;
 
-import org.bouncycastle.util.encoders.Hex;
-
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import junit.framework.TestCase;
 
@@ -21,15 +20,15 @@ public class KeyGenUtilsTest extends TestCase {
 	private static final int falseLength = -1;
 	private static final KeyType[] keyTypes = KeyType.values();
 	private static final byte[][] trueSecretKeys = {
-			Hex.decode("20e86dc31ebf2c0e37670e30f8f45c57"),
-			Hex.decode("8c6c2e0a60b3b73e9dbef076b68b686bacc9d20081e8822725d14b10b5034f48"),
-			Hex.decode("33a4a38b71c8e350d3a98357d1bc9ecd"),
-			Hex.decode("be56dbec20bff9f6f343800367287b48c0c28bf47f14b46aad3a32e4f24f0f5e"),
-			Hex.decode("53e5a3fd40382755f582f4ff3a4ccb373babd087"),
-			Hex.decode("ad8ce252fcac490700b7cecc560391ca783794a5bc86ab5892679bbcbabb5b73"),
-			Hex.decode("a92e3fa63e8cbe50869fb352d883911271bf2b0e9048ad04c013b20e901f5806"),
-			Hex.decode("45d6c9656b3b115263ba12739e90dcc1"),
-			Hex.decode("f468986cbaeecabd4cf242607ac602b51a1adaf4f9a4fc5b298970cbda0b55c6")
+			HexUtil.hexToBytes("20e86dc31ebf2c0e37670e30f8f45c57"),
+			HexUtil.hexToBytes("8c6c2e0a60b3b73e9dbef076b68b686bacc9d20081e8822725d14b10b5034f48"),
+			HexUtil.hexToBytes("33a4a38b71c8e350d3a98357d1bc9ecd"),
+			HexUtil.hexToBytes("be56dbec20bff9f6f343800367287b48c0c28bf47f14b46aad3a32e4f24f0f5e"),
+			HexUtil.hexToBytes("53e5a3fd40382755f582f4ff3a4ccb373babd087"),
+			HexUtil.hexToBytes("ad8ce252fcac490700b7cecc560391ca783794a5bc86ab5892679bbcbabb5b73"),
+			HexUtil.hexToBytes("a92e3fa63e8cbe50869fb352d883911271bf2b0e9048ad04c013b20e901f5806"),
+			HexUtil.hexToBytes("45d6c9656b3b115263ba12739e90dcc1"),
+			HexUtil.hexToBytes("f468986cbaeecabd4cf242607ac602b51a1adaf4f9a4fc5b298970cbda0b55c6")
 	};
 	
 	private static final KeyPairType[] trueKeyPairTypes = {KeyPairType.ECP256, 
@@ -37,15 +36,15 @@ public class KeyGenUtilsTest extends TestCase {
 	@SuppressWarnings("deprecation")
 	private static final KeyPairType falseKeyPairType = KeyPairType.DSA;
 	private static final byte[][] truePublicKeys = {
-			Hex.decode("3059301306072a8648ce3d020106082a8648ce3d030107034200040126491fbe391419fcdca058122a8520a816d3b7af9bc3a3af038e455b311b8234e5915ae2da11550a9f0ff9da5c65257c95c2bd3d5c21bcf16f6c15a94a50cb"),
-			Hex.decode("3076301006072a8648ce3d020106052b81040022036200043a095518fc49cfaf6feb5af01cf71c02ebfff4fe581d93c6e252c8c607e6568db7267e0b958c4a262a6e6fa7c18572c3af59cd16535a28759d04488bae6c3014bbb4b89c25cbe3b76d7b540dabb13aed5793eb3ce572811b560bb18b00a5ac93"),
-			Hex.decode("30819b301006072a8648ce3d020106052b8104002303818600040076083359c8b0b34a903461e435188cb90f7501bcb7ed97e8c506c5b60ff21178a625f80f5729ed4746d8e83b28145a51b9495880bf41b8ff0746ea0fe684832cc100ef1b01793c84abf64f31452d95bf0ef43d32440d8bc0d67501fcffaf51ae4956e5ff22f3baffea5edddbebbeed0ec3b4af28d18568aaf97b5cd026f6753881e0c4")
+			HexUtil.hexToBytes("3059301306072a8648ce3d020106082a8648ce3d030107034200040126491fbe391419fcdca058122a8520a816d3b7af9bc3a3af038e455b311b8234e5915ae2da11550a9f0ff9da5c65257c95c2bd3d5c21bcf16f6c15a94a50cb"),
+			HexUtil.hexToBytes("3076301006072a8648ce3d020106052b81040022036200043a095518fc49cfaf6feb5af01cf71c02ebfff4fe581d93c6e252c8c607e6568db7267e0b958c4a262a6e6fa7c18572c3af59cd16535a28759d04488bae6c3014bbb4b89c25cbe3b76d7b540dabb13aed5793eb3ce572811b560bb18b00a5ac93"),
+			HexUtil.hexToBytes("30819b301006072a8648ce3d020106052b8104002303818600040076083359c8b0b34a903461e435188cb90f7501bcb7ed97e8c506c5b60ff21178a625f80f5729ed4746d8e83b28145a51b9495880bf41b8ff0746ea0fe684832cc100ef1b01793c84abf64f31452d95bf0ef43d32440d8bc0d67501fcffaf51ae4956e5ff22f3baffea5edddbebbeed0ec3b4af28d18568aaf97b5cd026f6753881e0c4")
 	};
 	private static PublicKey[] publicKeys = new PublicKey[truePublicKeys.length];
 	private static final byte[][] truePrivateKeys = {
-			Hex.decode("3041020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420f8cb4b29aa51153ba811461e93fd1b2e69a127972f7100c5e246a3b2dcdd1b1c"),
-			Hex.decode("304e020100301006072a8648ce3d020106052b81040022043730350201010430b88fe05d03b20dca95f19cb0fbabdfef1211452b29527ccac2ea37236d31ab6e7cada08315c62912b5c17cdf2d87fa3d"),
-			Hex.decode("3060020100301006072a8648ce3d020106052b8104002304493047020101044201b4f573157d51f2e64a8b465fa92e52bae3529270951d448c18e4967beaa04b1f1fedb0e7a1e26f2eefb30566a479e1194358670b044fae438d11717eb2a795c3a8")
+			HexUtil.hexToBytes("3041020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420f8cb4b29aa51153ba811461e93fd1b2e69a127972f7100c5e246a3b2dcdd1b1c"),
+			HexUtil.hexToBytes("304e020100301006072a8648ce3d020106052b81040022043730350201010430b88fe05d03b20dca95f19cb0fbabdfef1211452b29527ccac2ea37236d31ab6e7cada08315c62912b5c17cdf2d87fa3d"),
+			HexUtil.hexToBytes("3060020100301006072a8648ce3d020106052b8104002304493047020101044201b4f573157d51f2e64a8b465fa92e52bae3529270951d448c18e4967beaa04b1f1fedb0e7a1e26f2eefb30566a479e1194358670b044fae438d11717eb2a795c3a8")
 	};
 	private static PrivateKey[] privateKeys = new PrivateKey[truePublicKeys.length];
 	

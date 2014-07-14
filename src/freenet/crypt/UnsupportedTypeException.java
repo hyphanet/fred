@@ -11,10 +11,10 @@ package freenet.crypt;
  */
 public class UnsupportedTypeException extends IllegalArgumentException {
 	private static final long serialVersionUID = -1;
-    public UnsupportedTypeException(String typeEnum, Enum<?> type, String s) {
-    	super("Unsupported "+typeEnum+" "+type.name()+" used. "+s);
+    public UnsupportedTypeException(Enum<?> type, String s) {
+    	super("Unsupported "+type.getDeclaringClass().getName()+" "+type.name()+" used. "+s);
     }
-    public UnsupportedTypeException(String typeEnum, Enum<?> type){
-    	this(typeEnum, type, "");
+    public UnsupportedTypeException(Enum<?> type){
+    	this(type, "");
     }
 }

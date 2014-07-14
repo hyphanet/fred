@@ -18,6 +18,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import freenet.node.NodeStarter;
 import freenet.support.Logger;
 
 /**
@@ -37,7 +38,7 @@ public class KeyGenUtils {
 	 */
 	public static KeyPair genKeyPair(KeyPairType type) {
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
+			throw new UnsupportedTypeException(type);
 		}
 		try {
 			KeyPairGenerator kg = KeyPairGenerator.getInstance(type.alg);
@@ -57,7 +58,7 @@ public class KeyGenUtils {
 	 */
 	public static PublicKey getPublicKey(KeyPairType type, byte[] pub){
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
+			throw new UnsupportedTypeException(type);
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
@@ -90,7 +91,7 @@ public class KeyGenUtils {
 	 */
 	public static KeyPair getKeyPair(KeyPairType type, byte[] pub, byte[] pri) {
 		if(type.equals(KeyPairType.DSA)){
-			throw new UnsupportedTypeException(KeyPairType.class.getName(), type);
+			throw new UnsupportedTypeException(type);
 		}
 		try {
 			KeyFactory kf = KeyFactory.getInstance(type.alg);
@@ -152,7 +153,7 @@ public class KeyGenUtils {
 	 */
 	public static byte[] genNonce(int length){
 		byte[] nonce = new byte[length];
-		Util.sRandom.nextBytes(nonce);
+		NodeStarter.getGlobalSecureRandom().nextBytes(nonce);
 		return nonce;
 	}
 

@@ -17,7 +17,7 @@ public enum KeyType {
 	public final String alg;
 	public final int keySize;
 
-	KeyType(String alg, int keySize){
+	private KeyType(String alg, int keySize){
 		this.alg = alg;
 		this.keySize = keySize;
 	}
