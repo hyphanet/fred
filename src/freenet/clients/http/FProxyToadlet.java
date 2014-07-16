@@ -691,7 +691,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
         try {
             fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
         } catch (FetchException e) {
-            fe = fr.failed;
+            fe = e;
         }
         if(fetch != null)
             while(true) {
@@ -706,7 +706,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
                         try {
                             fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
                         } catch (FetchException e) {
-                            fe = fr.failed;
+                            fe = e;
                         }
                         if(fetch == null) break;
                         continue;
