@@ -4,7 +4,7 @@ import freenet.support.MemoryLimitedJobRunner.MemoryLimitedChunk;
 
 public abstract class MemoryLimitedJob {
     
-    final long initialAllocation;
+    protected final long initialAllocation;
     
     public MemoryLimitedJob(long initial) {
         this.initialAllocation = initial;
