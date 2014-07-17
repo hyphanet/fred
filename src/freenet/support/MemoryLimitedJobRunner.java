@@ -37,6 +37,8 @@ public class MemoryLimitedJobRunner {
     }
 
     private synchronized void deallocate(long size) {
+        if(size == 0) return; // Can't do anything, legal no-op.
+        if(size < 0) throw new IllegalArgumentException();
         assert(size <= counter);
         counter -= size;
         while(true) {
