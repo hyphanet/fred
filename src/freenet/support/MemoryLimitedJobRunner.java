@@ -99,6 +99,10 @@ public class MemoryLimitedJobRunner {
             deallocate(amount);
             return amount;
         }
+        
+        MemoryLimitedJobRunner getRunner() {
+            return MemoryLimitedJobRunner.this;
+        }
 
     }
     

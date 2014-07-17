@@ -31,16 +31,22 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
 
         @Override
         public boolean start(MemoryLimitedChunk chunk) {
+            MemoryLimitedJobRunner runner = chunk.getRunner();
+            checkRunner(runner);
             waitForCanStart();
+            checkRunner(runner);
             synchronized(completionSemaphore) {
                 isStarted = true;
                 completionSemaphore.notifyAll();
             }
+            checkRunner(runner);
             waitForCanFinish();
+            checkRunner(runner);
             synchronized(completionSemaphore) {
                 isFinished = true;
                 completionSemaphore.notifyAll();
             }
+            checkRunner(runner);
             return true;
         }
 
@@ -205,22 +211,30 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
 
         @Override
         public boolean start(final MemoryLimitedChunk chunk) {
+            final MemoryLimitedJobRunner runner = chunk.getRunner();
+            checkRunner(runner);
             waitForCanStart();
+            checkRunner(runner);
             synchronized(completionSemaphore) {
                 isStarted = true;
                 completionSemaphore.notifyAll();
             }
+            checkRunner(runner);
             Thread t = new Thread(new Runnable() {
 
                 @Override
                 public void run() {
+                    checkRunner(runner);
                     waitForCanFinish();
+                    checkRunner(runner);
                     synchronized(completionSemaphore) {
                         isFinished = true;
                         completionSemaphore.notifyAll();
                     }
+                    checkRunner(runner);
                     assertEquals(chunk.release(), initialAllocation);
                     assertEquals(chunk.release(), 0);
+                    checkRunner(runner);
                 }
                 
             });
@@ -307,5 +321,9 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         waitForZero(runner);
     }
 
-    // FIXME Test that it sticks to the limits?
+    protected void checkRunner(MemoryLimitedJobRunner runner) {
+        long used = runner.used();
+        assertTrue(used <= runner.capacity);
+        assertTrue(used >= 0);
+    }
 }
