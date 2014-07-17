@@ -26,7 +26,6 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 
 public final class CHKInsertSender extends BaseSender implements PrioRunnable, AnyInsertSender, ByteCounter {
@@ -399,9 +398,7 @@ public final class CHKInsertSender extends BaseSender implements PrioRunnable, A
 	    freenet.support.Logger.OSThread.logPID(this);
     	origTag.startedSender();
         try {
-        	routeRequests();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
+            routeRequests();
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {

@@ -72,9 +72,6 @@ public class PrioritizedTicker implements Ticker, Runnable {
 		while(true) {
 			try {
 				realRun();
-			} catch(OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
 			} catch(Throwable t) {
 				Logger.error(this, "Caught in PacketSender: " + t, t);
 				System.err.println("Caught in PacketSender: " + t);
@@ -129,14 +126,12 @@ public class PrioritizedTicker implements Ticker, Runnable {
 				else
 					try {
 						executor.execute(r.job, r.name, true);
-					} catch(OutOfMemoryError e) {
-						OOMHandler.handleOOM(e);
-						System.err.println("Will retry above failed operation...");
-						queueTimedJob(r.job, r.name, 200, true, false);
 					} catch(Throwable t) {
 						Logger.error(this, "Caught in PacketSender: " + t, t);
 						System.err.println("Caught in PacketSender: " + t);
 						t.printStackTrace();
+                                                System.err.println("Will retry above failed operation...");
+                                                queueTimedJob(r.job, r.name, 200, true, false);
 					}
 			}
 

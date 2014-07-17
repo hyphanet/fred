@@ -25,7 +25,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
@@ -144,11 +143,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 					// If this throws, we want the whole request to fail.
 					output.close(); output = null;
 			}
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Failing above attempted fetch...");
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
-			return;
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);

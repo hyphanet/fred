@@ -31,7 +31,12 @@ public class ShortOption extends Option<Short> {
 	}
 
 	@Override
-	protected String toString(Short val) {
+	protected String toDisplayString(Short val) {
 		return Fields.shortToString(val, isSize);
-	}	
+	}
+
+	@Override
+	protected String toString(Short val) {
+		return Fields.shortToString(val, false);
+	}
 }

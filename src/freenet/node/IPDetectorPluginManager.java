@@ -33,7 +33,6 @@ import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -713,8 +712,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				realRun();
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}

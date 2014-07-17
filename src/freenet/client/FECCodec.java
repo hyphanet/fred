@@ -9,7 +9,6 @@ import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
-import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.util.Buffer;
 
 import freenet.client.InsertContext.CompatibilityMode;

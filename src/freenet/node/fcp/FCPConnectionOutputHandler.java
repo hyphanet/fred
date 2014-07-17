@@ -13,7 +13,6 @@ import com.db4o.ObjectContainer;
 import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 
 public class FCPConnectionOutputHandler implements Runnable {
@@ -54,8 +53,6 @@ public class FCPConnectionOutputHandler implements Runnable {
 		} catch (IOException e) {
 			if(logMINOR)
 				Logger.minor(this, "Caught "+e, e);
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 		} finally {

@@ -52,7 +52,6 @@ import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.RemoveRangeArrayList;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -240,11 +239,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(data, container, context);
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Failing above attempted fetch...");
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
-				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);

@@ -246,8 +246,6 @@ public class PooledExecutor implements Executor {
 				try {
 					setName(job.name + "(" + threadNo + ")");
 					job.runnable.run();
-				} catch (OutOfMemoryError e) {
-					OOMHandler.handleOOM(e);
 				} catch(Throwable t) {
 					Logger.error(this, "Caught " + t + " running job " + job, t);
 				}

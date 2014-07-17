@@ -1,7 +1,6 @@
 package freenet.pluginmanager;
 
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 
 /**
  * Methods to handle a specific plugin (= set it up and start it)
@@ -64,8 +63,6 @@ public class PluginHandler {
 				try {
 					pm.register(pi);
 					pi.getPlugin().runPlugin(pi.getPluginRespirator());
-				} catch (OutOfMemoryError e) {
-					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {
 					Logger.normal(this, "Caught Throwable while running plugin: "+t, t);
 					System.err.println("Caught Throwable while running plugin: "+t);

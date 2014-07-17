@@ -73,8 +73,7 @@ import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
+import freenet.support.MutableBoolean;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -90,12 +89,11 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
-import freenet.support.math.MersenneTwister;
 
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, ExecutorIdleCallback {
+public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCallback {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -499,7 +497,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		toadletContainer.setBucketFactory(tempBucketFactory);
 		if(fecQueue == null) throw new NullPointerException();
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
-		OOMHandler.addOOMHook(this);
+		
 		if(killedDatabase)
 			System.err.println("Database corrupted (leaving NodeClientCore)!");
 
@@ -1936,15 +1934,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					persistentTempBucketFactory.postCommit(node.db);
 				}
 			} catch (Throwable t) {
-				if(t instanceof OutOfMemoryError) {
-					synchronized(NodeClientCore.this) {
-						killedDatabase = true;
-					}
-					OOMHandler.handleOOM((OutOfMemoryError) t);
-				} else {
-					Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
-				}
-				boolean killed;
+				
+                                Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+				
+                                boolean killed;
 				synchronized(NodeClientCore.this) {
 					killed = killedDatabase;
 				}
@@ -1981,22 +1974,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	@Override
 	public int getQueueSize(int priority) {
 		return clientDatabaseExecutor.getQueueSize(priority);
-	}
-
-	@Override
-	public void handleLowMemory() throws Exception {
-		// Ignore
-	}
-
-	@Override
-	public void handleOutOfMemory() throws Exception {
-		synchronized(this) {
-			killedDatabase = true;
-		}
-		WrapperManager.requestThreadDump();
-		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
-		WrapperManager.restart();
-		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
 
 	/**

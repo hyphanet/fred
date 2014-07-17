@@ -14,7 +14,6 @@ import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -84,11 +83,6 @@ public class RealCompressor implements PrioRunnable {
 								finalJob.tryCompress(context);
 							} catch(InsertException e) {
 								finalJob.onFailure(e, null, context);
-							} catch(OutOfMemoryError e) {
-								OOMHandler.handleOOM(e);
-								System.err.println("OffThreadCompressor thread above failed.");
-								// Might not be heap, so try anyway
-								finalJob.onFailure(new InsertException(InsertException.INTERNAL_ERROR, e, null), null, context);
 							} catch(Throwable t) {
 								Logger.error(this, "Caught in OffThreadCompressor: " + t, t);
 								System.err.println("Caught in OffThreadCompressor: " + t);

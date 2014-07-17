@@ -29,7 +29,7 @@ public class OfficialPlugins {
 			addPlugin("Freemail_wot")
 					.inGroup("communication")
 					.minimumVersion(24)
-					.loadedFrom("CHK@3quK1QnUrXS1KqVrc87lAy87boNiNUt83RIza0eAfLQ,J4tzwpdDuJKZJV22r6nBPgO5CGAwCWP~p7Xt~kzCDKY,AAMC--8/Freemail_wot.jar");
+					.loadedFrom("CHK@DcKbZCZ0wXfRUUfTXRGIhlqm7dhQ-ZM3VJ1KRFWEfuc,mWbiDOpbujik5VuPoHbyu2aza~fzkdpiDV6ThJLcS8E,AAMC--8/Freemail.jar");
 			addPlugin("HelloWorld")
 					.inGroup("example")
 					.loadedFrom("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar")
@@ -46,7 +46,7 @@ public class OfficialPlugins {
 			addPlugin("KeyUtils")
 					.inGroup("technical")
 					.minimumVersion(5021)
-					.loadedFrom("CHK@AJ4MTxURy0ouvGeVaHoCGh59K7rUHpH7EvKD4Yqy7sY,TwT~eA4MwSTniZXuSBps4VECy2y9fHtHEA~zT-KQKSk,AAMC--8/KeyUtils.jar\"")
+					.loadedFrom("CHK@~hS3~oxnvcUZNKW~zdmhh0BJRvQ1NYg9qSiVJt0IPSU,fRRHqSbuZ7dqPo0rYPBuP5NbZPGXtGe-Ug7iGjd~4SY,AAMC--8/KeyExplorer.jar")
 					.advanced();
 			addPlugin("MDNSDiscovery")
 					.inGroup("connectivity")
@@ -107,7 +107,7 @@ public class OfficialPlugins {
 					.inGroup("communication")
 					.minimumVersion(31)
 					.usesXml()
-					.loadedFrom("CHK@LF5EYfrrUtRJPxAYGO1EjGETtDEDTLSjMYXvy-0J1xo,4UySA~Rnsw~Obm1J1VQqgUM-9TeBLO4~evU91BuONmI,AAMC--8/FlogHelper.jar");
+					.loadedFrom("CHK@UAgvzuTihdGnVmtQ7R2PMoSzzcPpMisS8AILj7j78Ek,mRnnc-NDu~ktr4809nfD2huLk-6thoiMK9Khndo3Toc,AAMC--8/FlogHelper.jar");
 		} catch (MalformedURLException mue1) {
 			throw new RuntimeException("Could not create FreenetURI.", mue1);
 		}

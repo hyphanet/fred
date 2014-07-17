@@ -14,7 +14,6 @@ import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MersenneTwister;
@@ -124,9 +123,6 @@ public class PacketSender implements Runnable {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
 				realRun();
-			} catch(OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
 			} catch(Throwable t) {
 				Logger.error(this, "Caught in PacketSender: " + t, t);
 				System.err.println("Caught in PacketSender: " + t);

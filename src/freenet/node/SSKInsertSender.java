@@ -20,7 +20,6 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
@@ -111,11 +110,7 @@ public class SSKInsertSender extends BaseSender implements PrioRunnable, AnyInse
 	    freenet.support.Logger.OSThread.logPID(this);
         origTag.startedSender();
         try {
-        	routeRequests();
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-            if(status == NOT_FINISHED)
-            	finish(INTERNAL_ERROR, null);
+            routeRequests();
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             if(status == NOT_FINISHED)

@@ -29,7 +29,6 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
 import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
@@ -37,7 +36,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
@@ -365,10 +363,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				clientMetadata = worker.getClientMetadata();
 				result = new FetchResult(clientMetadata, finalResult);
 			}
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Failing above attempted fetch...");
-			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
 		} catch(UnsafeContentTypeException e) {
 			Logger.normal(this, "Error filtering content: will not validate", e);
 			ex = e.createFetchException(ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME, expectedSize);

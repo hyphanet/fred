@@ -41,7 +41,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
@@ -1098,11 +1097,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				output.close(); output = null;
 				pipeOut.close(); pipeOut = null;
 				pipeIn.close(); pipeIn = null;
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Failing above attempted fetch...");
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
-				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
@@ -1333,11 +1327,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					worker.waitFinished();
 				} else streamGenerator.writeTo(output, container, context);
 
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Failing above attempted fetch...");
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
-				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
