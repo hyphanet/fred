@@ -101,6 +101,11 @@ public class MemoryLimitedJobRunner {
         }
 
     }
+    
+    /** For tests and stats. How much of the scarce resource is used right now? */
+    long used() {
+        return counter;
+    }
 
 }
 

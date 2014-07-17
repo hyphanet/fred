@@ -120,8 +120,20 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         for(SynchronousJob job : jobs)
             job.setCanFinish();
         waitForAllFinished(jobs, completion);
+        waitForZero(runner);
     }
     
+    private void waitForZero(MemoryLimitedJobRunner runner) {
+        while(runner.used() > 0) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
+        }
+        assertEquals(runner.used(), 0);
+    }
+
     // FIXME start the executor immediately.
     
     private void waitForAllFinished(SynchronousJob[] jobs, Object semaphore) {
@@ -292,9 +304,8 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         for(SynchronousJob job : jobs)
             job.setCanFinish();
         waitForAllFinished(jobs, completion);
+        waitForZero(runner);
     }
 
-    // FIXME Test that it goes back to exactly 0? Probably need some arbitrary unreliable delays...? :(
-    
     // FIXME Test that it sticks to the limits?
 }
