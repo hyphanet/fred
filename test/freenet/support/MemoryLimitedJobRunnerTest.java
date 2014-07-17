@@ -207,7 +207,8 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
                         isFinished = true;
                         completionSemaphore.notifyAll();
                     }
-                    chunk.release();
+                    assertEquals(chunk.release(), initialAllocation);
+                    assertEquals(chunk.release(), 0);
                 }
                 
             });
