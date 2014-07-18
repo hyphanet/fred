@@ -330,8 +330,7 @@ public class BaseL10n {
 
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
-			// FIXME: REDFLAG: not symlink-race proof!
-			File tempFile = new File(finalFile.getParentFile(), finalFile.getName() + ".bak");
+			File tempFile = File.createTempFile(finalFile.getName(), ".bak", finalFile.getParentFile());;
 			Logger.minor(this.getClass(), "The temporary filename is : " + tempFile);
 
 			fos = new FileOutputStream(tempFile);
