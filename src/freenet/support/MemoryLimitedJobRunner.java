@@ -36,7 +36,7 @@ public class MemoryLimitedJobRunner {
         }
     }
 
-    private synchronized void deallocate(long size) {
+    synchronized void deallocate(long size) {
         if(size == 0) return; // Can't do anything, legal no-op.
         if(size < 0) throw new IllegalArgumentException();
         assert(size <= counter);
@@ -57,7 +57,7 @@ public class MemoryLimitedJobRunner {
 
             @Override
             public void run() {
-                MemoryLimitedChunk chunk = new MemoryLimitedChunk(job.initialAllocation);
+                MemoryLimitedChunk chunk = new MemoryLimitedChunk(MemoryLimitedJobRunner.this, job.initialAllocation);
                 if(job.start(chunk))
                     chunk.release();
             }
@@ -70,42 +70,6 @@ public class MemoryLimitedJobRunner {
         });
     }
 
-    /** A chunk of a limited resource which has been allocated to a task. Can be released but not
-     * added to.
-     * @author toad
-     */
-    public final class MemoryLimitedChunk {
-        private long used;
-        private MemoryLimitedChunk(long used) {
-            if(used < 0) throw new IllegalArgumentException();
-            this.used = used;
-        }
-        
-        public long release() {
-            long released = 0;
-            synchronized(this) {
-                released = used;
-                used = 0;
-            }
-            deallocate(released);
-            return released;
-        }
-        
-        public long release(long amount) {
-            synchronized(this) {
-                if(amount > used) throw new IllegalArgumentException("Only have "+used+" in use but asked to release "+amount);
-                used -= amount;
-            }
-            deallocate(amount);
-            return amount;
-        }
-        
-        MemoryLimitedJobRunner getRunner() {
-            return MemoryLimitedJobRunner.this;
-        }
-
-    }
-    
     /** For tests and stats. How much of the scarce resource is used right now? */
     long used() {
         return counter;

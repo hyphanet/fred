@@ -2,7 +2,6 @@ package freenet.support;
 
 import junit.framework.TestCase;
 
-import freenet.support.MemoryLimitedJobRunner.MemoryLimitedChunk;
 import freenet.support.io.NativeThread;
 
 public class MemoryLimitedJobRunnerTest extends TestCase {

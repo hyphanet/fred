@@ -1,6 +1,5 @@
 package freenet.support;
 
-import freenet.support.MemoryLimitedJobRunner.MemoryLimitedChunk;
 
 public abstract class MemoryLimitedJob {
     
@@ -13,10 +12,14 @@ public abstract class MemoryLimitedJob {
     /** Does not affect queueing, only the priority of the thread when it is run. */
     public abstract int getPriority();
     
-    /** Start the job.
+    /** Start the job. Generally called by MemoryLimitedJobRunner, which schedules jobs within
+     * the limited available resource (memory).
      * @param chunk The chunk of the scarce resource that has been allocated for this job. Can
      * be released but not added to. Initial size is equal to initialAllocation(). 
-     * @return True to free up all resources. Otherwise the job must release() asynchronously. */
+     * @return If this returns true, the caller (MemoryLimitedJobRunner) will call release() on
+     * the chunk, and the job must have finished, freeing up all of the memory buffers in use.
+     * If it returns false, the job may still be running (asynchronously), and must call 
+     * MemoryLimitedJobRunner.MemoryLimitedChunk.release() when it is finished. */
     public abstract boolean start(MemoryLimitedChunk chunk);
     
 }
