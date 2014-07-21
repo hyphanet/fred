@@ -74,12 +74,12 @@ public class OpennetManager {
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
-	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
+	/** Our peers. OpennetPeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
-	private final LRUQueue<PeerNode> peersLRU;
+	private final LRUQueue<OpennetPeerNode> peersLRU;
 	/** Old peers. Opennet peers which we dropped but would still like to talk to
 	 * if we have no other option. */
-	private final LRUQueue<PeerNode> oldPeers;
+	private final LRUQueue<OpennetPeerNode> oldPeers;
 	/** Maximum number of old peers */
 	static final int MAX_OLD_PEERS = 25;
 	/** Time at which last dropped a peer due to an incoming connection of each type. */
@@ -202,8 +202,8 @@ public class OpennetManager {
 				crypto.initCrypto();
 			}
 		}
-		peersLRU = new LRUQueue<PeerNode>();
-		oldPeers = new LRUQueue<PeerNode>();
+		peersLRU = new LRUQueue<OpennetPeerNode>();
+		oldPeers = new LRUQueue<OpennetPeerNode>();
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 	}
 
@@ -387,7 +387,7 @@ public class OpennetManager {
 	/** When did we last offer our noderef to some other node? */
 	private long timeLastOffered;
 
-	void forceAddPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+	void forceAddPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU) {
 		synchronized(this) {
 			if(addAtLRU)
 				peersLRU.pushLeast(nodeToAddNow);
@@ -418,7 +418,7 @@ public class OpennetManager {
 	 * because of the first check.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
+	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
@@ -509,7 +509,7 @@ public class OpennetManager {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
-				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
+				OpennetPeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -655,7 +655,7 @@ public class OpennetManager {
 		while(getSize() > maxPeers) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
-			PeerNode toDrop;
+			OpennetPeerNode toDrop;
 			toDrop = peerToDrop(false, false, false, null, maxPeers);
 			if(toDrop == null) toDrop = peerToDrop(false, true, false, null, maxPeers);
 			if(toDrop == null) return;
@@ -680,8 +680,8 @@ public class OpennetManager {
 	 */
 	synchronized public int getSize() {
 		int x = 0;
-		for (Enumeration<PeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
-			PeerNode pn = e.nextElement();
+		for (Enumeration<OpennetPeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
+			OpennetPeerNode pn = e.nextElement();
 			if(!pn.isUnroutableOlderVersion()) x++;
 		}
 		return x;
@@ -805,12 +805,12 @@ public class OpennetManager {
 		}
 	}
 
-	synchronized PeerNode[] getOldPeers() {
-		return oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
+	synchronized OpennetPeerNode[] getOldPeers() {
+		return oldPeers.toArrayOrdered(new OpennetPeerNode[oldPeers.size()]);
 	}
 
-	synchronized PeerNode[] getUnsortedOldPeers() {
-		return oldPeers.toArray(new PeerNode[oldPeers.size()]);
+	synchronized OpennetPeerNode[] getUnsortedOldPeers() {
+		return oldPeers.toArray(new OpennetPeerNode[oldPeers.size()]);
 	}
 
 	/**
@@ -818,7 +818,7 @@ public class OpennetManager {
 	 * if we are desperate.
 	 * @param pn The node to add to the old opennet nodes LRU.
 	 */
-	synchronized void addOldOpennetNode(PeerNode pn) {
+	synchronized void addOldOpennetNode(OpennetPeerNode pn) {
 		oldPeers.push(pn);
 	}
 
@@ -830,13 +830,13 @@ public class OpennetManager {
 		return oldPeers.size();
 	}
 
-	PeerNode randomOldOpennetNode() {
-		PeerNode[] nodes = getUnsortedOldPeers();
+	OpennetPeerNode randomOldOpennetNode() {
+		OpennetPeerNode[] nodes = getUnsortedOldPeers();
 		if(nodes.length == 0) return null;
 		return nodes[node.random.nextInt(nodes.length)];
 	}
 
-	public synchronized void purgeOldOpennetPeer(PeerNode source) {
+	public synchronized void purgeOldOpennetPeer(OpennetPeerNode source) {
 		oldPeers.remove(source);
 	}
 
@@ -866,7 +866,8 @@ public class OpennetManager {
 	 * Send our opennet noderef to a node.
 	 * @param isReply If true, send an FNPOpennetConnectReply, else send an FNPOpennetConnectDestination.
 	 * @param uid The unique ID of the request chain involved.
-	 * @param peer The node to send the noderef to.
+	 * @param peer The node to send the noderef to. Not necessarily an OpennetPeerNode, as path 
+	 * folding and possibly announcement can pass through darknet.
 	 * @param cs The full compressed noderef to send.
 	 * @throws NotConnectedException If the peer becomes disconnected while we are trying to send the noderef.
 	 */
