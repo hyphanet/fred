@@ -74,6 +74,8 @@ public class OpennetManager {
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
+	/** Peers with more than this distance are considered "long links". */
+	static final double LONG_DISTANCE = 0.01;
 	/** Our peers. OpennetPeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
 	private final LRUQueue<OpennetPeerNode> peersLRU;
