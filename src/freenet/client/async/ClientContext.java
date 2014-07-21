@@ -67,9 +67,7 @@ public class ClientContext {
 	public transient DownloadCache downloadCache;
 	/** Used for memory intensive jobs such as in-RAM FEC decodes. Some of these jobs may do disk 
 	 * I/O and we don't guarantee to serialise them. The new splitfile code does FEC decodes 
-	 * entirely in memory, which saves a lot of seeks and improves robustness. 
-	 * FIXME do we still need to serialise FEC jobs on the FECQueue? This is not clear, although 
-	 * the FEC decode itself does use some memory, especially if it's done natively... */
+	 * entirely in memory, which saves a lot of seeks and improves robustness. */
 	public transient final MemoryLimitedJobRunner memoryLimitedJobRunner;
 
 	/** Provider for link filter exceptions. */
