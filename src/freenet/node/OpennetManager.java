@@ -301,8 +301,16 @@ public class OpennetManager {
 				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
-		for(OpennetPeerNode opn: nodes)
-			peersLRU.push(opn);
+		for(OpennetPeerNode opn: nodes) {
+		    // Drop any peers which don't have a location yet. That means we haven't connected to
+		    // them yet.
+		    // This should only be a problem with old nodes; we will include the location in new 
+		    // path folding noderefs...
+		    if(Location.isValid(opn.getLocation()))
+		        peersLRU.push(opn);
+		    else
+		        node.peers.disconnectAndRemove(opn, false, false, false);
+		}
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
 			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
