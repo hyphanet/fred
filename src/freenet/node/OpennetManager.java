@@ -1315,4 +1315,17 @@ public class OpennetManager {
 		seedTracker.drawSeedStats(content);
 	}
 
+	/** Called when a connection completes. If it's an opennet peer, we may need to drop a peer
+	 * to make space. If it's a darknet peer, the connection limit for opennet peers may have
+	 * decreased so again we may need to drop a peer. */
+    public void onConnectedPeer(PeerNode pn) {
+        if(pn instanceof OpennetPeerNode)
+            dropExcessPeers(((OpennetPeerNode)pn).isLongDistance());
+        else {
+            // The peer count target may have decreased, so we may need to drop an opennet peer.
+            dropExcessPeers(true);
+            dropExcessPeers(false);
+        }
+    }
+
 }
