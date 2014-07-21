@@ -29,7 +29,7 @@ public class ClientMetadata implements Cloneable {
 		mimeType = (mime == null) ? null : mime.intern();
 	}
 	
-	public ClientMetadata(DataInputStream dis) throws MetadataParseException, IOException {
+	private ClientMetadata(DataInputStream dis) throws MetadataParseException, IOException {
 	    int magic = dis.readInt();
 	    if(magic != MAGIC)
 	        throw new MetadataParseException("Bad magic value in ClientMetadata");
@@ -41,6 +41,12 @@ public class ClientMetadata implements Cloneable {
 	        mimeType = dis.readUTF();
 	    else
 	        mimeType = null;
+	}
+	
+	/** Factory method to keep the API cleaner, avoid ambiguity; this won't be used as often as
+	 * the String constructor. */
+	public static ClientMetadata construct(DataInputStream dis) throws MetadataParseException, IOException {
+	    return new ClientMetadata(dis);
 	}
 	
 	/** Get the document MIME type. Will always be a valid MIME type, unless there
