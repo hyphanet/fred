@@ -3676,8 +3676,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			sendingUOMLegacyExtJar = false;
 		}
 		OpennetManager om = node.getOpennet();
-		if(om != null)
-			om.dropExcessPeers();
+		if(om != null) {
+		    if(this instanceof OpennetPeerNode)
+		        om.dropExcessPeers(((OpennetPeerNode)this).isLongDistance());
+		    else {
+		        // The opennet peer count target may have decreased, so we may need to drop an opennet peer.
+		        om.dropExcessPeers(true);
+		        om.dropExcessPeers(false);
+		    }
+		}
 	}
 
 	@Override
