@@ -38,7 +38,9 @@ import freenet.support.io.NativeThread;
 @Deprecated // See NewFECCodec, MemoryLimitedJobRunner, new splitfile code... (architecture is a bit different ...)
 public class FECQueue {
 	
-	private transient LinkedList<FECJob>[] transientQueue;
+    /** Minimum amount of memory needed for FEC decodes. This depends on the FEC algorithm. */
+    public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024;
+    private transient LinkedList<FECJob>[] transientQueue;
 	private transient LinkedList<FECJob>[] persistentQueueCache;
 	private transient int maxPersistentQueueCacheSize;
 	private transient int priorities;
