@@ -76,6 +76,8 @@ public class OpennetManager {
 
 	/** Peers with more than this distance are considered "long links". */
 	static final double LONG_DISTANCE = 0.01;
+	/** This proportion of the routing table consists of "long links". */
+	static final double LONG_PROPORTION = 0.3;
 	/** Our peers. OpennetPeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
 	private final LRUQueue<OpennetPeerNode> peersLRU;
@@ -863,6 +865,13 @@ public class OpennetManager {
 	}
 
 	/** Get the target number of opennet peers. Do not call while holding locks. */
+	public int getNumberOfConnectedPeersToAim(boolean longDistance) {
+	    int target = getNumberOfConnectedPeersToAim();
+	    int longPeers = (int) (target * LONG_PROPORTION);
+	    if(longDistance) return longPeers;
+	    else return target - longPeers;
+	}
+	
 	public int getNumberOfConnectedPeersToAim() {
 		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
 		return max - node.peers.countConnectedDarknetPeers();
