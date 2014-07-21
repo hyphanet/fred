@@ -423,6 +423,23 @@ public class OpennetManager {
 		dropExcessPeers(isLong);
 	}
 
+	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
+	    if(nodeToAddNow != null) {
+	        if(!Location.isValid(nodeToAddNow.getLocation())) {
+	            Logger.error(this, "Added opennet node reference must include a valid location", new Exception("error"));
+	            return false;
+	        }
+            // We have received a node reference, so we know whether it is long or short.
+	        boolean isLong = nodeToAddNow.isLongDistance();
+	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, isLong);
+	    } else {
+	        // Initiate path folding if we want a long link *or* a short link.
+	        // FIXME ideally we'd like to indicate whether we want long links or short links.
+	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, true)
+	             || wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, false);
+	    }
+	}
+	
 	/**
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
