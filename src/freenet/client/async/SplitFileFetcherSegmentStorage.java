@@ -762,12 +762,18 @@ public class SplitFileFetcherSegmentStorage {
 
     static final short VERSION = 1;
 
-    public synchronized boolean hasStartedDecode() {
+    // For unit testing.
+    
+    synchronized boolean hasStartedDecode() {
         return succeeded || failed || finished || tryDecode;
     }
 
-    public synchronized boolean hasFailed() {
+    synchronized boolean hasFailed() {
         return failed;
+    }
+
+    boolean[] copyDownloadedBlocks() {
+        return this.blocksFound.clone();
     }
 
 }

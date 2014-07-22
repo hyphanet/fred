@@ -136,6 +136,10 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public CHKBlock encodeDataBlock(int i) throws CHKEncodeException {
             return ClientCHKBlock.encodeSplitfileBlock(dataBlocks[i], cryptoKey, cryptoAlgorithm).getBlock();
         }
+        
+        public CHKBlock encodeCheckBlock(int i) throws CHKEncodeException {
+            return ClientCHKBlock.encodeSplitfileBlock(checkBlocks[i], cryptoKey, cryptoAlgorithm).getBlock();
+        }
 
         public int findCheckBlock(byte[] data, int start) {
             start++;
@@ -144,6 +148,17 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
             for(int i=start;i<checkBlocks.length;i++) {
                 if(Arrays.equals(checkBlocks[i], data)) return i;
+            }
+            return -1;
+        }
+
+        public int findDataBlock(byte[] data, int start) {
+            start++;
+            for(int i=start;i<dataBlocks.length;i++) {
+                if(dataBlocks[i] == data) return i;
+            }
+            for(int i=start;i<dataBlocks.length;i++) {
+                if(Arrays.equals(dataBlocks[i], data)) return i;
             }
             return -1;
         }
@@ -185,14 +200,14 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static class StorageCallback implements SplitFileFetcherCallback {
         
         final TestSplitfile splitfile;
-        final boolean[] encodedCheckBlocks;
+        final boolean[] encodedBlocks;
         private boolean succeeded;
         private boolean closed;
         private boolean failed;
 
         public StorageCallback(TestSplitfile splitfile) {
             this.splitfile = splitfile;
-            encodedCheckBlocks = new boolean[splitfile.checkBlocks.length];
+            encodedBlocks = new boolean[splitfile.dataBlocks.length + splitfile.checkBlocks.length];
         }
 
         @Override
@@ -240,8 +255,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
             int x = -1;
             boolean progress = false;
             while((x = splitfile.findCheckBlock(data, x)) != -1) {
-                encodedCheckBlocks[x] = true;
+                encodedBlocks[x+splitfile.dataBlocks.length] = true;
                 progress = true;
+            }
+            if(!progress) {
+                // Data block?
+                while((x = splitfile.findDataBlock(data, x)) != -1) {
+                    encodedBlocks[x] = true;
+                    progress = true;
+                }
+            }
+            if(!progress) {
+                System.err.println("Queued healing block not in the original block list");
+                assertTrue(false);
             }
             assertTrue(progress);
         }
@@ -260,17 +286,33 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
         }
         
-        public synchronized void waitForFree() {
-            while(!closed) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    // Ignore.
+        public void waitForFree(SplitFileFetcherStorage storage) {
+            synchronized(this) {
+                while(!closed) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        // Ignore.
+                    }
+                }
+                assertTrue(succeeded);
+            }
+            int x = 0;
+            for(SplitFileFetcherSegmentStorage seg : storage.segments) {
+                boolean[] downloadedBlocks = seg.copyDownloadedBlocks();
+                for(boolean b : downloadedBlocks) {
+                    if(b) {
+                        synchronized(this) {
+                            encodedBlocks[x] = true;
+                        }
+                        x++;
+                    }
                 }
             }
-            assertTrue(succeeded);
-            for(boolean b : encodedCheckBlocks)
-                assertTrue(b);
+            synchronized(this) {
+                for(int i=0;i<encodedBlocks.length;i++)
+                    assertTrue("Block "+i+" not found or decoded", encodedBlocks[i]);
+            }
         }
         
     }
@@ -325,6 +367,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
     
     public void testSingleSegment() throws CHKEncodeException, IOException, FetchException, MetadataParseException, MetadataUnresolvedException {
         // 2 data blocks.
+        testSingleSegment(2, 1, BLOCK_SIZE*2);
+        testSingleSegment(2, 1, BLOCK_SIZE+1);
         testSingleSegment(2, 2, BLOCK_SIZE*2);
         testSingleSegment(2, 2, BLOCK_SIZE+1);
         testSingleSegment(2, 3, BLOCK_SIZE*2);
@@ -345,7 +389,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
         TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
         testDataBlocksOnly(test);
-        //testCheckBlocksOnly(test); // FIXME
+        if(checkBlocks >= dataBlocks)
+            testCheckBlocksOnly(test);
         //testRandomMixture(test); // FIXME
         test.free();
     }
@@ -374,7 +419,38 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.checkFailed();
         waitForFinished(segment);
         cb.checkFailed();
-        cb.waitForFree();
+        cb.waitForFree(storage);
+        cb.checkFailed();
+    }
+
+    private void testCheckBlocksOnly(TestSplitfile test) throws IOException, CHKEncodeException, FetchException, MetadataParseException {
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        SplitFileFetcherSegmentStorage segment = storage.segments[0];
+        for(int i=0;i<test.dataBlocks.length;i++) {
+            segment.onNonFatalFailure(i);
+        }
+        for(int i=test.dataBlocks.length;i<test.checkBlocks.length;i++) {
+            segment.onNonFatalFailure(i+test.dataBlocks.length);
+        }
+        for(int i=0;i<test.dataBlocks.length /* only need that many to decode */;i++) {
+            assertFalse(segment.hasStartedDecode());
+            assertTrue(segment.onGotKey(test.checkKeys[i].getNodeCHK(), test.encodeCheckBlock(i)));
+        }
+        cb.checkFailed();
+        assertTrue(segment.hasStartedDecode());
+        cb.checkFailed();
+        waitForDecode(segment);
+        cb.checkFailed();
+        cb.waitForFinished();
+        cb.checkFailed();
+        test.verifyOutput(storage);
+        cb.checkFailed();
+        storage.finishedFetcher();
+        cb.checkFailed();
+        waitForFinished(segment);
+        cb.checkFailed();
+        cb.waitForFree(storage);
         cb.checkFailed();
     }
 
