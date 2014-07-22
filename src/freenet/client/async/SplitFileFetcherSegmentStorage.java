@@ -762,4 +762,12 @@ public class SplitFileFetcherSegmentStorage {
 
     static final short VERSION = 1;
 
+    public synchronized boolean hasStartedDecode() {
+        return succeeded || failed || finished || tryDecode;
+    }
+
+    public synchronized boolean hasFailed() {
+        return failed;
+    }
+
 }
