@@ -260,7 +260,7 @@ public class SplitFileFetcherSegmentStorage {
                 } else {
                     if(logMINOR) Logger.minor(this, "Found block "+blocksFetched[i]+" in slot "+i);
                     maybeBlocks.add(new MyBlock(allBlocks[i], blocksFetched[i], i));
-                    used[i] = true;
+                    used[blocksFetched[i]] = true;
                     fetchedCount++;
                 }
             }
