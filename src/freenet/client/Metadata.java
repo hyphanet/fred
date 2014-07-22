@@ -1109,6 +1109,7 @@ public class Metadata implements Cloneable {
 			this.specifySplitfileKey = specifySplitfileKey;
 			if(splitfileCryptoKey == null) throw new IllegalArgumentException("Splitfile with parsed version 1 must have a crypto key");
 		}
+		// FIXME set up segments?
 	}
 
 	private boolean keysValid(ClientCHK[] keys) {
@@ -1845,6 +1846,14 @@ public class Metadata implements Cloneable {
 			return segs;
 		}
 	}
+
+    public SplitFileSegmentKeys[] getSegmentKeys() throws FetchException {
+        synchronized(this) {
+            if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
+                throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+            return segments;
+        }
+    }
 
 	public int getDeductBlocksFromSegments() {
 		return deductBlocksFromSegments;

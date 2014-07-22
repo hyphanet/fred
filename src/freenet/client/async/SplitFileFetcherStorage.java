@@ -174,7 +174,7 @@ public class SplitFileFetcherStorage {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
         this.clientMetadata = clientMetadata == null ? new ClientMetadata() : clientMetadata.clone(); // copy it as in SingleFileFetcher
-        SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys(null);
+        SplitFileSegmentKeys[] segmentKeys = metadata.getSegmentKeys();
         CompatibilityMode minCompatMode = metadata.getMinCompatMode();
         CompatibilityMode maxCompatMode = metadata.getMaxCompatMode();
 
@@ -629,5 +629,5 @@ public class SplitFileFetcherStorage {
     public void failOnDiskError(IOException e) {
         fetcher.failOnDiskError(e);
     }
-    
+
 }
