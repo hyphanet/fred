@@ -608,7 +608,13 @@ public class SplitFileFetcherSegmentStorage {
         // FIXME if we use readAllBlocks() we'll need to run on the memory limited queue???
         for(int i=0;i<dataBlocks;i++) {
             byte[] buf = readBlock(i);
-            os.write(buf);
+            if(i == dataBlocks-1 && this.segNo == parent.segments.length-1) {
+                int length = (int) (parent.finalLength % CHKBlock.DATA_LENGTH);
+                if(length == 0) length = CHKBlock.DATA_LENGTH;
+                os.write(buf, 0, length);
+            } else {
+                os.write(buf);
+            }
         }
     }
 
