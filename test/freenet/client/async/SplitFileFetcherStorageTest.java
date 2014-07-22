@@ -27,6 +27,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
+import freenet.keys.NodeCHK;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
@@ -140,6 +141,13 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public CHKBlock encodeCheckBlock(int i) throws CHKEncodeException {
             return ClientCHKBlock.encodeSplitfileBlock(checkBlocks[i], cryptoKey, cryptoAlgorithm).getBlock();
         }
+        
+        public CHKBlock encodeBlock(int block) throws CHKEncodeException {
+            if(block < dataBlocks.length)
+                return encodeDataBlock(block);
+            else
+                return encodeCheckBlock(block - dataBlocks.length);
+        }
 
         public int findCheckBlock(byte[] data, int start) {
             start++;
@@ -186,6 +194,13 @@ public class SplitFileFetcherStorageTest extends TestCase {
             os.close();
             assertTrue(BucketTools.equalBuckets(originalData, out));
             out.free();
+        }
+
+        public NodeCHK getCHK(int block) {
+            if(block < dataBlocks.length)
+                return dataKeys[block].getNodeCHK();
+            else
+                return checkKeys[block-dataBlocks.length].getNodeCHK();
         }
 
     }
@@ -391,7 +406,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         testDataBlocksOnly(test);
         if(checkBlocks >= dataBlocks)
             testCheckBlocksOnly(test);
-        //testRandomMixture(test); // FIXME
+        testRandomMixture(test);
         test.free();
     }
 
@@ -436,6 +451,40 @@ public class SplitFileFetcherStorageTest extends TestCase {
         for(int i=0;i<test.dataBlocks.length /* only need that many to decode */;i++) {
             assertFalse(segment.hasStartedDecode());
             assertTrue(segment.onGotKey(test.checkKeys[i].getNodeCHK(), test.encodeCheckBlock(i)));
+        }
+        cb.checkFailed();
+        assertTrue(segment.hasStartedDecode());
+        cb.checkFailed();
+        waitForDecode(segment);
+        cb.checkFailed();
+        cb.waitForFinished();
+        cb.checkFailed();
+        test.verifyOutput(storage);
+        cb.checkFailed();
+        storage.finishedFetcher();
+        cb.checkFailed();
+        waitForFinished(segment);
+        cb.checkFailed();
+        cb.waitForFree(storage);
+        cb.checkFailed();
+    }
+    
+    private void testRandomMixture(TestSplitfile test) throws FetchException, MetadataParseException, IOException, CHKEncodeException {
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        SplitFileFetcherSegmentStorage segment = storage.segments[0];
+        int total = test.dataBlocks.length+test.checkBlocks.length;
+        for(int i=0;i<total;i++)
+            segment.onNonFatalFailure(i); // We want healing on all blocks that aren't found.
+        boolean[] hits = new boolean[total];
+        for(int i=0;i<test.dataBlocks.length;i++) {
+            int block;
+            do {
+                block = random.nextInt(total);
+            } while (hits[block]);
+            hits[block] = true;
+            assertFalse(segment.hasStartedDecode());
+            assertTrue(segment.onGotKey(test.getCHK(block), test.encodeBlock(block)));
         }
         cb.checkFailed();
         assertTrue(segment.hasStartedDecode());
