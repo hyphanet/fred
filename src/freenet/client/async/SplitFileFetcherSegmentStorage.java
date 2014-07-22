@@ -99,7 +99,7 @@ public class SplitFileFetcherSegmentStorage {
     public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, int segNumber, 
             short splitfileType, int dataBlocks, int checkBlocks, int crossCheckBlocks,
             long segmentDataOffset, long segmentKeysOffset, long segmentStatusOffset, 
-            boolean trackRetries) {
+            boolean trackRetries, SplitFileSegmentKeys keys) {
         this.parent = parent;
         this.segNo = segNumber;
         this.dataBlocks = dataBlocks;
@@ -127,6 +127,8 @@ public class SplitFileFetcherSegmentStorage {
         this.segmentBlockDataOffset = segmentDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
+        // This must be passed in here or we will read the uninitialised keys!
+        keysCache = new SoftReference<SplitFileSegmentKeys>(keys);
     }
 
     public SplitFileSegmentKeys getSegmentKeys() throws IOException {
