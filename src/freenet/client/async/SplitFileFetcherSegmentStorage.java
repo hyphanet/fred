@@ -118,6 +118,7 @@ public class SplitFileFetcherSegmentStorage {
         else
             crossSegmentsByBlock = null;
         blocksFetched = new short[minFetched];
+        for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusLength = storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, 
                 trackRetries);
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
@@ -263,8 +264,8 @@ public class SplitFileFetcherSegmentStorage {
                     fetchedCount++;
                 }
             }
-            int count = 0;
             if(fetchedCount < blocksForDecode()) {
+                int count = 0;
                 for(int i=0;i<totalBlocks;i++) {
                     if(!used[i]) {
                         changedSomething = true;
@@ -272,11 +273,11 @@ public class SplitFileFetcherSegmentStorage {
                     }
                     if(blocksFound[i]) count++;
                 }
-            }
-            if(count != blocksFetchedCount) {
-                Logger.warning(this, "Corrected block count to "+count+" from "+blocksFetchedCount);
-                blocksFetchedCount = count;
-                changedSomething = true;
+                if(count != blocksFetchedCount) {
+                    Logger.warning(this, "Corrected block count to "+count+" from "+blocksFetchedCount);
+                    blocksFetchedCount = count;
+                    changedSomething = true;
+                }
             }
         }
         if(fetchedCount < blocksForDecode()) {
@@ -378,6 +379,7 @@ public class SplitFileFetcherSegmentStorage {
         synchronized(this) {
             finished = true;
         }
+        parent.finishedEncoding(this);
     }
 
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
@@ -418,6 +420,7 @@ public class SplitFileFetcherSegmentStorage {
     private void triggerAllCrossSegmentCallbacks() {
         SplitFileFetcherCrossSegmentStorage[] crossSegmentsByBlockCopy;
         synchronized(this) {
+            if(crossSegmentsByBlock == null) return;
             crossSegmentsByBlockCopy = Arrays.copyOf(this.crossSegmentsByBlock, this.crossSegmentsByBlock.length);
             for(int i=0;i<crossSegmentsByBlock.length;i++)
                 crossSegmentsByBlock[i] = null;
