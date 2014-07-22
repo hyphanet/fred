@@ -2,6 +2,9 @@ package freenet.client.async;
 
 import java.io.IOException;
 
+import freenet.client.InsertContext.CompatibilityMode;
+import freenet.support.api.Bucket;
+
 /** Callback used by SplitFileFetcherStorage. Arguably this is over-abstraction purely to make unit
  * tests easier without having to use Mockito (which presumably means solving the issues with 
  * Maven). OTOH maybe it has some other use ... FIXME reconsider.
@@ -26,5 +29,29 @@ public interface SplitFileFetcherCallback {
 
     /** Called when the splitfile storage layer receives an unrecoverable disk I/O error. */
     void failOnDiskError(IOException e);
+
+    /** Called during construction to tell other layers how many blocks to expect. FIXME SFF should
+     * call addMustSucceedBlocks, addBlocks, then notifyClients.
+     * @param requiredBlocks The number of blocks that must be fetched to complete the download.
+     * @param remainingBlocks The total number of blocks minus requiredBlocks.
+     */
+    void setSplitfileBlocks(int requiredBlocks, int remainingBlocks);
+
+    /**
+     * Called during construction, when we know the settings for the splitfile.
+     * @param min The lowest CompatibilityMode that appears to be valid based on what we've fetched so far.
+     * @param max The highest CompatibilityMode that appears to be valid based on what we've fetched so far.
+     * @param customSplitfileKey The fixed byte[] encryption key used on insert. On anything recent, we generate a single key, randomly for an SSK,
+     * or based on the content for a CHK, and use it for everything. This saves metadata space and improves security for SSKs.
+     * @param compressed Whether the content is compressed. If false, the dontCompress option was used.
+     * @param bottomLayer Whether this report originates at the bottom layer of the splitfile pyramid. I.e. the actual file, not the file containing
+     * the metadata to fetch the file (this can recurse for several levels!)
+     * @param definitiveAnyway Whether this report is definitive even though it's not from the bottom layer. This is true of recent splitfiles, 
+     * where we store all the data in the top key.
+     */
+    void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway);
+
+    /** Queue a block to be healed. */
+    void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm);
 
 }

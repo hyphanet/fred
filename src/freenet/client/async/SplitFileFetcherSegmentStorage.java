@@ -23,8 +23,6 @@ import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
-import freenet.support.api.Bucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.NativeThread;
 
@@ -190,7 +188,7 @@ public class SplitFileFetcherSegmentStorage {
         long limit = totalBlocks() * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlocks + crossSegmentCheckBlocks, checkBlocks),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlocks + crossSegmentCheckBlocks, checkBlocks));
-        parent.context.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
+        parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
             public int getPriority() {
@@ -394,7 +392,6 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private void queueHeal(int blockNumber, byte[] data) throws IOException {
-        Bucket bucket = BucketTools.makeImmutableBucket(parent.context.tempBucketFactory, data);
         byte[] cryptoKey;
         byte cryptoAlgorithm;
         if(parent.splitfileSingleCryptoKey != null) {
@@ -405,7 +402,7 @@ public class SplitFileFetcherSegmentStorage {
             cryptoKey = key.getCryptoKey();
             cryptoAlgorithm = key.getCryptoAlgorithm();
         }
-        parent.context.healingQueue.queue(bucket, cryptoKey, cryptoAlgorithm, parent.context);
+        parent.fetcher.queueHeal(data, cryptoKey, cryptoAlgorithm);
     }
 
     private byte[][] readAllBlocks() throws IOException {

@@ -3,7 +3,6 @@ package freenet.client.async;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.zip.CRC32;
 
 import com.db4o.ObjectContainer;
@@ -118,9 +117,9 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
      * SplitFileFetcher adds keys in whatever blocks are convenient.
      * @param keys
      */
-    synchronized void addKey(Key key, int segNo, ClientContext context, ClientRequestSchedulerBase scheduler) {
+    synchronized void addKey(Key key, int segNo, KeySalter salter) {
         if(finishedSetup) throw new IllegalStateException();
-        byte[] saltedKey = scheduler.saltKey(key);
+        byte[] saltedKey = salter.saltKey(key);
         filter.addKey(saltedKey);
         byte[] localSalted = localSaltKey(key);
         segmentFilters[segNo].addKey(localSalted);

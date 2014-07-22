@@ -24,13 +24,18 @@ import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
 import freenet.crypt.ChecksumOutputStream;
+import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.PooledRandomAccessFileWrapper;
@@ -90,7 +95,6 @@ public class SplitFileFetcherStorage {
         Logger.registerClass(SplitFileFetcherStorage.class);
     }
     
-    final transient ClientContext context;
     final SplitFileFetcherCallback fetcher;
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
@@ -105,6 +109,8 @@ public class SplitFileFetcherStorage {
     final byte[] splitfileSingleCryptoKey;
     /** FEC codec for the splitfile, if needed. */
     public final NewFECCodec fecCodec;
+    final Ticker ticker;
+    final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final long finalLength;
     final short splitfileType;
     /** MIME type etc. Set on construction and passed to onSuccess(). */
@@ -153,12 +159,13 @@ public class SplitFileFetcherStorage {
     public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherCallback fetcher, 
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
-            GetCompletionCallback cb, ClientRequester parent, boolean persistent, boolean realTime,
-            ClientRequestSchedulerBase scheduler, FreenetURI thisKey, ObjectContainer container, 
-            ClientContext context) 
+            boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
+            BucketFactory tempBucketFactory, FilenameGenerator fg, Ticker ticker,
+            MemoryLimitedJobRunner memoryLimitedJobRunner) 
     throws FetchException, MetadataParseException, IOException {
-        this.context = context;
         this.fetcher = fetcher;
+        this.ticker = ticker;
+        this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.finalLength = metadata.dataLength();
         this.splitfileType = metadata.getSplitfileType();
         this.fecCodec = NewFECCodec.getInstance(splitfileType);
@@ -167,12 +174,7 @@ public class SplitFileFetcherStorage {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
         this.clientMetadata = clientMetadata == null ? new ClientMetadata() : clientMetadata.clone(); // copy it as in SingleFileFetcher
-        SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys(container);
-        if(persistent) {
-            // Clear them here so they don't get deleted and we don't need to clone them.
-            metadata.clearSplitfileKeys();
-            container.store(metadata);
-        }
+        SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys(null);
         CompatibilityMode minCompatMode = metadata.getMinCompatMode();
         CompatibilityMode maxCompatMode = metadata.getMaxCompatMode();
 
@@ -228,7 +230,7 @@ public class SplitFileFetcherStorage {
             }
             // We assume we are the bottom layer. 
             // If the top-block stats are passed in then we can safely say the report is definitive.
-            cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0, container, context);
+            fetcher.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0);
 
             if((blocksPerSegment > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocksPerSegment > origFetchContext.maxCheckBlocksPerSegment))
@@ -252,9 +254,9 @@ public class SplitFileFetcherStorage {
         }
         
         byte[] localSalt = new byte[32];
-        context.random.nextBytes(localSalt);
+        random.nextBytes(localSalt);
         
-        keyListener = new SplitFileFetcherKeyListenerNew(fetcher, this, realTime, persistent, 
+        keyListener = new SplitFileFetcherKeyListenerNew(fetcher, this, realTime, false, 
                 localSalt, splitfileDataBlocks + splitfileCheckBlocks, blocksPerSegment + 
                 checkBlocksPerSegment, segmentCount);
 
@@ -295,16 +297,14 @@ public class SplitFileFetcherStorage {
             int data = keys.getDataBlocks();
             int check = keys.getCheckBlocks();
             for(int j=0;j<(data+check);j++) {
-                keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, context, scheduler);
+                keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
             }
         }
         assert(dataOffset == storedBlocksLength);
         assert(segmentKeysOffset == storedBlocksLength + storedKeysLength);
         assert(segmentStatusOffset == storedBlocksLength + storedKeysLength + storedSegmentStatusLength);
         int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
-        parent.addMustSucceedBlocks(splitfileDataBlocks - totalCrossCheckBlocks, container);
-        parent.addBlocks(splitfileCheckBlocks + totalCrossCheckBlocks, container);
-        parent.notifyClients(container, context);
+        fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
         
         keyListener.finishedSetup();
         
@@ -340,7 +340,7 @@ public class SplitFileFetcherStorage {
         }
         
         // Write the metadata to a temporary file to get its exact length.
-        Bucket metadataTemp = context.tempBucketFactory.makeBucket(-1);
+        Bucket metadataTemp = tempBucketFactory.makeBucket(-1);
         OutputStream os = metadataTemp.getOutputStream();
         ChecksumOutputStream cos = new ChecksumOutputStream(os, new CRC32());
         BufferedOutputStream bos = new BufferedOutputStream(cos);
@@ -367,7 +367,7 @@ public class SplitFileFetcherStorage {
         // Create the actual LockableRandomAccessThing
         
         // FIXME use some sort of tempfile management. This will do for now though.
-        File f = context.fg.makeRandomFile();
+        File f = fg.makeRandomFile();
         this.raf = new PooledRandomAccessFileWrapper(f, "rw", totalLength);
         RAFLock lock = raf.lockOpen();
         try {
@@ -587,7 +587,7 @@ public class SplitFileFetcherStorage {
     };
 
     public void lazyWriteMetadata() {
-        context.ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
+        ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
                 LAZY_WRITE_METADATA_DELAY, false, true);
     }
 
