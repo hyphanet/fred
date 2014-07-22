@@ -390,8 +390,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
         testSingleSegment(2, 3, BLOCK_SIZE+1);
         testSingleSegment(128, 128, BLOCK_SIZE*128);
         testSingleSegment(128, 128, BLOCK_SIZE*128-1);
-        testSingleSegment(129, 127, BLOCK_SIZE*128);
-        testSingleSegment(129, 127, BLOCK_SIZE*128-1);
+        testSingleSegment(129, 127, BLOCK_SIZE*129);
+        testSingleSegment(129, 127, BLOCK_SIZE*129-1);
         testSingleSegment(127, 129, BLOCK_SIZE*127);
         testSingleSegment(127, 129, BLOCK_SIZE*127-1);
     }
