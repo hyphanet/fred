@@ -346,6 +346,18 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				bucketFactory, eventProducer,
 				false, CAN_WRITE_CLIENT_CACHE, null, null);
 	}
+	
+	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength, 
+	        BucketFactory bucketFactory, SimpleEventProducer eventProducer) {
+        return
+        new FetchContext(maxLength, maxTempLength, 1024*1024,
+            MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
+            SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
+            FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+            FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+            bucketFactory, eventProducer,
+            false, CAN_WRITE_CLIENT_CACHE, null, null);
+	}
 
 	@Override
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
