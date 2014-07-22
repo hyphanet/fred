@@ -772,7 +772,7 @@ public class SplitFileFetcherSegmentStorage {
         return failed;
     }
 
-    boolean[] copyDownloadedBlocks() {
+    synchronized boolean[] copyDownloadedBlocks() {
         return this.blocksFound.clone();
     }
 

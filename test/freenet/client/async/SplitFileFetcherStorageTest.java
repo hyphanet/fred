@@ -320,8 +320,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
                         synchronized(this) {
                             encodedBlocks[x] = true;
                         }
-                        x++;
                     }
+                    x++;
                 }
             }
             synchronized(this) {
@@ -486,6 +486,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             assertFalse(segment.hasStartedDecode());
             assertTrue(segment.onGotKey(test.getCHK(block), test.encodeBlock(block)));
         }
+        //printChosenBlocks(hits);
         cb.checkFailed();
         assertTrue(segment.hasStartedDecode());
         cb.checkFailed();
@@ -501,6 +502,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.checkFailed();
         cb.waitForFree(storage);
         cb.checkFailed();
+    }
+
+    private void printChosenBlocks(boolean[] hits) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Blocks: ");
+        for(int i=0;i<hits.length;i++) {
+            if(hits[i]) {
+                sb.append(i);
+                sb.append(" ");
+            }
+        }
+        sb.setLength(sb.length()-1);
+        System.out.println(sb.toString());
     }
 
     private void waitForFinished(SplitFileFetcherSegmentStorage segment) {
