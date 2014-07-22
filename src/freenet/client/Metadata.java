@@ -1835,6 +1835,7 @@ public class Metadata implements Cloneable {
 		return segmentCount;
 	}
 
+	// FIXME gross hack due to database/memory issues... remove and make segments final.
 	public SplitFileSegmentKeys[] grabSegmentKeys(ObjectContainer container) throws FetchException {
 		synchronized(this) {
 			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
