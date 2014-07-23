@@ -74,6 +74,24 @@ public class OpennetManager {
 	final Announcer announcer;
 	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
+	/* The routing table is split into "buckets" by distance, each of which has a separate LRU 
+	 * list. For now there are only 2 buckets; the PETS paper suggested many buckets, but this 
+	 * would have larger overhead, more dependence on the network size, and it is not clear that 
+	 * it is necessary at the moment.
+	 * 
+	 * The measured global link length distribution showed a good (1/d) length distribution below 
+	 * 0.01 (but nowhere near enough nodes) and a flat distribution above 0.01. Hence the choice of
+	 * LONG_DISTANCE as 0.01. It appeared that there were very few short links (<0.01) and a lot of
+	 * random long links, resulting in routing not working and requests bouncing around more or 
+	 * less randomly on the long links.
+	 * 
+	 * LONG_PROPORTION is chosen as 30% for two reasons: (a) It is close to the Kleinberg optimum 
+	 * (around 20%), and (b) it ensures that nodes with 10 connections still have 3 long links, so 
+	 * long links cannot form chains and the routing still scales if the short routing is broken.
+	 * 
+	 * See USK@ZLwcSLwqpM1527Tw1YmnSiXgzITU0neHQ11Cyl0iLmk,f6FLo3TvsEijIcJq-X3BTjjtm0ErVZwAPO7AUd9V7lY,AQACAAE/fix-link-length/7/
+	 * (FIXME move to wiki or other permanent storage)
+	 */
 	/** Peers with more than this distance are considered "long links". */
 	static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
@@ -86,6 +104,7 @@ public class OpennetManager {
      * successfully fetch a key. Normally we take the bottom peer, but if that isn't eligible 
      * to be dropped, we iterate up the list. */
     private final LRUQueue<OpennetPeerNode> peersLRUShort;
+    
 	/** Old peers. Opennet peers which we dropped but would still like to talk to
 	 * if we have no other option. */
 	private final LRUQueue<OpennetPeerNode> oldPeers;
