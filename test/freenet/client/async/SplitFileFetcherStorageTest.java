@@ -342,17 +342,18 @@ public class SplitFileFetcherStorageTest extends TestCase {
             if(i < n-1) {
                 dis.readFully(blocks[i]);
             } else {
-                dis.readFully(blocks[i], 0, (int) (size - i*BLOCK_SIZE));
+                int length = (int) (size - i*BLOCK_SIZE);
+                dis.readFully(blocks[i], 0, length);
                 // Now pad it ...
-                blocks[i] = pad(blocks[i]);
+                blocks[i] = pad(blocks[i], length);
             }
         }
         return blocks;
     }
 
-    private static byte[] pad(byte[] orig) throws IOException {
+    private static byte[] pad(byte[] orig, int length) throws IOException {
         ArrayBucket b = new ArrayBucket(orig);
-        Bucket ret = BucketTools.pad(b, BLOCK_SIZE, bf, orig.length);
+        Bucket ret = BucketTools.pad(b, BLOCK_SIZE, bf, length);
         return BucketTools.toByteArray(ret);
     }
 
