@@ -343,8 +343,7 @@ public class OpennetManager {
 			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
 			Logger.minor(this, "My heavy setup ref: "+crypto.myCompressedHeavySetupRef().length);
 		}
-		dropExcessPeers(true);
-		dropExcessPeers(false);
+		dropAllExcessPeers();
 		writeFile();
 		// Read old peers
 		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
@@ -719,6 +718,11 @@ public class OpennetManager {
 		}
 		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit+" addingPeer="+addingPeer);
 		return false;
+	}
+
+	void dropAllExcessPeers() {
+	    dropExcessPeers(true);
+	    dropExcessPeers(false);
 	}
 
 	void dropExcessPeers(boolean longDistance) {
@@ -1344,11 +1348,9 @@ public class OpennetManager {
     public void onConnectedPeer(PeerNode pn) {
         if(pn instanceof OpennetPeerNode)
             dropExcessPeers(((OpennetPeerNode)pn).isLongDistance());
-        else {
+        else
             // The peer count target may have decreased, so we may need to drop an opennet peer.
-            dropExcessPeers(true);
-            dropExcessPeers(false);
-        }
+            dropAllExcessPeers();
     }
 
 }
