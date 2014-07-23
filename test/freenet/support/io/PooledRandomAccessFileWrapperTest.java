@@ -7,7 +7,7 @@ import java.util.Random;
 
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 
-public class PooledRandomAccessFileWrapperTest extends BaseRandomAccessThingTest {
+public class PooledRandomAccessFileWrapperTest extends RandomAccessThingTestBase {
 
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
     

@@ -6,20 +6,20 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 /** Base class for testing RandomAccessThing's. */
-public abstract class BaseRandomAccessThingTest extends TestCase {
+public abstract class RandomAccessThingTestBase extends TestCase {
     
     /** Size list for small tests i.e. stuff that definitely fits in RAM */
     private final int[] sizeList;
     /** Size list for big tests i.e. stuff that might not fit in RAM */
     private final long[] fullSizeList;
     
-    protected BaseRandomAccessThingTest(int[] allSmallTests) {
+    protected RandomAccessThingTestBase(int[] allSmallTests) {
         sizeList = allSmallTests;
         fullSizeList = new long[sizeList.length];
         for(int i=0;i<sizeList.length;i++) fullSizeList[i] = sizeList[i];
     }
     
-    protected BaseRandomAccessThingTest(int[] smallTests, long[] bigTests) {
+    protected RandomAccessThingTestBase(int[] smallTests, long[] bigTests) {
         sizeList = smallTests;
         fullSizeList = bigTests;
     }

@@ -3,7 +3,7 @@ package freenet.support.io;
 import java.io.File;
 import java.io.IOException;
 
-public class RandomAccessFileWrapperTest extends BaseRandomAccessThingTest {
+public class RandomAccessFileWrapperTest extends RandomAccessThingTestBase {
     
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
     
