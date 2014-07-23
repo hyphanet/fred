@@ -3,7 +3,6 @@ package freenet.client.async;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -35,10 +34,9 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
-import freenet.support.io.PooledRandomAccessFileWrapper;
+import freenet.support.io.LockableRandomAccessThingFactory;
 
 /** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 
  * single random access file), but with most of the metadata in memory. The data, and the larger
@@ -160,7 +158,7 @@ public class SplitFileFetcherStorage {
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
-            BucketFactory tempBucketFactory, FilenameGenerator fg, Ticker ticker,
+            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Ticker ticker,
             MemoryLimitedJobRunner memoryLimitedJobRunner) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
@@ -366,9 +364,7 @@ public class SplitFileFetcherStorage {
         
         // Create the actual LockableRandomAccessThing
         
-        // FIXME use some sort of tempfile management. This will do for now though.
-        File f = fg.makeRandomFile();
-        this.raf = new PooledRandomAccessFileWrapper(f, "rw", totalLength);
+        this.raf = rafFactory.makeRAF(totalLength);
         RAFLock lock = raf.lockOpen();
         try {
             for(SplitFileFetcherSegmentStorage segment : segments)

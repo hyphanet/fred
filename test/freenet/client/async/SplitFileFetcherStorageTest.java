@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -37,9 +36,10 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FilenameGenerator;
-import freenet.support.io.TempBucketFactory;
+import freenet.support.io.ByteArrayRandomAccessThingFactory;
+import freenet.support.io.LockableRandomAccessThingFactory;
 import junit.framework.TestCase;
 
 public class SplitFileFetcherStorageTest extends TestCase {
@@ -47,8 +47,6 @@ public class SplitFileFetcherStorageTest extends TestCase {
     // Setup code is considerable. See below for actual tests ...
     
     static final DummyRandomSource random = new DummyRandomSource(1234);
-    static final File tempDir = new File("split-file-fetcher-storage-test");
-    static FilenameGenerator fg;
     static final KeySalter salt = new KeySalter() {
 
         @Override
@@ -57,7 +55,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
         
     };
-    static BucketFactory bf;
+    static BucketFactory bf = new ArrayBucketFactory();
+    static LockableRandomAccessThingFactory rafFactory = new ByteArrayRandomAccessThingFactory();
     static final Executor exec = new PooledExecutor();
     static final Ticker ticker = new TrivialTicker(exec);
     static MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, exec);
@@ -69,11 +68,6 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static final FreenetURI URI = FreenetURI.generateRandomCHK(random);
     private static final List<COMPRESSOR_TYPE> NO_DECOMPRESSORS = Collections.emptyList();
     
-    public void setUp() throws IOException {
-        fg = new FilenameGenerator(random, true, tempDir, "test-");
-        bf = new TempBucketFactory(exec, fg, 0, 0, random, random, false);
-    }
-
     static class TestSplitfile {
         final Bucket originalData;
         final Metadata metadata;
@@ -178,7 +172,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb) throws FetchException, MetadataParseException, IOException {
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, makeFetchContext(), false, salt, URI, random, bf,
-                    fg, ticker, memoryLimitedJobRunner);
+                    rafFactory, ticker, memoryLimitedJobRunner);
         }
 
         private FetchContext makeFetchContext() {
