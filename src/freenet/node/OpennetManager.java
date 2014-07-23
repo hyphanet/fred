@@ -590,7 +590,7 @@ public class OpennetManager {
 		}
 		boolean canAdd = true;
 		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
-		maxPeers = getNumberOfConnectedPeersToAim();
+		maxPeers = getNumberOfConnectedPeersToAim(distance);
 		synchronized(this) {
 			int size = getSize(distance);
 			if(size == maxPeers && nodeToAddNow == null) {
