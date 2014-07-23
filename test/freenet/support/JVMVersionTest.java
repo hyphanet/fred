@@ -16,4 +16,8 @@ public class JVMVersionTest extends TestCase {
 		Assert.assertFalse(JVMVersion.isTooOld("1.7"));
 		Assert.assertFalse(JVMVersion.isTooOld("1.8.0_9"));
 	}
+
+	public void testNull() {
+		Assert.assertFalse(JVMVersion.isTooOld(null));
+	}
 }

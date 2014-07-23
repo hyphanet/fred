@@ -18,6 +18,8 @@ public class JVMVersion {
 	}
 
 	static boolean isTooOld(String version) {
+		if (version == null) return false;
+
 		return version.compareTo(REQUIRED) < 0;
 	}
 }
