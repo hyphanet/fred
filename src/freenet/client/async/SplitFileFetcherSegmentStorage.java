@@ -449,7 +449,7 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
-    private final int totalBlocks() {
+    final int totalBlocks() {
         return dataBlocks + crossSegmentCheckBlocks + checkBlocks;
     }
 

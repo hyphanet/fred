@@ -555,7 +555,7 @@ public class Metadata implements Cloneable {
 							!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
 						minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
 					} else
-						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode");
+						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode: min="+minCompatMode+" max="+maxCompatMode+" top="+topCompatibilityMode);
 				}
 
 				// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
@@ -1097,6 +1097,10 @@ public class Metadata implements Cloneable {
 			splitfileParams = new byte[len];
 			byte[] b = Fields.shortToBytes(mode);
 			System.arraycopy(b, 0, splitfileParams, 0, 2);
+			// FIXME we set the params but we don't include the values in the metadata.
+			// We don't set keys either.
+			// The format of the Metadata object is different for creating one from scratch for 
+			// inserting vs constructing it from a serialized metadata document.
 			if(mode == SPLITFILE_PARAMS_CROSS_SEGMENT)
 				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments, crossSegmentBlocks } );
 			else if(mode == SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS)
