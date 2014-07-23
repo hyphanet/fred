@@ -81,9 +81,9 @@ public class OpennetManager {
 	 * 
 	 * The measured global link length distribution showed a good (1/d) length distribution below 
 	 * 0.01 (but nowhere near enough nodes) and a flat distribution above 0.01. Hence the choice of
-	 * LONG_DISTANCE as 0.01. It appeared that there were very few short links (<0.01) and a lot of
-	 * random long links, resulting in routing not working and requests bouncing around more or 
-	 * less randomly on the long links.
+	 * LONG_DISTANCE as 0.01. It appeared that there were very few short links (~ 15% less than 
+	 * 0.01 distance) and a lot of random long links, which is the opposite of what we need for
+	 * good routing, so requests would mostly bounce around randomly on the long links.
 	 * 
 	 * LONG_PROPORTION is chosen as 30% for two reasons: (a) It is close to the Kleinberg optimum 
 	 * (around 20%), and (b) it ensures that nodes with 10 connections still have 3 long links, so 
