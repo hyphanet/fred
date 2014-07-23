@@ -78,11 +78,11 @@ public class OpennetManager {
 	static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
 	static final double LONG_PROPORTION = 0.3;
-	/** Peers with distance greater than LONG_DISTANCE. PeerNode's are promoted when they 
+	/** Peers with distance greater than LONG_DISTANCE. PeerNodes are promoted when they 
 	 * successfully fetch a key. Normally we take the bottom peer, but if that isn't eligible 
 	 * to be dropped, we iterate up the list. */
 	private final LRUQueue<OpennetPeerNode> peersLRULong;
-    /** Peers with distance shorter than LONG_DISTANCE. PeerNode's are promoted when they 
+    /** Peers with distance shorter than LONG_DISTANCE. PeerNodes are promoted when they 
      * successfully fetch a key. Normally we take the bottom peer, but if that isn't eligible 
      * to be dropped, we iterate up the list. */
     private final LRUQueue<OpennetPeerNode> peersLRUShort;
@@ -305,7 +305,7 @@ public class OpennetManager {
 				// a-b not opposite sign to b-a possible in a corner case (a=0 b=Integer.MIN_VALUE).
 				if(pn1.hashCode > pn2.hashCode) return 1;
 				else if(pn1.hashCode < pn2.hashCode) return -1;
-				Logger.error(this, "Two OpennerPeerNode's with the same hashcode: "+pn1+" vs "+pn2);
+				Logger.error(this, "Two OpennetPeerNodes with the same hashcode: "+pn1+" vs "+pn2);
 				return Fields.compareObjectID(pn1, pn2);
 			}
 		});
