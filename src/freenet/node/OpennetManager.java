@@ -315,7 +315,7 @@ public class OpennetManager {
 		    // This should only be a problem with old nodes; we will include the location in new 
 		    // path folding noderefs...
 		    if(Location.isValid(opn.getLocation()))
-		        (opn.isLongDistance() ? peersLRULong : peersLRUShort).push(opn);
+		        lruQueue(opn).push(opn);
 		    else
 		        node.peers.disconnectAndRemove(opn, false, false, false);
 		}
@@ -353,14 +353,20 @@ public class OpennetManager {
 		return stopping;
 	}
 	
+	private LRUQueue<OpennetPeerNode> lruQueue(boolean longDistance) {
+	    return longDistance ? peersLRULong : peersLRUShort;
+	}
+	
+    private LRUQueue<OpennetPeerNode> lruQueue(OpennetPeerNode pn) {
+        return pn.isLongDistance() ? peersLRULong : peersLRUShort;
+    }
+    
 	public boolean alreadyHaveOpennetNode(SimpleFieldSet fs) {
 		try {
 			// FIXME OPT can we do this cheaper?
 			// Maybe just parse the pubkey, and then compare it with the existing peers?
 			OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
-			boolean isLong = pn.isLongDistance();
-			LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
-			if(peersLRU.contains(pn)) {
+			if(lruQueue(pn).contains(pn)) {
 				if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 				return true;
 			}
@@ -381,7 +387,7 @@ public class OpennetManager {
 			return null; // Equal to myself
 		}
 		boolean isLong = pn.isLongDistance();
-		LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
+		LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
 		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			if(allowExisting) {
@@ -412,7 +418,7 @@ public class OpennetManager {
 
 	void forceAddPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU) {
 	    boolean isLong = nodeToAddNow.isLongDistance();
-	    LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
+        LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
 		synchronized(this) {
 			if(addAtLRU)
 				peersLRU.pushLeast(nodeToAddNow);
@@ -462,7 +468,7 @@ public class OpennetManager {
 	 * @return True if the node was added / should be added.
 	 */
 	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType, boolean isLong) {
-	    LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
@@ -697,7 +703,7 @@ public class OpennetManager {
 	}
 
 	void dropExcessPeers(boolean longDistance) {
-	    LRUQueue<OpennetPeerNode> peersLRU = longDistance ? peersLRULong : peersLRUShort;
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(longDistance);
 		int maxPeers = getNumberOfConnectedPeersToAim(longDistance);
 		while(peersLRU.size() > maxPeers) {
 			if(logMINOR)
@@ -726,9 +732,8 @@ public class OpennetManager {
 	 * @see OpennetPeerNode.shouldDisconnectAndRemoveNow()
 	 */
 	synchronized public int getSize(boolean longDistance) {
-	    LRUQueue<OpennetPeerNode> peersLRU = longDistance ? peersLRULong : peersLRUShort;
 		int x = 0;
-		for (Enumeration<OpennetPeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
+		for (Enumeration<OpennetPeerNode> e = lruQueue(longDistance).elements(); e.hasMoreElements();) {
 			OpennetPeerNode pn = e.nextElement();
 			if(!pn.isUnroutableOlderVersion()) x++;
 		}
@@ -822,7 +827,7 @@ public class OpennetManager {
 
 	public void onSuccess(OpennetPeerNode pn) {
 	    boolean isLong = pn.isLongDistance();
-	    LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
 		synchronized(this) {
 			for(ConnectionType type : ConnectionType.values())
 				successCount.put(type, successCount.get(type)+1);
@@ -841,8 +846,7 @@ public class OpennetManager {
 
 	public void onRemove(OpennetPeerNode pn) {
 		long now = System.currentTimeMillis();
-        boolean isLong = pn.isLongDistance();
-        LRUQueue<OpennetPeerNode> peersLRU = isLong ? peersLRULong : peersLRUShort;
+        LRUQueue<OpennetPeerNode> peersLRU = lruQueue(pn);
 		synchronized (this) {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
