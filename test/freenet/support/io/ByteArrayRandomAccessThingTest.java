@@ -1,6 +1,6 @@
 package freenet.support.io;
 
-public class ByteArrayRandomAccessThingTest extends BaseRandomAccessThingTest {
+public class ByteArrayRandomAccessThingTest extends RandomAccessThingTestBase {
 
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
     
