@@ -96,15 +96,33 @@ public class OpennetManager {
 	static final double LONG_DISTANCE = 0.01;
 	/** This proportion of the routing table consists of "long links". */
 	static final double LONG_PROPORTION = 0.3;
-	/** Peers with distance greater than LONG_DISTANCE. PeerNodes are promoted when they 
-	 * successfully fetch a key. Normally we take the bottom peer, but if that isn't eligible 
-	 * to be dropped, we iterate up the list. */
-	private final LRUQueue<OpennetPeerNode> peersLRULong;
-    /** Peers with distance shorter than LONG_DISTANCE. PeerNodes are promoted when they 
+	
+    enum LINK_LENGTH {
+        /** Shorter than LONG_DISTANCE */
+        SHORT {
+            @Override
+            public int getTargetPeers(int target) {
+                int longPeers = (int) (target * LONG_PROPORTION);
+                return target - longPeers;
+            }
+        },
+        /** Longer than LONG_DISTANCE */
+        LONG {
+            @Override
+            public int getTargetPeers(int target) {
+                int longPeers = (int) (target * LONG_PROPORTION);
+                return longPeers;
+            }
+        };
+        /** Get the target number of peers for this class, given the overall target number of peers */
+        public abstract int getTargetPeers(int target);
+    }
+    
+    /** Peers LRUs by LINK_LENGTH. PeerNodes are promoted within their LRU when they 
      * successfully fetch a key. Normally we take the bottom peer, but if that isn't eligible 
      * to be dropped, we iterate up the list. */
-    private final LRUQueue<OpennetPeerNode> peersLRUShort;
-    
+    private final EnumMap<LINK_LENGTH, LRUQueue<OpennetPeerNode>> peersLRUByDistance;
+	
 	/** Old peers. Opennet peers which we dropped but would still like to talk to
 	 * if we have no other option. */
 	private final LRUQueue<OpennetPeerNode> oldPeers;
@@ -230,8 +248,9 @@ public class OpennetManager {
 				crypto.initCrypto();
 			}
 		}
-		peersLRUShort = new LRUQueue<OpennetPeerNode>();
-        peersLRULong = new LRUQueue<OpennetPeerNode>();
+		peersLRUByDistance = new EnumMap<LINK_LENGTH, LRUQueue<OpennetPeerNode>>(LINK_LENGTH.class);
+		for(LINK_LENGTH l : LINK_LENGTH.values())
+		    peersLRUByDistance.put(l, new LRUQueue<OpennetPeerNode>());
 		oldPeers = new LRUQueue<OpennetPeerNode>();
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 	}
@@ -371,12 +390,12 @@ public class OpennetManager {
 		return stopping;
 	}
 	
-	private LRUQueue<OpennetPeerNode> lruQueue(boolean longDistance) {
-	    return longDistance ? peersLRULong : peersLRUShort;
+	private LRUQueue<OpennetPeerNode> lruQueue(LINK_LENGTH distance) {
+	    return peersLRUByDistance.get(distance);
 	}
 	
     private LRUQueue<OpennetPeerNode> lruQueue(OpennetPeerNode pn) {
-        return pn.isLongDistance() ? peersLRULong : peersLRUShort;
+        return lruQueue(pn.linkLengthClass());
     }
     
 	public boolean alreadyHaveOpennetNode(SimpleFieldSet fs) {
@@ -404,8 +423,8 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
 			return null; // Equal to myself
 		}
-		boolean isLong = pn.isLongDistance();
-		LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
+		LINK_LENGTH distance = pn.linkLengthClass();
+		LRUQueue<OpennetPeerNode> peersLRU = lruQueue(distance);
 		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			if(allowExisting) {
@@ -420,7 +439,7 @@ public class OpennetManager {
 			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
 			return null;
 		}
-		if(wantPeer(pn, true, false, false, connectionType, isLong)) return pn;
+		if(wantPeer(pn, true, false, false, connectionType, distance)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
 		} catch (Throwable t) {
@@ -435,8 +454,8 @@ public class OpennetManager {
 	private long timeLastOffered;
 
 	void forceAddPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU) {
-	    boolean isLong = nodeToAddNow.isLongDistance();
-        LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
+	    LINK_LENGTH distance = nodeToAddNow.linkLengthClass();
+        LRUQueue<OpennetPeerNode> peersLRU = lruQueue(distance);
 		synchronized(this) {
 			if(addAtLRU)
 				peersLRU.pushLeast(nodeToAddNow);
@@ -444,7 +463,7 @@ public class OpennetManager {
 				peersLRU.push(nodeToAddNow);
 			oldPeers.remove(nodeToAddNow);
 		}
-		dropExcessPeers(isLong);
+		dropExcessPeers(distance);
 	}
 
 	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
@@ -454,13 +473,13 @@ public class OpennetManager {
 	            return false;
 	        }
             // We have received a node reference, so we know whether it is long or short.
-	        boolean isLong = nodeToAddNow.isLongDistance();
-	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, isLong);
+	        LINK_LENGTH distance = nodeToAddNow.linkLengthClass();
+	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, distance);
 	    } else {
 	        // Initiate path folding if we want a long link *or* a short link.
 	        // FIXME ideally we'd like to indicate whether we want long links or short links.
-	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, true)
-	             || wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, false);
+	        return wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, LINK_LENGTH.SHORT)
+	             || wantPeer(nodeToAddNow, addAtLRU, justChecking, oldOpennetPeer, connectionType, LINK_LENGTH.LONG);
 	    }
 	}
 	
@@ -485,12 +504,12 @@ public class OpennetManager {
 	 * @param isLong True if the peer to add is distant. False otherwise.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType, boolean isLong) {
-	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
+	public boolean wantPeer(OpennetPeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType, LINK_LENGTH distance) {
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(distance);
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "wantPeer("+(nodeToAddNow != null) + "," +addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+","+isLong+")");
+		if(logMINOR) Logger.minor(this, "wantPeer("+(nodeToAddNow != null) + "," +addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+","+distance+")");
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
 		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: "+nodeToAddNow.getVersionNumber()+" for "+connectionType);
 		if(outdated) {
@@ -528,7 +547,7 @@ public class OpennetManager {
 				return false;
 			}
 		}
-		int maxPeers = getNumberOfConnectedPeersToAim(isLong);
+		int maxPeers = getNumberOfConnectedPeersToAim(distance);
 		if(logMINOR) Logger.minor(this, "Peers target: "+maxPeers);
 		synchronized(this) {
 			if(nodeToAddNow != null &&
@@ -539,7 +558,7 @@ public class OpennetManager {
 			}
 			if(nodeToAddNow != null)
 				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
-			if(getSize(isLong) < maxPeers || outdated) {
+			if(getSize(distance) < maxPeers || outdated) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -573,12 +592,12 @@ public class OpennetManager {
 		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
 		maxPeers = getNumberOfConnectedPeersToAim();
 		synchronized(this) {
-			int size = getSize(isLong);
+			int size = getSize(distance);
 			if(size == maxPeers && nodeToAddNow == null) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
-				OpennetPeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers, isLong, peersLRU);
+				OpennetPeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers, distance, peersLRU);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -594,10 +613,10 @@ public class OpennetManager {
 						return false;
 					}
 				}
-			} else while(canAdd && (size = getSize(isLong)) > maxPeers - ((nodeToAddNow == null || outdated) ? 0 : 1)) {
+			} else while(canAdd && (size = getSize(distance)) > maxPeers - ((nodeToAddNow == null || outdated) ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers, isLong, peersLRU);
+				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType, maxPeers, distance, peersLRU);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -615,7 +634,7 @@ public class OpennetManager {
 				}
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
-						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize(isLong));
+						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize(distance));
 					peersLRU.remove(toDrop);
 					dropList.add(toDrop);
 				}
@@ -719,21 +738,20 @@ public class OpennetManager {
 		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit+" addingPeer="+addingPeer);
 		return false;
 	}
-
+	
 	void dropAllExcessPeers() {
-	    dropExcessPeers(true);
-	    dropExcessPeers(false);
+        for(LINK_LENGTH l : LINK_LENGTH.values()) dropExcessPeers(l);
 	}
 
-	void dropExcessPeers(boolean longDistance) {
-	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(longDistance);
-		int maxPeers = getNumberOfConnectedPeersToAim(longDistance);
+	void dropExcessPeers(LINK_LENGTH distance) {
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(distance);
+		int maxPeers = getNumberOfConnectedPeersToAim(distance);
 		while(peersLRU.size() > maxPeers) {
 			if(logMINOR)
-	            Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size()+" of "+maxPeers+" for "+(longDistance ? "long" : "short")+" distance links");
+	            Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size()+" of "+maxPeers+" for "+distance+" distance links");
             OpennetPeerNode toDrop;
-			toDrop = peerToDrop(false, false, false, null, maxPeers, longDistance, peersLRU);
-			if(toDrop == null) toDrop = peerToDrop(false, true, false, null, maxPeers, longDistance, peersLRU);
+			toDrop = peerToDrop(false, false, false, null, maxPeers, distance, peersLRU);
+			if(toDrop == null) toDrop = peerToDrop(false, true, false, null, maxPeers, distance, peersLRU);
 			if(toDrop == null) return;
 			synchronized(this) {
 				peersLRU.remove(toDrop);
@@ -754,17 +772,17 @@ public class OpennetManager {
 	 * long enough to auto-update. They will be disconnected eventually, and then removed:
 	 * @see OpennetPeerNode.shouldDisconnectAndRemoveNow()
 	 */
-	synchronized public int getSize(boolean longDistance) {
+	synchronized public int getSize(LINK_LENGTH distance) {
 		int x = 0;
-		for (Enumeration<OpennetPeerNode> e = lruQueue(longDistance).elements(); e.hasMoreElements();) {
+		for (Enumeration<OpennetPeerNode> e = lruQueue(distance).elements(); e.hasMoreElements();) {
 			OpennetPeerNode pn = e.nextElement();
 			if(!pn.isUnroutableOlderVersion()) x++;
 		}
 		return x;
 	}
 
-	private OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode, ConnectionType connectionType, int maxPeers, boolean isLong, LRUQueue<OpennetPeerNode> peersLRU) {
-		if(getSize(isLong) < maxPeers) {
+	private OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode, ConnectionType connectionType, int maxPeers, LINK_LENGTH distance, LRUQueue<OpennetPeerNode> peersLRU) {
+		if(getSize(distance) < maxPeers) {
 			// Don't drop any peers
 			if(logMINOR) Logger.minor(this, "peerToDrop(): Not dropping any peer (force="+force+" addingNode="+addingNode+") because don't need to");
 			return null;
@@ -849,8 +867,8 @@ public class OpennetManager {
 	}
 
 	public void onSuccess(OpennetPeerNode pn) {
-	    boolean isLong = pn.isLongDistance();
-	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(isLong);
+	    LINK_LENGTH distance = pn.linkLengthClass();
+	    LRUQueue<OpennetPeerNode> peersLRU = lruQueue(distance);
 		synchronized(this) {
 			for(ConnectionType type : ConnectionType.values())
 				successCount.put(type, successCount.get(type)+1);
@@ -863,7 +881,7 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		if(!wantPeer(pn, false, false, false, ConnectionType.RECONNECT, isLong)) // Start at top as it just succeeded
+		if(!wantPeer(pn, false, false, false, ConnectionType.RECONNECT, distance)) // Start at top as it just succeeded
 			node.peers.disconnectAndRemove(pn, true, false, true);
 	}
 
@@ -932,11 +950,10 @@ public class OpennetManager {
 	}
 
 	/** Get the target number of opennet peers. Do not call while holding locks. */
-	public int getNumberOfConnectedPeersToAim(boolean longDistance) {
+	public int getNumberOfConnectedPeersToAim(LINK_LENGTH distance) {
+	    if(distance == null) throw new IllegalArgumentException();
 	    int target = getNumberOfConnectedPeersToAim();
-	    int longPeers = (int) (target * LONG_PROPORTION);
-	    if(longDistance) return longPeers;
-	    else return target - longPeers;
+	    return distance.getTargetPeers(target);
 	}
 	
 	public int getNumberOfConnectedPeersToAim() {
@@ -1347,7 +1364,7 @@ public class OpennetManager {
 	 * decreased so again we may need to drop a peer. */
     public void onConnectedPeer(PeerNode pn) {
         if(pn instanceof OpennetPeerNode)
-            dropExcessPeers(((OpennetPeerNode)pn).isLongDistance());
+            dropExcessPeers(((OpennetPeerNode)pn).linkLengthClass());
         else
             // The peer count target may have decreased, so we may need to drop an opennet peer.
             dropAllExcessPeers();
