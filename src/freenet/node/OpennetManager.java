@@ -1363,11 +1363,12 @@ public class OpennetManager {
 	 * to make space. If it's a darknet peer, the connection limit for opennet peers may have
 	 * decreased so again we may need to drop a peer. */
     public void onConnectedPeer(PeerNode pn) {
-        if(pn instanceof OpennetPeerNode)
+        if(pn instanceof OpennetPeerNode) {
             dropExcessPeers(((OpennetPeerNode)pn).linkLengthClass());
-        else
+        } else {
             // The peer count target may have decreased, so we may need to drop an opennet peer.
             dropAllExcessPeers();
+        }
     }
 
 }
