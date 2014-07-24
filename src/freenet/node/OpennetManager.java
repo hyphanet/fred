@@ -487,7 +487,10 @@ public class OpennetManager {
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
 	 * pending offers being accepted simultaneously.
-	 * @param nodeToAddNow Node to add.
+	 * @param nodeToAddNow Node to add. Can be null, which means the caller needs to know whether
+	 * we have space for another node, without actually adding one. This happens e.g. when we are
+	 * the data source and are trying to decide whether to send our noderef downstream for path
+	 * folding. 
 	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
 	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
 	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
