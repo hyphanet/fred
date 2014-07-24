@@ -30,8 +30,7 @@ public interface SplitFileFetcherCallback {
     /** Called when the splitfile storage layer receives an unrecoverable disk I/O error. */
     void failOnDiskError(IOException e);
 
-    /** Called during construction to tell other layers how many blocks to expect. FIXME SFF should
-     * call addMustSucceedBlocks, addBlocks, then notifyClients.
+    /** Called during construction to tell other layers how many blocks to expect.
      * @param requiredBlocks The number of blocks that must be fetched to complete the download.
      * @param remainingBlocks The total number of blocks minus requiredBlocks.
      */

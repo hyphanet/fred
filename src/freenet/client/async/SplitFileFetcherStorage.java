@@ -604,7 +604,7 @@ public class SplitFileFetcherStorage {
     }
     
     /** Shutdown and free resources */
-    private void close() {
+    void close() {
         raf.close();
         raf.free();
         fetcher.close();
