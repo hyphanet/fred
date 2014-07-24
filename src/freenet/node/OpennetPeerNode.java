@@ -6,7 +6,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.node.OpennetManager.LINK_LENGTH;
+import freenet.node.OpennetManager.LinkLengthClass;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
@@ -277,16 +277,16 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 	
-    public LINK_LENGTH linkLengthClass() {
+    public LinkLengthClass linkLengthClass() {
         if(!Location.isValid(getLocation())) {
             Logger.error(this, "No location on "+this, new Exception("debug"));
-            return LINK_LENGTH.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
+            return LinkLengthClass.SHORT; // FIXME add unknown to enum? Would need more complex error handling...
         }
         // FIXME OPTIMISE This should not change since we don't swap on opennet.
         if(Location.distance(this, opennet.node.getLocation()) > OpennetManager.LONG_DISTANCE)
-            return LINK_LENGTH.LONG;
+            return LinkLengthClass.LONG;
         else
-            return LINK_LENGTH.SHORT;
+            return LinkLengthClass.SHORT;
     }
 
 }
