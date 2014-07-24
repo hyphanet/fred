@@ -23,7 +23,9 @@ import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
+import freenet.support.io.ByteArrayRandomAccessThingFactory;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -54,6 +56,7 @@ public class ClientContext {
 	public transient PersistentTempBucketFactory persistentBucketFactory;
 	public transient PersistentFileTracker persistentFileTracker;
 	public transient final BucketFactory tempBucketFactory;
+	public transient final LockableRandomAccessThingFactory tempRAFFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
@@ -101,6 +104,8 @@ public class ClientContext {
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		this.cooldownTracker = new CooldownTracker();
 		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
+	    // FIXME!! This is just for demonstration purposes ...
+		this.tempRAFFactory = new ByteArrayRandomAccessThingFactory(); 
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
