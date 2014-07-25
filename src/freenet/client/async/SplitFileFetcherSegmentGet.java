@@ -111,34 +111,6 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		return localOnly;
 	}
 
-	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	private FetchException translateException(LowLevelGetException e) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			return new FetchException(FetchException.DATA_NOT_FOUND);
-		case LowLevelGetException.RECENTLY_FAILED:
-			return new FetchException(FetchException.RECENTLY_FAILED);
-		case LowLevelGetException.DECODE_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.INTERNAL_ERROR:
-			return new FetchException(FetchException.INTERNAL_ERROR);
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			return new FetchException(FetchException.REJECTED_OVERLOAD);
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			return new FetchException(FetchException.ROUTE_NOT_FOUND);
-		case LowLevelGetException.TRANSFER_FAILED:
-			return new FetchException(FetchException.TRANSFER_FAILED);
-		case LowLevelGetException.VERIFY_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.CANCELLED:
-			return new FetchException(FetchException.CANCELLED);
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
-		}
-	}
-
 	@Override
 	public void onFailure(LowLevelGetException e, Object token,
 			ObjectContainer container, ClientContext context) {

@@ -52,46 +52,11 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		});
 	}
-
+	
 	// Translate it, then call the real onFailure
 	@Override
 	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), false, container, context);
-			return;
-		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), false, container, context);
-			return;
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), false, container, context);
-			return;
-		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
-			return;
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
-			return;
-		}
+	    onFailure(translateException(e), false, container, context);
 	}
 
 	// Real onFailure
