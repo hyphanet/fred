@@ -27,6 +27,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -945,8 +946,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.TOO_BIG, uncompressedLen, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
-				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
-						realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);
+				ClientGetState sf;
+				// Use the new splitfile code only in certain circumstances.
+				// FIXME relax these conditions once know it works.
+				if((!persistent) // Transient only for now
+				        && metadata.getCrossCheckBlocks() == 0 && // No cross-segment
+				        metadata.getMinCompatMode().ordinal() >= 
+				            InsertContext.CompatibilityMode.COMPAT_1416.ordinal()) { // 1416 only until checked last-block-not-full support.
+				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey);
+				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
+				            decompressors, clientMetadata, token, topDontCompress, 
+				            topCompatibilityMode, false, thisKey, container, context);
+				} else {
+				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
+				            realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);
+				}
 				this.deleteFetchContext = false;
 				if(persistent) {
 					container.store(sf); // Avoid problems caused by storing a deactivated sf
