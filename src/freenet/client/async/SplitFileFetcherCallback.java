@@ -72,4 +72,7 @@ public interface SplitFileFetcherCallback {
      * expected key. */
     void maybeAddToBinaryBlob(ClientCHKBlock decodedBlock);
 
+    /** Do we want maybeAddToBinaryBlob() to be called?? */
+    boolean wantBinaryBlob();
+
 }

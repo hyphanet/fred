@@ -240,4 +240,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         }
     }
 
+    @Override
+    public boolean wantBinaryBlob() {
+        if(parent instanceof ClientGetter) {
+            return ((ClientGetter)parent).collectingBinaryBlob();
+        } else return false;
+    }
+
 }

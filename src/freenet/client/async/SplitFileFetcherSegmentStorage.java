@@ -383,7 +383,8 @@ public class SplitFileFetcherSegmentStorage {
         }
         // Check that the decoded blocks correspond to the keys given.
         // This will catch odd bugs and ensure consistent behaviour.
-        checkDecodedDataBlocks(dataBlocks, dataBlocksPresent, keys);
+        boolean capturingBinaryBlob = parent.fetcher.wantBinaryBlob();
+        checkDecodedDataBlocks(dataBlocks, dataBlocksPresent, keys, capturingBinaryBlob);
         writeAllDataBlocks(dataBlocks);
         // Report success at this point.
         parent.finishedSuccess(this);
@@ -391,7 +392,7 @@ public class SplitFileFetcherSegmentStorage {
         parent.fecCodec.encode(dataBlocks, checkBlocks, checkBlocksPresent, CHKBlock.DATA_LENGTH);
         // Check these *after* we complete, to reduce the critical path.
         // FIXME possibility of inconsistency with malicious splitfiles?
-        checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys);
+        checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys, capturingBinaryBlob);
         queueHeal(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent);
         dataBlocks = null;
         checkBlocks = null;
@@ -404,7 +405,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private void checkDecodedDataBlocks(byte[][] dataBlocks, boolean[] dataBlocksPresent, 
-            SplitFileSegmentKeys keys) {
+            SplitFileSegmentKeys keys, boolean capturingBinaryBlob) {
         for(int i=0;i<dataBlocks.length;i++) {
             if(dataBlocksPresent[i]) continue;
             ClientCHK decodeKey = keys.getKey(i, null, false);
@@ -423,7 +424,8 @@ public class SplitFileFetcherSegmentStorage {
                         return;
                     }
                 }
-                parent.fetcher.maybeAddToBinaryBlob(block);
+                if(capturingBinaryBlob)
+                    parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
                 parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
@@ -434,7 +436,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private void checkEncodedDataBlocks(byte[][] checkBlocks, boolean[] checkBlocksPresent, 
-            SplitFileSegmentKeys keys) {
+            SplitFileSegmentKeys keys, boolean capturingBinaryBlob) {
         for(int i=0;i<checkBlocks.length;i++) {
             if(checkBlocksPresent[i]) continue;
             ClientCHK decodeKey = keys.getKey(i+dataBlocks, null, false);
@@ -447,7 +449,8 @@ public class SplitFileFetcherSegmentStorage {
                     Logger.error(this, "Splitfile check block does not encode to expected key");
                     return;
                 }
-                parent.fetcher.maybeAddToBinaryBlob(block);
+                if(capturingBinaryBlob)
+                    parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
                 parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
