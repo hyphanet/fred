@@ -185,7 +185,7 @@ public class SplitFileFetcherSegmentStorage {
      * enough blocks to decode and need to fetch more blocks. */
     public boolean tryStartDecode() {
         synchronized(this) {
-            if(succeeded || failed) return false;
+            if(succeeded || failed || finished) return false;
             if(blocksFetchedCount < blocksForDecode()) return false;
             if(tryDecode) return true;
             tryDecode = true;
@@ -222,6 +222,7 @@ public class SplitFileFetcherSegmentStorage {
     
     /** Attempt FEC decoding */
     private void innerTryStartDecode(MemoryLimitedChunk chunk) throws IOException {
+        if(logMINOR) Logger.minor(this, "Trying to decode "+this+" for "+parent);
         // Even if we fail, once we set tryDecode=true, we need to notify the parent when we're done.
         boolean fail;
         synchronized(this) {
@@ -479,7 +480,7 @@ public class SplitFileFetcherSegmentStorage {
         short blockNumber;
         ClientCHK decodeKey;
         synchronized(this) {
-            if(succeeded || failed) return false;
+            if(succeeded || failed || finished) return false;
             blockNumber = (short)keys.getBlockNumber(key, blocksFound);
             if(blockNumber == -1) return false;
             if(blocksFound[blockNumber]) 
@@ -503,7 +504,7 @@ public class SplitFileFetcherSegmentStorage {
         SplitFileFetcherCrossSegmentStorage callback = null;
         // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
         synchronized(this) {
-            if(succeeded || failed) return false;
+            if(succeeded || failed || finished) return false;
             if(blocksFound[blockNumber]) return false;
             if(blocksFetchedCount >= blocksForDecode())
                 return false;
@@ -748,7 +749,7 @@ public class SplitFileFetcherSegmentStorage {
 
     public boolean definitelyWantKey(NodeCHK key) {
         synchronized(this) {
-            if(succeeded || failed) return false;
+            if(succeeded || failed || finished) return false;
         }
         SplitFileSegmentKeys keys;
         try {

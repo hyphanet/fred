@@ -129,7 +129,6 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
      */
     @Override
     public void failOnDiskError(IOException e) {
-        Logger.error(this, "Splitfile download failed due to disk error: "+e, e);
         fail(new FetchException(FetchException.BUCKET_ERROR));
     }
     
@@ -142,8 +141,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             if(succeeded || failed) return;
             failed = true;
         }
-        storage.cancel();
         getter.cancel(context);
+        storage.cancel();
         cb.onFailure(e, this, null, context);
     }
 
