@@ -15,6 +15,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
+import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -55,7 +56,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	
 	// Translate it, then call the real onFailure
 	@Override
-	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, SendableRequestItem reqTokenIgnored, ObjectContainer container, ClientContext context) {
 	    onFailure(translateException(e), false, container, context);
 	}
 
@@ -177,7 +178,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	protected void onBlockDecodeError(Object token, ObjectContainer container,
+	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context) {
 		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, container, context);
 	}

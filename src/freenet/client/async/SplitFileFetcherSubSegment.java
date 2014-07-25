@@ -89,7 +89,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public ClientKey getKey(Object token, ObjectContainer container) {
+	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -150,7 +150,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	
 	// Translate it, then call the real onFailure
 	@Override
-	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -267,7 +267,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
 

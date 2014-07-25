@@ -58,7 +58,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public ClientKey getKey(Object token, ObjectContainer container) {
+	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 		SplitFileFetcherSegmentSendableRequestItem req = (SplitFileFetcherSegmentSendableRequestItem) token;
 		if(persistent) container.activate(segment, 1);
 		return segment.getBlockKey(req.blockNum, container);
@@ -112,7 +112,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public void onFailure(LowLevelGetException e, Object token,
+	public void onFailure(LowLevelGetException e, SendableRequestItem token,
 			ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
@@ -151,7 +151,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		return segment.getCooldownWakeup(((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, segment.getMaxRetries(container), container, context);
 	}

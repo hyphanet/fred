@@ -1430,7 +1430,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+		public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 			return -1;
 		}
 
@@ -1440,7 +1440,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public ClientKey getKey(Object token, ObjectContainer container) {
+		public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 			return null;
 		}
 
@@ -1450,7 +1450,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+		public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 

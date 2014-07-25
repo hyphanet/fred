@@ -137,7 +137,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         fail(new FetchException(FetchException.DATA_NOT_FOUND));
     }
 
-    private void fail(FetchException e) {
+    void fail(FetchException e) {
         synchronized(this) {
             if(succeeded || failed) return;
             failed = true;

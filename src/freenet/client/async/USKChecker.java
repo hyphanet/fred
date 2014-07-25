@@ -10,6 +10,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
+import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -52,7 +53,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(cb, 1);
@@ -134,7 +135,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	protected void onBlockDecodeError(Object token, ObjectContainer container,
+	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context) {
 		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, container, context);
 	}

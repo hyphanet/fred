@@ -26,7 +26,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(Object token, ObjectContainer container);
+	public abstract ClientKey getKey(SendableRequestItem token, ObjectContainer container);
 	
 	@Override
 	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
@@ -47,7 +47,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract FetchContext getContext(ObjectContainer container);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
+	public abstract void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context);
 	
 	// Implementation
 
@@ -77,7 +77,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context);
+	public abstract long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context);
 	
 	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context);
 	

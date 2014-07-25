@@ -97,7 +97,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public ClientKey getKey(Object token, ObjectContainer container) {
+	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 		if(persistent)
 			container.activate(key, 5);
 		return key;
@@ -280,7 +280,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 	}
 	
-	public void onSuccess(KeyBlock lowLevelBlock, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
+	public void onSuccess(KeyBlock lowLevelBlock, boolean fromStore, SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(key, Integer.MAX_VALUE);
 		}
@@ -293,14 +293,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 	}
 	
-	protected abstract void onBlockDecodeError(Object token, ObjectContainer container,
+	protected abstract void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context);
 
 	/** Called when/if the low-level request succeeds. */
 	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
 	
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		return tracker.cooldownWakeupTime;
 	}
