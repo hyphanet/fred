@@ -620,12 +620,14 @@ public class SplitFileFetcherStorage {
     
     /** Shutdown and free resources */
     void close() {
+        if(logMINOR) Logger.minor(this, "Finishing "+this+" for "+fetcher, new Exception("debug"));
         raf.close();
         raf.free();
         fetcher.onClosed();
     }
     
     void finishedEncoding(SplitFileFetcherSegmentStorage segment) {
+        if(logMINOR) Logger.minor(this, "Successfully decoded "+segment+" for "+this+" for "+fetcher);
         if(!allFinished()) return;
         finishedEncoding();
     }
