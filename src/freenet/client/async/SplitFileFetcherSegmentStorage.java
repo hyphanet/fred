@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.zip.CRC32;
 
@@ -19,6 +20,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
@@ -220,9 +222,18 @@ public class SplitFileFetcherSegmentStorage {
     
     /** Attempt FEC decoding */
     private void innerTryStartDecode(MemoryLimitedChunk chunk) throws IOException {
+        // Even if we fail, once we set tryDecode=true, we need to notify the parent when we're done.
+        boolean fail;
         synchronized(this) {
-            if(succeeded || failed) return;
+            if(finished) return;
+            fail = succeeded || failed;
+            if(fail) finished = true;
         }
+        if(fail) {
+            parent.finishedEncoding(this);
+            return;
+        }
+        
         int totalBlocks = totalBlocks();
         byte[][] allBlocks = readAllBlocks();
         SplitFileSegmentKeys keys = getSegmentKeys();
@@ -598,6 +609,10 @@ public class SplitFileFetcherSegmentStorage {
         return finished || failed;
     }
     
+    public synchronized boolean isDecodingOrFinished() {
+        return finished || failed || succeeded || tryDecode;
+    }
+    
     public synchronized boolean hasSucceeded() {
         return succeeded;
     }
@@ -774,6 +789,76 @@ public class SplitFileFetcherSegmentStorage {
 
     synchronized boolean[] copyDownloadedBlocks() {
         return this.blocksFound.clone();
+    }
+
+    synchronized public long countUnfetchedKeys() {
+        if(finished || tryDecode)
+            return 0;
+        int x = 0;
+        for(int i=0;i<blocksFound.length;i++) {
+            if(!blocksFound[x]) x++;
+        }
+        return x;
+    }
+
+    public synchronized void getUnfetchedKeys(List<Key> keys) throws IOException {
+        if(finished || tryDecode)
+            return;
+        SplitFileSegmentKeys keyList = getSegmentKeys();
+        for(int i=0;i<blocksFound.length;i++) {
+            if(!blocksFound[i])
+                keys.add(keyList.getNodeKey(i, null, false));
+        }
+    }
+
+    public synchronized int chooseRandomKey() {
+        if(finished) return -1;
+        if(tryDecode) {
+            if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
+            return -1;
+        }
+        int[] candidates = new int[retries.length];
+        int count = 0;
+        if(retries == null) {
+            // maxRetries = -1, to minimise disk I/O we are not tracking retries.
+            // FIXME OPT try a couple random first? How much does random cost?
+            for(int i=0;i<retries.length;i++) {
+                if(blocksFound[i]) continue;
+                candidates[count++] = i;
+            }
+        } else {
+            // Find and count all candidates at the smallest retry count.
+            // This is O(n), but n <= 256, and memory matters more than clock cycles.
+            // Complicated schemes would use more memory as well as creating more bugs,
+            // and SoftReference's do have a cost too.
+            int minRetryCount = Integer.MAX_VALUE;
+            for(int i=0;i<retries.length;i++) {
+                if(blocksFound[i]) continue;
+                int retry = retries[i];
+                if(retry < minRetryCount) {
+                    count = 0;
+                    candidates[count++] = i;
+                    minRetryCount = retry;
+                } else if(retry == minRetryCount) {
+                    candidates[count++] = i;
+                } // else continue;
+            }
+        }
+        if(count == 0) return -1;
+        return candidates[parent.random.nextInt(count)];
+    }
+
+    public void cancel() {
+        boolean decoding;
+        synchronized(this) {
+            if(finished) return;
+            finished = true;
+            decoding = tryDecode;
+            // If already decoding, must wait for decoder to check in before completing shutdown.
+        }
+        if(!decoding)
+            parent.finishedEncoding(this);
+        // Else must wait.
     }
 
 }

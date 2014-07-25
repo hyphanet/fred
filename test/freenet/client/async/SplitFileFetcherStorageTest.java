@@ -420,6 +420,14 @@ public class SplitFileFetcherStorageTest extends TestCase {
                     assertTrue("Block "+i+" not found or decoded", encodedBlocks[i]);
             }
         }
+
+        @Override
+        public void failCheckedDatastoreOnly() {
+            assertFalse(true);
+            synchronized(this) {
+                failed = true;
+            }
+        }
         
     }
 

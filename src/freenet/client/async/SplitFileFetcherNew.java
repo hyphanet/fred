@@ -49,6 +49,8 @@ import freenet.support.io.BucketTools;
  * Longer term goal: Implement similar code for inserts. Eliminate db4o and persist everything that
  * remains with simple checkpointed serialisation.
  * 
+ * LOCKING: (this) should be taken last, because it is used by e.g. SplitFileFetcherGet.isCancelled().
+ * 
  * @author toad
  */
 public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback {
@@ -66,6 +68,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     final long token;
     /** Storage doesn't have a ClientContext so we need one here. */
     private transient final ClientContext context;
+    private transient final SplitFileFetcherGet getter;
+    private boolean failed;
+    private boolean succeeded;
     
     SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
@@ -107,19 +112,44 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             container.deactivate(cb, 1);
         if(eventualLength > 0 && fetchContext.maxOutputLength > 0 && eventualLength > fetchContext.maxOutputLength)
             throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
+        getter = new SplitFileFetcherGet(this, storage);
     }
 
     @Override
     public void schedule(ObjectContainer container, ClientContext context)
             throws KeyListenerConstructionException {
-        // TODO Auto-generated method stub
-        
+        getter.schedule(context, false);
+    }
+    
+    /** Fail the whole splitfile request when we get an IOException on writing to or reading from 
+     * the on-disk storage. Can be called asynchronously by SplitFileFetcher*Storage if an 
+     * off-thread job (e.g. FEC decoding) breaks, or may be called when SplitFileFetcher*Storage
+     * throws.
+     * @param e The IOException, generated when accessing the on-disk storage.
+     */
+    @Override
+    public void failOnDiskError(IOException e) {
+        Logger.error(this, "Splitfile download failed due to disk error: "+e, e);
+        fail(new FetchException(FetchException.BUCKET_ERROR));
+    }
+    
+    public void failCheckedDatastoreOnly() {
+        fail(new FetchException(FetchException.DATA_NOT_FOUND));
+    }
+
+    private void fail(FetchException e) {
+        synchronized(this) {
+            if(succeeded || failed) return;
+            failed = true;
+        }
+        storage.cancel();
+        getter.cancel(context);
+        cb.onFailure(e, this, null, context);
     }
 
     @Override
     public void cancel(ObjectContainer container, ClientContext context) {
-        // TODO Auto-generated method stub
-        
+        fail(new FetchException(FetchException.CANCELLED));
     }
 
     @Override
@@ -132,28 +162,14 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         throw new UnsupportedOperationException();
     }
     
-    /** Fail the whole splitfile request when we get an IOException on writing to or reading from 
-     * the on-disk storage. Can be called asynchronously by SplitFileFetcher*Storage if an 
-     * off-thread job (e.g. FEC decoding) breaks, or may be called when SplitFileFetcher*Storage
-     * throws.
-     * @param e The IOException, generated when accessing the on-disk storage.
-     */
-    @Override
-    public void failOnDiskError(IOException e) {
-        Logger.error(this, "Splitfile download failed due to disk error: "+e, e);
-        // FIXME Only call the callback once.
-        // FIXME Do we want to wait for FEC decodes/encodes to finish? If we just close they may get IOE's, which we can ignore.
-        // And they may still be running.
-        storage.close();
-        // FIXME stop fetching
-        cb.onFailure(new FetchException(FetchException.BUCKET_ERROR), this, null, context);
-    }
-
     /** The splitfile download succeeded. Generate a stream and send it to the 
      * GetCompletionCallback. See bug #6063 for a better way that probably is too much complexity
      * for the benefit. */
     @Override
     public void onSuccess() {
+        synchronized(this) {
+            succeeded = true;
+        }
         cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
                 this, null, context);
         storage.finishedFetcher();
@@ -194,6 +210,18 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             // Nothing to be done, but need to log the error.
             Logger.error(this, "I/O error, failed to queue healing block: "+e, e);
         }
+    }
+
+    public boolean localRequestOnly() {
+        return blockFetchContext.localRequestOnly;
+    }
+
+    public void toNetwork() {
+        parent.toNetwork(null, context);
+    }
+
+    public boolean hasFinished() {
+        return failed || succeeded;
     }
 
 }

@@ -53,4 +53,7 @@ public interface SplitFileFetcherCallback {
     /** Queue a block to be healed. */
     void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm);
 
+    /** Called when a datastore-only fetch didn't find enough data. */
+    void failCheckedDatastoreOnly();
+
 }

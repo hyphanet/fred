@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,7 @@ import java.util.zip.Checksum;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -26,6 +28,7 @@ import freenet.crypt.ChecksumOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.keys.Key;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
@@ -118,9 +121,15 @@ public class SplitFileFetcherStorage {
     
     private boolean finishedFetcher;
     private boolean finishedEncoding;
+    private boolean cancelled;
+    
+    /** Errors. For now, this is not persisted (FIXME). */
+    private final FailureCodeTracker errors;
     
     /** Contains Bloom filters */
     final SplitFileFetcherKeyListenerNew keyListener;
+    
+    final RandomSource random;
     
     // Metadata for the file i.e. stuff we need to be able to efficiently read/write it.
     /** Offset to start of the key lists in bytes */
@@ -168,6 +177,8 @@ public class SplitFileFetcherStorage {
         this.splitfileType = metadata.getSplitfileType();
         this.fecCodec = NewFECCodec.getInstance(splitfileType);
         this.decompressors = decompressors;
+        this.random = random;
+        this.errors = new FailureCodeTracker(false);
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
@@ -621,9 +632,97 @@ public class SplitFileFetcherStorage {
         }
         return true;
     }
+    
+    private boolean allDecodingOrFinished() {
+        for(SplitFileFetcherSegmentStorage segment : segments) {
+            if(!segment.isDecodingOrFinished()) return false;
+        }
+        return true;
+    }
 
     public void failOnDiskError(IOException e) {
         fetcher.failOnDiskError(e);
+    }
+
+    public long countUnfetchedKeys() {
+        long total = 0;
+        for(SplitFileFetcherSegmentStorage segment : segments)
+            total += segment.countUnfetchedKeys();
+        return total;
+    }
+
+    public Key[] listUnfetchedKeys() {
+        try {
+            ArrayList<Key> keys = new ArrayList<Key>();
+            for(SplitFileFetcherSegmentStorage segment : segments)
+                segment.getUnfetchedKeys(keys);
+            return keys.toArray(new Key[keys.size()]);
+        } catch (IOException e) {
+            failOnDiskError(e);
+            return new Key[0];
+        }
+    }
+
+    /** Choose a random key which can be fetched at the moment.
+     * @return The block number to be fetched, as an integer.
+     */
+    public int chooseRandomKey() {
+        synchronized(this) {
+            if(finishedFetcher) return -1;
+        }
+        // Generally segments are fairly well balanced, so we can usually pick a random segment 
+        // then a random key from it.
+        int segNo = random.nextInt(segments.length);
+        SplitFileFetcherSegmentStorage segment = segments[segNo];
+        int ret = segment.chooseRandomKey();
+        if(ret != -1) return ret;
+        // Looks like we are close to completion ...
+        // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
+        // 4GB splitfile, there would be 512 segments. The alternative is to keep a similar 
+        // structure up to date, which also requires changes to the segment code. Not urgent until
+        // very big splitfiles are common.
+        boolean[] tried = new boolean[segments.length];
+        tried[segNo] = true;
+        for(int count=1; count<segments.length; count++) {
+            while(tried[segNo = random.nextInt(segments.length)]);
+            tried[segNo] = true;
+            segment = segments[segNo];
+            ret = segment.chooseRandomKey();
+            if(ret != -1) return ret;
+        }
+        return -1;
+    }
+
+    /** Cancel the download, stop all FEC decodes, and call close() off-thread when done. */
+    void cancel() {
+        synchronized(this) {
+            cancelled = true;
+            finishedFetcher = true;
+        }
+        for(SplitFileFetcherSegmentStorage segment : segments)
+            segment.cancel();
+    }
+
+    /** Local only is true and we've finished checking the datastore. If all segments are not 
+     * already finished/decoding, we need to fail with DNF. If the segments fail to decode due to
+     * data corruption, we will retry as usual. */
+    public void finishedCheckingDatastoreOnLocalRequest() {
+        if(hasFinished()) return; // Don't need to do anything.
+        if(allDecodingOrFinished()) {
+            // All segments are decoding.
+            // If they succeed, we complete.
+            // If they fail to decode, they will cause the getter to retry, and re-scan the 
+            // datastore for the corrupted keys.
+            return;
+        }
+        if(hasFinished()) return; // Don't need to do anything.
+        // Some segments still need data.
+        // They're not going to get it.
+        fetcher.failCheckedDatastoreOnly();
+    }
+
+    private synchronized boolean hasFinished() {
+        return cancelled || finishedFetcher;
     }
 
 }
