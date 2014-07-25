@@ -28,7 +28,7 @@ public class MemoryLimitedJobRunner {
     
     /** Run the job if the counter is below some threshold, otherwise queue it. */
     public synchronized void queueJob(final MemoryLimitedJob job) {
-        if(job.initialAllocation > capacity) throw new IllegalArgumentException();
+        if(job.initialAllocation > capacity) throw new IllegalArgumentException("Job size "+job.initialAllocation+" > capacity "+capacity);
         if(counter + job.initialAllocation <= capacity) {
             startJob(job);
         } else {
