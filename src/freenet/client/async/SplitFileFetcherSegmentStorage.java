@@ -34,6 +34,12 @@ import freenet.support.io.NativeThread;
  * opportunistically. Hence we are very robust (but not completely immune) to disk corruption.
  * @see SplitFileFetcherStorage */
 public class SplitFileFetcherSegmentStorage {
+    
+    // Set this to false to turn off checking the CHKs on blocks decoded (and encoded) via FEC.
+    // Generally it is a good idea to have consistent behaviour regardless of what order we fetched
+    // the blocks in, whether binary blobs are enabled etc ... and this has caught nasty bugs in
+    // the past, although now we have hashes at file level ...
+    private static final boolean FORCE_CHECK_FEC_KEYS = true;
 
     /** The segment number within the splitfile */
     final int segNo;
@@ -381,18 +387,26 @@ public class SplitFileFetcherSegmentStorage {
             if(logMINOR) Logger.minor(this, "Decoding in memory for "+this);
             parent.fecCodec.decode(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent, CHKBlock.DATA_LENGTH);
         }
-        // Check that the decoded blocks correspond to the keys given.
-        // This will catch odd bugs and ensure consistent behaviour.
         boolean capturingBinaryBlob = parent.fetcher.wantBinaryBlob();
-        checkDecodedDataBlocks(dataBlocks, dataBlocksPresent, keys, capturingBinaryBlob);
+        boolean checkDecodedKeys = FORCE_CHECK_FEC_KEYS || capturingBinaryBlob;
+        if(checkDecodedKeys) {
+            // Check that the decoded blocks correspond to the keys given.
+            // This will catch odd bugs and ensure consistent behaviour.
+            checkDecodedDataBlocks(dataBlocks, dataBlocksPresent, keys, capturingBinaryBlob);
+        }
         writeAllDataBlocks(dataBlocks);
-        // Report success at this point.
-        parent.finishedSuccess(this);
+        // Report success if we are not verifying decoded keys, but if we *are*, we need to wait
+        // until FEC encoding completes.
+        if(!checkDecodedKeys)
+            parent.finishedSuccess(this);
         triggerAllCrossSegmentCallbacks();
         parent.fecCodec.encode(dataBlocks, checkBlocks, checkBlocksPresent, CHKBlock.DATA_LENGTH);
         // Check these *after* we complete, to reduce the critical path.
         // FIXME possibility of inconsistency with malicious splitfiles?
-        checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys, capturingBinaryBlob);
+        if(checkDecodedKeys) {
+            checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys, capturingBinaryBlob);
+            parent.finishedSuccess(this);
+        }
         queueHeal(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent);
         dataBlocks = null;
         checkBlocks = null;
