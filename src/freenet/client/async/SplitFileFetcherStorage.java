@@ -575,6 +575,7 @@ public class SplitFileFetcherStorage {
                     for(SplitFileFetcherSegmentStorage segment : segments) {
                         segment.writeToInner(os);
                     }
+                    os.close();
                 } finally {
                     lock.unlock();
                 }
