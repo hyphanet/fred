@@ -39,7 +39,7 @@ import freenet.support.io.NativeThread;
 public class FECQueue {
 	
     /** Minimum amount of memory needed for FEC decodes. This depends on the FEC algorithm. */
-    public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024;
+    public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024+256*1024;
     private transient LinkedList<FECJob>[] transientQueue;
 	private transient LinkedList<FECJob>[] persistentQueueCache;
 	private transient int maxPersistentQueueCacheSize;
