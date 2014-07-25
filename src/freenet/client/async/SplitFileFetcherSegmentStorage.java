@@ -534,6 +534,14 @@ public class SplitFileFetcherSegmentStorage {
             callback.onFetchedRelevantBlock(this);
         // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
         writeMetadata();
+        parent.executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                parent.fetcher.onFetchedBlock();
+            }
+            
+        });
         tryStartDecode();
         return true;
     }

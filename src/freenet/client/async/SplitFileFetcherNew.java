@@ -221,4 +221,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         return failed || succeeded;
     }
 
+    @Override
+    public void onFetchedBlock() {
+        parent.completedBlock(getter.hasQueued(), null, context);
+    }
+
 }

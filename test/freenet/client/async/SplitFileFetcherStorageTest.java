@@ -428,6 +428,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 failed = true;
             }
         }
+
+        @Override
+        public void onFetchedBlock() {
+            // Ignore.
+        }
         
     }
 

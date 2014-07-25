@@ -27,6 +27,8 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     final SplitFileFetcherNew parent;
     final SplitFileFetcherStorage storage;
+    /** Have we completed checking the datastore, and finished registering? */
+    private boolean hasCheckedStore;
 
     public SplitFileFetcherGet(SplitFileFetcherNew fetcher, SplitFileFetcherStorage storage) {
         super(fetcher.parent, fetcher.realTimeFlag);
@@ -104,6 +106,11 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
         if(!toNetwork) return false;
+        synchronized(this) {
+            hasCheckedStore = true;
+        }
+        // Notify clients of all the work we've done checking the datastore.
+        parent.parent.notifyClients(container, context);
         if(parent.localRequestOnly()) {
             storage.finishedCheckingDatastoreOnLocalRequest();
             return true;
@@ -190,6 +197,11 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     public void cancel(ClientContext context) {
         unregister(null, context, parent.getPriorityClass());
+    }
+
+    /** Has preRegister() been called? */
+    public synchronized boolean hasQueued() {
+        return hasCheckedStore;
     }
 
 }

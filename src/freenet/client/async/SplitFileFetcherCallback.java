@@ -56,4 +56,6 @@ public interface SplitFileFetcherCallback {
      * storage has been freed, i.e. the request is now completely finished. */
     void onClosed();
 
+    void onFetchedBlock();
+
 }
