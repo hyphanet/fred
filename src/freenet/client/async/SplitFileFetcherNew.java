@@ -93,7 +93,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
                     thisKey, context.random, context.tempBucketFactory, context.tempRAFFactory, 
-                    context.ticker, context.memoryLimitedJobRunner);
+                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner);
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);
@@ -175,14 +175,6 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         storage.finishedFetcher();
     }
     
-    /** Called when we have finished both with sending the data to the client AND with healing 
-     * blocks etc. */
-    public void close() {
-        // All locks on RAF must have been released by this point.
-        // FIXME there is more to do here
-        storage.close();
-    }
-
     @Override
     public void onClosed() {
         // Don't need to do anything.

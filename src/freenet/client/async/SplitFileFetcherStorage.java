@@ -33,6 +33,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
+import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
@@ -90,7 +91,12 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  * Length of basic settings. (So we can seek back to get them)
  * Version number.
  * Magic value.
- *  
+ * 
+ * 
+ * OTHER NOTES:
+ * 
+ * CONCURRENCY: Callbacks into fetcher should be run off-thread, as they will usually be inside a 
+ * MemoryLimitedJob.
  * @author toad
  */
 public class SplitFileFetcherStorage {
@@ -115,6 +121,7 @@ public class SplitFileFetcherStorage {
     /** FEC codec for the splitfile, if needed. */
     public final NewFECCodec fecCodec;
     final Ticker ticker;
+    final Executor executor;
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final long finalLength;
     final short splitfileType;
@@ -171,10 +178,11 @@ public class SplitFileFetcherStorage {
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
-            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Ticker ticker,
-            MemoryLimitedJobRunner memoryLimitedJobRunner) 
+            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Executor exec,
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
+        this.executor = exec;
         this.ticker = ticker;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.finalLength = metadata.dataLength();
@@ -534,7 +542,14 @@ public class SplitFileFetcherStorage {
     /** A segment successfully completed. */
     public void finishedSuccess(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage) {
         if(allSucceeded()) {
-            fetcher.onSuccess();
+            executor.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    fetcher.onSuccess();
+                }
+                
+            });
         }
         // FIXME truncation optimisation: if the file isn't compressed and doesn't need filtering, 
         // we can just truncate it to get rid of the metadata etc.
@@ -607,7 +622,14 @@ public class SplitFileFetcherStorage {
             finishedFetcher = true;
             if(!finishedEncoding) return;
         }
-        close();
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                close();
+            }
+            
+        });
     }
     
     private void finishedEncoding() {
@@ -615,10 +637,18 @@ public class SplitFileFetcherStorage {
             finishedEncoding = true;
             if(!finishedFetcher) return;
         }
-        close();
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                close();
+            }
+            
+        });
     }
     
-    /** Shutdown and free resources */
+    /** Shutdown and free resources. CONCURRENCY: Caller is responsible for making sure this is 
+     * not called on a MemoryLimitedJob thread. */
     void close() {
         if(logMINOR) Logger.minor(this, "Finishing "+this+" for "+fetcher, new Exception("debug"));
         raf.close();
@@ -646,8 +676,15 @@ public class SplitFileFetcherStorage {
         return true;
     }
 
-    public void failOnDiskError(IOException e) {
-        fetcher.failOnDiskError(e);
+    public void failOnDiskError(final IOException e) {
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.failOnDiskError(e);
+            }
+            
+        });
     }
 
     public long countUnfetchedKeys() {
@@ -772,7 +809,14 @@ public class SplitFileFetcherStorage {
         if(hasFinished()) return; // Don't need to do anything.
         // Some segments still need data.
         // They're not going to get it.
-        fetcher.failCheckedDatastoreOnly();
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.failCheckedDatastoreOnly();
+            }
+            
+        });
     }
 
     private synchronized boolean hasFinished() {

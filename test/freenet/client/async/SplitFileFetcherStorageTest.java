@@ -250,7 +250,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb) throws FetchException, MetadataParseException, IOException {
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, makeFetchContext(), false, salt, URI, random, bf,
-                    rafFactory, ticker, memoryLimitedJobRunner);
+                    rafFactory, exec, ticker, memoryLimitedJobRunner);
         }
 
         private FetchContext makeFetchContext() {
