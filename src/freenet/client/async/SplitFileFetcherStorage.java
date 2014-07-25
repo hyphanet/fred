@@ -24,11 +24,15 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
+import freenet.client.async.SplitFileFetcherStorage.MyKey;
 import freenet.crypt.ChecksumOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
+import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
@@ -662,20 +666,68 @@ public class SplitFileFetcherStorage {
             return new Key[0];
         }
     }
+    
+    final class MyKey implements SendableRequestItem, SendableRequestItemKey {
+
+        public MyKey(int n, int segNo, SplitFileFetcherStorage storage) {
+            this.blockNumber = n;
+            this.segmentNumber = segNo;
+            this.get = storage;
+            hashCode = initialHashCode();
+        }
+
+        final int blockNumber;
+        final int segmentNumber;
+        final SplitFileFetcherStorage get;
+        final int hashCode;
+
+        @Override
+        public void dump() {
+            // Ignore.
+        }
+
+        @Override
+        public SendableRequestItemKey getKey() {
+            return this;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if(this == o) return true;
+            if(!(o instanceof MyKey)) return false;
+            MyKey k = (MyKey)o;
+            return k.blockNumber == blockNumber && k.segmentNumber == segmentNumber && 
+                k.get == get;
+        }
+        
+        public int hashCode() {
+            return hashCode;
+        }
+
+        private int initialHashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + blockNumber;
+            result = prime * result + ((get == null) ? 0 : get.hashCode());
+            result = prime * result + segmentNumber;
+            return result;
+        }
+
+    }
 
     /** Choose a random key which can be fetched at the moment.
      * @return The block number to be fetched, as an integer.
      */
-    public int chooseRandomKey() {
+    public MyKey chooseRandomKey() {
         synchronized(this) {
-            if(finishedFetcher) return -1;
+            if(finishedFetcher) return null;
         }
         // Generally segments are fairly well balanced, so we can usually pick a random segment 
         // then a random key from it.
         int segNo = random.nextInt(segments.length);
         SplitFileFetcherSegmentStorage segment = segments[segNo];
         int ret = segment.chooseRandomKey();
-        if(ret != -1) return ret;
+        if(ret != -1) return new MyKey(ret, segNo, this);
         // Looks like we are close to completion ...
         // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
         // 4GB splitfile, there would be 512 segments. The alternative is to keep a similar 
@@ -688,9 +740,9 @@ public class SplitFileFetcherStorage {
             tried[segNo] = true;
             segment = segments[segNo];
             ret = segment.chooseRandomKey();
-            if(ret != -1) return ret;
+            if(ret != -1) return new MyKey(ret, segNo, this);
         }
-        return -1;
+        return null;
     }
 
     /** Cancel the download, stop all FEC decodes, and call close() off-thread when done. */
@@ -723,6 +775,24 @@ public class SplitFileFetcherStorage {
 
     private synchronized boolean hasFinished() {
         return cancelled || finishedFetcher;
+    }
+
+    public void onFailure(MyKey key, FetchException fe) {
+        synchronized(this) {
+            if(cancelled || finishedFetcher) return;
+        }
+        errors.inc(fe.getMode());
+        SplitFileFetcherSegmentStorage segment = segments[key.segmentNumber];
+        segment.onNonFatalFailure(key.blockNumber);
+    }
+
+    public ClientKey getKey(MyKey key) {
+        try {
+            return segments[key.segmentNumber].getSegmentKeys().getKey(key.blockNumber, null, false);
+        } catch (IOException e) {
+            this.failOnDiskError(e);
+            return null;
+        }
     }
 
 }
