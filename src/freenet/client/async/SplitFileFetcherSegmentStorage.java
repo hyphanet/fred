@@ -92,6 +92,8 @@ public class SplitFileFetcherSegmentStorage {
     private boolean tryDecode;
     private int crossDataBlocksAllocated;
     private int crossCheckBlocksAllocated;
+    /** Number of blocks we've given up on. */
+    private int failedBlocks;
     
     private boolean logMINOR;
     static {
@@ -654,9 +656,22 @@ public class SplitFileFetcherSegmentStorage {
     
     public void onNonFatalFailure(int blockNumber) {
         boolean changed = false;
+        int maxRetries = parent.maxRetries();
+        boolean givenUp = false;
+        boolean kill = false;
         synchronized(this) {
+            if(finished || failed || succeeded) return;
             if(retries != null) {
                 retries[blockNumber]++;
+                if(retries[blockNumber] == maxRetries) {
+                    failedBlocks++;
+                    givenUp = true;
+                    if(failedBlocks == checkBlocks+1) {
+                        kill = true;
+                        finished = true;
+                        failed = true;
+                    }
+                }
                 changed = true;
             }
             if(!tried[blockNumber]) {
@@ -666,6 +681,10 @@ public class SplitFileFetcherSegmentStorage {
         }
         if(changed)
             lazyWriteMetadata();
+        if(givenUp)
+            parent.failedBlock();
+        if(kill)
+            parent.failOnSegment(this);
     }
 
     /** The metadata has been updated. We should write it ... at some point. */
@@ -840,10 +859,12 @@ public class SplitFileFetcherSegmentStorage {
             // This is O(n), but n <= 256, and memory matters more than clock cycles.
             // Complicated schemes would use more memory as well as creating more bugs,
             // and SoftReference's do have a cost too.
+            int maxRetries = parent.maxRetries();
             int minRetryCount = Integer.MAX_VALUE;
             for(int i=0;i<retries.length;i++) {
                 if(blocksFound[i]) continue;
                 int retry = retries[i];
+                if(retry >= maxRetries) continue;
                 if(retry < minRetryCount) {
                     count = 0;
                     candidates[count++] = i;

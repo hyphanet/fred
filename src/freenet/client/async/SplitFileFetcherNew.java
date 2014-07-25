@@ -136,7 +136,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         fail(new FetchException(FetchException.DATA_NOT_FOUND));
     }
 
-    void fail(FetchException e) {
+    public void fail(FetchException e) {
         synchronized(this) {
             if(succeeded || failed) return;
             failed = true;
@@ -224,6 +224,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void onFetchedBlock() {
         parent.completedBlock(getter.hasQueued(), null, context);
+    }
+
+    @Override
+    public void onFailedBlock() {
+        parent.failedBlock(null, context);
     }
 
 }

@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 
+import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.support.api.Bucket;
 
@@ -57,5 +58,12 @@ public interface SplitFileFetcherCallback {
     void onClosed();
 
     void onFetchedBlock();
+
+    /** Called when the splitfile fetcher gives up on a block. (Assumed to be a non-fatal error,
+     * run out of retries) */
+    void onFailedBlock();
+
+    /** Called when the fetch failed, e.g. due to running out of retries. */
+    void fail(FetchException fetchException);
 
 }

@@ -433,6 +433,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void onFetchedBlock() {
             // Ignore.
         }
+
+        @Override
+        public void fail(FetchException fe) {
+            assertFalse(true);
+            synchronized(this) {
+                failed = true;
+            }
+        }
+
+        @Override
+        public void onFailedBlock() {
+            // Ignore.
+        }
         
     }
 

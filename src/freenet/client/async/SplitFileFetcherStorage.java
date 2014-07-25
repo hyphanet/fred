@@ -24,7 +24,6 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
-import freenet.client.async.SplitFileFetcherStorage.MyKey;
 import freenet.crypt.ChecksumOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -136,6 +135,7 @@ public class SplitFileFetcherStorage {
     
     /** Errors. For now, this is not persisted (FIXME). */
     private final FailureCodeTracker errors;
+    private final int maxRetries;
     
     /** Contains Bloom filters */
     final SplitFileFetcherKeyListenerNew keyListener;
@@ -201,7 +201,7 @@ public class SplitFileFetcherStorage {
 
         int crossCheckBlocks = metadata.getCrossCheckBlocks();
         
-        int maxRetries = origFetchContext.maxSplitfileBlockRetries;
+        maxRetries = origFetchContext.maxSplitfileBlockRetries;
         this.splitfileSingleCryptoAlgorithm = metadata.getSplitfileCryptoAlgorithm();
         splitfileSingleCryptoKey = metadata.getSplitfileCryptoKey();
         
@@ -412,6 +412,7 @@ public class SplitFileFetcherStorage {
         } finally {
             lock.unlock();
         }
+        if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this);
     }
     
     /** Encode the basic settings (number of blocks etc) to a byte array */
@@ -840,6 +841,36 @@ public class SplitFileFetcherStorage {
             this.failOnDiskError(e);
             return null;
         }
+    }
+
+    public int maxRetries() {
+        return maxRetries;
+    }
+
+    /** A segment ran out of retries. We have given up on that segment and therefore on the whole
+     * splitfile.
+     * @param segment The segment that failed.
+     */
+    public void failOnSegment(SplitFileFetcherSegmentStorage segment) {
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+            }
+            
+        });
+    }
+
+    public void failedBlock() {
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.onFailedBlock();
+            }
+            
+        });
     }
 
 }
