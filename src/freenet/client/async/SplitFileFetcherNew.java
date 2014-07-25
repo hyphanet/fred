@@ -170,6 +170,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         synchronized(this) {
             succeeded = true;
         }
+        getter.cancel(context);
         cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
                 this, null, context);
         storage.finishedFetcher();
