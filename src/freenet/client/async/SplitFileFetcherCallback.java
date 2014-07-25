@@ -20,10 +20,6 @@ public interface SplitFileFetcherCallback {
      * storage and call close() here. */
     void onSuccess();
     
-    /** Called when the storage layer has finished, the higher level code has finished, and the 
-     * storage has been freed, i.e. the request is now completely finished. */
-    void close();
-
     /** Get the priority class of the request. Needed for e.g. FEC decoding scheduling. */
     short getPriorityClass();
 
@@ -55,5 +51,9 @@ public interface SplitFileFetcherCallback {
 
     /** Called when a datastore-only fetch didn't find enough data. */
     void failCheckedDatastoreOnly();
+
+    /** Called when the storage layer has finished, the higher level code has finished, and the 
+     * storage has been freed, i.e. the request is now completely finished. */
+    void onClosed();
 
 }

@@ -622,7 +622,7 @@ public class SplitFileFetcherStorage {
     void close() {
         raf.close();
         raf.free();
-        fetcher.close();
+        fetcher.onClosed();
     }
     
     void finishedEncoding(SplitFileFetcherSegmentStorage segment) {

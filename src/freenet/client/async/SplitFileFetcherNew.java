@@ -183,6 +183,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         storage.close();
     }
 
+    @Override
+    public void onClosed() {
+        // Don't need to do anything.
+    }
+
     public short getPriorityClass() {
         // FIXME PERSISTENCE When this is temporarily in the database we'll need to pass ObjectContainer here?
         return this.parent.getPriorityClass();

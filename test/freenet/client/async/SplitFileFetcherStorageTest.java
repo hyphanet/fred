@@ -326,7 +326,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         @Override
-        public synchronized void close() {
+        public synchronized void onClosed() {
             closed = true;
             notifyAll();
         }
