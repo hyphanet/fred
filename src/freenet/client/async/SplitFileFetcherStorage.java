@@ -136,6 +136,7 @@ public class SplitFileFetcherStorage {
     /** Errors. For now, this is not persisted (FIXME). */
     private final FailureCodeTracker errors;
     private final int maxRetries;
+    final CompatibilityMode finalMinCompatMode;
     
     /** Contains Bloom filters */
     final SplitFileFetcherKeyListenerNew keyListener;
@@ -283,6 +284,7 @@ public class SplitFileFetcherStorage {
 
         boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
         boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
+        finalMinCompatMode = minCompatMode;
         
         this.offsetKeyList = storedBlocksLength;
         this.offsetSegmentStatus = offsetKeyList + storedKeysLength;
@@ -871,6 +873,11 @@ public class SplitFileFetcherStorage {
             }
             
         });
+    }
+
+    public boolean lastBlockMightNotBePadded() {
+        return (finalMinCompatMode == CompatibilityMode.COMPAT_UNKNOWN || 
+                finalMinCompatMode.ordinal() < CompatibilityMode.COMPAT_1416.ordinal());
     }
 
 }

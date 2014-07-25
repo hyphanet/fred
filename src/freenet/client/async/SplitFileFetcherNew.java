@@ -11,6 +11,8 @@ import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -229,6 +231,13 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void onFailedBlock() {
         parent.failedBlock(null, context);
+    }
+
+    @Override
+    public void maybeAddToBinaryBlob(ClientCHKBlock block) {
+        if(parent instanceof ClientGetter) {
+            ((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
+        }
     }
 
 }

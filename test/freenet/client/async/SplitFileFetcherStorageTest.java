@@ -446,6 +446,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void onFailedBlock() {
             // Ignore.
         }
+
+        @Override
+        public void maybeAddToBinaryBlob(ClientCHKBlock decodedBlock) {
+            // Ignore.
+        }
         
     }
 

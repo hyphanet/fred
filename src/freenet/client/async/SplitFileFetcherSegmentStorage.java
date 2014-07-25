@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.zip.CRC32;
 
+import freenet.client.FetchException;
 import freenet.crypt.ChecksumOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
@@ -380,11 +381,17 @@ public class SplitFileFetcherSegmentStorage {
             if(logMINOR) Logger.minor(this, "Decoding in memory for "+this);
             parent.fecCodec.decode(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent, CHKBlock.DATA_LENGTH);
         }
+        // Check that the decoded blocks correspond to the keys given.
+        // This will catch odd bugs and ensure consistent behaviour.
+        checkDecodedDataBlocks(dataBlocks, dataBlocksPresent, keys);
         writeAllDataBlocks(dataBlocks);
         // Report success at this point.
         parent.finishedSuccess(this);
         triggerAllCrossSegmentCallbacks();
         parent.fecCodec.encode(dataBlocks, checkBlocks, checkBlocksPresent, CHKBlock.DATA_LENGTH);
+        // Check these *after* we complete, to reduce the critical path.
+        // FIXME possibility of inconsistency with malicious splitfiles?
+        checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys);
         queueHeal(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent);
         dataBlocks = null;
         checkBlocks = null;
@@ -394,6 +401,60 @@ public class SplitFileFetcherSegmentStorage {
             finished = true;
         }
         parent.finishedEncoding(this);
+    }
+
+    private void checkDecodedDataBlocks(byte[][] dataBlocks, boolean[] dataBlocksPresent, 
+            SplitFileSegmentKeys keys) {
+        for(int i=0;i<dataBlocks.length;i++) {
+            if(dataBlocksPresent[i]) continue;
+            ClientCHK decodeKey = keys.getKey(i, null, false);
+            // Encode it to check whether the key is the same.
+            ClientCHKBlock block;
+            try {
+                block = ClientCHKBlock.encodeSplitfileBlock(dataBlocks[i], decodeKey.getCryptoKey(), decodeKey.getCryptoAlgorithm());
+                ClientCHK actualKey = block.getClientKey();
+                if(!actualKey.equals(decodeKey)) {
+                    if(i == dataBlocks.length-1 && this.segNo == parent.segments.length-1 && 
+                            parent.lastBlockMightNotBePadded()) {
+                        // Ignore.
+                    } else {
+                        // Usual case.
+                        parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
+                        return;
+                    }
+                }
+                parent.fetcher.maybeAddToBinaryBlob(block);
+            } catch (CHKEncodeException e) {
+                // Impossible!
+                parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                Logger.error(this, "Impossible: Decoded block could not be encoded");
+                return;
+            }
+        }
+    }
+
+    private void checkEncodedDataBlocks(byte[][] checkBlocks, boolean[] checkBlocksPresent, 
+            SplitFileSegmentKeys keys) {
+        for(int i=0;i<checkBlocks.length;i++) {
+            if(checkBlocksPresent[i]) continue;
+            ClientCHK decodeKey = keys.getKey(i+dataBlocks, null, false);
+            // Encode it to check whether the key is the same.
+            ClientCHKBlock block;
+            try {
+                block = ClientCHKBlock.encodeSplitfileBlock(checkBlocks[i], decodeKey.getCryptoKey(), decodeKey.getCryptoAlgorithm());
+                ClientCHK actualKey = block.getClientKey();
+                if(!actualKey.equals(decodeKey)) {
+                    Logger.error(this, "Splitfile check block does not encode to expected key");
+                    return;
+                }
+                parent.fetcher.maybeAddToBinaryBlob(block);
+            } catch (CHKEncodeException e) {
+                // Impossible!
+                parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                Logger.error(this, "Impossible: Decoded block could not be encoded");
+                return;
+            }
+        }
     }
 
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
@@ -545,6 +606,7 @@ public class SplitFileFetcherSegmentStorage {
             
         });
         tryStartDecode();
+        parent.fetcher.maybeAddToBinaryBlob(decodedBlock);
         return true;
     }
 
