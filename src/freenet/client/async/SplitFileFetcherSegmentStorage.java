@@ -566,7 +566,10 @@ public class SplitFileFetcherSegmentStorage {
         synchronized(this) {
             if(succeeded || failed || finished) return false;
             blockNumber = (short)keys.getBlockNumber(key, blocksFound);
-            if(blockNumber == -1) return false;
+            if(blockNumber == -1) {
+                if(logMINOR) Logger.minor(this, "Block not found "+key);
+                return false;
+            }
             if(blocksFound[blockNumber]) 
                 return false; // Even if this is inaccurate, it will be corrected on a FEC attempt.
             if(blocksFetchedCount >= blocksForDecode())
@@ -632,6 +635,7 @@ public class SplitFileFetcherSegmentStorage {
             callback.onFetchedRelevantBlock(this);
         // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
         writeMetadata();
+        if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
         parent.executor.execute(new Runnable() {
 
             @Override
