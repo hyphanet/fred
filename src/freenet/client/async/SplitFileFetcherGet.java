@@ -20,7 +20,7 @@ import freenet.support.Logger;
 /** Actually does the splitfile fetch. Only one fetcher object for an entire splitfile. */
 public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     
-    private boolean logMINOR;
+    private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherGet.class);
     }

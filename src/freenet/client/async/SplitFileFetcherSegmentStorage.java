@@ -103,7 +103,7 @@ public class SplitFileFetcherSegmentStorage {
     /** Number of blocks we've given up on. */
     private int failedBlocks;
     
-    private boolean logMINOR;
+    private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherSegmentStorage.class);
     }

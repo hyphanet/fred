@@ -58,7 +58,7 @@ import freenet.support.io.BucketTools;
  */
 public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback {
     
-    private boolean logMINOR;
+    private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherNew.class);
     }

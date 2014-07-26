@@ -23,7 +23,7 @@ import freenet.support.io.LockableRandomAccessThing.RAFLock;
 
 public class SplitFileFetcherKeyListenerNew implements KeyListener {
     
-    private boolean logMINOR;
+    private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherKeyListenerNew.class);
     }

@@ -101,7 +101,7 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  */
 public class SplitFileFetcherStorage {
 
-    private boolean logMINOR;
+    private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherStorage.class);
     }
