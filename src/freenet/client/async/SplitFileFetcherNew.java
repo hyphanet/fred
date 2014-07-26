@@ -253,4 +253,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         return getter;
     }
 
+    @Override
+    public void restartedAfterDataCorruption() {
+        Logger.error(this, "Restarting download "+this+" after data corruption");
+    }
+
 }

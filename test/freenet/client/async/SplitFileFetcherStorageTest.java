@@ -314,6 +314,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         private boolean succeeded;
         private boolean closed;
         private boolean failed;
+        private boolean hasRestartedOnCorruption;
 
         public StorageCallback(TestSplitfile splitfile) {
             this.splitfile = splitfile;
@@ -461,6 +462,14 @@ public class SplitFileFetcherStorageTest extends TestCase {
         @Override
         public BaseSendableGet getSendableGet() {
             return null;
+        }
+
+        @Override
+        public void restartedAfterDataCorruption() {
+            // Will be used in a different test.
+            synchronized(this) {
+                hasRestartedOnCorruption = true;
+            }
         }
         
     }

@@ -79,4 +79,9 @@ public interface SplitFileFetcherCallback {
     /** Can be null. Provided mainly for KeysFetchingLocally. */
     BaseSendableGet getSendableGet();
 
+    /** Called when we recover from disk corruption, and have to re-download some blocks that we
+     * had already downloaded but which were corrupted on disk. E.g. when a segment attempts to 
+     * decode but discovers that a block doesn't match the key given. */
+    void restartedAfterDataCorruption();
+
 }

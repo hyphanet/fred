@@ -300,6 +300,7 @@ public class SplitFileFetcherSegmentStorage {
         }
         if(fetchedCount < blocksForDecode()) {
             writeMetadata();
+            parent.restartedAfterDataCorruption();
             return;
         }
         
@@ -358,6 +359,7 @@ public class SplitFileFetcherSegmentStorage {
         maybeBlocks = null;
         if(validBlocks < blocksForDecode()) {
             writeMetadata();
+            parent.restartedAfterDataCorruption();
             return;
         }
         boolean[] dataBlocksPresent = new boolean[dataBlocks.length];

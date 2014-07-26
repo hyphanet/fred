@@ -885,4 +885,15 @@ public class SplitFileFetcherStorage {
                 finalMinCompatMode.ordinal() < CompatibilityMode.COMPAT_1416.ordinal());
     }
 
+    public void restartedAfterDataCorruption() {
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.restartedAfterDataCorruption();
+            }
+            
+        });
+    }
+
 }
