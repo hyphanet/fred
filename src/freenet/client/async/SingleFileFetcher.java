@@ -950,10 +950,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Use the new splitfile code only in certain circumstances.
 				// FIXME relax these conditions once know it works.
 				if((!persistent) // Transient only for now
-				        && metadata.getCrossCheckBlocks() == 0 && // No cross-segment
-				        metadata.getMinCompatMode().ordinal() >= 
-				            InsertContext.CompatibilityMode.COMPAT_1416.ordinal()) { // 1416 only until checked last-block-not-full support.
-				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey);
+				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
+				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
+				            metadata.getMinCompatMode());
 				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
 				            topCompatibilityMode, false, thisKey, container, context);
