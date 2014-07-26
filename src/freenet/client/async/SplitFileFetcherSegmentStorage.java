@@ -461,7 +461,7 @@ public class SplitFileFetcherSegmentStorage {
                 block = ClientCHKBlock.encodeSplitfileBlock(checkBlocks[i], decodeKey.getCryptoKey(), decodeKey.getCryptoAlgorithm());
                 ClientCHK actualKey = block.getClientKey();
                 if(!actualKey.equals(decodeKey)) {
-                    Logger.error(this, "Splitfile check block does not encode to expected key");
+                    Logger.error(this, "Splitfile check block "+i+" does not encode to expected key for "+this+" for "+parent);
                     return;
                 }
                 if(capturingBinaryBlob)
