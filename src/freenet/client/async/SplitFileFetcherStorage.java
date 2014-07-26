@@ -414,7 +414,7 @@ public class SplitFileFetcherStorage {
         } finally {
             lock.unlock();
         }
-        if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this);
+        if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this+" for "+fetcher);
     }
     
     /** Encode the basic settings (number of blocks etc) to a byte array */
@@ -579,6 +579,8 @@ public class SplitFileFetcherStorage {
                         segment.writeToInner(os);
                     }
                     os.close();
+                } catch (Throwable t) {
+                    Logger.error(this, "Failed to write stream: "+t, t);
                 } finally {
                     lock.unlock();
                 }
@@ -609,7 +611,7 @@ public class SplitFileFetcherStorage {
                     lock.unlock();
                 }
             } catch (IOException e) {
-                Logger.error(this, "Failed writing metadata for "+this+": "+e, e);
+                Logger.error(this, "Failed writing metadata for "+SplitFileFetcherStorage.this+": "+e, e);
                 return;
             }
         }
