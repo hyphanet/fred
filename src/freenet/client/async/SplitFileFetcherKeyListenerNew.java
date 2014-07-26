@@ -254,9 +254,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
             }
             if(match) {
                 try {
-                    while(storage.segments[i].onGotKey((NodeCHK)key, (CHKBlock)block)) {
-                        found = true;
-                    }
+                    found = storage.segments[i].onGotKey((NodeCHK)key, (CHKBlock)block);
                 } catch (IOException e) {
                     fetcher.failOnDiskError(e);
                     return false;

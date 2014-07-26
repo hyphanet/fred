@@ -596,56 +596,62 @@ public class SplitFileFetcherSegmentStorage {
                 // checking, and might have non-obvious complications if we e.g. have data loss in
                 // FEC decoding.
                 Logger.warning(this, "Ignoring last block");
-                return false; // Do not look for another match.
+                return true;
             } else {
                 parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
                 return false;
             }
         }
         SplitFileFetcherCrossSegmentStorage callback = null;
-        // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
-        synchronized(this) {
-            if(succeeded || failed || finished) return false;
-            if(blocksFound[blockNumber]) return false;
-            if(blocksFetchedCount >= blocksForDecode())
-                return false;
-            int slotNumber = findFreeSlot();
-            assert(slotNumber != -1);
-            blocksFetched[slotNumber] = blockNumber;
-            blocksFound[blockNumber] = true;
-            RAFLock lock = parent.raf.lockOpen();
-            try {
-                writeDownloadedBlock(slotNumber, decodedData);
-                innerWriteMetadata(true);
-            } catch (IOException e) {
-                blocksFetched[slotNumber] = -1;
-                blocksFound[blockNumber] = false;
-                Logger.error(this, "Unable to write downloaded block to disk: "+e, e);
-                throw e;
-            } finally {
-                lock.unlock();
+        // Clearer to do duplicate handling here, plus we only need to decode once.
+        do {
+            short nextBlockNumber;
+            // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
+            synchronized(this) {
+                if(succeeded || failed || finished) return true; // We decoded it, it's definitely OK.
+                if(blocksFound[blockNumber]) continue;
+                if(blocksFetchedCount >= blocksForDecode())
+                    return true;
+                int slotNumber = findFreeSlot();
+                assert(slotNumber != -1);
+                blocksFetched[slotNumber] = blockNumber;
+                blocksFound[blockNumber] = true;
+                RAFLock lock = parent.raf.lockOpen();
+                try {
+                    writeDownloadedBlock(slotNumber, decodedData);
+                    innerWriteMetadata(true);
+                } catch (IOException e) {
+                    blocksFetched[slotNumber] = -1;
+                    blocksFound[blockNumber] = false;
+                    Logger.error(this, "Unable to write downloaded block to disk: "+e, e);
+                    throw e;
+                } finally {
+                    lock.unlock();
+                }
+                blocksFetchedCount++;
+                if(crossSegmentsByBlock != null && blockNumber < crossSegmentsByBlock.length) {
+                    callback = crossSegmentsByBlock[blockNumber];
+                    crossSegmentsByBlock[blockNumber] = null;
+                }
+                nextBlockNumber = (short)keys.getBlockNumber(key, blocksFound);
             }
-            blocksFetchedCount++;
-            if(crossSegmentsByBlock != null && blockNumber < crossSegmentsByBlock.length) {
-                callback = crossSegmentsByBlock[blockNumber];
-                crossSegmentsByBlock[blockNumber] = null;
-            }
-        }
-        if(callback != null)
-            callback.onFetchedRelevantBlock(this);
-        // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
-        writeMetadata();
-        if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
-        parent.executor.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                parent.fetcher.onFetchedBlock();
-            }
-            
-        });
-        tryStartDecode();
-        parent.fetcher.maybeAddToBinaryBlob(decodedBlock);
+            if(callback != null)
+                callback.onFetchedRelevantBlock(this);
+            // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
+            writeMetadata();
+            if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
+            parent.executor.execute(new Runnable() {
+                
+                @Override
+                public void run() {
+                    parent.fetcher.onFetchedBlock();
+                }
+                
+            });
+            tryStartDecode();
+            parent.fetcher.maybeAddToBinaryBlob(decodedBlock);
+            blockNumber = nextBlockNumber;
+        } while(blockNumber != -1);
         return true;
     }
 
