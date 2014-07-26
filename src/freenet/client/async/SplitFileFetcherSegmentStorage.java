@@ -742,8 +742,7 @@ public class SplitFileFetcherSegmentStorage {
         synchronized(this) {
             if(finished || failed || succeeded) return;
             if(retries != null) {
-                retries[blockNumber]++;
-                if(retries[blockNumber] == maxRetries) {
+                if(retries[blockNumber++] == maxRetries) {
                     failedBlocks++;
                     givenUp = true;
                     if(failedBlocks == checkBlocks+1) {
@@ -944,7 +943,7 @@ public class SplitFileFetcherSegmentStorage {
             for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
                 int retry = retries[i];
-                if(retry >= maxRetries) continue;
+                if(retry > maxRetries) continue;
                 if(retry < minRetryCount) {
                     count = 0;
                     candidates[count++] = i;
