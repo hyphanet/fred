@@ -758,6 +758,7 @@ public class SplitFileFetcherSegmentStorage {
         boolean kill = false;
         synchronized(this) {
             if(finished || failed || succeeded) return;
+            if(blocksFound[blockNumber]) return;
             if(retries != null) {
                 if(retries[blockNumber]++ == maxRetries) {
                     failedBlocks++;
