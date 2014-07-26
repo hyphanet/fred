@@ -601,6 +601,7 @@ public class SplitFileFetcherStorage {
         @Override
         public void run() {
             try {
+                if(hasFinished()) return;
                 RAFLock lock = raf.lockOpen();
                 try {
                     for(SplitFileFetcherSegmentStorage segment : segments) {
@@ -611,6 +612,7 @@ public class SplitFileFetcherStorage {
                     lock.unlock();
                 }
             } catch (IOException e) {
+                if(hasFinished()) return;
                 Logger.error(this, "Failed writing metadata for "+SplitFileFetcherStorage.this+": "+e, e);
                 return;
             }
