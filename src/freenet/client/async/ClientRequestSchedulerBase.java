@@ -357,10 +357,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return false;
 	}
 	
-	private long persistentTruePositives;
-	private long persistentFalsePositives;
-	private long persistentNegatives;
-	
 	public boolean tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		if((key instanceof NodeSSK) != isSSKScheduler) {
 			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
@@ -397,63 +393,9 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 				}
 			}
 		} else return false;
-		if(ret) {
-			// True positive
-			synchronized(this) {
-				persistentTruePositives++;
-				logFalsePositives("hit");
-			}
-		} else {
-			synchronized(this) {
-				persistentFalsePositives++;
-				logFalsePositives("false");
-			}
-		}
 		return ret;
 	}
 	
-	synchronized void countNegative() {
-		persistentNegatives++;
-		if(persistentNegatives % 32 == 0)
-			logFalsePositives("neg");
-	}
-	
-	private synchronized void logFalsePositives(String phase) {
-		long totalPositives = persistentFalsePositives + persistentTruePositives;
-		double percent;
-		if(totalPositives > 0)
-			percent = ((double) 100 * persistentFalsePositives) / totalPositives;
-		else
-			percent = 0;
-		if(!(percent > 2 || logMINOR)) return;
-		StringBuilder buf = new StringBuilder();
-		if(persistent())
-			buf.append("Persistent ");
-		else
-			buf.append("Transient ");
-		buf.append("false positives ");
-		buf.append(phase);
-		buf.append(": ");
-		
-		if(totalPositives != 0) {
-			buf.append(percent);
-			buf.append("% ");
-		}
-		buf.append("(false=");
-		buf.append(persistentFalsePositives);
-		buf.append(" true=");
-		buf.append(persistentTruePositives);
-		buf.append(" negatives=");
-		buf.append(persistentNegatives);
-		buf.append(')');
-		if(percent > 10)
-			Logger.error(this, buf.toString());
-		else if(percent > 2)
-			Logger.normal(this, buf.toString());
-		else
-			Logger.minor(this, buf.toString());
-	}
-
 	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
 		ArrayList<SendableGet> list = null;
 		assert(key instanceof NodeSSK == isSSKScheduler);
