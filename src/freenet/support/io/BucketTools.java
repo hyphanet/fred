@@ -490,6 +490,14 @@ public class BucketTools {
 			return b;
 		} finally { Closer.close(os); }
 	}
+	
+	static final ArrayBucketFactory ARRAY_FACTORY = new ArrayBucketFactory();
+	
+    public static byte[] pad(byte[] orig, int blockSize, int length) throws IOException {
+        ArrayBucket b = new ArrayBucket(orig);
+        Bucket ret = BucketTools.pad(b, blockSize, ARRAY_FACTORY, length);
+        return BucketTools.toByteArray(ret);
+    }
 
     public static boolean equalBuckets(Bucket a, Bucket b) throws IOException {
         if(a.size() != b.size()) return false;
