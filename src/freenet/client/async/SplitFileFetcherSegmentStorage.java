@@ -432,6 +432,7 @@ public class SplitFileFetcherSegmentStorage {
                     if(i == dataBlocks.length-1 && this.segNo == parent.segments.length-1 && 
                             parent.lastBlockMightNotBePadded()) {
                         // Ignore.
+                        return;
                     } else {
                         // Usual case.
                         parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
