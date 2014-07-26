@@ -553,7 +553,9 @@ public class SplitFileFetcherSegmentStorage {
      * @param key
      * @param block
      * @throws IOException If we were unable to write the block to disk.
-     * @return
+     * @return True if we successfully decoded a block, in which case the function will be called
+     * again. False if there was no match, if we have already fetched that block, or if various 
+     * errors occurred.
      */
     public boolean onGotKey(NodeCHK key, CHKBlock block) throws IOException {
         SplitFileSegmentKeys keys = getSegmentKeys();
