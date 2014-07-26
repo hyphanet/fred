@@ -582,6 +582,20 @@ public class SplitFileFetcherSegmentStorage {
             Logger.error(this, "Decode failed on block for "+decodeKey);
             return false;
         }
+        if(decodedData.length != CHKBlock.DATA_LENGTH) {
+            if(blockNumber == dataBlocks-1 && this.segNo == parent.segments.length-1 && 
+                    parent.lastBlockMightNotBePadded()) {
+                // Can't use it for FEC decode. Just ignore it.
+                // FIXME We can use it if we have all the other data blocks, but it's not worth 
+                // checking, and might have non-obvious complications if we e.g. have data loss in
+                // FEC decoding.
+                Logger.warning(this, "Ignoring last block");
+                return true;
+            } else {
+                parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
+                return false;
+            }
+        }
         SplitFileFetcherCrossSegmentStorage callback = null;
         // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
         synchronized(this) {
