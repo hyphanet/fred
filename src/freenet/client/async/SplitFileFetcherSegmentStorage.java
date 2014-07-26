@@ -590,7 +590,7 @@ public class SplitFileFetcherSegmentStorage {
                 // checking, and might have non-obvious complications if we e.g. have data loss in
                 // FEC decoding.
                 Logger.warning(this, "Ignoring last block");
-                return true;
+                return false; // Do not look for another match.
             } else {
                 parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
                 return false;
