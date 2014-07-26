@@ -264,7 +264,6 @@ public class SplitFileFetcherSegmentStorage {
         }
         ArrayList<MyBlock> maybeBlocks = new ArrayList<MyBlock>();
         int fetchedCount = 0;
-        boolean changedSomething = false;
         synchronized(this) {
             boolean[] used = new boolean[totalBlocks];
             for(short i=0;i<blocksFetched.length;i++) {
@@ -273,12 +272,10 @@ public class SplitFileFetcherSegmentStorage {
                     if(blocksFetched[i] != -1)
                         blocksFetched[i] = -1;
                     maybeBlocks.add(new MyBlock(allBlocks[i], (short)-1, i));
-                    changedSomething = true;
                     continue;
                 } else if(used[blocksFetched[i]]) {
                     Logger.warning(this, "Inconsistency decoding splitfile: slot "+i+" has duplicate block number "+blocksFetched[i]);
                     blocksFetched[i] = -1;
-                    changedSomething = true;
                     continue;
                 } else {
                     if(logMINOR) Logger.minor(this, "Found block "+blocksFetched[i]+" in slot "+i);
@@ -291,7 +288,6 @@ public class SplitFileFetcherSegmentStorage {
                 int count = 0;
                 for(int i=0;i<totalBlocks;i++) {
                     if(!used[i]) {
-                        changedSomething = true;
                         blocksFound[i] = false;
                     }
                     if(blocksFound[i]) count++;
@@ -299,13 +295,11 @@ public class SplitFileFetcherSegmentStorage {
                 if(count != blocksFetchedCount) {
                     Logger.warning(this, "Corrected block count to "+count+" from "+blocksFetchedCount);
                     blocksFetchedCount = count;
-                    changedSomething = true;
                 }
             }
         }
         if(fetchedCount < blocksForDecode()) {
-            if(changedSomething)
-                writeMetadata();
+            writeMetadata();
             return;
         }
         
@@ -334,7 +328,6 @@ public class SplitFileFetcherSegmentStorage {
                     } else {
                         synchronized(this) {
                             blocksFetched[test.slot] = blockNumber;
-                            changedSomething = true;
                         }
                     }
                 }
@@ -356,7 +349,6 @@ public class SplitFileFetcherSegmentStorage {
                     if(blocksFetched[test.slot] == test.blockNumber) {
                         blocksFetched[test.slot] = (short)-1;
                         blocksFetchedCount--;
-                        changedSomething = true;
                     }
                 }
             }
@@ -365,8 +357,7 @@ public class SplitFileFetcherSegmentStorage {
         maybeBlocks.clear();
         maybeBlocks = null;
         if(validBlocks < blocksForDecode()) {
-            if(changedSomething)
-                writeMetadata();
+            writeMetadata();
             return;
         }
         boolean[] dataBlocksPresent = new boolean[dataBlocks.length];
