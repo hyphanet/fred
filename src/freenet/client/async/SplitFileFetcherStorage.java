@@ -310,7 +310,7 @@ public class SplitFileFetcherStorage {
             segments[i] = new SplitFileFetcherSegmentStorage(this, i, splitfileType, 
                     dataBlocks-crossCheckBlocks, // Cross check blocks are included in data blocks for SplitFileSegmentKeys' purposes.
                     checkBlocks, crossCheckBlocks, dataOffset, segmentKeysOffset, segmentStatusOffset,
-                    splitfileSingleCryptoKey != null, keys);
+                    maxRetries != -1, keys);
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null);
