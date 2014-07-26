@@ -925,12 +925,12 @@ public class SplitFileFetcherSegmentStorage {
             if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
             return -1;
         }
-        int[] candidates = new int[retries.length];
+        int[] candidates = new int[blocksFound.length];
         int count = 0;
         if(retries == null) {
             // maxRetries = -1, to minimise disk I/O we are not tracking retries.
             // FIXME OPT try a couple random first? How much does random cost?
-            for(int i=0;i<retries.length;i++) {
+            for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
                 candidates[count++] = i;
             }
@@ -941,7 +941,7 @@ public class SplitFileFetcherSegmentStorage {
             // and SoftReference's do have a cost too.
             int maxRetries = parent.maxRetries();
             int minRetryCount = Integer.MAX_VALUE;
-            for(int i=0;i<retries.length;i++) {
+            for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
                 int retry = retries[i];
                 if(retry >= maxRetries) continue;
