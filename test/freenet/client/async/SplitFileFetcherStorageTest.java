@@ -27,6 +27,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
+import freenet.node.BaseSendableGet;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
@@ -455,6 +456,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
         @Override
         public boolean wantBinaryBlob() {
             return false;
+        }
+
+        @Override
+        public BaseSendableGet getSendableGet() {
+            return null;
         }
         
     }

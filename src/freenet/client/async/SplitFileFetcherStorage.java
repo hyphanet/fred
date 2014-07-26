@@ -30,6 +30,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Executor;
@@ -765,7 +766,7 @@ public class SplitFileFetcherStorage {
     /** Choose a random key which can be fetched at the moment.
      * @return The block number to be fetched, as an integer.
      */
-    public MyKey chooseRandomKey() {
+    public MyKey chooseRandomKey(KeysFetchingLocally keys) {
         synchronized(this) {
             if(finishedFetcher) return null;
         }
@@ -773,7 +774,7 @@ public class SplitFileFetcherStorage {
         // then a random key from it.
         int segNo = random.nextInt(segments.length);
         SplitFileFetcherSegmentStorage segment = segments[segNo];
-        int ret = segment.chooseRandomKey();
+        int ret = segment.chooseRandomKey(keys);
         if(ret != -1) return new MyKey(ret, segNo, this);
         // Looks like we are close to completion ...
         // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
@@ -786,7 +787,7 @@ public class SplitFileFetcherStorage {
             while(tried[segNo = random.nextInt(segments.length)]);
             tried[segNo] = true;
             segment = segments[segNo];
-            ret = segment.chooseRandomKey();
+            ret = segment.chooseRandomKey(keys);
             if(ret != -1) return new MyKey(ret, segNo, this);
         }
         return null;

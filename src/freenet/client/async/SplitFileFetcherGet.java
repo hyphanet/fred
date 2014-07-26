@@ -127,7 +127,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container,
             ClientContext context) {
-        return storage.chooseRandomKey();
+        return storage.chooseRandomKey(keys);
     }
 
     @Override

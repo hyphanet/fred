@@ -14,6 +14,7 @@ import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -245,6 +246,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         if(parent instanceof ClientGetter) {
             return ((ClientGetter)parent).collectingBinaryBlob();
         } else return false;
+    }
+
+    @Override
+    public BaseSendableGet getSendableGet() {
+        return getter;
     }
 
 }

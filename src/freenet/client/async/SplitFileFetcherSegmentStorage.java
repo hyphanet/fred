@@ -23,6 +23,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
+import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
@@ -934,7 +935,7 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
-    public synchronized int chooseRandomKey() {
+    public synchronized int chooseRandomKey(KeysFetchingLocally keysFetching) {
         if(finished) return -1;
         if(tryDecode) {
             if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
@@ -944,12 +945,29 @@ public class SplitFileFetcherSegmentStorage {
             (this.segNo == parent.segments.length-1 && parent.lastBlockMightNotBePadded());
         int[] candidates = new int[blocksFound.length];
         int count = 0;
+        SplitFileSegmentKeys keys = null;
         if(retries == null) {
             // maxRetries = -1, to minimise disk I/O we are not tracking retries.
             // FIXME OPT try a couple random first? How much does random cost?
             for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
                 if(ignoreLastBlock && i == dataBlocks-1) continue;
+                if(keys == null)
+                    try {
+                        keys = getSegmentKeys();
+                    } catch (final IOException e) {
+                        parent.executor.execute(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                parent.failOnDiskError(e);
+                            }
+                            
+                        });
+                        return -1;
+                    }
+                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
+                    continue;
                 candidates[count++] = i;
             }
         } else {
@@ -964,6 +982,23 @@ public class SplitFileFetcherSegmentStorage {
                 if(ignoreLastBlock && i == dataBlocks-1) continue;
                 int retry = retries[i];
                 if(retry > maxRetries) continue;
+                if(retry > minRetryCount) continue;
+                if(keys == null)
+                    try {
+                        keys = getSegmentKeys();
+                    } catch (final IOException e) {
+                        parent.executor.execute(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                parent.failOnDiskError(e);
+                            }
+                            
+                        });
+                        return -1;
+                    }
+                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
+                    continue;
                 if(retry < minRetryCount) {
                     count = 0;
                     candidates[count++] = i;

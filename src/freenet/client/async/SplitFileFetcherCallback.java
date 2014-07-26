@@ -6,6 +6,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
+import freenet.node.BaseSendableGet;
 import freenet.support.api.Bucket;
 
 /** Callback used by SplitFileFetcherStorage. Arguably this is over-abstraction purely to make unit
@@ -74,5 +75,8 @@ public interface SplitFileFetcherCallback {
 
     /** Do we want maybeAddToBinaryBlob() to be called?? */
     boolean wantBinaryBlob();
+
+    /** Can be null. Provided mainly for KeysFetchingLocally. */
+    BaseSendableGet getSendableGet();
 
 }
