@@ -213,7 +213,7 @@ public class SplitFileFetcherSegmentStorage {
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
                 try {
-                    innerTryStartDecode(chunk);
+                    innerDecode(chunk);
                 } catch (IOException e) {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
@@ -230,8 +230,9 @@ public class SplitFileFetcherSegmentStorage {
         return true;
     }
     
-    /** Attempt FEC decoding */
-    private void innerTryStartDecode(MemoryLimitedChunk chunk) throws IOException {
+    /** Attempt FEC decoding. Check blocks before decoding in case there is disk corruption. Check
+     * the new decoded blocks afterwards to ensure reproducible behaviour. */
+    private void innerDecode(MemoryLimitedChunk chunk) throws IOException {
         if(logMINOR) Logger.minor(this, "Trying to decode "+this+" for "+parent);
         // Even if we fail, once we set tryDecode=true, we need to notify the parent when we're done.
         boolean fail;
