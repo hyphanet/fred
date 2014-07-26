@@ -940,6 +940,8 @@ public class SplitFileFetcherSegmentStorage {
             if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
             return -1;
         }
+        boolean ignoreLastBlock = 
+            (this.segNo == parent.segments.length-1 && parent.lastBlockMightNotBePadded());
         int[] candidates = new int[blocksFound.length];
         int count = 0;
         if(retries == null) {
@@ -947,6 +949,7 @@ public class SplitFileFetcherSegmentStorage {
             // FIXME OPT try a couple random first? How much does random cost?
             for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
+                if(ignoreLastBlock && i == dataBlocks-1) continue;
                 candidates[count++] = i;
             }
         } else {
@@ -958,6 +961,7 @@ public class SplitFileFetcherSegmentStorage {
             int minRetryCount = Integer.MAX_VALUE;
             for(int i=0;i<blocksFound.length;i++) {
                 if(blocksFound[i]) continue;
+                if(ignoreLastBlock && i == dataBlocks-1) continue;
                 int retry = retries[i];
                 if(retry > maxRetries) continue;
                 if(retry < minRetryCount) {
