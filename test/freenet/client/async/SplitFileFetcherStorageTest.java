@@ -6,7 +6,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -18,6 +21,7 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.OnionFECCodec;
+import freenet.client.async.SplitFileFetcherStorage.MyKey;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKBlock;
@@ -28,6 +32,9 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.node.BaseSendableGet;
+import freenet.node.KeysFetchingLocally;
+import freenet.node.SendableInsert;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
@@ -247,14 +254,18 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public StorageCallback createStorageCallback() {
             return new StorageCallback(this);
         }
-
+        
         public SplitFileFetcherStorage createStorage(StorageCallback cb) throws FetchException, MetadataParseException, IOException {
+            return createStorage(cb, makeFetchContext());
+        }
+
+        public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx) throws FetchException, MetadataParseException, IOException {
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
-                    COMPATIBILITY_MODE, makeFetchContext(), false, salt, URI, random, bf,
+                    COMPATIBILITY_MODE, ctx, false, salt, URI, random, bf,
                     rafFactory, exec, ticker, memoryLimitedJobRunner);
         }
 
-        private FetchContext makeFetchContext() {
+        public FetchContext makeFetchContext() {
             return HighLevelSimpleClientImpl.makeDefaultFetchContext(Long.MAX_VALUE, Long.MAX_VALUE, 
                     bf, new SimpleEventProducer());
         }
@@ -763,4 +774,81 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
         }
     }
+    
+    class MyKeysFetchingLocally implements KeysFetchingLocally {
+        private final HashSet<Key> keys = new HashSet<Key>();
+
+        @Override
+        public long checkRecentlyFailed(Key key, boolean realTime) {
+            return 0;
+        }
+
+        @Override
+        public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent,
+                ObjectContainer container) {
+            return keys.contains(key);
+        }
+
+        @Override
+        public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
+            return false;
+        }
+
+        public void add(Key k) {
+            keys.add(k);
+        }
+        
+    }
+    
+    public void testChooseKeyOneTry() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 3, checkBlocks = 3;
+        TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        FetchContext ctx = test.makeFetchContext();
+        ctx.maxSplitfileBlockRetries = 0;
+        SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        boolean[] tried = new boolean[dataBlocks+checkBlocks];
+        innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], keys, tried, test);
+        assertEquals(storage.chooseRandomKey(keys), null);
+        keys = new MyKeysFetchingLocally();
+        assertEquals(storage.chooseRandomKey(keys), null);
+    }
+    
+    private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, MyKeysFetchingLocally keys, boolean[] tried, TestSplitfile test) {
+        for(int i=0;i<dataBlocks+checkBlocks;i++) {
+            int chosen = storage.chooseRandomKey(keys);
+            assertTrue(chosen != -1);
+            assertFalse(tried[chosen]);
+            tried[chosen] = true;
+            Key k = test.getCHK(chosen);
+            keys.add(k);
+        }
+        for(boolean b : tried) {
+            assertTrue(b);
+        }
+        for(int i=0;i<dataBlocks+checkBlocks;i++) {
+            storage.onNonFatalFailure(i);
+        }
+    }
+
+    public void testChooseKeyThreeTries() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 3, checkBlocks = 3;
+        TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        FetchContext ctx = test.makeFetchContext();
+        ctx.maxSplitfileBlockRetries = 2;
+        SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
+        MyKeysFetchingLocally keys = null;
+        for(int i=0;i<3;i++) {
+            keys = new MyKeysFetchingLocally();
+            boolean[] tried = new boolean[dataBlocks+checkBlocks];
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], keys, tried, test);
+            assertEquals(storage.chooseRandomKey(keys), null);
+        }
+        assertEquals(storage.chooseRandomKey(keys), null);
+        keys = new MyKeysFetchingLocally();
+        assertEquals(storage.chooseRandomKey(keys), null);
+    }
+    
 }
