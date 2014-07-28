@@ -704,6 +704,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
                 if(hasMigrated) return;
                 hasMigrated = true;
             }
+            _hasFreed(size);
             synchronized(ramBucketQueue) {
                 ramBucketQueue.remove(getReference());
             }
