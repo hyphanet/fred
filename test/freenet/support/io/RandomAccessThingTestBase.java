@@ -9,7 +9,7 @@ import junit.framework.TestCase;
 public abstract class RandomAccessThingTestBase extends TestCase {
     
     /** Size list for small tests i.e. stuff that definitely fits in RAM */
-    private final int[] sizeList;
+    protected final int[] sizeList;
     /** Size list for big tests i.e. stuff that might not fit in RAM */
     private final long[] fullSizeList;
     
@@ -248,7 +248,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     }
 
     /** Check that the array section equals the read data, then write it and repeat the check. */
-    private void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end) throws IOException {
+    protected void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end) throws IOException {
         int len = end - start;
         if(len == 0) return;
         byte[] tmp = new byte[len];

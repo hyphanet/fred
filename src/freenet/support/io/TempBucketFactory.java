@@ -675,7 +675,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	/** Unlike a TempBucket, the size is fixed, so migrate only happens on the migration thread. */
-	private class TempLockableRandomAccessThing extends SwitchableProxyRandomAccessThing implements Migratable {
+	class TempLockableRandomAccessThing extends SwitchableProxyRandomAccessThing implements Migratable {
 	    
 	    protected boolean hasMigrated = false;
 	    private final long creationTime;
@@ -724,6 +724,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         @Override
         public void migrateToDisk() throws IOException {
             migrate();
+        }
+
+        public synchronized boolean hasMigrated() {
+            return hasMigrated;
         }
         
 	}
