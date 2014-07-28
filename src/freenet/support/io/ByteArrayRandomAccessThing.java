@@ -1,6 +1,7 @@
 package freenet.support.io;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 
@@ -11,8 +12,16 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
 	public ByteArrayRandomAccessThing(byte[] padded) {
 		this.data = padded;
 	}
+	
+	public ByteArrayRandomAccessThing(int size) {
+	    this.data = new byte[size];
+	}
 
-	@Override
+	public ByteArrayRandomAccessThing(byte[] initialContents, int offset, int size) {
+	    data = Arrays.copyOfRange(initialContents, offset, offset+size);
+    }
+
+    @Override
 	public void close() {
 	    closed = true;
 	}
@@ -60,6 +69,11 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
     @Override
     public void free() {
         // Do nothing.
+    }
+    
+    /** Package-local! */
+    byte[] getBuffer() {
+        return data;
     }
 
 }

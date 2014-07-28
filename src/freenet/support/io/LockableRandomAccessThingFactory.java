@@ -19,5 +19,16 @@ public interface LockableRandomAccessThingFactory {
      * @throws IllegalArgumentException If size < 0.
      */
     public LockableRandomAccessThing makeRAF(long size) throws IOException;
+    
+    /**
+     * Create a bucket with specified initial contents.
+     * @param initialContents Byte array from which to copy data. Data will be copied even if the
+     * underlying implementation is a byte array, for reasons of consistency.
+     * @param offset Offset within the array to start copying data from.
+     * @param size Number of bytes to copy i.e. length of the new RandomAccessThing.
+     * @return
+     * @throws IOException If an I/O error prevented the operation.
+     */
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size) throws IOException;
 
 }
