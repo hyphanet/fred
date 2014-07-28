@@ -416,6 +416,17 @@ public class SplitFileFetcherStorageTest extends TestCase {
             }
         }
         
+        public synchronized void waitForFailed() {
+            while(!(succeeded || failed)) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+            assertTrue(failed);
+        }
+        
         public void waitForFree(SplitFileFetcherStorage storage) {
             synchronized(this) {
                 while(!closed) {
@@ -449,9 +460,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
 
         @Override
         public void fail(FetchException fe) {
-            assertFalse(true);
             synchronized(this) {
                 failed = true;
+                notifyAll();
             }
         }
 
@@ -813,6 +824,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(keys), null);
         keys = new MyKeysFetchingLocally();
         assertEquals(storage.chooseRandomKey(keys), null);
+        cb.waitForFailed();
     }
     
     private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, MyKeysFetchingLocally keys, boolean[] tried, TestSplitfile test) {
@@ -849,6 +861,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertEquals(storage.chooseRandomKey(keys), null);
         keys = new MyKeysFetchingLocally();
         assertEquals(storage.chooseRandomKey(keys), null);
+        cb.waitForFailed();
     }
     
 }
