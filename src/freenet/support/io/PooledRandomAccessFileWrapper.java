@@ -3,8 +3,6 @@ package freenet.support.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
@@ -45,6 +43,25 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
                 currentLength = forceLength;
             }
             this.length = currentLength;
+            lock.unlock();
+        } catch (IOException e) {
+            synchronized(this) {
+                raf.close();
+                raf = null;
+            }
+            throw e;
+        }
+    }
+
+    public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
+            int offset, int size) throws IOException {
+        this.file = file;
+        this.mode = mode;
+        this.length = size;
+        lockLevel = 0;
+        RAFLock lock = lockOpen();
+        try {
+            raf.write(initialContents, offset, size);
             lock.unlock();
         } catch (IOException e) {
             synchronized(this) {
