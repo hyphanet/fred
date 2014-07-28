@@ -39,6 +39,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
         if(fileOffset+length > size) throw new IOException("Tried to read past end of file");
         try {
             lock.readLock().lock();
@@ -52,6 +53,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
+        if(fileOffset < 0) throw new IllegalArgumentException();
         if(fileOffset+length > size) throw new IOException("Tried to write past end of file");
         try {
             lock.readLock().lock();
