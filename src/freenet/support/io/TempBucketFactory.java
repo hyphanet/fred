@@ -49,11 +49,12 @@ import java.util.ArrayList;
  *	- if they are long-lived or not (@see RAMBUCKET_MAX_AGE)
  *	- if their size is over RAMBUCKET_CONVERSION_FACTOR*maxRAMBucketSize
  */
-public class TempBucketFactory implements BucketFactory {
+public class TempBucketFactory implements BucketFactory, LockableRandomAccessThingFactory {
 	public final static long defaultIncrement = 4096;
 	public final static float DEFAULT_FACTOR = 1.25F;
 	
 	private final FilenameGenerator filenameGenerator;
+	private final LockableRandomAccessThingFactory diskRAFFactory;
 	private long bytesInUse = 0;
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
@@ -82,7 +83,15 @@ public class TempBucketFactory implements BucketFactory {
 		});
 	}
 	
-	public class TempBucket implements Bucket {
+	private interface Migratable {
+
+        long creationTime();
+
+        void migrateToDisk() throws IOException;
+	    
+	};
+	
+	public class TempBucket implements Bucket, Migratable {
 		/** The underlying bucket itself */
 		private Bucket currentBucket;
 		/** We have to account the size of the underlying bucket ourself in order to be able to access it fast */
@@ -137,7 +146,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
-		final void migrateToFileBucket() throws IOException {
+		public final void migrateToDisk() throws IOException {
 			Bucket toMigrate = null;
 			long size;
 			synchronized(this) {
@@ -230,7 +239,7 @@ public class TempBucketFactory implements BucketFactory {
 							else
 								Logger.minor(this, "The bucketpool is full: force-migrate before we go over the limit");
 						}
-						migrateToFileBucket();
+						migrateToDisk();
 					}
 				}
 			}
@@ -446,9 +455,9 @@ public class TempBucketFactory implements BucketFactory {
 			return false;
 		}
 		
-		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
+		private WeakReference<Migratable> weakRef = new WeakReference<Migratable>(this);
 
-		public WeakReference<TempBucket> getReference() {
+		public WeakReference<Migratable> getReference() {
 			return weakRef;
 		}
 		
@@ -461,6 +470,11 @@ public class TempBucketFactory implements BucketFactory {
 			}
                         super.finalize();
 		}
+
+        @Override
+        public long creationTime() {
+            return creationTime;
+        }
 	}
 	
 	// Storage accounting disabled by default.
@@ -472,6 +486,7 @@ public class TempBucketFactory implements BucketFactory {
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
+		this.diskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator);
 	}
 
 	@Override
@@ -597,30 +612,30 @@ public class TempBucketFactory implements BucketFactory {
 	private boolean cleanBucketQueue(long now, boolean force) {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
-		Queue<TempBucket> toMigrate = null;
+		Queue<Migratable> toMigrate = null;
                 if(logMINOR)
 			Logger.minor(this, "Starting cleanBucketQueue");
 		do {
 			synchronized(ramBucketQueue) {
-				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
+				final WeakReference<Migratable> tmpBucketRef = ramBucketQueue.peek();
 				if (tmpBucketRef == null)
 					shouldContinue = false;
 				else {
-					TempBucket tmpBucket = tmpBucketRef.get();
+					Migratable tmpBucket = tmpBucketRef.get();
 					if (tmpBucket == null) {
 						ramBucketQueue.remove(tmpBucketRef);
 						continue; // ugh. this is freed
 					}
 
 					// Don't access the buckets inside the lock, will deadlock.
-					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now && !force)
+					if (tmpBucket.creationTime() + RAMBUCKET_MAX_AGE > now && !force)
 						shouldContinue = false;
 					else {
 						if (logMINOR)
-							Logger.minor(this, "The bucket "+tmpBucket+" is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
+							Logger.minor(this, "The bucket "+tmpBucket+" is " + TimeUtil.formatTime(now - tmpBucket.creationTime())
 							        + " old: we will force-migrate it to disk.");
 						ramBucketQueue.remove(tmpBucketRef);
-						if(toMigrate == null) toMigrate = new LinkedList<TempBucket>();
+						if(toMigrate == null) toMigrate = new LinkedList<Migratable>();
 						toMigrate.add(tmpBucket);
 						force = false;
 					}
@@ -632,9 +647,9 @@ public class TempBucketFactory implements BucketFactory {
 		if(toMigrate.size() > 0) {
 			if(logMINOR)
 				Logger.minor(this, "We are going to migrate " + toMigrate.size() + " RAMBuckets");
-			for(TempBucket tmpBucket : toMigrate) {
+			for(Migratable tmpBucket : toMigrate) {
 				try {
-					tmpBucket.migrateToFileBucket();
+					tmpBucket.migrateToDisk();
 				} catch(IOException e) {
 					Logger.error(tmpBucket, "An IOE occured while migrating long-lived buckets:" + e.getMessage(), e);
 				}
@@ -644,7 +659,7 @@ public class TempBucketFactory implements BucketFactory {
 		return false;
 	}
 	
-	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
+	private final Queue<WeakReference<Migratable>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<Migratable>>();
 	
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
@@ -658,4 +673,121 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		return fileBucket;
 	}
+	
+	/** Unlike a TempBucket, the size is fixed, so migrate only happens on the migration thread. */
+	private class TempLockableRandomAccessThing extends SwitchableProxyRandomAccessThing implements Migratable {
+	    
+	    protected boolean hasMigrated = false;
+	    private final long creationTime;
+	    
+	    TempLockableRandomAccessThing(int size, long time) throws IOException {
+	        super(new ByteArrayRandomAccessThing(size), size);
+	        creationTime = time;
+	    }
+
+        public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time) throws IOException {
+            super(new ByteArrayRandomAccessThing(initialContents, offset, size), size);
+            creationTime = time;
+        }
+
+        @Override
+        protected LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException {
+            ByteArrayRandomAccessThing b = (ByteArrayRandomAccessThing)underlying;
+            byte[] buf = b.getBuffer();
+            return diskRAFFactory.makeRAF(buf, 0, (int)size);
+        }
+
+        @Override
+        protected void afterFreeUnderlying() {
+            synchronized(this) {
+                // Proliferation of locks! This is okay, migrate is expensive and rarely called.
+                if(hasMigrated) return;
+                hasMigrated = true;
+            }
+            synchronized(ramBucketQueue) {
+                ramBucketQueue.remove(getReference());
+            }
+        }
+        
+        private WeakReference<Migratable> weakRef = new WeakReference<Migratable>(this);
+
+        public WeakReference<Migratable> getReference() {
+            return weakRef;
+        }
+
+        @Override
+        public long creationTime() {
+            return creationTime;
+        }
+
+        @Override
+        public void migrateToDisk() throws IOException {
+            migrate();
+        }
+        
+	}
+
+	// FIXME encrypt (and pad) RAF's.
+	
+	@Override
+    public LockableRandomAccessThing makeRAF(long size) throws IOException {
+	    if(size < 0) throw new IllegalArgumentException();
+	    if(size > Integer.MAX_VALUE) return diskRAFFactory.makeRAF(size);
+	    
+	    boolean useRAMBucket = false;
+	    long now = System.currentTimeMillis();
+	    
+	    TempLockableRandomAccessThing raf = null;
+	    
+	    synchronized(this) {
+	        if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
+	            raf = new TempLockableRandomAccessThing((int)size, now);
+	            bytesInUse += size;
+	        }
+	        if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
+	            runningCleaner = true;
+	            executor.execute(cleaner);
+	        }
+	    }
+	    
+	    if(raf != null) {
+            synchronized(ramBucketQueue) {
+                ramBucketQueue.add(raf.getReference());
+            }
+            return raf;
+	    } else {
+	        return diskRAFFactory.makeRAF(size);
+	    }
+    }
+
+    @Override
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
+            throws IOException {
+        if(size < 0) throw new IllegalArgumentException();
+        
+        boolean useRAMBucket = false;
+        long now = System.currentTimeMillis();
+        
+        TempLockableRandomAccessThing raf = null;
+        
+        synchronized(this) {
+            if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
+                raf = new TempLockableRandomAccessThing(initialContents, offset, size, now);
+                bytesInUse += size;
+            }
+            if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
+                runningCleaner = true;
+                executor.execute(cleaner);
+            }
+        }
+        
+        if(raf != null) {
+            synchronized(ramBucketQueue) {
+                ramBucketQueue.add(raf.getReference());
+            }
+            return raf;
+        } else {
+            return diskRAFFactory.makeRAF(initialContents, offset, size);
+        }
+    }
 }
