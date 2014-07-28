@@ -76,6 +76,9 @@ public class SplitFileFetcherSegmentStorage {
     /** Which blocks have we tried to fetch? And presumably failed, if we don't have them. Updated
      * when a block fails and written lazily. */
     private final boolean[] tried;
+    /** Time at which each block will be sendable. 0 = sendable now. Not serialised - reset when
+     * the node is restarted. */
+    private final long[] cooldownTimes;
     /** Which blocks have we already found? May be inaccurate, checked on FEC decode. */
     private final boolean[] blocksFound;
     /** What is the order of the blocks on disk? Should be kept consistent with blocksFound! Is 
@@ -124,6 +127,7 @@ public class SplitFileFetcherSegmentStorage {
         retries = new int[total];
         tried = new boolean[total];
         blocksFound = new boolean[total];
+        cooldownTimes = new long[total];
         int minFetched = dataBlocks + crossSegmentCheckBlocks;
         if(crossCheckBlocks != 0)
             crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
@@ -757,6 +761,8 @@ public class SplitFileFetcherSegmentStorage {
     
     public void onNonFatalFailure(int blockNumber) {
         int maxRetries = parent.maxRetries();
+        int cooldownTries = parent.cooldownTries;
+        long cooldownTime = parent.cooldownTime;
         boolean givenUp = false;
         boolean kill = false;
         synchronized(this) {
@@ -771,6 +777,11 @@ public class SplitFileFetcherSegmentStorage {
                     kill = true;
                     finished = true;
                     failed = true;
+                }
+            } else {
+                if(cooldownTries == 0 || retries[blockNumber] % cooldownTries == 0) {
+                    if(logMINOR) Logger.minor(this, "Block "+blockNumber+" entering cooldown on "+this);
+                    cooldownTimes[blockNumber] = System.currentTimeMillis() + cooldownTime;
                 }
             }
         }
@@ -951,6 +962,7 @@ public class SplitFileFetcherSegmentStorage {
         // Complicated schemes would use more memory as well as creating more bugs,
         // and SoftReference's do have a cost too.
         int maxRetries = parent.maxRetries();
+        long now = System.currentTimeMillis();
         int minRetryCount = Integer.MAX_VALUE;
         for(int i=0;i<blocksFound.length;i++) {
             if(blocksFound[i]) continue;
@@ -958,6 +970,8 @@ public class SplitFileFetcherSegmentStorage {
             int retry = retries[i];
             if(retry > maxRetries) continue;
             if(retry > minRetryCount) continue;
+            if(cooldownTimes[i] > now) continue;
+            cooldownTimes[i] = 0;
             if(keys == null) {
                 try {
                     keys = getSegmentKeys();

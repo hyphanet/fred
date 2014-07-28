@@ -136,7 +136,9 @@ public class SplitFileFetcherStorage {
     
     /** Errors. For now, this is not persisted (FIXME). */
     private final FailureCodeTracker errors;
-    private final int maxRetries;
+    final int maxRetries;
+    final int cooldownTries;
+    final long cooldownTime;
     final CompatibilityMode finalMinCompatMode;
     
     /** Contains Bloom filters */
@@ -204,6 +206,8 @@ public class SplitFileFetcherStorage {
         int crossCheckBlocks = metadata.getCrossCheckBlocks();
         
         maxRetries = origFetchContext.maxSplitfileBlockRetries;
+        cooldownTries = origFetchContext.getCooldownRetries();
+        cooldownTime = origFetchContext.getCooldownTime();
         this.splitfileSingleCryptoAlgorithm = metadata.getSplitfileCryptoAlgorithm();
         splitfileSingleCryptoKey = metadata.getSplitfileCryptoKey();
         
