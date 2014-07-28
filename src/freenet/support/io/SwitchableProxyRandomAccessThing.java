@@ -86,6 +86,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
         }  finally {
             lock.writeLock().unlock();
         }
+        afterFreeUnderlying();
     }
     
     /** Called after freeing underlying. */ 
