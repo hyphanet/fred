@@ -80,9 +80,9 @@ public class ClientContext {
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom,
-			Random fastWeakRandom, Ticker ticker,
-			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker, LinkFilterExceptionProvider linkFilterExceptionProvider,
-			long memoryLimitedJobRunnerMemoryLimit) {
+			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
+			LockableRandomAccessThingFactory rafFactory, RealCompressor rc, DatastoreChecker checker, 
+			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
 		this.bootID = bootID;
 		this.fecQueue = fecQueue;
 		this.jobRunner = jobRunner;
@@ -104,8 +104,7 @@ public class ClientContext {
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		this.cooldownTracker = new CooldownTracker();
 		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
-	    // FIXME!! This is just for demonstration purposes ...
-		this.tempRAFFactory = new ByteArrayRandomAccessThingFactory(); 
+		this.tempRAFFactory = rafFactory; 
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
