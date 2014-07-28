@@ -49,6 +49,7 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.TempBucketFactory;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
@@ -950,6 +951,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Use the new splitfile code only in certain circumstances.
 				// FIXME relax these conditions once know it works.
 				if((!persistent) // Transient only for now
+				        && !((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
 				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
 				            metadata.getMinCompatMode());
