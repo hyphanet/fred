@@ -71,6 +71,8 @@ public class SplitFileFetcherSegmentStorage {
     public final int checkBlocks;
     /** How many times have blocks been retried? Null if maxRetries = -1 */
     private final int[] retries;
+    /** Should we write retries to disk? */
+    private final boolean writeRetries;
     /** Which blocks have we tried to fetch? And presumably failed, if we don't have them. Updated
      * when a block fails and written lazily. */
     private final boolean[] tried;
@@ -111,17 +113,15 @@ public class SplitFileFetcherSegmentStorage {
     public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, int segNumber, 
             short splitfileType, int dataBlocks, int checkBlocks, int crossCheckBlocks,
             long segmentDataOffset, long segmentKeysOffset, long segmentStatusOffset, 
-            boolean trackRetries, SplitFileSegmentKeys keys) {
+            boolean writeRetries, SplitFileSegmentKeys keys) {
         this.parent = parent;
         this.segNo = segNumber;
         this.dataBlocks = dataBlocks;
         this.checkBlocks = checkBlocks;
         this.crossSegmentCheckBlocks = crossCheckBlocks;
         int total = dataBlocks + checkBlocks + crossSegmentCheckBlocks;
-        if(trackRetries)
-            retries = new int[total];
-        else
-            retries = null;
+        this.writeRetries = writeRetries;
+        retries = new int[total];
         tried = new boolean[total];
         blocksFound = new boolean[total];
         int minFetched = dataBlocks + crossSegmentCheckBlocks;
@@ -132,11 +132,11 @@ public class SplitFileFetcherSegmentStorage {
         blocksFetched = new short[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusLength = storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, 
-                trackRetries);
+                writeRetries);
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                crossCheckBlocks, trackRetries);
+                crossCheckBlocks, writeRetries);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, trackRetries);
+            storedKeysLength(dataBlocks, checkBlocks, writeRetries);
         this.segmentBlockDataOffset = segmentDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
@@ -683,7 +683,7 @@ public class SplitFileFetcherSegmentStorage {
                 DataOutputStream dos = new DataOutputStream(baos);
                 for(short s : blocksFetched)
                     dos.writeShort(s);
-                if(retries != null) {
+                if(writeRetries) {
                     for(int r : retries)
                         dos.writeInt(r);
                 }
@@ -756,33 +756,25 @@ public class SplitFileFetcherSegmentStorage {
     }
     
     public void onNonFatalFailure(int blockNumber) {
-        boolean changed = false;
         int maxRetries = parent.maxRetries();
         boolean givenUp = false;
         boolean kill = false;
         synchronized(this) {
             if(finished || failed || succeeded) return;
             if(blocksFound[blockNumber]) return;
-            if(retries != null) {
-                if(retries[blockNumber]++ == maxRetries) {
-                    failedBlocks++;
-                    givenUp = true;
-                    int target = checkBlocks;
-                    if(!parent.lastBlockMightNotBePadded()) target++;
-                    if(failedBlocks == target) {
-                        kill = true;
-                        finished = true;
-                        failed = true;
-                    }
+            if(retries[blockNumber]++ == maxRetries) {
+                failedBlocks++;
+                givenUp = true;
+                int target = checkBlocks;
+                if(!parent.lastBlockMightNotBePadded()) target++;
+                if(failedBlocks == target) {
+                    kill = true;
+                    finished = true;
+                    failed = true;
                 }
-                changed = true;
-            }
-            if(!tried[blockNumber]) {
-                tried[blockNumber] = true;
-                changed = true;
             }
         }
-        if(changed)
+        if(writeRetries && !kill)
             lazyWriteMetadata();
         if(givenUp)
             parent.failedBlock();
@@ -953,67 +945,43 @@ public class SplitFileFetcherSegmentStorage {
         int[] candidates = new int[blocksFound.length];
         int count = 0;
         SplitFileSegmentKeys keys = null;
-        if(retries == null) {
-            // maxRetries = -1, to minimise disk I/O we are not tracking retries.
-            // FIXME OPT try a couple random first? How much does random cost?
-            for(int i=0;i<blocksFound.length;i++) {
-                if(blocksFound[i]) continue;
-                if(ignoreLastBlock && i == dataBlocks-1) continue;
-                if(keys == null)
-                    try {
-                        keys = getSegmentKeys();
-                    } catch (final IOException e) {
-                        parent.executor.execute(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                parent.failOnDiskError(e);
-                            }
-                            
-                        });
-                        return -1;
-                    }
-                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
-                    continue;
+        // FIXME OPT try a couple random first? How much does random cost?
+        // Find and count all candidates at the smallest retry count.
+        // This is O(n), but n <= 256, and memory matters more than clock cycles.
+        // Complicated schemes would use more memory as well as creating more bugs,
+        // and SoftReference's do have a cost too.
+        int maxRetries = parent.maxRetries();
+        int minRetryCount = Integer.MAX_VALUE;
+        for(int i=0;i<blocksFound.length;i++) {
+            if(blocksFound[i]) continue;
+            if(ignoreLastBlock && i == dataBlocks-1) continue;
+            int retry = retries[i];
+            if(retry > maxRetries) continue;
+            if(retry > minRetryCount) continue;
+            if(keys == null) {
+                try {
+                    keys = getSegmentKeys();
+                } catch (final IOException e) {
+                    parent.executor.execute(new Runnable() {
+                        
+                        @Override
+                        public void run() {
+                            parent.failOnDiskError(e);
+                        }
+                        
+                    });
+                    return -1;
+                }
+            }
+            if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
+                continue;
+            if(retry < minRetryCount) {
+                count = 0;
                 candidates[count++] = i;
-            }
-        } else {
-            // Find and count all candidates at the smallest retry count.
-            // This is O(n), but n <= 256, and memory matters more than clock cycles.
-            // Complicated schemes would use more memory as well as creating more bugs,
-            // and SoftReference's do have a cost too.
-            int maxRetries = parent.maxRetries();
-            int minRetryCount = Integer.MAX_VALUE;
-            for(int i=0;i<blocksFound.length;i++) {
-                if(blocksFound[i]) continue;
-                if(ignoreLastBlock && i == dataBlocks-1) continue;
-                int retry = retries[i];
-                if(retry > maxRetries) continue;
-                if(retry > minRetryCount) continue;
-                if(keys == null)
-                    try {
-                        keys = getSegmentKeys();
-                    } catch (final IOException e) {
-                        parent.executor.execute(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                parent.failOnDiskError(e);
-                            }
-                            
-                        });
-                        return -1;
-                    }
-                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
-                    continue;
-                if(retry < minRetryCount) {
-                    count = 0;
-                    candidates[count++] = i;
-                    minRetryCount = retry;
-                } else if(retry == minRetryCount) {
-                    candidates[count++] = i;
-                } // else continue;
-            }
+                minRetryCount = retry;
+            } else if(retry == minRetryCount) {
+                candidates[count++] = i;
+            } // else continue;
         }
         if(count == 0) return -1;
         return candidates[parent.random.nextInt(count)];
