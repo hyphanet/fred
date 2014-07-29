@@ -3676,8 +3676,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 			sendingUOMLegacyExtJar = false;
 		}
 		OpennetManager om = node.getOpennet();
-		if(om != null)
-			om.dropExcessPeers();
+		if(om != null) {
+		    // OpennetManager must be notified of a new connection even if it is a darknet peer.
+		    om.onConnectedPeer(this);
+		}
 	}
 
 	@Override
