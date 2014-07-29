@@ -85,12 +85,6 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-        // FIXME remove, nobody uses this now.
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void requeueAfterCooldown(Key key, long time, ObjectContainer container,
             ClientContext context) {
         if(this.getParentGrabArray() != null) {

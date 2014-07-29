@@ -1435,11 +1435,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-			return -1;
-		}
-
-		@Override
 		public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 			return null;
 		}

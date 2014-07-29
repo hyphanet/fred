@@ -306,12 +306,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-		return tracker.cooldownWakeupTime;
-	}
-	
-	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		if(tracker.cooldownWakeupTime > time) {

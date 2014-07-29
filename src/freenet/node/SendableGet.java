@@ -79,8 +79,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	 */
 	public abstract long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context);
 	
-	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context);
-	
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
 	 */

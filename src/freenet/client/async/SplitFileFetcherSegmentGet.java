@@ -157,24 +157,6 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-		/* Only deactivate if was deactivated in the first place. 
-		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
-		boolean activated = false;
-		if(persistent) {
-			activated = container.ext().isActive(segment);
-			if(!activated)
-				container.activate(segment, 1);
-		}
-		long ret = segment.getCooldownWakeupByKey(key, container, context);
-		if(persistent) {
-			if(!activated)
-				container.deactivate(segment, 1);
-		}
-		return ret;
-	}
-
-	@Override
 	public void requeueAfterCooldown(Key key, long time,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
