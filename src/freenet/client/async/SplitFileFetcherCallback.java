@@ -89,4 +89,7 @@ public interface SplitFileFetcherCallback {
     /** Called when the fetcher may have exited cooldown early. */
     void clearCooldown();
 
+    /** Can be null. Provided for KeyListeners. */
+    HasKeyListener getHasKeyListener();
+
 }

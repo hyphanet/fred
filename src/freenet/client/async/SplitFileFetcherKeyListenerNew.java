@@ -290,20 +290,17 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
 
     @Override
     public HasKeyListener getHasKeyListener() {
-        // TODO Auto-generated method stub
-        return null;
+        return fetcher.getHasKeyListener();
     }
 
     @Override
     public void onRemove() {
-        // TODO Auto-generated method stub
-
+        // Ignore.
     }
 
     @Override
     public boolean isEmpty() {
-        // TODO Auto-generated method stub
-        return false;
+        return storage.hasFinished();
     }
 
     @Override

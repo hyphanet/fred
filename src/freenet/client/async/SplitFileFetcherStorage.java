@@ -884,7 +884,7 @@ public class SplitFileFetcherStorage {
         });
     }
 
-    private synchronized boolean hasFinished() {
+    synchronized boolean hasFinished() {
         return cancelled || finishedFetcher;
     }
 
