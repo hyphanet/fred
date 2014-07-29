@@ -273,8 +273,6 @@ public class SplitFileFetcherStorage {
                 
         } else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 
-        long maxTempLength = origFetchContext.maxTempLength;
-        // FIXME check maxTempLength against final storage file size.
         if(logMINOR)
             Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+
                     ", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
@@ -294,8 +292,6 @@ public class SplitFileFetcherStorage {
                 localSalt, splitfileDataBlocks + splitfileCheckBlocks, blocksPerSegment + 
                 checkBlocksPerSegment, segmentCount);
 
-        boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
-        boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
         finalMinCompatMode = minCompatMode;
         
         this.offsetKeyList = storedBlocksLength;
@@ -342,8 +338,6 @@ public class SplitFileFetcherStorage {
         fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
         
         keyListener.finishedSetup();
-        
-        int deductBlocksFromSegments = metadata.getDeductBlocksFromSegments();
         
         if(crossCheckBlocks != 0) {
             // FIXME
