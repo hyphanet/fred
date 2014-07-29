@@ -97,6 +97,9 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  * 
  * CONCURRENCY: Callbacks into fetcher should be run off-thread, as they will usually be inside a 
  * MemoryLimitedJob.
+ * 
+ * LOCKING: Trivial or taken last. Hence can be called inside e.g. RGA calls to getCooldownTime 
+ * etc.
  * @author toad
  */
 public class SplitFileFetcherStorage {
@@ -137,8 +140,12 @@ public class SplitFileFetcherStorage {
     /** Errors. For now, this is not persisted (FIXME). */
     private final FailureCodeTracker errors;
     final int maxRetries;
+    /** Every cooldownTries attempts, a key will enter cooldown, and won't be re-tried for a period. */
     final int cooldownTries;
-    final long cooldownTime;
+    /** Cooldown lasts this long for each key. */
+    final long cooldownLength;
+    /** Only set if all segments are in cooldown. */
+    private long overallCooldownWakeupTime;
     final CompatibilityMode finalMinCompatMode;
     
     /** Contains Bloom filters */
@@ -207,7 +214,7 @@ public class SplitFileFetcherStorage {
         
         maxRetries = origFetchContext.maxSplitfileBlockRetries;
         cooldownTries = origFetchContext.getCooldownRetries();
-        cooldownTime = origFetchContext.getCooldownTime();
+        cooldownLength = origFetchContext.getCooldownTime();
         this.splitfileSingleCryptoAlgorithm = metadata.getSplitfileCryptoAlgorithm();
         splitfileSingleCryptoKey = metadata.getSplitfileCryptoKey();
         
@@ -719,6 +726,14 @@ public class SplitFileFetcherStorage {
         }
     }
     
+    public long countSendableKeys() {
+        long now = System.currentTimeMillis();
+        long total = 0;
+        for(SplitFileFetcherSegmentStorage segment : segments)
+            total += segment.countSendableKeys(now, maxRetries);
+        return total;
+    }
+
     final class MyKey implements SendableRequestItem, SendableRequestItemKey {
 
         public MyKey(int n, int segNo, SplitFileFetcherStorage storage) {
@@ -894,10 +909,58 @@ public class SplitFileFetcherStorage {
 
             @Override
             public void run() {
+                maybeClearCooldown();
                 fetcher.restartedAfterDataCorruption();
             }
             
         });
+    }
+
+    /** Separate lock for cooldown operations, which must be serialized. Must be taken *BEFORE*
+     * segment locks. */
+    private final Object cooldownLock = new Object();
+
+    /** Called when a segment goes into overall cooldown. */
+    void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
+            final long cooldownTime) {
+        // Risky locking-wise, so run as a separate job.
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                long now = System.currentTimeMillis();
+                synchronized(cooldownLock) {
+                    if(cooldownTime < now) return;
+                    if(overallCooldownWakeupTime > now) return; // Wait for it to wake up.
+                    long wakeupTime = Long.MAX_VALUE;
+                    for(SplitFileFetcherSegmentStorage segment : segments) {
+                        long segmentTime = segment.getOverallCooldownTime();
+                        if(segmentTime < now) return;
+                        wakeupTime = Math.min(segmentTime, wakeupTime);
+                    }
+                    overallCooldownWakeupTime = wakeupTime;
+                }
+            }
+            
+        });
+    }
+
+    /** Called when a segment exits cooldown e.g. due to a request completing and becoming 
+     * retryable. Must NOT be called with segment locks held. */
+    public void maybeClearCooldown() {
+        synchronized(cooldownLock) {
+            if(overallCooldownWakeupTime == 0 || 
+                    overallCooldownWakeupTime < System.currentTimeMillis()) return;
+            overallCooldownWakeupTime = 0;
+        }
+        fetcher.clearCooldown();
+    }
+
+    public long getCooldownWakeupTime(long now) {
+        synchronized(cooldownLock) {
+            if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
+            return overallCooldownWakeupTime;
+        }
     }
 
 }

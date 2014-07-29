@@ -244,11 +244,17 @@ public class FetchContext implements Cloneable {
 			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
 		this.cooldownRetries = cooldownRetries;
 	}
-	
+
+	/** Set the cooldown time */
 	public void setCooldownTime(long cooldownTime) {
+	    setCooldownTime(cooldownTime, false);
+	}
+
+	/** Only for tests */
+	public void setCooldownTime(long cooldownTime, boolean force) {
 		if(cooldownTime < 0)
 			throw new IllegalArgumentException("Bogus negative cooldown time");
-		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD)
+		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force)
 			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
 		this.cooldownTime = cooldownTime;
 	}

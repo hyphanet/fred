@@ -71,20 +71,23 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     
     @Override
     public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
-        // FIXME implement cooldown.
-        return 0;
+        return storage.getCooldownWakeupTime(now);
+        // We do not call CooldownTracker.setCachedWakeup() because there isn't much point, since
+        // this is as fast as using the cooldown tracker. Calling it for individual SendableGet's 
+        // is an optimisation only useful for database-backed requests.
+        // It will be called by RGA for higher levels if necessary.
     }
 
     @Override
     public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
-        // FIXME implement cooldown.
-        return -1;
+        MyKey key = (MyKey) token;
+        return storage.segments[key.segmentNumber].getCooldownTime(key.blockNumber);
     }
 
     @Override
     public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-        // FIXME implement cooldown.
-        return -1;
+        // FIXME remove, nobody uses this now.
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -137,8 +140,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     @Override
     public long countSendableKeys(ObjectContainer container, ClientContext context) {
-        // FIXME take cooldown into account here.
-        return storage.countUnfetchedKeys();
+        return storage.countSendableKeys();
     }
 
     @Override

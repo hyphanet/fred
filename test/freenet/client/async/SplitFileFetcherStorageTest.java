@@ -402,7 +402,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             encodedBlocks[block] = true;
         }
 
-        public void checkFailed() {
+        public synchronized void checkFailed() {
             assertFalse(failed);
         }
 
@@ -492,6 +492,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
             synchronized(this) {
                 hasRestartedOnCorruption = true;
             }
+        }
+
+        @Override
+        public void clearCooldown() {
+            // Ignore.
         }
         
     }
@@ -808,6 +813,10 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void add(Key k) {
             keys.add(k);
         }
+
+        public void clear() {
+            keys.clear();
+        }
         
     }
     
@@ -818,16 +827,14 @@ public class SplitFileFetcherStorageTest extends TestCase {
         FetchContext ctx = test.makeFetchContext();
         ctx.maxSplitfileBlockRetries = 0;
         SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
-        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
         boolean[] tried = new boolean[dataBlocks+checkBlocks];
-        innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], keys, tried, test);
-        assertEquals(storage.chooseRandomKey(keys), null);
-        keys = new MyKeysFetchingLocally();
-        assertEquals(storage.chooseRandomKey(keys), null);
+        innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
+        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
         cb.waitForFailed();
     }
     
-    private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, MyKeysFetchingLocally keys, boolean[] tried, TestSplitfile test) {
+    private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, boolean[] tried, TestSplitfile test, boolean cooldown) {
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
         for(int i=0;i<dataBlocks+checkBlocks;i++) {
             int chosen = storage.chooseRandomKey(keys);
             assertTrue(chosen != -1);
@@ -836,12 +843,29 @@ public class SplitFileFetcherStorageTest extends TestCase {
             Key k = test.getCHK(chosen);
             keys.add(k);
         }
+        // Every block has been tried.
         for(boolean b : tried) {
             assertTrue(b);
         }
+        if(cooldown) {
+            assertEquals(storage.chooseRandomKey(keys), -1);
+            // In infinite cooldown, waiting for all requests to complete.
+            assertEquals(storage.getOverallCooldownTime(), Long.MAX_VALUE);
+        }
+        // Every request is running.
+        // When we complete a request, we remove it from KeysFetchingLocally *and* call onNonFatalFailure.
+        // This will reset the cooldown.
         for(int i=0;i<dataBlocks+checkBlocks;i++) {
             storage.onNonFatalFailure(i);
         }
+        if(!cooldown) {
+            // Cleared cooldown, if any.
+            assertEquals(storage.getOverallCooldownTime(), 0);
+        }
+        assertTrue(storage.getOverallCooldownTime() != Long.MAX_VALUE || storage.hasFailed());
+        // Now all the requests have completed, the keys are no longer being fetched.
+        keys.clear();
+        // Will be able to fetch keys immediately, unless in cooldown.
     }
 
     public void testChooseKeyThreeTries() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
@@ -851,16 +875,42 @@ public class SplitFileFetcherStorageTest extends TestCase {
         FetchContext ctx = test.makeFetchContext();
         ctx.maxSplitfileBlockRetries = 2;
         SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
-        MyKeysFetchingLocally keys = null;
         for(int i=0;i<3;i++) {
-            keys = new MyKeysFetchingLocally();
             boolean[] tried = new boolean[dataBlocks+checkBlocks];
-            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], keys, tried, test);
-            assertEquals(storage.chooseRandomKey(keys), null);
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
         }
-        assertEquals(storage.chooseRandomKey(keys), null);
-        keys = new MyKeysFetchingLocally();
-        assertEquals(storage.chooseRandomKey(keys), null);
+        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        cb.waitForFailed();
+    }
+    
+    public void testChooseKeyCooldown() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException, InterruptedException {
+        int dataBlocks = 3, checkBlocks = 3;
+        int COOLDOWN_TIME = 200;
+        TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        FetchContext ctx = test.makeFetchContext();
+        ctx.maxSplitfileBlockRetries = 5;
+        ctx.setCooldownRetries(3);
+        ctx.setCooldownTime(COOLDOWN_TIME, true);
+        SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
+        // 3 tries for each block.
+        long now = System.currentTimeMillis();
+        for(int i=0;i<3;i++) {
+            boolean[] tried = new boolean[dataBlocks+checkBlocks];
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, true);
+        }
+        assertTrue(storage.segments[0].getOverallCooldownTime() > now);
+        assertFalse(storage.segments[0].getOverallCooldownTime() == Long.MAX_VALUE);
+        // Now in cooldown.
+        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        Thread.sleep((long)(COOLDOWN_TIME+COOLDOWN_TIME/2+1));
+        cb.checkFailed();
+        // Should be out of cooldown now.
+        for(int i=0;i<3;i++) {
+            boolean[] tried = new boolean[dataBlocks+checkBlocks];
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, true);
+        }
+        // Now it should fail.
         cb.waitForFailed();
     }
     

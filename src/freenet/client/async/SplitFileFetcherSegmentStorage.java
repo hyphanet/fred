@@ -73,12 +73,15 @@ public class SplitFileFetcherSegmentStorage {
     private final int[] retries;
     /** Should we write retries to disk? */
     private final boolean writeRetries;
-    /** Which blocks have we tried to fetch? And presumably failed, if we don't have them. Updated
-     * when a block fails and written lazily. */
-    private final boolean[] tried;
     /** Time at which each block will be sendable. 0 = sendable now. Not serialised - reset when
      * the node is restarted. */
     private final long[] cooldownTimes;
+    /** Time at which any block will be sendable. 0 = sendable now. This is only updated when we
+     * fail to choose a key to send, and if it increases we tell parent. It is okay for this to be 
+     * too small (i.e. we will wake up earlier than expected), but not okay for it to be too large
+     * (i.e. we will wake up too LATE). Fortunately all operations here - getting a block, failing 
+     * to get a block etc - potentially increase rather than decrease this. */
+    private long overallCooldownTime;
     /** Which blocks have we already found? May be inaccurate, checked on FEC decode. */
     private final boolean[] blocksFound;
     /** What is the order of the blocks on disk? Should be kept consistent with blocksFound! Is 
@@ -125,7 +128,6 @@ public class SplitFileFetcherSegmentStorage {
         int total = dataBlocks + checkBlocks + crossSegmentCheckBlocks;
         this.writeRetries = writeRetries;
         retries = new int[total];
-        tried = new boolean[total];
         blocksFound = new boolean[total];
         cooldownTimes = new long[total];
         int minFetched = dataBlocks + crossSegmentCheckBlocks;
@@ -477,12 +479,12 @@ public class SplitFileFetcherSegmentStorage {
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
         for(int i=0;i<dataBlocks.length;i++) {
             if(dataBlocksPresent[i]) continue;
-            if(!tried[i]) continue;
+            if(retries[i] == 0) continue;
             queueHeal(i, dataBlocks[i]);
         }
         for(int i=0;i<checkBlocks.length;i++) {
             if(checkBlocksPresent[i]) continue;
-            if(!tried[i+dataBlocks.length]) continue;
+            if(retries[i+dataBlocks.length] == 0) continue;
             queueHeal(i+dataBlocks.length, checkBlocks[i]);
         }
     }
@@ -691,8 +693,6 @@ public class SplitFileFetcherSegmentStorage {
                     for(int r : retries)
                         dos.writeInt(r);
                 }
-                for(boolean b : tried)
-                    dos.writeBoolean(b);
                 dos.close();
             } catch (IOException e) {
                 throw new Error(e); // Impossible!
@@ -762,9 +762,10 @@ public class SplitFileFetcherSegmentStorage {
     public void onNonFatalFailure(int blockNumber) {
         int maxRetries = parent.maxRetries();
         int cooldownTries = parent.cooldownTries;
-        long cooldownTime = parent.cooldownTime;
+        long cooldownTime = parent.cooldownLength;
         boolean givenUp = false;
         boolean kill = false;
+        boolean wake = false;
         synchronized(this) {
             if(finished || failed || succeeded) return;
             if(blocksFound[blockNumber]) return;
@@ -781,7 +782,18 @@ public class SplitFileFetcherSegmentStorage {
             } else {
                 if(cooldownTries == 0 || retries[blockNumber] % cooldownTries == 0) {
                     if(logMINOR) Logger.minor(this, "Block "+blockNumber+" entering cooldown on "+this);
-                    cooldownTimes[blockNumber] = System.currentTimeMillis() + cooldownTime;
+                    long now = System.currentTimeMillis();
+                    cooldownTimes[blockNumber] = now + cooldownTime;
+                    if(overallCooldownTime > cooldownTimes[blockNumber]) {
+                        // Will need to wake up earlier than current, so reset the cooldown cache.
+                        overallCooldownTime = cooldownTimes[blockNumber];
+                        wake = true;
+                    }
+                } else {
+                    if(overallCooldownTime > 0 && overallCooldownTime > System.currentTimeMillis()) {
+                        overallCooldownTime = 0;
+                        wake = true;
+                    }
                 }
             }
         }
@@ -791,8 +803,10 @@ public class SplitFileFetcherSegmentStorage {
             parent.failedBlock();
         if(kill)
             parent.failOnSegment(this);
+        if(wake)
+            parent.maybeClearCooldown();
     }
-
+    
     /** The metadata has been updated. We should write it ... at some point. */
     private void lazyWriteMetadata() {
         parent.lazyWriteMetadata();
@@ -935,6 +949,18 @@ public class SplitFileFetcherSegmentStorage {
         return x;
     }
 
+    synchronized public long countSendableKeys(long now, int maxRetries) {
+        if(finished || tryDecode)
+            return 0;
+        int x = 0;
+        for(int i=0;i<blocksFound.length;i++) {
+            if(retries[x] >= maxRetries) continue;
+            if(cooldownTimes[x] > now) continue;
+            if(!blocksFound[x]) x++;
+        }
+        return x;
+    }
+
     public synchronized void getUnfetchedKeys(List<Key> keys) throws IOException {
         if(finished || tryDecode)
             return;
@@ -945,62 +971,81 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
-    public synchronized int chooseRandomKey(KeysFetchingLocally keysFetching) {
-        if(finished) return -1;
-        if(tryDecode) {
-            if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
-            return -1;
-        }
-        boolean ignoreLastBlock = 
-            (this.segNo == parent.segments.length-1 && parent.lastBlockMightNotBePadded());
+    public int chooseRandomKey(KeysFetchingLocally keysFetching) {
         int[] candidates = new int[blocksFound.length];
         int count = 0;
-        SplitFileSegmentKeys keys = null;
-        // FIXME OPT try a couple random first? How much does random cost?
-        // Find and count all candidates at the smallest retry count.
-        // This is O(n), but n <= 256, and memory matters more than clock cycles.
-        // Complicated schemes would use more memory as well as creating more bugs,
-        // and SoftReference's do have a cost too.
         int maxRetries = parent.maxRetries();
         long now = System.currentTimeMillis();
-        int minRetryCount = Integer.MAX_VALUE;
-        for(int i=0;i<blocksFound.length;i++) {
-            if(blocksFound[i]) continue;
-            if(ignoreLastBlock && i == dataBlocks-1) continue;
-            int retry = retries[i];
-            if(retry > maxRetries) continue;
-            if(retry > minRetryCount) continue;
-            if(cooldownTimes[i] > now) continue;
-            cooldownTimes[i] = 0;
-            if(keys == null) {
-                try {
-                    keys = getSegmentKeys();
-                } catch (final IOException e) {
-                    parent.executor.execute(new Runnable() {
-                        
-                        @Override
-                        public void run() {
-                            parent.failOnDiskError(e);
-                        }
-                        
-                    });
-                    return -1;
-                }
+        long cooldownTime = Long.MAX_VALUE; // Indicates all blocks have running requests.
+        synchronized(this) {
+            if(finished) return -1;
+            if(tryDecode) {
+                if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
+                return -1;
             }
-            if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
-                continue;
-            if(retry < minRetryCount) {
-                count = 0;
-                candidates[count++] = i;
-                minRetryCount = retry;
-            } else if(retry == minRetryCount) {
-                candidates[count++] = i;
-            } // else continue;
+            boolean ignoreLastBlock = 
+                (this.segNo == parent.segments.length-1 && parent.lastBlockMightNotBePadded());
+            SplitFileSegmentKeys keys = null;
+            // FIXME OPT try a couple random first? How much does random cost?
+            // Find and count all candidates at the smallest retry count.
+            // This is O(n), but n <= 256, and memory matters more than clock cycles.
+            // Complicated schemes would use more memory as well as creating more bugs,
+            // and SoftReference's do have a cost too.
+            if(now < overallCooldownTime) return -1; // overallCooldownTime can't decrease.
+            long oldOverallCooldownTime = overallCooldownTime;
+            int minRetryCount = Integer.MAX_VALUE;
+            for(int i=0;i<blocksFound.length;i++) {
+                if(blocksFound[i]) continue;
+                if(ignoreLastBlock && i == dataBlocks-1) continue;
+                int retry = retries[i];
+                if(retry > maxRetries) continue;
+                if(retry > minRetryCount) continue;
+                if(cooldownTimes[i] > now) {
+                    cooldownTime = Math.min(cooldownTime, cooldownTimes[i]);
+                    continue;
+                }
+                cooldownTimes[i] = 0;
+                if(keys == null) {
+                    try {
+                        keys = getSegmentKeys();
+                    } catch (final IOException e) {
+                        parent.executor.execute(new Runnable() {
+                            
+                            @Override
+                            public void run() {
+                                parent.failOnDiskError(e);
+                            }
+                            
+                        });
+                        return -1;
+                    }
+                }
+                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
+                    continue;
+                if(retry < minRetryCount) {
+                    count = 0;
+                    candidates[count++] = i;
+                    minRetryCount = retry;
+                } else if(retry == minRetryCount) {
+                    candidates[count++] = i;
+                } // else continue;
+            }
+            if(count != 0) {
+                overallCooldownTime = 0;
+                cooldownTime = 0;
+            } else {
+                overallCooldownTime = cooldownTime;
+                if(cooldownTime == oldOverallCooldownTime) cooldownTime = 0; // Don't need to tell parent.
+            }
         }
-        if(count == 0) return -1;
+        if(count == 0) {
+            if(cooldownTime > now)
+                parent.increaseCooldown(this, cooldownTime);
+            return -1;
+        }
         return candidates[parent.random.nextInt(count)];
     }
-
+    
     public void cancel() {
         boolean decoding;
         synchronized(this) {
@@ -1012,6 +1057,19 @@ public class SplitFileFetcherSegmentStorage {
         if(!decoding)
             parent.finishedEncoding(this);
         // Else must wait.
+    }
+
+    public synchronized long getOverallCooldownTime() {
+        if(finished || succeeded || failed) return 0;
+        // Do not recalculate. Calculated in chooseRandomKey(). It's okay if this is smaller than 
+        // the true value.
+        return overallCooldownTime;
+    }
+
+    synchronized long getCooldownTime(int blockNumber) {
+        if(finished || succeeded || failed) return 0;
+        if(blocksFound[blockNumber]) return 0;
+        return cooldownTimes[blockNumber];
     }
 
 }

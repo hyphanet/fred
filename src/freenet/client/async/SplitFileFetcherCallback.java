@@ -84,4 +84,7 @@ public interface SplitFileFetcherCallback {
      * decode but discovers that a block doesn't match the key given. */
     void restartedAfterDataCorruption();
 
+    /** Called when the fetcher may have exited cooldown early. */
+    void clearCooldown();
+
 }
