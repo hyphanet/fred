@@ -176,8 +176,7 @@ public final class KeyGenUtils {
     }
 
     /**
-     * Converts an iv in a specified portion of a byte[] and places it 
-     * in a IvParameterSpec.
+     * Converts an iv in a specified portion of a byte[] and places it in a IvParameterSpec.
      * @param iv The byte[] containing the iv
      * @param offset Where the iv begins 
      * @param length How long the iv is

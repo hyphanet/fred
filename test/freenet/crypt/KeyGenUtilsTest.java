@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
@@ -41,15 +40,29 @@ public class KeyGenUtilsTest {
     @SuppressWarnings("deprecation")
     private static final KeyPairType falseKeyPairType = KeyPairType.DSA;
     private static final byte[][] truePublicKeys = {
-        HexUtil.hexToBytes("3059301306072a8648ce3d020106082a8648ce3d030107034200040126491fbe391419fcdca058122a8520a816d3b7af9bc3a3af038e455b311b8234e5915ae2da11550a9f0ff9da5c65257c95c2bd3d5c21bcf16f6c15a94a50cb"),
-        HexUtil.hexToBytes("3076301006072a8648ce3d020106052b81040022036200043a095518fc49cfaf6feb5af01cf71c02ebfff4fe581d93c6e252c8c607e6568db7267e0b958c4a262a6e6fa7c18572c3af59cd16535a28759d04488bae6c3014bbb4b89c25cbe3b76d7b540dabb13aed5793eb3ce572811b560bb18b00a5ac93"),
-        HexUtil.hexToBytes("30819b301006072a8648ce3d020106052b8104002303818600040076083359c8b0b34a903461e435188cb90f7501bcb7ed97e8c506c5b60ff21178a625f80f5729ed4746d8e83b28145a51b9495880bf41b8ff0746ea0fe684832cc100ef1b01793c84abf64f31452d95bf0ef43d32440d8bc0d67501fcffaf51ae4956e5ff22f3baffea5edddbebbeed0ec3b4af28d18568aaf97b5cd026f6753881e0c4")
+        HexUtil.hexToBytes("3059301306072a8648ce3d020106082a8648ce3d030107034200040126491fbe391419f"
+                + "cdca058122a8520a816d3b7af9bc3a3af038e455b311b8234e5915ae2da11550a9f0ff9da5c65257"
+                + "c95c2bd3d5c21bcf16f6c15a94a50cb"),
+        HexUtil.hexToBytes("3076301006072a8648ce3d020106052b81040022036200043a095518fc49cfaf6feb5af"
+                + "01cf71c02ebfff4fe581d93c6e252c8c607e6568db7267e0b958c4a262a6e6fa7c18572c3af59cd1"
+                + "6535a28759d04488bae6c3014bbb4b89c25cbe3b76d7b540dabb13aed5793eb3ce572811b560bb18"
+                + "b00a5ac93"),
+        HexUtil.hexToBytes("30819b301006072a8648ce3d020106052b8104002303818600040076083359c8b0b34a9"
+                + "03461e435188cb90f7501bcb7ed97e8c506c5b60ff21178a625f80f5729ed4746d8e83b28145a51b"
+                + "9495880bf41b8ff0746ea0fe684832cc100ef1b01793c84abf64f31452d95bf0ef43d32440d8bc0d"
+                + "67501fcffaf51ae4956e5ff22f3baffea5edddbebbeed0ec3b4af28d18568aaf97b5cd026f675388"
+                + "1e0c4")
     };
     private static PublicKey[] publicKeys = new PublicKey[truePublicKeys.length];
     private static final byte[][] truePrivateKeys = {
-        HexUtil.hexToBytes("3041020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420f8cb4b29aa51153ba811461e93fd1b2e69a127972f7100c5e246a3b2dcdd1b1c"),
-        HexUtil.hexToBytes("304e020100301006072a8648ce3d020106052b81040022043730350201010430b88fe05d03b20dca95f19cb0fbabdfef1211452b29527ccac2ea37236d31ab6e7cada08315c62912b5c17cdf2d87fa3d"),
-        HexUtil.hexToBytes("3060020100301006072a8648ce3d020106052b8104002304493047020101044201b4f573157d51f2e64a8b465fa92e52bae3529270951d448c18e4967beaa04b1f1fedb0e7a1e26f2eefb30566a479e1194358670b044fae438d11717eb2a795c3a8")
+        HexUtil.hexToBytes("3041020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420f"
+                + "8cb4b29aa51153ba811461e93fd1b2e69a127972f7100c5e246a3b2dcdd1b1c"),
+        HexUtil.hexToBytes("304e020100301006072a8648ce3d020106052b81040022043730350201010430b88fe05"
+                + "d03b20dca95f19cb0fbabdfef1211452b29527ccac2ea37236d31ab6e7cada08315c62912b5c17cd"
+                + "f2d87fa3d"),
+        HexUtil.hexToBytes("3060020100301006072a8648ce3d020106052b8104002304493047020101044201b4f57"
+                + "3157d51f2e64a8b465fa92e52bae3529270951d448c18e4967beaa04b1f1fedb0e7a1e26f2eefb30"
+                + "566a479e1194358670b044fae438d11717eb2a795c3a8")
     };
     private static PrivateKey[] privateKeys = new PrivateKey[truePublicKeys.length];
 
@@ -130,7 +143,8 @@ public class KeyGenUtilsTest {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
             KeyPair key = KeyGenUtils.getPublicKeyPair(type, truePublicKeys[i]);
-            assertTrue("KeyPairType: "+type.name(), MessageDigest.isEqual(key.getPublic().getEncoded(), truePublicKeys[i]));
+            assertArrayEquals("KeyPairType: "+type.name(), key.getPublic().getEncoded(), 
+                    truePublicKeys[i]);
             assertNull("KeyPairType: "+type.name(), key.getPrivate());
         }
     }
@@ -139,7 +153,8 @@ public class KeyGenUtilsTest {
     public void testGetPublicKeyPairNotNull() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
-            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type, truePublicKeys[i]));
+            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type, 
+                    truePublicKeys[i]));
         }
     }
 
@@ -275,7 +290,8 @@ public class KeyGenUtilsTest {
 
     @Test
     public void testGetIvParameterSpecLength() {
-        assertEquals(KeyGenUtils.getIvParameterSpec(new byte[16], 0, trueLength).getIV().length, trueLength);
+        assertEquals(KeyGenUtils.getIvParameterSpec(new byte[16], 0, trueLength).getIV().length, 
+                trueLength);
     }
 
     @Test (expected = IllegalArgumentException.class)
