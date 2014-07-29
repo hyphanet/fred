@@ -232,7 +232,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
 
     @Override
     public void onFetchedBlock() {
-        parent.completedBlock(getter.hasQueued(), null, context);
+        parent.completedBlock(!getter.hasQueued(), null, context);
     }
 
     @Override
