@@ -823,6 +823,8 @@ public class SplitFileFetcherStorage {
         // 4GB splitfile, there would be 512 segments. The alternative is to keep a similar 
         // structure up to date, which also requires changes to the segment code. Not urgent until
         // very big splitfiles are common.
+        // FIXME OPT SCALABILITY A simpler option might be just to have one SplitFileFetcherGet per
+        // segment, like the old code.
         boolean[] tried = new boolean[segments.length];
         tried[segNo] = true;
         for(int count=1; count<segments.length; count++) {
