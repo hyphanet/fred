@@ -240,10 +240,10 @@ public class SplitFileFetcherStorage {
             splitfileDataBlocks += dataBlocks;
             splitfileCheckBlocks += checkBlocks;
             storedKeysLength +=
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null);
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             storedSegmentStatusLength +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1);
+                        crossCheckBlocks, maxRetries != -1, checksumLength);
         }
         
         storedBlocksLength = (splitfileDataBlocks + splitfileCheckBlocks) * CHKBlock.DATA_LENGTH;
@@ -326,10 +326,10 @@ public class SplitFileFetcherStorage {
                     maxRetries != -1, keys);
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null);
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1);
+                        crossCheckBlocks, maxRetries != -1, checksumLength);
             int data = keys.getDataBlocks();
             int check = keys.getCheckBlocks();
             for(int j=0;j<(data+check);j++) {

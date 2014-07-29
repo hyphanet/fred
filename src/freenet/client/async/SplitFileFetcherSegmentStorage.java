@@ -11,10 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.zip.CRC32;
 
 import freenet.client.FetchException;
-import freenet.crypt.ChecksumOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -48,8 +46,6 @@ public class SplitFileFetcherSegmentStorage {
     final long segmentBlockDataOffset;
     /** Offset to the segment's status metadata storage. */
     final long segmentStatusOffset;
-    /** Length of the segment status */
-    final int segmentStatusLength;
     /** Length of the segment status for purposes of locating it on disk, may be larger than
      * segmentStatusLength. */
     final int segmentStatusPaddedLength;
@@ -137,12 +133,10 @@ public class SplitFileFetcherSegmentStorage {
             crossSegmentsByBlock = null;
         blocksFetched = new short[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
-        segmentStatusLength = storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, 
-                writeRetries);
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                crossCheckBlocks, writeRetries);
+                crossCheckBlocks, writeRetries, parent.checksumLength);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, writeRetries);
+            storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
         this.segmentBlockDataOffset = segmentDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
@@ -686,7 +680,8 @@ public class SplitFileFetcherSegmentStorage {
             if(!(force || metadataDirty)) return false;
             baos = new ByteArrayOutputStream();
             try {
-                DataOutputStream dos = new DataOutputStream(baos);
+                OutputStream cos = parent.checksumOutputStream(baos);
+                DataOutputStream dos = new DataOutputStream(cos);
                 for(short s : blocksFetched)
                     dos.writeShort(s);
                 if(writeRetries) {
@@ -700,7 +695,7 @@ public class SplitFileFetcherSegmentStorage {
             metadataDirty = false;
         }
         byte[] buf = baos.toByteArray();
-        assert(buf.length == segmentStatusLength);
+        assert(buf.length == segmentStatusPaddedLength);
         parent.raf.pwrite(segmentStatusOffset, buf, 0, buf.length);
         return true;
     }
@@ -713,8 +708,9 @@ public class SplitFileFetcherSegmentStorage {
     }
     
     public static int paddedStoredSegmentStatusLength(int dataBlocks, int checkBlocks, int crossCheckBlocks, 
-            boolean trackRetries) {
-        return storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, trackRetries);
+            boolean trackRetries, int checksumLength) {
+        return storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, trackRetries) +
+            checksumLength;
     }
     
     private final int blocksForDecode() {
@@ -865,8 +861,8 @@ public class SplitFileFetcherSegmentStorage {
         throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
     }
 
-    static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey) {
-        return SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, commonDecryptKey) + 4;
+    static int storedKeysLength(int dataBlocks, int checkBlocks, boolean commonDecryptKey, int checksumLength) {
+        return SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, commonDecryptKey) + checksumLength;
     }
     
     void writeKeysWithChecksum() throws IOException {
@@ -874,17 +870,16 @@ public class SplitFileFetcherSegmentStorage {
         assert(this.dataBlocks + this.crossSegmentCheckBlocks == keys.dataBlocks);
         assert(this.checkBlocks == keys.checkBlocks);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ChecksumOutputStream cos = new ChecksumOutputStream(baos, new CRC32());
+        OutputStream cos = parent.checksumOutputStream(baos);
         DataOutputStream dos = new DataOutputStream(cos);
         try {
             keys.writeKeys(dos, false);
             keys.writeKeys(dos, true);
-            // Write the checksum, only including the keys.
-            dos.writeInt((int)cos.getValue());
         } catch (IOException e) {
             // Impossible!
             throw new Error(e);
         }
+        dos.close();
         byte[] buf = baos.toByteArray();
         RAFLock lock = parent.raf.lockOpen();
         try {
