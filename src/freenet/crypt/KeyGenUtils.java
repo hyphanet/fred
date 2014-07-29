@@ -142,7 +142,7 @@ public final class KeyGenUtils {
      * @param type Type of key
      * @return The key as a SecretKey
      */
-    public static SecretKey getSecretKey(byte[] key, KeyType type){
+    public static SecretKey getSecretKey(KeyType type, byte[] key){
         return new SecretKeySpec(key, type.alg);
     }
 

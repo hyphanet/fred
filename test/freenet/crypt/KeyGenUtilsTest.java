@@ -78,24 +78,16 @@ public class KeyGenUtilsTest {
     @Test
     public void testGenKeyPair() {
         for(KeyPairType type: trueKeyPairTypes){
-            try {
-                assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.genKeyPair(type));
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.genKeyPair(type));
         }
     }
 
     @Test
-    public void testGenKeyPairPublicKeyLenght() {
+    public void testGenKeyPairPublicKeyLength() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
-            try {
-                KeyPairType type = trueKeyPairTypes[i];
-                byte[] publicKey = KeyGenUtils.genKeyPair(type).getPublic().getEncoded();
-                assertEquals("KeyPairType: "+type.name(), truePublicKeys[i].length, publicKey.length);
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            KeyPairType type = trueKeyPairTypes[i];
+            byte[] publicKey = KeyGenUtils.genKeyPair(type).getPublic().getEncoded();
+            assertEquals("KeyPairType: "+type.name(), truePublicKeys[i].length, publicKey.length);
         }
     }
 
@@ -106,23 +98,15 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGenKeyPairNullInput() {
-        try{
-            KeyGenUtils.genKeyPair(null);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.genKeyPair(null);
     }
 
     @Test
     public void testGetPublicKey() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
-            try{
-                KeyPairType type = trueKeyPairTypes[i];
-                PublicKey key = KeyGenUtils.getPublicKey(type, truePublicKeys[i]);
-                assertArrayEquals("KeyPairType: "+type.name(), key.getEncoded(), truePublicKeys[i]);
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            KeyPairType type = trueKeyPairTypes[i];
+            PublicKey key = KeyGenUtils.getPublicKey(type, truePublicKeys[i]);
+            assertArrayEquals("KeyPairType: "+type.name(), key.getEncoded(), truePublicKeys[i]);
         }
     }
 
@@ -133,45 +117,29 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyNullInput1() {
-        try{
-            KeyGenUtils.getPublicKey(null, truePublicKeys[0]);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getPublicKey(null, truePublicKeys[0]);
     }
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyNullInput2() {
-        try{
-            KeyGenUtils.getPublicKey(trueKeyPairTypes[0], null);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getPublicKey(trueKeyPairTypes[0], null);
     }
 
     @Test
     public void testGetPublicKeyPair() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
-            try{
-                KeyPairType type = trueKeyPairTypes[i];
-                KeyPair key = KeyGenUtils.getPublicKeyPair(type, truePublicKeys[i]);
-                assertTrue("KeyPairType: "+type.name(), MessageDigest.isEqual(key.getPublic().getEncoded(), truePublicKeys[i]));
-                assertNull("KeyPairType: "+type.name(), key.getPrivate());
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            KeyPairType type = trueKeyPairTypes[i];
+            KeyPair key = KeyGenUtils.getPublicKeyPair(type, truePublicKeys[i]);
+            assertTrue("KeyPairType: "+type.name(), MessageDigest.isEqual(key.getPublic().getEncoded(), truePublicKeys[i]));
+            assertNull("KeyPairType: "+type.name(), key.getPrivate());
         }
     }
 
     @Test
     public void testGetPublicKeyPairNotNull() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
-            try {
-                KeyPairType type = trueKeyPairTypes[i];
-                assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type, truePublicKeys[i]));
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            KeyPairType type = trueKeyPairTypes[i];
+            assertNotNull("KeyPairType: "+type.name(), KeyGenUtils.getPublicKey(type, truePublicKeys[i]));
         }
     }
 
@@ -182,32 +150,20 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyPairNullInput1() {
-        try{
-            KeyGenUtils.getPublicKeyPair(null, truePublicKeys[0]);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getPublicKeyPair(null, truePublicKeys[0]);
     }
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyPairNullInput2() {
-        try{
-            KeyGenUtils.getPublicKeyPair(trueKeyPairTypes[0], null);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getPublicKeyPair(trueKeyPairTypes[0], null);
     }
 
     @Test
     public void testGetKeyPairKeyPairTypeByteArrayByteArray() {
         for(int i = 0; i < trueKeyPairTypes.length; i++){
             KeyPairType type = trueKeyPairTypes[i];
-            try {
-                assertNotNull("KeyPairType: "+type.name(), 
-                        KeyGenUtils.getKeyPair(type, truePublicKeys[i], truePrivateKeys[i]));
-            } catch (UnsupportedTypeException e) {
-                fail("UnsupportedTypeException thrown");
-            }
+            assertNotNull("KeyPairType: "+type.name(), 
+                    KeyGenUtils.getKeyPair(type, truePublicKeys[i], truePrivateKeys[i]));
         }
     }
 
@@ -218,29 +174,17 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGetKeyPairKeyPairTypeByteArrayNullInput1() {
-        try{
-            KeyGenUtils.getKeyPair(null, truePublicKeys[0], truePrivateKeys[0]);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getKeyPair(null, truePublicKeys[0], truePrivateKeys[0]);
     }
 
     @Test (expected = NullPointerException.class)
     public void testGetKeyPairKeyPairTypeByteArrayNullInput2() {
-        try{
-            KeyGenUtils.getKeyPair(trueKeyPairTypes[0], null, truePrivateKeys[0]);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getKeyPair(trueKeyPairTypes[0], null, truePrivateKeys[0]);
     }
 
     @Test (expected = NullPointerException.class)
     public void testGetKeyPairKeyPairTypeByteArrayNullInput3() {
-        try{
-            KeyGenUtils.getKeyPair(trueKeyPairTypes[0], truePublicKeys[0], null);
-        } catch (UnsupportedTypeException e) {
-            fail("UnsupportedTypeException thrown");
-        }
+        KeyGenUtils.getKeyPair(trueKeyPairTypes[0], truePublicKeys[0], null);
     }
 
     @Test
@@ -280,7 +224,8 @@ public class KeyGenUtilsTest {
     public void testGenSecretKeyKeySize() {
         for(KeyType type: keyTypes){
             byte[] key = KeyGenUtils.genSecretKey(type).getEncoded();
-            assertEquals("KeyType: "+type.name(), type.keySize >> 3, key.length);
+            int keySizeBytes = type.keySize >> 3;
+            assertEquals("KeyType: "+type.name(), keySizeBytes, key.length);
         }
     }
 
@@ -293,19 +238,19 @@ public class KeyGenUtilsTest {
     public void testGetSecretKey() {
         for(int i = 0; i < keyTypes.length; i++){
             KeyType type = keyTypes[i];
-            SecretKey newKey = KeyGenUtils.getSecretKey(trueSecretKeys[i], type);
+            SecretKey newKey = KeyGenUtils.getSecretKey(type, trueSecretKeys[i]);
             assertArrayEquals("KeyType: "+type.name(), trueSecretKeys[i], newKey.getEncoded());
         }
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void testGetSecretKeyNullInput1() {
-        KeyGenUtils.getSecretKey(null, keyTypes[1]);
+        KeyGenUtils.getSecretKey(keyTypes[1], null);
     }
 
     @Test (expected = NullPointerException.class)
     public void testGetSecretKeyNullInput2() {
-        KeyGenUtils.getSecretKey(trueSecretKeys[0], null);
+        KeyGenUtils.getSecretKey(null, trueSecretKeys[0]);
     }
 
     @Test
