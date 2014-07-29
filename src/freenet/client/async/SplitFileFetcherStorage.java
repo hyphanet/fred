@@ -696,6 +696,29 @@ public class SplitFileFetcherStorage {
         return true;
     }
 
+    /** Fail the request, off-thread. The callback will call cancel etc, so it won't immediately
+     * shut down the storage.
+     * @param e
+     */
+    public void fail(final FetchException e) {
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                fetcher.fail(e);
+            }
+            
+        });
+    }
+
+    /** A segment ran out of retries. We have given up on that segment and therefore on the whole
+     * splitfile.
+     * @param segment The segment that failed.
+     */
+    public void failOnSegment(SplitFileFetcherSegmentStorage segment) {
+        fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+    }
+
     public void failOnDiskError(final IOException e) {
         executor.execute(new Runnable() {
 
@@ -871,21 +894,6 @@ public class SplitFileFetcherStorage {
 
     public int maxRetries() {
         return maxRetries;
-    }
-
-    /** A segment ran out of retries. We have given up on that segment and therefore on the whole
-     * splitfile.
-     * @param segment The segment that failed.
-     */
-    public void failOnSegment(SplitFileFetcherSegmentStorage segment) {
-        executor.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
-            }
-            
-        });
     }
 
     public void failedBlock() {

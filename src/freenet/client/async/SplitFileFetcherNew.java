@@ -74,6 +74,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     private transient final SplitFileFetcherGet getter;
     private boolean failed;
     private boolean succeeded;
+    private final boolean wantBinaryBlob;
     
     SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
@@ -86,6 +87,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         this.realTimeFlag = realTimeFlag;
         this.token = token;
         this.context = context;
+        if(parent instanceof ClientGetter) {
+            wantBinaryBlob = ((ClientGetter)parent).collectingBinaryBlob();
+        } else {
+            wantBinaryBlob = false;
+        }
         blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
         if(parent.isCancelled())
             throw new FetchException(FetchException.CANCELLED);
@@ -243,9 +249,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
 
     @Override
     public boolean wantBinaryBlob() {
-        if(parent instanceof ClientGetter) {
-            return ((ClientGetter)parent).collectingBinaryBlob();
-        } else return false;
+        return wantBinaryBlob;
     }
 
     @Override

@@ -436,7 +436,7 @@ public class SplitFileFetcherSegmentStorage {
                         return;
                     } else {
                         // Usual case.
-                        parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
+                        parent.fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
                         return;
                     }
                 }
@@ -444,7 +444,7 @@ public class SplitFileFetcherSegmentStorage {
                     parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
-                parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                parent.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
                 Logger.error(this, "Impossible: Decoded block could not be encoded");
                 return;
             }
@@ -469,7 +469,7 @@ public class SplitFileFetcherSegmentStorage {
                     parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
-                parent.fetcher.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                parent.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
                 Logger.error(this, "Impossible: Decoded block could not be encoded");
                 return;
             }
@@ -598,7 +598,7 @@ public class SplitFileFetcherSegmentStorage {
                 Logger.warning(this, "Ignoring last block");
                 return true;
             } else {
-                parent.fetcher.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
+                parent.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
                 return false;
             }
         }

@@ -50,7 +50,8 @@ public interface SplitFileFetcherCallback {
      */
     void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway);
 
-    /** Queue a block to be healed. */
+    /** Queue a block to be healed. LOCKING: Called on the decode thread, so should avoid taking 
+     * any dangerous locks and not be too slow. */
     void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm);
 
     /** Called when a datastore-only fetch didn't find enough data. */
@@ -70,10 +71,11 @@ public interface SplitFileFetcherCallback {
     void fail(FetchException fetchException);
 
     /** Called whenever we successfully download, decode or encode a block and it matches the 
-     * expected key. */
+     * expected key. LOCKING: Called on the decode thread so should avoid taking any dangerous
+     * locks. */
     void maybeAddToBinaryBlob(ClientCHKBlock decodedBlock);
 
-    /** Do we want maybeAddToBinaryBlob() to be called?? */
+    /** Do we want maybeAddToBinaryBlob() to be called?? LOCKING: Should not take any locks. */
     boolean wantBinaryBlob();
 
     /** Can be null. Provided mainly for KeysFetchingLocally. */
