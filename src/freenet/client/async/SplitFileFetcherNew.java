@@ -150,6 +150,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             if(succeeded || failed) return;
             failed = true;
         }
+        context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
         storage.cancel();
         cb.onFailure(e, this, null, context);
@@ -178,6 +179,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         synchronized(this) {
             succeeded = true;
         }
+        context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
         cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
                 this, null, context);
