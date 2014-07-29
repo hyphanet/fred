@@ -1035,6 +1035,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		tempContext.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
 		tempContext.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		tempContext.localRequestOnly = true;
+		tempContext.useNewSplitfileCode = false;
 
 		final ArrayBucket cleanedBlob = new ArrayBucket();
 
@@ -1471,6 +1472,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true, false).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
+		tempContext.useNewSplitfileCode = false;
 
 		File f;
 		FileBucket b = null;
