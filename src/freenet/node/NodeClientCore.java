@@ -517,6 +517,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 
 		});
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
+		nodeConfig.register("useNewSplitfileCodeTransient", true, sortOrder++, true, false, "NodeClientCore.useNewSplitfileCodeTransient", "NodeClientCore.useNewSplitfileCodeTransient",
+		        new BooleanCallback() {
+
+                    @Override
+                    public Boolean get() {
+                        return HighLevelSimpleClientImpl.USE_NEW_SPLITFILE_CODE_TRANSIENT;
+                    }
+
+                    @Override
+                    public void set(Boolean val) throws InvalidConfigValueException,
+                            NodeNeedRestartException {
+                        HighLevelSimpleClientImpl.USE_NEW_SPLITFILE_CODE_TRANSIENT = val;
+                    }
+		    
+		});
+		HighLevelSimpleClientImpl.USE_NEW_SPLITFILE_CODE_TRANSIENT = nodeConfig.getBoolean("useNewSplitfileCodeTransient");
 	}
 
 	private void initUSK(ObjectContainer container) {
