@@ -709,7 +709,7 @@ public class SplitFileFetcherSegmentStorage {
             boolean trackRetries) {
         int fetchedBlocks = dataBlocks + crossCheckBlocks;
         int totalBlocks = dataBlocks + checkBlocks + crossCheckBlocks;
-        return fetchedBlocks * 2 + (trackRetries ? (totalBlocks * 4) : 0) + totalBlocks;
+        return fetchedBlocks * 2 + (trackRetries ? (totalBlocks * 4) : 0);
     }
     
     public static int paddedStoredSegmentStatusLength(int dataBlocks, int checkBlocks, int crossCheckBlocks, 
