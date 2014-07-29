@@ -91,7 +91,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
 	/** FIXME remove */
-	static final boolean USE_NEW_SPLITFILE_CODE = true;
+	static final boolean USE_NEW_SPLITFILE_CODE_TRANSIENT = true;
 
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		this.core = node;
@@ -346,7 +346,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE);
+				false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE_TRANSIENT);
 	}
 	
 	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength, 
@@ -358,7 +358,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
             FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
             FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
             bucketFactory, eventProducer,
-            false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE);
+            false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE_TRANSIENT);
 	}
 
 	@Override

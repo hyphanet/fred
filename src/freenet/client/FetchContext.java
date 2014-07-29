@@ -120,7 +120,7 @@ public class FetchContext implements Cloneable {
 	
 	/** Whether to use SplitFileFetcherNew etc for splitfile fetches. If false, we use the older
 	 * code. FIXME REMOVE */
-	public boolean useNewSplitfileCode;
+	public boolean useNewSplitfileCodeTransient;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -157,7 +157,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
-		this.useNewSplitfileCode = useNewSplitfileCode;
+		this.useNewSplitfileCodeTransient = useNewSplitfileCode;
 		hasOwnEventProducer = true;
 	}
 
@@ -204,7 +204,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
-		this.useNewSplitfileCode = ctx.useNewSplitfileCode;
+		this.useNewSplitfileCodeTransient = ctx.useNewSplitfileCodeTransient;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
