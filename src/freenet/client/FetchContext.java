@@ -117,6 +117,10 @@ public class FetchContext implements Cloneable {
 
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
+	
+	/** Whether to use SplitFileFetcherNew etc for splitfile fetches. If false, we use the older
+	 * code. FIXME REMOVE */
+	public boolean useNewSplitfileCode;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -126,7 +130,8 @@ public class FetchContext implements Cloneable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
+			boolean useNewSplitfileCode) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -152,6 +157,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
+		this.useNewSplitfileCode = useNewSplitfileCode;
 		hasOwnEventProducer = true;
 	}
 
@@ -198,6 +204,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
+		this.useNewSplitfileCode = ctx.useNewSplitfileCode;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
