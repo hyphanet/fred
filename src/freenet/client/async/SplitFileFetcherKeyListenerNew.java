@@ -231,7 +231,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     @Override
     public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container,
             ClientContext context) {
-        // TODO Auto-generated method stub
+        // FIXME Ignored. We don't use the cooldown *queue*.
         return null;
     }
 
