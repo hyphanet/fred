@@ -10,27 +10,27 @@ package freenet.crypt;
  *
  */
 public enum KeyType {
-	Rijndael128("RIJNDAEL", 128),
-	Rijndael256("RIJNDAEL", 256),
-	AES128("AES", 128),
-	AES256("AES", 256),
-	HMACSHA1("HMACSHA1", 160), 
-	HMACSHA256("HMACSHA256", 256),
-	POLY1305AES("POLY1305-AES", 256),
-	ChaCha128("CHACHA", 128),
-	ChaCha256("CHACHA", 256);
+    Rijndael128("RIJNDAEL", 128),
+    Rijndael256("RIJNDAEL", 256),
+    AES128("AES", 128),
+    AES256("AES", 256),
+    HMACSHA1("HMACSHA1", 160), 
+    HMACSHA256("HMACSHA256", 256),
+    POLY1305AES("POLY1305-AES", 256),
+    ChaCha128("CHACHA", 128),
+    ChaCha256("CHACHA", 256);
 
-	public final String alg;
-	public final int keySize;
+    public final String alg;
+    public final int keySize;
 
-	/**
-	 * Creates an enum value for the specified algorithm and keysize
-	 * @param alg The name of the algorithm KeyGenerator should use to 
-	 * create a key
-	 * @param keySize The size of the key that KeyGenerator should generate
-	 */
-	private KeyType(String alg, int keySize){
-		this.alg = alg;
-		this.keySize = keySize;
-	}
+    /**
+     * Creates an enum value for the specified algorithm and keysize
+     * @param alg The name of the algorithm KeyGenerator should use to 
+     * create a key
+     * @param keySize The size of the key that KeyGenerator should generate
+     */
+    private KeyType(String alg, int keySize){
+        this.alg = alg;
+        this.keySize = keySize;
+    }
 }
