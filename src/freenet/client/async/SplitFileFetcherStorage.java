@@ -433,7 +433,7 @@ public class SplitFileFetcherStorage {
         if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this+" for "+fetcher);
     }
     
-    private OutputStream checksumOutputStream(OutputStream os) {
+    OutputStream checksumOutputStream(OutputStream os) {
         return new ChecksumOutputStream(os, new CRC32());
     }
 

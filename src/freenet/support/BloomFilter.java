@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Random;
@@ -251,6 +252,10 @@ public abstract class BloomFilter {
         } finally {
             lock.readLock().unlock();
         }
+    }
+    
+    public void writeTo(OutputStream cos) throws IOException {
+        cos.write(filter.array());
     }
 
 }

@@ -1,9 +1,10 @@
 package freenet.client.async;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.util.zip.CRC32;
 
 import com.db4o.ObjectContainer;
 
@@ -17,7 +18,6 @@ import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
-import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 
@@ -146,18 +146,15 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         synchronized(this) {
             if(!finishedSetup) throw new IllegalStateException();
         }
-        byte[] buf = new byte[totalSegmentBloomFiltersSize()];
-        int offset = 0;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(totalSegmentBloomFiltersSize());
+        OutputStream cos = storage.checksumOutputStream(baos);
         for(BinaryBloomFilter segFilter : segmentFilters) {
-            int written = segFilter.copyTo(buf, offset);
-            assert(written == perSegmentBloomFilterSizeBytes);
-            offset += written;
+            segFilter.writeTo(cos);
         }
-        CRC32 checksum = new CRC32();
-        checksum.update(buf, 0, offset);
-        byte[] out = Fields.intToBytes((int)checksum.getValue());
-        System.arraycopy(out, 0, buf, offset, 4);
-        assert(offset + 4 == buf.length);
+        cos.close();
+        byte[] buf = baos.toByteArray();
+        baos = null;
+        assert(buf.length == totalSegmentBloomFiltersSize());
         RAFLock lock = storage.raf.lockOpen();
         try {
             storage.raf.pwrite(fileOffset, buf, 0, buf.length);
@@ -167,7 +164,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     }
     
     int totalSegmentBloomFiltersSize() {
-        return perSegmentBloomFilterSizeBytes * segmentFilters.length + 4;
+        return perSegmentBloomFilterSizeBytes * segmentFilters.length + storage.checksumLength;
     }
     
     void maybeWriteMainBloomFilter(long fileOffset) throws IOException {
@@ -183,14 +180,13 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         synchronized(this) {
             if(!finishedSetup) throw new IllegalStateException();
         }
-        byte[] buf = new byte[paddedMainBloomFilterSize()];
-        int offset = filter.copyTo(buf, 0);
-        assert(offset == mainBloomFilterSizeBytes);
-        CRC32 checksum = new CRC32();
-        checksum.update(buf, 0, offset);
-        byte[] out = Fields.intToBytes((int)checksum.getValue());
-        System.arraycopy(out, 0, buf, offset, 4);
-        assert(offset + 4 == buf.length);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(paddedMainBloomFilterSize());
+        OutputStream cos = storage.checksumOutputStream(baos);
+        filter.writeTo(cos);
+        cos.close();
+        byte[] buf = baos.toByteArray();
+        baos = null;
+        assert(buf.length == paddedMainBloomFilterSize());
         
         RAFLock lock = storage.raf.lockOpen();
         try {
@@ -202,7 +198,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     
     public int paddedMainBloomFilterSize() {
         assert(mainBloomFilterSizeBytes == filter.getSizeBytes());
-        return mainBloomFilterSizeBytes + 4;
+        return mainBloomFilterSizeBytes + storage.checksumLength;
     }
 
     @Override
