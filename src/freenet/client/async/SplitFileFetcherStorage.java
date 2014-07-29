@@ -90,10 +90,12 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  * FOOTER:
  * Length of basic settings. (So we can seek back to get them)
  * Version number.
+ * Checksum.
  * Magic value.
  * 
- * 
  * OTHER NOTES:
+ * 
+ * CHECKSUMS: 4-byte CRC32.
  * 
  * CONCURRENCY: Callbacks into fetcher should be run off-thread, as they will usually be inside a 
  * MemoryLimitedJob.
@@ -168,6 +170,8 @@ public class SplitFileFetcherStorage {
     final long offsetOriginalURI;
     /** Offset to start of the basic settings in bytes */
     final long offsetBasicSettings;
+    /** Length of all section checksums */
+    final int checksumLength;
     /** Fixed value posted at the end of the file (if plaintext!) */
     static final long END_MAGIC = 0x28b32d99416eb6efL;
     /** Current format version */
@@ -202,6 +206,7 @@ public class SplitFileFetcherStorage {
         this.decompressors = decompressors;
         this.random = random;
         this.errors = new FailureCodeTracker(false);
+        checksumLength = 4; // FIXME 32 if pass in HMAC key
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
@@ -371,7 +376,7 @@ public class SplitFileFetcherStorage {
         // Write the metadata to a temporary file to get its exact length.
         Bucket metadataTemp = tempBucketFactory.makeBucket(-1);
         OutputStream os = metadataTemp.getOutputStream();
-        ChecksumOutputStream cos = new ChecksumOutputStream(os, new CRC32());
+        OutputStream cos = checksumOutputStream(os);
         BufferedOutputStream bos = new BufferedOutputStream(cos);
         try {
             metadata.writeTo(new DataOutputStream(bos));
@@ -385,12 +390,13 @@ public class SplitFileFetcherStorage {
         byte[] encodedURI = encodeAndChecksumURI(thisKey);
         this.offsetBasicSettings = offsetOriginalURI + encodedURI.length;
         
-        byte[] encodedBasicSettings = encodeBasicSettings(); // FIXME checksum???
+        byte[] encodedBasicSettings = encodeBasicSettings();
         long totalLength = 
             offsetBasicSettings + // rest of file
             encodedBasicSettings.length + // basic settings
             4 + // length of basic settings
             4 + // version
+            checksumLength + // might as well checksum the footer as well
             8; // magic
         
         // Create the actual LockableRandomAccessThing
@@ -404,7 +410,6 @@ public class SplitFileFetcherStorage {
                 segment.writeMetadata();
             keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
             keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
-            // TODO write metadata and then delete the temp bucket
             BucketTools.copyTo(metadataTemp, raf, offsetOriginalMetadata, -1);
             metadataTemp.free();
             raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
@@ -413,18 +418,31 @@ public class SplitFileFetcherStorage {
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeInt(encodedBasicSettings.length);
             dos.writeInt(VERSION);
-            dos.writeLong(END_MAGIC);
-            byte[] buf = baos.toByteArray();
+            byte[] buf = appendChecksum(baos.toByteArray());
             raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, 
                     buf, 0, buf.length);
+            // Write magic last.
+            baos = new ByteArrayOutputStream();
+            dos = new DataOutputStream(baos);
+            dos.writeLong(END_MAGIC);
+            buf = baos.toByteArray();
+            raf.pwrite(totalLength - 8, buf, 0, 8);
         } finally {
             lock.unlock();
         }
         if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this+" for "+fetcher);
     }
     
-    /** Encode the basic settings (number of blocks etc) to a byte array */
+    private OutputStream checksumOutputStream(OutputStream os) {
+        return new ChecksumOutputStream(os, new CRC32());
+    }
+
     private byte[] encodeBasicSettings() {
+        return appendChecksum(innerEncodeBasicSettings());
+    }
+    
+    /** Encode the basic settings (number of blocks etc) to a byte array */
+    private byte[] innerEncodeBasicSettings() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         try {
