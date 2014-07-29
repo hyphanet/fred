@@ -19,6 +19,7 @@ import freenet.support.api.BucketFactory;
  * about. FIXME these should be final or private, with getters/setters and 
  * checking for valid values e.g. maxRecursionLevel >= 1. */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+// Having said that, there is some support for schema evolution... new fields will be default valued etc IIRC
 public class FetchContext implements Cloneable {
 
 	public static final int IDENTICAL_MASK = 0;
