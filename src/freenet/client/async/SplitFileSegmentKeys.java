@@ -296,4 +296,45 @@ public class SplitFileSegmentKeys implements Cloneable {
 		}
 	}
 
+	// Not often used, not very efficient, but overriding equals() requires overriding hashCode().
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + checkBlocks;
+        result = prime * result + Arrays.hashCode(commonDecryptKey);
+        result = prime * result + Arrays.hashCode(commonExtraBytes);
+        result = prime * result + dataBlocks;
+        result = prime * result + Arrays.hashCode(decryptKeys);
+        result = prime * result + Arrays.hashCode(extraBytesForKeys);
+        result = prime * result + Arrays.hashCode(routingKeys);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        SplitFileSegmentKeys other = (SplitFileSegmentKeys) obj;
+        if (checkBlocks != other.checkBlocks)
+            return false;
+        if (!Arrays.equals(commonDecryptKey, other.commonDecryptKey))
+            return false;
+        if (!Arrays.equals(commonExtraBytes, other.commonExtraBytes))
+            return false;
+        if (dataBlocks != other.dataBlocks)
+            return false;
+        if (!Arrays.equals(decryptKeys, other.decryptKeys))
+            return false;
+        if (!Arrays.equals(extraBytesForKeys, other.extraBytesForKeys))
+            return false;
+        if (!Arrays.equals(routingKeys, other.routingKeys))
+            return false;
+        return true;
+    }
+
 }
