@@ -881,6 +881,7 @@ public class SplitFileFetcherSegmentStorage {
         }
         dos.close();
         byte[] buf = baos.toByteArray();
+        assert(buf.length == segmentKeyListLength);
         RAFLock lock = parent.raf.lockOpen();
         try {
             parent.raf.pwrite(segmentKeyListOffset, buf, 0, buf.length);
