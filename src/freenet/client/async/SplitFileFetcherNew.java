@@ -11,6 +11,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.crypt.CRCChecksumChecker;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
@@ -102,7 +103,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
                     thisKey, context.random, context.tempBucketFactory, context.tempRAFFactory, 
-                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner);
+                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker());
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);

@@ -23,6 +23,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.OnionFECCodec;
 import freenet.client.async.SplitFileFetcherStorage.MyKey;
 import freenet.client.events.SimpleEventProducer;
+import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
@@ -262,7 +263,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx) throws FetchException, MetadataParseException, IOException {
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, ctx, false, salt, URI, random, bf,
-                    rafFactory, exec, ticker, memoryLimitedJobRunner);
+                    rafFactory, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
         }
 
         public FetchContext makeFetchContext() {

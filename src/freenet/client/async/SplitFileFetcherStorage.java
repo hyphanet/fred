@@ -24,6 +24,8 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
+import freenet.crypt.ChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.ChecksumOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -172,6 +174,8 @@ public class SplitFileFetcherStorage {
     final long offsetBasicSettings;
     /** Length of all section checksums */
     final int checksumLength;
+    /** Checksum implementation */
+    final ChecksumChecker checksumChecker;
     /** Fixed value posted at the end of the file (if plaintext!) */
     static final long END_MAGIC = 0x28b32d99416eb6efL;
     /** Current format version */
@@ -194,7 +198,7 @@ public class SplitFileFetcherStorage {
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Executor exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner) 
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.executor = exec;
@@ -206,7 +210,8 @@ public class SplitFileFetcherStorage {
         this.decompressors = decompressors;
         this.random = random;
         this.errors = new FailureCodeTracker(false);
-        checksumLength = 4; // FIXME 32 if pass in HMAC key
+        this.checksumChecker = checker;
+        this.checksumLength = checker.checksumLength();
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
@@ -434,7 +439,7 @@ public class SplitFileFetcherStorage {
     }
     
     OutputStream checksumOutputStream(OutputStream os) {
-        return new ChecksumOutputStream(os, new CRC32(), true);
+        return checksumChecker.checksumWriter(os);
     }
 
     private byte[] encodeBasicSettings() {
@@ -500,14 +505,20 @@ public class SplitFileFetcherStorage {
     }
 
     /** Append a CRC32 to a (short) byte[] */
-    static private byte[] appendChecksum(byte[] data) {
-        byte[] output = new byte[data.length+4];
-        System.arraycopy(data, 0, output, 0, data.length);
-        Checksum crc = new CRC32();
-        crc.update(data, 0, data.length);
-        byte[] checksum = Fields.intToBytes((int)crc.getValue());
-        System.arraycopy(checksum, 0, output, data.length, 4);
-        return output;
+    private byte[] appendChecksum(byte[] data) {
+        return checksumChecker.appendChecksum(data);
+    }
+    
+    public void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
+        byte[] checksumBuf = new byte[checksumLength];
+        RAFLock lock = raf.lockOpen();
+        try {
+            raf.pread(fileOffset, buf, offset, length);
+            raf.pread(fileOffset+length, checksumBuf, 0, checksumLength);
+        } finally {
+            lock.unlock();
+        }
+        checksumChecker.verifyChecksum(buf, offset, length, checksumBuf);
     }
 
     /** FIXME not used yet */
