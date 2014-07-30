@@ -790,13 +790,19 @@ public class SplitFileFetcherSegmentStorage {
                 }
             }
         }
+        int maxRetries = parent.maxRetries;
         if(writeRetries) {
             for(int i=0;i<retries.length;i++) {
                 int r = dis.readInt();
                 if(r < 0)
                     throw new StorageFormatException("Bogus retry count in retries["+i+"]: "+r);
                 retries[i] = r;
+                if(maxRetries > -1 && r > maxRetries)
+                    failedBlocks++;
             }
+        }
+        if(failedBlocks >= checkBlocks) {
+            failed = true;
         }
         dis.close();
     }

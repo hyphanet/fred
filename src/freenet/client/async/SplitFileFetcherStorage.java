@@ -466,11 +466,13 @@ public class SplitFileFetcherStorage {
      * those on ClientContext, i.e. we'd be able to restore the splitfile download without knowing
      * anything about it. 
      * @throws IOException If the restore failed because of a failure to read from disk. 
-     * @throws StorageFormatException */
+     * @throws StorageFormatException 
+     * @throws FetchException If the request has already failed (but it wasn't processed before 
+     * restarting). */
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
             SplitFileFetcherCallback callback, FetchContext origContext,
             RandomSource random, Executor exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException {
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException, FetchException {
         this.raf = raf;
         this.fetcher = callback;
         this.ticker = ticker;
@@ -600,11 +602,14 @@ public class SplitFileFetcherStorage {
             throw new StorageFormatException("Cross-segment not supported yet");
         this.crossSegments = null; // FIXME cross-segment splitfile support
         this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
-        List<SplitFileFetcherSegmentStorage> segmentsToTryDecode = null;
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {
                 segment.readMetadata();
+                if(segment.hasFailed()) {
+                    close(); // Failed, so free it.
+                    throw new FetchException(FetchException.SPLITFILE_ERROR, errors);
+                }
             } catch (ChecksumFailedException e) {
                 Logger.error(this, "Progress for segment "+segment.segNo+" on "+this+" corrupted.");
                 needsDecode = true;
