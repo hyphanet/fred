@@ -128,6 +128,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void schedule(ObjectContainer container, ClientContext context)
             throws KeyListenerConstructionException {
+        storage.start();
         getter.schedule(context, false);
     }
     

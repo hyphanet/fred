@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Random;
 
 import freenet.client.FetchException;
+import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
@@ -25,6 +26,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
+import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.NativeThread;
 
@@ -96,6 +98,8 @@ public class SplitFileFetcherSegmentStorage {
     private boolean failed;
     /** True if the metadata needs writing but isn't going to be written immediately. */
     private boolean metadataDirty;
+    /** True if the metadata was corrupt and we need to innerDecode(). */
+    private boolean corruptMetadata;
     /** The cross segments for each data or cross-segment check block. This allows us to tell the
      * cross-segments when we may have data to decode. The array is null if there are no 
      * cross-segments, and the elements are null if there is no associated cross-segment. */
@@ -144,29 +148,83 @@ public class SplitFileFetcherSegmentStorage {
         keysCache = new SoftReference<SplitFileSegmentKeys>(keys);
     }
 
+    /** Construct from a saved file. Uses the DataInputStream to read static settings, i.e. number 
+     * of blocks, does not use the RAF to read block status etc; caller must call readMetadata and
+     * readKeys separately for that.
+     * @param splitFileFetcherStorage
+     * @param raf
+     * @param dis DataInputStream to which the static settings have been saved. Anything else we 
+     * will need to read separately from the RandomAccessThing.
+     * @param segNo The segment number.
+     * @throws IOException 
+     * @throws StorageFormatException 
+     */
+    public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, DataInputStream dis, 
+            int segNo, boolean writeRetries, long segmentDataOffset, long segmentKeysOffset, 
+            long segmentStatusOffset) throws IOException, StorageFormatException {
+        this.segNo = segNo;
+        this.parent = parent;
+        this.dataBlocks = dis.readInt();
+        if(dataBlocks < 1 || dataBlocks > 256)
+            throw new StorageFormatException("Bad data block count");
+        this.crossSegmentCheckBlocks = dis.readInt();
+        // REDFLAG one day we will support more than 256 blocks per segment?
+        if(crossSegmentCheckBlocks < 0 || crossSegmentCheckBlocks > 256)
+            throw new StorageFormatException("Bad cross-segment check block count");
+        if(crossSegmentCheckBlocks > 0) 
+            throw new StorageFormatException("Cross-segment not supported yet"); // FIXME
+        this.checkBlocks = dis.readInt();
+        if(checkBlocks < 0 || checkBlocks > 256)
+            throw new StorageFormatException("Bad check block count");
+        int total = dataBlocks+checkBlocks+crossSegmentCheckBlocks;
+        if(total > 256)
+            throw new StorageFormatException("Too many blocks in segment");
+        // Some of these can be read from the RAF.
+        retries = new int[total];
+        blocksFound = new boolean[total];
+        cooldownTimes = new long[total];
+        int minFetched = dataBlocks + crossSegmentCheckBlocks;
+        if(crossSegmentCheckBlocks != 0)
+            crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
+        else
+            crossSegmentsByBlock = null;
+        blocksFetched = new short[minFetched];
+        for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
+        segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
+                crossSegmentCheckBlocks, writeRetries, parent.checksumLength);
+        segmentKeyListLength = 
+            storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
+        keysCache = null; // Will be read later
+        this.writeRetries = writeRetries;
+        this.segmentBlockDataOffset = segmentDataOffset;
+        this.segmentKeyListOffset = segmentKeysOffset;
+        this.segmentStatusOffset = segmentStatusOffset;
+    }
+
     public SplitFileSegmentKeys getSegmentKeys() throws IOException {
         synchronized(this) {
             if(keysCache != null) {
                 SplitFileSegmentKeys cached = keysCache.get();
                 if(cached != null) return cached;
             }
-            SplitFileSegmentKeys keys = readSegmentKeys();
+            SplitFileSegmentKeys keys;
+            try {
+                keys = readSegmentKeys();
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Keys corrupted on "+this+" !");
+                // Treat as IOException, i.e. fatal. FIXME!
+                throw new IOException(e);
+            }
             if(keys == null) return keys;
             keysCache = new SoftReference<SplitFileSegmentKeys>(keys);
             return keys;
         }
     }
 
-    SplitFileSegmentKeys readSegmentKeys() throws IOException {
+    SplitFileSegmentKeys readSegmentKeys() throws IOException, ChecksumFailedException {
         SplitFileSegmentKeys keys = new SplitFileSegmentKeys(dataBlocks + crossSegmentCheckBlocks, checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
         byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null)];
-        try {
-            parent.preadChecksummed(segmentKeyListOffset, buf, 0, buf.length);
-        } catch (ChecksumFailedException e) {
-            Logger.error(this, "Keys corrupted on "+this+" !");
-            // Treat as IOException, i.e. fatal. FIXME!
-            throw new IOException(e);
-        }
+        parent.preadChecksummed(segmentKeyListOffset, buf, 0, buf.length);
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         keys.readKeys(dis, false);
         keys.readKeys(dis, true);
@@ -192,7 +250,7 @@ public class SplitFileFetcherSegmentStorage {
     public boolean tryStartDecode() {
         synchronized(this) {
             if(succeeded || failed || finished) return false;
-            if(blocksFetchedCount < blocksForDecode()) return false;
+            if(!corruptMetadata && blocksFetchedCount < blocksForDecode()) return false;
             if(tryDecode) return true;
             tryDecode = true;
         }
@@ -296,7 +354,12 @@ public class SplitFileFetcherSegmentStorage {
         }
         if(fetchedCount < blocksForDecode()) {
             writeMetadata();
-            parent.restartedAfterDataCorruption();
+            boolean wasCorrupt;
+            synchronized(this) {
+                wasCorrupt = corruptMetadata;
+                corruptMetadata = false;
+            }
+            parent.restartedAfterDataCorruption(wasCorrupt);
             return;
         }
         
@@ -355,7 +418,12 @@ public class SplitFileFetcherSegmentStorage {
         maybeBlocks = null;
         if(validBlocks < blocksForDecode()) {
             writeMetadata();
-            parent.restartedAfterDataCorruption();
+            boolean wasCorrupt;
+            synchronized(this) {
+                wasCorrupt = corruptMetadata;
+                corruptMetadata = false;
+            }
+            parent.restartedAfterDataCorruption(wasCorrupt);
             return;
         }
         boolean[] dataBlocksPresent = new boolean[dataBlocks.length];
@@ -404,6 +472,7 @@ public class SplitFileFetcherSegmentStorage {
         writeMetadata();
         // Now we've REALLY finished.
         synchronized(this) {
+            corruptMetadata = false;
             finished = true;
         }
         parent.finishedEncoding(this);
@@ -695,6 +764,35 @@ public class SplitFileFetcherSegmentStorage {
         return true;
     }
     
+    /** Only called during construction. Reads the variable metadata from the RandomAccessThing. 
+     * @throws ChecksumFailedException 
+     * @throws StorageFormatException */
+    void readMetadata() throws IOException, StorageFormatException, ChecksumFailedException {
+        byte[] buf = new byte[segmentStatusPaddedLength];
+        try {
+            parent.preadChecksummed(segmentStatusOffset, buf, 0, segmentStatusPaddedLength-parent.checksumLength);
+        } catch (ChecksumFailedException e) {
+            corruptMetadata = true;
+            throw e;
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
+        for(int i=0;i<blocksFetched.length;i++) {
+            short s = dis.readShort();
+            if(s < -1 || s > retries.length)
+                throw new StorageFormatException("Bogus block number in blocksFetched["+i+"]: "+s);
+            blocksFetched[i] = s;
+        }
+        if(writeRetries) {
+            for(int i=0;i<retries.length;i++) {
+                int r = dis.readInt();
+                if(r < 0)
+                    throw new StorageFormatException("Bogus retry count in retries["+i+"]: "+r);
+                retries[i] = r;
+            }
+        }
+        dis.close();
+    }
+
     public static int storedSegmentStatusLength(int dataBlocks, int checkBlocks, int crossCheckBlocks, 
             boolean trackRetries) {
         int fetchedBlocks = dataBlocks + crossCheckBlocks;
@@ -895,15 +993,10 @@ public class SplitFileFetcherSegmentStorage {
      * cross-segments. 
      * @throws IOException */
     public void writeFixedMetadata(DataOutputStream dos) throws IOException {
-        dos.writeShort(VERSION);
         dos.writeInt(this.dataBlocks);
         dos.writeInt(this.crossSegmentCheckBlocks);
         dos.writeInt(this.checkBlocks);
-        dos.writeInt(segmentStatusPaddedLength);
-        dos.writeInt(segmentKeyListLength);
     }
-
-    static final short VERSION = 1;
 
     // For unit testing.
     
@@ -963,6 +1056,7 @@ public class SplitFileFetcherSegmentStorage {
                 if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
                 return -1;
             }
+            if(corruptMetadata) return -1; // Will be fetchable after we've found out what blocks we actually have.
             boolean ignoreLastBlock = 
                 (this.segNo == parent.segments.length-1 && parent.lastBlockMightNotBePadded());
             SplitFileSegmentKeys keys = null;
@@ -1050,6 +1144,10 @@ public class SplitFileFetcherSegmentStorage {
         if(finished || succeeded || failed) return 0;
         if(blocksFound[blockNumber]) return 0;
         return cooldownTimes[blockNumber];
+    }
+
+    synchronized boolean corruptMetadata() {
+        return corruptMetadata;
     }
 
 }

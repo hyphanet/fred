@@ -1883,4 +1883,13 @@ public class Metadata implements Cloneable {
 		return max;
 	}
 
+    public static boolean isValidSplitfileType(short splitfileType) {
+        return splitfileType == SPLITFILE_NONREDUNDANT
+            || splitfileType == SPLITFILE_ONION_STANDARD;
+    }
+
+    public static boolean isValidSplitfileCryptoAlgorithm(byte cryptoAlgorithm) {
+        return cryptoAlgorithm == 0 || Key.isValidCryptoAlgorithm(cryptoAlgorithm);
+    }
+
 }

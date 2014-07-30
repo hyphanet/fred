@@ -1,13 +1,16 @@
 package freenet.client.async;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +34,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.PrioRunnable;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Executor;
@@ -44,6 +48,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
+import freenet.support.io.NativeThread;
 
 /** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 
  * single random access file), but with most of the metadata in memory. The data, and the larger
@@ -177,6 +182,10 @@ public class SplitFileFetcherStorage {
     static final long END_MAGIC = 0x28b32d99416eb6efL;
     /** Current format version */
     static final int VERSION = 1;
+    
+    /** List of segments we need to tryStartDecode() on because their metadata was corrupted on
+     * startup. */
+    private List<SplitFileFetcherSegmentStorage> segmentsToTryDecode;
     
     /** Construct a new SplitFileFetcherStorage from metadata. Creates the RandomAccessThing and
      * writes the initial data to it. There is another constructor for resuming a download. 
@@ -317,8 +326,8 @@ public class SplitFileFetcherStorage {
             // splitfile* will be overwritten, this is bad
             // so copy them
             SplitFileSegmentKeys keys = segmentKeys[i];
-            int dataBlocks = keys.getDataBlocks();
-            int checkBlocks = keys.getCheckBlocks();
+            final int dataBlocks = keys.getDataBlocks();
+            final int checkBlocks = keys.getCheckBlocks();
             if((dataBlocks > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocks > origFetchContext.maxCheckBlocksPerSegment))
                 throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
@@ -328,13 +337,11 @@ public class SplitFileFetcherStorage {
                     maxRetries != -1, keys);
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength);
-            int data = keys.getDataBlocks();
-            int check = keys.getCheckBlocks();
-            for(int j=0;j<(data+check);j++) {
+            for(int j=0;j<(dataBlocks+checkBlocks);j++) {
                 keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
             }
         }
@@ -397,8 +404,8 @@ public class SplitFileFetcherStorage {
             offsetBasicSettings + // rest of file
             encodedBasicSettings.length + // basic settings
             4 + // length of basic settings
-            4 + // version
             checksumLength + // might as well checksum the footer as well
+            4 + // version
             8; // magic
         
         // Create the actual LockableRandomAccessThing
@@ -418,23 +425,234 @@ public class SplitFileFetcherStorage {
             metadataTemp.free();
             raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
             raf.pwrite(offsetBasicSettings, encodedBasicSettings, 0, encodedBasicSettings.length);
+            
+            // This bit tricky because version is included in the checksum.
+            // When the RAF is encrypted, we use HMAC's and this is important.
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
-            dos.writeInt(encodedBasicSettings.length);
+            dos.writeInt(encodedBasicSettings.length - checksumLength);
+            byte[] bufToWrite = baos.toByteArray();
+            baos = new ByteArrayOutputStream();
+            dos = new DataOutputStream(baos);
             dos.writeInt(VERSION);
-            byte[] buf = appendChecksum(baos.toByteArray());
-            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, 
-                    buf, 0, buf.length);
+            byte[] version = baos.toByteArray();
+            byte[] bufToChecksum = Arrays.copyOf(bufToWrite, bufToWrite.length+version.length);
+            System.arraycopy(version, 0, bufToChecksum, bufToWrite.length, version.length);
+            byte[] checksum = 
+                checksumChecker.generateChecksum(bufToChecksum);
+            // Pointers.
+            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, bufToWrite, 0, 
+                    bufToWrite.length);
+            // Checksum.
+            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length, 
+                    checksum, 0, checksum.length);
+            // Version.
+            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length + 
+                    checksum.length, version, 0, version.length);
             // Write magic last.
             baos = new ByteArrayOutputStream();
             dos = new DataOutputStream(baos);
             dos.writeLong(END_MAGIC);
-            buf = baos.toByteArray();
+            byte[] buf = baos.toByteArray();
             raf.pwrite(totalLength - 8, buf, 0, 8);
         } finally {
             lock.unlock();
         }
         if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this+" for "+fetcher);
+    }
+    
+    /** Construct a SplitFileFetcherStorage from a stored RandomAccessThing, and appropriate local
+     * settings passed in. Ideally this would work with only basic system utilities such as 
+     * those on ClientContext, i.e. we'd be able to restore the splitfile download without knowing
+     * anything about it. 
+     * @throws IOException If the restore failed because of a failure to read from disk. 
+     * @throws StorageFormatException */
+    public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
+            SplitFileFetcherCallback callback, FetchContext origContext,
+            RandomSource random, Executor exec,
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException {
+        this.raf = raf;
+        this.fetcher = callback;
+        this.ticker = ticker;
+        this.executor = exec;
+        this.memoryLimitedJobRunner = memoryLimitedJobRunner;
+        this.random = random;
+        this.checksumChecker = checker;
+        this.checksumLength = checker.checksumLength();
+        this.maxRetries = origContext.maxSplitfileBlockRetries;
+        this.cooldownTries = origContext.getCooldownRetries();
+        this.cooldownLength = origContext.getCooldownTime();
+        this.errors = new FailureCodeTracker(false); // FIXME persist???
+        long rafLength = raf.size();
+        if(raf.size() < 8 /* FIXME more! */)
+            throw new StorageFormatException("Too short");
+        // Last 8 bytes: Magic value.
+        byte[] buf = new byte[8];
+        raf.pread(rafLength-8, buf, 0, 8);
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
+        if(dis.readLong() != END_MAGIC)
+            throw new StorageFormatException("Wrong magic bytes");
+        // 4 bytes before that: Version.
+        byte[] versionBuf = new byte[4];
+        raf.pread(rafLength-12, versionBuf, 0, 4);
+        dis = new DataInputStream(new ByteArrayInputStream(versionBuf));
+        int version = dis.readInt();
+        if(version != 1)
+            throw new StorageFormatException("Wrong version "+version);
+        // 4 bytes basic settings length and a checksum, which includes both the settings length and the version.
+        buf = new byte[8];
+        raf.pread(rafLength-(12+4+checksumLength), buf, 0, 4);
+        byte[] checksum = new byte[checksumLength];
+        raf.pread(rafLength-(12+checksumLength), checksum, 0, checksumLength);
+        System.arraycopy(versionBuf, 0, buf, 4, 4);
+        if(!checksumChecker.checkChecksum(buf, 0, 8, checksum))
+            throw new StorageFormatException("Checksum failed on basic settings length and version");
+        dis = new DataInputStream(new ByteArrayInputStream(buf));
+        int basicSettingsLength = dis.readInt();
+        if(basicSettingsLength < 0 || basicSettingsLength + 12 + 4 + checksumLength > raf.size() || 
+                basicSettingsLength > 4096)
+            throw new StorageFormatException("Bad basic settings length");
+        byte[] basicSettingsBuffer = new byte[basicSettingsLength];
+        long basicSettingsOffset = rafLength-(12+4+checksumLength*2+basicSettingsLength);
+        try {
+            preadChecksummed(basicSettingsOffset, 
+                    basicSettingsBuffer, 0, basicSettingsLength);
+        } catch (ChecksumFailedException e) {
+            throw new StorageFormatException("Basic settings checksum invalid");
+        }
+        dis = new DataInputStream(new ByteArrayInputStream(basicSettingsBuffer));
+        splitfileType = dis.readShort();
+        if(!Metadata.isValidSplitfileType(splitfileType))
+            throw new StorageFormatException("Invalid splitfile type "+splitfileType);
+        this.fecCodec = NewFECCodec.getInstance(splitfileType);
+        splitfileSingleCryptoAlgorithm = dis.readByte();
+        if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileSingleCryptoAlgorithm))
+            throw new StorageFormatException("Invalid splitfile crypto algorithm "+splitfileType);
+        if(dis.readBoolean()) {
+            splitfileSingleCryptoKey = new byte[32];
+            dis.readFully(splitfileSingleCryptoKey);
+        } else {
+            splitfileSingleCryptoKey = null;
+        }
+        finalLength = dis.readLong();
+        if(finalLength < 0)
+            throw new StorageFormatException("Invalid final length "+finalLength);
+        try {
+            clientMetadata = ClientMetadata.construct(dis);
+        } catch (MetadataParseException e) {
+            throw new StorageFormatException("Invalid MIME type");
+        }
+        int decompressorCount = dis.readInt();
+        if(decompressorCount < 0)
+            throw new StorageFormatException("Invalid decompressor count "+decompressorCount);
+        decompressors = new ArrayList<COMPRESSOR_TYPE>(decompressorCount);
+        for(int i=0;i<decompressorCount;i++) {
+            short type = dis.readShort();
+            COMPRESSOR_TYPE d = COMPRESSOR_TYPE.getCompressorByMetadataID(type);
+            if(d == null) throw new StorageFormatException("Invalid decompressor ID "+type);
+            decompressors.add(d);
+        }
+        offsetKeyList = dis.readLong();
+        if(offsetKeyList < 0 || offsetKeyList > rafLength) 
+            throw new StorageFormatException("Invalid offset (key list)");
+        offsetSegmentStatus = dis.readLong();
+        if(offsetSegmentStatus < 0 || offsetSegmentStatus > rafLength) 
+            throw new StorageFormatException("Invalid offset (segment status)");
+        offsetMainBloomFilter = dis.readLong();
+        if(offsetMainBloomFilter < 0 || offsetMainBloomFilter > rafLength) 
+            throw new StorageFormatException("Invalid offset (main bloom filter)");
+        offsetSegmentBloomFilters = dis.readLong();
+        if(offsetSegmentBloomFilters < 0 || offsetSegmentBloomFilters > rafLength) 
+            throw new StorageFormatException("Invalid offset (segment bloom filters)");
+        offsetOriginalMetadata = dis.readLong();
+        if(offsetOriginalMetadata < 0 || offsetOriginalMetadata > rafLength) 
+            throw new StorageFormatException("Invalid offset (original metadata)");
+        offsetOriginalURI = dis.readLong();
+        if(offsetOriginalURI < 0 || offsetOriginalURI > rafLength) 
+            throw new StorageFormatException("Invalid offset (original metadata)");
+        offsetBasicSettings = dis.readLong();
+        if(offsetBasicSettings != basicSettingsOffset)
+            throw new StorageFormatException("Invalid basic settings offset (not the same as computed)");
+        int compatMode = dis.readInt();
+        if(compatMode < 0 || compatMode > CompatibilityMode.values().length)
+            throw new StorageFormatException("Invalid compatibility mode "+compatMode);
+        finalMinCompatMode = CompatibilityMode.values()[compatMode];
+        int segmentCount = dis.readInt();
+        if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
+        this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
+        long dataOffset = 0;
+        long segmentKeysOffset = offsetKeyList;
+        long segmentStatusOffset = offsetSegmentStatus;
+        for(int i=0;i<segments.length;i++) {
+            segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, dataOffset, segmentKeysOffset, segmentStatusOffset);
+            int dataBlocks = segments[i].dataBlocks;
+            int checkBlocks = segments[i].checkBlocks;
+            int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
+            dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
+            segmentKeysOffset += 
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
+            segmentStatusOffset +=
+                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
+                        crossCheckBlocks, maxRetries != -1, checksumLength);
+        }
+        int crossSegments = dis.readInt();
+        if(crossSegments != 0)
+            throw new StorageFormatException("Cross-segment not supported yet");
+        this.crossSegments = null; // FIXME cross-segment splitfile support
+        this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
+        List<SplitFileFetcherSegmentStorage> segmentsToTryDecode = null;
+        for(SplitFileFetcherSegmentStorage segment : segments) {
+            try {
+                segment.readMetadata();
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Progress for segment "+segment.segNo+" on "+this+" corrupted.");
+                if(segmentsToTryDecode == null)
+                    segmentsToTryDecode = new ArrayList<SplitFileFetcherSegmentStorage>();
+                segmentsToTryDecode.add(segment);
+            }
+        }
+        for(SplitFileFetcherSegmentStorage segment : segments) {
+            try {
+                segment.readSegmentKeys();
+            } catch (ChecksumFailedException e) {
+                throw new StorageFormatException("Keys corrupted");
+            }
+        }
+    }
+    
+    public void start() {
+        if(segmentsToTryDecode != null) {
+            executor.execute(new PrioRunnable() {
+
+                @Override
+                public void run() {
+                    List<SplitFileFetcherSegmentStorage> brokenSegments;
+                    synchronized(SplitFileFetcherStorage.this) {
+                        brokenSegments = segmentsToTryDecode;
+                        segmentsToTryDecode = null;
+                    }
+                    if(brokenSegments == null) return;
+                    for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
+                        segment.tryStartDecode();
+                    }
+                }
+
+                @Override
+                public int getPriority() {
+                    return NativeThread.LOW_PRIORITY+1; // Slightly more important than other decodes.
+                }
+                
+            });
+        }
+    }
+    
+    /** Thrown when the file being loaded appears not to be a stored splitfile */
+    static class StorageFormatException extends Exception {
+
+        public StorageFormatException(String message) {
+            super(message);
+        }
+        
     }
     
     OutputStream checksumOutputStream(OutputStream os) {
@@ -459,9 +677,17 @@ public class SplitFileFetcherStorage {
             }
             dos.writeLong(this.finalLength);
             clientMetadata.writeTo(dos);
-            dos.writeInt(decompressors.size());
+            dos.writeInt(decompressors.size()); // FIXME enforce size limits???
             for(COMPRESSOR_TYPE c : decompressors)
                 dos.writeShort(c.metadataID);
+            dos.writeLong(offsetKeyList);
+            dos.writeLong(offsetSegmentStatus);
+            dos.writeLong(offsetMainBloomFilter);
+            dos.writeLong(offsetSegmentBloomFilters);
+            dos.writeLong(offsetOriginalMetadata);
+            dos.writeLong(offsetOriginalURI);
+            dos.writeLong(offsetBasicSettings);
+            dos.writeInt(finalMinCompatMode.ordinal());
             dos.writeInt(segments.length);
             for(SplitFileFetcherSegmentStorage segment : segments) {
                 segment.writeFixedMetadata(dos);
@@ -475,13 +701,7 @@ public class SplitFileFetcherStorage {
 //                    segment.writeFixedMetadata(dos);
 //                }
             }
-            dos.writeLong(offsetKeyList);
-            dos.writeLong(offsetSegmentStatus);
-            dos.writeLong(offsetMainBloomFilter);
-            dos.writeLong(offsetSegmentBloomFilters);
-            dos.writeLong(offsetOriginalMetadata);
-            dos.writeLong(offsetOriginalURI);
-            dos.writeLong(offsetBasicSettings);
+            keyListener.writeStaticSettings(dos);
         } catch (IOException e) {
             throw new Error(e); // Impossible
         }
@@ -919,7 +1139,7 @@ public class SplitFileFetcherStorage {
                 finalMinCompatMode.ordinal() < CompatibilityMode.COMPAT_1416.ordinal());
     }
 
-    public void restartedAfterDataCorruption() {
+    public void restartedAfterDataCorruption(boolean wasCorrupt) {
         executor.execute(new Runnable() {
 
             @Override

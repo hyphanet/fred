@@ -335,4 +335,9 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	 * not we need to copy it because the original might pick up a pubkey after this
 	 * call. And the returned key will not accidentally pick up extra data. */
 	public abstract Key archivalCopy();
+
+    public static boolean isValidCryptoAlgorithm(byte cryptoAlgorithm) {
+        return cryptoAlgorithm == ALGO_AES_PCFB_256_SHA256 ||
+            cryptoAlgorithm == ALGO_AES_CTR_256_SHA256;
+    }
 }

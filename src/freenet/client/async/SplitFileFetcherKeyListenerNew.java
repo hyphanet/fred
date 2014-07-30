@@ -1,6 +1,7 @@
 package freenet.client.async;
 
-import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -9,6 +10,7 @@ import java.security.MessageDigest;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchException;
+import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.SHA256;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -19,7 +21,6 @@ import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
 import freenet.support.Logger;
-import freenet.support.io.LockableRandomAccessThing.RAFLock;
 
 public class SplitFileFetcherKeyListenerNew implements KeyListener {
     
@@ -51,9 +52,6 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     private final int perSegmentBloomFilterSizeBytes;
     /** Number of hashes for the per-segment bloom filters. */
     private final int perSegmentK;
-    /** Number of keys we are still waiting for. FIXME This should be created on startup from the
-     * splitfile metadata. */
-    private int keyCount;
     /** The overall bloom filter, containing all the keys, salted with the global hash. When a key
      * is found, it is removed from this. */
     private final CountingBloomFilter filter;
@@ -92,7 +90,6 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         perSegmentSize = (perSegmentSize + 7) & ~7;
         perSegmentBloomFilterSizeBytes = perSegmentSize / 8;
         perSegmentK = BloomFilter.optimialK(perSegmentSize, segBlocks);
-        keyCount = origSize;
         segmentFilters = new BinaryBloomFilter[segments];
         byte[] segmentsFilterBuffer = new byte[perSegmentBloomFilterSizeBytes * segments];
         ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
@@ -113,6 +110,49 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         filter.setWarnOnRemoveFromEmpty();
     }
     
+    public SplitFileFetcherKeyListenerNew(SplitFileFetcherStorage storage, 
+            SplitFileFetcherCallback callback, DataInputStream dis, boolean realTime, boolean persistent) 
+    throws IOException, StorageFormatException {
+        this.storage = storage;
+        this.fetcher = callback;
+        this.realTime = realTime;
+        this.persistent = persistent;
+        localSalt = new byte[32];
+        dis.readFully(localSalt);
+        mainBloomFilterSizeBytes = dis.readInt();
+        // FIXME impose an upper bound based on estimate of bits per key.
+        if(mainBloomFilterSizeBytes < 0)
+            throw new StorageFormatException("Bad main bloom filter size");
+        mainBloomK = dis.readInt();
+        if(mainBloomK < 1)
+            throw new StorageFormatException("Bad main bloom filter K");
+        perSegmentBloomFilterSizeBytes = dis.readInt();
+        if(perSegmentBloomFilterSizeBytes < 0)
+            throw new StorageFormatException("Bad per segment bloom filter size");
+        perSegmentK = dis.readInt();
+        if(perSegmentK < 0)
+            throw new StorageFormatException("Bad per segment bloom filter K");
+        int segments = storage.segments.length;
+        segmentFilters = new BinaryBloomFilter[segments];
+        byte[] segmentsFilterBuffer = new byte[perSegmentBloomFilterSizeBytes * segments];
+        ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
+        int start = 0;
+        int end = perSegmentBloomFilterSizeBytes;
+        for(int i=0;i<segments;i++) {
+            baseBuffer.position(start);
+            baseBuffer.limit(end);
+            ByteBuffer slice;
+            
+            slice = baseBuffer.slice();
+            segmentFilters[i] = new BinaryBloomFilter(slice, perSegmentBloomFilterSizeBytes * 8, perSegmentK);
+            start += perSegmentBloomFilterSizeBytes;
+            end += perSegmentBloomFilterSizeBytes;
+        }
+        byte[] filterBuffer = new byte[mainBloomFilterSizeBytes];
+        filter = new CountingBloomFilter(mainBloomFilterSizeBytes * 8 / 2, mainBloomK, filterBuffer);
+        filter.setWarnOnRemoveFromEmpty();
+    }
+
     /**
      * SplitFileFetcher adds keys in whatever blocks are convenient.
      * @param keys
@@ -239,7 +279,6 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         if(found) {
             synchronized(this) {
                 dirty = true;
-                keyCount--;
             }
             filter.removeKey(saltedKey);
             if(persistent)
@@ -259,8 +298,9 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     }
 
     @Override
-    public synchronized long countKeys() {
-        return keyCount;
+    public long countKeys() {
+        // FIXME remove. Only used by persistent fetches.
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -286,6 +326,14 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     @Override
     public boolean isRealTime() {
         return realTime;
+    }
+
+    public void writeStaticSettings(DataOutputStream dos) throws IOException {
+        dos.write(localSalt);
+        dos.writeInt(mainBloomFilterSizeBytes);
+        dos.writeInt(mainBloomK);
+        dos.writeInt(perSegmentBloomFilterSizeBytes);
+        dos.writeInt(perSegmentK);
     }
 
 }

@@ -22,8 +22,10 @@ import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.OnionFECCodec;
 import freenet.client.async.SplitFileFetcherStorage.MyKey;
+import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.CRCChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.DummyRandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
@@ -48,6 +50,7 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThingFactory;
+import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import junit.framework.TestCase;
 
@@ -260,10 +263,36 @@ public class SplitFileFetcherStorageTest extends TestCase {
             return createStorage(cb, makeFetchContext());
         }
 
-        public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx) throws FetchException, MetadataParseException, IOException {
+        public SplitFileFetcherStorage createStorage(final StorageCallback cb, FetchContext ctx) throws FetchException, MetadataParseException, IOException {
+            LockableRandomAccessThingFactory f = new LockableRandomAccessThingFactory() {
+
+                @Override
+                public LockableRandomAccessThing makeRAF(long size) throws IOException {
+                    LockableRandomAccessThing t = rafFactory.makeRAF(size);
+                    cb.snoopRAF(t);
+                    return t;
+                }
+
+                @Override
+                public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset,
+                        int size) throws IOException {
+                    LockableRandomAccessThing t = rafFactory.makeRAF(initialContents, offset, size);
+                    cb.snoopRAF(t);
+                    return t;
+                }
+                
+            };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, ctx, false, salt, URI, random, bf,
-                    rafFactory, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
+                    f, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
+        }
+
+        /** Restore a splitfile fetcher from a file. 
+         * @throws StorageFormatException 
+         * @throws IOException */
+        public SplitFileFetcherStorage createStorage(StorageCallback cb,
+                LockableRandomAccessThing raf) throws IOException, StorageFormatException {
+            return new SplitFileFetcherStorage(raf, false, cb, makeFetchContext(), random, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
         }
 
         public FetchContext makeFetchContext() {
@@ -327,10 +356,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
         private boolean closed;
         private boolean failed;
         private boolean hasRestartedOnCorruption;
+        private LockableRandomAccessThing raf;
 
         public StorageCallback(TestSplitfile splitfile) {
             this.splitfile = splitfile;
             encodedBlocks = new boolean[splitfile.dataBlocks.length + splitfile.checkBlocks.length];
+        }
+
+        synchronized void snoopRAF(LockableRandomAccessThing t) {
+            this.raf = t;
+        }
+        
+        synchronized LockableRandomAccessThing getRAF() {
+            return raf;
         }
 
         @Override
@@ -920,7 +958,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
-    public void testWriteReadSegmentKeys() throws FetchException, MetadataParseException, IOException, CHKEncodeException, MetadataUnresolvedException {
+    public void testWriteReadSegmentKeys() throws FetchException, MetadataParseException, IOException, CHKEncodeException, MetadataUnresolvedException, ChecksumFailedException {
         int dataBlocks = 3, checkBlocks = 3;
         TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null);
         StorageCallback cb = test.createStorageCallback();
@@ -930,6 +968,64 @@ public class SplitFileFetcherStorageTest extends TestCase {
         SplitFileSegmentKeys moreKeys = segment.readSegmentKeys();
         assertTrue(keys.equals(moreKeys));
         storage.close();
+    }
+
+    /** Test persistence: Create and then reload. Don't do anything. */
+    public void testPersistenceReload() throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException, StorageFormatException {
+        int dataBlocks = 2;
+        int checkBlocks = 3;
+        long size = 32768*2-1;
+        assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
+        TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        // No need to shutdown the old storage.
+        storage = test.createStorage(cb, cb.getRAF());
+        storage.close();
+    }
+    
+    public void testPersistenceReloadThenFetch() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 2;
+        int checkBlocks = 3;
+        long size = 32768*2-1;
+        assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
+        TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        // No need to shutdown the old storage.
+        storage = test.createStorage(cb, cb.getRAF());
+        SplitFileFetcherSegmentStorage segment = storage.segments[0];
+        assertFalse(segment.corruptMetadata());
+        int total = test.dataBlocks.length+test.checkBlocks.length;
+        for(int i=0;i<total;i++)
+            segment.onNonFatalFailure(i); // We want healing on all blocks that aren't found.
+        boolean[] hits = new boolean[total];
+        for(int i=0;i<test.dataBlocks.length;i++) {
+            int block;
+            do {
+                block = random.nextInt(total);
+            } while (hits[block]);
+            hits[block] = true;
+            assertFalse(segment.hasStartedDecode());
+            assertTrue(segment.onGotKey(test.getCHK(block), test.encodeBlock(block)));
+            cb.markDownloadedBlock(block);
+        }
+        //printChosenBlocks(hits);
+        cb.checkFailed();
+        assertTrue(segment.hasStartedDecode());
+        cb.checkFailed();
+        waitForDecode(segment);
+        cb.checkFailed();
+        cb.waitForFinished();
+        cb.checkFailed();
+        test.verifyOutput(storage);
+        cb.checkFailed();
+        storage.finishedFetcher();
+        cb.checkFailed();
+        waitForFinished(segment);
+        cb.checkFailed();
+        cb.waitForFree(storage);
+        cb.checkFailed();
     }
     
 }
