@@ -409,8 +409,10 @@ public class SplitFileFetcherStorage {
         this.raf = rafFactory.makeRAF(totalLength);
         RAFLock lock = raf.lockOpen();
         try {
-            for(SplitFileFetcherSegmentStorage segment : segments)
-                segment.writeKeysWithChecksum();
+            for(int i=0;i<segments.length;i++) {
+                SplitFileFetcherSegmentStorage segment = segments[i];
+                segment.writeKeysWithChecksum(segmentKeys[i]);
+            }
             for(SplitFileFetcherSegmentStorage segment : segments)
                 segment.writeMetadata();
             keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);

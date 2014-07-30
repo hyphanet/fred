@@ -867,8 +867,9 @@ public class SplitFileFetcherSegmentStorage {
         return SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, commonDecryptKey) + checksumLength;
     }
     
-    void writeKeysWithChecksum() throws IOException {
-        SplitFileSegmentKeys keys = getSegmentKeys();
+    /** Only called during creation. Do not read the keys in before writing them! */
+    void writeKeysWithChecksum(SplitFileSegmentKeys keys) throws IOException {
+        assert(keysCache.get() == keys);
         assert(this.dataBlocks + this.crossSegmentCheckBlocks == keys.dataBlocks);
         assert(this.checkBlocks == keys.checkBlocks);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
