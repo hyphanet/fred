@@ -852,8 +852,11 @@ public class SplitFileFetcherStorage {
     };
 
     public void lazyWriteMetadata() {
-        ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
-                LAZY_WRITE_METADATA_DELAY, false, true);
+        if(LAZY_WRITE_METADATA_DELAY != 0)
+            ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
+                    LAZY_WRITE_METADATA_DELAY, false, true);
+        else
+            executor.execute(writeMetadataJob); // Must still be off-thread, multiple segments, possible locking issues...
     }
 
     public void finishedFetcher() {
