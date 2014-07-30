@@ -255,7 +255,7 @@ public abstract class BloomFilter {
     }
     
     public void writeTo(OutputStream cos) throws IOException {
-        cos.write(filter.array());
+        cos.write(filter.array(), filter.arrayOffset(), filter.capacity());
     }
 
 }
