@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Random;
 
 import freenet.client.FetchException;
+import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -158,18 +159,19 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private SplitFileSegmentKeys readSegmentKeys() throws IOException {
-        RAFLock lock = parent.raf.lockOpen();
+        SplitFileSegmentKeys keys = new SplitFileSegmentKeys(dataBlocks + crossSegmentCheckBlocks, checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
+        byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null)];
         try {
-            SplitFileSegmentKeys keys = new SplitFileSegmentKeys(dataBlocks + crossSegmentCheckBlocks, checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
-            byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null)];
-            parent.raf.pread(segmentKeyListOffset, buf, 0, buf.length);
-            DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
-            keys.readKeys(dis, false);
-            keys.readKeys(dis, true);
-            return keys;
-        } finally {
-            lock.unlock();
+            parent.preadChecksummed(segmentKeyListOffset, buf, 0, buf.length);
+        } catch (ChecksumFailedException e) {
+            Logger.error(this, "Keys corrupted on "+this+" !");
+            // Treat as IOException, i.e. fatal. FIXME!
+            throw new IOException(e);
         }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
+        keys.readKeys(dis, false);
+        keys.readKeys(dis, true);
+        return keys;
     }
     
     /** Write the status metadata to disk, after a series of updates. */
