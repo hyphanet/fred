@@ -1048,4 +1048,54 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    public void testPersistenceReloadBetweenFetches() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 2;
+        int checkBlocks = 3;
+        long size = 32768*2-1;
+        assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
+        TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        // No need to shutdown the old storage.
+        storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
+        SplitFileFetcherSegmentStorage segment = storage.segments[0];
+        assertFalse(segment.corruptMetadata());
+        int total = test.dataBlocks.length+test.checkBlocks.length;
+        for(int i=0;i<total;i++)
+            segment.onNonFatalFailure(i); // We want healing on all blocks that aren't found.
+        boolean[] hits = new boolean[total];
+        for(int i=0;i<test.dataBlocks.length;i++) {
+            int block;
+            do {
+                block = random.nextInt(total);
+            } while (hits[block]);
+            hits[block] = true;
+            assertFalse(segment.hasStartedDecode());
+            assertTrue(segment.onGotKey(test.getCHK(block), test.encodeBlock(block)));
+            cb.markDownloadedBlock(block);
+            if(i != test.dataBlocks.length-1) {
+                // Reload.
+                storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
+                segment = storage.segments[0];
+                storage.start();
+            }
+        }
+        //printChosenBlocks(hits);
+        cb.checkFailed();
+        assertTrue(segment.hasStartedDecode());
+        cb.checkFailed();
+        waitForDecode(segment);
+        cb.checkFailed();
+        cb.waitForFinished();
+        cb.checkFailed();
+        test.verifyOutput(storage);
+        cb.checkFailed();
+        storage.finishedFetcher();
+        cb.checkFailed();
+        waitForFinished(segment);
+        cb.checkFailed();
+        cb.waitForFree(storage);
+        cb.checkFailed();
+    }
+    
 }

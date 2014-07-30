@@ -778,9 +778,17 @@ public class SplitFileFetcherSegmentStorage {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         for(int i=0;i<blocksFetched.length;i++) {
             short s = dis.readShort();
-            if(s < -1 || s > retries.length)
+            if(s < -1 || s >= retries.length)
                 throw new StorageFormatException("Bogus block number in blocksFetched["+i+"]: "+s);
             blocksFetched[i] = s;
+            if(s >= 0) {
+                if(!blocksFound[s]) {
+                    blocksFound[s] = true;
+                    blocksFetchedCount++;
+                } else {
+                    throw new StorageFormatException("Duplicated block number in blocksFetched in "+this);
+                }
+            }
         }
         if(writeRetries) {
             for(int i=0;i<retries.length;i++) {
@@ -1148,6 +1156,12 @@ public class SplitFileFetcherSegmentStorage {
 
     synchronized boolean corruptMetadata() {
         return corruptMetadata;
+    }
+
+    public synchronized boolean needsDecode() {
+        if(finished || succeeded || failed) return false;
+        if(tryDecode) return false;
+        return blocksFetchedCount == blocksForDecode();
     }
 
 }

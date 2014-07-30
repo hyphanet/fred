@@ -602,10 +602,16 @@ public class SplitFileFetcherStorage {
         this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
         List<SplitFileFetcherSegmentStorage> segmentsToTryDecode = null;
         for(SplitFileFetcherSegmentStorage segment : segments) {
+            boolean needsDecode = false;
             try {
                 segment.readMetadata();
             } catch (ChecksumFailedException e) {
                 Logger.error(this, "Progress for segment "+segment.segNo+" on "+this+" corrupted.");
+                needsDecode = true;
+            }
+            if(segment.needsDecode())
+                needsDecode = true;
+            if(needsDecode) {
                 if(segmentsToTryDecode == null)
                     segmentsToTryDecode = new ArrayList<SplitFileFetcherSegmentStorage>();
                 segmentsToTryDecode.add(segment);
@@ -622,27 +628,15 @@ public class SplitFileFetcherStorage {
     
     public void start() {
         if(segmentsToTryDecode != null) {
-            executor.execute(new PrioRunnable() {
-
-                @Override
-                public void run() {
-                    List<SplitFileFetcherSegmentStorage> brokenSegments;
-                    synchronized(SplitFileFetcherStorage.this) {
-                        brokenSegments = segmentsToTryDecode;
-                        segmentsToTryDecode = null;
-                    }
-                    if(brokenSegments == null) return;
-                    for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
-                        segment.tryStartDecode();
-                    }
-                }
-
-                @Override
-                public int getPriority() {
-                    return NativeThread.LOW_PRIORITY+1; // Slightly more important than other decodes.
-                }
-                
-            });
+            List<SplitFileFetcherSegmentStorage> brokenSegments;
+            synchronized(SplitFileFetcherStorage.this) {
+                brokenSegments = segmentsToTryDecode;
+                segmentsToTryDecode = null;
+            }
+            if(brokenSegments == null) return;
+            for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
+                segment.tryStartDecode();
+            }
         }
     }
     
