@@ -290,9 +290,9 @@ public class SplitFileFetcherStorageTest extends TestCase {
         /** Restore a splitfile fetcher from a file. 
          * @throws StorageFormatException 
          * @throws IOException */
-        public SplitFileFetcherStorage createStorage(StorageCallback cb,
+        public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessThing raf) throws IOException, StorageFormatException {
-            return new SplitFileFetcherStorage(raf, false, cb, makeFetchContext(), random, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
+            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
         }
 
         public FetchContext makeFetchContext() {
@@ -980,7 +980,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         StorageCallback cb = test.createStorageCallback();
         SplitFileFetcherStorage storage = test.createStorage(cb);
         // No need to shutdown the old storage.
-        storage = test.createStorage(cb, cb.getRAF());
+        storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
         storage.close();
     }
     
@@ -993,7 +993,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         StorageCallback cb = test.createStorageCallback();
         SplitFileFetcherStorage storage = test.createStorage(cb);
         // No need to shutdown the old storage.
-        storage = test.createStorage(cb, cb.getRAF());
+        storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
         SplitFileFetcherSegmentStorage segment = storage.segments[0];
         assertFalse(segment.corruptMetadata());
         int total = test.dataBlocks.length+test.checkBlocks.length;
@@ -1026,6 +1026,26 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.checkFailed();
         cb.waitForFree(storage);
         cb.checkFailed();
+    }
+    
+    public void testPersistenceReloadThenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 2;
+        int checkBlocks = 3;
+        long size = 32768*2-1;
+        assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
+        TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        FetchContext ctx = test.makeFetchContext();
+        ctx.maxSplitfileBlockRetries = 2;
+        SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
+        // No need to shutdown the old storage.
+        storage = test.createStorage(cb, ctx, cb.getRAF());
+        for(int i=0;i<3;i++) {
+            boolean[] tried = new boolean[dataBlocks+checkBlocks];
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
+        }
+        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        cb.waitForFailed();
     }
     
 }
