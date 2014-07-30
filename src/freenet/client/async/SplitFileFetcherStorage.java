@@ -434,7 +434,7 @@ public class SplitFileFetcherStorage {
     }
     
     OutputStream checksumOutputStream(OutputStream os) {
-        return new ChecksumOutputStream(os, new CRC32());
+        return new ChecksumOutputStream(os, new CRC32(), true);
     }
 
     private byte[] encodeBasicSettings() {
