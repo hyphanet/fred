@@ -38,11 +38,13 @@ import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
+import freenet.support.CheatingTicker;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
+import freenet.support.WaitableExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -69,8 +71,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
     };
     static BucketFactory bf = new ArrayBucketFactory();
     static LockableRandomAccessThingFactory rafFactory = new ByteArrayRandomAccessThingFactory();
-    static final Executor exec = new PooledExecutor();
-    static final Ticker ticker = new TrivialTicker(exec);
+    static final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
+    static final Ticker ticker = new CheatingTicker(exec);
     static MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, exec);
     static final int BLOCK_SIZE = CHKBlock.DATA_LENGTH;
     private static final OnionFECCodec codec = new OnionFECCodec();
@@ -289,9 +291,10 @@ public class SplitFileFetcherStorageTest extends TestCase {
 
         /** Restore a splitfile fetcher from a file. 
          * @throws StorageFormatException 
-         * @throws IOException */
+         * @throws IOException 
+         * @throws FetchException */
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
-                LockableRandomAccessThing raf) throws IOException, StorageFormatException {
+                LockableRandomAccessThing raf) throws IOException, StorageFormatException, FetchException {
             return new SplitFileFetcherStorage(raf, false, cb, ctx, random, exec, ticker, memoryLimitedJobRunner, new CRCChecksumChecker());
         }
 
@@ -1048,6 +1051,36 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    public void testPersistenceReloadBetweenChooseKey() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
+        int dataBlocks = 2;
+        int checkBlocks = 3;
+        long size = 32768*2-1;
+        assertTrue(dataBlocks * (long)BLOCK_SIZE >= size);
+        TestSplitfile test = TestSplitfile.constructSingleSegment(size, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        FetchContext ctx = test.makeFetchContext();
+        ctx.maxSplitfileBlockRetries = 2;
+        SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
+        // No need to shutdown the old storage.
+        storage = test.createStorage(cb, ctx, cb.getRAF());
+        for(int i=0;i<3;i++) {
+            boolean[] tried = new boolean[dataBlocks+checkBlocks];
+            innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
+            // Reload.
+            exec.waitForIdle();
+            try {
+                storage = test.createStorage(cb, ctx, cb.getRAF());
+                assertTrue(i != 2);
+                storage.start();
+            } catch (FetchException e) {
+                if(i != 2) throw e; // Already failed on the final iteration, otherwise is an error.
+                return;
+            }
+        }
+        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        cb.waitForFailed();
+    }
+    
     public void testPersistenceReloadBetweenFetches() throws IOException, StorageFormatException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException, FetchException {
         int dataBlocks = 2;
         int checkBlocks = 3;
@@ -1075,6 +1108,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             cb.markDownloadedBlock(block);
             if(i != test.dataBlocks.length-1) {
                 // Reload.
+                exec.waitForIdle();
                 storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
                 segment = storage.segments[0];
                 storage.start();
