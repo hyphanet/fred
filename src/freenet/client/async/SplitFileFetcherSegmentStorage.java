@@ -900,7 +900,7 @@ public class SplitFileFetcherSegmentStorage {
             parent.failOnDiskError(e);
             return false;
         }
-        synchronized(this) {
+        synchronized(this) { // Synched because of blocksFound
             return keys.getBlockNumber(key, blocksFound) >= 0;
         }
     }
