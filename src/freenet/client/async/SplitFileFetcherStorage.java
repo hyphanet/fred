@@ -503,23 +503,6 @@ public class SplitFileFetcherStorage {
         return appendChecksum(data);
     }
 
-    /** Append a CRC32 to a (short) byte[] */
-    private byte[] appendChecksum(byte[] data) {
-        return checksumChecker.appendChecksum(data);
-    }
-    
-    public void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
-        byte[] checksumBuf = new byte[checksumLength];
-        RAFLock lock = raf.lockOpen();
-        try {
-            raf.pread(fileOffset, buf, offset, length);
-            raf.pread(fileOffset+length, checksumBuf, 0, checksumLength);
-        } finally {
-            lock.unlock();
-        }
-        checksumChecker.verifyChecksum(buf, offset, length, checksumBuf);
-    }
-
     /** FIXME not used yet */
     private void allocateCrossDataBlock(SplitFileFetcherCrossSegmentStorage segment, Random random) {
         int x = 0;
@@ -993,6 +976,25 @@ public class SplitFileFetcherStorage {
             if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
+    }
+    
+    // Operations with checksums and storage access.
+    
+    /** Append a CRC32 to a (short) byte[] */
+    private byte[] appendChecksum(byte[] data) {
+        return checksumChecker.appendChecksum(data);
+    }
+    
+    public void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
+        byte[] checksumBuf = new byte[checksumLength];
+        RAFLock lock = raf.lockOpen();
+        try {
+            raf.pread(fileOffset, buf, offset, length);
+            raf.pread(fileOffset+length, checksumBuf, 0, checksumLength);
+        } finally {
+            lock.unlock();
+        }
+        checksumChecker.verifyChecksum(buf, offset, length, checksumBuf);
     }
 
     /** Create an OutputStream that we can write formatted data to of a specific length. On 
