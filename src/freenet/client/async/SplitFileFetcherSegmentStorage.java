@@ -890,6 +890,8 @@ public class SplitFileFetcherSegmentStorage {
                     }
                 }
             }
+            if(writeRetries && !kill)
+                metadataDirty = true;
         }
         if(writeRetries && !kill)
             lazyWriteMetadata();
@@ -901,7 +903,7 @@ public class SplitFileFetcherSegmentStorage {
             parent.maybeClearCooldown();
     }
     
-    /** The metadata has been updated. We should write it ... at some point. */
+    /** The metadata has been updated. We should write it ... at some point. CALLER MUST SET metadataDirty! */
     private void lazyWriteMetadata() {
         parent.lazyWriteMetadata();
     }
