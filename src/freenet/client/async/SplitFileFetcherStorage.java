@@ -607,7 +607,8 @@ public class SplitFileFetcherStorage {
             try {
                 segment.readMetadata();
                 if(segment.hasFailed()) {
-                    close(); // Failed, so free it.
+                    raf.close();
+                    raf.free(); // Failed, so free it.
                     throw new FetchException(FetchException.SPLITFILE_ERROR, errors);
                 }
             } catch (ChecksumFailedException e) {
