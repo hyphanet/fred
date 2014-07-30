@@ -874,7 +874,7 @@ public class SplitFileFetcherSegmentStorage {
                 givenUp = true;
                 int target = checkBlocks;
                 if(!parent.lastBlockMightNotBePadded()) target++;
-                if(failedBlocks == target) {
+                if(failedBlocks >= target) {
                     kill = true;
                     finished = true;
                     failed = true;
