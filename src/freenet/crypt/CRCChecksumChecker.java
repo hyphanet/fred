@@ -39,4 +39,11 @@ public class CRCChecksumChecker extends ChecksumChecker {
         return output;
     }
 
+    @Override
+    public byte[] generateChecksum(byte[] data) {
+        Checksum crc = new CRC32();
+        crc.update(data, 0, data.length);
+        return Fields.intToBytes((int)crc.getValue());
+    }
+
 }

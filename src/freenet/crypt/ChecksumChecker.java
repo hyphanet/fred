@@ -21,4 +21,6 @@ public abstract class ChecksumChecker {
     /** Verify a checksum or report */
     public abstract boolean checkChecksum(byte[] data, int offset, int length, byte[] checksum);
 
+    public abstract byte[] generateChecksum(byte[] bufToChecksum);
+
 }
