@@ -920,4 +920,16 @@ public class SplitFileFetcherStorageTest extends TestCase {
         cb.waitForFailed();
     }
     
+    public void testWriteReadSegmentKeys() throws FetchException, MetadataParseException, IOException, CHKEncodeException, MetadataUnresolvedException {
+        int dataBlocks = 3, checkBlocks = 3;
+        TestSplitfile test = TestSplitfile.constructSingleSegment(dataBlocks*BLOCK_SIZE, checkBlocks, null);
+        StorageCallback cb = test.createStorageCallback();
+        SplitFileFetcherStorage storage = test.createStorage(cb);
+        SplitFileFetcherSegmentStorage segment = storage.segments[0];
+        SplitFileSegmentKeys keys = segment.getSegmentKeys();
+        SplitFileSegmentKeys moreKeys = segment.readSegmentKeys();
+        assertTrue(keys.equals(moreKeys));
+        storage.close();
+    }
+    
 }

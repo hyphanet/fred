@@ -157,7 +157,7 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
-    private SplitFileSegmentKeys readSegmentKeys() throws IOException {
+    SplitFileSegmentKeys readSegmentKeys() throws IOException {
         SplitFileSegmentKeys keys = new SplitFileSegmentKeys(dataBlocks + crossSegmentCheckBlocks, checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
         byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null)];
         try {
