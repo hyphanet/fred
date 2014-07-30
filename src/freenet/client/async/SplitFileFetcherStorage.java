@@ -985,7 +985,7 @@ public class SplitFileFetcherStorage {
         return checksumChecker.appendChecksum(data);
     }
     
-    public void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
+    void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
         byte[] checksumBuf = new byte[checksumLength];
         RAFLock lock = raf.lockOpen();
         try {
@@ -1004,7 +1004,7 @@ public class SplitFileFetcherStorage {
      * @param length The length, including checksum, of the data to be written.
      * @return
      */
-    public OutputStream writeChecksummedTo(final long fileOffset, final int length) {
+    OutputStream writeChecksummedTo(final long fileOffset, final int length) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
         OutputStream cos = checksumOutputStream(baos);
         return new FilterOutputStream(cos) {
@@ -1020,7 +1020,7 @@ public class SplitFileFetcherStorage {
         };
     }
 
-    public RAFLock lockRAFOpen() throws IOException {
+    RAFLock lockRAFOpen() throws IOException {
         return raf.lockOpen();
     }
 
