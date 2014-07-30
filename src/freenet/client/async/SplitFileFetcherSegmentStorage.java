@@ -500,11 +500,16 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private byte[][] readAllBlocks() throws IOException {
-        // FIXME consider using a single big byte[].
-        byte[][] ret = new byte[blocksForDecode()][];
-        for(int i=0;i<ret.length;i++)
-            ret[i] = readBlock(i);
-        return ret;
+        RAFLock lock = parent.raf.lockOpen();
+        try {
+            // FIXME consider using a single big byte[].
+            byte[][] ret = new byte[blocksForDecode()][];
+            for(int i=0;i<ret.length;i++)
+                ret[i] = readBlock(i);
+            return ret;
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void triggerAllCrossSegmentCallbacks() {
