@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -181,12 +180,7 @@ public class SplitFileFetcherSegmentStorage {
 
     /** Write the status metadata to disk, after a series of updates. */
     public boolean writeMetadata(boolean force) throws IOException {
-        RAFLock lock = parent.raf.lockOpen();
-        try {
-            return innerWriteMetadata(force);
-        } finally {
-            lock.unlock();
-        }
+        return innerWriteMetadata(force);
     }
     
     /** Read all the blocks, encode them according to their supposed keys and check that they are
@@ -500,7 +494,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     private byte[][] readAllBlocks() throws IOException {
-        RAFLock lock = parent.raf.lockOpen();
+        RAFLock lock = parent.lockRAFOpen();
         try {
             // FIXME consider using a single big byte[].
             byte[][] ret = new byte[blocksForDecode()][];
@@ -528,7 +522,7 @@ public class SplitFileFetcherSegmentStorage {
 
     /** Write a full set of data blocks to disk and update the metadata accordingly. */
     private void writeAllDataBlocks(byte[][] dataBlocks) throws IOException {
-        RAFLock lock = parent.raf.lockOpen();
+        RAFLock lock = parent.lockRAFOpen();
         try {
             synchronized(this) {
                 for(int i=0;i<blocksForDecode();i++) {
@@ -617,7 +611,7 @@ public class SplitFileFetcherSegmentStorage {
                 assert(slotNumber != -1);
                 blocksFetched[slotNumber] = blockNumber;
                 blocksFound[blockNumber] = true;
-                RAFLock lock = parent.raf.lockOpen();
+                RAFLock lock = parent.lockRAFOpen();
                 try {
                     writeDownloadedBlock(slotNumber, decodedData);
                     innerWriteMetadata(true);
@@ -669,11 +663,10 @@ public class SplitFileFetcherSegmentStorage {
         // FIXME Do we need to pad here for really old splitfiles, or does the FEC code do it?
         if(data.length != CHKBlock.DATA_LENGTH) throw new IllegalArgumentException();
         if(slotNumber >= blocksForDecode()) throw new IllegalArgumentException();
-        long offset = blockOffset(slotNumber);
-        parent.raf.pwrite(offset, data, 0, data.length);
+        parent.writeBlock(this, slotNumber, data);
     }
 
-    private long blockOffset(int slotNumber) {
+    long blockOffset(int slotNumber) {
         return segmentBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
     }
 
@@ -682,12 +675,10 @@ public class SplitFileFetcherSegmentStorage {
      * check it) when constructing.
      * @throws IOException */
     private boolean innerWriteMetadata(boolean force) throws IOException {
-        ByteArrayOutputStream baos;
         synchronized(this) {
             if(!(force || metadataDirty)) return false;
-            baos = new ByteArrayOutputStream();
+            OutputStream cos = parent.writeChecksummedTo(segmentStatusOffset, segmentStatusPaddedLength);
             try {
-                OutputStream cos = parent.checksumOutputStream(baos);
                 DataOutputStream dos = new DataOutputStream(cos);
                 for(short s : blocksFetched)
                     dos.writeShort(s);
@@ -701,9 +692,6 @@ public class SplitFileFetcherSegmentStorage {
             }
             metadataDirty = false;
         }
-        byte[] buf = baos.toByteArray();
-        assert(buf.length == segmentStatusPaddedLength);
-        parent.raf.pwrite(segmentStatusOffset, buf, 0, buf.length);
         return true;
     }
     
@@ -756,10 +744,7 @@ public class SplitFileFetcherSegmentStorage {
      * @throws IOException If an error occurred reading the data from disk. */
     private byte[] readBlock(int slotNumber) throws IOException {
         if(slotNumber >= blocksForDecode()) throw new IllegalArgumentException();
-        long offset = blockOffset(slotNumber);
-        byte[] buf = new byte[CHKBlock.DATA_LENGTH];
-        parent.raf.pread(offset, buf, 0, buf.length);
-        return buf;
+        return parent.readBlock(this, slotNumber);
     }
     
     public void onNonFatalFailure(int blockNumber) {
@@ -877,8 +862,7 @@ public class SplitFileFetcherSegmentStorage {
         assert(keysCache.get() == keys);
         assert(this.dataBlocks + this.crossSegmentCheckBlocks == keys.dataBlocks);
         assert(this.checkBlocks == keys.checkBlocks);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStream cos = parent.checksumOutputStream(baos);
+        OutputStream cos = parent.writeChecksummedTo(segmentKeyListOffset, segmentKeyListLength);
         DataOutputStream dos = new DataOutputStream(cos);
         try {
             keys.writeKeys(dos, false);
@@ -888,14 +872,6 @@ public class SplitFileFetcherSegmentStorage {
             throw new Error(e);
         }
         dos.close();
-        byte[] buf = baos.toByteArray();
-        assert(buf.length == segmentKeyListLength);
-        RAFLock lock = parent.raf.lockOpen();
-        try {
-            parent.raf.pwrite(segmentKeyListOffset, buf, 0, buf.length);
-        } finally {
-            lock.unlock();
-        }
     }
 
     public boolean definitelyWantKey(NodeCHK key) {

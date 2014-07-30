@@ -3,6 +3,7 @@ package freenet.client.async;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -10,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
 
 import com.db4o.ObjectContainer;
 
@@ -26,7 +25,6 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.NewFECCodec;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
-import freenet.crypt.ChecksumOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
@@ -36,7 +34,6 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Executor;
-import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
@@ -116,7 +113,7 @@ public class SplitFileFetcherStorage {
     final SplitFileFetcherCallback fetcher;
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
-    final LockableRandomAccessThing raf;
+    private final LockableRandomAccessThing raf;
     /** The segments */
     final SplitFileFetcherSegmentStorage[] segments;
     /** The cross-segments. Null if no cross-segments. */
@@ -996,6 +993,46 @@ public class SplitFileFetcherStorage {
             if(overallCooldownWakeupTime < now) overallCooldownWakeupTime = 0;
             return overallCooldownWakeupTime;
         }
+    }
+
+    /** Create an OutputStream that we can write formatted data to of a specific length. On 
+     * close(), it checks that the length is as expected, computes the checksum, and writes the
+     * data to the specified position in the file.
+     * @param fileOffset The position in the file (raf) of the first byte.
+     * @param length The length, including checksum, of the data to be written.
+     * @return
+     */
+    public OutputStream writeChecksummedTo(final long fileOffset, final int length) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
+        OutputStream cos = checksumOutputStream(baos);
+        return new FilterOutputStream(cos) {
+            
+            public void close() throws IOException {
+                out.close();
+                byte[] buf = baos.toByteArray();
+                if(buf.length != length)
+                    throw new IllegalStateException("Wrote wrong number of bytes: "+buf.length+" should be "+length);
+                raf.pwrite(fileOffset, buf, 0, length);
+            }
+            
+        };
+    }
+
+    public RAFLock lockRAFOpen() throws IOException {
+        return raf.lockOpen();
+    }
+
+    void writeBlock(SplitFileFetcherSegmentStorage segment, int slotNumber, byte[] data) 
+    throws IOException {
+        raf.pwrite(segment.blockOffset(slotNumber), data, 0, data.length);
+    }
+
+    byte[] readBlock(SplitFileFetcherSegmentStorage segment, int slotNumber) 
+    throws IOException {
+        long offset = segment.blockOffset(slotNumber);
+        byte[] buf = new byte[CHKBlock.DATA_LENGTH];
+        raf.pread(offset, buf, 0, buf.length);
+        return buf;
     }
 
 }

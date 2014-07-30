@@ -146,21 +146,11 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         synchronized(this) {
             if(!finishedSetup) throw new IllegalStateException();
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(totalSegmentBloomFiltersSize());
-        OutputStream cos = storage.checksumOutputStream(baos);
+        OutputStream cos = storage.writeChecksummedTo(fileOffset, totalSegmentBloomFiltersSize());
         for(BinaryBloomFilter segFilter : segmentFilters) {
             segFilter.writeTo(cos);
         }
         cos.close();
-        byte[] buf = baos.toByteArray();
-        baos = null;
-        assert(buf.length == totalSegmentBloomFiltersSize());
-        RAFLock lock = storage.raf.lockOpen();
-        try {
-            storage.raf.pwrite(fileOffset, buf, 0, buf.length);
-        } finally {
-            lock.unlock();
-        }        
     }
     
     int totalSegmentBloomFiltersSize() {
@@ -180,20 +170,9 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         synchronized(this) {
             if(!finishedSetup) throw new IllegalStateException();
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(paddedMainBloomFilterSize());
-        OutputStream cos = storage.checksumOutputStream(baos);
+        OutputStream cos = storage.writeChecksummedTo(fileOffset, paddedMainBloomFilterSize());
         filter.writeTo(cos);
         cos.close();
-        byte[] buf = baos.toByteArray();
-        baos = null;
-        assert(buf.length == paddedMainBloomFilterSize());
-        
-        RAFLock lock = storage.raf.lockOpen();
-        try {
-            storage.raf.pwrite(fileOffset, buf, 0, buf.length);
-        } finally {
-            lock.unlock();
-        }
     }
     
     public int paddedMainBloomFilterSize() {
