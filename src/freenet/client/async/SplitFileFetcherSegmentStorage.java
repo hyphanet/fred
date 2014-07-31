@@ -140,7 +140,7 @@ public class SplitFileFetcherSegmentStorage {
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossCheckBlocks, writeRetries, parent.checksumLength, parent.persistent);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
+            storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null, parent.checksumLength);
         this.segmentBlockDataOffset = segmentDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
@@ -193,7 +193,7 @@ public class SplitFileFetcherSegmentStorage {
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossSegmentCheckBlocks, writeRetries, parent.checksumLength, true);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
+            storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null, parent.checksumLength);
         keysCache = null; // Will be read later
         this.writeRetries = writeRetries;
         this.segmentBlockDataOffset = segmentDataOffset;
