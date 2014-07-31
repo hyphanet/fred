@@ -29,6 +29,7 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory.InsufficientSpaceException;
 
 import java.util.ArrayList;
 
@@ -596,16 +597,48 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
 		@Override
 		public void run() {
+		    boolean saidSo = false;
 			try {
 				long now = System.currentTimeMillis();
 				// First migrate all the old buckets.
-				cleanBucketQueue(now, false);
+				while(true) {
+				    try {
+                        cleanBucketQueue(now, false);
+                    } catch (InsufficientSpaceException e) {
+                        if(!saidSo) {
+                            Logger.error(this, "Insufficient disk space to migrate in-RAM buckets to disk!");
+                            System.err.println("Out of disk space!");
+                            saidSo = true;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {
+                            // Ignore.
+                        }
+                        continue;
+                    }
+				    break;
+				}
+				saidSo = false;
 				while(true) {
 					// Now migrate buckets until usage is below the lower threshold.
 					synchronized(TempBucketFactory.this) {
 						if(bytesInUse <= maxRamUsed * MAX_USAGE_LOW) return;
 					}
-					if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
+					try {
+                        if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
+                    } catch (InsufficientSpaceException e) {
+                        if(!saidSo) {
+                            Logger.error(this, "Insufficient disk space to migrate in-RAM buckets to disk!");
+                            System.err.println("Out of disk space!");
+                            saidSo = true;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {
+                            // Ignore.
+                        }
+                    }
 				}
 			} finally {
 				synchronized(TempBucketFactory.this) {
@@ -622,8 +655,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	 * just to free up space. Otherwise we will migrate all long-lived buckets but
 	 * not any others. 
 	 * @return True if we migrated any buckets.
+	 * @throws InsufficientSpaceException If there is not enough space to migrate buckets to disk.
 	 */
-	private boolean cleanBucketQueue(long now, boolean force) {
+	private boolean cleanBucketQueue(long now, boolean force) throws InsufficientSpaceException {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
 		Queue<Migratable> toMigrate = null;
@@ -664,6 +698,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			for(Migratable tmpBucket : toMigrate) {
 				try {
 					tmpBucket.migrateToDisk();
+				} catch (InsufficientSpaceException e) {
+				    throw e;
 				} catch(IOException e) {
 					Logger.error(tmpBucket, "An IOE occured while migrating long-lived buckets:" + e.getMessage(), e);
 				}
@@ -708,7 +744,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         protected LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException {
             ByteArrayRandomAccessThing b = (ByteArrayRandomAccessThing)underlying;
             byte[] buf = b.getBuffer();
-            return underlyingDiskRAFFactory.makeRAF(buf, 0, (int)size);
+            return diskRAFFactory.makeRAF(buf, 0, (int)size);
         }
 
         @Override
