@@ -887,6 +887,15 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
 	}
 
+	/** Write either a null or a FreenetURI. */
+	public static void writeFullBinaryKeyWithLength(FreenetURI uri, DataOutputStream dos) 
+	throws IOException {
+	    if(uri == null)
+	        dos.writeShort((short)0);
+	    else
+	        uri.writeFullBinaryKeyWithLength(dos);
+	}
+	
 	/**
 	 * Write a binary representation of this URI, with a short length, so it can be passed over if necessary.
 	 * @param dos The stream to write to.

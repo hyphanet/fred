@@ -176,8 +176,12 @@ public class SplitFileFetcherStorage {
     final long offsetSegmentBloomFilters;
     /** Offset to start of the original metadata in bytes */
     final long offsetOriginalMetadata;
-    /** Offset to start of the original URL in bytes */
-    final long offsetOriginalURI;
+    /** Offset to start of the original details in bytes. "Original details" includes the URI to 
+     * this download (if available), the original URI for the whole download (if available), 
+     * whether this is the final fetch (it might be a metadata or container fetch), and data from
+     * the ultimate client, e.g. the Identifier, whether it is on the Global queue, the client name
+     * if it isn't etc. */
+    final long offsetOriginalDetails;
     /** Offset to start of the basic settings in bytes */
     final long offsetBasicSettings;
     /** Length of all section checksums */
@@ -208,9 +212,11 @@ public class SplitFileFetcherStorage {
     public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherCallback fetcher, 
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
-            boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
-            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Executor exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, boolean persistent) 
+            boolean realTime, KeySalter salt, FreenetURI thisKey, FreenetURI origKey, 
+            boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
+            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
+            Executor exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
+            ChecksumChecker checker, boolean persistent) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.executor = exec;
@@ -411,10 +417,10 @@ public class SplitFileFetcherStorage {
             }
             bos.close();
             long metadataLength = metadataTemp.size();
-            offsetOriginalURI = offsetOriginalMetadata + metadataLength;
+            offsetOriginalDetails = offsetOriginalMetadata + metadataLength;
             
-            encodedURI = encodeAndChecksumURI(thisKey);
-            this.offsetBasicSettings = offsetOriginalURI + encodedURI.length;
+            encodedURI = encodeAndChecksumOriginalDetails(thisKey, origKey, clientDetails, isFinalFetch);
+            this.offsetBasicSettings = offsetOriginalDetails + encodedURI.length;
             
             encodedBasicSettings = encodeBasicSettings();
             totalLength = 
@@ -426,7 +432,7 @@ public class SplitFileFetcherStorage {
                 8; // magic
         } else {
             totalLength = offsetSegmentStatus;
-            offsetOriginalURI = offsetBasicSettings = offsetSegmentStatus;
+            offsetOriginalDetails = offsetBasicSettings = offsetSegmentStatus;
             metadataTemp = null;
             encodedURI = encodedBasicSettings = null;
         }
@@ -447,7 +453,7 @@ public class SplitFileFetcherStorage {
                 keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
                 BucketTools.copyTo(metadataTemp, raf, offsetOriginalMetadata, -1);
                 metadataTemp.free();
-                raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
+                raf.pwrite(offsetOriginalDetails, encodedURI, 0, encodedURI.length);
                 raf.pwrite(offsetBasicSettings, encodedBasicSettings, 0, encodedBasicSettings.length);
                 
                 // This bit tricky because version is included in the checksum.
@@ -595,8 +601,8 @@ public class SplitFileFetcherStorage {
         offsetOriginalMetadata = dis.readLong();
         if(offsetOriginalMetadata < 0 || offsetOriginalMetadata > rafLength) 
             throw new StorageFormatException("Invalid offset (original metadata)");
-        offsetOriginalURI = dis.readLong();
-        if(offsetOriginalURI < 0 || offsetOriginalURI > rafLength) 
+        offsetOriginalDetails = dis.readLong();
+        if(offsetOriginalDetails < 0 || offsetOriginalDetails > rafLength) 
             throw new StorageFormatException("Invalid offset (original metadata)");
         offsetBasicSettings = dis.readLong();
         if(offsetBasicSettings != basicSettingsOffset)
@@ -711,7 +717,7 @@ public class SplitFileFetcherStorage {
             dos.writeLong(offsetMainBloomFilter);
             dos.writeLong(offsetSegmentBloomFilters);
             dos.writeLong(offsetOriginalMetadata);
-            dos.writeLong(offsetOriginalURI);
+            dos.writeLong(offsetOriginalDetails);
             dos.writeLong(offsetBasicSettings);
             dos.writeInt(finalMinCompatMode.ordinal());
             dos.writeInt(segments.length);
@@ -733,20 +739,17 @@ public class SplitFileFetcherStorage {
         }
         return baos.toByteArray();
     }
-
-    /** Should work even for null key */
-    private byte[] encodeAndChecksumURI(FreenetURI key) {
-        byte[] data;
-        if(key == null)
-            data = new byte[0];
-        else
-            try {
-                data = key.toString(true, false).getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible.
-                throw new Error(e);
-            }
-        return appendChecksum(data);
+    
+    private byte[] encodeAndChecksumOriginalDetails(FreenetURI thisKey, FreenetURI origKey,
+            byte[] clientDetails, boolean isFinalFetch) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        FreenetURI.writeFullBinaryKeyWithLength(thisKey, dos);
+        FreenetURI.writeFullBinaryKeyWithLength(origKey, dos);
+        dos.writeBoolean(isFinalFetch);
+        dos.writeInt(clientDetails.length);
+        dos.write(clientDetails);
+        return checksumChecker.appendChecksum(baos.toByteArray());
     }
 
     /** FIXME not used yet */

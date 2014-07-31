@@ -957,7 +957,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				            metadata.getMinCompatMode());
 				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
-				            topCompatibilityMode, false, thisKey, container, context);
+				            topCompatibilityMode, false, thisKey, isFinal, container, context);
 				} else {
 				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
 				            realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);

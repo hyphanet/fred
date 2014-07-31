@@ -81,7 +81,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
             ClientMetadata clientMetadata, long token, boolean topDontCompress, 
-            short topCompatibilityMode, boolean persistent, FreenetURI thisKey, 
+            short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
             ObjectContainer container, ClientContext context) 
             throws FetchException, MetadataParseException {
         if(persistent) throw new UnsupportedOperationException();
@@ -105,7 +105,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         try {
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
-                    thisKey, context.random, context.tempBucketFactory, context.tempRAFFactory, 
+                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(), 
+                    context.random, context.tempBucketFactory, context.tempRAFFactory, 
                     context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);

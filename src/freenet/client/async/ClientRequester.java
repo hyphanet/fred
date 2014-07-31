@@ -462,4 +462,12 @@ public abstract class ClientRequester {
 			return allRequesters.keySet().toArray(new ClientRequester[0]);
 		}
 	}
+
+    /** @return A byte[] representing the original client, to be written to the file storing a 
+     * persistent download. E.g. for FCP, this will include the Identifier, whether it is on the 
+     * global queue and the client name. */
+    public byte[] getClientDetail() {
+        return new byte[0];
+    }
+    
 }
