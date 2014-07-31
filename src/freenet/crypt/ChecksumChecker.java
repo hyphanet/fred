@@ -23,4 +23,10 @@ public abstract class ChecksumChecker {
 
     public abstract byte[] generateChecksum(byte[] bufToChecksum);
 
+    public abstract int getChecksumTypeID();
+    
+    // Checksum IDs.
+    // FIXME use an enum when we are creating them from ID's.
+    public static final int CHECKSUM_CRC = 1;
+
 }

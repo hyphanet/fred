@@ -429,6 +429,8 @@ public class SplitFileFetcherStorage {
                 4 + // length of basic settings
                 checksumLength + // might as well checksum the footer as well
                 4 + // version
+                4 + // flags
+                2 + // checksum type
                 8; // magic
         } else {
             totalLength = offsetSegmentStatus;
@@ -458,12 +460,16 @@ public class SplitFileFetcherStorage {
                 
                 // This bit tricky because version is included in the checksum.
                 // When the RAF is encrypted, we use HMAC's and this is important.
+                // FIXME is Fields.bytesToInt etc compatible with DataOutputStream.*?
+                // FIXME if not, we need something that is ...
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream dos = new DataOutputStream(baos);
                 dos.writeInt(encodedBasicSettings.length - checksumLength);
                 byte[] bufToWrite = baos.toByteArray();
                 baos = new ByteArrayOutputStream();
                 dos = new DataOutputStream(baos);
+                dos.writeInt(0); // flags
+                dos.writeShort(checksumChecker.getChecksumTypeID());
                 dos.writeInt(VERSION);
                 byte[] version = baos.toByteArray();
                 byte[] bufToChecksum = Arrays.copyOf(bufToWrite, bufToWrite.length+version.length);
@@ -533,13 +539,30 @@ public class SplitFileFetcherStorage {
         int version = dis.readInt();
         if(version != 1)
             throw new StorageFormatException("Wrong version "+version);
+        // 2 bytes: Checksum type
+        byte[] checksumTypeBuf = new byte[2];
+        raf.pread(rafLength-14, checksumTypeBuf, 0, 2);
+        dis = new DataInputStream(new ByteArrayInputStream(checksumTypeBuf));
+        int checksumType = dis.readShort();
+        if(checksumType != ChecksumChecker.CHECKSUM_CRC)
+            throw new StorageFormatException("Unknown checksum type "+checksumType);
+        // 4 bytes: Flags. Unused at present.
+        byte[] flagsBuf = new byte[4];
+        raf.pread(rafLength-18, flagsBuf, 0, 4);
+        dis = new DataInputStream(new ByteArrayInputStream(flagsBuf));
+        int flags = dis.readInt();
+        if(flags != 0)
+            throw new StorageFormatException("Unknown flags: "+flags);
         // 4 bytes basic settings length and a checksum, which includes both the settings length and the version.
-        buf = new byte[8];
-        raf.pread(rafLength-(12+4+checksumLength), buf, 0, 4);
+        buf = new byte[14];
+        raf.pread(rafLength-(22+checksumLength), buf, 0, 4);
         byte[] checksum = new byte[checksumLength];
-        raf.pread(rafLength-(12+checksumLength), checksum, 0, checksumLength);
-        System.arraycopy(versionBuf, 0, buf, 4, 4);
-        if(!checksumChecker.checkChecksum(buf, 0, 8, checksum))
+        // Check the checksum.
+        raf.pread(rafLength-(18+checksumLength), checksum, 0, checksumLength);
+        System.arraycopy(flagsBuf, 0, buf, 4, 4);
+        System.arraycopy(checksumTypeBuf, 0, buf, 8, 2);
+        System.arraycopy(versionBuf, 0, buf, 10, 4);
+        if(!checksumChecker.checkChecksum(buf, 0, 14, checksum))
             throw new StorageFormatException("Checksum failed on basic settings length and version");
         dis = new DataInputStream(new ByteArrayInputStream(buf));
         int basicSettingsLength = dis.readInt();
@@ -547,7 +570,7 @@ public class SplitFileFetcherStorage {
                 basicSettingsLength > 4096)
             throw new StorageFormatException("Bad basic settings length");
         byte[] basicSettingsBuffer = new byte[basicSettingsLength];
-        long basicSettingsOffset = rafLength-(12+4+checksumLength*2+basicSettingsLength);
+        long basicSettingsOffset = rafLength-(18+4+checksumLength*2+basicSettingsLength);
         try {
             preadChecksummed(basicSettingsOffset, 
                     basicSettingsBuffer, 0, basicSettingsLength);

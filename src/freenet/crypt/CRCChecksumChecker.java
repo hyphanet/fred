@@ -46,4 +46,9 @@ public class CRCChecksumChecker extends ChecksumChecker {
         return Fields.intToBytes((int)crc.getValue());
     }
 
+    @Override
+    public int getChecksumTypeID() {
+        return ChecksumChecker.CHECKSUM_CRC;
+    }
+
 }
