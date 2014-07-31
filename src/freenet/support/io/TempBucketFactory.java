@@ -29,6 +29,7 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+
 import java.util.ArrayList;
 
 /**
@@ -54,7 +55,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	public final static float DEFAULT_FACTOR = 1.25F;
 	
 	private final FilenameGenerator filenameGenerator;
-	private final PooledFileRandomAccessThingFactory diskRAFFactory;
+	private final PooledFileRandomAccessThingFactory underlyingDiskRAFFactory;
+	private final DiskSpaceCheckingRandomAccessThingFactory diskRAFFactory;
 	private long bytesInUse = 0;
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
@@ -478,7 +480,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	// Storage accounting disabled by default.
-	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
+	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt, long minDiskSpace) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
@@ -486,9 +488,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.diskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
-		diskRAFFactory.enableCrypto(reallyEncrypt);
-		
+		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
+		underlyingDiskRAFFactory.enableCrypto(reallyEncrypt);
+		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
+		        filenameGenerator.getDir(), minDiskSpace);
 	}
 
 	@Override
@@ -530,7 +533,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	
 	public void setEncryption(boolean value) {
 		reallyEncrypt = value;
-		diskRAFFactory.enableCrypto(value);
+		underlyingDiskRAFFactory.enableCrypto(value);
+	}
+	
+	public void setMinDiskSpace(long min) {
+	    diskRAFFactory.setMinDiskSpace(min);
 	}
 	
 	public boolean isEncrypting() {
@@ -697,7 +704,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         protected LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException {
             ByteArrayRandomAccessThing b = (ByteArrayRandomAccessThing)underlying;
             byte[] buf = b.getBuffer();
-            return diskRAFFactory.makeRAF(buf, 0, (int)size);
+            return underlyingDiskRAFFactory.makeRAF(buf, 0, (int)size);
         }
 
         @Override

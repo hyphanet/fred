@@ -29,7 +29,7 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
     @Override
     public void setUp() throws IOException {
         fg = new FilenameGenerator(weakPRNG, true, f, "temp-raf-test-");
-        factory = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
+        factory = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false, 1024*1024*2);
         assertEquals(factory.getRamUsed(), 0);
         FileUtil.removeAll(f);
         f.mkdir();
