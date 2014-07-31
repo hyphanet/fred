@@ -523,6 +523,7 @@ public class SplitFileFetcherStorage {
         this.cooldownTries = origContext.getCooldownRetries();
         this.cooldownLength = origContext.getCooldownTime();
         this.errors = new FailureCodeTracker(false); // FIXME persist???
+        // FIXME this is hideous! Rewrite the writing/parsing code here in a less ugly way. However, it works...
         long rafLength = raf.size();
         if(raf.size() < 8 /* FIXME more! */)
             throw new StorageFormatException("Too short");
