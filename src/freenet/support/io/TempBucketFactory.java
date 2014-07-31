@@ -54,7 +54,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	public final static float DEFAULT_FACTOR = 1.25F;
 	
 	private final FilenameGenerator filenameGenerator;
-	private final LockableRandomAccessThingFactory diskRAFFactory;
+	private final PooledFileRandomAccessThingFactory diskRAFFactory;
 	private long bytesInUse = 0;
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
@@ -486,7 +486,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.diskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator);
+		this.diskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
+		diskRAFFactory.enableCrypto(reallyEncrypt);
+		
 	}
 
 	@Override
@@ -528,6 +530,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	
 	public void setEncryption(boolean value) {
 		reallyEncrypt = value;
+		diskRAFFactory.enableCrypto(value);
 	}
 	
 	public boolean isEncrypting() {

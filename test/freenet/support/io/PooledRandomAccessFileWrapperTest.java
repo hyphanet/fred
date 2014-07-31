@@ -24,11 +24,13 @@ public class PooledRandomAccessFileWrapperTest extends RandomAccessThingTestBase
     public void tearDown() {
         FileUtil.removeAll(base);
     }
-
+    
+    private Random r = new Random(222831072);
+    
     @Override
     protected PooledRandomAccessFileWrapper construct(long size) throws IOException {
         File f = File.createTempFile("test", ".tmp", base);
-        return new PooledRandomAccessFileWrapper(f, "rw", size);
+        return new PooledRandomAccessFileWrapper(f, "rw", size, r.nextBoolean() ? r : null);
     }
 
     /** Simplest test for pooling. TODO Add more. */

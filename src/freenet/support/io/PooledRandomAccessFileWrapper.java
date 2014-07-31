@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Random;
 
 import freenet.support.Logger;
+import freenet.support.math.MersenneTwister;
 
 /** Random access files with a limited number of open files, using a pool. 
  * LOCKING OPTIMISATION: Contention on closables likely here. It's not clear how to avoid that, FIXME.
@@ -28,7 +30,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     private final long length;
     private boolean closed;
     
-    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength) throws IOException {
+    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength, Random seedRandom) throws IOException {
         this.file = file;
         this.mode = mode;
         lockLevel = 0;
@@ -40,9 +42,13 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
             if(forceLength >= 0) {
                 // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
                 raf.seek(0);
+                MersenneTwister mt = null;
+                if(seedRandom != null)
+                    mt = new MersenneTwister(seedRandom.nextLong());
                 byte[] buf = new byte[4096];
                 for(long l = 0; l < forceLength; l+=4096) {
-                    // FIXME If encryption is enabled, we need to use random bytes.
+                    if(mt != null)
+                        mt.nextBytes(buf);
                     int maxWrite = (int)Math.min(4096, forceLength - l);
                     raf.write(buf, 0, maxWrite);
                 }
