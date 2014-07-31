@@ -57,6 +57,7 @@ public class ClientContext {
 	public transient PersistentFileTracker persistentFileTracker;
 	public transient final BucketFactory tempBucketFactory;
 	public transient final LockableRandomAccessThingFactory tempRAFFactory;
+	public transient final LockableRandomAccessThingFactory persistentRAFFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
@@ -78,10 +79,11 @@ public class ClientContext {
 
 	public ClientContext(long bootID, long nodeDBHandle, DBJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
-			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
-			USKManager uskManager, RandomSource strongRandom,
+			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
+			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
-			LockableRandomAccessThingFactory rafFactory, RealCompressor rc, DatastoreChecker checker, 
+			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
+			RealCompressor rc, DatastoreChecker checker, 
 			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
 		this.bootID = bootID;
 		this.fecQueue = fecQueue;
@@ -99,6 +101,7 @@ public class ClientContext {
 		this.ticker = ticker;
 		this.fg = fg;
 		this.persistentFG = persistentFG;
+		this.persistentRAFFactory = persistentRAFFactory;
 		this.rc = rc;
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;

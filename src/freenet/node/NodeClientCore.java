@@ -84,10 +84,13 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.RealCompressor;
+import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
+import freenet.support.io.PooledFileRandomAccessThingFactory;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -119,6 +122,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public FilenameGenerator persistentFilenameGenerator;
 	public final TempBucketFactory tempBucketFactory;
 	public PersistentTempBucketFactory persistentTempBucketFactory;
+	public final DiskSpaceCheckingRandomAccessThingFactory persistentRAFFactory;
 	public final Node node;
 	public final RequestTracker tracker;
 	final NodeStats nodeStats;
@@ -336,6 +340,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
 	                    minDiskFreeLongTerm = val;
 	                }
+	                persistentRAFFactory.setMinDiskSpace(val);
 	            }
 	            
 	        }, true);
@@ -371,12 +376,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		long memoryLimitedJobsMemoryLimit = FECQueue.MIN_MEMORY_ALLOCATION; // FIXME 
+		long memoryLimitedJobsMemoryLimit = FECQueue.MIN_MEMORY_ALLOCATION; // FIXME
+		LockableRandomAccessThingFactory raff = 
+		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
+		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
+		        persistentFilenameGenerator.getDir(), minDiskFreeLongTerm);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
+		        persistentRAFFactory, compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
