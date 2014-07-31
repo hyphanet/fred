@@ -320,48 +320,50 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 				tempBucketFactory.setEncryption(val);
 			}
 		});
+		
+	      nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
+
+	            @Override
+	            public Long get() {
+	                synchronized(NodeClientCore.this) {
+	                    return minDiskFreeLongTerm;
+	                }
+	            }
+
+	            @Override
+	            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+	                synchronized(NodeClientCore.this) {
+	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
+	                    minDiskFreeLongTerm = val;
+	                }
+	            }
+	            
+	        }, true);
+	        minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
+	        
+	        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
+
+	            @Override
+	            public Long get() {
+	                synchronized(NodeClientCore.this) {
+	                    return minDiskFreeShortTerm;
+	                }
+	            }
+
+	            @Override
+	            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+	                synchronized(NodeClientCore.this) {
+	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
+	                    minDiskFreeShortTerm = val;
+	                }
+	                tempBucketFactory.setMinDiskSpace(val);
+	            }
+	            
+	        }, true);
+	        minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
+	        
 		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
-		nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
-
-            @Override
-            public Long get() {
-                synchronized(NodeClientCore.this) {
-                    return minDiskFreeLongTerm;
-                }
-            }
-
-            @Override
-            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-                synchronized(NodeClientCore.this) {
-                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
-                    minDiskFreeLongTerm = val;
-                }
-            }
-		    
-		}, true);
-		minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
-		
-        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
-
-            @Override
-            public Long get() {
-                synchronized(NodeClientCore.this) {
-                    return minDiskFreeShortTerm;
-                }
-            }
-
-            @Override
-            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-                synchronized(NodeClientCore.this) {
-                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
-                    minDiskFreeShortTerm = val;
-                }
-            }
-            
-        }, true);
-        minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
-        
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 
 		healingQueue = new SimpleHealingQueue(
