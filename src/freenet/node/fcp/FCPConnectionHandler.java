@@ -73,7 +73,7 @@ public class FCPConnectionHandler implements Closeable {
 	private FCPClient foreverClient;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
-	protected final String connectionIdentifier;
+	public final String connectionIdentifier;
 	private static volatile boolean logMINOR;
 	private boolean killedDupe;
 

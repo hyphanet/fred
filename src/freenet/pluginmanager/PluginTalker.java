@@ -4,6 +4,7 @@
 package freenet.pluginmanager;
 
 import java.lang.ref.WeakReference;
+import java.util.UUID;
 
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler;
@@ -25,20 +26,31 @@ public class PluginTalker {
 	protected WeakReference<FredPluginFCP> pluginRef;
 	protected String pluginName;
 
-	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String connectionIdentifier) throws PluginNotFoundException {
+	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String clientSideIdentifier) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
 		pluginRef = findPlugin(pluginname2);
 		access = FredPluginFCP.ACCESS_DIRECT;
-		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, connectionIdentifier);
+		
+		// Normally, the clientIdentifier passed to the PluginReplySenderDirect() shall be an identifier of the particular network connection to the client.
+		// But this PluginTalker constructor typically gets called by PluginRespirator.getPluginTalker() which is called directly by client plugins.
+		// So there is no real FCP network connection, the client plugin runs in the same node as the server plugin.
+		// As we have no network connection to pull an ID from, we assume a new client for each call of this constructor by computing a random clientIdentifier.
+		final String clientIdentifier = UUID.randomUUID().toString();
+		
+		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, clientIdentifier, clientSideIdentifier);
 	}
 
-	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String connectionIdentifier, boolean access2) throws PluginNotFoundException {
+	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String clientSideIdentifier, boolean access2) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
 		pluginRef = findPlugin(pluginname2);
 		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
-		replysender = new PluginReplySenderFCP(handler, pluginname2, connectionIdentifier);
+		
+		// FCPConnectionHandler.connectionIdentifier is unique for each network connection of a client, which is exactly what the PluginReplySenderFCP() wants.
+		final String clientIdentifier = handler.connectionIdentifier;
+		
+		replysender = new PluginReplySenderFCP(handler, pluginname2, clientIdentifier, clientSideIdentifier);
 	}
 
 	protected WeakReference<FredPluginFCP> findPlugin(String pluginname2) throws PluginNotFoundException {
