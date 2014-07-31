@@ -76,6 +76,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     private boolean failed;
     private boolean succeeded;
     private final boolean wantBinaryBlob;
+    private final boolean persistent;
     
     SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
@@ -83,6 +84,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, 
             ObjectContainer container, ClientContext context) 
             throws FetchException, MetadataParseException {
+        if(persistent) throw new UnsupportedOperationException();
+        this.persistent = false;
         this.cb = rcb;
         this.parent = parent;
         this.realTimeFlag = realTimeFlag;
@@ -103,7 +106,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
                     thisKey, context.random, context.tempBucketFactory, context.tempRAFFactory, 
-                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker());
+                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);

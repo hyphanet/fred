@@ -138,6 +138,12 @@ public class SplitFileFetcherStorage {
     final ClientMetadata clientMetadata;
     /** Decompressors. Set on construction and passed to onSuccess(). */
     final List<COMPRESSOR_TYPE> decompressors;
+    /** False = Transient: We are using the RAF as scratch space, we only need to write the blocks,
+     * and the keys (if we don't keep them in memory). True = Persistent: It must be possible to 
+     * resume after a node restart. Ideally we'd like to be able to recover the download in its
+     * entirety without needing any additional information, but at a minimum we want to be able to
+     * continue it while passing in the usual external arguments (FetchContext, parent, etc). */
+    final boolean persistent;
     
     private boolean finishedFetcher;
     private boolean finishedEncoding;
@@ -204,7 +210,7 @@ public class SplitFileFetcherStorage {
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, Executor exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) 
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, boolean persistent) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.executor = exec;
@@ -218,6 +224,7 @@ public class SplitFileFetcherStorage {
         this.errors = new FailureCodeTracker(false);
         this.checksumChecker = checker;
         this.checksumLength = checker.checksumLength();
+        this.persistent = persistent;
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
@@ -254,7 +261,7 @@ public class SplitFileFetcherStorage {
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             storedSegmentStatusLength +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1, checksumLength);
+                        crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
         }
         
         storedBlocksLength = (splitfileDataBlocks + splitfileCheckBlocks) * CHKBlock.DATA_LENGTH;
@@ -312,10 +319,15 @@ public class SplitFileFetcherStorage {
         
         this.offsetKeyList = storedBlocksLength;
         this.offsetSegmentStatus = offsetKeyList + storedKeysLength;
-        this.offsetMainBloomFilter = offsetSegmentStatus + storedSegmentStatusLength;
-        this.offsetSegmentBloomFilters = offsetMainBloomFilter + keyListener.paddedMainBloomFilterSize();
-        this.offsetOriginalMetadata = offsetSegmentBloomFilters + 
-            keyListener.totalSegmentBloomFiltersSize();
+        if(persistent) {
+            this.offsetMainBloomFilter = offsetSegmentStatus + storedSegmentStatusLength;
+            this.offsetSegmentBloomFilters = offsetMainBloomFilter + keyListener.paddedMainBloomFilterSize();
+            this.offsetOriginalMetadata = offsetSegmentBloomFilters + 
+                keyListener.totalSegmentBloomFiltersSize();
+        } else {
+            // Don't store anything except the blocks and the key list.
+            offsetMainBloomFilter = offsetSegmentBloomFilters = offsetOriginalMetadata = offsetSegmentStatus;
+        }
             
         
         long dataOffset = 0;
@@ -340,7 +352,7 @@ public class SplitFileFetcherStorage {
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1, checksumLength);
+                        crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
             for(int j=0;j<(dataBlocks+checkBlocks);j++) {
                 keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
             }
@@ -382,31 +394,42 @@ public class SplitFileFetcherStorage {
             crossSegments = null;
         }
         
-        // Write the metadata to a temporary file to get its exact length.
-        Bucket metadataTemp = tempBucketFactory.makeBucket(-1);
-        OutputStream os = metadataTemp.getOutputStream();
-        OutputStream cos = checksumOutputStream(os);
-        BufferedOutputStream bos = new BufferedOutputStream(cos);
-        try {
-            metadata.writeTo(new DataOutputStream(bos));
-        } catch (MetadataUnresolvedException e) {
-            throw new FetchException(FetchException.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
+        long totalLength;
+        Bucket metadataTemp;
+        byte[] encodedURI;
+        byte[] encodedBasicSettings;
+        if(persistent) {
+            // Write the metadata to a temporary file to get its exact length.
+            metadataTemp = tempBucketFactory.makeBucket(-1);
+            OutputStream os = metadataTemp.getOutputStream();
+            OutputStream cos = checksumOutputStream(os);
+            BufferedOutputStream bos = new BufferedOutputStream(cos);
+            try {
+                metadata.writeTo(new DataOutputStream(bos));
+            } catch (MetadataUnresolvedException e) {
+                throw new FetchException(FetchException.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
+            }
+            bos.close();
+            long metadataLength = metadataTemp.size();
+            offsetOriginalURI = offsetOriginalMetadata + metadataLength;
+            
+            encodedURI = encodeAndChecksumURI(thisKey);
+            this.offsetBasicSettings = offsetOriginalURI + encodedURI.length;
+            
+            encodedBasicSettings = encodeBasicSettings();
+            totalLength = 
+                offsetBasicSettings + // rest of file
+                encodedBasicSettings.length + // basic settings
+                4 + // length of basic settings
+                checksumLength + // might as well checksum the footer as well
+                4 + // version
+                8; // magic
+        } else {
+            totalLength = offsetSegmentStatus;
+            offsetOriginalURI = offsetBasicSettings = offsetSegmentStatus;
+            metadataTemp = null;
+            encodedURI = encodedBasicSettings = null;
         }
-        bos.close();
-        long metadataLength = metadataTemp.size();
-        offsetOriginalURI = offsetOriginalMetadata + metadataLength;
-        
-        byte[] encodedURI = encodeAndChecksumURI(thisKey);
-        this.offsetBasicSettings = offsetOriginalURI + encodedURI.length;
-        
-        byte[] encodedBasicSettings = encodeBasicSettings();
-        long totalLength = 
-            offsetBasicSettings + // rest of file
-            encodedBasicSettings.length + // basic settings
-            4 + // length of basic settings
-            checksumLength + // might as well checksum the footer as well
-            4 + // version
-            8; // magic
         
         // Create the actual LockableRandomAccessThing
         
@@ -417,44 +440,46 @@ public class SplitFileFetcherStorage {
                 SplitFileFetcherSegmentStorage segment = segments[i];
                 segment.writeKeysWithChecksum(segmentKeys[i]);
             }
-            for(SplitFileFetcherSegmentStorage segment : segments)
-                segment.writeMetadata();
-            keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
-            keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
-            BucketTools.copyTo(metadataTemp, raf, offsetOriginalMetadata, -1);
-            metadataTemp.free();
-            raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
-            raf.pwrite(offsetBasicSettings, encodedBasicSettings, 0, encodedBasicSettings.length);
-            
-            // This bit tricky because version is included in the checksum.
-            // When the RAF is encrypted, we use HMAC's and this is important.
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            dos.writeInt(encodedBasicSettings.length - checksumLength);
-            byte[] bufToWrite = baos.toByteArray();
-            baos = new ByteArrayOutputStream();
-            dos = new DataOutputStream(baos);
-            dos.writeInt(VERSION);
-            byte[] version = baos.toByteArray();
-            byte[] bufToChecksum = Arrays.copyOf(bufToWrite, bufToWrite.length+version.length);
-            System.arraycopy(version, 0, bufToChecksum, bufToWrite.length, version.length);
-            byte[] checksum = 
-                checksumChecker.generateChecksum(bufToChecksum);
-            // Pointers.
-            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, bufToWrite, 0, 
-                    bufToWrite.length);
-            // Checksum.
-            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length, 
-                    checksum, 0, checksum.length);
-            // Version.
-            raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length + 
-                    checksum.length, version, 0, version.length);
-            // Write magic last.
-            baos = new ByteArrayOutputStream();
-            dos = new DataOutputStream(baos);
-            dos.writeLong(END_MAGIC);
-            byte[] buf = baos.toByteArray();
-            raf.pwrite(totalLength - 8, buf, 0, 8);
+            if(persistent) {
+                for(SplitFileFetcherSegmentStorage segment : segments)
+                    segment.writeMetadata();
+                keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
+                keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
+                BucketTools.copyTo(metadataTemp, raf, offsetOriginalMetadata, -1);
+                metadataTemp.free();
+                raf.pwrite(offsetOriginalURI, encodedURI, 0, encodedURI.length);
+                raf.pwrite(offsetBasicSettings, encodedBasicSettings, 0, encodedBasicSettings.length);
+                
+                // This bit tricky because version is included in the checksum.
+                // When the RAF is encrypted, we use HMAC's and this is important.
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(baos);
+                dos.writeInt(encodedBasicSettings.length - checksumLength);
+                byte[] bufToWrite = baos.toByteArray();
+                baos = new ByteArrayOutputStream();
+                dos = new DataOutputStream(baos);
+                dos.writeInt(VERSION);
+                byte[] version = baos.toByteArray();
+                byte[] bufToChecksum = Arrays.copyOf(bufToWrite, bufToWrite.length+version.length);
+                System.arraycopy(version, 0, bufToChecksum, bufToWrite.length, version.length);
+                byte[] checksum = 
+                    checksumChecker.generateChecksum(bufToChecksum);
+                // Pointers.
+                raf.pwrite(offsetBasicSettings + encodedBasicSettings.length, bufToWrite, 0, 
+                        bufToWrite.length);
+                // Checksum.
+                raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length, 
+                        checksum, 0, checksum.length);
+                // Version.
+                raf.pwrite(offsetBasicSettings + encodedBasicSettings.length + bufToWrite.length + 
+                        checksum.length, version, 0, version.length);
+                // Write magic last.
+                baos = new ByteArrayOutputStream();
+                dos = new DataOutputStream(baos);
+                dos.writeLong(END_MAGIC);
+                byte[] buf = baos.toByteArray();
+                raf.pwrite(totalLength - 8, buf, 0, 8);
+            }
         } finally {
             lock.unlock();
         }
@@ -473,6 +498,7 @@ public class SplitFileFetcherStorage {
             SplitFileFetcherCallback callback, FetchContext origContext,
             RandomSource random, Executor exec,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException, FetchException {
+        this.persistent = true;
         this.raf = raf;
         this.fetcher = callback;
         this.ticker = ticker;
@@ -595,7 +621,7 @@ public class SplitFileFetcherStorage {
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1, checksumLength);
+                        crossCheckBlocks, maxRetries != -1, checksumLength, true);
         }
         int crossSegments = dis.readInt();
         if(crossSegments != 0)
@@ -858,6 +884,7 @@ public class SplitFileFetcherStorage {
     };
 
     public void lazyWriteMetadata() {
+        if(!persistent) return;
         if(LAZY_WRITE_METADATA_DELAY != 0)
             ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
                     LAZY_WRITE_METADATA_DELAY, false, true);

@@ -138,7 +138,7 @@ public class SplitFileFetcherSegmentStorage {
         blocksFetched = new short[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                crossCheckBlocks, writeRetries, parent.checksumLength);
+                crossCheckBlocks, writeRetries, parent.checksumLength, parent.persistent);
         segmentKeyListLength = 
             storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
         this.segmentBlockDataOffset = segmentDataOffset;
@@ -191,7 +191,7 @@ public class SplitFileFetcherSegmentStorage {
         blocksFetched = new short[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                crossSegmentCheckBlocks, writeRetries, parent.checksumLength);
+                crossSegmentCheckBlocks, writeRetries, parent.checksumLength, true);
         segmentKeyListLength = 
             storedKeysLength(dataBlocks, checkBlocks, writeRetries, parent.checksumLength);
         keysCache = null; // Will be read later
@@ -744,6 +744,7 @@ public class SplitFileFetcherSegmentStorage {
      * check it) when constructing.
      * @throws IOException */
     private void innerWriteMetadata(boolean force) throws IOException {
+        if(!parent.persistent) return;
         synchronized(this) {
             if(!(force || metadataDirty)) return;
             OutputStream cos = parent.writeChecksummedTo(segmentStatusOffset, segmentStatusPaddedLength);
@@ -815,7 +816,8 @@ public class SplitFileFetcherSegmentStorage {
     }
     
     public static int paddedStoredSegmentStatusLength(int dataBlocks, int checkBlocks, int crossCheckBlocks, 
-            boolean trackRetries, int checksumLength) {
+            boolean trackRetries, int checksumLength, boolean persistent) {
+        if(!persistent) return 0;
         return storedSegmentStatusLength(dataBlocks, checkBlocks, crossCheckBlocks, trackRetries) +
             checksumLength;
     }
