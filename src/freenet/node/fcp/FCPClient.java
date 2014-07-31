@@ -1,5 +1,7 @@
 package freenet.node.fcp;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -707,5 +709,16 @@ public class FCPClient {
 		else
 			return lowLevelClient;
 	}
+	
+	private static final long CLIENT_DETAIL_MAGIC = 0xa6086aaab769aa4aL;
+	private static final int CLIENT_DETAIL_VERSION = 1;
+
+    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+        dos.writeLong(CLIENT_DETAIL_MAGIC);
+        dos.writeLong(CLIENT_DETAIL_VERSION);
+        dos.writeBoolean(this.isGlobalQueue);
+        if(!isGlobalQueue)
+            dos.writeUTF(name);
+    }
 
 }

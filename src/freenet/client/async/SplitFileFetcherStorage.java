@@ -739,7 +739,9 @@ public class SplitFileFetcherStorage {
         }
         return baos.toByteArray();
     }
-    
+
+    /** Write details needed to restart the download from scratch, and to identify whether it is
+     * useful to do so. */
     private byte[] encodeAndChecksumOriginalDetails(FreenetURI thisKey, FreenetURI origKey,
             byte[] clientDetails, boolean isFinalFetch) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -749,6 +751,9 @@ public class SplitFileFetcherStorage {
         dos.writeBoolean(isFinalFetch);
         dos.writeInt(clientDetails.length);
         dos.write(clientDetails);
+        dos.writeInt(maxRetries);
+        dos.writeInt(cooldownTries);
+        dos.writeLong(cooldownLength);
         return checksumChecker.appendChecksum(baos.toByteArray());
     }
 

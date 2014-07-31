@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Set;
 
 import com.db4o.ObjectContainer;
@@ -274,4 +276,51 @@ public class FetchContext implements Cloneable {
 	public long getCooldownTime() {
 		return cooldownTime;
 	}
+
+    private static final long CLIENT_DETAIL_MAGIC = 0x5ae53b0ce18dd821L;
+    private static final int CLIENT_DETAIL_VERSION = 1;
+
+    public void writeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(CLIENT_DETAIL_MAGIC);
+        dos.writeInt(CLIENT_DETAIL_VERSION);
+        dos.writeLong(maxOutputLength);
+        dos.writeLong(maxTempLength);
+        dos.writeInt(maxRecursionLevel);
+        dos.writeInt(maxArchiveRestarts);
+        dos.writeInt(maxArchiveLevels);
+        dos.writeBoolean(dontEnterImplicitArchives);
+        dos.writeInt(maxSplitfileBlockRetries);
+        dos.writeInt(maxNonSplitfileRetries);
+        dos.writeInt(maxUSKRetries);
+        dos.writeBoolean(allowSplitfiles);
+        dos.writeBoolean(followRedirects);
+        dos.writeBoolean(localRequestOnly);
+        dos.writeBoolean(ignoreStore);
+        dos.writeInt(maxMetadataSize);
+        dos.writeInt(maxDataBlocksPerSegment);
+        dos.writeInt(maxCheckBlocksPerSegment);
+        dos.writeBoolean(returnZIPManifests);
+        dos.writeBoolean(filterData);
+        dos.writeBoolean(ignoreTooManyPathComponents);
+        if(blocks != null) throw new UnsupportedOperationException("Binary blob not supported");
+        if(allowedMIMETypes != null) {
+            dos.writeInt(allowedMIMETypes.size());
+            for(String s : allowedMIMETypes)
+                dos.writeUTF(s);
+        } else {
+            dos.writeInt(0);
+        }
+        dos.writeUTF(charset);
+        dos.writeBoolean(canWriteClientCache);
+        if(prefetchHook != null) throw new UnsupportedOperationException("Prefetch hook not supported");
+        if(tagReplacer != null) throw new UnsupportedOperationException("Tag replacer not supported");
+        if(overrideMIME != null)
+            dos.writeUTF(overrideMIME);
+        else
+            dos.writeUTF("");
+        dos.writeInt(cooldownRetries);
+        dos.writeLong(cooldownTime);
+        dos.writeBoolean(ignoreUSKDatehints);
+        // Ignore useNewSplitfileCodeTransient, it will go away soon.
+    }
 }

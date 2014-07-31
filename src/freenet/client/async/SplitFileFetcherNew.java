@@ -105,7 +105,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         try {
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
-                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(), 
+                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(container), 
                     context.random, context.tempBucketFactory, context.tempRAFFactory, 
                     context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
         } catch (IOException e) {

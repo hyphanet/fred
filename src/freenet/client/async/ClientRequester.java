@@ -4,6 +4,10 @@
 package freenet.client.async;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.WeakHashMap;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -465,9 +469,18 @@ public abstract class ClientRequester {
 
     /** @return A byte[] representing the original client, to be written to the file storing a 
      * persistent download. E.g. for FCP, this will include the Identifier, whether it is on the 
-     * global queue and the client name. */
-    public byte[] getClientDetail() {
+     * global queue and the client name. 
+     * @throws IOException */
+    public byte[] getClientDetail(ObjectContainer container) throws IOException {
         return new byte[0];
+    }
+    
+    protected static byte[] getClientDetail(PersistentClientCallback callback,
+            ObjectContainer container) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        callback.getClientDetail(container, dos);
+        return baos.toByteArray();
     }
     
 }

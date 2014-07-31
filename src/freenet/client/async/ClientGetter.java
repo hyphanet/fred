@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -900,4 +902,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return binaryBlobWriter.getFinalBucket();
 	}
 	
+    public byte[] getClientDetail(ObjectContainer container) throws IOException {
+        if(persistent())
+            container.activate(clientCallback, 1);
+        if(clientCallback instanceof PersistentClientCallback) {
+            return getClientDetail((PersistentClientCallback)clientCallback, container);
+        } else
+            return new byte[0];
+    }
+
 }

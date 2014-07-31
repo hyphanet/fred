@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistentClientCallback;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.EnterFiniteCooldownEvent;
@@ -45,7 +47,7 @@ import freenet.support.io.NullBucket;
  * A simple client fetch. This can of course fetch arbitrarily large
  * files, including splitfiles, redirects, etc.
  */
-public class ClientGet extends ClientRequest implements ClientGetCallback, ClientEventListener {
+public class ClientGet extends ClientRequest implements ClientGetCallback, ClientEventListener, PersistentClientCallback {
 
 	/** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
@@ -1258,4 +1260,28 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
 				getURI(container).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress(container));
 	}
+
+	private static final long CLIENT_DETAIL_MAGIC = 0x67145b675d2e22f4L;
+	private static final int CLIENT_DETAIL_VERSION = 1;
+
+    @Override
+    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+        dos.writeLong(CLIENT_DETAIL_MAGIC);
+        dos.writeLong(CLIENT_DETAIL_VERSION);
+        dos.writeShort(returnType);
+        writeFile(targetFile, dos);
+        writeFile(tempFile, dos);
+        dos.writeBoolean(binaryBlob);
+        if(persistenceType == PERSIST_FOREVER)
+            container.activate(fctx, 1);
+        fctx.writeTo(dos);
+        super.getClientDetail(container, dos);
+    }
+
+    private static void writeFile(File f, DataOutputStream dos) throws IOException {
+        if(f == null)
+            dos.writeUTF("");
+        else
+            dos.writeUTF(f.toString());
+    }
 }

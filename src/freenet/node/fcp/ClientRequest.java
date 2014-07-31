@@ -1,11 +1,15 @@
 package freenet.node.fcp;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistentClientCallback;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
@@ -477,5 +481,21 @@ public abstract class ClientRequest {
 	}
 
 	abstract RequestStatus getStatus(ObjectContainer container);
+	
+	private static final long CLIENT_DETAIL_MAGIC = 0xebf0b4f4fa9f6721L;
+	private static final int CLIENT_DETAIL_VERSION = 1;
+
+    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+        dos.writeLong(CLIENT_DETAIL_MAGIC);
+        dos.writeLong(CLIENT_DETAIL_VERSION);
+        if(persistenceType == PERSIST_FOREVER)
+            container.activate(client, 1);
+        client.getClientDetail(container, dos);
+        dos.writeUTF(identifier);
+        dos.writeInt(verbosity);
+        dos.writeShort(priorityClass);
+        dos.writeUTF(charset);
+        dos.writeLong(startupTime);
+    }
 	
 }
