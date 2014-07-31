@@ -57,6 +57,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final FilenameGenerator filenameGenerator;
 	private final PooledFileRandomAccessThingFactory underlyingDiskRAFFactory;
 	private final DiskSpaceCheckingRandomAccessThingFactory diskRAFFactory;
+	private long minDiskSpace;
 	private long bytesInUse = 0;
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
@@ -490,8 +491,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.executor = executor;
 		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
 		underlyingDiskRAFFactory.enableCrypto(reallyEncrypt);
+		this.minDiskSpace = minDiskSpace;
 		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
-		        filenameGenerator.getDir(), minDiskSpace);
+		        filenameGenerator.getDir(), minDiskSpace - maxRamUsed);
 	}
 
 	@Override
@@ -525,6 +527,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	
 	public synchronized void setMaxRAMBucketSize(long size) {
 		maxRAMBucketSize = size;
+		diskRAFFactory.setMinDiskSpace(minDiskSpace - maxRamUsed);
 	}
 	
 	public synchronized long getMaxRAMBucketSize() {
@@ -536,8 +539,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		underlyingDiskRAFFactory.enableCrypto(value);
 	}
 	
-	public void setMinDiskSpace(long min) {
-	    diskRAFFactory.setMinDiskSpace(min);
+	public synchronized void setMinDiskSpace(long min) {
+	    minDiskSpace = min;
+	    diskRAFFactory.setMinDiskSpace(minDiskSpace - maxRamUsed);
 	}
 	
 	public boolean isEncrypting() {
