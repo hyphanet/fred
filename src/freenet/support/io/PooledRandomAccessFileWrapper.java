@@ -38,7 +38,16 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
         try {
             long currentLength = raf.length();
             if(forceLength >= 0) {
-                // FIXME unix sparse files? We may need to preallocate space reliably, write errors mid file tend to break things badly as does out of disk space.
+                // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
+                raf.seek(0);
+                byte[] buf = new byte[4096];
+                for(long l = 0; l < forceLength; l+=4096) {
+                    // FIXME If encryption is enabled, we need to use random bytes.
+                    int maxWrite = (int)Math.min(4096, forceLength - l);
+                    raf.write(buf, 0, maxWrite);
+                }
+                assert(raf.getFilePointer() == forceLength);
+                assert(raf.length() == forceLength);
                 raf.setLength(forceLength); 
                 currentLength = forceLength;
             }
