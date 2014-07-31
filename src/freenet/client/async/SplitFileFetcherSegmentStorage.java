@@ -232,13 +232,13 @@ public class SplitFileFetcherSegmentStorage {
     }
     
     /** Write the status metadata to disk, after a series of updates. */
-    public boolean writeMetadata() throws IOException {
-        return writeMetadata(true);
+    public void writeMetadata() throws IOException {
+        writeMetadata(true);
     }
 
     /** Write the status metadata to disk, after a series of updates. */
-    public boolean writeMetadata(boolean force) throws IOException {
-        return innerWriteMetadata(force);
+    public void writeMetadata(boolean force) throws IOException {
+        innerWriteMetadata(force);
     }
     
     /** Read all the blocks, encode them according to their supposed keys and check that they are
@@ -743,9 +743,9 @@ public class SplitFileFetcherSegmentStorage {
      * synchronized(this). Metadata is fairly sparse on disk, we are expected to deduce it (and
      * check it) when constructing.
      * @throws IOException */
-    private boolean innerWriteMetadata(boolean force) throws IOException {
+    private void innerWriteMetadata(boolean force) throws IOException {
         synchronized(this) {
-            if(!(force || metadataDirty)) return false;
+            if(!(force || metadataDirty)) return;
             OutputStream cos = parent.writeChecksummedTo(segmentStatusOffset, segmentStatusPaddedLength);
             try {
                 DataOutputStream dos = new DataOutputStream(cos);
@@ -761,7 +761,7 @@ public class SplitFileFetcherSegmentStorage {
             }
             metadataDirty = false;
         }
-        return true;
+        return;
     }
     
     /** Only called during construction. Reads the variable metadata from the RandomAccessThing. 
