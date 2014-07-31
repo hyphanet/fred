@@ -477,6 +477,8 @@ public class FetchException extends Exception implements Cloneable {
 	 * is equivalent to it not being filtered at all i.e. potentially dangerous.
 	 */
 	public static final int MIME_INCOMPATIBLE_WITH_EXTENSION = 36;
+	/** Not enough disk space to start a download or the next stage of a download. */
+	public static final int NOT_ENOUGH_DISK_SPACE = 37;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -521,6 +523,7 @@ public class FetchException extends Exception implements Cloneable {
 			
 		case BUCKET_ERROR:
 		case INTERNAL_ERROR:
+		case NOT_ENOUGH_DISK_SPACE:
 			// No point retrying.
 			return true;
 		
@@ -586,6 +589,7 @@ public class FetchException extends Exception implements Cloneable {
 			
 		case BUCKET_ERROR:
 		case INTERNAL_ERROR:
+		case NOT_ENOUGH_DISK_SPACE:
 			// No point retrying. 
 			// But it's not really fatal. I.e. it's not necessarily a problem with the inserted data.
 			return false;
@@ -666,6 +670,7 @@ public class FetchException extends Exception implements Cloneable {
 		case CONTENT_VALIDATION_BAD_MIME:
 		case CONTENT_HASH_FAILED:
 		case SPLITFILE_DECODE_ERROR:
+		case NOT_ENOUGH_DISK_SPACE:
 			return true;
 		case SPLITFILE_ERROR:
 			return errorCodes.isDataFound();
