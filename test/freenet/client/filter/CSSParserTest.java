@@ -44,7 +44,7 @@ public class CSSParserTest extends TestCase {
 	{
 		CSS1_SELECTOR.put("h1 {}","h1");
 		CSS1_SELECTOR.put("h1:link {}","h1:link");
-		CSS1_SELECTOR.put("h1:visited {}","h1:visited");
+		CSS1_SELECTOR.put("h1:visited {}","");
 		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
 		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
 		CSS1_SELECTOR.put("h1 h2 {}","h1 h2");
@@ -97,7 +97,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red }");
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
-		CSS2_SELECTOR.put("a.external:visited { color: blue }", "a.external:visited { color: blue }");
+		CSS2_SELECTOR.put("a.external:visited { color: blue }", "");
 		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white }");
 		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
 		// CONFORMANCE: :first-line can only be attached to block-level, we don't enforce this, it is not dangerous.
@@ -737,7 +737,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { text-indent: 3em }", "p { text-indent: 3em }");
 		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
 		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
-		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:visited,a:link { text-decoration: underline }");
+		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:link { text-decoration: underline }");
 		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
 		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
 		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
@@ -760,8 +760,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 
 		// User interface
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
-		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
 
 		// UI colors
 		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
@@ -794,6 +794,16 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
 		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
 		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
+		
+		// Banned selectors
+		propertyTests.put(":visited { color:red }", "");
+		propertyTests.put("a:visited { color:red }", "");
+		propertyTests.put(":visited,:active { color:red }", ":active { color:red }");
+		propertyTests.put("a:visited,:active { color:red }", ":active { color:red }");
+		propertyTests.put(":active,:visited { color:red }", ":active { color:red }");
+		propertyTests.put(":active,a:visited { color:red }", ":active { color:red }");
+		propertyTests.put(":focus,:visited,:active { color:red }", ":focus,:active { color:red }");
+		propertyTests.put(":focus,a:visited,:active { color:red }", ":focus,:active { color:red }");
 	}
 
 	FilterMIMEType cssMIMEType;
