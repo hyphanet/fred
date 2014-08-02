@@ -458,31 +458,10 @@ public class FCPConnectionHandler implements Closeable {
 		if(failedMessage != null) {
 			if(logMINOR) Logger.minor(this, "Failed: "+failedMessage);
 			outputHandler.queue(failedMessage);
-			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
-				final ClientPut c = cp;
-				// Run on the database thread if persistent because it will try to activate stuff...
-				try {
-					server.core.clientContext.jobRunner.queue(new DBJob() {
-
-						@Override
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(c != null)
-								c.freeData(container);
-							else
-								message.freeData(container);
-							return true;
-						}
-						
-					}, NativeThread.HIGH_PRIORITY-1, false);
-				} catch (DatabaseDisabledException e) {
-					Logger.error(this, "Unable to free data for insert because database disabled: "+e, e);
-				}
-			} else {
-				if(cp != null)
-					cp.freeData(null);
-				else
-					message.freeData(null);
-			}
+			if(cp != null)
+			    cp.freeData(null);
+			else
+			    message.freeData(null);
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
