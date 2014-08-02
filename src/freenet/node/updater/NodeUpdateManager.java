@@ -19,7 +19,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -408,7 +408,7 @@ public class NodeUpdateManager {
 					priority, node.nonPersistentClientBulk, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {
 				onFailure(e, null, null);

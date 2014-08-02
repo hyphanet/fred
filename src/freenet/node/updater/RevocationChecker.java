@@ -14,7 +14,7 @@ import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -166,7 +166,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				}
 			}
 			return false;
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 			return false;
 		}

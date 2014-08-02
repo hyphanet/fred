@@ -24,7 +24,7 @@ import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -238,7 +238,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				synchronized(this) {
 					isFetching = false;
 				}
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible
 			}
 		if(cancelled != null)

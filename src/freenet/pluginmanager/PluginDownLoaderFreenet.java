@@ -16,7 +16,7 @@ import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
@@ -83,7 +83,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClientBulk, null, null, null);
 				try {
 					node.clientCore.clientContext.start(get);
-				} catch (DatabaseDisabledException e) {
+				} catch (PersistenceDisabledException e) {
 					// Impossible
 				}
 				FetchResult res = fw.waitForCompletion();

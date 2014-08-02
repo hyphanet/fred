@@ -39,7 +39,7 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.SimpleBlockSet;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
@@ -1097,7 +1097,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
 			myCallback.onFailure(e1, cg, null);
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 
@@ -1148,7 +1148,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			updateManager.node.clientCore.clientContext.start(putter, false);
 		} catch(InsertException e1) {
 			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 	}
@@ -1545,7 +1545,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			updateManager.node.clientCore.clientContext.start(cg);
 		} catch(FetchException e1) {
 			myCallback.onFailure(e1, cg, null);
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 
