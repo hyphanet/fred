@@ -56,9 +56,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFreeBucket> bucketsToFree;
 	
-	/** The node database handle. Used to find everything for a specific node in the database. */
-	private final long nodeDBHandle;
-
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
 
@@ -88,9 +85,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * one and only PersistentTempBucketFactory).
 	 * @throws IOException If we are unable to read the directory, etc.
 	 */
-	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
+	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt) throws IOException {
 		this.strongPRNG = strongPRNG;
-		this.nodeDBHandle = nodeDBHandle;
 		this.weakPRNG = weakPRNG;
 		this.encrypt = encrypt;
 		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
@@ -228,46 +224,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
 		return encrypt;
-	}
-
-	/** Load the persistent temporary bucket factory from the database, or create a new one if there is none
-	 * in the database. Automatically migrate files if the dir or prefix change.
-	 * @param dir The directory to put temporary files in.
-	 * @param prefix The prefix for temporary files.
-	 * @param random Strong random number generator.
-	 * @param fastWeakRandom Weak PRNG.
-	 * @param container The database. Must not be null, we must be running on the database thread and/or be
-	 * initialising the node.
-	 * @param nodeDBHandle The node database handle. Used to identify the specific PersistentTempBucketFactory
-	 * for the current node. Hence it is possible to have multiple nodes share the same database, at least in theory.
-	 * @param encrypt Whether to encrypt temporary buckets created. Note that if this is changed we do *not*
-	 * decrypt/encrypt old buckets.
-	 * @param jobRunner The DBJobRunner on which to schedule database jobs when needed.
-	 * @param ticker The Ticker to run non-database jobs on.
-	 * @return A persistent temporary bucket factory.
-	 * @throws IOException If we cannot access the proposed directory, or some other I/O error prevents us
-	 * using it.
-	 */
-	@SuppressWarnings("serial")
-	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner, Ticker ticker) throws IOException {
-		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
-			@Override
-			public boolean match(PersistentTempBucketFactory factory) {
-				if(factory.nodeDBHandle == nodeDBHandle) return true;
-				return false;
-			}
-		});
-		if(results.hasNext()) {
-			PersistentTempBucketFactory factory = results.next();
-			container.activate(factory, 5);
-			factory.init(dir, prefix, random, fastWeakRandom);
-			factory.setEncryption(encrypt);
-			return factory;
-		} else {
-			PersistentTempBucketFactory factory =
-				new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
-			return factory;
-		}
 	}
 
 	/**

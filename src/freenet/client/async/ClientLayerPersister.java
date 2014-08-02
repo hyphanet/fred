@@ -10,11 +10,15 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Random;
 
 import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.clients.fcp.RequestStatusCache;
+import freenet.crypt.RandomSource;
+import freenet.node.NodeInitException;
 import freenet.support.Executor;
 import freenet.support.io.FileBucket;
+import freenet.support.io.PersistentTempBucketFactory;
 
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
@@ -24,6 +28,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private boolean loaded;
     private FCPPersistentRoot root;
     private InsertCompressorTracker persistentCompressorTracker;
+    private PersistentTempBucketFactory persistentTempFactory;
     private boolean killed;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
@@ -36,7 +41,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.bucket = new FileBucket(filename, false, false, false, false, false);
     }
     
-    public void load() {
+    public void load(File ptbfDir, String ptbfPrefix, RandomSource random, Random fastWeakRandom, 
+            boolean encrypt) throws NodeInitException {
         // FIXME check backups.
         if(filename.exists()) {
             InputStream fis = null;
@@ -50,6 +56,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(version != VERSION) throw new IOException("Bad version");
                 root = FCPPersistentRoot.create(ois);
                 persistentCompressorTracker = (InsertCompressorTracker) ois.readObject();
+                persistentTempFactory = (PersistentTempBucketFactory) ois.readObject();
+                persistentTempFactory.init(ptbfDir, ptbfPrefix, random, fastWeakRandom);
                 return;
             } catch (IOException e) {
                 // FIXME tell user more obviously.
@@ -70,6 +78,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         // From scratch
         root = new FCPPersistentRoot();
         persistentCompressorTracker = new InsertCompressorTracker();
+        try {
+            persistentTempFactory =
+                new PersistentTempBucketFactory(ptbfDir, ptbfPrefix, random, fastWeakRandom, encrypt);
+        } catch (IOException e) {
+            String msg = "Could not find or create persistent temporary directory: "+e;
+            e.printStackTrace();
+            throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
+        }
         synchronized(this) {
             loaded = true;
             updateLastCheckpointed();
@@ -95,6 +111,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeInt(VERSION);
             oos.writeObject(root);
             oos.writeObject(persistentCompressorTracker);
+            oos.writeObject(persistentTempFactory);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
             e.printStackTrace();
@@ -119,6 +136,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     public InsertCompressorTracker persistentCompressorTracker() {
         return persistentCompressorTracker;
+    }
+    
+    public PersistentTempBucketFactory persistentTempBucketFactory() {
+        return persistentTempFactory;
     }
 
     public synchronized void kill() {

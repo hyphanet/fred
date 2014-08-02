@@ -246,7 +246,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		}
 
 		uskManager = new USKManager(this);
-
+		
 		// Persistent temp files
 		nodeConfig.register("encryptPersistentTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptPersistentTempBuckets", "NodeClientCore.encryptPersistentTempBucketsLong", new BooleanCallback() {
 
@@ -265,7 +265,12 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 
 		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp").toString(),
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
-		initPTBF(container, nodeConfig);
+		
+		clientLayerPersister = new ClientLayerPersister(node.executor, node.nodeDir.file("client.dat"));
+		// FIXME with crypto this load() may happen much later.
+		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
+		
+		initPTBF(nodeConfig);
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
 		int defaultRamBucketPoolSize;
@@ -346,9 +351,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		} else {
 		    persistentRAFFactory = null;
 		}
-		clientLayerPersister = new ClientLayerPersister(node.executor, node.nodeDir.file("client.dat"));
-		// FIXME with crypto this load() may happen much later.
-		clientLayerPersister.load();
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, fecQueue, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), clientLayerPersister.persistentCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
@@ -366,8 +368,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
-		if(container != null)
-		    migratePluginStores(container);
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
@@ -627,38 +627,12 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		}
 	}
 
-	private void initPTBF(ObjectContainer container, SubConfig nodeConfig) throws NodeInitException {
-		PersistentTempBucketFactory ptbf = null;
-		FilenameGenerator pfg = null;
-		try {
-			String prefix = "freenet-temp-";
-			if(!killedDatabase) {
-				ptbf = PersistentTempBucketFactory.load(getPersistentTempDir(), prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
-				ptbf.init(getPersistentTempDir(), prefix, random, node.fastWeakRandom);
-				pfg = ptbf.fg;
-			}
-		} catch(IOException e2) {
-			String msg = "Could not find or create persistent temporary directory: "+e2;
-			e2.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
-		} catch (Db4oException e) {
-			killedDatabase = true;
-		} catch (Throwable t) {
-			// Let the rest of the node start up but kill the database
-			System.err.println("Failed to load persistent temporary buckets factory: "+t);
-			t.printStackTrace();
-			killedDatabase = true;
-		}
-		if(killedDatabase) {
-			persistentTempBucketFactory = null;
-			persistentFilenameGenerator = null;
-		} else {
-			persistentTempBucketFactory = ptbf;
-			persistentFilenameGenerator = pfg;
-			if(clientContext != null) {
-				clientContext.setPersistentBucketFactory(persistentTempBucketFactory, persistentFilenameGenerator);
-			}
-		}
+	private void initPTBF(SubConfig nodeConfig) throws NodeInitException {
+	    persistentTempBucketFactory = clientLayerPersister.persistentTempBucketFactory();
+	    persistentFilenameGenerator = persistentTempBucketFactory.fg;
+        if(clientContext != null) {
+            clientContext.setPersistentBucketFactory(persistentTempBucketFactory, persistentFilenameGenerator);
+        }
 	}
 
 	private FECQueue initFECQueue(long nodeDBHandle, ObjectContainer container, FECQueue oldQueue) {
@@ -732,21 +706,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		System.out.println("Late database initialisation completed.");
 		return true;
 	}
-
-	private void migratePluginStores(ObjectContainer container) {
-	    try {
-	        pluginStores.migrateAllPluginStores(container, node.nodeDBHandle);
-	    } catch (Db4oException e) {
-	        System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
-	        Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
-            killedDatabase = true;
-	    } catch (Throwable e) {
-	        // Yes this really is necessary. db4o corruption can throw all sorts of crap.
-            System.err.println("Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.");
-            Logger.error(this, "Failed to migrate plugin stores due to database error: "+e+" - assuming node.db4o[.crypt] is corrupt.", e);
-            killedDatabase = true;
-	    }
-    }
 
     private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
 		fecQueue = initFECQueue(nodeDBHandle, container, fecQueue);
