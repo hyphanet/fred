@@ -569,7 +569,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	}
 
 	private void initDiskSpaceLimits(SubConfig nodeConfig, int sortOrder) {
-        nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
+        nodeConfig.register("minDiskFreeLongTerm", "100M", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
 
             @Override
             public Long get() {
@@ -591,7 +591,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
         }, true);
         minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
         
-        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
+        nodeConfig.register("minDiskFreeShortTerm", "50M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
 
             @Override
             public Long get() {
