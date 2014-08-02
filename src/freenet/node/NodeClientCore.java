@@ -1859,4 +1859,8 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
         return minDiskFreeShortTerm;
     }
 
+    public boolean killedDatabase() {
+        return this.clientLayerPersister.isKilledOrNotLoaded();
+    }
+
 }

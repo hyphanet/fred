@@ -223,4 +223,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         checkpoint();
     }
     
+    public boolean isKilledOrNotLoaded() {
+        synchronized(sync) {
+            return killed || !started;
+        }
+    }
+    
 }
