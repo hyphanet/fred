@@ -41,6 +41,7 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
+import freenet.support.io.InsufficientDiskSpaceException;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -385,6 +386,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		} catch(CompressionOutputSizeException e) {
 			Logger.error(this, "Caught "+e, e);
 			ex = new FetchException(FetchException.TOO_BIG, e);
+		} catch (InsufficientDiskSpaceException e) {
+		    ex = new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			ex = new FetchException(FetchException.BUCKET_ERROR, e);

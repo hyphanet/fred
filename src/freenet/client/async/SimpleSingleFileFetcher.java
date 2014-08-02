@@ -20,6 +20,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.InsufficientDiskSpaceException;
 
 /** 
  * Fetch a single block file.
@@ -139,6 +140,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		} catch (TooBigException e) {
 			onFailure(new FetchException(FetchException.TOO_BIG, e), false, container, context);
 			return null;
+		} catch (InsufficientDiskSpaceException e) {
+		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, container, context);
+		    return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);

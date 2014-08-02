@@ -29,6 +29,7 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
+import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -107,6 +108,9 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
+		} catch (InsufficientDiskSpaceException e) {
+            onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), state, container, context);
+            return;
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);

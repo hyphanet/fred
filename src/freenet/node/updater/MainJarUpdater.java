@@ -38,6 +38,7 @@ import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.InsufficientDiskSpaceException;
 
 public class MainJarUpdater extends NodeUpdater implements Deployer {
 	
@@ -130,6 +131,8 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			if(parent == null) parent = new File(".");
 			try {
 				tempFile = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, parent);
+			} catch (InsufficientDiskSpaceException e) {
+			    throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
 			} catch (IOException e) {
 				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
 			}

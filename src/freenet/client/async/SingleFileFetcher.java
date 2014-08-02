@@ -49,6 +49,7 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.TempBucketFactory;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
@@ -272,6 +273,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			data.free();
 			if(persistent) data.removeFrom(container);
 			return;
+		} catch (InsufficientDiskSpaceException e) {
+		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, container, context);
+            data.free();
+            if(persistent) data.removeFrom(container);
+		    return;
 		} catch (IOException e) {
 			// Bucket error?
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
@@ -510,6 +516,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					try {
 						metadata = Metadata.construct(metadataBucket);
 						metadataBucket.free();
+					} catch (InsufficientDiskSpaceException e) {
+					    throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
 					} catch (IOException e) {
 						// Bucket error?
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
@@ -589,6 +597,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						
 						newMetadata = Metadata.construct(dataBucket);
 						dataBucket.free();
+					} catch (InsufficientDiskSpaceException e) {
+					    throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
 					} catch (IOException e) {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
@@ -698,6 +708,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						} else {
 							out = dataBucket;
 						}
+					} catch (InsufficientDiskSpaceException e) {
+					    throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
 					} catch (IOException e) {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
@@ -1175,6 +1187,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), SingleFileFetcher.this, container, context);
 							return;
 						}
+					} catch (InsufficientDiskSpaceException e) {
+					    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), SingleFileFetcher.this, container, context);
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), SingleFileFetcher.this, container, context);
 						return;
@@ -1374,6 +1388,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 				return;
+			} catch (InsufficientDiskSpaceException e) {
+			    SingleFileFetcher.this.onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, container, context);
+			    return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
