@@ -351,7 +351,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		    persistentRAFFactory = null;
 		}
 		persistentJobRunner = new ClientLayerPersister(node.executor);
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, new ClientLayerPersister(node.executor), node.executor, 
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, new ClientLayerPersister(node.executor), fecQueue, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
