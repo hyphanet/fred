@@ -65,7 +65,6 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
-import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -112,7 +111,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
-	public NodeRestartJobsQueue restartJobsQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 	final ProgramDirectory downloadsDir;
@@ -174,7 +172,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	 * of them, so only cache a small number of them */
 	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
-	private RestartDBJob[] startupDatabaseJobs;
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 
@@ -196,8 +193,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		compressor = new RealCompressor(node.executor);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
-		if(container != null)
-			initRestartJobs(nodeDBHandle, container);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ticker, node.getRunDir());
 
@@ -663,44 +658,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		}
 	}
 
-	private void initRestartJobs(long nodeDBHandle, ObjectContainer container) {
-		// Restart jobs are handled directly by NodeClientCore, so no need to deal with ClientContext.
-		NodeRestartJobsQueue rq = null;
-		try {
-			if(!killedDatabase) rq = container == null ? null : NodeRestartJobsQueue.init(node.nodeDBHandle, container);
-		} catch (Db4oException e) {
-			killedDatabase = true;
-		}
-		restartJobsQueue = rq;
-		RestartDBJob[] startupJobs = null;
-		try {
-			if(!killedDatabase)
-				startupJobs = restartJobsQueue.getEarlyRestartDatabaseJobs(container);
-		} catch (Db4oException e) {
-			killedDatabase = true;
-		}
-		startupDatabaseJobs = startupJobs;
-		if(startupDatabaseJobs != null &&
-				startupDatabaseJobs.length > 0) {
-			try {
-				queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e1) {
-				// Impossible
-			}
-		}
-		if(!killedDatabase) {
-			try {
-				restartJobsQueue.addLateRestartDatabaseJobs(this, container);
-			} catch (Db4oException e) {
-				killedDatabase = true;
-			} catch (DatabaseDisabledException e) {
-				// addLateRestartDatabaseJobs only modifies the database in case of a job being deleted without being removed.
-				// So it is safe to just ignore this.
-			}
-		}
-
-	}
-
 	private FECQueue initFECQueue(long nodeDBHandle, ObjectContainer container, FECQueue oldQueue) {
 		FECQueue q;
 		try {
@@ -723,7 +680,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		}
 		// Don't actually start the database thread yet, messy concurrency issues.
 		lateInitFECQueue(nodeDBHandle, container);
-		initRestartJobs(nodeDBHandle, container);
 		initPTBF(container, node.config.get("node"));
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
@@ -733,7 +689,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 			fcpServer.load(container);
 		synchronized(this) {
 			if(killedDatabase) {
-				startupDatabaseJobs = null;
 				fecQueue = oldFECQueue;
 				clientContext.setFECQueue(oldFECQueue);
 				persistentTempBucketFactory = null;
@@ -882,44 +837,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		if(!killedDatabase)
 			clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
-
-	private int startupDatabaseJobsDone = 0;
-
-	private DBJob startupJobRunner = new DBJob() {
-
-		@Override
-		public String toString() {
-			return "Run startup jobs";
-		}
-
-		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
-			try {
-				container.activate(job.job, 1);
-				// Remove before execution, to allow it to re-add itself if it wants to
-				System.err.println("Cleaning up after restart: "+job.job);
-				restartJobsQueue.removeRestartJob(job.job, job.prio, container);
-				job.job.run(container, context);
-				container.commit();
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in startup job "+job, t);
-				// Try again next time
-				restartJobsQueue.queueRestartJob(job.job, job.prio, container, true);
-			}
-			startupDatabaseJobsDone++;
-			if(startupDatabaseJobsDone == startupDatabaseJobs.length)
-				startupDatabaseJobs = null;
-			else
-				try {
-					context.jobRunner.queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
-				} catch (DatabaseDisabledException e) {
-					// Do nothing
-				}
-			return true;
-		}
-
-	};
 
 	public interface SimpleRequestSenderCompletionListener {
 
