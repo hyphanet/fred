@@ -708,29 +708,6 @@ final public class FileUtil {
         secureDelete(file);
     }
     
-	public static long getFreeSpace(File dir) {
-		// Use JNI to find out the free space on this partition.
-		long freeSpace = -1;
-		try {
-			Class<? extends File> c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace");
-			if(m != null) {
-				Long lFreeSpace = (Long) m.invoke(dir);
-				if(lFreeSpace != null) {
-					freeSpace = lFreeSpace.longValue();
-					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
-				}
-			}
-		} catch(NoSuchMethodException e) {
-			// Ignore
-			freeSpace = -1;
-		} catch(Throwable t) {
-			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
-			freeSpace = -1;
-		}
-		return freeSpace;
-	}
-
 	/**
 	** Set owner-only RW on the given file.
 	*/

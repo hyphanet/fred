@@ -158,7 +158,7 @@ public class DATASTORE_SIZE implements Step {
 		if(!config.get("node").getOption("storeSize").isDefault())
 			return -1;
 
-		long freeSpace = FileUtil.getFreeSpace(core.node.getStoreDir());
+		long freeSpace = core.node.getStoreDir().getFreeSpace();
 
 		if(freeSpace <= 0) {
 			return -1;

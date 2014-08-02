@@ -3157,7 +3157,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private volatile long notEnoughSpaceMinimumSpace = 0;
 
 	private boolean enoughSpaceForAutoChangeEncryption(File file, boolean isCrypt) {
-		long freeSpace = FileUtil.getFreeSpace(file);
+		long freeSpace = file.getParentFile().getFreeSpace();
 		if(freeSpace == -1) {
 			return true; // We hope ... FIXME check the error handling ...
 		}
