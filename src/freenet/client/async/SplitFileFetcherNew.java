@@ -19,6 +19,7 @@ import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.InsufficientDiskSpaceException;
 
 /** Splitfile fetcher based on keeping as much state as possible, and in particular the downloaded blocks,
  * in a single file.
@@ -108,6 +109,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(container), 
                     context.random, context.tempBucketFactory, context.tempRAFFactory, 
                     context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
+        } catch (InsufficientDiskSpaceException e) {
+            throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);
