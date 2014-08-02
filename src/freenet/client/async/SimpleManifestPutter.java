@@ -860,24 +860,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		return forceCryptoKey;
 	}
 
-	private final DBJob runGotAllMetadata = new DBJob() {
-
-		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			try {
-				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
-			} catch (DatabaseDisabledException e) {
-				// Impossible
-				return false;
-			}
-			container.activate(SimpleManifestPutter.this, 1);
-			innerGotAllMetadata(container, context);
-			container.deactivate(SimpleManifestPutter.this, 1);
-			return true;
-		}
-
-	};
-
 	/**
 	 * Called when we have metadata for all the PutHandler's.
 	 * This does *not* necessarily mean we can immediately insert the final metadata, since
@@ -887,28 +869,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	 * @param context
 	 */
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
-		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
-		// and maximise the opportunities for garbage collection.
-		if(persistent()) {
-			container.activate(runGotAllMetadata, 1); // need to activate .this!
-			try {
-				context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container, false);
-				context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				// Impossible
-				return;
-			}
-		} else {
-			innerGotAllMetadata(null, context);
-		}
-	}
-
-	/**
-	 * Generate the global metadata, and then call resolveAndStartBase.
-	 * @param container
-	 * @param context
-	 */
-	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
 		/** COR-1582: We have to carefully avoid activating any hashmap to depth 2,
 		 * however we cannot afford the memory to activate everything to max depth in
 		 * advance. It looks like activating the hashmap at the top to depth 2, and
@@ -941,6 +901,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			container.store(baseMetadata);
 			container.store(this);
 		}
+		context.jobRunner.setCommitThisTransaction();
 		resolveAndStartBase(container, context);
 
 	}
@@ -1977,8 +1938,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);
 		}
-		container.activate(runGotAllMetadata, 1);
-		container.delete(runGotAllMetadata);
 		super.removeFrom(container, context);
 	}
 

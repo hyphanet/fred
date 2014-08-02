@@ -1196,23 +1196,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		return forceCryptoKey;
 	}
 
-	private final DBJob runGotAllMetadata = new DBJob() {
-
-		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			try {
-				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
-			} catch (DatabaseDisabledException e) {
-				// Impossible, we are already on the database thread
-			}
-			container.activate(BaseManifestPutter.this, 1);
-			innerGotAllMetadata(container, context);
-			container.deactivate(BaseManifestPutter.this, 1);
-			return true;
-		}
-
-	};
-
 	/**
 	 * Called when we have metadata for all the PutHandler's.
 	 * This does *not* necessarily mean we can immediately insert the final metadata, since
@@ -1222,28 +1205,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * @param context
 	 */
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
-		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
-		// and maximise the opportunities for garbage collection.
-		if (containerMode) throw new IllegalStateException();
-		if(persistent()) {
-			container.activate(runGotAllMetadata, 1); // need to activate .this!
-			try {
-				context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container, false);
-				context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				// Impossible, we are already on the database thread
-			}
-		} else {
-			innerGotAllMetadata(null, context);
-		}
-	}
-
-	/**
-	 * Generate the global metadata, and then call resolveAndStartBase.
-	 * @param container
-	 * @param context
-	 */
-	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
 		if (containerMode) throw new IllegalStateException();
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		baseMetadata = makeMetadata(rootDir, container);
@@ -1251,6 +1212,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			container.store(baseMetadata);
 			container.store(this);
 		}
+		context.jobRunner.setCommitThisTransaction();
 		resolveAndStartBase(container, context);
 	}
 
@@ -1723,8 +1685,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);
 		}
-		container.activate(runGotAllMetadata, 1);
-		container.delete(runGotAllMetadata);
 		super.removeFrom(container, context);
 	}
 
