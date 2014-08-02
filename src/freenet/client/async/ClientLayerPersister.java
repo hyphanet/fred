@@ -14,6 +14,7 @@ import java.util.Random;
 
 import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.crypt.RandomSource;
+import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Executor;
 import freenet.support.Ticker;
@@ -25,20 +26,21 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     static final long INTERVAL = MINUTES.toMillis(10);
     private final File filename;
     private final FileBucket bucket;
-    private boolean started;
+    private final Node node; // Needed for bandwidth stats putter
     private FCPPersistentRoot root;
     private InsertCompressorTracker persistentCompressorTracker;
     private PersistentTempBucketFactory persistentTempFactory;
-    private boolean killed;
+    private PersistentStatsPutter bandwidthStatsPutter;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
 
     /** Load everything. */
-    public ClientLayerPersister(Executor executor, Ticker ticker, File filename) {
+    public ClientLayerPersister(Executor executor, Ticker ticker, File filename, Node node) {
         super(executor, ticker, INTERVAL);
         this.filename = filename;
         this.bucket = new FileBucket(filename, false, false, false, false, false);
+        this.node = node;
     }
     
     public void load(File ptbfDir, String ptbfPrefix, RandomSource random, Random fastWeakRandom, 
@@ -58,6 +60,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 persistentCompressorTracker = (InsertCompressorTracker) ois.readObject();
                 persistentTempFactory = (PersistentTempBucketFactory) ois.readObject();
                 persistentTempFactory.init(ptbfDir, ptbfPrefix, random, fastWeakRandom);
+                bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
                 return;
             } catch (IOException e) {
                 // FIXME tell user more obviously.
@@ -86,6 +89,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             e.printStackTrace();
             throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
         }
+        bandwidthStatsPutter = new PersistentStatsPutter();
         onStarted();
     }
 
@@ -106,6 +110,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeObject(root);
             oos.writeObject(persistentCompressorTracker);
             oos.writeObject(persistentTempFactory);
+            bandwidthStatsPutter.updateData(node);
+            oos.writeObject(bandwidthStatsPutter);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
             e.printStackTrace();
@@ -125,6 +131,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     public PersistentTempBucketFactory persistentTempBucketFactory() {
         return persistentTempFactory;
+    }
+
+    public PersistentStatsPutter getBandwidthStats() {
+        return bandwidthStatsPutter;
     }
 
 }

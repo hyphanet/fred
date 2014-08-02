@@ -229,22 +229,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 
-		this.bandwidthStatsPutter = new PersistentStatsPutter(this.node);
-		if (container != null) {
-			bandwidthStatsPutter.restorePreviousData(container);
-			this.getTicker().queueTimedJob(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, true);
-						getTicker().queueTimedJob(this, "BandwidthStatsPutter", PersistentStatsPutter.OFFSET, false, true);
-					} catch (DatabaseDisabledException e) {
-						// Should be safe to ignore.
-					}
-				}
-			}, PersistentStatsPutter.OFFSET);
-		}
-
 		uskManager = new USKManager(this);
 		
 		// Persistent temp files
@@ -267,7 +251,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
-		        node.nodeDir.file("client.dat"));
+		        node.nodeDir.file("client.dat"), node);
 		// FIXME with crypto this load() may happen much later.
 		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		
@@ -293,6 +277,8 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
             }
 
         });
+        
+        this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 
 		initPTBF(nodeConfig);
 
