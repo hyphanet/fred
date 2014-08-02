@@ -23,7 +23,6 @@ import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
-import freenet.support.io.ByteArrayRandomAccessThingFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
@@ -37,7 +36,7 @@ import freenet.support.io.PersistentTempBucketFactory;
  */
 public class ClientContext {
 	
-	public transient FECQueue fecQueue;
+    public transient FECQueue fecQueue;
 	private transient ClientRequestScheduler sskFetchSchedulerBulk;
 	private transient ClientRequestScheduler chkFetchSchedulerBulk;
 	private transient ClientRequestScheduler sskInsertSchedulerBulk;
@@ -47,8 +46,11 @@ public class ClientContext {
 	private transient ClientRequestScheduler sskInsertSchedulerRT;
 	private transient ClientRequestScheduler chkInsertSchedulerRT;
 	private transient UserAlertManager alerts;
-	public transient final DBJobRunner jobRunner;
+	/** The main Executor for the node. Jobs for transient requests run here. */
 	public transient final Executor mainExecutor;
+	/** We need to be able to suspend execution of jobs changing persistent state in order to write
+	 * it to disk consistently. Also, some jobs may want to request immediate serialization. */
+	public transient final PersistentJobRunner jobRunner;
 	public transient final long nodeDBHandle;
 	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
@@ -77,7 +79,7 @@ public class ClientContext {
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
 
-	public ClientContext(long bootID, long nodeDBHandle, DBJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
+	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
@@ -151,21 +153,19 @@ public class ClientContext {
 	 */
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
-			jobRunner.queue(new DBJob() {
+			jobRunner.queue(new PersistentJob() {
 				
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					container.activate(inserter, 1);
+				public boolean run(ClientContext context) {
 					try {
-						inserter.start(earlyEncode, false, container, context);
+						inserter.start(earlyEncode, false, null, context);
 					} catch (InsertException e) {
-						inserter.client.onFailure(e, inserter, container);
+						inserter.client.onFailure(e, inserter, null);
 					}
-					container.deactivate(inserter, 1);
 					return true;
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.NORM_PRIORITY);
 		} else {
 			inserter.start(earlyEncode, false, null, this);
 		}
@@ -180,21 +180,19 @@ public class ClientContext {
 	 */
 	public void start(final ClientGetter getter) throws FetchException, DatabaseDisabledException {
 		if(getter.persistent()) {
-			jobRunner.queue(new DBJob() {
+			jobRunner.queue(new PersistentJob() {
 				
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					container.activate(getter, 1);
+				public boolean run(ClientContext context) {
 					try {
-						getter.start(container, context);
+						getter.start(null, context);
 					} catch (FetchException e) {
-						getter.clientCallback.onFailure(e, getter, container);
+						getter.clientCallback.onFailure(e, getter, null);
 					}
-					container.deactivate(getter, 1);
 					return true;
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.NORM_PRIORITY);
 		} else {
 			getter.start(null, this);
 		}
@@ -209,21 +207,19 @@ public class ClientContext {
 	 */
 	public void start(final SimpleManifestPutter inserter) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
-			jobRunner.queue(new DBJob() {
+			jobRunner.queue(new PersistentJob() {
 				
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					container.activate(inserter, 1);
+				public boolean run(ClientContext context) {
 					try {
-						inserter.start(container, context);
+						inserter.start(null, context);
 					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter, container);
+						inserter.cb.onFailure(e, inserter, null);
 					}
-					container.deactivate(inserter, 1);
 					return true;
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.NORM_PRIORITY);
 		} else {
 			inserter.start(null, this);
 		}
@@ -238,21 +234,19 @@ public class ClientContext {
 	 */
 	public void start(final BaseManifestPutter inserter) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
-			jobRunner.queue(new DBJob() {
+			jobRunner.queue(new PersistentJob() {
 				
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					container.activate(inserter, 1);
+				public boolean run(ClientContext context) {
 					try {
-						inserter.start(container, context);
+						inserter.start(null, context);
 					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter, container);
+						inserter.cb.onFailure(e, inserter, null);
 					}
-					container.deactivate(inserter, 1);
 					return true;
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.NORM_PRIORITY);
 		} else {
 			inserter.start(null, this);
 		}
@@ -286,10 +280,10 @@ public class ClientContext {
 		Logger.error(this, "Not storing ClientContext in database", new Exception("error"));
 		return false;
 	}
-
+	
 	/** Set the FEC queue after startup e.g. late startup when the database is encrypted. */
 	public void setFECQueue(FECQueue fecQueue2) {
-		this.fecQueue = fecQueue2;
+	    this.fecQueue = fecQueue2;
 	}
 
 	/** Set the persistent bucket factories after pulling them from the database. Normally called after

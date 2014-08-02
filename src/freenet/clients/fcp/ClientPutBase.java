@@ -323,14 +323,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				context.jobRunner.queue(new DBJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
+					public boolean run(ClientContext context) {
 						container.activate(ClientPutBase.this, 1);
 						receive(ce, container, context);
 						container.deactivate(ClientPutBase.this, 1);
 						return false;
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.NORM_PRIORITY);
 			} catch (DatabaseDisabledException e) {
 				// Impossible, not much we can do.
 			}

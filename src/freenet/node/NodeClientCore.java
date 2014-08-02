@@ -21,6 +21,8 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientLayerPersister;
+import freenet.client.async.PersistentJobRunnerImpl;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
@@ -29,6 +31,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.InsertCompressor;
+import freenet.client.async.PersistentJobRunner;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -124,6 +127,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public final TempBucketFactory tempBucketFactory;
 	public PersistentTempBucketFactory persistentTempBucketFactory;
 	public final DiskSpaceCheckingRandomAccessThingFactory persistentRAFFactory;
+	public final PersistentJobRunner persistentJobRunner;
 	public final Node node;
 	public final RequestTracker tracker;
 	final NodeStats nodeStats;
@@ -346,7 +350,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		} else {
 		    persistentRAFFactory = null;
 		}
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, 
+		persistentJobRunner = new ClientLayerPersister(node.executor);
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, new ClientLayerPersister(node.executor), node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
