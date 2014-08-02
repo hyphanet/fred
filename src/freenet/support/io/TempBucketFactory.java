@@ -555,7 +555,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	 * Create a temp bucket
 	 * 
 	 * @param size
-	 *            Default size
+	 *            Maximum size
 	 * @param factor
 	 *            Factor to increase size by when need more space
 	 * @return A temporary Bucket
@@ -586,6 +586,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			synchronized(ramBucketQueue) {
 				ramBucketQueue.add(toReturn.getReference());
 			}
+		} else {
+		    // If we know the disk space requirement in advance, check it.
+		    if(size != -1 && size != Long.MAX_VALUE) {
+		        if(filenameGenerator.getDir().getUsableSpace() + size < minDiskSpace)
+		            throw new InsufficientDiskSpaceException();
+		    }
 		}
 		return toReturn;
 }
