@@ -612,7 +612,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		}
 		if(!killedDatabase) {
 			try {
-				InsertCompressor.load(container, clientContext);
+				InsertCompressor.load(clientContext);
 				// FIXME get rid of this.
 				if(container != null) {
 					container.commit();

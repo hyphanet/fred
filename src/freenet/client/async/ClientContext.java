@@ -67,6 +67,8 @@ public class ClientContext {
 	public transient final Ticker ticker;
 	public transient final FilenameGenerator fg;
 	public transient FilenameGenerator persistentFG;
+	public transient final InsertCompressorTracker persistentInsertCompressors;
+	public transient final InsertCompressorTracker transientInsertCompressors;
 	public transient final RealCompressor rc;
 	public transient final DatastoreChecker checker;
 	public transient final CooldownTracker cooldownTracker;
@@ -82,6 +84,7 @@ public class ClientContext {
 	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
+			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
@@ -98,6 +101,8 @@ public class ClientContext {
 		this.persistentBucketFactory = ptbf;
 		this.tempBucketFactory = tbf;
 		this.healingQueue = hq;
+		this.transientInsertCompressors = transientInsertCompressors;
+		this.persistentInsertCompressors = persistentInsertCompressors;
 		this.uskManager = uskManager;
 		this.fastWeakRandom = fastWeakRandom;
 		this.ticker = ticker;
@@ -316,5 +321,9 @@ public class ClientContext {
 	public void setDownloadCache(DownloadCache cache) {
 		this.downloadCache = cache;
 	}
+
+    public InsertCompressorTracker getInsertCompressors(boolean persistent) {
+        return persistent ? persistentInsertCompressors : transientInsertCompressors;
+    }
 	
 }
