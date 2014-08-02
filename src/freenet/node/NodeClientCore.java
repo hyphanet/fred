@@ -340,7 +340,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
 	                    minDiskFreeLongTerm = val;
 	                }
-	                persistentRAFFactory.setMinDiskSpace(val);
+	                if(persistentRAFFactory != null)
+	                    persistentRAFFactory.setMinDiskSpace(val);
 	            }
 	            
 	        }, true);
@@ -377,10 +378,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		long memoryLimitedJobsMemoryLimit = FECQueue.MIN_MEMORY_ALLOCATION; // FIXME
-		LockableRandomAccessThingFactory raff = 
-		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
-		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
-		        persistentFilenameGenerator.getDir(), minDiskFreeLongTerm);
+		if(!killedDatabase) {
+		    LockableRandomAccessThingFactory raff = 
+		        new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
+		    persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
+		            persistentTempDir.dir(), minDiskFreeLongTerm);
+		} else {
+		    persistentRAFFactory = null;
+		}
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
