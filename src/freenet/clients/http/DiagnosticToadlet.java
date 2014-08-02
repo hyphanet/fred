@@ -11,6 +11,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.clients.fcp.DownloadRequestStatus;
 import freenet.clients.fcp.FCPServer;
 import freenet.clients.fcp.RequestStatus;
@@ -404,7 +405,7 @@ public class DiagnosticToadlet extends Toadlet {
 				text += "Downloads Queued: " + totalQueuedDownload + " (" + totalQueuedDownload + ")\n";
 				text += "Uploads Queued: " + totalQueuedUpload + " (" + totalQueuedUpload + ")\n";
 			}
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			text += "DatabaseDisabledException\n";
 		}
 		text += "\n";

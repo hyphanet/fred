@@ -28,6 +28,8 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.DownloadCache;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -509,8 +511,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public RequestStatus[] getGlobalRequests() throws DatabaseDisabledException {
-		if(core.killedDatabase()) throw new DatabaseDisabledException();
+	public RequestStatus[] getGlobalRequests() throws PersistenceDisabledException {
+		if(core.killedDatabase()) throw new PersistenceDisabledException();
 		List<RequestStatus> v = new ArrayList<RequestStatus>();
 		globalRebootClient.addPersistentRequestStatus(v);
 		if(globalForeverClient != null)
@@ -518,11 +520,11 @@ public class FCPServer implements Runnable, DownloadCache {
 		return v.toArray(new RequestStatus[v.size()]);
 	}
 
-	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, DatabaseDisabledException {
+	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, PersistenceDisabledException {
 		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null, core.clientContext)) {
 			final CountDownLatch done = new CountDownLatch(1);
 			final AtomicBoolean success = new AtomicBoolean();
-			core.clientContext.jobRunner.queue(new DBJob() {
+			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -530,10 +532,10 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
+				public boolean run(ClientContext context) {
 					boolean succeeded = false;
 					try {
-						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container, core.clientContext);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, null, core.clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {
@@ -543,7 +545,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					return true;
 				}
 
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY);
 			while (done.getCount() > 0) {
 				try {
 					done.await();
@@ -555,11 +557,11 @@ public class FCPServer implements Runnable, DownloadCache {
 		} else return true;
 	}
 
-	public boolean removeAllGlobalRequestsBlocking() throws DatabaseDisabledException {
+	public boolean removeAllGlobalRequestsBlocking() throws PersistenceDisabledException {
 		globalRebootClient.removeAll(null, core.clientContext);
 		final CountDownLatch done = new CountDownLatch(1);
 		final AtomicBoolean success = new AtomicBoolean();
-		core.clientContext.jobRunner.queue(new DBJob() {
+		core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -567,10 +569,10 @@ public class FCPServer implements Runnable, DownloadCache {
 			}
 
 			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
+			public boolean run(ClientContext context) {
 				boolean succeeded = false;
 				try {
-					globalForeverClient.removeAll(container, core.clientContext);
+					globalForeverClient.removeAll(null, core.clientContext);
 					succeeded = true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught while processing panic: "+t, t);
@@ -584,7 +586,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				return true;
 			}
 
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 		while (done.getCount() > 0) {
 			try {
 				done.await();
@@ -598,7 +600,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData,
 	        final String expectedMimeType, final String persistenceTypeString, final String returnTypeString,
 	        final boolean realTimeFlag, final File downloadsDir) throws NotAllowedException, IOException,
-	        DatabaseDisabledException {
+	        PersistenceDisabledException {
 		class OutputWrapper {
 			NotAllowedException ne;
 			IOException ioe;
@@ -606,7 +608,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 
 		final OutputWrapper ow = new OutputWrapper();
-		core.clientContext.jobRunner.queue(new DBJob() {
+		core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -614,12 +616,12 @@ public class FCPServer implements Runnable, DownloadCache {
 			}
 
 			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
+			public boolean run(ClientContext context) {
 				NotAllowedException ne = null;
 				IOException ioe = null;
 				try {
 					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType,
-					        persistenceTypeString, returnTypeString, realTimeFlag, container,
+					        persistenceTypeString, returnTypeString, realTimeFlag, null,
 					        downloadsDir);
 					return true;
 				} catch (NotAllowedException e) {
@@ -642,7 +644,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 			}
 
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 
 		synchronized(ow) {
 			while(true) {
@@ -661,7 +663,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) throws DatabaseDisabledException {
+	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) throws PersistenceDisabledException {
 		ClientRequest req = this.globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
 			req.modifyRequest(newToken, newPriority, this, null);
@@ -672,7 +674,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				boolean done;
 			}
 			final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new DBJob() {
+			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -680,14 +682,12 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
+				public boolean run(ClientContext context) {
 					boolean success = false;
 					try {
-						ClientRequest req = globalForeverClient.getRequest(identifier, container);
-						container.activate(req, 1);
+						ClientRequest req = globalForeverClient.getRequest(identifier, null);
 						if(req != null)
-							req.modifyRequest(newToken, newPriority, FCPServer.this, container);
-						container.deactivate(req, 1);
+							req.modifyRequest(newToken, newPriority, FCPServer.this, null);
 						success = true;
 					} finally {
 						synchronized(ow) {
@@ -699,7 +699,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					return true;
 				}
 
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY);
 
 			synchronized(ow) {
 				while(true) {
@@ -859,7 +859,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * if we are shutting down, if we are waiting for the user to give us the decryption 
 	 * password etc.
 	 */
-	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, DatabaseDisabledException {
+	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(null, core.clientContext);
 		} else {
@@ -874,7 +874,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				container.deactivate(req, 1);
 			} else {
 				final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new DBJob() {
+			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -882,11 +882,11 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
+				public boolean run(ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
-						req.register(container, false);
-						req.start(container, context);
+						req.register(null, false);
+						req.start(null, context);
 					} catch (IdentifierCollisionException e) {
 						ow.collided = e;
 					} finally {
@@ -895,11 +895,10 @@ public class FCPServer implements Runnable, DownloadCache {
 							ow.notifyAll();
 						}
 					}
-					container.deactivate(req, 1);
 					return true;
 				}
 
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY);
 
 			synchronized(ow) {
 				while(true) {
@@ -920,7 +919,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws DatabaseDisabledException {
+	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws PersistenceDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
 			req.restart(null, core.clientContext, disableFilterData);
@@ -931,7 +930,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				boolean success;
 			}
 			final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new DBJob() {
+			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -939,15 +938,15 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
+				public boolean run(ClientContext context) {
 					boolean success = false;
 					try {
-						ClientRequest req = globalForeverClient.getRequest(identifier, container);
+						ClientRequest req = globalForeverClient.getRequest(identifier, null);
 						if(req != null) {
-							req.restart(container, context, disableFilterData);
+							req.restart(null, context, disableFilterData);
 							success = true;
 						}
-					} catch (DatabaseDisabledException e) {
+					} catch (PersistenceDisabledException e) {
 						success = false;
 					} finally {
 						synchronized(ow) {
@@ -959,7 +958,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					return true;
 				}
 
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY);
 
 			synchronized(ow) {
 				while(true) {
@@ -976,7 +975,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 
 
-	public FetchResult getCompletedRequestBlocking(final FreenetURI key) throws DatabaseDisabledException {
+	public FetchResult getCompletedRequestBlocking(final FreenetURI key) throws PersistenceDisabledException {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
@@ -995,7 +994,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 		final OutputWrapper ow = new OutputWrapper();
 
-		core.clientContext.jobRunner.queue(new DBJob() {
+		core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -1003,10 +1002,10 @@ public class FCPServer implements Runnable, DownloadCache {
 			}
 
 			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
+			public boolean run(ClientContext context) {
 				FetchResult result = null;
 				try {
-					result = lookup(key, false, context, container, false, null);
+					result = lookup(key, false, context, null, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -1017,7 +1016,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				return false;
 			}
 
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 
 		synchronized(ow) {
 			while(true) {
