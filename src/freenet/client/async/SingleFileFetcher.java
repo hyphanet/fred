@@ -1138,36 +1138,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				context.uskManager.checkUSK(uri, persistent, container, false);
 			}
 
-			if(!persistent) {
-				// Run directly - we are running on some thread somewhere, don't worry about it.
-				parent.onTransition(state, SingleFileFetcher.this, container);
-				innerSuccess(data, container, context);
-			} else {
-				boolean wasActive;
-				// We are running on the database thread.
-				// Add a tag, unpack on a separate thread, copy the data to a persistent bucket, then schedule on the database thread,
-				// remove the tag, and call the callback.
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				if(!wasActive)
-					container.activate(SingleFileFetcher.this, 1);
-				container.activate(parent, 1);
-				parent.onTransition(state, SingleFileFetcher.this, container);
-				if(persistent)
-					container.activate(actx, 1);
-				ah.activateForExecution(container);
-				ah.extractPersistentOffThread(data, true, actx, element, callback, container, context);
-				if(!wasActive)
-					container.deactivate(SingleFileFetcher.this, 1);
-				if(state != null)
-					state.removeFrom(container, context);
-				container.delete(this);
-				if(hashes != null) {
-					for(HashResult res : hashes) {
-						container.activate(res, Integer.MAX_VALUE);
-						res.removeFrom(container);
-					}
-				}
-			}
+			// Run directly, even if persistent.
+			parent.onTransition(state, SingleFileFetcher.this, container);
+			innerSuccess(data, container, context);
 		}
 
 		private void innerSuccess(Bucket data, ObjectContainer container, ClientContext context) {

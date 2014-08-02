@@ -866,24 +866,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public void start(Config config) throws NodeInitException {
 		backgroundBlockEncoder.setContext(clientContext);
 		node.executor.execute(backgroundBlockEncoder, "Background block encoder");
-		try {
-			clientContext.jobRunner.queue(new DBJob() {
-
-				@Override
-				public String toString() {
-					return "Init ArchiveManager";
-				}
-
-				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					ArchiveManager.init(container, context, context.nodeDBHandle);
-					return false;
-				}
-
-			}, NativeThread.MAX_PRIORITY, false);
-		} catch (DatabaseDisabledException e) {
-			// Safe to ignore
-		}
 
 		persister.start();
 

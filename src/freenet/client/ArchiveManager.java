@@ -723,10 +723,6 @@ outerZIP:		while(true) {
 		}
 	}
 
-	public static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
-		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
-	}
-
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
 		return false;

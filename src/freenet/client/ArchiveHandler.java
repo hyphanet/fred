@@ -72,23 +72,6 @@ public interface ArchiveHandler {
 	public abstract void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager, 
 			ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException;
 
-	/**
-	 * Unpack a fetched archive on a separate thread for a persistent caller.
-	 * This involves:
-	 * - Add a tag to the database so that it will be restarted on a crash.
-	 * - Run the actual unpack on a separate thread.
-	 * - Copy the data to a persistent bucket.
-	 * - Schedule a database job.
-	 * - Call the callback.
-	 * @param bucket
-	 * @param actx
-	 * @param element
-	 * @param callback
-	 * @param container
-	 * @param context
-	 */
-	public abstract void extractPersistentOffThread(Bucket bucket, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
-	
 	public abstract void activateForExecution(ObjectContainer container);
 
 	public abstract ArchiveHandler cloneHandler();
