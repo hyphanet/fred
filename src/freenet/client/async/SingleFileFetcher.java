@@ -962,7 +962,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				ClientGetState sf;
 				// Use the new splitfile code only in certain circumstances.
 				// FIXME relax these conditions once know it works.
-				if(ctx.useNewSplitfileCodeTransient && (!persistent) // Transient only for now
+				if((!persistent) // Transient only for now
 				        && !((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
 				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
