@@ -32,7 +32,6 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NotPersistentBucket;
 import freenet.support.io.NullOutputStream;
-import freenet.support.io.SegmentedBucketChainBucket;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -431,16 +430,6 @@ class SingleFileInserter implements ClientPutState {
 	
 	private Bucket fixNotPersistent(Bucket data, ClientContext context) throws InsertException {
 		boolean skip = false;
-		if(data instanceof SegmentedBucketChainBucket) {
-			SegmentedBucketChainBucket seg = (SegmentedBucketChainBucket) data;
-			Bucket[] buckets = seg.getBuckets();
-			if(buckets.length == 1) {
-				seg.clear();
-				data = buckets[0];
-				skip = true;
-				if(logMINOR) Logger.minor(this, "Using bucket 0 of SegmentedBucketChainBucket");
-			}
-		}
 		try {
 			if(!skip) {
 			if(logMINOR) Logger.minor(this, "Copying data from "+data+" length "+data.size());
