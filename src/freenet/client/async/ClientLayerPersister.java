@@ -17,6 +17,7 @@ import freenet.clients.fcp.RequestStatusCache;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeInitException;
 import freenet.support.Executor;
+import freenet.support.Ticker;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PersistentTempBucketFactory;
 
@@ -35,8 +36,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private static final int VERSION = 1;
 
     /** Load everything. */
-    public ClientLayerPersister(Executor executor, File filename) {
-        super(executor, INTERVAL);
+    public ClientLayerPersister(Executor executor, Ticker ticker, File filename) {
+        super(executor, ticker, INTERVAL);
         this.filename = filename;
         this.bucket = new FileBucket(filename, false, false, false, false, false);
     }

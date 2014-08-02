@@ -6,6 +6,7 @@ import java.util.List;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
 
 /** Runs PersistentJob's and periodically, or on demand, suspends all jobs and calls 
@@ -13,6 +14,7 @@ import freenet.support.io.NativeThread;
 public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     
     final Executor executor;
+    final Ticker ticker;
     /** The number of jobs actually running. */
     private int runningJobs;
     /** If true, we must suspend and write to disk. */
@@ -25,9 +27,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     final long checkpointInterval;
     /** Not to be used by child classes. */
     private Object sync = new Object();
+    private boolean willCheck = false;
 
-    public PersistentJobRunnerImpl(Executor executor, long interval) {
+    public PersistentJobRunnerImpl(Executor executor, Ticker ticker, long interval) {
         this.executor = executor;
+        this.ticker = ticker;
         queuedJobs = new ArrayList<QueuedJob>();
         lastCheckpointed = System.currentTimeMillis();
         this.checkpointInterval = interval;
@@ -79,21 +83,13 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                             (System.currentTimeMillis() - lastCheckpointed > checkpointInterval);
                     }
                     runningJobs--;
-                    if(!(mustCheckpoint && runningJobs == 0)) return;
+                    if(!mustCheckpoint) {
+                        delayedCheckpoint();
+                        return;
+                    }
+                    if(runningJobs != 0) return;
                     if(threadPriority < WRITE_AT_PRIORITY) {
-                        executor.execute(new PrioRunnable() {
-
-                            @Override
-                            public void run() {
-                                checkpoint();
-                            }
-
-                            @Override
-                            public int getPriority() {
-                                return WRITE_AT_PRIORITY;
-                            }
-                            
-                        });
+                        checkpointOffThread();
                         return;
                     }
                 }
@@ -124,6 +120,47 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
+    public synchronized void delayedCheckpoint() {
+        if(willCheck) return;
+        ticker.queueTimedJob(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                synchronized(sync) {
+                    if(!(mustCheckpoint || 
+                            System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
+                        return;
+                    if(runningJobs != 0) return;
+                    mustCheckpoint = false;
+                }
+                checkpoint();
+            }
+
+            @Override
+            public int getPriority() {
+                return WRITE_AT_PRIORITY;
+            }
+            
+        }, checkpointInterval);
+        willCheck = true;
+    }
+
+    public void checkpointOffThread() {
+        executor.execute(new PrioRunnable() {
+
+            @Override
+            public void run() {
+                checkpoint();
+            }
+
+            @Override
+            public int getPriority() {
+                return WRITE_AT_PRIORITY;
+            }
+            
+        });
+    }
+
     public void setCommitThisTransaction() {
         synchronized(sync) {
             mustCheckpoint = true;

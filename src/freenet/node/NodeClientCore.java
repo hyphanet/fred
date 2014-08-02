@@ -266,7 +266,8 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp").toString(),
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		
-		clientLayerPersister = new ClientLayerPersister(node.executor, node.nodeDir.file("client.dat"));
+		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
+		        node.nodeDir.file("client.dat"));
 		// FIXME with crypto this load() may happen much later.
 		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		
