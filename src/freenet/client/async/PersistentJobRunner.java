@@ -6,4 +6,8 @@ public interface PersistentJobRunner {
 
     void queue(PersistentJob persistentJob, int threadPriority);
 
+    /** Commit ASAP. Can also be set via returning true from a PersistentJob, but it's useful to be
+     * able to do it "inline". */
+    void setCommitThisTransaction();
+
 }
