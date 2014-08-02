@@ -11,6 +11,8 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -319,21 +321,19 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(persistenceType == PERSIST_FOREVER && container == null) {
-			try {
-				context.jobRunner.queue(new DBJob() {
-
-					@Override
-					public boolean run(ClientContext context) {
-						container.activate(ClientPutBase.this, 1);
-						receive(ce, container, context);
-						container.deactivate(ClientPutBase.this, 1);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY);
-			} catch (DatabaseDisabledException e) {
-				// Impossible, not much we can do.
-			}
+		    try {
+		        context.jobRunner.queue(new PersistentJob() {
+		            
+		            @Override
+		            public boolean run(ClientContext context) {
+		                receive(ce, null, context);
+		                return false;
+		            }
+		            
+		        }, NativeThread.NORM_PRIORITY);
+		    } catch (PersistenceDisabledException e) {
+		     // Impossible, not much we can do.
+		    }
 			return;
 		}
 		if(ce instanceof SplitfileProgressEvent) {
@@ -478,21 +478,19 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			} else {
 				final FCPConnectionOutputHandler h = handler;
 				try {
-					context.jobRunner.queue(new DBJob() {
-
-						@Override
-						public boolean run(ObjectContainer container, ClientContext context) {
-							container.activate(ClientPutBase.this, 1);
-							trySendProgressMessage(msg, verbosity, h, container, context);
-							container.deactivate(ClientPutBase.this, 1);
-							return false;
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
-				} catch (DatabaseDisabledException e) {
-					// Impossible.
+				    context.jobRunner.queue(new PersistentJob() {
+				        
+				        @Override
+				        public boolean run(ClientContext context) {
+				            trySendProgressMessage(msg, verbosity, h, null, context);
+				            return false;
+				        }
+				        
+				    }, NativeThread.NORM_PRIORITY);
+				    return;
+				} catch (PersistenceDisabledException e) {
+				    // Impossible.
 				}
-				return;
 			}
 		} else {
 			synchronized(this) {

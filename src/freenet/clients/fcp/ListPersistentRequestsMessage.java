@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
@@ -30,7 +32,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		return NAME;
 	}
 	
-	public static abstract class ListJob implements DBJob {
+	public static abstract class ListJob implements PersistentJob {
 
 		final FCPClient client;
 		final FCPConnectionOutputHandler outputHandler;
@@ -45,15 +47,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		int progressRunning = 0;
 		
 		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			if(container != null) container.activate(client, 1);
+		public boolean run(ClientContext context) {
 			while(!sentRestartJobs) {
 				if(outputHandler.isQueueHalfFull()) {
-					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, container, progressCompleted, 30);
+				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, null, progressCompleted, 30);
 				if(p <= progressCompleted) {
 					sentRestartJobs = true;
 					break;
@@ -61,18 +61,16 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 				progressCompleted = p;
 			}
 			if(noRunning()) {
-				complete(container, context);
+				complete(context);
 			}
 			while(true) {
 				if(outputHandler.isQueueHalfFull()) {
-					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
 					reschedule(context);
 					return false;
 				}
-				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progressRunning, 30);
+				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, null, progressRunning, 30);
 				if(p <= progressRunning) {
-					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
-					complete(container, context);
+					complete(context);
 					return false;
 				}
 				progressRunning = p;
@@ -81,7 +79,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		abstract void reschedule(ClientContext context);
 		
-		abstract void complete(ObjectContainer container, ClientContext context);
+		abstract void complete(ClientContext context);
 		
 		protected boolean noRunning() {
 			return false;
@@ -100,7 +98,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		@Override
 		public void run() {
-			run(null, context);
+			run(context);
 		}
 
 		@Override
@@ -110,7 +108,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 	}
 	
-	public static abstract class PersistentListJob extends ListJob implements DBJob, Runnable {
+	public static abstract class PersistentListJob extends ListJob implements PersistentJob, Runnable {
 		
 		final ClientContext context;
 		
@@ -126,11 +124,11 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		@Override
 		public void run() {
-			try {
-				context.jobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, false);
-			} catch (DatabaseDisabledException e) {
-				outputHandler.queue(new EndListPersistentRequestsMessage());
-			}
+		    try {
+		        context.jobRunner.queue(this, NativeThread.HIGH_PRIORITY-1);
+		    } catch (PersistenceDisabledException e) {
+		        outputHandler.queue(new EndListPersistentRequestsMessage());
+		    }
 		}
 		
 	}
@@ -144,7 +142,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext) {
 
 			@Override
-			void complete(ObjectContainer container, ClientContext context) {
+			void complete(ClientContext context) {
 				
 				if(handler.getRebootClient().watchGlobal) {
 					FCPClient globalRebootClient = handler.server.globalRebootClient;
@@ -152,62 +150,59 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context) {
 
 						@Override
-						void complete(ObjectContainer container,
-								ClientContext context) {
-							finishComplete(container, context);
+						void complete(ClientContext context) {
+							finishComplete(null, context);
 						}
 						
 					};
 					job.run();
 				} else {
-					finishComplete(container, context);
+					finishComplete(null, context);
 				}
 				
 			}
 
 			private void finishComplete(ObjectContainer container,
 					ClientContext context) {
-				try {
-					context.jobRunner.queue(new DBJob() {
+					try {
+                        context.jobRunner.queue(new PersistentJob() {
 
-						@Override
-						public boolean run(ObjectContainer container, ClientContext context) {
-							FCPClient foreverClient = handler.getForeverClient(container);
-							PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
+                        	@Override
+                        	public boolean run(ClientContext context) {
+                        		FCPClient foreverClient = handler.getForeverClient(null);
+                        		PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
 
-								@Override
-								void complete(ObjectContainer container,
-										ClientContext context) {
-									if(handler.getRebootClient().watchGlobal) {
-										FCPClient globalForeverClient = handler.server.globalForeverClient;
-										PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context) {
+                        			@Override
+                        			void complete(ClientContext context) {
+                        				if(handler.getRebootClient().watchGlobal) {
+                        					FCPClient globalForeverClient = handler.server.globalForeverClient;
+                        					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context) {
 
-											@Override
-											void complete(
-													ObjectContainer container,
-													ClientContext context) {
-												finishFinal();
-											}
-											
-										};
-										job.run(container, context);
-									} else {
-										finishFinal();
-									}
-								}
+                        						@Override
+                        						void complete(
+                        								ClientContext context) {
+                        							finishFinal();
+                        						}
+                        						
+                        					};
+                        					job.run(context);
+                        				} else {
+                        					finishFinal();
+                        				}
+                        			}
 
-								private void finishFinal() {
-									outputHandler.queue(new EndListPersistentRequestsMessage());
-								}
-								
-							};
-							job.run(container, context);
-							return false;
-						}
-					}, NativeThread.HIGH_PRIORITY-1, false);
-				} catch (DatabaseDisabledException e) {
-					handler.outputHandler.queue(new EndListPersistentRequestsMessage());
-				}
+                        			private void finishFinal() {
+                        				outputHandler.queue(new EndListPersistentRequestsMessage());
+                        			}
+                        			
+                        		};
+                        		job.run(context);
+                        		return false;
+                        	}
+                        }, NativeThread.HIGH_PRIORITY-1);
+                    } catch (PersistenceDisabledException e) {
+                        handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+                    }
 			}
 			
 		};

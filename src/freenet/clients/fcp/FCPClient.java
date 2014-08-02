@@ -175,22 +175,22 @@ public class FCPClient {
 			PersistentListJob job = new PersistentListJob(this, outputHandler, context) {
 
 				@Override
-				void complete(ObjectContainer container, ClientContext context) {
+				void complete(ClientContext context) {
 					// Do nothing.
 				}
 				
 			};
-			job.run(container, context);
+			job.run(context);
 		} else {
 			TransientListJob job = new TransientListJob(this, outputHandler, context) {
 
 				@Override
-				void complete(ObjectContainer container, ClientContext context) {
+				void complete(ClientContext context) {
 					// Do nothing.
 				}
 				
 			};
-			job.run(container, context);
+			job.run(context);
 
 		}
 	}

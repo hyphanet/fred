@@ -23,6 +23,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ExpectedFileSizeEvent;
@@ -180,7 +181,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				this.failed = e;
 				this.finished = true;
 			}
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// Impossible
 			Logger.error(this, "Failed to start: "+e);
 			synchronized(this) {

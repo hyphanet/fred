@@ -22,7 +22,9 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentClientCallback;
+import freenet.client.async.PersistentJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.EnterFiniteCooldownEvent;
@@ -835,19 +837,18 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			progress = new EnterFiniteCooldown(identifier, global, event.wakeupTime);
 		}
 		else return; // Don't know what to do with event
-		// container may be null...
-		if(persistenceType == PERSIST_FOREVER && container == null) {
+		if(persistenceType == PERSIST_FOREVER) {
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						trySendProgress(progress, verbosityMask, null, container);
+					public boolean run(ClientContext context) {
+						trySendProgress(progress, verbosityMask, null, null);
 						return false;
 					}
 
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				// Not much we can do
 			}
 		} else {

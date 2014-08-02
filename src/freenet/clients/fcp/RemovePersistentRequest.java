@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -51,30 +53,30 @@ public class RemovePersistentRequest extends FCPMessage {
 			req = handler.removeRequestByIdentifier(identifier, true);
 		}
 		if(req == null) {
-			try {
-				handler.server.core.clientContext.jobRunner.queue(new DBJob() {
-
-					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						try {
-							ClientRequest req = handler.removePersistentForeverRequest(global, identifier, container);
-							if(req == null) {
-					    		Logger.error(this, "Huh ? the request is null!");
-					    		return false;
-							}
-							return true;
-						} catch (MessageInvalidException e) {
-							FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
-							handler.outputHandler.queue(err);
-							return false;
-						}
-					}
-					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled and non-persistent request not found", identifier, global);
-				handler.outputHandler.queue(err);
-			}
+		    try {
+                handler.server.core.clientContext.jobRunner.queue(new PersistentJob() {
+                    
+                    @Override
+                    public boolean run(ClientContext context) {
+                        try {
+                            ClientRequest req = handler.removePersistentForeverRequest(global, identifier, null);
+                            if(req == null) {
+                                Logger.error(this, "Huh ? the request is null!");
+                                return false;
+                            }
+                            return true;
+                        } catch (MessageInvalidException e) {
+                            FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
+                            handler.outputHandler.queue(err);
+                            return false;
+                        }
+                    }
+                    
+                }, NativeThread.HIGH_PRIORITY);
+            } catch (PersistenceDisabledException e) {
+                FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled and non-persistent request not found", identifier, global);
+                handler.outputHandler.queue(err);
+            }
 		}
 	}
 

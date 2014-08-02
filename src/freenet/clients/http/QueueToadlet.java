@@ -43,6 +43,8 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
@@ -143,7 +145,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		fcp.setCompletionCallback(this);
 		try {
 			loadCompletedIdentifiers();
-		} catch (DatabaseDisabledException e) {
+		} catch (PersistenceDisabledException e) {
 			// The user will know soon enough
 		}
 	}
@@ -1095,7 +1097,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		try {
-			core.clientContext.jobRunner.queue(new DBJob() {
+			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
 				public String toString() {
@@ -1103,14 +1105,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 
 				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
+				public boolean run(ClientContext context) {
 					HTMLNode pageNode = null;
 					String plainText = null;
 					try {
 						if(count) {
-							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys(container) + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys(container);
+							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys(null) + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys(null);
 							Logger.minor(this, "Total waiting CHKs: "+queued);
-							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countPersistentQueuedRequests(container) + core.requestStarters.chkFetchSchedulerRT.countPersistentQueuedRequests(container);
+							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countPersistentQueuedRequests(null) + core.requestStarters.chkFetchSchedulerRT.countPersistentQueuedRequests(null);
 							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
 							pageNode = page.outer;
@@ -1140,8 +1142,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 			// Do not use maximal priority: There may be exceptional cases which have higher priority than the UI, to get rid of excessive garbage for example.
-			}, NativeThread.HIGH_PRIORITY, false);
-		} catch (DatabaseDisabledException e1) {
+			}, NativeThread.HIGH_PRIORITY);
+		} catch (PersistenceDisabledException e1) {
 			sendPersistenceDisabledError(ctx);
 			return;
 		}
@@ -2237,7 +2239,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}, "Save completed identifiers");
 	}
 
-	private void loadCompletedIdentifiers() throws DatabaseDisabledException {
+	private void loadCompletedIdentifiers() throws PersistenceDisabledException {
 		String dl = uploads ? "uploads" : "downloads";
 		File completedIdentifiersList = core.node.userDir().file("completed.list."+dl);
 		File completedIdentifiersListNew = core.node.userDir().file("completed.list."+dl+".bak");
@@ -2251,7 +2253,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} else
 			oldCompletedIdentifiersList.delete();
 		final boolean writeAnyway = migrated;
-		core.clientContext.jobRunner.queue(new DBJob() {
+		core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
 			public String toString() {
@@ -2259,14 +2261,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 
 			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
+			public boolean run(ClientContext context) {
 				String[] identifiers;
 				boolean changed = writeAnyway;
 				synchronized(completedRequestIdentifiers) {
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
 				for(String identifier: identifiers) {
-					ClientRequest req = fcp.getGlobalRequest(identifier, container);
+					ClientRequest req = fcp.getGlobalRequest(identifier, null);
 					if(req == null || req instanceof ClientGet == uploads) {
 						synchronized(completedRequestIdentifiers) {
 							completedRequestIdentifiers.remove(identifier);
@@ -2274,13 +2276,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						changed = true;
 						continue;
 					}
-					registerAlert(req, container);
+					registerAlert(req, null);
 				}
 				if(changed) saveCompletedIdentifiers();
 				return false;
 			}
 
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 	}
 
 	private boolean readCompletedIdentifiers(File file) {

@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJob;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
@@ -77,30 +79,28 @@ public class ModifyPersistentRequest extends FCPMessage {
 		
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
 		if(req == null) {
-			try {
-				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
-
-					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
-						container.activate(req, 1);
-						if(req==null){
-							Logger.error(this, "Huh ? the request is null!");
-							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-							handler.outputHandler.queue(msg);
-							return false;
-						} else {
-							req.modifyRequest(clientToken, priorityClass, handler.server, container);
-						}
-						container.deactivate(req, 1);
-						return true;
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-				handler.outputHandler.queue(msg);
-			}
+		    try {
+                node.clientCore.clientContext.jobRunner.queue(new PersistentJob() {
+                    
+                    @Override
+                    public boolean run(ClientContext context) {
+                        ClientRequest req = handler.getForeverRequest(global, handler, identifier, null);
+                        if(req==null){
+                            Logger.error(this, "Huh ? the request is null!");
+                            ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+                            handler.outputHandler.queue(msg);
+                            return false;
+                        } else {
+                            req.modifyRequest(clientToken, priorityClass, handler.server, null);
+                        }
+                        return true;
+                    }
+                    
+                }, NativeThread.NORM_PRIORITY);
+            } catch (PersistenceDisabledException e) {
+                ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+                handler.outputHandler.queue(msg);
+            }
 		} else {
 			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer(), null);
 		}

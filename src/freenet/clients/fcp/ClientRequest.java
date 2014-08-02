@@ -9,7 +9,9 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentClientCallback;
+import freenet.client.async.PersistentJob;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
@@ -324,7 +326,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context, boolean disableFilterData) throws DatabaseDisabledException;
+	public abstract boolean restart(ObjectContainer container, ClientContext context, boolean disableFilterData) throws PersistenceDisabledException;
 
 	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
@@ -390,7 +392,7 @@ public abstract class ClientRequest {
 		client.queueClientRequestMessage(modifiedMsg, 0, container);
 	}
 
-	public void restartAsync(final FCPServer server, final boolean disableFilterData) throws DatabaseDisabledException {
+	public void restartAsync(final FCPServer server, final boolean disableFilterData) throws PersistenceDisabledException {
 		synchronized(this) {
 			this.started = false;
 		}
@@ -401,21 +403,19 @@ public abstract class ClientRequest {
 			}
 		}
 		if(persistenceType == PERSIST_FOREVER) {
-		server.core.clientContext.jobRunner.queue(new DBJob() {
+		server.core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
-			public boolean run(ObjectContainer container, ClientContext context) {
-				container.activate(ClientRequest.this, 1);
-				try {
-					restart(container, context, disableFilterData);
-				} catch (DatabaseDisabledException e) {
-					// Impossible
-				}
-				container.deactivate(ClientRequest.this, 1);
+			public boolean run(ClientContext context) {
+			    try {
+			        restart(null, context, disableFilterData);
+			    } catch (PersistenceDisabledException e) {
+			        // Impossible
+			    }
 				return true;
 			}
 			
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 		} else {
 			server.core.getExecutor().execute(new PrioRunnable() {
 
@@ -426,11 +426,11 @@ public abstract class ClientRequest {
 
 				@Override
 				public void run() {
-					try {
-						restart(null, server.core.clientContext, disableFilterData);
-					} catch (DatabaseDisabledException e) {
-						// Impossible
-					}
+				    try {
+                        restart(null, server.core.clientContext, disableFilterData);
+                    } catch (PersistenceDisabledException e) {
+                        // Impossible
+                    }
 				}
 				
 			}, "Restart request");
