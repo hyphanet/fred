@@ -57,7 +57,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final FilenameGenerator filenameGenerator;
 	private final PooledFileRandomAccessThingFactory underlyingDiskRAFFactory;
 	private final DiskSpaceCheckingRandomAccessThingFactory diskRAFFactory;
-	private long minDiskSpace;
+	private volatile long minDiskSpace;
 	private long bytesInUse = 0;
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
@@ -215,6 +215,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
+		    long lastCheckedSize = 0;
+		    long CHECK_DISK_EVERY = 4096;
 			boolean closed = false;
 			TempBucketOutputStream(short idx) throws IOException {
 				if(os == null)
@@ -244,6 +246,14 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 						}
 						migrateToDisk();
 					}
+				} else {
+				    // Check for excess disk usage.
+				    if(futureSize - lastCheckedSize >= CHECK_DISK_EVERY) {
+				        if(filenameGenerator.getDir().getUsableSpace() + (futureSize - currentSize) <
+				                minDiskSpace)
+				            throw new InsufficientDiskSpaceException();
+				        lastCheckedSize = futureSize;
+				    }
 				}
 			}
 			
