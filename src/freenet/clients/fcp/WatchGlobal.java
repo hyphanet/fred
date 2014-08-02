@@ -51,24 +51,9 @@ public class WatchGlobal extends FCPMessage {
 			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
 			handler.outputHandler.queue(err);
 		}
-		try {
-			handler.server.core.clientContext.jobRunner.queue(new DBJob() {
-
-				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					FCPClient client = handler.getForeverClient(container);
-					container.activate(client, 1);
-					client.setWatchGlobal(enabled, verbosityMask, handler.server, container);
-					container.deactivate(client, 1);
-					return false;
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
-		} catch (DatabaseDisabledException e) {
-			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
-			handler.outputHandler.queue(err);
-		}
-		
+		FCPClient client = handler.getForeverClient(null);
+		if(client != null)
+		    client.setWatchGlobal(enabled, verbosityMask, handler.server, null);
 	}
 
 	@Override
