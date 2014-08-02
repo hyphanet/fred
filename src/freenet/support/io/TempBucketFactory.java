@@ -29,7 +29,6 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory.InsufficientSpaceException;
 
 import java.util.ArrayList;
 
@@ -604,7 +603,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 				while(true) {
 				    try {
                         cleanBucketQueue(now, false);
-                    } catch (InsufficientSpaceException e) {
+                    } catch (InsufficientDiskSpaceException e) {
                         if(!saidSo) {
                             Logger.error(this, "Insufficient disk space to migrate in-RAM buckets to disk!");
                             System.err.println("Out of disk space!");
@@ -627,7 +626,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 					}
 					try {
                         if(!cleanBucketQueue(System.currentTimeMillis(), true)) return;
-                    } catch (InsufficientSpaceException e) {
+                    } catch (InsufficientDiskSpaceException e) {
                         if(!saidSo) {
                             Logger.error(this, "Insufficient disk space to migrate in-RAM buckets to disk!");
                             System.err.println("Out of disk space!");
@@ -657,7 +656,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	 * @return True if we migrated any buckets.
 	 * @throws InsufficientSpaceException If there is not enough space to migrate buckets to disk.
 	 */
-	private boolean cleanBucketQueue(long now, boolean force) throws InsufficientSpaceException {
+	private boolean cleanBucketQueue(long now, boolean force) throws InsufficientDiskSpaceException {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
 		Queue<Migratable> toMigrate = null;
@@ -698,7 +697,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			for(Migratable tmpBucket : toMigrate) {
 				try {
 					tmpBucket.migrateToDisk();
-				} catch (InsufficientSpaceException e) {
+				} catch (InsufficientDiskSpaceException e) {
 				    throw e;
 				} catch(IOException e) {
 					Logger.error(tmpBucket, "An IOE occured while migrating long-lived buckets:" + e.getMessage(), e);

@@ -28,11 +28,6 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
         this.minDiskSpace = min;
     }
     
-    class InsufficientSpaceException extends IOException {
-        
-    }
-
-    
     @Override
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
         lock.lock();
@@ -40,7 +35,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             if(dir.getUsableSpace() > size + minDiskSpace)
                 return underlying.makeRAF(size);
             else
-                throw new InsufficientSpaceException();
+                throw new InsufficientDiskSpaceException();
         } finally {
             lock.unlock();
         }
@@ -54,7 +49,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             if(dir.getUsableSpace() > size + minDiskSpace)
                 return underlying.makeRAF(size);
             else
-                throw new InsufficientSpaceException();
+                throw new InsufficientDiskSpaceException();
         } finally {
             lock.unlock();
         }
