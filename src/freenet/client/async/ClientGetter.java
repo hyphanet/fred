@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -312,9 +310,19 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		Bucket finalResult = null;
 		FetchResult result = null;
 
-		// FIXME use the two max lengths separately.
-		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-
+        long maxLen = -1;
+        synchronized(this) {
+            if(expectedSize > 0) {
+                maxLen = expectedSize;
+            }
+        }
+        if(ctx.filterData && maxLen >= 0) {
+            maxLen = expectedSize * 2 + 1024;
+        }
+        if(maxLen == -1) {
+            maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+        }
+        
 		if(persistent()) {
 			container.activate(returnBucket, 5);
 			container.activate(state, 1);
