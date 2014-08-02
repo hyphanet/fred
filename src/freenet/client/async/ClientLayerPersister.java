@@ -25,7 +25,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     static final long INTERVAL = MINUTES.toMillis(10);
     private final File filename;
     private final FileBucket bucket;
-    private boolean loaded;
+    private boolean started;
     private FCPPersistentRoot root;
     private InsertCompressorTracker persistentCompressorTracker;
     private PersistentTempBucketFactory persistentTempFactory;
@@ -86,17 +86,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             e.printStackTrace();
             throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
         }
-        synchronized(this) {
-            loaded = true;
-            updateLastCheckpointed();
-        }
+        onStarted();
     }
 
     @Override
     protected void innerCheckpoint() {
-        synchronized(this) {
-            if(!loaded) return;
-        }
         save();
     }
     
@@ -125,29 +119,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
-    @Override
-    public void queue(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
-        synchronized(this) {
-            if(!loaded) throw new PersistenceDisabledException();
-            if(killed) throw new PersistenceDisabledException();
-        }
-        super.queue(job, threadPriority);
-    }
-    
     public InsertCompressorTracker persistentCompressorTracker() {
         return persistentCompressorTracker;
     }
     
     public PersistentTempBucketFactory persistentTempBucketFactory() {
         return persistentTempFactory;
-    }
-
-    public synchronized void kill() {
-        killed = true;
-    }
-
-    public synchronized boolean killed() {
-        return killed;
     }
 
 }

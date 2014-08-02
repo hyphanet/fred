@@ -1216,40 +1216,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		masterKeysFile = f;
 		FileUtil.setOwnerRW(masterKeysFile);
-
-		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
-
-			@Override
-			public void realRun() {
-				System.err.println("Stopping database jobs...");
-				if(clientCore == null) return;
-				clientCore.killDatabase();
-			}
-
-		});
-
-		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, true) {
-
-			@Override
-			public void realRun() {
-				if(db == null) return;
-				System.err.println("Rolling back unfinished transactions...");
-				db.rollback();
-				System.err.println("Closing database...");
-				db.close();
-				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-					try {
-						FileUtil.secureDelete(dbFileCrypt);
-					} catch (IOException e) {
-						// Ignore
-					} finally {
-						dbFileCrypt.delete();
-					}
-				}
-			}
-
-		});
-
+		
 		nodeConfig.register("defragDatabaseOnStartup", false, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
 
 			@Override

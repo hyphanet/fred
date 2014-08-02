@@ -27,7 +27,15 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     final long checkpointInterval;
     /** Not to be used by child classes. */
     private Object sync = new Object();
+    private Object serializeCheckpoints = new Object();
     private boolean willCheck = false;
+    /** Has the process been properly started? E.g. we don't want to write to disk if we haven't 
+     * read from disk yet because we're waiting for a decryption key. */
+    private boolean started = false;
+    /** True if checkpoint is in progress */
+    private boolean writing = false;
+    /** True if we should reject all new jobs */
+    private boolean killed = false;
 
     public PersistentJobRunnerImpl(Executor executor, Ticker ticker, long interval) {
         this.executor = executor;
@@ -46,6 +54,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     @Override
     public void queue(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
         synchronized(sync) {
+            if(!started) throw new PersistenceDisabledException();
+            if(killed) throw new PersistenceDisabledException();
             if(context == null) throw new IllegalStateException();
             if(mustCheckpoint) {
                 queuedJobs.add(new QueuedJob(job, threadPriority));
@@ -88,9 +98,15 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         return;
                     }
                     if(runningJobs != 0) return;
-                    if(threadPriority < WRITE_AT_PRIORITY) {
-                        checkpointOffThread();
+                    if(killed) {
+                        sync.notifyAll();
                         return;
+                    } else {
+                        writing = true;
+                        if(threadPriority < WRITE_AT_PRIORITY) {
+                            checkpointOffThread();
+                            return;
+                        }
                     }
                 }
                 checkpoint();
@@ -109,40 +125,47 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
 
     private void checkpoint() {
-        innerCheckpoint();
+        synchronized(serializeCheckpoints) {
+            innerCheckpoint();
+        }
         synchronized(sync) {
             mustCheckpoint = false;
+            writing = false;
             QueuedJob[] jobs = queuedJobs.toArray(new QueuedJob[queuedJobs.size()]);
             for(QueuedJob job : jobs) {
                 runningJobs++;
                 executor.execute(new JobRunnable(job.job, job.threadPriority, context));
             }
+            sync.notifyAll();
         }
     }
     
-    public synchronized void delayedCheckpoint() {
-        if(willCheck) return;
-        ticker.queueTimedJob(new PrioRunnable() {
-
-            @Override
-            public void run() {
-                synchronized(sync) {
-                    if(!(mustCheckpoint || 
-                            System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
-                        return;
-                    if(runningJobs != 0) return;
-                    mustCheckpoint = false;
+    public void delayedCheckpoint() {
+        synchronized(sync) {
+            if(killed) return;
+            if(willCheck) return;
+            ticker.queueTimedJob(new PrioRunnable() {
+                
+                @Override
+                public void run() {
+                    synchronized(sync) {
+                        if(!(mustCheckpoint || 
+                                System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
+                            return;
+                        if(runningJobs != 0) return;
+                        writing = true;
+                    }
+                    checkpoint();
                 }
-                checkpoint();
-            }
-
-            @Override
-            public int getPriority() {
-                return WRITE_AT_PRIORITY;
-            }
-            
-        }, checkpointInterval);
-        willCheck = true;
+                
+                @Override
+                public int getPriority() {
+                    return WRITE_AT_PRIORITY;
+                }
+                
+            }, checkpointInterval);
+            willCheck = true;
+        }
     }
 
     public void checkpointOffThread() {
@@ -172,5 +195,26 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
 
     protected abstract void innerCheckpoint();
+    
+    protected void onStarted() {
+        synchronized(sync) {
+            started = true;
+            updateLastCheckpointed();
+        }
+    }
 
+    /** Typically called after shutdown() to wait for current jobs to complete. */
+    public void waitForIdleAndCheckpoint() {
+        synchronized(sync) {
+            while(runningJobs > 0 || writing) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+        checkpoint();
+    }
+    
 }

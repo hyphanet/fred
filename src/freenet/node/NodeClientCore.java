@@ -271,6 +271,29 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		// FIXME with crypto this load() may happen much later.
 		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		
+		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
+		
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
+		    
+		    @Override
+		    public void realRun() {
+		        System.err.println("Stopping database jobs...");
+		        clientLayerPersister.kill();
+		    }
+		    
+		});
+		
+        shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, true) {
+
+            @Override
+            public void realRun() {
+                System.out.println("Waiting for jobs to finish");
+                clientLayerPersister.waitForIdleAndCheckpoint();
+                System.out.println("Saved persistent requests to disk");
+            }
+
+        });
+
 		initPTBF(nodeConfig);
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
