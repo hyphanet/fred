@@ -64,6 +64,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
+import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -325,49 +326,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 			}
 		});
 		
-	      nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
-
-	            @Override
-	            public Long get() {
-	                synchronized(NodeClientCore.this) {
-	                    return minDiskFreeLongTerm;
-	                }
-	            }
-
-	            @Override
-	            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-	                synchronized(NodeClientCore.this) {
-	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
-	                    minDiskFreeLongTerm = val;
-	                }
-	                if(persistentRAFFactory != null)
-	                    persistentRAFFactory.setMinDiskSpace(val);
-	            }
-	            
-	        }, true);
-	        minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
-	        
-	        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
-
-	            @Override
-	            public Long get() {
-	                synchronized(NodeClientCore.this) {
-	                    return minDiskFreeShortTerm;
-	                }
-	            }
-
-	            @Override
-	            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-	                synchronized(NodeClientCore.this) {
-	                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
-	                    minDiskFreeShortTerm = val;
-	                }
-	                tempBucketFactory.setMinDiskSpace(val);
-	            }
-	            
-	        }, true);
-	        minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
-	        
+	    initDiskSpaceLimits(nodeConfig, sortOrder);
+	    
 		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm);
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
@@ -604,9 +564,57 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		    System.err.println("Disabling testing new splitfile code because memory limit is less than 256MB: "+maxMemory);
 		    HighLevelSimpleClientImpl.USE_NEW_SPLITFILE_CODE_TRANSIENT = false;
 		}
+		
+        alerts.register(new DiskSpaceUserAlert(this));
 	}
 
-	private void initUSK(ObjectContainer container) {
+	private void initDiskSpaceLimits(SubConfig nodeConfig, int sortOrder) {
+        nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
+
+            @Override
+            public Long get() {
+                synchronized(NodeClientCore.this) {
+                    return minDiskFreeLongTerm;
+                }
+            }
+
+            @Override
+            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+                synchronized(NodeClientCore.this) {
+                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
+                    minDiskFreeLongTerm = val;
+                }
+                if(persistentRAFFactory != null)
+                    persistentRAFFactory.setMinDiskSpace(val);
+            }
+            
+        }, true);
+        minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
+        
+        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
+
+            @Override
+            public Long get() {
+                synchronized(NodeClientCore.this) {
+                    return minDiskFreeShortTerm;
+                }
+            }
+
+            @Override
+            public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+                synchronized(NodeClientCore.this) {
+                    if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
+                    minDiskFreeShortTerm = val;
+                }
+                tempBucketFactory.setMinDiskSpace(val);
+            }
+            
+        }, true);
+        minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
+        // Do not register the UserAlert yet, since we haven't finished constructing stuff it uses.
+    }
+
+    private void initUSK(ObjectContainer container) {
 		if(!killedDatabase) {
 			try {
 				uskManager.init(container);
