@@ -1,6 +1,6 @@
 package freenet.client.async;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import java.util.Random;
 
 import freenet.clients.fcp.FCPPersistentRoot;
-import freenet.clients.fcp.RequestStatusCache;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeInitException;
 import freenet.support.Executor;
@@ -23,7 +22,7 @@ import freenet.support.io.PersistentTempBucketFactory;
 
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
-    static final long INTERVAL = SECONDS.toMillis(30);
+    static final long INTERVAL = MINUTES.toMillis(10);
     private final File filename;
     private final FileBucket bucket;
     private boolean loaded;
