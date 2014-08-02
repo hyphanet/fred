@@ -202,6 +202,12 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             updateLastCheckpointed();
         }
     }
+    
+    public void shutdown() {
+        synchronized(sync) {
+            killed = true;
+        }
+    }
 
     /** Typically called after shutdown() to wait for current jobs to complete. */
     public void waitForIdleAndCheckpoint() {

@@ -262,7 +262,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		    @Override
 		    public void realRun() {
 		        System.err.println("Stopping database jobs...");
-		        clientLayerPersister.kill();
+		        clientLayerPersister.shutdown();
 		    }
 		    
 		});
