@@ -28,7 +28,7 @@
  * <p>The main connections to other layers: Code which uses the client layer:</p>
  * <ul><li>@see freenet.client.HighLevelSimpleClient (a lightweight API used both internally and 
  * by some plugins)</li>
- * <li>@see freenet.node.fcp The interface to external FCP clients</li>
+ * <li>@see freenet.clients.fcp The interface to external FCP clients</li>
  * <li>Some code and plugins use the classes here directly.</li></ul>
  * <p>Code which the client layer uses:</p>
  * <ul><li>@see freenet.client Support classes for MIME type handling, container handling, etc</li>

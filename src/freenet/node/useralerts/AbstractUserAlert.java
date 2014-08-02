@@ -18,8 +18,8 @@
 
 package freenet.node.useralerts;
 
-import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.FeedMessage;
+import freenet.clients.fcp.FCPMessage;
+import freenet.clients.fcp.FeedMessage;
 import freenet.support.HTMLNode;
 
 /**

@@ -2,10 +2,10 @@ package freenet.node.useralerts;
 
 import java.io.File;
 
+import freenet.clients.fcp.FCPMessage;
+import freenet.clients.fcp.FeedMessage;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
-import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.FeedMessage;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.FilenameGenerator;

@@ -3,8 +3,8 @@ package freenet.node.useralerts;
 import java.util.Iterator;
 import java.util.Map;
 
-import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.FeedMessage;
+import freenet.clients.fcp.FCPMessage;
+import freenet.clients.fcp.FeedMessage;
 import freenet.support.HTMLNode;
 
 public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends AbstractUserEvent {
