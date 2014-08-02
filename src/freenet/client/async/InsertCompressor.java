@@ -22,7 +22,6 @@ import freenet.support.compress.CompressJob;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -126,7 +125,6 @@ public class InsertCompressor implements CompressJob {
 		// Try each algorithm, starting with the fastest and weakest.
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
-			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, CHKBlock.DATA_LENGTH, persistent ? context.jobRunner : null, 1024, true);
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
@@ -167,7 +165,7 @@ public class InsertCompressor implements CompressJob {
 					MultiHashInputStream hasher = null;
 					try {
 						is = origData.getInputStream();
-						result = bucketFactory2.makeBucket(-1);
+						result = context.getBucketFactory(shouldFreeOnFinally).makeBucket(-1);
 						os = result.getOutputStream();
 						long maxOutputSize = bestCompressedDataSize;
 						if(first && generateHashes != 0) {
