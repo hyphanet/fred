@@ -22,6 +22,7 @@ import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
+import freenet.client.async.InsertCompressorTracker;
 import freenet.client.async.PersistentJobRunnerImpl;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -99,7 +100,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCallback {
+public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -125,7 +126,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public final TempBucketFactory tempBucketFactory;
 	public PersistentTempBucketFactory persistentTempBucketFactory;
 	public final DiskSpaceCheckingRandomAccessThingFactory persistentRAFFactory;
-	public final PersistentJobRunner persistentJobRunner;
+	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
 	final NodeStats nodeStats;
@@ -345,10 +346,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		} else {
 		    persistentRAFFactory = null;
 		}
-		persistentJobRunner = new ClientLayerPersister(node.executor);
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, new ClientLayerPersister(node.executor), fecQueue, node.executor, 
+		clientLayerPersister = new ClientLayerPersister(node.executor, node.nodeDir.file("client.dat"));
+		// FIXME with crypto this load() may happen much later.
+		clientLayerPersister.load();
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, fecQueue, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
-		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
+		        persistentTempBucketFactory, new InsertCompressorTracker(), clientLayerPersister.persistentCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
 		        persistentRAFFactory, compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
@@ -523,7 +526,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		toadletContainer = toadlets;
 		toadletContainer.setBucketFactory(tempBucketFactory);
 		if(fecQueue == null) throw new NullPointerException();
-		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
+		//fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		
 		if(killedDatabase)
 			System.err.println("Database corrupted (leaving NodeClientCore)!");
@@ -1834,193 +1837,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	}
 
 	@Override
-	public void queue(final DBJob job, int priority, boolean checkDupes) throws DatabaseDisabledException{
-		synchronized(this) {
-			if(killedDatabase) throw new DatabaseDisabledException();
-		}
-		if(checkDupes)
-			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, job.toString());
-		else
-			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, job.toString());
-	}
-
-	private boolean killedDatabase = false;
-
-	private long lastCommitted = System.currentTimeMillis();
-
-	static final long MAX_COMMIT_INTERVAL = SECONDS.toMillis(30);
-
-	static final long SOON_COMMIT_INTERVAL = SECONDS.toMillis(5);
-
-	class DBJobWrapper implements Runnable {
-
-		DBJobWrapper(DBJob job) {
-			this.job = job;
-			if(job == null) throw new NullPointerException();
-		}
-
-		final DBJob job;
-
-		@Override
-		public void run() {
-
-			try {
-				synchronized(NodeClientCore.this) {
-					if(killedDatabase) {
-						Logger.error(this, "Database killed already, not running job");
-						return;
-					}
-				}
-				if(job == null) throw new NullPointerException();
-				if(node == null) throw new NullPointerException();
-				boolean commit = job.run(node.db, clientContext);
-				boolean killed;
-				synchronized(NodeClientCore.this) {
-					killed = killedDatabase;
-					if(!killed) {
-						long now = System.currentTimeMillis();
-						if(now - lastCommitted > MAX_COMMIT_INTERVAL) {
-							lastCommitted = now;
-							commit = true;
-						} else if(commitSoon && now - lastCommitted > SOON_COMMIT_INTERVAL) {
-							commitSoon = false;
-							lastCommitted = now;
-							commit = true;
-						} else if(commitSoon && !clientDatabaseExecutor.anyQueued()) {
-							commitSoon = false;
-							lastCommitted = now;
-							commit = true;
-						}
-						if(alwaysCommit)
-							commit = true;
-						if(commitThisTransaction) {
-							commit = true;
-							commitThisTransaction = false;
-						}
-					}
-				}
-				if(killed) {
-					node.db.rollback();
-					return;
-				} else if(commit) {
-					persistentTempBucketFactory.preCommit(node.db);
-					node.db.commit();
-					synchronized(NodeClientCore.this) {
-						lastCommitted = System.currentTimeMillis();
-					}
-					if(logMINOR) Logger.minor(this, "COMMITTED");
-					persistentTempBucketFactory.postCommit(node.db);
-				}
-			} catch (Throwable t) {
-				
-                                Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
-				
-                                boolean killed;
-				synchronized(NodeClientCore.this) {
-					killed = killedDatabase;
-				}
-				if(killed) {
-					node.db.rollback();
-				}
-			}
-		}
-
-		@Override
-		public int hashCode() {
-			return job == null ? 0 : job.hashCode();
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if(!(o instanceof DBJobWrapper)) return false;
-			DBJobWrapper cmp = (DBJobWrapper) o;
-			return (cmp.job == job);
-		}
-
-		@Override
-		public String toString() {
-			return "DBJobWrapper:"+job;
-		}
-
-	}
-
-	@Override
-	public boolean onDatabaseThread() {
-		return clientDatabaseExecutor.onThread();
-	}
-
-	@Override
-	public int getQueueSize(int priority) {
-		return clientDatabaseExecutor.getQueueSize(priority);
-	}
-
-	/**
-	 * Queue a job to be run soon after startup. The job must delete itself.
-	 */
-	@Override
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) throws DatabaseDisabledException {
-		synchronized(this) {
-			if(killedDatabase) throw new DatabaseDisabledException();
-		}
-		restartJobsQueue.queueRestartJob(job, priority, container, early);
-	}
-
-	@Override
-	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) throws DatabaseDisabledException {
-		synchronized(this) {
-			if(killedDatabase) throw new DatabaseDisabledException();
-		}
-		restartJobsQueue.removeRestartJob(job, priority, container);
-	}
-
-	@Override
-	public void runBlocking(final DBJob job, int priority) throws DatabaseDisabledException {
-		if(clientDatabaseExecutor.onThread()) {
-			job.run(node.db, clientContext);
-		} else {
-			final CountDownLatch finished = new CountDownLatch(1);
-			queue(new DBJob() {
-
-				@Override
-				public boolean run(ObjectContainer container, ClientContext context) {
-					try {
-						return job.run(container, context);
-					} finally {
-						finished.countDown();
-					}
-				}
-
-				@Override
-				public String toString() {
-					return job.toString();
-				}
-
-			}, priority, false);
-			while (finished.getCount() > 0) {
-				try {
-					finished.await();
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-		}
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeClientCore in database", new Exception("error"));
-		return false;
-	}
-
-	public synchronized void killDatabase() {
-		killedDatabase = true;
-	}
-
-	@Override
-	public synchronized boolean killedDatabase() {
-		return killedDatabase;
-	}
-
-	@Override
 	public void onIdle() {
 		synchronized(NodeClientCore.this) {
 			if(killedDatabase) return;
@@ -2032,20 +1848,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		}
 		if(logMINOR) Logger.minor(this, "COMMITTED");
 		persistentTempBucketFactory.postCommit(node.db);
-	}
-
-	private boolean commitThisTransaction;
-
-	@Override
-	public synchronized void setCommitThisTransaction() {
-		commitThisTransaction = true;
-	}
-
-	private boolean commitSoon;
-
-	@Override
-	public synchronized void setCommitSoon() {
-		commitSoon = true;
 	}
 
 	public static int getMaxBackgroundUSKFetchers() {

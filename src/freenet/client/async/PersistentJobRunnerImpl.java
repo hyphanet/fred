@@ -40,7 +40,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
 
     @Override
-    public void queue(PersistentJob job, int threadPriority) {
+    public void queue(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
         synchronized(sync) {
             if(context == null) throw new IllegalStateException();
             if(mustCheckpoint) {
@@ -128,6 +128,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         synchronized(sync) {
             mustCheckpoint = true;
         }
+    }
+    
+    protected void updateLastCheckpointed() {
+        lastCheckpointed = System.currentTimeMillis();
     }
 
     protected abstract void innerCheckpoint();
