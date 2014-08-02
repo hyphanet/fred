@@ -62,10 +62,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
 
-	/** Any temporary file of exactly 32KB - and there are a lot of such temporary files! - will be allocated
-	 * out of a single large blob file, whose contents are tracked in the database. */
-	private final PersistentBlobTempBucketFactory blobFactory;
-	
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 	
 	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
@@ -93,7 +89,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * @throws IOException If we are unable to read the directory, etc.
 	 */
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
-		blobFactory = new PersistentBlobTempBucketFactory(BLOB_SIZE, nodeDBHandle, new File(dir, "persistent-blob.tmp"));
 		this.strongPRNG = strongPRNG;
 		this.nodeDBHandle = nodeDBHandle;
 		this.weakPRNG = weakPRNG;
@@ -174,15 +169,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket rawBucket = null;
 		boolean mustWrap = true;
-		if(size == BLOB_SIZE) {
-			// No need for a DelayedFreeBucket, we handle this internally (and more efficiently) for blobs.
-			mustWrap = false;
-			try {
-				rawBucket = blobFactory.makeBucket();
-			} catch (DatabaseDisabledException e) {
-				throw new IOException("Database disabled, persistent buckets not available");
-			}
-		}
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
 		if(encrypt)
@@ -276,12 +262,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
 			factory.setEncryption(encrypt);
-			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE, ticker);
 			return factory;
 		} else {
 			PersistentTempBucketFactory factory =
 				new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
-			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE, ticker);
 			return factory;
 		}
 	}
@@ -317,7 +301,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * @param db The database.
 	 */
 	public void postCommit(ObjectContainer db) {
-		blobFactory.postCommit();
 		DelayedFreeBucket[] toFree = grabBucketsToFree();
 		if(toFree == null || toFree.length == 0) return;
 		int x = 0;
@@ -341,18 +324,4 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	/**
-	 * Add a callback job to be called when we are low on space in the blob temp bucket factory.
-	 * For example a defragger, but there are other possibilities. 
-	 */
-	public void addBlobFreeCallback(DBJob job) {
-		blobFactory.addBlobFreeCallback(job);
-	}
-
-	/**
-	 * Remove a blob temp bucket factory callback job.
-	 */
-	public void removeBlobFreeCallback(DBJob job) {
-		blobFactory.removeBlobFreeCallback(job);
-	}
 }
