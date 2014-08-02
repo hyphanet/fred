@@ -151,7 +151,7 @@ public class ClientContext {
 	 * @throws DatabaseDisabledException If the insert is persistent and the database is disabled (e.g. 
 	 * because it is encrypted and the user hasn't entered the password yet).
 	 */
-	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException, DatabaseDisabledException {
+	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException, PersistenceDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new PersistentJob() {
 				
@@ -178,7 +178,7 @@ public class ClientContext {
 	 * @throws FetchException If the request is transient and failed to start.
 	 * @throws DatabaseDisabledException If the request is persistent and the database is disabled.
 	 */
-	public void start(final ClientGetter getter) throws FetchException, DatabaseDisabledException {
+	public void start(final ClientGetter getter) throws FetchException, PersistenceDisabledException {
 		if(getter.persistent()) {
 			jobRunner.queue(new PersistentJob() {
 				
@@ -205,7 +205,7 @@ public class ClientContext {
 	 * @throws InsertException If the insert is transient and failed to start.
 	 * @throws DatabaseDisabledException If the insert is persistent and the database is disabled.
 	 */
-	public void start(final SimpleManifestPutter inserter) throws InsertException, DatabaseDisabledException {
+	public void start(final SimpleManifestPutter inserter) throws InsertException, PersistenceDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new PersistentJob() {
 				
@@ -232,7 +232,7 @@ public class ClientContext {
 	 * @throws InsertException If the insert is transient and failed to start.
 	 * @throws DatabaseDisabledException If the insert is persistent and the database is disabled.
 	 */
-	public void start(final BaseManifestPutter inserter) throws InsertException, DatabaseDisabledException {
+	public void start(final BaseManifestPutter inserter) throws InsertException, PersistenceDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new PersistentJob() {
 				
