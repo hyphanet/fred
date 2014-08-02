@@ -125,6 +125,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
+    public FCPPersistentRoot getPersistentRoot() {
+        return root;
+    }
+    
     public InsertCompressorTracker persistentCompressorTracker() {
         return persistentCompressorTracker;
     }

@@ -501,7 +501,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
 			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase)
-				fcpServer.load(container);
+				fcpServer.load(this.clientLayerPersister.getPersistentRoot());
 		} catch(IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: " + e);
 		} catch(InvalidConfigValueException e) {

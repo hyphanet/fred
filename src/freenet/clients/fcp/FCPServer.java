@@ -110,8 +110,9 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	}
 
-	public void load(ObjectContainer container) {
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, new RequestStatusCache(), container);
+	public void load(FCPPersistentRoot root) {
+		persistentRoot = root;
+		root.setRequestStatusCache(new RequestStatusCache());
 		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 
@@ -496,7 +497,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler, ObjectContainer container) {
-		return persistentRoot.registerForeverClient(name, core, handler, this, container);
+		return persistentRoot.registerForeverClient(name, core, handler, this);
 	}
 
 	public void unregisterClient(FCPClient client, ObjectContainer container) {
@@ -507,7 +508,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			rebootClientsByName.remove(name);
 		}
 		} else {
-			persistentRoot.maybeUnregisterClient(client, container);
+			persistentRoot.maybeUnregisterClient(client);
 		}
 	}
 
