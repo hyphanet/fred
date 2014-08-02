@@ -37,7 +37,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
         lock.lock();
         try {
-            if(dir.getFreeSpace() > size + minDiskSpace)
+            if(dir.getUsableSpace() > size + minDiskSpace)
                 return underlying.makeRAF(size);
             else
                 throw new InsufficientSpaceException();
@@ -51,7 +51,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             throws IOException {
         lock.lock();
         try {
-            if(dir.getFreeSpace() > size + minDiskSpace)
+            if(dir.getUsableSpace() > size + minDiskSpace)
                 return underlying.makeRAF(size);
             else
                 throw new InsufficientSpaceException();
