@@ -971,8 +971,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				            decompressors, clientMetadata, token, topDontCompress, 
 				            topCompatibilityMode, false, thisKey, isFinal, container, context);
 				} else {
-				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
-				            realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);
+				    Logger.error(this, "Splitfile not supported yet");
+				    onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Not supported yet"), false, container, context);
+				    return;
 				}
 				this.deleteFetchContext = false;
 				if(persistent) {
