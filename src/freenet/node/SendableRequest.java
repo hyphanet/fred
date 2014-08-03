@@ -63,7 +63,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return hashCode;
 	}
 	
-	protected RandomGrabArray parentGrabArray;
+	protected transient RandomGrabArray parentGrabArray;
 	/** Member because must be accessible when only marginally activated */
 	protected final boolean persistent;
 	
