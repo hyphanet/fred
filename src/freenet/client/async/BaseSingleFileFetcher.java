@@ -504,8 +504,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
     public void onRestartedFreenet(ClientContext context) {
-        ClientRequestScheduler.registerKeyListener(this, context);
-        // Register KeyListener.
+        schedule(null, context);
     }
 
 }
