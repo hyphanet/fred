@@ -489,8 +489,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					@Override
 					public boolean run(ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-						if(schedCore.tripPendingKey(key, block, null, clientContext))
-							context.jobRunner.setCommitSoon();
+						schedCore.tripPendingKey(key, block, null, clientContext);
 						return false;
 					}
 					
@@ -499,7 +498,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return "tripPendingKey";
 					}
 				}, TRIP_PENDING_PRIORITY);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Nothing to do
 			}
 		}
