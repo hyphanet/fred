@@ -156,8 +156,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	@Override
 	public void start(NodeClientCore core) {
-		if(schedCore != null)
-			schedCore.start(core);
 		queueFillRequestStarterQueue();
 	}
 	
@@ -171,55 +169,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	static final int QUEUE_THRESHOLD = 100;
 	
-	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, ObjectContainer container) {
+	public void registerInsert(final SendableRequest req, boolean persistent, ObjectContainer container) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(persistent) {
-				if(regmeOnly) {
-					long bootID = 0;
-					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
-					if(!queueFull)
-						bootID = this.node.bootID;
-					final RegisterMe regme = new RegisterMe(req, req.getPriorityClass(container), schedCore, null, bootID);
-					container.store(regme);
-					if(logMINOR)
-						Logger.minor(this, "Added insert RegisterMe: "+regme);
-					if(!queueFull) {
-					try {
-						jobRunner.queue(new DBJob() {
-							
-							@Override
-							public boolean run(ObjectContainer container, ClientContext context) {
-								container.delete(regme);
-								if(req.isCancelled(container)) {
-									if(logMINOR) Logger.minor(this, "Request already cancelled");
-									return false;
-								}
-								if(container.ext().isActive(req))
-									Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
-								container.activate(req, 1);
-								registerInsert(req, true, false, container);
-								container.deactivate(req, 1);
-								return true;
-							}
-							
-                                                        @Override
-							public String toString() {
-								return "registerInsert";
-							}
-							
-						}, NativeThread.NORM_PRIORITY, false);
-					} catch (DatabaseDisabledException e) {
-						// Impossible, we are already on the database thread.
-					}
-					} else {
-						schedCore.rerunRegisterMeRunner(jobRunner);
-					}
-					container.deactivate(req, 1);
-					return;
-				}
-				schedCore.innerRegister(req, container, clientContext, null);
-				starter.wakeUp();
+		    schedCore.innerRegister(req, container, clientContext, null);
+		    starter.wakeUp();
 		} else {
 			schedTransient.innerRegister(req, null, clientContext, null);
 			starter.wakeUp();
