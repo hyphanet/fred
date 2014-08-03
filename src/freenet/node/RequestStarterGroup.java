@@ -386,15 +386,15 @@ public class RequestStarterGroup {
 		return getThrottleWindow(realTime).realCurrentValue();
 	}
 
-	public long countTransientQueuedRequests() {
-		return chkFetchSchedulerBulk.countTransientQueuedRequests() +
-			sskFetchSchedulerBulk.countTransientQueuedRequests() +
-			chkPutSchedulerBulk.countTransientQueuedRequests() +
-			sskPutSchedulerBulk.countTransientQueuedRequests() +
-			chkFetchSchedulerRT.countTransientQueuedRequests() +
-			sskFetchSchedulerRT.countTransientQueuedRequests() +
-			chkPutSchedulerRT.countTransientQueuedRequests() +
-			sskPutSchedulerRT.countTransientQueuedRequests();
+	public long countQueuedRequests() {
+		return chkFetchSchedulerBulk.countQueuedRequests() +
+			sskFetchSchedulerBulk.countQueuedRequests() +
+			chkPutSchedulerBulk.countQueuedRequests() +
+			sskPutSchedulerBulk.countQueuedRequests() +
+			chkFetchSchedulerRT.countQueuedRequests() +
+			sskFetchSchedulerRT.countQueuedRequests() +
+			chkPutSchedulerRT.countQueuedRequests() +
+			sskPutSchedulerRT.countQueuedRequests();
 	}
 
 	public ClientRequestScheduler getScheduler(boolean ssk, boolean insert,

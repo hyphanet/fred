@@ -1763,8 +1763,8 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		return toadletContainer.getBookmarkURIs();
 	}
 
-	public long countTransientQueuedRequests() {
-		return requestStarters.countTransientQueuedRequests();
+	public long countQueuedRequests() {
+		return requestStarters.countQueuedRequests();
 	}
 
 	@Override

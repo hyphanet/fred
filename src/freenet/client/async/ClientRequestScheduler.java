@@ -607,6 +607,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				req.requeueAfterCooldown(key, now, container, clientContext);
 		}
 	}
+	
+	@Override
+	public long countQueuedRequests() {
+	    return selector.countQueuedRequests(null, clientContext);
+	}
 
 	@Override
 	public KeysFetchingLocally fetchingKeys() {
