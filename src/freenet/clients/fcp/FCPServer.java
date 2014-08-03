@@ -134,7 +134,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public void maybeStart() {
 	    Logger.error(this, "Resuming requests...");
-	    persistentRoot.onRestartedFreenet(core.clientContext);
+	    persistentRoot.onResume(core.clientContext);
 		if (this.enabled) {
 			maybeGetNetworkInterface();
 

@@ -570,7 +570,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 
         @Override
-        public void onRestartedFreenet(ClientContext context) {
+        public void onResume(ClientContext context) {
             // Do nothing.
         }
 
@@ -2013,7 +2013,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing.
     }
 

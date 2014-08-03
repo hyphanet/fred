@@ -109,7 +109,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing.
     }
 

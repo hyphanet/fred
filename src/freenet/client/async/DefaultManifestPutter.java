@@ -416,7 +416,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing.
     }
 }

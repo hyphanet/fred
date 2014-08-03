@@ -495,7 +495,7 @@ public abstract class ClientRequest {
         dos.writeLong(startupTime);
     }
 
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing by default.
     }
 	

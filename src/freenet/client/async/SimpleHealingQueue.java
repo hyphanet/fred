@@ -188,7 +188,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing. Not persisted.
     }
 

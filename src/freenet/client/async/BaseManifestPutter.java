@@ -967,7 +967,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		
         @Override
-        public void onRestartedFreenet(ClientContext context) {
+        public void onResume(ClientContext context) {
             // Do nothing.
         }
 

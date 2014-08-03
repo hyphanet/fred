@@ -598,9 +598,10 @@ public class ClientPut extends ClientPutBase {
 				fnam, isCompressing(container));
 	}
 	
-	public void onRestartedFreenet(ClientContext context) {
+	@Override
+	public void onResume(ClientContext context) {
 	    if(putter != null)
-	        putter.onRestartedFreenet(context);
+	        putter.onResume(context);
 	}
 
 }

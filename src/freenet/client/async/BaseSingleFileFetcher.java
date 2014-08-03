@@ -503,7 +503,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		innerCheckCachedCooldownData(container);
 	}
 	
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         schedule(null, context);
     }
 

@@ -279,7 +279,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         if(finished) return;
         start(context.uskManager, context, null);
     }

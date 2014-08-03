@@ -32,5 +32,5 @@ public interface ClientGetState {
 	
 	/** Called on restarting the node for a persistent request. The request must re-schedule 
 	 * itself, as neither the KeyListener's nor the RGA's are persistent now. */
-	public void onRestartedFreenet(ClientContext context);
+	public void onResume(ClientContext context);
 }

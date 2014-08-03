@@ -651,7 +651,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     }
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing.
     }
     

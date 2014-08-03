@@ -299,7 +299,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         Logger.error(this, "Restarting SplitFileFetcher from storage...");
         this.context = context;
         try {

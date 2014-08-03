@@ -326,7 +326,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         Logger.error(this, "Cannot be persistent");
         // Do nothing. Cannot be persistent.
     }

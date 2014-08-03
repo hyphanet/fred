@@ -1715,9 +1715,4 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		archiveMetadata = null;
 	}
 	
-    @Override
-    public void onRestartedFreenet(ClientContext context) {
-        
-    }
-
 }

@@ -450,9 +450,10 @@ public class ClientPutDir extends ClientPutBase {
 				failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
 	}
 	
-	public void onRestartedFreenet(ClientContext context) {
+	@Override
+	public void onResume(ClientContext context) {
 	    if(putter != null)
-	        putter.onRestartedFreenet(context);
+	        putter.onResume(context);
 	}
 
 }

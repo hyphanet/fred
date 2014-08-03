@@ -2140,7 +2140,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
     @Override
-    public void onRestartedFreenet(ClientContext context) {
+    public void onResume(ClientContext context) {
         // Do nothing. Not persistent.
     }
 
