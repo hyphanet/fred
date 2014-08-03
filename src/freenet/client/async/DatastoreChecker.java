@@ -462,33 +462,21 @@ public class DatastoreChecker implements PrioRunnable {
 			final boolean valid = anyValid;
 			final DatastoreCheckerItem it = item;
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isActive(get)) {
-							Logger.warning(this, "ALREADY ACTIVATED: "+get);
-						}
-						if(!container.ext().isStored(get)) {
-							// Completed and deleted already.
-							if(logMINOR)
-								Logger.minor(this, "Already deleted from database");
-							container.delete(it);
-							return false;
-						}
-						container.activate(get, 1);
+					public boolean run(ClientContext context) {
 						try {
-							scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
+							scheduler.finishRegister(new SendableGet[] { get }, true, null, valid, it);
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to register "+get+": "+t, t);
 							try {
-								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, container, context);
+								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, null, context);
 							} catch (Throwable t1) {
 								Logger.error(this, "Failed to fail: "+t, t);
 							}
 						}
-						container.deactivate(get, 1);
-						loader.run(container, context);
+						loader.run(null, context);
 						return false;
 					}
 					

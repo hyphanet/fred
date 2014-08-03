@@ -76,7 +76,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	final PrioritizedSerialExecutor databaseExecutor;
 	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
-	final DBJobRunner jobRunner;
+	final PersistentJobRunner jobRunner;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -833,15 +833,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
 		if(persistent) {
 			try {
-				jobRunner.queue(new DBJob() {
+				jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isActive(succeeded))
-							Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
-						container.activate(succeeded, 1);
-						schedCore.succeeded(succeeded, container);
-						container.deactivate(succeeded, 1);
+					public boolean run(ClientContext context) {
+						schedCore.succeeded(succeeded, null);
 						return false;
 					}
                                         @Override
@@ -849,8 +845,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return "BaseSendableGet succeeded";
 					}
 					
-				}, TRIP_PENDING_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, TRIP_PENDING_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				Logger.error(this, "succeeded() on a persistent request but database disabled", new Exception("error"));
 			}
 			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
@@ -883,12 +879,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
 			try {
-				jobRunner.queue(new DBJob() {
+				jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
+					public boolean run(ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-						if(schedCore.tripPendingKey(key, block, container, clientContext))
+						if(schedCore.tripPendingKey(key, block, null, clientContext))
 							context.jobRunner.setCommitSoon();
 						return false;
 					}
@@ -897,7 +893,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					public String toString() {
 						return "tripPendingKey";
 					}
-				}, TRIP_PENDING_PRIORITY, false);
+				}, TRIP_PENDING_PRIORITY);
 			} catch (DatabaseDisabledException e) {
 				// Nothing to do
 			}
@@ -1036,15 +1032,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			get.onFailure(e, null, null, clientContext);
 		} else {
 			try {
-				jobRunner.queue(new DBJob() {
+				jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isActive(get))
-							Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
-						container.activate(get, 1);
-						get.onFailure(e, null, container, clientContext);
-						container.deactivate(get, 1);
+					public boolean run(ClientContext context) {
+						get.onFailure(e, null, null, clientContext);
 						return false;
 					}
                                         @Override
@@ -1052,8 +1044,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return "SendableGet onFailure";
 					}
 					
-				}, prio, false);
-			} catch (DatabaseDisabledException e1) {
+				}, prio);
+			} catch (PersistenceDisabledException e1) {
 				Logger.error(this, "callFailure() on a persistent request but database disabled", new Exception("error"));
 			}
 		}
@@ -1065,15 +1057,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			insert.onFailure(e, null, null, clientContext);
 		} else {
 			try {
-				jobRunner.queue(new DBJob() {
+				jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isActive(insert))
-							Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
-						container.activate(insert, 1);
-						insert.onFailure(e, null, container, context);
-						container.deactivate(insert, 1);
+					public boolean run(ClientContext context) {
+						insert.onFailure(e, null, null, context);
 						return false;
 					}
                                         @Override
@@ -1081,8 +1069,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return "SendableInsert onFailure";
 					}
 					
-				}, prio, false);
-			} catch (DatabaseDisabledException e1) {
+				}, prio);
+			} catch (PersistenceDisabledException e1) {
 				Logger.error(this, "callFailure() on a persistent request but database disabled", new Exception("error"));
 			}
 		}
