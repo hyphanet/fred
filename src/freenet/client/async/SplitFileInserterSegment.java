@@ -1312,45 +1312,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		// FIXME use keys
-		if(persistent) {
-			container.activate(blocks, 1);
-		}
-		Integer[] blockNumbers;
-		synchronized(this) {
-			blockNumbers = blocks.toArray(new Integer[blocks.size()]);
-		}
-		ArrayList<PersistentChosenBlock> ret = new ArrayList<PersistentChosenBlock>();
-		Arrays.sort(blockNumbers);
-		int prevBlockNumber = -1;
-		byte cryptoAlgorithm = getCryptoAlgorithm(container);
-		for(int blockNumber: blockNumbers) {
-			if(blockNumber == prevBlockNumber) {
-				Logger.error(this, "Duplicate block number in makeBlocks() in "+this+": two copies of "+blockNumber);
-				continue;
-			}
-			prevBlockNumber = blockNumber;
-			SendableRequestItem item;
-			try {
-				item = getBlockItem(container, context, blockNumber, cryptoAlgorithm);
-				if(item == null) continue;
-			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
-				return null;
-			}
-			PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
-			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
-			ret.add(block);
-		}
-		if(persistent) {
-			container.deactivate(blocks, 1);
-		}
-		if(logMINOR) Logger.minor(this, "Returning "+ret.size()+" blocks");
-		return ret;
-	}
-
-	@Override
 	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(blocks, 1);

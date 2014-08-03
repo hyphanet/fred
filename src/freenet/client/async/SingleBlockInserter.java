@@ -6,8 +6,6 @@ package freenet.client.async;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -743,22 +741,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
-	}
-	
-	@Override
-	// FIXME keys is ignored
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		BlockItem item;
-		try {
-			BlockItemKey key = new BlockItemKey(this, hashCode());
-			item = getBlockItem(key, container, context);
-		} catch (InsertException e) {
-			fail(e, container, context);
-			return null;
-		}
-		if(item == null) return null;
-		PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
-		return Collections.singletonList(block);
 	}
 	
 	/** Everything needed to check whether we are already running a request */

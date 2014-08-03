@@ -159,13 +159,6 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
         return false;
     }
 
-    @Override
-    public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request,
-            RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container,
-            ClientContext context) {
-        throw new UnsupportedOperationException(); // Not persistent.
-    }
-
     /**
      * Schedule the fetch.
      * @param context

@@ -7,8 +7,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.PersistentChosenBlock;
-import freenet.client.async.PersistentChosenRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -176,10 +174,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	/** Requeue after an internal error */
 	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
-
-	/** Construct a full set of ChosenBlock's for a persistent request. These are transient, so we will need to clone keys
-	 * etc. */
-	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 
 	@Override
 	public boolean isStorageBroken(ObjectContainer container) {

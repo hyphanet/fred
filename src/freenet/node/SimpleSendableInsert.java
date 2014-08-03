@@ -3,16 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.List;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.PersistentChosenBlock;
-import freenet.client.async.PersistentChosenRequest;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
@@ -172,12 +168,6 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public boolean isSSK() {
 		return block instanceof SSKBlock;
-	}
-
-	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		// Transient-only so no makeBlocks().
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

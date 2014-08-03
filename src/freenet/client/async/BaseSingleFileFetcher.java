@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.Collections;
-import java.util.List;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
@@ -371,32 +368,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(persistent)
 			container.activate(key, 5);
 		return new Key[] { key.getNodeKey(true) };
-	}
-
-	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keysFetching, ObjectContainer container, ClientContext context) {
-		if(persistent)
-			container.activate(key, 5);
-		ClientKey ckey = key.cloneKey();
-		Key k = ckey.getNodeKey(true);
-		if(keysFetching.hasKey(k, this, persistent, container))
-			return null;
-		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
-		long now = System.currentTimeMillis();
-		if(l > 0 && l > now) {
-			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
-				// FIXME synchronization!!!
-				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
-				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
-				return null;
-			} else {
-				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
-				return null;
-			}
-		}
-		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], k, ckey, sched);
-		return Collections.singletonList(block);
 	}
 
 	@Override

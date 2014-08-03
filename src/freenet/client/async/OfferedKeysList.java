@@ -226,11 +226,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		throw new UnsupportedOperationException("Transient only");
-	}
-
-	@Override
 	public boolean isInsert() {
 		return false;
 	}

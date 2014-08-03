@@ -1548,11 +1548,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-			return null;
-		}
-
-		@Override
 		public long getCooldownTime(ObjectContainer container,
 				ClientContext context, long now) {
 			return 0;
