@@ -414,4 +414,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		}	
 	}
+
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing.
+    }
 }

@@ -324,5 +324,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		if(f == null) throw new IllegalStateException();
 		f.changeUSKPollParameters(time, tries, context);
 	}
+
+    @Override
+    public void onRestart(ClientContext context) {
+        Logger.error(this, "Cannot be persistent");
+        // Do nothing. Cannot be persistent.
+    }
 	
 }

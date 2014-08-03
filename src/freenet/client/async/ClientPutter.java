@@ -649,5 +649,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
         } else
             return new byte[0];
     }
+
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing.
+    }
     
 }

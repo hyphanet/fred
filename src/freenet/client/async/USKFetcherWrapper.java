@@ -108,4 +108,9 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing.
+    }
+
 }

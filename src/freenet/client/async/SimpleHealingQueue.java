@@ -187,4 +187,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		meta.free();
 	}
 
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing. Not persisted.
+    }
+
 }

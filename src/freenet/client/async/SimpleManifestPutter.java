@@ -569,6 +569,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			// Ignore
 		}
 
+        @Override
+        public void onRestart(ClientContext context) {
+            // Do nothing.
+        }
+
 	}
 
 	// FIXME: DB4O ISSUE: HASHMAP ACTIVATION:
@@ -2006,6 +2011,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
+
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing.
+    }
 
 }
 

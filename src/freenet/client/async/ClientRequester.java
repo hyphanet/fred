@@ -484,8 +484,6 @@ public abstract class ClientRequester {
     }
     
     /** Called for a persistent request after startup. */
-    public void onRestart(ClientContext context) {
-        // Do nothing by default.
-    }
+    public abstract void onRestart(ClientContext context);
     
 }

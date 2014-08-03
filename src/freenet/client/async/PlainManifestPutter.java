@@ -58,5 +58,10 @@ public class PlainManifestPutter extends BaseManifestPutter {
 			}
 		}
 	}
+
+    @Override
+    public void onRestart(ClientContext context) {
+        // Do nothing.
+    }
 }
 

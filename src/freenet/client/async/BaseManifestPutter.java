@@ -966,6 +966,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			// Ignore
 		}
 		
+        @Override
+        public void onRestart(ClientContext context) {
+            // Do nothing.
+        }
+
 	}
 
 	private final static String[] defaultDefaultNames =

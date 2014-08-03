@@ -21,8 +21,6 @@ public interface ClientGetState {
 
 	/** Get a long value which may be passed around to identify this request (e.g. by the USK fetching code). */
 	public long getToken();
-
-	
 	
 	/**
 	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
@@ -31,4 +29,7 @@ public interface ClientGetState {
 	 * @param container
 	 */
 	public void removeFrom(ObjectContainer container, ClientContext context);
+	
+	/** Called on restarting the node on a persistent request. */
+	public void onRestartedFreenet(ClientContext context);
 }
