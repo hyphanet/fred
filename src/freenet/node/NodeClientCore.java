@@ -182,9 +182,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
-		killedDatabase = container == null;
-		if(killedDatabase)
-			System.err.println("Database corrupted (before entering NodeClientCore)!");
 		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, SECONDS.toMillis(30), this, node.nodeStats);
@@ -353,7 +350,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		long memoryLimitedJobsMemoryLimit = FECQueue.MIN_MEMORY_ALLOCATION; // FIXME
-		if(!killedDatabase) {
+		if(!killedDatabase()) {
 		    LockableRandomAccessThingFactory raff = 
 		        new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		    persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
@@ -500,7 +497,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		try {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
 			clientContext.setDownloadCache(fcpServer);
-			if(!killedDatabase)
+			if(!killedDatabase())
 				fcpServer.load(this.clientLayerPersister.getPersistentRoot());
 		} catch(IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: " + e);
@@ -520,7 +517,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 			@Override
 			public boolean isValid() {
 				synchronized(NodeClientCore.this) {
-					if(!killedDatabase) return false;
+					if(!killedDatabase()) return false;
 				}
 				if(NodeClientCore.this.node.awaitingPassword()) return false;
 				if(NodeClientCore.this.node.isStopping()) return false;
@@ -538,9 +535,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		if(fecQueue == null) throw new NullPointerException();
 		//fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		
-		if(killedDatabase)
-			System.err.println("Database corrupted (leaving NodeClientCore)!");
-
 		nodeConfig.register("alwaysCommit", false, sortOrder++, true, false, "NodeClientCore.alwaysCommit", "NodeClientCore.alwaysCommitLong",
 				new BooleanCallback() {
 
@@ -623,17 +617,8 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 				killedDatabase = true;
 			}
 		}
-		if(!killedDatabase) {
-			try {
-				InsertCompressor.load(clientContext);
-				// FIXME get rid of this.
-				if(container != null) {
-					container.commit();
-					ClientRequester.checkAll(container, clientContext);
-				}
-			} catch (Db4oException e) {
-				killedDatabase = true;
-			}
+		if(!killedDatabase()) {
+		    InsertCompressor.load(clientContext);
 		}
 	}
 
@@ -671,7 +656,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
 		initKeys(container);
-		migratePluginStores(container);
 		if(!killedDatabase)
 			fcpServer.load(container);
 		synchronized(this) {
@@ -806,8 +790,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 			}
 		}, "Startup completion thread");
 
-		if(!killedDatabase)
-			clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
 
 	public interface SimpleRequestSenderCompletionListener {
