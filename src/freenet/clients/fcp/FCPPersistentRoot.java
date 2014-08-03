@@ -65,10 +65,10 @@ public class FCPPersistentRoot {
 		}
 	}
 	
-	public void onRestart(ClientContext context) {
-	    globalForeverClient.onRestart(context);
+	public void onRestartedFreenet(ClientContext context) {
+	    globalForeverClient.onRestartedFreenet(context);
 	    for(FCPClient c : clients.values())
-	        c.onRestart(context);
+	        c.onRestartedFreenet(context);
 	}
 
 }
