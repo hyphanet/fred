@@ -139,26 +139,22 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		synchronized(this) {
 			finished = true;
 		}
-		if(persistent && container == null) {
-			// If cancelled externally, and this function is called from USKFetcher,
-			// container may be null even though we are running on the database thread,
-			// resulting in a database leak.
+		if(persistent) {
+		    // This can be called from USKFetcher, in which case we want to run on the 
+		    // PersistentJobRunner.
 			try {
-				context.jobRunner.runBlocking(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onCancelled(container, context);
-						removeFrom(container, context);
-						container.deactivate(callback, 1);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
+						callback.onCancelled(null, context);
 						return false;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY);
-			} catch (DatabaseDisabledException e) {
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
 			}
 		} else {
@@ -179,33 +175,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			finished = true;
 		}
 		if(persistent) {
-			if(container != null) {
-				container.activate(callback, 1);
-				if(callback instanceof USKFetcherTagCallback)
-					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-				callback.onFailure(container, context);
-				container.deactivate(callback, 1);
-				removeFrom(container, context);
-			} else {
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(USKFetcherTag.this, 1);
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onFailure(container, context);
-						container.deactivate(callback, 1);
-						removeFrom(container, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
+						callback.onFailure(null, context);
 						return true;
 					}
 					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
-			}
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
@@ -239,32 +222,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			fetcher = null;
 		}
 		if(persistent) {
-			if(container != null) {
-				container.activate(callback, 1);
-				if(callback instanceof USKFetcherTagCallback)
-					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-				callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
-				container.deactivate(callback, 1);
-				removeFrom(container, context);
-			} else {
 			try {
-				context.jobRunner.queue(new DBJob() {
+				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(callback, 1);
+					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-						callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
-						container.deactivate(callback, 1);
-						removeFrom(container, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
+						callback.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
 						return false;
 					}
 					
-				}, NativeThread.HIGH_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (PersistenceDisabledException e) {
 				// Impossible.
-			}
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
