@@ -374,8 +374,10 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		
 		
 		clientContext.init(requestStarters, alerts);
-		initKeys(container);
-
+		if(!killedDatabase()) {
+		    InsertCompressor.load(clientContext);
+		}
+		
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 			@Override
@@ -598,19 +600,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
         // Do not register the UserAlert yet, since we haven't finished constructing stuff it uses.
     }
 
-	private void initKeys(ObjectContainer container) {
-		if(!killedDatabase) {
-			try {
-				ClientRequestScheduler.loadKeyListeners(container, clientContext);
-			} catch (Db4oException e) {
-				killedDatabase = true;
-			}
-		}
-		if(!killedDatabase()) {
-		    InsertCompressor.load(clientContext);
-		}
-	}
-
 	private void initPTBF(SubConfig nodeConfig) throws NodeInitException {
 	    persistentTempBucketFactory = clientLayerPersister.persistentTempBucketFactory();
 	    persistentFilenameGenerator = persistentTempBucketFactory.fg;
@@ -644,7 +633,9 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		initPTBF(container, node.config.get("node"));
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
-		initKeys(container);
+		if(!killedDatabase()) {
+		    InsertCompressor.load(clientContext);
+		}
 		if(!killedDatabase)
 			fcpServer.load(container);
 		synchronized(this) {
