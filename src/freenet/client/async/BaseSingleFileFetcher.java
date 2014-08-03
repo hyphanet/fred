@@ -502,5 +502,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		innerCheckCachedCooldownData(container);
 	}
+	
+    public void onRestartedFreenet(ClientContext context) {
+        ClientRequestScheduler.registerKeyListener(this, context);
+        // Register KeyListener.
+    }
 
 }

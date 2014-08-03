@@ -187,9 +187,4 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, container, context);
 	}
 
-    @Override
-    public void onRestartedFreenet(ClientContext context) {
-        // Do nothing.
-    }
-
 }

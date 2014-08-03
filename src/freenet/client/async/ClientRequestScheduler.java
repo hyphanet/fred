@@ -1209,5 +1209,24 @@ public class ClientRequestScheduler implements RequestScheduler {
 	Node getNode() {
 		return node;
 	}
+	
+	static void registerKeyListener(HasKeyListener l, ClientContext context) {
+	    try {
+	        if(l.isCancelled(null)) return;
+	        KeyListener listener = l.makeKeyListener(null, context, true);
+	        if(listener != null) {
+	            if(listener.isSSK())
+	                context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
+	            else
+	                context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
+	            if(logMINOR) Logger.minor(ClientRequestScheduler.class, "Loaded request key listener: "+listener+" for "+l);
+	        }
+	    } catch (KeyListenerConstructionException e) {
+	        System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
+	        e.printStackTrace();
+	        Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
+	    }
+
+	}
 
 }
