@@ -721,4 +721,9 @@ public class FCPClient {
             dos.writeUTF(name);
     }
 
+    public void onRestart(ClientContext context) {
+        for(ClientRequest req : runningPersistentRequests)
+            req.onRestartedFreenet(context);
+    }
+
 }

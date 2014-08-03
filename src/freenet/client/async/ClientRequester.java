@@ -483,4 +483,9 @@ public abstract class ClientRequester {
         return baos.toByteArray();
     }
     
+    /** Called for a persistent request after startup. */
+    public void onRestart(ClientContext context) {
+        // Do nothing by default.
+    }
+    
 }

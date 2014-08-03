@@ -597,6 +597,10 @@ public class ClientPut extends ClientPutBase {
 				failureReasonShort, failureReasonLong, getDataSize(container), mimeType,
 				fnam, isCompressing(container));
 	}
-
+	
+	public void onRestartedFreenet(ClientContext context) {
+	    if(putter != null)
+	        putter.onRestart(context);
+	}
 
 }

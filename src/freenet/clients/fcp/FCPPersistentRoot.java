@@ -8,6 +8,7 @@ import java.io.ObjectInput;
 import java.util.Map;
 import java.util.TreeMap;
 
+import freenet.client.async.ClientContext;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -62,6 +63,12 @@ public class FCPPersistentRoot {
 		        clients.remove(client.name);
 		    }
 		}
+	}
+	
+	public void onRestart(ClientContext context) {
+	    globalForeverClient.onRestart(context);
+	    for(FCPClient c : clients.values())
+	        c.onRestart(context);
 	}
 
 }

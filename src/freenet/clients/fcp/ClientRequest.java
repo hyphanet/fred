@@ -7,10 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.DBJob;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.PersistenceDisabledException;
-import freenet.client.async.PersistentClientCallback;
 import freenet.client.async.PersistentJob;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
@@ -496,6 +493,10 @@ public abstract class ClientRequest {
         dos.writeShort(priorityClass);
         dos.writeUTF(charset);
         dos.writeLong(startupTime);
+    }
+
+    public void onRestartedFreenet(ClientContext context) {
+        // Do nothing by default.
     }
 	
 }

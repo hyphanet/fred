@@ -1285,4 +1285,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         else
             dos.writeUTF(f.toString());
     }
+    
+    public void onRestartedFreenet(ClientContext context) {
+        if(getter != null)
+            getter.onRestart(context);
+    }
 }
