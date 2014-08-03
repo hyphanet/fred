@@ -1316,4 +1316,9 @@ public class SplitFileFetcherStorage {
         return buf;
     }
 
+    /** Needed for resuming. */
+    LockableRandomAccessThing getRAF() {
+        return raf;
+    }
+
 }

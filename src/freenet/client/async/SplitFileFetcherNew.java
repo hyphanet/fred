@@ -11,6 +11,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
@@ -20,6 +21,7 @@ import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.InsufficientDiskSpaceException;
+import freenet.support.io.LockableRandomAccessThing;
 
 /** Splitfile fetcher based on keeping as much state as possible, and in particular the downloaded blocks,
  * in a single file.
@@ -65,15 +67,17 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         Logger.registerClass(SplitFileFetcherNew.class);
     }
 
-    private transient final SplitFileFetcherStorage storage;
+    private transient SplitFileFetcherStorage storage;
+    /** Kept here so we can resume from storage */
+    private LockableRandomAccessThing raf;
     final ClientRequester parent;
     final GetCompletionCallback cb;
     final boolean realTimeFlag;
     final FetchContext blockFetchContext;
     final long token;
     /** Storage doesn't have a ClientContext so we need one here. */
-    private transient final ClientContext context;
-    private transient final SplitFileFetcherGet getter;
+    private transient ClientContext context;
+    private transient SplitFileFetcherGet getter;
     private boolean failed;
     private boolean succeeded;
     private final boolean wantBinaryBlob;
@@ -130,6 +134,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         if(eventualLength > 0 && fetchContext.maxOutputLength > 0 && eventualLength > fetchContext.maxOutputLength)
             throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
         getter = new SplitFileFetcherGet(this, storage);
+        raf = storage.getRAF();
     }
 
     @Override
@@ -161,7 +166,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         }
         context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
-        storage.cancel();
+        if(storage != null)
+            storage.cancel();
         cb.onFailure(e, this, null, context);
     }
 
@@ -290,6 +296,34 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public HasKeyListener getHasKeyListener() {
         return getter;
+    }
+
+    @Override
+    public void onRestartedFreenet(ClientContext context) {
+        Logger.error(this, "Restarting SplitFileFetcher from storage...");
+        this.context = context;
+        try {
+            this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
+                    context.random, context.mainExecutor, context.ticker, 
+                    context.memoryLimitedJobRunner, new CRCChecksumChecker());
+        } catch (IOException e) {
+            fail(new FetchException(FetchException.BUCKET_ERROR, e));
+            return;
+        } catch (StorageFormatException e) {
+            fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
+            return;
+        } catch (FetchException e) {
+            fail(e);
+            return;
+        }
+        getter = new SplitFileFetcherGet(this, storage);
+        try {
+            getter.schedule(context, false);
+        } catch (KeyListenerConstructionException e) {
+            Logger.error(this, "Key listener construction failed during resume: "+e, e);
+            fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
+            return;
+        }
     }
 
 }
