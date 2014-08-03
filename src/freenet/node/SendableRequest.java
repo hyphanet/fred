@@ -70,9 +70,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get the priority class of the request. */
 	public abstract short getPriorityClass(ObjectContainer container);
 	
-	/** Choose a key to fetch. Removes the block number from any internal queues 
-	 * (but not the key itself, implementors must have a separate queue of block 
-	 * numbers and mapping of block numbers to keys).
+	/** Choose a key to fetch. Must not modify any persisted structures, but will update cooldowns
+	 * etc to avoid it being chosen again soon. There is a separate callback for when a fetch
+	 * fails, succeeds, etc. Hence it is safe to call these outside of the PersistentJobRunner.
 	 * @return An object identifying a specific key. null indicates no keys available. */
 	public abstract SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 	

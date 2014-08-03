@@ -1062,6 +1062,7 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
+    /** Pick a key to fetch. Must not update any persistent field. (Cooldowns etc are fine) */
     public int chooseRandomKey(KeysFetchingLocally keysFetching) {
         int[] candidates = new int[blocksFound.length];
         int count = 0;

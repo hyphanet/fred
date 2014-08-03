@@ -103,6 +103,10 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  * 
  * LOCKING: Trivial or taken last. Hence can be called inside e.g. RGA calls to getCooldownTime 
  * etc.
+ * 
+ * PERSISTENCE: This whole class is transient. It is recreated on startup by the 
+ * SplitFileFetcherNew. Many of the fields are also transient, e.g. 
+ * SplitFileFetcherSegmentStorage's cooldown fields.
  * @author toad
  */
 public class SplitFileFetcherStorage {
@@ -1089,7 +1093,9 @@ public class SplitFileFetcherStorage {
 
     }
 
-    /** Choose a random key which can be fetched at the moment.
+    /** Choose a random key which can be fetched at the moment. Must not update any persistent data;
+     * it's okay to update caches and other stuff that isn't stored to disk. If we fail etc we 
+     * should do it off-thread.
      * @return The block number to be fetched, as an integer.
      */
     public MyKey chooseRandomKey(KeysFetchingLocally keys) {
