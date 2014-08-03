@@ -16,6 +16,7 @@ import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
@@ -35,12 +36,24 @@ import freenet.support.TimeUtil;
 class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final boolean isInsertScheduler;
+	final boolean isSSKScheduler;
+	final boolean isRTScheduler;
 	
 	final ClientRequestScheduler sched;
 	
-	ClientRequestSelector(boolean isInsertScheduler, ClientRequestScheduler sched) {
+	/**
+     * The base of the tree.
+     * array (by priority) -> // one element per possible priority
+     * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
+     * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
+     */
+    protected SectoredRandomGrabArray[] newPriorities;
+	
+	ClientRequestSelector(boolean isInsertScheduler, boolean isSSKScheduler, boolean isRTScheduler, ClientRequestScheduler sched) {
 		this.sched = sched;
 		this.isInsertScheduler = isInsertScheduler;
+		this.isSSKScheduler = isSSKScheduler;
+		this.isRTScheduler = isRTScheduler;
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet<Key>();
 			persistentRequestsWaitingForKeysFetching = new HashMap<Key, Long[]>();
@@ -52,6 +65,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
 			this.recentSuccesses = null;
 		}
+		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 	
 	private static volatile boolean logMINOR;
@@ -123,41 +137,18 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			boolean persistent = false;
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			if(transientOnly || schedCore == null)
-				result = null;
-			else {
-				result = schedCore.newPriorities[priority];
-				if(result != null) {
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						if(logMINOR) {
-							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
-							else
-								Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						}
-						result = null;
-					} else {
-						container.activate(result, 1);
-						persistent = true;
-					}
-				}
-			}
-			if(result == null) {
-				result = schedTransient.newPriorities[priority];
-				if(result != null) {
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						if(logMINOR) {
-							if(cooldownTime == Long.MAX_VALUE)
-								Logger.minor(this, "Priority "+priority+" (transient) is waiting until a request finishes or is empty");
-							else
-								Logger.minor(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						}
-						result = null;
-					}
+			result = newPriorities[priority];
+			if(result != null) {
+			    long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
+			    if(cooldownTime > 0) {
+			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+			        if(logMINOR) {
+			            if(cooldownTime == Long.MAX_VALUE)
+			                Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
+			            else
+			                Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+			        }
+			        result = null;
 				}
 			}
 			if(priority > maxPrio) {
@@ -315,71 +306,22 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SectoredRandomGrabArray perm = null;
-			if(!transientOnly)
-				perm = schedCore.newPriorities[choosenPriorityClass];
-			SectoredRandomGrabArray trans = null;
-			if(!notTransient)
-				trans = schedTransient.newPriorities[choosenPriorityClass];
-			if(perm == null && trans == null) {
+			SectoredRandomGrabArray chosenTracker = newPriorities[choosenPriorityClass];
+			if(chosenTracker == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
 			}
-			boolean triedPerm = false;
-			boolean triedTrans = false;
 			while(true) {
-				boolean persistent;
-				SectoredRandomGrabArray chosenTracker = null;
-				// If we can't find anything on perm (on the previous loop), try trans, and vice versa
-				if(triedTrans) trans = null;
-				if(triedPerm) perm = null;
-				if(perm == null && trans == null) continue outer;
-				else if(perm == null && trans != null) {
-					chosenTracker = trans;
-					triedTrans = true;
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, false, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						continue outer;
-					}
-					persistent = false;
-				} else if(perm != null && trans == null) {
-					chosenTracker = perm;
-					triedPerm = true;
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(perm, true, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						continue outer;
-					}
-					container.activate(perm, 1);
-					persistent = true;
-				} else {
-					container.activate(perm, 1);
-					int permSize = perm.size();
-					int transSize = trans.size();
-					boolean choosePerm = random.nextInt(permSize + transSize) < permSize;
-					if(choosePerm) {
-						chosenTracker = perm;
-						triedPerm = true;
-						persistent = true;
-					} else {
-						chosenTracker = trans;
-						triedTrans = true;
-						persistent = false;
-					}
-					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
-					if(cooldownTime > 0) {
-						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-						continue outer;
-					}
+			    long cooldownTime = context.cooldownTracker.getCachedWakeup(chosenTracker, false, container, now);
+			    if(cooldownTime > 0) {
+			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+			        Logger.normal(this, "Priority "+choosenPriorityClass+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+			        continue outer;
 				}
 				
 				if(logMINOR)
 					Logger.minor(this, "Got priority tracker "+chosenTracker);
-				RemoveRandomReturn val = chosenTracker.removeRandom(starter, persistent ? container : null, context, now);
+				RemoveRandomReturn val = chosenTracker.removeRandom(starter, null, context, now);
 				SendableRequest req;
 				if(val == null) {
 					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
@@ -395,16 +337,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					continue;
 				} else {
 					req = (SendableRequest) val.item;
-				}
-				if(persistent)
-					container.activate(req, 1); // FIXME
-				if(chosenTracker.persistent() != persistent) {
-					Logger.error(this, "Tracker.persistent()="+chosenTracker.persistent()+" but is in the queue for persistent="+persistent+" for "+chosenTracker);
-					// FIXME fix it
-				}
-				if(req.persistent() != persistent) {
-					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+chosenTracker.persistent()+" for "+req);
-					// FIXME fix it
 				}
 				if(req.getPriorityClass(container) != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
@@ -734,5 +666,100 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		Node node = sched.getNode();
 		return node.clientCore.checkRecentlyFailed(key, realTime);
 	}
+	
+	   /** Add a request (or insert) to the request selection tree.
+     * @param priorityClass The priority of the request.
+     * @param client Label object indicating which larger group of requests this request belongs to
+     * (e.g. the global queue, or an FCP client), and whether it is persistent.
+     * @param cr The high-level request that this single block request is part of. E.g. a fetch for 
+     * a single key may download many blocks in a splitfile; an insert for a large freesite is 
+     * considered a single @see ClientRequester.
+     * @param req A single SendableRequest object which is one or more low-level requests. E.g. it 
+     * can be an insert of a single block, or it can be a request or insert for a single segment 
+     * within a splitfile. 
+     * @param container The database handle, if the request is persistent, in which case this will
+     * be a ClientRequestSchedulerCore. If so, this method must be called on the database thread.
+     * @param context The client context object, which contains links to all the important objects
+     * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
+     */
+    void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
+        if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
+            throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
+        // Client
+        synchronized(this) {
+            SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
+            if(clientGrabber == null) {
+                clientGrabber = new SectoredRandomGrabArray(false, container, null);
+                newPriorities[priorityClass] = clientGrabber;
+                if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
+            }
+            // SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
+            // To avoid a race condition it is essential to mirror that here.
+            synchronized(clientGrabber) {
+                // Request
+                SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+                if(requestGrabber == null) {
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, container, clientGrabber);
+                    if(logMINOR)
+                        Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
+                    clientGrabber.addGrabber(client, requestGrabber, container, context);
+                    // FIXME unnecessary as it knows its parent and addGrabber() will call it???
+                    context.cooldownTracker.clearCachedWakeup(clientGrabber, false, container);
+                }
+                requestGrabber.add(cr, req, container, context);
+            }
+        }
+        sched.wakeStarter();
+    }
+
+    public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
+        long total = 0;
+        for(int i=0;i<newPriorities.length;i++) {
+            SectoredRandomGrabArray prio = newPriorities[i];
+            container.activate(prio, 1);
+            if(prio == null || prio.isEmpty(container))
+                System.out.println("Priority "+i+" : empty");
+            else {
+                System.out.println("Priority "+i+" : "+prio.size());
+                    System.out.println("Clients: "+prio.size()+" for "+prio);
+                    for(int k=0;k<prio.size();k++) {
+                        Object client = prio.getClient(k);
+                        container.activate(client, 1);
+                        System.out.println("Client "+k+" : "+client);
+                        container.deactivate(client, 1);
+                        SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) prio.getGrabber(client);
+                        container.activate(requestGrabber, 1);
+                        System.out.println("SRGA for client: "+requestGrabber);
+                        for(int l=0;l<requestGrabber.size();l++) {
+                            client = requestGrabber.getClient(l);
+                            container.activate(client, 1);
+                            System.out.println("Request "+l+" : "+client);
+                            container.deactivate(client, 1);
+                            RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(client);
+                            container.activate(rga, 1);
+                            System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
+                            long sendable = 0;
+                            long all = 0;
+                            for(int m=0;m<rga.size();m++) {
+                                SendableRequest req = (SendableRequest) rga.get(m, container);
+                                if(req == null) continue;
+                                container.activate(req, 1);
+                                sendable += req.countSendableKeys(container, context);
+                                all += req.countAllKeys(container, context);
+                                container.deactivate(req, 1);
+                            }
+                            System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));
+                            total += all;
+                            container.deactivate(rga, 1);
+                        }
+                        container.deactivate(requestGrabber, 1);
+                    }
+                    container.deactivate(prio, 1);
+            }
+        }
+        return total;
+    }   
+    
+
 	
 }

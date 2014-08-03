@@ -30,9 +30,6 @@ public interface RequestScheduler {
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
-	public long countTransientQueuedRequests();
-
-	public void queueFillRequestStarterQueue();
 
 	public KeysFetchingLocally fetchingKeys();
 
@@ -68,8 +65,6 @@ public interface RequestScheduler {
 	 * @return
 	 */
 	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
-
-	public void start(NodeClientCore core);
 
 	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
 

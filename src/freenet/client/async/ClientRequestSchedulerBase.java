@@ -17,18 +17,12 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
-import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
-import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithInt;
-import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -69,15 +63,8 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	final boolean isSSKScheduler;
 	final boolean isRTScheduler;
 	
-	/**
-	 * The base of the tree.
-	 * array (by priority) -> // one element per possible priority
-	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
-	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
-	 */
-	protected SectoredRandomGrabArray[] newPriorities;
 	protected transient ClientRequestScheduler sched;
-	/** Transient even for persistent scheduler. */
+	/** Transient even for persistent scheduler. There is one for each of transient, persistent. */
 	protected transient ArrayList<KeyListener> keyListeners;
 
 	abstract boolean persistent();
@@ -87,7 +74,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
-		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
 	}
@@ -115,10 +101,8 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
+		sched.selector.addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
-		if(persistent())
-			sched.maybeAddToStarterQueue(req, container, maybeActive);
 	}
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
@@ -135,54 +119,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		}
 	}
 	
-	/** Add a request (or insert) to the request selection tree.
-	 * @param priorityClass The priority of the request.
-	 * @param client Label object indicating which larger group of requests this request belongs to
-	 * (e.g. the global queue, or an FCP client), and whether it is persistent.
-	 * @param cr The high-level request that this single block request is part of. E.g. a fetch for 
-	 * a single key may download many blocks in a splitfile; an insert for a large freesite is 
-	 * considered a single @see ClientRequester.
-	 * @param req A single SendableRequest object which is one or more low-level requests. E.g. it 
-	 * can be an insert of a single block, or it can be a request or insert for a single segment 
-	 * within a splitfile. 
-	 * @param container The database handle, if the request is persistent, in which case this will
-	 * be a ClientRequestSchedulerCore. If so, this method must be called on the database thread.
-	 * @param context The client context object, which contains links to all the important objects
-	 * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
-	 */
-	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
-		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
-			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
-		// Client
-		synchronized(this) {
-			SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
-			if(persistent()) container.activate(clientGrabber, 1);
-			if(clientGrabber == null) {
-				clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);
-				newPriorities[priorityClass] = clientGrabber;
-				if(persistent()) container.store(this);
-				if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
-			}
-			// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
-			// To avoid a race condition it is essential to mirror that here.
-			synchronized(clientGrabber) {
-				// Request
-				SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-				if(persistent()) container.activate(requestGrabber, 1);
-				if(requestGrabber == null) {
-					requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
-					if(logMINOR)
-						Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-					clientGrabber.addGrabber(client, requestGrabber, container, context);
-					// FIXME unnecessary as it knows its parent and addGrabber() will call it???
-					context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
-				}
-				requestGrabber.add(cr, req, container, context);
-			}
-		}
-		sched.wakeStarter();
-	}
-
 	/**
 	 * Mangle the retry count.
 	 * Below a certain number of attempts, we don't prefer one request to another just because
@@ -242,7 +178,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context, oldPrio);
 			//Remove from the starterQueue
-			if(persistent()) sched.removeFromStarterQueue(req, container, true);
 			// Then can do innerRegister() (not register()).
 			if(persistent())
 				container.activate(req, 1);
@@ -415,10 +350,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	
 	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
-		if(newPriorities == null) {
-			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-			if(persistent()) container.store(this);
-		}
 	}
 	
 	@Override
@@ -435,54 +366,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return sb.toString();
 	}
 
-	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
-		long total = 0;
-		for(int i=0;i<newPriorities.length;i++) {
-			SectoredRandomGrabArray prio = newPriorities[i];
-			container.activate(prio, 1);
-			if(prio == null || prio.isEmpty(container))
-				System.out.println("Priority "+i+" : empty");
-			else {
-				System.out.println("Priority "+i+" : "+prio.size());
-					System.out.println("Clients: "+prio.size()+" for "+prio);
-					for(int k=0;k<prio.size();k++) {
-						Object client = prio.getClient(k);
-						container.activate(client, 1);
-						System.out.println("Client "+k+" : "+client);
-						container.deactivate(client, 1);
-						SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) prio.getGrabber(client);
-						container.activate(requestGrabber, 1);
-						System.out.println("SRGA for client: "+requestGrabber);
-						for(int l=0;l<requestGrabber.size();l++) {
-							client = requestGrabber.getClient(l);
-							container.activate(client, 1);
-							System.out.println("Request "+l+" : "+client);
-							container.deactivate(client, 1);
-							RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(client);
-							container.activate(rga, 1);
-							System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
-							long sendable = 0;
-							long all = 0;
-							for(int m=0;m<rga.size();m++) {
-								SendableRequest req = (SendableRequest) rga.get(m, container);
-								if(req == null) continue;
-								container.activate(req, 1);
-								sendable += req.countSendableKeys(container, context);
-								all += req.countAllKeys(container, context);
-								container.deactivate(req, 1);
-							}
-							System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));
-							total += all;
-							container.deactivate(rga, 1);
-						}
-						container.deactivate(requestGrabber, 1);
-					}
-					container.deactivate(prio, 1);
-			}
-		}
-		return total;
-	}	
-	
 	public byte[] globalSalt;
 	
 	public byte[] saltKey(Key key) {

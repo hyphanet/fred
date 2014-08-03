@@ -102,9 +102,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void start() {
-		sched.start(core);
 		core.getExecutor().execute(this, name);
-		sched.queueFillRequestStarterQueue();
 	}
 	
 	final String name;

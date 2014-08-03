@@ -175,18 +175,10 @@ public class RequestStarterGroup {
 		chkPutSchedulerBulk.startCore(core, dbHandle, container);
 		sskFetchSchedulerBulk.startCore(core, dbHandle, container);
 		sskPutSchedulerBulk.startCore(core, dbHandle, container);
-		chkFetchSchedulerBulk.start(core);
-		chkPutSchedulerBulk.start(core);
-		sskFetchSchedulerBulk.start(core);
-		sskPutSchedulerBulk.start(core);
 		chkFetchSchedulerRT.startCore(core, dbHandle, container);
 		chkPutSchedulerRT.startCore(core, dbHandle, container);
 		sskFetchSchedulerRT.startCore(core, dbHandle, container);
 		sskPutSchedulerRT.startCore(core, dbHandle, container);
-		chkFetchSchedulerRT.start(core);
-		chkPutSchedulerRT.start(core);
-		sskFetchSchedulerRT.start(core);
-		sskPutSchedulerRT.start(core);
 	}
 
 	public class MyRequestThrottle implements BaseRequestThrottle {

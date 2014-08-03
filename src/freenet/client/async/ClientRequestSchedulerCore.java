@@ -107,13 +107,5 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return true;
 	}
 
-	@Override
-	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
-		long ret = super.countQueuedRequests(container, context);
-		long cooldown = persistentCooldownQueue.size(container);
-		System.out.println("Cooldown queue size: "+cooldown);
-		return ret + cooldown;
-	}
-
 }
 

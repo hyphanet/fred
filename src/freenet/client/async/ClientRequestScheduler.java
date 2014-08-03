@@ -50,7 +50,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private ClientRequestSchedulerCore schedCore;
 	final ClientRequestSchedulerNonPersistent schedTransient;
-	private final transient ClientRequestSelector selector;
+	final transient ClientRequestSelector selector;
 	
 	private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -94,7 +94,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.random = random;
 		this.node = node;
 		this.clientContext = context;
-		selector = new ClientRequestSelector(forInserts, this);
+		selector = new ClientRequestSelector(forInserts, forSSKs, forRT, this);
 		
 		this.name = name;
 		
@@ -154,11 +154,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	@Override
-	public void start(NodeClientCore core) {
-		queueFillRequestStarterQueue();
-	}
-	
 	/** Called by the  config. Callback
 	 * 
 	 * @param val
@@ -308,7 +303,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(reg != null)
 					container.delete(reg);
-				queueFillRequestStarterQueue(true);
 		} else {
 			// Register immediately.
 			for(SendableGet getter : getters) {
@@ -350,14 +344,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * awaiting the callbacks being executed etc). We MUST compare by pointer, as this is accessed on
 	 * threads other than the database thread, so we don't know whether they are active (and in fact 
 	 * that may change under us!). So it can't be a HashSet.
-	 * 
-	 * SYNCHRONIZATION: Synched on starterQueue.
 	 */
 	private final transient IdentityHashSet<SendableRequest> runningPersistentRequests = new IdentityHashSet<SendableRequest> ();
 	
 	@Override
 	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
-		synchronized(starterQueue) {
+		synchronized(runningPersistentRequests) {
 			if(runningPersistentRequests.remove(request)) {
 				if(logMINOR)
 					Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
@@ -372,11 +364,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	@Override
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
-		synchronized(starterQueue) {
+		synchronized(runningPersistentRequests) {
 			if(runningPersistentRequests.contains(request)) return true;
-			for(PersistentChosenRequest req : starterQueue) {
-				if(req.request == request) return true;
-			}
 		}
 		return false;
 	}
@@ -393,403 +382,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	static final int WARNING_STARTER_QUEUE_SIZE = 800;
 	private static final long WAIT_AFTER_NOTHING_TO_START = SECONDS.toMillis(60);
 	
-	private final transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
-	
 	/**
 	 * Called by RequestStarter to find a request to run.
 	 */
 	@Override
 	public ChosenBlock grabRequest() {
-		boolean needsRefill = true;
-		while(true) {
-			PersistentChosenRequest reqGroup = null;
-			synchronized(starterQueue) {
-				short bestPriority = Short.MAX_VALUE;
-				for(PersistentChosenRequest req : starterQueue) {
-					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
-					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio);
-					     continue; //Ignore paused requests
-					}
-					if(req.prio < bestPriority) {
-						bestPriority = req.prio;
-						reqGroup = req;
-					}
-				}
-			}
-			if(reqGroup != null) {
-				// Try to find a better non-persistent request
-				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio);
-				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio);
-				if(better != null) {
-					if(better.getPriority() > reqGroup.prio) {
-						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
-					}
-					if(logMINOR) Logger.minor(this, "Returning better: "+better);
-					return better;
-				}
-			}
-			if(reqGroup == null) {
-				queueFillRequestStarterQueue();
-				return getBetterNonPersistentRequest(Short.MAX_VALUE);
-			}
-			ChosenBlock block;
-			synchronized(starterQueue) {
-				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
-				if(block == null) {
-					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
-					int finalLength = 0;
-					Iterator<PersistentChosenRequest> it = starterQueue.iterator();
-					while(it.hasNext()) {
-						PersistentChosenRequest req = it.next();
-						if(req == reqGroup) {
-							it.remove();
-							if(logMINOR)
-								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
-						} else {
-							finalLength += req.sizeNotStarted();
-						}
-					}
-					needsRefill = finalLength < MAX_STARTER_QUEUE_SIZE;
-					continue;
-				} else {
-					// Prevent this request being selected, even though we may remove the PCR from the starter queue
-					// in the very near future. When the PCR finishes, the requests will be un-blocked.
-					if(!runningPersistentRequests.contains(reqGroup.request))
-						runningPersistentRequests.add(reqGroup.request);
-				}
-			}
-			if(needsRefill)
-				queueFillRequestStarterQueue();
-			if(logMINOR)
-				Logger.minor(this, "grabRequest() returning "+block+" for "+reqGroup);
-			return block;
-		}
+	    short fuzz = -1;
+	    if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+	        fuzz = -1;
+	    else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+	        fuzz = 0;
+	    return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, Short.MAX_VALUE, isRTScheduler, clientContext, null);
 	}
 	
-	@Override
-	public void queueFillRequestStarterQueue() {
-		queueFillRequestStarterQueue(false);
-	}
-	
-	/** Don't fill the starter queue until this point. Used to implement a 60 second
-	 * cooldown after failing to fill the queue: if there was nothing queued, and since
-	 * we know if more requests are started they will be added to the queue, this is
-	 * an acceptable optimisation to reduce the database load from the idle schedulers... */
-	private long nextQueueFillRequestStarterQueue = -1;
-	
-	public void queueFillRequestStarterQueue(boolean force) {
-		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue && !force)
-			return;
-		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
-			return;
-		try {
-			jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
-		} catch (DatabaseDisabledException e) {
-			// Ok, do what we can
-			moveKeysFromCooldownQueue(transientCooldownQueue, false, null);
-		}
-	}
-
-	private int starterQueueLength() {
-		int length = 0;
-		synchronized(starterQueue) {
-			for(PersistentChosenRequest request : starterQueue)
-				length += request.sizeNotStarted();
-		}
-		return length;
-	}
-
-	/**
-	 * @param request
-	 * @param container
-	 * @return True if the queue is now full/over-full.
-	 */
-	boolean addToStarterQueue(SendableRequest request, ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Adding to starter queue: "+request);
-		container.activate(request, 1);
-		PersistentChosenRequest chosen;
-		try {
-			chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), container, ClientRequestScheduler.this, clientContext);
-		} catch (NoValidBlocksException e) {
-			return false;
-		}
-		if(logMINOR)
-			Logger.minor(this, "Created PCR: "+chosen);
-		container.deactivate(request, 1);
-		boolean dumpNew = false;
-		synchronized(starterQueue) {
-			int length = 0;
-			for(PersistentChosenRequest req : starterQueue) {
-				if(req.request == request) {
-					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
-					dumpNew = true;
-					break;
-				}
-				length += req.sizeNotStarted();
-			}
-			if(!dumpNew) {
-				// assert(length == starterQueueLength());
-				starterQueue.add(chosen);
-				length += chosen.sizeNotStarted();
-				runningPersistentRequests.add(request);
-				if(logMINOR)
-					Logger.minor(this, "Added to running persistent requests, size now "+runningPersistentRequests.size()+" : "+request);
-				return length > MAX_STARTER_QUEUE_SIZE;
-			}
-		}
-		if(dumpNew)
-			chosen.onDumped(schedCore, container, false);
-		return false;
-	}
-	
-	void removeFromStarterQueue(SendableRequest req, ObjectContainer container, boolean reqAlreadyActive) {
-		PersistentChosenRequest dumped = null;
-		synchronized(starterQueue) {
-			Iterator<PersistentChosenRequest> it = starterQueue.iterator();
-			while(it.hasNext()) {
-				PersistentChosenRequest pcr = it.next();
-				if(pcr.request == req) {
-					it.remove();
-					dumped = pcr;
-					break;
-				}
-			}
-		}
-		if(dumped != null)
-			dumped.onDumped(schedCore, container, reqAlreadyActive);
-	}
-	
-	int starterQueueSize() {
-		synchronized(starterQueue) {
-			return starterQueue.size();
-		}
-	}
-	
-	private DBJob requestStarterQueueFiller = new DBJob() {
-		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			fillRequestStarterQueue(container, context);
-			return false;
-		}
-        @Override
-		public String toString() {
-			return "fillRequestStarterQueue";
-		}
-	};
-	
-	private boolean fillingRequestStarterQueue;
-	
-	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context) {
-		synchronized(this) {
-			if(fillingRequestStarterQueue) return;
-			fillingRequestStarterQueue = true;
-		}
-		long now = System.currentTimeMillis();
-		try {
-		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-		long noLaterThan = Long.MAX_VALUE;
-		boolean checkCooldownQueue = now > nextQueueFillRequestStarterQueue;
-		if((!isInsertScheduler) && checkCooldownQueue) {
-			if(persistentCooldownQueue != null)
-				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
-			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
-		}
-		// If anything has been re-added, the request starter will have been woken up.
-		short fuzz = -1;
-		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-			fuzz = -1;
-		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;
-		boolean added = false;
-		synchronized(starterQueue) {
-			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
-				Logger.minor(this, "Scheduling CHK fetches...");
-				for(SendableRequest req : runningPersistentRequests) {
-					boolean wasActive = container.ext().isActive(req);
-					if(!wasActive) container.activate(req, 1);
-					Logger.minor(this, "Running persistent request: "+req);
-					if(!wasActive) container.deactivate(req, 1);
-				}
-			}
-			// Recompute starterQueueLength
-			int length = 0;
-			PersistentChosenRequest old = null;
-			for(PersistentChosenRequest req : starterQueue) {
-				if(old == req)
-					Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
-				if(old != null && old.request == req.request)
-					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
-				boolean ignoreActive = false;
-				if(!ignoreActive) {
-					if(container.ext().isActive(req.request))
-						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
-					else if(logMINOR)
-						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
-				} else if(logMINOR)
-					Logger.minor(this, "Ignoring active because just registered: "+req.request);
-				req.pruneDuplicates(ClientRequestScheduler.this);
-				old = req;
-				length += req.sizeNotStarted();
-			}
-			if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
-				if(length >= WARNING_STARTER_QUEUE_SIZE)
-					Logger.error(this, "Queue already full: "+length);
-				return;
-			}
-		}
-		
-		if((!isSSKScheduler) && (!isInsertScheduler)) {
-			Logger.minor(this, "Scheduling CHK fetches...");
-		}
-		boolean addedMore = false;
-		while(true) {
-			SelectorReturn r;
-			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
-			synchronized(this) {
-				r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
-			}
-			SendableRequest request = null;
-			if(r != null && r.req != null) request = r.req;
-			else {
-				if(r != null && r.wakeupTime > 0 && noLaterThan > r.wakeupTime) {
-					noLaterThan = r.wakeupTime;
-					if(logMINOR) Logger.minor(this, "Waking up in "+TimeUtil.formatTime(noLaterThan - now)+" for cooldowns");
-				}
-			}
-			if(request == null) {
-				synchronized(ClientRequestScheduler.this) {
-					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
-					if(checkCooldownQueue && !added) {
-						nextQueueFillRequestStarterQueue = 
-							System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
-						if(nextQueueFillRequestStarterQueue > noLaterThan)
-							nextQueueFillRequestStarterQueue = noLaterThan + 1;
-					}
-				}
-				if(addedMore) starter.wakeUp();
-				return;
-			}
-			boolean full = addToStarterQueue(request, container);
-			container.deactivate(request, 1);
-			if(!added) starter.wakeUp();
-			else addedMore = true;
-			added = true;
-			if(full) {
-				if(addedMore) starter.wakeUp();
-				return;
-			}
-		}
-		} finally {
-			synchronized(this) {
-			fillingRequestStarterQueue = false;
-			}
-		}
-	}
-	
-	/**
-	 * Compare a recently registered SendableRequest to what is already on the
-	 * starter queue. If it is better, kick out stuff from the queue until we
-	 * are just over the limit.
-	 * @param req
-	 * @param container
-	 */
-	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container, SendableRequest[] mightBeActive) {
-		short prio = req.getPriorityClass(container);
-		if(logMINOR)
-			Logger.minor(this, "Maybe adding to starter queue: prio="+prio);
-		synchronized(starterQueue) {
-			boolean betterThanSome = false;
-			int size = 0;
-			for(PersistentChosenRequest old : starterQueue) {
-				if(old.request == req) {
-					// Wait for a reselect. Otherwise we can starve other
-					// requests. Note that this happens with persistent SBI's:
-					// they are added at the new retry count before being
-					// removed at the old retry count.
-					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
-					return;
-				}
-				boolean ignoreActive = false;
-				if(mightBeActive != null) {
-					for(SendableRequest tmp : mightBeActive)
-						if(tmp == old.request) ignoreActive = true;
-				}
-				if(!ignoreActive) {
-					if(container.ext().isActive(old.request))
-						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
-					else if(logDEBUG)
-						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
-				} else if(logMINOR)
-					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
-				size += old.sizeNotStarted();
-				if(old.prio > prio)
-					betterThanSome = true;
-				if(old.request == req) return;
-			}
-			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) {
-				if(logMINOR)
-					Logger.minor(this, "Not adding to starter queue: over limit and req not better than any queued requests");
-				return;
-			}
-		}
-		addToStarterQueue(req, container);
-		trimStarterQueue(container);
-	}
-	
-	private void trimStarterQueue(ObjectContainer container) {
-		ArrayList<PersistentChosenRequest> dumped = null;
-		synchronized(starterQueue) {
-			int length = starterQueueLength();
-			while(length > MAX_STARTER_QUEUE_SIZE) {
-				// Find the lowest priority/retry count request.
-				// If we can dump it without going below the limit, then do so.
-				// If we can't, return.
-				PersistentChosenRequest worst = null;
-				short worstPrio = -1;
-				int worstIndex = -1;
-				int worstLength = -1;
-				if(starterQueue.isEmpty()) {
-					break;
-				}
-				length = 0;
-				ListIterator<PersistentChosenRequest> it = starterQueue.listIterator();
-				while(it.hasNext()) {
-					int nextIndex = it.nextIndex();
-					PersistentChosenRequest req = it.next();
-					short prio = req.prio;
-					int size = req.sizeNotStarted();
-					length += size;
-					if(prio > worstPrio) {
-						worstPrio = prio;
-						worst = req;
-						// FIXME is there way to save iterator state and avoid O(n) List.remove(index) here?
-						// We could use a LinkedHashSet but I'm not sure there's any point, worst case is 512 elements, average case is more like 2.
-						worstIndex = nextIndex;
-						worstLength = size;
-						continue;
-					}
-				}
-				int lengthAfter = length - worstLength;
-				if(lengthAfter >= MAX_STARTER_QUEUE_SIZE) {
-					if(dumped == null)
-						dumped = new ArrayList<PersistentChosenRequest>(2);
-					dumped.add(worst);
-					starterQueue.remove(worstIndex);
-					if(lengthAfter == MAX_STARTER_QUEUE_SIZE) break;
-				} else {
-					// Can't remove any more.
-					break;
-				}
-			}
-		}
-		if(dumped == null) return;
-		for(PersistentChosenRequest req : dumped) {
-			req.onDumped(schedCore, container, false);
-		}
-	}
-
 	/**
 	 * Remove a KeyListener from the list of KeyListeners.
 	 * @param getter
@@ -1004,11 +609,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	@Override
-	public long countTransientQueuedRequests() {
-		return schedTransient.countQueuedRequests(null, clientContext);
-	}
-
-	@Override
 	public KeysFetchingLocally fetchingKeys() {
 		return selector;
 	}
@@ -1107,15 +707,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public long countPersistentWaitingKeys(ObjectContainer container) {
 		if(schedCore == null) return 0;
 		return schedCore.countWaitingKeys(container);
-	}
-	
-	public long countPersistentQueuedRequests(ObjectContainer container) {
-		if(schedCore == null) return 0;
-		return schedCore.countQueuedRequests(container, clientContext);
-	}
-
-	public boolean isQueueAlmostEmpty() {
-		return starterQueueSize() < MAX_STARTER_QUEUE_SIZE / 4;
 	}
 	
 	public boolean isInsertScheduler() {
