@@ -154,11 +154,6 @@ public class USKManager {
 		this.context = context;
 	}
 
-	public void init(ObjectContainer container) {
-		if(container != null)
-			USKManagerPersistent.init(this, container, context);
-	}
-	
 	/**
 	 * Look up the latest known working version of the given USK.
 	 * @return The latest known edition number, or -1.

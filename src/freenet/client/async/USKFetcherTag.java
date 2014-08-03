@@ -306,6 +306,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	public boolean objectCanDeactivate(ObjectContainer container) {
 		return false;
 	}
+
+    @Override
+    public void onRestartedFreenet(ClientContext context) {
+        if(finished) return;
+        start(context.uskManager, context, null);
+    }
 	
 //	public void objectOnNew(ObjectContainer container) {
 //		if(logDEBUG) Logger.debug(this, "Storing as new: "+this);

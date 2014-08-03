@@ -461,7 +461,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager.init(clientContext);
-		initUSK(container);
 
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
@@ -598,16 +597,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
         minDiskFreeShortTerm = nodeConfig.getLong("minDiskFreeShortTerm");
         // Do not register the UserAlert yet, since we haven't finished constructing stuff it uses.
     }
-
-    private void initUSK(ObjectContainer container) {
-		if(!killedDatabase) {
-			try {
-				uskManager.init(container);
-			} catch (Db4oException e) {
-				killedDatabase = true;
-			}
-		}
-	}
 
 	private void initKeys(ObjectContainer container) {
 		if(!killedDatabase) {
