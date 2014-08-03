@@ -112,7 +112,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
                     thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(container), 
                     context.random, context.tempBucketFactory, context.tempRAFFactory, 
-                    context.mainExecutor, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
+                    context.jobRunner, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {
@@ -304,7 +304,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         this.context = context;
         try {
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
-                    context.random, context.mainExecutor, context.ticker, 
+                    context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker());
         } catch (IOException e) {
             fail(new FetchException(FetchException.BUCKET_ERROR, e));

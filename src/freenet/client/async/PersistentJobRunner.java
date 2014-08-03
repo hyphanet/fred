@@ -8,6 +8,9 @@ public interface PersistentJobRunner {
 
     void queue(PersistentJob persistentJob, int threadPriority) throws PersistenceDisabledException;
 
+    /** Queue the job at low thread priority or drop it if persistence is disabled. */
+    void queueLowOrDrop(PersistentJob persistentJob);
+
     /** Commit ASAP. Can also be set via returning true from a PersistentJob, but it's useful to be
      * able to do it "inline". */
     void setCommitThisTransaction();

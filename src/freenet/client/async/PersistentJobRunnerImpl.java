@@ -66,6 +66,15 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
+    @Override
+    public void queueLowOrDrop(PersistentJob job) {
+        try {
+            queue(job, NativeThread.LOW_PRIORITY);
+        } catch (PersistenceDisabledException e) {
+            return;
+        }
+    }
+    
     private class JobRunnable implements Runnable {
         
         private final int threadPriority;

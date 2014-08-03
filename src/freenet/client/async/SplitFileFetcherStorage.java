@@ -35,7 +35,6 @@ import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
@@ -131,7 +130,7 @@ public class SplitFileFetcherStorage {
     /** FEC codec for the splitfile, if needed. */
     public final NewFECCodec fecCodec;
     final Ticker ticker;
-    final Executor executor;
+    final PersistentJobRunner jobRunner;
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final long finalLength;
     final short splitfileType;
@@ -216,11 +215,11 @@ public class SplitFileFetcherStorage {
             boolean realTime, KeySalter salt, FreenetURI thisKey, FreenetURI origKey, 
             boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
-            Executor exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
+            PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
             ChecksumChecker checker, boolean persistent) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
-        this.executor = exec;
+        this.jobRunner = exec;
         this.ticker = ticker;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.finalLength = metadata.dataLength();
@@ -509,13 +508,13 @@ public class SplitFileFetcherStorage {
      * restarting). */
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
             SplitFileFetcherCallback callback, FetchContext origContext,
-            RandomSource random, Executor exec,
+            RandomSource random, PersistentJobRunner exec,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException, FetchException {
         this.persistent = true;
         this.raf = raf;
         this.fetcher = callback;
         this.ticker = ticker;
-        this.executor = exec;
+        this.jobRunner = exec;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.random = random;
         this.checksumChecker = checker;
@@ -838,14 +837,16 @@ public class SplitFileFetcherStorage {
         return fetcher.getPriorityClass();
     }
 
-    /** A segment successfully completed. */
+    /** A segment successfully completed. 
+     * @throws PersistenceDisabledException */
     public void finishedSuccess(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage) {
         if(allSucceeded()) {
-            executor.execute(new Runnable() {
+            jobRunner.queueLowOrDrop(new PersistentJob() {
 
                 @Override
-                public void run() {
+                public boolean run(ClientContext context) {
                     fetcher.onSuccess();
+                    return true;
                 }
                 
             });
@@ -892,12 +893,12 @@ public class SplitFileFetcherStorage {
 
     static final long LAZY_WRITE_METADATA_DELAY = TimeUnit.MINUTES.toMillis(5);
     
-    private final Runnable writeMetadataJob = new Runnable() {
+    private final PersistentJob writeMetadataJob = new PersistentJob() {
 
         @Override
-        public void run() {
+        public boolean run(ClientContext context) {
             try {
-                if(hasFinished()) return;
+                if(hasFinished()) return false;
                 RAFLock lock = raf.lockOpen();
                 try {
                     for(SplitFileFetcherSegmentStorage segment : segments) {
@@ -907,10 +908,11 @@ public class SplitFileFetcherStorage {
                 } finally {
                     lock.unlock();
                 }
+                return false;
             } catch (IOException e) {
-                if(hasFinished()) return;
+                if(hasFinished()) return false;
                 Logger.error(this, "Failed writing metadata for "+SplitFileFetcherStorage.this+": "+e, e);
-                return;
+                return false;
             }
         }
         
@@ -918,11 +920,19 @@ public class SplitFileFetcherStorage {
 
     public void lazyWriteMetadata() {
         if(!persistent) return;
-        if(LAZY_WRITE_METADATA_DELAY != 0)
-            ticker.queueTimedJob(writeMetadataJob, "Write metadata for splitfile", 
+        if(LAZY_WRITE_METADATA_DELAY != 0) {
+            ticker.queueTimedJob(new Runnable() {
+
+                @Override
+                public void run() {
+                    jobRunner.queueLowOrDrop(writeMetadataJob);
+                }
+                
+            }, "Write metadata for splitfile", 
                     LAZY_WRITE_METADATA_DELAY, false, true);
-        else
-            executor.execute(writeMetadataJob); // Must still be off-thread, multiple segments, possible locking issues...
+        } else { // Must still be off-thread, multiple segments, possible locking issues...
+            jobRunner.queueLowOrDrop(writeMetadataJob);
+        }
     }
 
     public void finishedFetcher() {
@@ -930,11 +940,12 @@ public class SplitFileFetcherStorage {
             finishedFetcher = true;
             if(!finishedEncoding) return;
         }
-        executor.execute(new Runnable() {
-
+        jobRunner.queueLowOrDrop(new PersistentJob() {
+            
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 close();
+                return true;
             }
             
         });
@@ -945,11 +956,12 @@ public class SplitFileFetcherStorage {
             finishedEncoding = true;
             if(!finishedFetcher) return;
         }
-        executor.execute(new Runnable() {
-
+        jobRunner.queueLowOrDrop(new PersistentJob() {
+            
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 close();
+                return true;
             }
             
         });
@@ -989,13 +1001,14 @@ public class SplitFileFetcherStorage {
      * @param e
      */
     public void fail(final FetchException e) {
-        executor.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                fetcher.fail(e);
-            }
+        jobRunner.queueLowOrDrop(new PersistentJob() {
             
+            @Override
+            public boolean run(ClientContext context) {
+                fetcher.fail(e);
+                return true;
+            }
+                
         });
     }
 
@@ -1008,11 +1021,12 @@ public class SplitFileFetcherStorage {
     }
 
     public void failOnDiskError(final IOException e) {
-        executor.execute(new Runnable() {
+        jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 fetcher.failOnDiskError(e);
+                return true;
             }
             
         });
@@ -1152,11 +1166,12 @@ public class SplitFileFetcherStorage {
         if(hasFinished()) return; // Don't need to do anything.
         // Some segments still need data.
         // They're not going to get it.
-        executor.execute(new Runnable() {
+        jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 fetcher.failCheckedDatastoreOnly();
+                return true;
             }
             
         });
@@ -1189,11 +1204,12 @@ public class SplitFileFetcherStorage {
     }
 
     public void failedBlock() {
-        executor.execute(new Runnable() {
+        jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 fetcher.onFailedBlock();
+                return false;
             }
             
         });
@@ -1205,12 +1221,13 @@ public class SplitFileFetcherStorage {
     }
 
     public void restartedAfterDataCorruption(boolean wasCorrupt) {
-        executor.execute(new Runnable() {
+        jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 maybeClearCooldown();
                 fetcher.restartedAfterDataCorruption();
+                return false;
             }
             
         });
@@ -1224,22 +1241,23 @@ public class SplitFileFetcherStorage {
     void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
             final long cooldownTime) {
         // Risky locking-wise, so run as a separate job.
-        executor.execute(new Runnable() {
+        jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
-            public void run() {
+            public boolean run(ClientContext context) {
                 long now = System.currentTimeMillis();
                 synchronized(cooldownLock) {
-                    if(cooldownTime < now) return;
-                    if(overallCooldownWakeupTime > now) return; // Wait for it to wake up.
+                    if(cooldownTime < now) return false;
+                    if(overallCooldownWakeupTime > now) return false; // Wait for it to wake up.
                     long wakeupTime = Long.MAX_VALUE;
                     for(SplitFileFetcherSegmentStorage segment : segments) {
                         long segmentTime = segment.getOverallCooldownTime();
-                        if(segmentTime < now) return;
+                        if(segmentTime < now) return false;
                         wakeupTime = Math.min(segmentTime, wakeupTime);
                     }
                     overallCooldownWakeupTime = wakeupTime;
                 }
+                return false;
             }
             
         });

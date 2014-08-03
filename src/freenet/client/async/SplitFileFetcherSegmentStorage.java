@@ -704,11 +704,12 @@ public class SplitFileFetcherSegmentStorage {
             // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
             writeMetadata();
             if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
-            parent.executor.execute(new Runnable() {
+            parent.jobRunner.queueLowOrDrop(new PersistentJob() {
                 
                 @Override
-                public void run() {
+                public boolean run(ClientContext context) {
                     parent.fetcher.onFetchedBlock();
+                    return false;
                 }
                 
             });
@@ -1102,11 +1103,12 @@ public class SplitFileFetcherSegmentStorage {
                     try {
                         keys = getSegmentKeys();
                     } catch (final IOException e) {
-                        parent.executor.execute(new Runnable() {
+                        parent.jobRunner.queueLowOrDrop(new PersistentJob() {
                             
                             @Override
-                            public void run() {
+                            public boolean run(ClientContext context) {
                                 parent.failOnDiskError(e);
+                                return true;
                             }
                             
                         });
