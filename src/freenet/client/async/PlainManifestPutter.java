@@ -60,7 +60,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
     @Override
-    public void onRestart(ClientContext context) {
+    public void onRestartedFreenet(ClientContext context) {
         // Do nothing.
     }
 }

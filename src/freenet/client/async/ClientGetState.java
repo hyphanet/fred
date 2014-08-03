@@ -30,6 +30,7 @@ public interface ClientGetState {
 	 */
 	public void removeFrom(ObjectContainer container, ClientContext context);
 	
-	/** Called on restarting the node on a persistent request. */
+	/** Called on restarting the node for a persistent request. The request must re-schedule 
+	 * itself, as neither the KeyListener's nor the RGA's are persistent now. */
 	public void onRestartedFreenet(ClientContext context);
 }

@@ -1288,6 +1288,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     
     public void onRestartedFreenet(ClientContext context) {
         if(getter != null)
-            getter.onRestart(context);
+            getter.onRestartedFreenet(context);
     }
 }

@@ -924,7 +924,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     
     /** Called for a persistent request after startup. */
     @Override
-    public void onRestart(ClientContext context) {
+    public void onRestartedFreenet(ClientContext context) {
         if(currentState != null)
             currentState.onRestartedFreenet(context);
     }

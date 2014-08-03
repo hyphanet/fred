@@ -600,7 +600,7 @@ public class ClientPut extends ClientPutBase {
 	
 	public void onRestartedFreenet(ClientContext context) {
 	    if(putter != null)
-	        putter.onRestart(context);
+	        putter.onRestartedFreenet(context);
 	}
 
 }

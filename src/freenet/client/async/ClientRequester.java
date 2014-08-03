@@ -484,6 +484,6 @@ public abstract class ClientRequester {
     }
     
     /** Called for a persistent request after startup. */
-    public abstract void onRestart(ClientContext context);
+    public abstract void onRestartedFreenet(ClientContext context);
     
 }
