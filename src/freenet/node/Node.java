@@ -59,7 +59,6 @@ import com.db4o.io.RandomAccessFileAdapter;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchContext;
-import freenet.client.async.SplitFileInserterSegment;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
 import freenet.clients.http.SecurityLevelsToadlet;
@@ -3042,32 +3041,6 @@ public class Node implements TimeSkewDetectorCallback {
 		for(Map.Entry<String,Integer> entry : map.entrySet()) {
 			System.err.println(entry.getKey()+" : "+entry.getValue());
 			total += entry.getValue();
-		}
-
-		// Now dump the SplitFileInserterSegment's.
-		ObjectSet<SplitFileInserterSegment> segments = database.query(SplitFileInserterSegment.class);
-		for(SplitFileInserterSegment seg : segments) {
-			try {
-			database.activate(seg, 1);
-			boolean finished = seg.isFinished();
-			boolean cancelled = seg.isCancelled(database);
-			boolean empty = seg.isEmpty(database);
-			boolean encoded = seg.isEncoded();
-			boolean started = seg.isStarted();
-			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check started="+started);
-
-			if(!finished && !encoded) {
-				System.out.println("Not finished and not encoded: "+seg);
-				// Basic checks...
-				seg.checkHasDataBlocks(true, database);
-
-			}
-
-			database.deactivate(seg, 1);
-			} catch (Throwable t) {
-				System.out.println("Caught "+t+" processing segment");
-				t.printStackTrace();
-			}
 		}
 
 		FECQueue.dump(database, RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
