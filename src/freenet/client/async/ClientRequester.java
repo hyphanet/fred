@@ -466,15 +466,14 @@ public abstract class ClientRequester {
      * persistent download. E.g. for FCP, this will include the Identifier, whether it is on the 
      * global queue and the client name. 
      * @throws IOException */
-    public byte[] getClientDetail(ObjectContainer container) throws IOException {
+    public byte[] getClientDetail() throws IOException {
         return new byte[0];
     }
     
-    protected static byte[] getClientDetail(PersistentClientCallback callback,
-            ObjectContainer container) throws IOException {
+    protected static byte[] getClientDetail(PersistentClientCallback callback) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        callback.getClientDetail(container, dos);
+        callback.getClientDetail(dos);
         return baos.toByteArray();
     }
     

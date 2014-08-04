@@ -912,11 +912,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return binaryBlobWriter.getFinalBucket();
 	}
 	
-    public byte[] getClientDetail(ObjectContainer container) throws IOException {
-        if(persistent())
-            container.activate(clientCallback, 1);
+    public byte[] getClientDetail() throws IOException {
         if(clientCallback instanceof PersistentClientCallback) {
-            return getClientDetail((PersistentClientCallback)clientCallback, container);
+            return getClientDetail((PersistentClientCallback)clientCallback);
         } else
             return new byte[0];
     }

@@ -1008,15 +1008,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
     @Override
-    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+    public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
         dos.writeShort(returnType);
         writeFile(targetFile, dos);
         writeFile(tempFile, dos);
         dos.writeBoolean(binaryBlob);
-        if(persistenceType == PERSIST_FOREVER)
-            container.activate(fctx, 1);
         fctx.writeTo(dos);
         super.getClientDetail(dos);
     }

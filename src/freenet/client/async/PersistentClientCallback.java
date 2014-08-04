@@ -3,8 +3,6 @@ package freenet.client.async;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 /** Fetches which may be persistent need getClientDetail() so that we can save that data to the 
  * file a splitfile download is using, so that it can be recovered later.
  * @author toad
@@ -19,6 +17,6 @@ public interface PersistentClientCallback extends ClientBaseCallback {
      * version number. Will only be called for persistent requests. Should not include progress 
      * etc; this is supposed to be just enough to restart the download from scratch.
      */
-    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException;
+    public void getClientDetail(DataOutputStream dos) throws IOException;
     
 }

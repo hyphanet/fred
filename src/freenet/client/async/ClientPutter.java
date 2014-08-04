@@ -640,11 +640,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		System.out.println("Data: "+data);
 	}
 	
-    public byte[] getClientDetail(ObjectContainer container) throws IOException {
-        if(persistent())
-            container.activate(client, 1);
+    public byte[] getClientDetail() throws IOException {
         if(client instanceof PersistentClientCallback) {
-            return getClientDetail((PersistentClientCallback)client, container);
+            return getClientDetail((PersistentClientCallback)client);
         } else
             return new byte[0];
     }
