@@ -214,19 +214,19 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
+	public abstract void onSuccess(BaseClientPutter state);
 
 	/**
 	 * You have to do "finally { removeInsert() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
+	public abstract void onFailure(InsertException e, BaseClientPutter state);
 
 	@Override
-	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
+	public abstract void onFetchable(BaseClientPutter state);
 
 	@Override
-	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
+	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */

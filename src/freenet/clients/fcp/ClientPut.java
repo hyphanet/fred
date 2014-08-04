@@ -296,12 +296,12 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(e, null, null);
+			onFailure(e, null);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, null);
+			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
 		}
 	}
 
@@ -416,7 +416,7 @@ public class ClientPut extends ClientPutBase {
 			}
 			return true;
 		} catch (InsertException e) {
-			onFailure(e, null, null);
+			onFailure(e, null);
 			return false;
 		}
 	}

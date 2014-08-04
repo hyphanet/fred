@@ -141,7 +141,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public void onSuccess(BaseClientPutter state) {
 		synchronized(this) {
 			// Including this helps with certain bugs...
 			//progressMessage = null;
@@ -160,15 +160,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		if(finished) return;
 		synchronized(this) {
 			finished = true;
 			completionTime = System.currentTimeMillis();
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(this);
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
 		finish();
@@ -178,7 +176,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		synchronized(this) {
 			if(generatedURI != null) {
 				if(!uri.equals(generatedURI))
@@ -189,9 +187,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				generatedURI = uri;
 			}
 		}
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(this);
-		trySendGeneratedURIMessage(null, container);
+		trySendGeneratedURIMessage(null, null);
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
@@ -212,8 +208,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 	
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		boolean delete = false;
 		synchronized(this) {
 			if(generatedURI != null)
@@ -227,13 +222,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 		if(delete) {
 			metadata.free();
-			metadata.removeFrom(container);
 		} else {
-			if(persistenceType == PERSIST_FOREVER) {
-				metadata.storeTo(container);
-				container.store(this);
-			}
-			trySendGeneratedMetadataMessage(metadata, null, container);
+			trySendGeneratedMetadataMessage(metadata, null, null);
 		}
 	}
 	
@@ -336,7 +326,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	protected abstract void onStartCompressing();
 
 	@Override
-	public void onFetchable(BaseClientPutter putter, ObjectContainer container) {
+	public void onFetchable(BaseClientPutter putter) {
 		if(finished) return;
 		if((verbosity & VERBOSITY_PUT_FETCHABLE) == VERBOSITY_PUT_FETCHABLE) {
 			FreenetURI temp;
@@ -345,7 +335,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			}
 			PutFetchableMessage msg =
 				new PutFetchableMessage(identifier, global, temp);
-			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null, container, null);
+			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null, null, null);
 		}
 	}
 

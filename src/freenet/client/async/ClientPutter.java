@@ -255,7 +255,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(e, this, container);
+				this.client.onFailure(e, this);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -267,7 +267,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
+				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
 			}
 		} catch (BinaryBlobFormatException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -279,7 +279,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
+				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
 			}
 		}
 		if(logMINOR)
@@ -335,7 +335,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		if(persistent())
 			container.store(this);
-		client.onSuccess(this, container);
+		client.onSuccess(this);
 	}
 
 	/** Called when the insert fails. */
@@ -358,7 +358,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			state.removeFrom(container, context);
 		if(persistent())
 			container.store(this);
-		client.onFailure(e, this, container);
+		client.onFailure(e, this);
 	}
 
 	/** Called when significant milestones are passed. */
@@ -393,7 +393,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.store(this);
 			u = u.clone();
 		}
-		client.onGeneratedURI(uri, this, container);
+		client.onGeneratedURI(uri, this);
 	}
 	
 	/** Called when metadataThreshold was specified and metadata is being returned
@@ -421,7 +421,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(persistent()) {
 			container.store(this);
 		}
-		client.onGeneratedMetadata(finalMetadata, this, container);
+		client.onGeneratedMetadata(finalMetadata, this);
 	}
 
 	/** Cancel the insert. Will call onFailure() if it is not already cancelled, so the callback will
@@ -582,7 +582,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);
-		client.onFetchable(this, container);
+		client.onFetchable(this);
 	}
 
 	/** Can we restart the insert? */

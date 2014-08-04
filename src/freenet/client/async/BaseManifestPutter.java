@@ -186,7 +186,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				finalURI = key.getURI();
 				if(persistent())
 					container.activate(cb, 1);
-				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this, container);
+				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
 				if(persistent()) {
 					container.deactivate(cb, 1);
 					container.store(this);
@@ -388,7 +388,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				finalURI = key.getURI();
 				if(persistent())
 					container.activate(cb, 1);
-				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this, container);
+				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
 				if(persistent()) {
 					container.deactivate(cb, 1);
 					container.store(this);
@@ -1409,7 +1409,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			deactivateCB = !container.ext().isActive(cb);
 			container.activate(cb, 1);
 		}
-		cb.onSuccess(this, container);
+		cb.onSuccess(this);
 		if(deactivateCB)
 			container.deactivate(cb, 1);
 	}
@@ -1430,7 +1430,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		if(persistent())
 			container.activate(cb, 1);
-		cb.onFailure(e, this, container);
+		cb.onFailure(e, this);
 	}
 
 	private void removePutHandlers(ObjectContainer container, ClientContext context) {
@@ -1641,7 +1641,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				container.deactivate(putHandlersWaitingForFetchable, 1);
 				container.activate(cb, 1);
 			}
-			cb.onFetchable(this, container);
+			cb.onFetchable(this);
 			if(persistent())
 				container.deactivate(cb, 1);
 		} else {

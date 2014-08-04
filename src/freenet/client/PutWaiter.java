@@ -1,7 +1,5 @@
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
@@ -36,21 +34,21 @@ public class PutWaiter implements ClientPutCallback {
     }
 
     @Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		succeeded = true;
 		finished = true;
 		notifyAll();
 	}
 
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		error = e;
 		finished = true;
 		notifyAll();
 	}
 
 	@Override
-	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR)
 			Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
@@ -83,13 +81,12 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+	public void onFetchable(BaseClientPutter state) {
 		// Ignore
 	}
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		Logger.error(this, "onGeneratedMetadata() on PutWaiter from "+state, new Exception("error"));
 		metadata.free();
 	}

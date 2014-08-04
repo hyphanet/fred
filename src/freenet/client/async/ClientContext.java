@@ -166,7 +166,7 @@ public class ClientContext {
 					try {
 						inserter.start(earlyEncode, false, null, context);
 					} catch (InsertException e) {
-						inserter.client.onFailure(e, inserter, null);
+						inserter.client.onFailure(e, inserter);
 					}
 					return true;
 				}
@@ -220,7 +220,7 @@ public class ClientContext {
 					try {
 						inserter.start(null, context);
 					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter, null);
+						inserter.cb.onFailure(e, inserter);
 					}
 					return true;
 				}
@@ -247,7 +247,7 @@ public class ClientContext {
 					try {
 						inserter.start(null, context);
 					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter, null);
+						inserter.cb.onFailure(e, inserter);
 					}
 					return true;
 				}

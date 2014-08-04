@@ -197,14 +197,14 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 				}
 			}
 		} catch (InsertException e) {
-			onFailure(e, inserter, null);	
+			onFailure(e, inserter);	
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
 	}
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public void onSuccess(BaseClientPutter state) {
 		FreenetURI uri = state.getURI();
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert succeeded: " + uri);
 		synchronized (this) {
@@ -216,7 +216,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public void onFailure(InsertException e, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert failed: "+e);
 		synchronized(this) {
 			lastInsertedPeers = null;
@@ -233,7 +233,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: "+uri);
 		long l = uri.getSuggestedEdition();
 		if(l < crypto.myARKNumber) {
@@ -273,7 +273,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+	public void onFetchable(BaseClientPutter state) {
 		// Ignore, we don't care
 	}
 
@@ -288,8 +288,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		Logger.error(this, "Bogus onGeneratedMetadata() on "+this+" from "+state, new Exception("error"));
 		metadata.free();
 	}

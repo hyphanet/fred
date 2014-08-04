@@ -1246,7 +1246,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			deactivateCB = !container.ext().isActive(cb);
 			container.activate(cb, 1);
 		}
-		cb.onSuccess(this, container);
+		cb.onSuccess(this);
 		if(deactivateCB)
 			container.deactivate(cb, 1);
 	}
@@ -1263,7 +1263,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 		if(persistent())
 			container.activate(cb, 1);
-		cb.onFailure(e, this, container);
+		cb.onFailure(e, this);
 	}
 
 	private void removePutHandlers(ObjectContainer container, ClientContext context) {
@@ -1563,7 +1563,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
 			if(persistent())
 				container.activate(cb, 1);
-			cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this, container);
+			cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
 			if(persistent())
 				container.deactivate(cb, 1);
 			if(persistent())
@@ -1826,7 +1826,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				container.deactivate(metadataPuttersUnfetchable, 1);
 				container.activate(cb, 1);
 			}
-			cb.onFetchable(this, container);
+			cb.onFetchable(this);
 			if(persistent())
 				container.deactivate(cb, 1);
 		} else {
@@ -1861,7 +1861,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 				container.store(this);
 				container.activate(cb, 1);
 			}
-			cb.onFetchable(this, container);
+			cb.onFetchable(this);
 			if(persistent())
 				container.deactivate(cb, 1);
 		}

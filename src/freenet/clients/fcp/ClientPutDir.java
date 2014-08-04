@@ -211,7 +211,7 @@ public class ClientPutDir extends ClientPutBase {
 			}
 		} catch (InsertException e) {
 			started = true;
-			onFailure(e, null, null);
+			onFailure(e, null);
 		}
 	}
 	
@@ -327,24 +327,24 @@ public class ClientPutDir extends ClientPutBase {
 		try {
 			makePutter(context);
 		} catch (TooManyFilesInsertException e) {
-			this.onFailure(new InsertException(e), null, null);
+			this.onFailure(new InsertException(e), null);
 		}
 		start(context);
 		return true;
 	}
 
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
+	public void onFailure(FetchException e, ClientGetter state) {}
 
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+	public void onSuccess(FetchResult result, ClientGetter state) {}
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		super.onSuccess(state, container);
+	public void onSuccess(BaseClientPutter state) {
+		super.onSuccess(state);
 	}
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		super.onFailure(e, state, container);
+	public void onFailure(InsertException e, BaseClientPutter state) {
+		super.onFailure(e, state);
 	}
 
 	@Override

@@ -1117,17 +1117,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		ClientPutCallback callback = new ClientPutCallback() {
 
 			@Override
-			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+			public void onFailure(InsertException e, BaseClientPutter state) {
 				Logger.error(this, "Failed to insert "+type+" binary blob: " + e, e);
 			}
 			
 			@Override
-			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+			public void onFetchable(BaseClientPutter state) {
 				// Ignore
 			}
 			
 			@Override
-			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 				// Ignore
 			}
 			
@@ -1137,14 +1137,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			@Override
-			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+			public void onSuccess(BaseClientPutter state) {
 				// All done. Cool.
 				Logger.normal(this, "Inserted "+type+" binary blob");
 			}
 
 			@Override
 			public void onGeneratedMetadata(Bucket metadata,
-					BaseClientPutter state, ObjectContainer container) {
+					BaseClientPutter state) {
 				Logger.error(this, "Got onGeneratedMetadata inserting blob from "+state, new Exception("error"));
 				metadata.free();
 			}
