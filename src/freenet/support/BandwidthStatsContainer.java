@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import java.io.Serializable;
+
 /**
  * Contains bandwidth statistics.
  * 
  * @author Artefact2
  */
-public class BandwidthStatsContainer {
-	public long creationTime = 0;
+public class BandwidthStatsContainer implements Serializable {
+    private static final long serialVersionUID = 1L;
+    public long creationTime = 0;
 	public long totalBytesOut = 0;
 	public long totalBytesIn = 0;
 

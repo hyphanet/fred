@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import java.io.Serializable;
+
 /**
  * Contains uptime statistics.
  *
  * @author Artefact2
  */
-public class UptimeContainer {
-	public long creationTime = 0;
+public class UptimeContainer implements Serializable {
+    private static final long serialVersionUID = 1L;
+    public long creationTime = 0;
 	public long totalUptime = 0;
 
 	@Override
