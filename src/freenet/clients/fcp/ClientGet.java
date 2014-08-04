@@ -8,8 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;

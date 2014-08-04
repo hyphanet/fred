@@ -2,15 +2,11 @@ package freenet.clients.fcp;
 
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
-import freenet.client.async.PersistenceDisabledException;
-import freenet.client.async.PersistentJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -24,7 +20,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.NativeThread;
 
 /**
  * Base class for ClientPut and ClientPutDir.
@@ -187,7 +182,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				generatedURI = uri;
 			}
 		}
-		trySendGeneratedURIMessage(null, null);
+		trySendGeneratedURIMessage(null);
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
@@ -223,7 +218,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(delete) {
 			metadata.free();
 		} else {
-			trySendGeneratedMetadataMessage(metadata, null, null);
+			trySendGeneratedMetadataMessage(metadata, null);
 		}
 	}
 	
@@ -273,7 +268,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 				lastActivity = System.currentTimeMillis();
-				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, null, context);
+				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, context);
 			}
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -285,21 +280,21 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				StartedCompressionMessage msg =
 					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, null, context);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, context);
 				onStartCompressing();
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
 					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, null, context);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, context);
 				onStopCompressing();
 			}
 		} else if(ce instanceof ExpectedHashesEvent) {
 			if((verbosity & VERBOSITY_EXPECTED_HASHES) == VERBOSITY_EXPECTED_HASHES) {
 				ExpectedHashes msg =
 					new ExpectedHashes((ExpectedHashesEvent)ce, identifier, global);
-				trySendProgressMessage(msg, VERBOSITY_EXPECTED_HASHES, null, null, context);
+				trySendProgressMessage(msg, VERBOSITY_EXPECTED_HASHES, null, context);
 				//FIXME: onHashesComputed();
 			}
 		}
@@ -319,7 +314,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			}
 			PutFetchableMessage msg =
 				new PutFetchableMessage(identifier, global, temp);
-			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null, null, null);
+			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null, null);
 		}
 	}
 
@@ -350,12 +345,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 	}
 
-	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
 		FCPMessage msg;
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(client, 1);
-			container.activate(generatedURI, 5);
-		}
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
 		}
@@ -372,7 +363,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	 * @param handler
 	 * @param container
 	 */
-	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler) {
 		FCPMessage msg = new GeneratedMetadataMessage(identifier, global, metadata);
 		if(persistenceType == PERSIST_CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
@@ -389,44 +380,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	 * @param container Either container or context is required for a persistent request.
 	 * @param context Can be null if container is not null.
 	 */
-	private void trySendProgressMessage(final FCPMessage msg, final int verbosity, FCPConnectionOutputHandler handler, ObjectContainer container, ClientContext context) {
-		if(persistenceType == PERSIST_FOREVER) {
-			if(container != null) {
-				FCPMessage oldProgress = null;
-				synchronized(this) {
-					if(persistenceType != PERSIST_CONNECTION) {
-						oldProgress = progressMessage;
-						progressMessage = msg;
-					}
-				}
-				if(oldProgress != null) {
-					container.activate(oldProgress, 1);
-					oldProgress.removeFrom(container);
-				}
-				container.store(this);
-			} else {
-				final FCPConnectionOutputHandler h = handler;
-				try {
-				    context.jobRunner.queue(new PersistentJob() {
-				        
-				        @Override
-				        public boolean run(ClientContext context) {
-				            trySendProgressMessage(msg, verbosity, h, null, context);
-				            return false;
-				        }
-				        
-				    }, NativeThread.NORM_PRIORITY);
-				    return;
-				} catch (PersistenceDisabledException e) {
-				    // Impossible.
-				}
-			}
-		} else {
-			synchronized(this) {
-				if(persistenceType != PERSIST_CONNECTION)
-					progressMessage = msg;
-			}
-		}
+	private void trySendProgressMessage(final FCPMessage msg, final int verbosity, FCPConnectionOutputHandler handler, ClientContext context) {
+	    synchronized(this) {
+	        if(persistenceType != PERSIST_CONNECTION)
+	            progressMessage = msg;
+	    }
 		if(persistenceType == PERSIST_CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
@@ -453,9 +411,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			meta = generatedMetadata;
 		}
 		if(generated)
-			trySendGeneratedURIMessage(handler, null);
+			trySendGeneratedURIMessage(handler);
 		if(meta != null)
-			trySendGeneratedMetadataMessage(meta, handler, null);
+			trySendGeneratedMetadataMessage(meta, handler);
 		if(msg != null)
 			handler.queue(msg);
 		if(fin)
@@ -543,11 +501,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		return s;
 	}
 
-	public PutFailedMessage getFailureMessage(ObjectContainer container) {
+	public PutFailedMessage getFailureMessage() {
 		if(putFailedMessage == null)
 			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(putFailedMessage, 5);
 		return putFailedMessage;
 	}
 	

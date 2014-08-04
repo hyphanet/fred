@@ -132,7 +132,7 @@ public class FCPClient {
 				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(), ((ClientGet) get).getMIMEType(), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData());
 			} else if(get instanceof ClientPutBase) {
 				ClientPutBase upload = (ClientPutBase)get;
-				PutFailedMessage msg = upload.getFailureMessage(null);
+				PutFailedMessage msg = upload.getFailureMessage();
 				int failureCode = -1;
 				String shortFailMessage = null;
 				String longFailMessage = null;

@@ -12,8 +12,6 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertContext;

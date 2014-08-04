@@ -8,8 +8,6 @@ import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
