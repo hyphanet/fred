@@ -1394,6 +1394,7 @@ public class SplitFileFetcherStorage {
 
     public synchronized void setHasCheckedStore() {
         hasCheckedDatastore = true;
+        if(!persistent) return;
         this.jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override
