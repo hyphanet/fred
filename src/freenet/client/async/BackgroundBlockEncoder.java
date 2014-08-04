@@ -45,32 +45,6 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		}
 	}
 	
-	public void queue(SingleBlockInserter[] sbis, ObjectContainer container, ClientContext context) {
-		synchronized(this) {
-			for(SingleBlockInserter inserter: sbis) {
-				if(inserter == null) continue;
-				if(inserter.isCancelled(container)) continue;
-				if(inserter.resultingURI != null) continue;
-				if(inserter.persistent()) continue;
-				Logger.minor(this, "Queueing encode of "+inserter);
-				SoftReference<Encodeable> ref = new SoftReference<Encodeable>(inserter);
-				queue.add(ref);
-			}
-			notifyAll();
-		}
-		boolean anyPersistent = false;
-		for(SingleBlockInserter inserter: sbis) {
-			if(inserter == null) continue;
-			if(inserter.isCancelled(container)) continue;
-			if(inserter.resultingURI != null) continue;
-			if(!inserter.persistent()) continue;
-			anyPersistent = true;
-			queuePersistent(inserter, container, context);
-		}
-		if(anyPersistent)
-			runPersistentQueue(context);
-	}
-	
 	public void runPersistentQueue(ClientContext context) {
 		try {
 			context.jobRunner.queue(runner, NativeThread.LOW_PRIORITY, true);
