@@ -111,8 +111,8 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			String charset, short priorityClass, short persistenceType, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
-			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
-		super(uri = checkEmptySSK(uri, targetFilename, server.core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, server, container);
+			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
+		super(uri = checkEmptySSK(uri, targetFilename, server.core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -150,10 +150,10 @@ public class ClientPut extends ClientPutBase {
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey, -1);
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity, null, 
 				handler, message.priorityClass, message.persistenceType, message.clientToken,
-				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server, container);
+				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		String salt = null;
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;
@@ -261,28 +261,26 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
+	void register(boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
-			FCPMessage msg = persistentTagMessage(container);
+			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
 	}
 	
 	@Override
-	public void start(ObjectContainer container, ClientContext context) {
+	public void start(ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		synchronized(this) {
 			if(finished) return;
 		}
 		try {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(putter, 1);
-			putter.start(earlyEncode, false, container, context);
+			putter.start(earlyEncode, false, null, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage(container);
+				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
 			synchronized(this) {
@@ -294,35 +292,29 @@ public class ClientPut extends ClientPutBase {
 					cache.updateStarted(identifier, true);
 				}
 			}
-			if(persistenceType == PERSIST_FOREVER)
-				container.store(this); // Update
 		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(e, null, container);
+			onFailure(e, null, null);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, container);
+			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, null);
 		}
 	}
 
 	@Override
-	protected void freeData(ObjectContainer container) {
+	protected void freeData() {
 		Bucket d;
 		synchronized(this) {
 			d = data;
 			data = null;
 			if(d == null) return;
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(d, 5);
 			finishedSize = d.size();
 		}
 		d.free();
-		if(persistenceType == PERSIST_FOREVER)
-			d.removeFrom(container);
 	}
 	
 	@Override
@@ -331,22 +323,13 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	protected FCPMessage persistentTagMessage(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(publicURI, 5);
-			container.activate(uri, 5);
-			container.activate(clientMetadata, 5);
-			container.activate(origFilename, 5);
-			container.activate(ctx, 1);
-			container.activate(lowLevelClient, 1);
-			container.activate(putter, 1);
-		}
+	protected FCPMessage persistentTagMessage() {
 		if (putter == null)
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
 		return new PersistentPut(identifier, publicURI, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
+				getDataSize(null), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
 
 	private boolean isRealTime() {
@@ -414,19 +397,17 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
+	public boolean restart(ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
-		setVarsRestart(container);
+		setVarsRestart(null);
 		try {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(putter, 1);
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
 					cache.updateStarted(identifier, false);
 				}
 			}
-			if(putter.restart(earlyEncode, container, context)) {
+			if(putter.restart(earlyEncode, null, context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;
@@ -438,11 +419,9 @@ public class ClientPut extends ClientPutBase {
 					cache.updateStarted(identifier, true);
 				}
 			}
-			if(persistenceType == PERSIST_FOREVER)
-				container.store(this);
 			return true;
 		} catch (InsertException e) {
-			onFailure(e, null, container);
+			onFailure(e, null, null);
 			return false;
 		}
 	}
@@ -464,22 +443,11 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+	public void requestWasRemoved(ClientContext context) {
 		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(putter, 1);
-			putter.removeFrom(container, context);
 			putter = null;
-			if(origFilename != null) {
-				container.activate(origFilename, 5);
-				container.delete(origFilename);
-			}
-			// clientMetadata will be deleted by putter
-			if(targetURI != null) {
-				container.activate(targetURI, 5);
-				targetURI.removeFrom(container);
-			}
 		}
-		super.requestWasRemoved(container, context);
+		super.requestWasRemoved(context);
 	}
 	
 	public enum COMPRESS_STATE {
@@ -531,35 +499,28 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	RequestStatus getStatus(ObjectContainer container) {
-		FreenetURI finalURI = getFinalURI(container);
-		if(finalURI != null) finalURI = getFinalURI(container).clone();
+	RequestStatus getStatus() {
+		FreenetURI finalURI = getFinalURI(null);
+		if(finalURI != null) finalURI = getFinalURI(null).clone();
 		int failureCode = -1;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
 		if(putFailedMessage != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(putFailedMessage, 5);
 			failureCode = putFailedMessage.code;
 			failureReasonShort = putFailedMessage.getShortFailedMessage();
 			failureReasonShort = putFailedMessage.getLongFailedMessage();
-			if(persistenceType == PERSIST_FOREVER)
-				container.deactivate(putFailedMessage, 5);
 		}
 		String mimeType = null;
 		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(clientMetadata, 1);
 			mimeType = clientMetadata.getMIMEType();
 		}
-		File fnam = getOrigFilename(container);
+		File fnam = getOrigFilename(null);
 		if(fnam != null) fnam = new File(fnam.getPath());
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
 		boolean totalFinalized = false;
 		
 		if(progressMessage != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(progressMessage, 2);
 			if(progressMessage instanceof SimpleProgressMessage) {
 				SimpleProgressMessage msg = (SimpleProgressMessage)progressMessage;
 				total = (int) msg.getTotalBlocks();
@@ -573,15 +534,14 @@ public class ClientPut extends ClientPutBase {
 		
 		FreenetURI origURI = uri;
 		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(origURI, Integer.MAX_VALUE);
 			origURI = origURI.clone();
 		}
 		
 		return new UploadFileRequestStatus(identifier, persistenceType, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, finalURI, origURI, failureCode,
-				failureReasonShort, failureReasonLong, getDataSize(container), mimeType,
-				fnam, isCompressing(container));
+				failureReasonShort, failureReasonLong, getDataSize(null), mimeType,
+				fnam, isCompressing(null));
 	}
 	
 	@Override

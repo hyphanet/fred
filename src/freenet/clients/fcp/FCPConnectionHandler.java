@@ -158,7 +158,7 @@ public class FCPConnectionHandler implements Closeable {
 			dupe = killedDupe;
 		}
 		for(ClientRequest req : requests)
-			req.onLostConnection(null, server.core.clientContext);
+			req.onLostConnection(server.core.clientContext);
 		for(SubscribeUSK sub : uskSubscriptions2)
 			sub.unsubscribe();
 		if(!dupe) {
@@ -276,7 +276,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					
 					if(!persistent) {
-						cg = new ClientGet(this, message, server, null);
+						cg = new ClientGet(this, message, server);
 						requestsByIdentifier.put(id, cg);
 					} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					    try {
@@ -286,7 +286,7 @@ public class FCPConnectionHandler implements Closeable {
 					            public boolean run(ClientContext context) {
 					                ClientGet getter;
 					                try {
-					                    getter = new ClientGet(FCPConnectionHandler.this, message, server, null);
+					                    getter = new ClientGet(FCPConnectionHandler.this, message, server);
 					                } catch (IdentifierCollisionException e1) {
 					                    Logger.normal(this, "Identifier collision on "+this);
 					                    FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -297,14 +297,14 @@ public class FCPConnectionHandler implements Closeable {
 					                    return false;
 					                }
 					                try {
-					                    getter.register(null, false);
+					                    getter.register(false);
 					                } catch (IdentifierCollisionException e) {
 					                    Logger.normal(this, "Identifier collision on "+this);
 					                    FCPMessage msg = new IdentifierCollisionMessage(id, global);
 					                    outputHandler.queue(msg);
 					                    return false;
 					                }
-					                getter.start(null, context);
+					                getter.start(context);
 					                return true;
 					            }
 					            
@@ -315,7 +315,7 @@ public class FCPConnectionHandler implements Closeable {
 					    }
 						return; // Don't run the start() below
 					} else {
-						cg = new ClientGet(this, message, server, null);
+						cg = new ClientGet(this, message, server);
 					}
 				} catch (IdentifierCollisionException e) {
 					success = false;
@@ -327,7 +327,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
 			try {
-				cg.register(null, false);
+				cg.register(false);
 			} catch (IdentifierCollisionException e) {
 				success = false;
 			}
@@ -337,7 +337,7 @@ public class FCPConnectionHandler implements Closeable {
 			outputHandler.queue(msg);
 			return;
 		} else {
-			cg.start(null, server.core.clientContext);
+			cg.start(server.core.clientContext);
 		}
 	}
 
@@ -363,7 +363,7 @@ public class FCPConnectionHandler implements Closeable {
 			if(success) {
 				if(!persistent) {
 					try {
-						cp = new ClientPut(this, message, server, null);
+						cp = new ClientPut(this, message, server);
 						requestsByIdentifier.put(id, cp);
 					} catch (IdentifierCollisionException e) {
 						success = false;
@@ -381,7 +381,7 @@ public class FCPConnectionHandler implements Closeable {
 				            public boolean run(ClientContext context) {
 				                ClientPut putter;
 				                try {
-				                    putter = new ClientPut(FCPConnectionHandler.this, message, server, null);
+				                    putter = new ClientPut(FCPConnectionHandler.this, message, server);
 				                } catch (IdentifierCollisionException e) {
 				                    Logger.normal(this, "Identifier collision on "+this);
 				                    FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -395,14 +395,14 @@ public class FCPConnectionHandler implements Closeable {
 				                    return false;
 				                }
 				                try {
-				                    putter.register(null, false);
+				                    putter.register(false);
 				                } catch (IdentifierCollisionException e) {
 				                    Logger.normal(this, "Identifier collision on "+this);
 				                    FCPMessage msg = new IdentifierCollisionMessage(id, global);
 				                    outputHandler.queue(msg);
 				                    return false;
 				                }
-				                putter.start(null, context);
+				                putter.start(context);
 				                return true;
 				            }
 				        
@@ -413,7 +413,7 @@ public class FCPConnectionHandler implements Closeable {
 					return; // Don't run the start() below
 				} else {
 					try {
-						cp = new ClientPut(this, message, server, null);
+						cp = new ClientPut(this, message, server);
 					} catch (IdentifierCollisionException e) {
 						success = false;
 					} catch (MessageInvalidException e) {
@@ -431,7 +431,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT && cp != null)
 			try {
-				cp.register(null, false);
+				cp.register(false);
 			} catch (IdentifierCollisionException e) {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
@@ -439,13 +439,13 @@ public class FCPConnectionHandler implements Closeable {
 			if(logMINOR) Logger.minor(this, "Failed: "+failedMessage);
 			outputHandler.queue(failedMessage);
 			if(cp != null)
-			    cp.freeData(null);
+			    cp.freeData();
 			else
 			    message.freeData(null);
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
-			cp.start(null, server.core.clientContext);
+			cp.start(server.core.clientContext);
 		}
 	}
 
@@ -469,7 +469,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(success) {
 			if(!persistent) {
 				try {
-					cp = new ClientPutDir(this, message, buckets, wasDiskPut, server, null);
+					cp = new ClientPutDir(this, message, buckets, wasDiskPut, server);
 					synchronized(this) {
 						requestsByIdentifier.put(id, cp);
 					}
@@ -489,7 +489,7 @@ public class FCPConnectionHandler implements Closeable {
 			            public boolean run(ClientContext context) {
 			                ClientPutDir putter;
 			                try {
-			                    putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server, null);
+			                    putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server);
 			                } catch (IdentifierCollisionException e) {
 			                    Logger.normal(this, "Identifier collision on "+this);
 			                    FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -503,14 +503,14 @@ public class FCPConnectionHandler implements Closeable {
 			                    return false;
 			                }
 			                try {
-			                    putter.register(null, false);
+			                    putter.register(false);
 			                } catch (IdentifierCollisionException e) {
 			                    Logger.normal(this, "Identifier collision on "+this);
 			                    FCPMessage msg = new IdentifierCollisionMessage(id, global);
 			                    outputHandler.queue(msg);
 			                    return false;
 			                }
-			                putter.start(null, context);
+			                putter.start(context);
 			                return true;
 			            }
 			            
@@ -522,7 +522,7 @@ public class FCPConnectionHandler implements Closeable {
 				
 			} else {
 				try {
-					cp = new ClientPutDir(this, message, buckets, wasDiskPut, server, null);
+					cp = new ClientPutDir(this, message, buckets, wasDiskPut, server);
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MalformedURLException e) {
@@ -539,7 +539,7 @@ public class FCPConnectionHandler implements Closeable {
 		
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
 			try {
-				cp.register(null, false);
+				cp.register(false);
 			} catch (IdentifierCollisionException e) {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
@@ -547,12 +547,12 @@ public class FCPConnectionHandler implements Closeable {
 			// FIXME do we need to freeData???
 			outputHandler.queue(failedMessage);
 			if(cp != null)
-				cp.cancel(null, server.core.clientContext);
+				cp.cancel(server.core.clientContext);
 			return;
 		} else {
 			if(logMINOR)
 				Logger.minor(this, "Starting "+cp);
-			cp.start(null, server.core.clientContext);
+			cp.start(server.core.clientContext);
 		}
 	}
 	
@@ -560,12 +560,11 @@ public class FCPConnectionHandler implements Closeable {
 		return rebootClient;
 	}
 
-	public FCPClient getForeverClient(ObjectContainer container) {
+	public FCPClient getForeverClient() {
 		synchronized(this) {
 			if(foreverClient == null) {
-				foreverClient = createForeverClient(clientName, container);
+				foreverClient = createForeverClient(clientName, null);
 			}
-			container.activate(foreverClient, 1);
 			return foreverClient;
 		}
 	}
@@ -722,8 +721,8 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(req != null) {
 			if(kill)
-				req.cancel(null, server.core.clientContext);
-			req.requestWasRemoved(null, server.core.clientContext);
+				req.cancel(server.core.clientContext);
+			req.requestWasRemoved(server.core.clientContext);
 		}
 		return req;
 	}
@@ -739,7 +738,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(global)
 			return handler.server.globalForeverClient.getRequest(identifier);
 		else
-			return handler.getForeverClient(container).getRequest(identifier);
+			return handler.getForeverClient().getRequest(identifier);
 	}
 	
 	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
@@ -756,7 +755,7 @@ public class FCPConnectionHandler implements Closeable {
 	ClientRequest removePersistentForeverRequest(boolean global, String identifier, ObjectContainer container) throws MessageInvalidException {
 		FCPClient client =
 			global ? server.globalForeverClient :
-			getForeverClient(container);
+			getForeverClient();
 		container.activate(client, 1);
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {

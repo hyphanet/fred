@@ -49,7 +49,7 @@ public class WatchGlobal extends FCPMessage {
 			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
 			handler.outputHandler.queue(err);
 		}
-		FCPClient client = handler.getForeverClient(null);
+		FCPClient client = handler.getForeverClient();
 		if(client != null)
 		    client.setWatchGlobal(enabled, verbosityMask, handler.server);
 	}

@@ -664,7 +664,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) throws PersistenceDisabledException {
 		ClientRequest req = this.globalRebootClient.getRequest(identifier);
 		if(req != null) {
-			req.modifyRequest(newToken, newPriority, this, null);
+			req.modifyRequest(newToken, newPriority, this);
 			return true;
 		} else {
 			class OutputWrapper {
@@ -685,7 +685,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier);
 						if(req != null)
-							req.modifyRequest(newToken, newPriority, FCPServer.this, null);
+							req.modifyRequest(newToken, newPriority, FCPServer.this);
 						success = true;
 					} finally {
 						synchronized(ow) {
@@ -810,9 +810,9 @@ public class FCPServer implements Runnable, DownloadCache {
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_RETRIES, QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id,
-					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, null, false, realTimeFlag, this, container);
-		cg.register(container, false);
-		cg.start(container, core.clientContext);
+					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, null, false, realTimeFlag, this);
+		cg.register(false);
+		cg.start(core.clientContext);
 	}
 
 	/**
@@ -859,7 +859,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 */
 	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
-			req.start(null, core.clientContext);
+			req.start(core.clientContext);
 		} else {
 			class OutputWrapper {
 				boolean done;
@@ -867,8 +867,8 @@ public class FCPServer implements Runnable, DownloadCache {
 			}
 			if(container != null) {
 				// Don't activate, it may not be stored yet.
-					req.register(container, false);
-					req.start(container, context);
+					req.register(false);
+					req.start(context);
 				container.deactivate(req, 1);
 			} else {
 				final OutputWrapper ow = new OutputWrapper();
@@ -883,8 +883,8 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
-						req.register(null, false);
-						req.start(null, context);
+						req.register(false);
+						req.start(context);
 					} catch (IdentifierCollisionException e) {
 						ow.collided = e;
 					} finally {
@@ -920,7 +920,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws PersistenceDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier);
 		if(req != null) {
-			req.restart(null, core.clientContext, disableFilterData);
+			req.restart(core.clientContext, disableFilterData);
 			return true;
 		} else {
 			class OutputWrapper {
@@ -941,7 +941,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier);
 						if(req != null) {
-							req.restart(null, context, disableFilterData);
+							req.restart(context, disableFilterData);
 							success = true;
 						}
 					} catch (PersistenceDisabledException e) {

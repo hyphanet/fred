@@ -82,7 +82,7 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global, ObjectContainer container) {
+			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -118,7 +118,7 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, final boolean realTime, String clientToken2, boolean global, ObjectContainer container) {
+			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, final boolean realTime, String clientToken2, boolean global) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -159,7 +159,7 @@ public abstract class ClientRequest implements Serializable {
 			if(global) {
 				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 			} else {
-				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
+				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient() : handler.getRebootClient();
 			}
 			lowLevelClient = client.lowLevelClient(realTime);
 			if(lowLevelClient == null)
@@ -174,10 +174,10 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	/** Lost connection */
-	public abstract void onLostConnection(ObjectContainer container, ClientContext context);
+	public abstract void onLostConnection(ClientContext context);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
-	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container);
+	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
 
 	// Persistence
 
@@ -208,18 +208,14 @@ public abstract class ClientRequest implements Serializable {
 		return Short.parseShort(string);
 	}
 
-	abstract void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException;
+	abstract void register(boolean noTags) throws IdentifierCollisionException;
 
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(cr, 1);
 		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
-		if(cr != null) cr.cancel(container, context);
-		freeData(container);
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(this);
+		if(cr != null) cr.cancel(null, context);
+		freeData();
 	}
 
 	public boolean isPersistentForever() {
@@ -243,9 +239,9 @@ public abstract class ClientRequest implements Serializable {
 	protected abstract ClientRequester getClientRequest();
 
 	/** Completed request dropped off the end without being acknowledged */
-	public void dropped(ObjectContainer container, ClientContext context) {
-		cancel(container, context);
-		freeData(container);
+	public void dropped(ClientContext context) {
+		cancel(context);
+		freeData();
 	}
 
 	/** Return the priority class */
@@ -254,39 +250,37 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	/** Free cached data bucket(s) */
-	protected abstract void freeData(ObjectContainer container); 
+	protected abstract void freeData(); 
 
 	/** Request completed. But we may have to stick around until we are acked. */
-	protected void finish(ObjectContainer container) {
+	protected void finish() {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
 			client.finishedClientRequest(this);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			container.store(this);
 	}
 
-	public abstract double getSuccessFraction(ObjectContainer container);
+	public abstract double getSuccessFraction();
 
-	public abstract double getTotalBlocks(ObjectContainer container);
-	public abstract double getMinBlocks(ObjectContainer container);
-	public abstract double getFetchedBlocks(ObjectContainer container);
-	public abstract double getFailedBlocks(ObjectContainer container);
-	public abstract double getFatalyFailedBlocks(ObjectContainer container);
+	public abstract double getTotalBlocks();
+	public abstract double getMinBlocks();
+	public abstract double getFetchedBlocks();
+	public abstract double getFailedBlocks();
+	public abstract double getFatalyFailedBlocks();
 
-	public abstract String getFailureReason(boolean longDescription, ObjectContainer container);
+	public abstract String getFailureReason(boolean longDescription);
 
 	/**
 	 * Has the total number of blocks to insert been determined yet?
 	 */
-	public abstract boolean isTotalFinalized(ObjectContainer container);
+	public abstract boolean isTotalFinalized();
 
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
 	/** Start the request, if it has not already been started. */
-	public abstract void start(ObjectContainer container, ClientContext context);
+	public abstract void start(ClientContext context);
 
 	protected boolean started;
 
@@ -308,16 +302,15 @@ public abstract class ClientRequest implements Serializable {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context, boolean disableFilterData) throws PersistenceDisabledException;
+	public abstract boolean restart(ClientContext context, boolean disableFilterData) throws PersistenceDisabledException;
 
-	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
+	protected abstract FCPMessage persistentTagMessage();
 
 	/**
 	 * Called after a ModifyPersistentRequest.
 	 * Sends a PersistentRequestModified message to clients if any value changed. 
-	 * Commits before sending the messages.
 	 */
-	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server, ObjectContainer container) {
+	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server) {
 
 		boolean clientTokenChanged = false;
 		boolean priorityClassChanged = false;
@@ -337,10 +330,8 @@ public abstract class ClientRequest implements Serializable {
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
-			if(persistenceType == PERSIST_FOREVER) container.activate(r, 1);
-			if(r.checkForBrokenClient(container, server.node.clientCore.clientContext)) return;
-			r.setPriorityClass(priorityClass, server.core.clientContext, container);
-			if(persistenceType == PERSIST_FOREVER) container.deactivate(r, 1);
+			if(r.checkForBrokenClient(null, server.node.clientCore.clientContext)) return;
+			r.setPriorityClass(priorityClass, server.core.clientContext, null);
 			priorityClassChanged = true;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -354,12 +345,8 @@ public abstract class ClientRequest implements Serializable {
 			return; // quick return, nothing was changed
 		}
 		
-		if(persistenceType == PERSIST_FOREVER) {
-			container.store(this);
-			container.commit(); // commit before we send the message
-			if(logMINOR) Logger.minor(this, "COMMITTED");
-		}
-
+		server.core.clientContext.jobRunner.setCommitThisTransaction();
+		
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;
 		if( clientTokenChanged && priorityClassChanged ) {
@@ -390,7 +377,7 @@ public abstract class ClientRequest implements Serializable {
 			@Override
 			public boolean run(ClientContext context) {
 			    try {
-			        restart(null, context, disableFilterData);
+			        restart(context, disableFilterData);
 			    } catch (PersistenceDisabledException e) {
 			        // Impossible
 			    }
@@ -409,7 +396,7 @@ public abstract class ClientRequest implements Serializable {
 				@Override
 				public void run() {
 				    try {
-                        restart(null, server.core.clientContext, disableFilterData);
+                        restart(server.core.clientContext, disableFilterData);
                     } catch (PersistenceDisabledException e) {
                         // Impossible
                     }
@@ -423,10 +410,8 @@ public abstract class ClientRequest implements Serializable {
 	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
 	 * If the request is in the database, delete it.
 	 */
-	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+	public void requestWasRemoved(ClientContext context) {
 		if(persistenceType != PERSIST_FOREVER) return;
-		if(uri != null) uri.removeFrom(container);
-		container.delete(this);
 	}
 
 	protected boolean isGlobalQueue() {
@@ -434,44 +419,18 @@ public abstract class ClientRequest implements Serializable {
 		return client.isGlobalQueue;
 	}
 
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(hashCode == 0) {
-			Logger.error(this, "Trying to update with hash 0 => already deleted!", new Exception("error"));
-			return false;
-		}
-		return true;
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(persistenceType != PERSIST_FOREVER) {
-			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
-			return false;
-		}
-		if(hashCode == 0) {
-			Logger.error(this, "Trying to write with hash 0 => already deleted!", new Exception("error"));
-			return false;
-		}
-		return true;
-	}
-
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-	
 	public FCPClient getClient(){
 		return client;
 	}
 
-	abstract RequestStatus getStatus(ObjectContainer container);
+	abstract RequestStatus getStatus();
 	
 	private static final long CLIENT_DETAIL_MAGIC = 0xebf0b4f4fa9f6721L;
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
-    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+    public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
-        if(persistenceType == PERSIST_FOREVER)
-            container.activate(client, 1);
         client.getClientDetail(dos);
         dos.writeUTF(identifier);
         dos.writeInt(verbosity);

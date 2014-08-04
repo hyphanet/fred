@@ -186,7 +186,7 @@ public class FCPClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, null);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false);
 		}
 		return i;
 	}
@@ -202,7 +202,7 @@ public class FCPClient {
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			req.sendPendingMessages(outputHandler, true, false, false, null);
+			req.sendPendingMessages(outputHandler, true, false, false);
 		}
 		return i;
 	}
@@ -225,9 +225,9 @@ public class FCPClient {
 		}
 		if(statusCache != null) {
 			if(cg instanceof ClientGet) {
-				statusCache.addDownload((DownloadRequestStatus)(cg.getStatus(null)));
+				statusCache.addDownload((DownloadRequestStatus)(cg.getStatus()));
 			} else if(cg instanceof ClientPutBase) {
-				statusCache.addUpload((UploadRequestStatus)(cg.getStatus(null)));
+				statusCache.addUpload((UploadRequestStatus)(cg.getStatus()));
 			}
 		}
 	}
@@ -272,9 +272,9 @@ public class FCPClient {
 		}
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
-			req.cancel(null, context);
+			req.cancel(context);
 		}
-        req.requestWasRemoved(null, context);
+        req.requestWasRemoved(context);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
         	if(completionCallbacks != null)
@@ -312,7 +312,7 @@ public class FCPClient {
 		addPersistentRequests(reqs, onlyForever);
 		for(ClientRequest req : reqs) {
 			try {
-				status.add(req.getStatus(null));
+				status.add(req.getStatus());
 			} catch (Throwable t) {
 				// Try to load the rest. :<
 				Logger.error(this, "BROKEN REQUEST LOADING PERSISTENT REQUEST STATUS: "+t, t);

@@ -167,7 +167,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
                         	@Override
                         	public boolean run(ClientContext context) {
-                        		FCPClient foreverClient = handler.getForeverClient(null);
+                        		FCPClient foreverClient = handler.getForeverClient();
                         		PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
 
                         			@Override

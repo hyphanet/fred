@@ -89,7 +89,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                             handler.outputHandler.queue(msg);
                             return false;
                         } else {
-                            req.modifyRequest(clientToken, priorityClass, handler.server, null);
+                            req.modifyRequest(clientToken, priorityClass, handler.server);
                         }
                         return true;
                     }
@@ -100,7 +100,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                 handler.outputHandler.queue(msg);
             }
 		} else {
-			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer(), null);
+			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
 		}
 	}
 

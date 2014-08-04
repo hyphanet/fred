@@ -82,8 +82,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
+			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
+		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -114,8 +114,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
-			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
+			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
+		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -134,9 +134,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void onLostConnection(ObjectContainer container, ClientContext context) {
+	public void onLostConnection(ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel(container, context);
+			cancel(context);
 		// otherwise ignore
 	}
 
@@ -153,7 +153,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
-		finish(container);
+		finish();
 		trySendFinalMessage(null, container);
 		if(client != null)
 			client.notifySuccess(this);
@@ -171,7 +171,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			container.store(this);
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
-		finish(container);
+		finish();
 		trySendFinalMessage(null, container);
 		if(client != null)
 			client.notifyFailure(this);
@@ -240,7 +240,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 	
 	@Override
-	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+	public void requestWasRemoved(ClientContext context) {
 		// if request is still running, send a PutFailed with code=cancelled
 		if( !finished ) {
 			synchronized(this) {
@@ -248,7 +248,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				InsertException cancelled = new InsertException(InsertException.CANCELLED);
 				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
 			}
-			trySendFinalMessage(null, container);
+			trySendFinalMessage(null, null);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
@@ -257,7 +257,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		else
 		client.queueClientRequestMessage(msg, 0);
 
-		freeData(container);
+		freeData();
 		Bucket meta;
 		synchronized(this) {
 			meta = generatedMetadata;
@@ -266,44 +266,15 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		// FIXME combine the synchronized blocks, null out even if non-persistent.
 		if(meta != null) {
 			meta.free();
-			if(persistenceType == PERSIST_FOREVER) {
-				meta.removeFrom(container);
-			}
 		}
 		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(ctx, 2);
-			ctx.removeFrom(container);
-			PutFailedMessage pfm;
-			FreenetURI uri;
-			FreenetURI pubURI;
-			FCPMessage progress;
 			synchronized(this) {
-				pfm = putFailedMessage;
 				putFailedMessage = null;
-				uri = generatedURI;
 				generatedURI = null;
-				pubURI = publicURI;
-				progress = progressMessage;
 				progressMessage = null;
 			}
-			if(pfm != null) {
-				container.activate(pfm, 5);
-				pfm.removeFrom(container);
-			}
-			if(uri != null) {
-				container.activate(uri, 5);
-				uri.removeFrom(container);
-			}
-			if(progress != null) {
-				container.activate(progress, 1);
-				progress.removeFrom(container);
-			}
-			if(pubURI != null) {
-				container.activate(pubURI, 5);
-				pubURI.removeFrom(container);
-			}
 		}
-		super.requestWasRemoved(container, context);
+		super.requestWasRemoved(context);
 	}
 
 	@Override
@@ -496,9 +467,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(includePersistentRequest) {
-			FCPMessage msg = persistentTagMessage(container);
+			FCPMessage msg = persistentTagMessage();
 			handler.queue(msg);
 		}
 
@@ -512,24 +483,20 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			fin = finished;
 			meta = generatedMetadata;
 		}
-		if(persistenceType == PERSIST_FOREVER && msg != null)
-			container.activate(msg, 5);
 		if(generated)
-			trySendGeneratedURIMessage(handler, container);
+			trySendGeneratedURIMessage(handler, null);
 		if(meta != null)
-			trySendGeneratedMetadataMessage(meta, handler, container);
+			trySendGeneratedMetadataMessage(meta, handler, null);
 		if(msg != null)
 			handler.queue(msg);
 		if(fin)
-			trySendFinalMessage(handler, container);
+			trySendFinalMessage(handler, null);
 	}
 
 	protected abstract String getTypeName();
 
 	@Override
-	public synchronized double getSuccessFraction(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getSuccessFraction() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFraction();
@@ -540,9 +507,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 
 	@Override
-	public synchronized double getTotalBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getTotalBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getTotalBlocks();
@@ -552,9 +517,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized double getMinBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getMinBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getMinBlocks();
@@ -564,9 +527,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized double getFailedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFailedBlocks();
@@ -576,9 +537,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized double getFatalyFailedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getFatalyFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFatalyFailedBlocks();
@@ -588,9 +547,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized double getFetchedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
-			container.activate(progressMessage, 2);
+	public synchronized double getFetchedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFetchedBlocks();
@@ -600,21 +557,17 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized boolean isTotalFinalized(ObjectContainer container) {
+	public synchronized boolean isTotalFinalized() {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(progressMessage, 5);
 			return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 		}
 	}
 
 	@Override
-	public synchronized String getFailureReason(boolean longDescription, ObjectContainer container) {
+	public synchronized String getFailureReason(boolean longDescription) {
 		if(putFailedMessage == null)
 			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(putFailedMessage, 5);
 		String s = putFailedMessage.shortCodeDescription;
 		if(longDescription && putFailedMessage.extraDescription != null)
 			s += ": "+putFailedMessage.extraDescription;
