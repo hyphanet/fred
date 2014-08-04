@@ -731,4 +731,11 @@ public class FCPClient implements Serializable {
             requesters.add(req.getClientRequest());
     }
 
+    public void resume(ClientRequest clientRequest) {
+        if(clientRequest.hasFinished())
+            completedUnackedRequests.add(clientRequest);
+        else
+            runningPersistentRequests.add(clientRequest);
+    }
+
 }

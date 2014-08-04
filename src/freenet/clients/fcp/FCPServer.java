@@ -494,7 +494,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler, ObjectContainer container) {
-		return persistentRoot.registerForeverClient(name, core, handler, this);
+		return persistentRoot.registerForeverClient(name, handler);
 	}
 
 	public void unregisterClient(FCPClient client, ObjectContainer container) {

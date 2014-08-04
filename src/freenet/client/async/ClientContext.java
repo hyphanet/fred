@@ -11,6 +11,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.client.filter.LinkFilterExceptionProvider;
+import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -75,6 +76,7 @@ public class ClientContext {
 	 * I/O and we don't guarantee to serialise them. The new splitfile code does FEC decodes 
 	 * entirely in memory, which saves a lot of seeks and improves robustness. */
 	public transient final MemoryLimitedJobRunner memoryLimitedJobRunner;
+	public transient final FCPPersistentRoot persistentRoot;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -86,7 +88,7 @@ public class ClientContext {
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
-			RealCompressor rc, DatastoreChecker checker, 
+			RealCompressor rc, DatastoreChecker checker, FCPPersistentRoot persistentRoot,
 			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
 		this.bootID = bootID;
 		this.jobRunner = jobRunner;
@@ -113,6 +115,7 @@ public class ClientContext {
 		this.cooldownTracker = new CooldownTracker();
 		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
 		this.tempRAFFactory = rafFactory; 
+		this.persistentRoot = persistentRoot;
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {

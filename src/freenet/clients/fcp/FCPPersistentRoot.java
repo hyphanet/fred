@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
@@ -45,7 +44,7 @@ public class FCPPersistentRoot {
         globalForeverClient.setRequestStatusCache(cache, null);
 	}
 
-	public synchronized FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server) {
+	public synchronized FCPClient registerForeverClient(final String name, FCPConnectionHandler handler) {
 		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
 		FCPClient client = clients.get(name);
 		if(client != null) return client;
@@ -68,6 +67,17 @@ public class FCPPersistentRoot {
         for(FCPClient client : clients.values())
             client.addPersistentRequesters(requesters);
         return requesters.toArray(new ClientRequester[requesters.size()]);
+    }
+
+    FCPClient resume(ClientRequest clientRequest, boolean global, String clientName) {
+        if(global) {
+            globalForeverClient.resume(clientRequest);
+            return globalForeverClient;
+        } else {
+            FCPClient client = registerForeverClient(clientName, null);
+            client.resume(clientRequest);
+            return client;
+        }
     }
 	
 }

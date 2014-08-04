@@ -34,8 +34,12 @@ public abstract class ClientRequest implements Serializable {
 	protected final int verbosity;
 	/** Original FCPConnectionHandler. Null if persistence != connection */
 	protected transient final FCPConnectionHandler origHandler;
+	/** Is the request on the global queue? */
+    protected final boolean global;
+    /** If the request isn't on the global queue, what is the client's name? */
+    protected final String clientName;
 	/** Client */
-	protected final FCPClient client;
+	protected FCPClient client;
 	/** Priority class */
 	protected short priorityClass;
 	/** Persistence type */
@@ -47,8 +51,6 @@ public abstract class ClientRequest implements Serializable {
 	/** Client token (string to feed back to the client on a Persistent* when he does a
 	 * ListPersistentRequests). */
 	protected String clientToken;
-	/** Is the request on the global queue? */
-	protected final boolean global;
 	/** Timestamp : startup time */
 	protected final long startupTime;
 	/** Timestamp : completion time */
@@ -91,6 +93,7 @@ public abstract class ClientRequest implements Serializable {
 		global = false;
 		hashCode = 0;
 		identifier = null;
+		clientName = null;
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
@@ -100,10 +103,13 @@ public abstract class ClientRequest implements Serializable {
 		hashCode = hash;
 		this.uri = uri2;
 		this.identifier = identifier2;
-		if(global)
+		if(global) {
 			this.verbosity = Integer.MAX_VALUE;
-		else
+			this.clientName = null;
+		} else {
 			this.verbosity = verbosity2;
+			this.clientName = client.name;
+	    }
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
@@ -137,10 +143,13 @@ public abstract class ClientRequest implements Serializable {
 		this.uri = uri2;
 		
 		this.identifier = identifier2;
-		if(global)
+		if(global) {
 			this.verbosity = Integer.MAX_VALUE;
-		else
+            clientName = null;
+		} else {
 			this.verbosity = verbosity2;
+            this.clientName = client.name;
+		}
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
@@ -498,7 +507,7 @@ public abstract class ClientRequest implements Serializable {
     }
 
     public void onResume(ClientContext context) {
-        // Do nothing by default.
+        client = context.persistentRoot.resume(this, global, clientName);
     }
 	
 }
