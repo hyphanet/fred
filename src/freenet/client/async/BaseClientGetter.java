@@ -3,13 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.node.RequestClient;
-
 public abstract class BaseClientGetter extends ClientRequester implements
 		GetCompletionCallback {
 	
-	protected BaseClientGetter(short priorityClass, RequestClient client) {
-		super(priorityClass, client);
+	protected BaseClientGetter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
 	}
 
 }

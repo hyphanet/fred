@@ -192,13 +192,11 @@ public class ClientPutDir extends ClientPutBase {
 		case ManifestPutter.MANIFEST_DEFAULTPUTTER:
 			putter = new DefaultManifestPutter(this,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					lowLevelClient,
 					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, container, context);
 			break;
 		default:
 			putter = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					lowLevelClient,
 					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, container, context);
 		}
 	}

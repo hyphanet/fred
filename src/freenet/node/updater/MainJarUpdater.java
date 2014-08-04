@@ -138,7 +138,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					this, new FileBucket(tempFile, false, false, false, false, false), null, null);
+					new FileBucket(tempFile, false, false, false, false, false), null, null);
 			myCtx.eventProducer.addEventListener(this);
 			this.cb = cb;
 			this.filename = filename;
@@ -286,6 +286,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 	    public void onResume(ClientContext context) {
 	        // Do nothing. Not persistent.
 	    }
+
+        @Override
+        public RequestClient getRequestClient() {
+            return this;
+        }
 
 	}
 	

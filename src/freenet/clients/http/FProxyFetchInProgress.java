@@ -123,6 +123,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
 	private boolean cancelled = false;
+	private final RequestClient rc;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
 		this.refilterPolicy = refilter;
@@ -131,12 +132,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.maxSize = maxSize2;
 		this.timeStarted = System.currentTimeMillis();
 		this.fctx = fctx;
+        this.rc = rc;
 		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
 		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
 		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
 		results = new ArrayList<FProxyFetchResult>();
-		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, null, null, null);
+		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, null, null, null);
 	}
 	
 	public synchronized FProxyFetchWaiter getWaiter() {
@@ -558,6 +560,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
     @Override
     public void onResume(ClientContext context) {
         throw new UnsupportedOperationException(); // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return rc;
     }
 
 }

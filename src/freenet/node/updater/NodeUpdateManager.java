@@ -37,6 +37,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.updater.MainJarDependenciesChecker.MainJarDependencies;
@@ -406,7 +407,7 @@ public class NodeUpdateManager {
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
 			ClientGetter get = new ClientGetter(this, freenetURI, context,
-					priority, node.nonPersistentClientBulk, null, null, null);
+					priority, null, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
 			} catch (PersistenceDisabledException e) {
@@ -475,6 +476,11 @@ public class NodeUpdateManager {
         @Override
         public void onResume(ClientContext context) {
             // Not persistent.
+        }
+
+        @Override
+        public RequestClient getRequestClient() {
+            return node.nonPersistentClientBulk; 
         }
 
 	}

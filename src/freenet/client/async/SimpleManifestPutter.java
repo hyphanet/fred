@@ -29,7 +29,6 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -67,7 +66,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
-			super(smp.priorityClass, smp.client);
+			super(smp.priorityClass, smp.cb);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
@@ -80,7 +79,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client);
+			super(smp.getPriorityClass(), smp.cb);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = null;
@@ -92,7 +91,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client);
+			super(smp.getPriorityClass(), smp.cb);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
@@ -653,8 +652,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, null, container, context);
+			String defaultName, InsertContext ctx, boolean getCHKOnly, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, earlyEncode, persistent, null, container, context);
 
 	}
 		
@@ -672,8 +671,8 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
-		super(prioClass, clientContext);
+			String defaultName, InsertContext ctx, boolean getCHKOnly, boolean earlyEncode, boolean persistent, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
+		super(prioClass, cb);
 		this.defaultName = defaultName;
 		
 		if(defaultName != null) {

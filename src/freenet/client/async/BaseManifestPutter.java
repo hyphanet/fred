@@ -27,7 +27,6 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -447,7 +446,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		// run me
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap, ObjectContainer container) {
-			super(bmp.priorityClass, bmp.client);
+			super(bmp.priorityClass, bmp.cb);
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -492,7 +491,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		// place holder, don't run it
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, String nameInArchive, Metadata md, ClientMetadata cm) {
-			super(bmp.priorityClass, bmp.client);
+			super(bmp.priorityClass, bmp.cb);
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -1031,8 +1030,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
-		super(prioClass, clientContext);
+			InsertContext ctx, boolean getCHKOnly2, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
+		super(prioClass, cb);
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else

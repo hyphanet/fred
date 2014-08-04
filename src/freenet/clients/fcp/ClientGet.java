@@ -33,6 +33,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -160,7 +161,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
-					lowLevelClient,
 					returnBucket, null, false, null, extensionCheck);
 	}
 
@@ -236,7 +236,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		returnBucket = ret;
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
-					lowLevelClient,
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, false, message.getInitialMetadata(), extensionCheck);
 	}
 

@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.RequestClient;
-
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseClientPutter extends ClientRequester {
 
@@ -16,8 +14,8 @@ public abstract class BaseClientPutter extends ClientRequester {
 	protected BaseClientPutter() {
 	}
 
-	protected BaseClientPutter(short priorityClass, RequestClient context) {
-		super(priorityClass, context);
+	protected BaseClientPutter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
 	}
 
 	public abstract void onMajorProgress(ObjectContainer container);

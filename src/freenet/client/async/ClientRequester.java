@@ -50,7 +50,7 @@ public abstract class ClientRequester {
 	/** The RequestClient, used to determine whether this request is 
 	 * persistent, and also we round-robin between different RequestClient's
 	 * in scheduling within a given priority class and retry count. */
-	protected RequestClient client;
+	protected transient RequestClient client;
 	/** The set of queued low-level requests or inserts for this request or
 	 * insert. */
 	protected final SendableRequestSet requests;
@@ -70,9 +70,9 @@ public abstract class ClientRequester {
 		requests = null;
 	}
 
-	protected ClientRequester(short priorityClass, RequestClient client) {
+	protected ClientRequester(short priorityClass, ClientBaseCallback cb) {
 		this.priorityClass = priorityClass;
-		this.client = client;
+		this.client = cb.getRequestClient();
 		this.realTimeFlag = client.realTimeFlag();
 		if(client == null)
 			throw new NullPointerException();
@@ -485,7 +485,9 @@ public abstract class ClientRequester {
     
     /** Called for a persistent request after startup. */
     public void onResume(ClientContext context) {
-        getCallback().onResume(context);
+        ClientBaseCallback cb = getCallback();
+        client = cb.getRequestClient();
+        cb.onResume(context);
     }
 
     protected abstract ClientBaseCallback getCallback();

@@ -34,7 +34,6 @@ import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -97,28 +96,28 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	// Shorter constructors for convenience and backwards compatibility.
 
 	public ClientGetter(ClientGetCallback client,
-		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext) {
-		this(client, uri, ctx, priorityClass, clientContext, null, null, null);
+		    FreenetURI uri, FetchContext ctx, short priorityClass) {
+		this(client, uri, ctx, priorityClass, null, null, null);
 	}
 
 	public ClientGetter(ClientGetCallback client,
-		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket) {
-		this(client, uri, ctx, priorityClass, clientContext, returnBucket, null, null);
+		    FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket) {
+		this(client, uri, ctx, priorityClass, returnBucket, null, null);
 	}
 
 	public ClientGetter(ClientGetCallback client,
-		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
-		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, null);
+		    FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter) {
+		this(client, uri, ctx, priorityClass, returnBucket, binaryBlobWriter, null);
 	}
 
 	public ClientGetter(ClientGetCallback client,
-		    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
-		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, false, initialMetadata);
+		    FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, Bucket initialMetadata) {
+		this(client, uri, ctx, priorityClass, returnBucket, binaryBlobWriter, false, initialMetadata);
 	}
 
 	public ClientGetter(ClientGetCallback client,
-			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata) {
-		this(client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobWriter, dontFinalizeBlobWriter, initialMetadata, null);
+			FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata) {
+		this(client, uri, ctx, priorityClass, returnBucket, binaryBlobWriter, dontFinalizeBlobWriter, initialMetadata, null);
 	}
 	
 	/**
@@ -137,8 +136,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @param dontFinalizeBlobWriter If true, the caller is responsible for BlobWriter finalization
 	 */
 	public ClientGetter(ClientGetCallback client,
-			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata, String forceCompatibleExtension) {
-		super(priorityClass, clientContext);
+			FreenetURI uri, FetchContext ctx, short priorityClass, Bucket returnBucket, BinaryBlobWriter binaryBlobWriter, boolean dontFinalizeBlobWriter, Bucket initialMetadata, String forceCompatibleExtension) {
+		super(priorityClass, client);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri.clone();

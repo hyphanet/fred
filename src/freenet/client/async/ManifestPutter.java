@@ -6,15 +6,14 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.client.InsertException;
-import freenet.node.RequestClient;
 
 public abstract class ManifestPutter extends BaseClientPutter {
 	
 	protected ManifestPutter() {
 	}
 
-	protected ManifestPutter(short priorityClass, RequestClient context) {
-		super(priorityClass, context);
+	protected ManifestPutter(short priorityClass, ClientBaseCallback cb) {
+		super(priorityClass, cb);
 	}
 
 	public abstract int countFiles();

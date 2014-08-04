@@ -93,7 +93,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			tempFile = tmp;
 			cg = new ClientGetter(this,  
 					uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-					client, null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false, false)));
+					null, new BinaryBlobWriter(new FileBucket(tempFile, false, false, false, false, false)));
 			fetched = false;
 		}
 	}
@@ -182,6 +182,11 @@ class LegacyJarFetcher implements ClientGetCallback {
     @Override
     public void onResume(ClientContext context) {
         // Do nothing. Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return client;
     }
 
 }

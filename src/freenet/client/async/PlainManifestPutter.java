@@ -10,7 +10,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestClient;
 import freenet.support.Logger;
 
 /**
@@ -30,8 +29,8 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode, boolean persistent, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
+			boolean earlyEncode, boolean persistent, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), forceCryptoKey, container, context);
 	}
 
 	@Override

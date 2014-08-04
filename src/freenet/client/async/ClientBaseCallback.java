@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
+import freenet.node.RequestClient;
+
 /**
  * A client process. Something that initiates requests, and can cancel them. FCP, FProxy, and the
  * GlobalPersistentClient, implement this somewhere.
@@ -22,4 +24,8 @@ public interface ClientBaseCallback {
 	 * @param context
 	 */
 	public void onResume(ClientContext context);
+	
+	/** Get the RequestClient context object used to indicate which requests are related to each
+	 * other for scheduling purposes. */
+	public RequestClient getRequestClient();
 }

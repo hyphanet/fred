@@ -143,8 +143,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		FetchContext context = getFetchContext();
-		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null, null);
+		FetchWaiter fw = new FetchWaiter(this);
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, null, null, null);
 		try {
 			core.clientContext.start(get);
 		} catch (PersistenceDisabledException e) {
@@ -160,8 +160,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FetchResult fetchFromMetadata(Bucket initialMetadata) throws FetchException {
 		if(initialMetadata == null) throw new NullPointerException();
 		FetchContext context = getFetchContext();
-		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, this, null, null, initialMetadata);
+		FetchWaiter fw = new FetchWaiter(this);
+		ClientGetter get = new ClientGetter(fw, FreenetURI.EMPTY_CHK_URI, context, priorityClass, null, null, initialMetadata);
 		try {
 			core.clientContext.start(get);
 		} catch (PersistenceDisabledException e) {
@@ -178,9 +178,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	@Override
 	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, RequestClient clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetchWaiter fw = new FetchWaiter();
+		FetchWaiter fw = new FetchWaiter(clientContext);
 		FetchContext context = getFetchContext(overrideMaxSize);
-		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null, null);
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, null, null, null);
 		try {
 			core.clientContext.start(get);
 		} catch (PersistenceDisabledException e) {
@@ -190,19 +190,19 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	@Override
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
-		return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
+	public ClientGetter fetch(FreenetURI uri, long maxSize, ClientGetCallback callback, FetchContext fctx) throws FetchException {
+		return fetch(uri, maxSize, callback, fctx, priorityClass);
 	}
 
 	@Override
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
-		return fetch(uri, clientContext, callback, fctx, prio);
+	public ClientGetter fetch(FreenetURI uri, long maxSize, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+		return fetch(uri, callback, fctx, prio);
 	}
 	
 	@Override
-	public ClientGetter fetch(FreenetURI uri, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+	public ClientGetter fetch(FreenetURI uri, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null, null);
+		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, null, null, null);
 		try {
 			core.clientContext.start(get);
 		} catch (PersistenceDisabledException e) {
@@ -212,9 +212,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	@Override
-	public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
+	public ClientGetter fetchFromMetadata(Bucket initialMetadata, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
 		if(initialMetadata == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, clientContext, null, null, initialMetadata);
+		ClientGetter get = new ClientGetter(callback, FreenetURI.EMPTY_CHK_URI, fctx, prio, null, null, initialMetadata);
 		try {
 			core.clientContext.start(get);
 		} catch (PersistenceDisabledException e) {
@@ -248,10 +248,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
-		PutWaiter pw = new PutWaiter();
+		PutWaiter pw = new PutWaiter(this);
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, forceCryptoKey, -1);
+				getCHKOnly, isMetadata, filenameHint, false, core.clientContext, forceCryptoKey, -1);
 		try {
 			core.clientContext.start(put, false);
 		} catch (PersistenceDisabledException e) {
@@ -269,7 +269,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				getCHKOnly, isMetadata, this, filenameHint, false, core.clientContext, null, -1);
+				getCHKOnly, isMetadata, filenameHint, false, core.clientContext, null, -1);
 		try {
 			core.clientContext.start(put, false);
 		} catch (PersistenceDisabledException e) {
@@ -308,9 +308,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	
 	@Override
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass, byte[] forceCryptoKey) throws InsertException {
-		PutWaiter pw = new PutWaiter();
+		PutWaiter pw = new PutWaiter(this);
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false, false, forceCryptoKey, null, core.clientContext);
+			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, null, core.clientContext);
 		try {
 			core.clientContext.start(putter);
 		} catch (PersistenceDisabledException e) {
@@ -373,7 +373,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
 	}
 
-	private final ClientGetCallback nullCallback = new NullClientCallback();
+	private final ClientGetCallback nullCallback = new NullClientCallback(this);
 
 	@Override
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes) {
@@ -384,7 +384,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
-		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, this, new NullBucket(), null, null);
+		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, new NullBucket(), null, null);
 		core.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {

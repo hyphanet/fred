@@ -18,7 +18,6 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -107,9 +106,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
+			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {
-		super(priorityClass, clientContext);
+		super(priorityClass, client);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;

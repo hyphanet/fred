@@ -173,7 +173,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		inserter = new ClientPutter(this, b, uri,
 					null, // Modern ARKs easily fit inside 1KB so should be pure SSKs => no MIME type; this improves fetchability considerably
 					ctx,
-					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, false, node.clientCore.clientContext, null, -1);
+					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, null, false, node.clientCore.clientContext, null, -1);
 		
 		try {
 			
@@ -302,6 +302,11 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
     @Override
     public void onResume(ClientContext context) {
         // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return this;
     }
 
 }

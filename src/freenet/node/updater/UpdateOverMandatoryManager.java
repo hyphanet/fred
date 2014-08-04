@@ -1091,10 +1091,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
             public void onResume(ClientContext context) {
                 // Not persistent.
             }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.getRevocationURI(), tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
+			updateManager.getRevocationURI(), tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1148,12 +1153,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
             public void onResume(ClientContext context) {
                 // Not persistent.
             }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
+
 		};
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter, false);
 		} catch(InsertException e1) {
@@ -1550,10 +1561,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
             public void onResume(ClientContext context) {
                 // Not persistent.
             }
+            
+            @Override
+            public RequestClient getRequestClient() {
+                return UpdateOverMandatoryManager.this;
+            }
+
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, new BinaryBlobWriter(cleanedBlob), null);
+			uri, tempContext, (short) 0, null, new BinaryBlobWriter(cleanedBlob), null);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);

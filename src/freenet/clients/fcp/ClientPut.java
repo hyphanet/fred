@@ -160,7 +160,6 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
-				lowLevelClient,
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey, -1);
 	}
 	
@@ -271,7 +270,6 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
-				lowLevelClient,
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	

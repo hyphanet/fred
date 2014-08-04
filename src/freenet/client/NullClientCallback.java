@@ -8,6 +8,7 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -20,8 +21,14 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
     static {
 		Logger.registerClass(NullClientCallback.class);
     }
+    
+    private final RequestClient cb;
 
-	@Override
+	public NullClientCallback(RequestClient cb) {
+	    this.cb = cb;
+    }
+
+    @Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);
 	}
@@ -67,6 +74,11 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return cb;
     }
 
 }

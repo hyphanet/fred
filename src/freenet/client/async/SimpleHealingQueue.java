@@ -36,21 +36,42 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			}
 		});
 	}
+	
+	static final RequestClient REQUEST_CLIENT = 
+	    new RequestClient() {
+            @Override
+            public boolean persistent() {
+                return false;
+            }
+            @Override
+            public void removeFrom(ObjectContainer container) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean realTimeFlag() {
+                return false;
+            }
+	};
+    
+    static final ClientBaseCallback BOGUS_CALLBACK = 
+        new ClientBaseCallback() {
+            @Override
+            public void onMajorProgress(ObjectContainer container) {
+                // Ignore.
+            }
+            @Override
+            public void onResume(ClientContext context) {
+                throw new IllegalStateException(); // Impossible.
+            }
+
+            @Override
+            public RequestClient getRequestClient() {
+                return REQUEST_CLIENT;
+            }
+    };
 
 	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
-		super(prio, new RequestClient() {
-			@Override
-			public boolean persistent() {
-				return false;
-			}
-			@Override
-			public void removeFrom(ObjectContainer container) {
-				throw new UnsupportedOperationException();
-			}
-			@Override
-			public boolean realTimeFlag() {
-				return false;
-			} });
+		super(prio, BOGUS_CALLBACK);
 		this.ctx = context;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;

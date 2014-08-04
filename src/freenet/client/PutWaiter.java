@@ -6,6 +6,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -18,6 +19,7 @@ public class PutWaiter implements ClientPutCallback {
 	private boolean succeeded;
 	private FreenetURI uri;
 	private InsertException error;
+	final RequestClient client;
 
         private static volatile boolean logMINOR;
 	static {
@@ -29,7 +31,11 @@ public class PutWaiter implements ClientPutCallback {
 		});
 	}
 
-	@Override
+	public PutWaiter(RequestClient client) {
+	    this.client = client;
+    }
+
+    @Override
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		succeeded = true;
 		finished = true;
@@ -91,6 +97,11 @@ public class PutWaiter implements ClientPutCallback {
     @Override
     public void onResume(ClientContext context) {
         throw new UnsupportedOperationException(); // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return client;
     }
 
 }

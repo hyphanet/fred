@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
+import freenet.node.RequestClient;
 
 /** Provides a blocking wrapper for a fetch. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class FetchWaiter implements ClientGetCallback {
@@ -15,8 +16,13 @@ public class FetchWaiter implements ClientGetCallback {
 	private FetchResult result;
 	private FetchException error;
 	private boolean finished;
+	private final RequestClient client;
 	
-	@Override
+	public FetchWaiter(RequestClient client) {
+	    this.client = client;
+    }
+
+    @Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		if(finished) return;
 		this.result = result;
@@ -55,5 +61,10 @@ public class FetchWaiter implements ClientGetCallback {
     public void onResume(ClientContext context) {
         throw new UnsupportedOperationException();
         // Not persistent.
+    }
+
+    @Override
+    public RequestClient getRequestClient() {
+        return client;
     }
 }

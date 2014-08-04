@@ -61,7 +61,7 @@ public interface HighLevelSimpleClient {
 	 * @param fctx Fetch context so you can customise the search process.
 	 * @return The ClientGetter object, which will have been started already.
 	 */
-	public ClientGetter fetch(FreenetURI uri, RequestClient context, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
 
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
@@ -71,7 +71,7 @@ public interface HighLevelSimpleClient {
 	 * @param fctx Fetch context so you can customise the search process.
 	 * @return The ClientGetter object, which will have been started already.
 	 */
-	public ClientGetter fetchFromMetadata(Bucket initialMetadata, RequestClient context, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
+	public ClientGetter fetchFromMetadata(Bucket initialMetadata, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
 
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
@@ -82,7 +82,7 @@ public interface HighLevelSimpleClient {
 	 * @param maxSize IGNORED. FIXME DEPRECATE
 	 * @return The ClientGetter object, which will have been started already.
 	 */
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, long maxSize, ClientGetCallback callback, FetchContext fctx) throws FetchException;
 
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
@@ -93,7 +93,7 @@ public interface HighLevelSimpleClient {
 	 * @param priorityClass What priority to start at. It is much more efficient to specify it here than to change it later.
 	 * @return The ClientGetter object, which will have been started already.
 	 */
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx, short priorityClass) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, long maxSize, ClientGetCallback callback, FetchContext fctx, short priorityClass) throws FetchException;
 
 	/**
 	 * Blocking insert.

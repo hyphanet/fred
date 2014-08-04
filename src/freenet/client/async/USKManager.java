@@ -209,7 +209,7 @@ public class USKManager {
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
 		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null, null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -236,7 +236,7 @@ public class USKManager {
 		}
 		uri = uri.sskForUSK();
 		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null, null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -306,8 +306,13 @@ public class USKManager {
             public void onResume(ClientContext context) {
                 // Do nothing.
             }
+
+            @Override
+            public RequestClient getRequestClient() {
+                return rcBulk;
+            }
 			
-		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null, null);
+		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -451,7 +456,12 @@ public class USKManager {
                     public void onResume(ClientContext context) {
                         // Do nothing. Not persistent.
                     }
-				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null, null);
+
+                    @Override
+                    public RequestClient getRequestClient() {
+                        return rcBulk;
+                    }
+				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
 				try {
 					get.start(null, context);
 				} catch (FetchException e) {
