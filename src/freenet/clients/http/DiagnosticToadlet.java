@@ -74,7 +74,7 @@ public class DiagnosticToadlet extends Toadlet {
         if(!ctx.checkFullAccess(this))
             return;
 
-		node.clientCore.bandwidthStatsPutter.updateData();
+		node.clientCore.bandwidthStatsPutter.updateData(node);
 
 		final SubConfig nodeConfig = node.config.get("node");
 
@@ -419,15 +419,6 @@ public class DiagnosticToadlet extends Toadlet {
 			text += l10n("waiting") + ": " + String.valueOf(waitingThreadsByPriority[i]) + " (" + String.valueOf(i+1) + ")\n";
 		}
 		text += "\n";
-
-		// drawDatabaseJobsBox
-		int[] jobsByPriority = core.clientDatabaseExecutor.getQueuedJobsCountByPriority();
-		for(int i=0; i<jobsByPriority.length; i++) {
-			text += l10n("waiting") + ": " + String.valueOf(i) + " (" + String.valueOf(jobsByPriority[i]) + ")\n";
-		}
-		text += "\n";
-		
-		}
 
 		this.writeTextReply(ctx, 200, "OK", text);
 	}

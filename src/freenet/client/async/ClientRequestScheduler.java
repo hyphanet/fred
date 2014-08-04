@@ -31,7 +31,6 @@ import freenet.node.SendableRequestItemKey;
 import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
-import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.io.NativeThread;
 
 /**
@@ -66,7 +65,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
 	private CooldownQueue persistentCooldownQueue;
-	final PrioritizedSerialExecutor databaseExecutor;
 	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
 	final PersistentJobRunner jobRunner;
@@ -81,7 +79,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, forRT, random);
-		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
 		this.random = random;
@@ -105,7 +102,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
-		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, isRTScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, isRTScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, this, clientContext);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
@@ -225,9 +222,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		if(persistent) {
 			// Add to the persistent registration queue
-				if(!databaseExecutor.onThread()) {
-					throw new IllegalStateException("Not on database thread!");
-				}
 				if(persistent)
 					container.activate(getters, 1);
 				if(logMINOR)

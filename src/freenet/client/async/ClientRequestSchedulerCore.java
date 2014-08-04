@@ -10,7 +10,6 @@ import com.db4o.query.Predicate;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -47,7 +46,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param executor
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final boolean forRT, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final boolean forRT, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		if(selectorContainer == null) {
 			return null;
 		}

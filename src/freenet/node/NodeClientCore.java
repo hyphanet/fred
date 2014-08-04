@@ -144,16 +144,6 @@ public class NodeClientCore implements Persistable {
 	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	protected final Persister persister;
-	/** All client-layer database access occurs on a SerialExecutor, so that we don't need
-	 * to have multiple parallel transactions. Advantages:
-	 * - We never have two copies of the same object in RAM, and more broadly, we don't
-	 *   need to worry about interactions between objects from different transactions.
-	 * - Only one weak-reference cache for the database.
-	 * - No need to refresh live objects.
-	 * - Deactivation is simpler.
-	 * Note that the priorities are thread priorities, not request priorities.
-	 */
-	public transient final PrioritizedSerialExecutor clientDatabaseExecutor;
 	public final DatastoreChecker storeChecker;
 	/** How much disk space must be free when starting a long-term, unpredictable duration job such 
 	 * as a big download? */
@@ -184,7 +174,6 @@ public class NodeClientCore implements Persistable {
 		this.pluginStores = new PluginStores(node, installConfig);
 		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, SECONDS.toMillis(30), this, node.nodeStats);
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -628,21 +617,6 @@ public class NodeClientCore implements Persistable {
 		InsertCompressor.load(clientContext);
 		fcpServer.load(this.clientLayerPersister.getPersistentRoot());
 		this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
-		// CONCURRENCY: We need everything to have hit its various memory locations.
-		// How to ensure this?
-		// FIXME This is a hack!!
-		// I guess the standard solution would be to make ClientContext members volatile etc?
-		// That sucks though ... they are only changed ONCE, and they are used constantly.
-		// Also existing transient requests won't care about the changes; what we must guarantee
-		// is that new persistent jobs will be accepted.
-		node.getTicker().queueTimedJob(new Runnable() {
-
-			@Override
-			public void run() {
-				clientDatabaseExecutor.start(node.executor, "Client database access thread");
-			}
-
-		}, 1000);
 		System.out.println("Late database initialisation completed.");
 		return true;
 	}

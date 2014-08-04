@@ -7,7 +7,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -41,7 +40,6 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
-import freenet.support.io.NativeThread;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
@@ -3641,20 +3639,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 		Arrays.sort(entries);
 		return entries;
-	}
-
-	public StringCounter getDatabaseJobQueueStatistics() {
-		final StringCounter result = new StringCounter();
-
-		final Runnable[][] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
-
-		for(Runnable[] list : dbJobs) {
-			for(Runnable job : list) {
-				result.inc(sanitizeDBJobType(job.toString()));
-			}
-		}
-
-		return result;
 	}
 
 	public PeerLoadStats createPeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
