@@ -219,17 +219,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public synchronized void receive(ClientEvent ce, ObjectContainer maybeContainer,
-				ClientContext context) {
+		public synchronized void receive(ClientEvent ce, ClientContext context) {
 			if(ce instanceof SplitfileProgressEvent)
 				lastProgress = (SplitfileProgressEvent) ce;
 		}
 		
-		@Override
-		public void onRemoveEventProducer(ObjectContainer container) {
-			// Do nothing.
-		}
-
 		private void start() throws FetchException {
 			getter.start(null, clientContext);
 		}

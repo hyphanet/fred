@@ -21,8 +21,6 @@ import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -147,12 +145,7 @@ public class LongTermPushPullTest extends LongTermTest {
 				client.addEventHook(new ClientEventListener() {
 
 					@Override
-					public void onRemoveEventProducer(ObjectContainer container) {
-						// Ignore
-					}
-
-					@Override
-					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+					public void receive(ClientEvent ce, ClientContext context) {
 						System.out.println(ce.getDescription());
 					}
 					

@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
@@ -324,12 +322,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onRemoveEventProducer(ObjectContainer container) {
-		// Impossible
-	}
-
-	@Override
-	public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+	public void receive(ClientEvent ce, ClientContext context) {
 		try{
 			if(ce instanceof SplitfileProgressEvent) {
 				SplitfileProgressEvent split = (SplitfileProgressEvent) ce;

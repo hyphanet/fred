@@ -55,16 +55,12 @@ public class SimpleEventProducer implements ClientEventProducer {
      * Sends the ClientEvent to all registered listeners of this object.
      **/
 	@Override
-    public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
-    	if(container != null)
-    		container.activate(listeners, 1);
+    public void produceEvent(ClientEvent ce, ClientContext context) {
 	for (Enumeration<ClientEventListener> e = listeners.elements() ; 
 	     e.hasMoreElements();) {
             try {
             	ClientEventListener cel = e.nextElement();
-            	if(container != null)
-            		container.activate(cel, 1);
-                cel.receive(ce, container, context);
+                cel.receive(ce, context);
             } catch (NoSuchElementException ne) {
 		Logger.normal(this, "Concurrent modification in "+
 				"produceEvent!: "+this);
@@ -90,15 +86,4 @@ public class SimpleEventProducer implements ClientEventProducer {
 	    addEventListener(cela[i]);
     }
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-    	if(container != null)
-    		container.activate(listeners, 1);
-		ClientEventListener[] list = listeners.toArray(new ClientEventListener[listeners.size()]);
-		listeners.clear();
-		container.delete(listeners);
-		for(ClientEventListener l: list)
-			l.onRemoveEventProducer(container);
-		container.delete(this);
-	}
 }

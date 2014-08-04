@@ -348,11 +348,6 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	public void onRemoveEventProducer(ObjectContainer container) {
-		// Do nothing, we called the removeFrom().
-	}
-	
-	@Override
 	public void requestWasRemoved(ClientContext context) {
 		if(persistenceType == PERSIST_FOREVER) {
 			putter = null;

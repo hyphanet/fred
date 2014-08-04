@@ -58,12 +58,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				hlsc.addEventHook(new ClientEventListener() {
 
 					@Override
-					public void onRemoveEventProducer(ObjectContainer container) {
-						// Ignore
-					}
-
-					@Override
-					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+					public void receive(ClientEvent ce, ClientContext context) {
 						if(ce instanceof SplitfileProgressEvent) {
 							SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
 							if(split.finalizedTotal) {

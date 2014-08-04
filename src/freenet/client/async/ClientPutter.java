@@ -555,7 +555,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(ctx, 2);
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), context);
 	}
 
 	/** Notify listening clients that an insert has been sent to the network. */
@@ -565,7 +565,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
+		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
 	}
 
 	/** Called when we know exactly how many blocks will be needed. */

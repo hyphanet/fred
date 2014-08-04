@@ -155,7 +155,6 @@ public class InsertContext implements Cloneable {
 			Logger.error(this, "No EventProducer on InsertContext! activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 		} else {
 			container.activate(eventProducer, 1);
-			eventProducer.removeFrom(container);
 		}
 		container.delete(this);
 	}

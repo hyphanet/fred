@@ -604,7 +604,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			minSuccess = finalBlocksRequired;
 			finalized = true;
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized), context);
 	}
 
 	/**
@@ -617,7 +617,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
+		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
 	}
 
 	/**
@@ -754,7 +754,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.store(this);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), container, context);
+		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), context);
 	}
 
 	private void checkCompatibleExtension(String mimeType) throws FetchException {
@@ -777,7 +777,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(size), container, context);
+		ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(size), context);
 	}
 
 	/** Called when we are fairly sure that the expected MIME and size won't change */
@@ -867,7 +867,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 
 	@Override
 	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), context);
 	}
 
 	@Override
@@ -884,7 +884,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(persistent()) container.store(this);
 		HashResult[] clientHashes = hashes;
 		if(persistent()) clientHashes = HashResult.copy(hashes);
-		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
+		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), context);
 	}
 
 	@Override
@@ -899,7 +899,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				container.activate(ctx, 1);
 				container.activate(ctx.eventProducer, 1);
 			}
-			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), container, context);
+			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), context);
 		}
 	}
 

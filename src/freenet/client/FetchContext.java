@@ -233,7 +233,6 @@ public class FetchContext implements Cloneable, Serializable {
 	public void removeFrom(ObjectContainer container) {
 		if(hasOwnEventProducer) {
 			container.activate(eventProducer, 1);
-			eventProducer.removeFrom(container);
 		}
 		// Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 		// allowedMIMETypes is passed in, whoever passes it in is responsible for deleting it.

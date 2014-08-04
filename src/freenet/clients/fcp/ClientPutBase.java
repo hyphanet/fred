@@ -266,30 +266,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
+	public void receive(final ClientEvent ce, ClientContext context) {
 		if(finished) return;
-		if(persistenceType == PERSIST_FOREVER && container == null) {
-		    try {
-		        context.jobRunner.queue(new PersistentJob() {
-		            
-		            @Override
-		            public boolean run(ClientContext context) {
-		                receive(ce, null, context);
-		                return false;
-		            }
-		            
-		        }, NativeThread.NORM_PRIORITY);
-		    } catch (PersistenceDisabledException e) {
-		     // Impossible, not much we can do.
-		    }
-			return;
-		}
 		if(ce instanceof SplitfileProgressEvent) {
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 				lastActivity = System.currentTimeMillis();
-				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
+				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, null, context);
 			}
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -301,21 +285,21 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				StartedCompressionMessage msg =
 					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, null, context);
 				onStartCompressing();
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
 					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, null, context);
 				onStopCompressing();
 			}
 		} else if(ce instanceof ExpectedHashesEvent) {
 			if((verbosity & VERBOSITY_EXPECTED_HASHES) == VERBOSITY_EXPECTED_HASHES) {
 				ExpectedHashes msg =
 					new ExpectedHashes((ExpectedHashesEvent)ce, identifier, global);
-				trySendProgressMessage(msg, VERBOSITY_EXPECTED_HASHES, null, container, context);
+				trySendProgressMessage(msg, VERBOSITY_EXPECTED_HASHES, null, null, context);
 				//FIXME: onHashesComputed();
 			}
 		}

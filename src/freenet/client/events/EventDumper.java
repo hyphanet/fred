@@ -6,8 +6,6 @@ package freenet.client.events;
 import java.io.IOException;
 import java.io.Writer;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 
 public class EventDumper implements ClientEventListener {
@@ -21,18 +19,12 @@ public class EventDumper implements ClientEventListener {
 	}
 
 	@Override
-	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
+	public void receive(ClientEvent ce, ClientContext context) {
 		try {
 			w.write(ce.getDescription()+"\n");
 		} catch (IOException e) {
 			// Ignore.
 		}
-	}
-
-	@Override
-	public void onRemoveEventProducer(ObjectContainer container) {
-		if(removeWithProducer)
-			container.delete(this);
 	}
 
 }

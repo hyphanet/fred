@@ -208,7 +208,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 			HashResult[] clientHashes = hashes;
 			if(persistent) clientHashes = HashResult.copy(hashes);
-			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), container, context);
+			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), context);
 			
 			// So it is passed on.
 			origHashes = hashes;
@@ -266,7 +266,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx.eventProducer, 1);
 			}
 			short codecID = bestCodec == null ? -1 : bestCodec.metadataID;
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(codecID, origSize, bestCompressedDataSize), container, context);
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(codecID, origSize, bestCompressedDataSize), context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
 		}
 		
@@ -1208,7 +1208,7 @@ class SingleFileInserter implements ClientPutState {
 		if(parent == cb) {
 			if(ctx == null) throw new NullPointerException();
 			if(ctx.eventProducer == null) throw new NullPointerException();
-			ctx.eventProducer.produceEvent(new StartedCompressionEvent(ctype), container, context);
+			ctx.eventProducer.produceEvent(new StartedCompressionEvent(ctype), context);
 		}
 	}
 	
