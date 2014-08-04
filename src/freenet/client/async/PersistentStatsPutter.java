@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.Serializable;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
@@ -17,8 +19,10 @@ import freenet.support.UptimeContainer;
  * 
  * @author Artefact2
  */
-public class PersistentStatsPutter {
-	public static final int OFFSET = 60000;
+public class PersistentStatsPutter implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public static final int OFFSET = 60000;
 
 	private long latestNodeBytesOut = 0;
 	private long latestNodeBytesIn = 0;
