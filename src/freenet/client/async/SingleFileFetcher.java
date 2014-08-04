@@ -963,8 +963,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// FIXME relax these conditions once know it works.
 				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
-				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
-				            metadata.getMinCompatMode());
 				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
 				            topCompatibilityMode, persistent, thisKey, isFinal, container, context);
