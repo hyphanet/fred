@@ -7,12 +7,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.concurrent.CountDownLatch;
-
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ext.Db4oException;
 
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
@@ -23,13 +19,10 @@ import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
 import freenet.client.async.InsertCompressorTracker;
-import freenet.client.async.PersistentJobRunnerImpl;
 import freenet.client.async.ClientRequestScheduler;
-import freenet.client.async.ClientRequester;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.InsertCompressor;
-import freenet.client.async.PersistentJobRunner;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -72,10 +65,7 @@ import freenet.pluginmanager.PluginStores;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
-import freenet.support.ExecutorIdleCallback;
 import freenet.support.Logger;
-import freenet.support.MutableBoolean;
-import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
@@ -155,9 +145,6 @@ public class NodeClientCore implements Persistable {
 	static final long MAX_CACHED_ARCHIVE_DATA = 32 * 1024 * 1024; // make a fixed fraction of the store by default? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024 * 1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256 * 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
-	/** Each FEC item can take a fair amount of RAM, since it's fully activated with all the buckets, potentially 256
-	 * of them, so only cache a small number of them */
-	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
