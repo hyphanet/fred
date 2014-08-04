@@ -6,14 +6,11 @@ package freenet.client.async;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.ext.Db4oException;
 
 import freenet.client.FetchException;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
@@ -62,8 +59,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final CooldownQueue transientCooldownQueue;
-	private CooldownQueue persistentCooldownQueue;
 	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
 	final PersistentJobRunner jobRunner;
@@ -93,16 +88,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 			offeredKeys = null;
 		}
-		if(!forInserts)
-			transientCooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
-		else
-			transientCooldownQueue = null;
 		jobRunner = clientContext.jobRunner;
 	}
 	
 	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
 		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, isRTScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, this, clientContext);
-		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
 	/** Called by the  config. Callback
@@ -432,87 +422,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		offeredKeys.remove(key);
 	}
 
-	/**
-	 * Restore keys from the given cooldown queue. Find any keys that are due to be
-	 * restored, restore all requests both persistent and non-persistent for those keys.
-	 * @param queue
-	 * @param persistent
-	 * @param container
-	 * @return Long.MAX_VALUE if nothing is queued in the next WAIT_AFTER_NOTHING_TO_START
-	 * millis, the time at which the next key is due to be restored if there are keys queued
-	 * to be restarted in the near future.
-	 */
-	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
-		final boolean logMINOR = ClientRequestScheduler.logMINOR;
-		if(queue == null) return Long.MAX_VALUE;
-		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent="+persistent);
-		/*
-		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
-		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database
-		 * thread, then we will wake it up if we find keys... and we'll be scheduled again.
-		 * 
-		 * FIXME: I think we need to restore all the listeners for a single key 
-		 * simultaneously to avoid some kind of race condition? Or could we just
-		 * restore the one request on the queue? Maybe it's just a misguided
-		 * optimisation? IIRC we had some severe problems when we didn't have 
-		 * this, related to requests somehow being lost altogether... Is it 
-		 * essential? We can save a query if it's not... Is this about requests
-		 * or about keys? Should we limit all requests across any 
-		 * SendableRequest's to 3 every half hour for a specific key? Probably 
-		 * yes...? In which case, can the cooldown queue be entirely in RAM,
-		 * and would it be useful for it to be? Less disk, more RAM... for fast
-		 * nodes with little RAM it would be bad...
-		 */
-		final int MAX_KEYS = 20;
-		Object ret;
-		ClientRequestScheduler otherScheduler = 
-			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler(isRTScheduler) : this.clientContext.getChkFetchScheduler(isRTScheduler));
-		if(queue instanceof PersistentCooldownQueue) {
-			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
-		} else
-			ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
-		if(ret == null) return Long.MAX_VALUE;
-		if(ret instanceof Long) {
-			return (Long) ret;
-		}
-		Key[] keys = (Key[]) ret;
-		for(Key key: keys) {
-			if(persistent)
-				container.activate(key, 5);
-			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			if(key instanceof NodeSSK == isSSKScheduler)
-				restoreKey(key, container, now);
-			else
-				otherScheduler.restoreKey(key, container, now); 
-			if(persistent)
-				container.deactivate(key, 5);
-		}
-		return Long.MAX_VALUE;
-	}
-
-	private void restoreKey(Key key, ObjectContainer container, long now) {
-		SendableGet[] reqs = container == null ? null : (schedCore == null ? null : schedCore.requestsForKey(key, container, clientContext));
-		SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
-		if(reqs == null && transientReqs == null) {
-			// Not an error as this can happen due to race conditions etc.
-			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
-		}
-		if(reqs != null) {
-			for(SendableGet req: reqs) {
-				// Requests may or may not be returned activated from requestsForKey(), so don't check
-				// But do deactivate them once we're done with them.
-				container.activate(req, 1);
-				req.requeueAfterCooldown(key, now, container, clientContext);
-				container.deactivate(req, 1);
-			}
-		}
-		if(transientReqs != null) {
-			for(SendableGet req: transientReqs)
-				req.requeueAfterCooldown(key, now, container, clientContext);
-		}
-	}
-	
 	@Override
 	public long countQueuedRequests() {
 	    return selector.countQueuedRequests(null, clientContext);

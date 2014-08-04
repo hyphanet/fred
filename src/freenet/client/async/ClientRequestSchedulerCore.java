@@ -23,7 +23,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
-	final PersistentCooldownQueue persistentCooldownQueue;
 
 	private static volatile boolean logMINOR;
 
@@ -81,11 +80,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, boolean forRT, ObjectContainer selectorContainer, long cooldownTime) {
 		super(forInserts, forSSKs, forRT, node.random);
 		this.nodeDBHandle = node.nodeDBHandle;
-		if(!forInserts) {
-			this.persistentCooldownQueue = new PersistentCooldownQueue();
-		} else {
-			this.persistentCooldownQueue = null;
-		}
 		this.globalSalt = null;
 	}
 
@@ -94,9 +88,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted(container, context);
 		System.err.println("insert scheduler: "+isInsertScheduler);
-		if(!isInsertScheduler) {
-			persistentCooldownQueue.setCooldownTime(cooldownTime);
-		}
 		this.sched = sched;
 		hintGlobalSalt(globalSalt);
 	}
