@@ -167,7 +167,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void onMajorProgress(ObjectContainer container) {
+		public void onMajorProgress() {
 			// Ignore.
 		}
 		

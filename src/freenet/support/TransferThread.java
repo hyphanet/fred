@@ -231,7 +231,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
 	@Override
-	public abstract void onMajorProgress(ObjectContainer container);
+	public abstract void onMajorProgress();
 
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));

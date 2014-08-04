@@ -49,7 +49,7 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

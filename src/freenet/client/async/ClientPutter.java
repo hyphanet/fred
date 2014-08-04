@@ -366,7 +366,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onMajorProgress(ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);
-		client.onMajorProgress(container);
+		client.onMajorProgress();
 	}
 
 	/** Called when we know the final URI of the insert. */

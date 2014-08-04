@@ -271,7 +271,7 @@ public class USKManager {
 		final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
+			public void onMajorProgress() {
 				// Ignore
 			}
 
@@ -438,7 +438,7 @@ public class USKManager {
 					}
 					
 					@Override
-					public void onMajorProgress(ObjectContainer container) {
+					public void onMajorProgress() {
 						// Ignore
 					}
 

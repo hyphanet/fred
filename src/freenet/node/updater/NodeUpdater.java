@@ -502,7 +502,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

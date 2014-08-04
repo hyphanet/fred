@@ -52,7 +52,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
     static final ClientBaseCallback BOGUS_CALLBACK = 
         new ClientBaseCallback() {
             @Override
-            public void onMajorProgress(ObjectContainer container) {
+            public void onMajorProgress() {
                 // Ignore.
             }
             @Override

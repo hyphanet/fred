@@ -64,7 +64,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			final RequestClient client, USKRetrieverCallback cb, USK origUSK) {
 		super(prio, new ClientBaseCallback() {
             @Override
-            public void onMajorProgress(ObjectContainer container) {
+            public void onMajorProgress() {
                 // Ignore.
             }
             @Override

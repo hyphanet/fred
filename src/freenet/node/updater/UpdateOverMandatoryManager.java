@@ -1074,7 +1074,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
+			public void onMajorProgress() {
 				// Ignore
 			}
 
@@ -1132,7 +1132,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 			
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
+			public void onMajorProgress() {
 				// Ignore
 			}
 			
@@ -1535,7 +1535,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 			@Override
-			public void onMajorProgress(ObjectContainer container) {
+			public void onMajorProgress() {
 				// Ignore
 			}
 

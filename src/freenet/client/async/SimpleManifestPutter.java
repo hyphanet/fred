@@ -1809,7 +1809,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			deactivate = !container.ext().isActive(cb);
 			if(deactivate) container.activate(cb, 1);
 		}
-		cb.onMajorProgress(container);
+		cb.onMajorProgress();
 		if(deactivate) container.deactivate(cb, 1);
 	}
 

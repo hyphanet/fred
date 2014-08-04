@@ -336,7 +336,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// TODO Auto-generated method stub
 		
 	}

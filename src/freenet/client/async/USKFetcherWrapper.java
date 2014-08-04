@@ -27,7 +27,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		super(prio, new ClientBaseCallback() {
 
             @Override
-            public void onMajorProgress(ObjectContainer container) {
+            public void onMajorProgress() {
                 // Ignore.
             }
 

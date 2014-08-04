@@ -53,7 +53,7 @@ public class FetchWaiter implements ClientGetCallback {
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

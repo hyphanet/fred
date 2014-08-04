@@ -78,7 +78,7 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

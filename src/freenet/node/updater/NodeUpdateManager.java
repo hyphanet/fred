@@ -469,7 +469,7 @@ public class NodeUpdateManager {
 		}
 
 		@Override
-		public void onMajorProgress(ObjectContainer container) {
+		public void onMajorProgress() {
 			// Ignore
 		}
 

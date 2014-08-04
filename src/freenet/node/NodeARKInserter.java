@@ -268,7 +268,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

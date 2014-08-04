@@ -395,7 +395,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

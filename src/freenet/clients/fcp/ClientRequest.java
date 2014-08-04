@@ -4,8 +4,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistenceDisabledException;
@@ -275,7 +273,7 @@ public abstract class ClientRequest implements Serializable {
 	 */
 	public abstract boolean isTotalFinalized();
 
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

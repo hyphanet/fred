@@ -1625,7 +1625,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			deactivate = !container.ext().isActive(cb);
 			if(deactivate) container.activate(cb, 1);
 		}
-		cb.onMajorProgress(container);
+		cb.onMajorProgress();
 		if(deactivate) container.deactivate(cb, 1);
 	}
 
