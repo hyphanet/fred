@@ -343,6 +343,7 @@ public class NodeClientCore implements Persistable {
 		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
+		clientLayerPersister.start(clientContext);
 		
 		// FIXME with crypto this load() may happen much later.
         clientLayerPersister.load(clientContext);
