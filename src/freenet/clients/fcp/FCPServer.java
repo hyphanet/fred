@@ -977,7 +977,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		ClientGet get = globalRebootClient.getCompletedRequest(key);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
-			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
+			return new FetchResult(new ClientMetadata(get.getMIMEType()), new NoFreeBucket(get.getBucket()));
 		}
 
 		FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, false);
@@ -1044,9 +1044,9 @@ public class FCPServer implements Runnable, DownloadCache {
 		String mime = null;
 		boolean filtered = false;
 
-		if(get != null && ((!noFilter) || (!(filtered = get.filterData(null))))) {
-			origData = new NoFreeBucket(get.getBucket(null));
-			mime = get.getMIMEType(null);
+		if(get != null && ((!noFilter) || (!(filtered = get.filterData())))) {
+			origData = new NoFreeBucket(get.getBucket());
+			mime = get.getMIMEType();
 		}
 
 		if(origData == null && globalForeverClient != null) {
@@ -1090,8 +1090,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		ClientGet get = globalForeverClient.getCompletedRequest(key);
 		container.activate(get, 1);
 		if(get != null) {
-			boolean filtered = get.filterData(container);
-			Bucket origData = get.getBucket(container);
+			boolean filtered = get.filterData();
+			Bucket origData = get.getBucket();
 			container.activate(origData, 5);
 			Bucket newData = null;
 			if(!mustCopy)
@@ -1109,7 +1109,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 			}
 			container.deactivate(get, 1);
-			return new CacheFetchResult(new ClientMetadata(get.getMIMEType(container)), newData, filtered);
+			return new CacheFetchResult(new ClientMetadata(get.getMIMEType()), newData, filtered);
 		}
 		return null;
 	}

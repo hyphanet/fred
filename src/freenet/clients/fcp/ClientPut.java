@@ -329,7 +329,7 @@ public class ClientPut extends ClientPutBase {
 		// FIXME end
 		return new PersistentPut(identifier, publicURI, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(null), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
+				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
 
 	private boolean isRealTime() {
@@ -352,9 +352,7 @@ public class ClientPut extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(generatedURI, 5);
+	public FreenetURI getFinalURI() {
 		return generatedURI;
 	}
 
@@ -362,19 +360,16 @@ public class ClientPut extends ClientPutBase {
 		return uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT;
 	}
 
-	public File getOrigFilename(ObjectContainer container) {
+	public File getOrigFilename() {
 		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK)
 			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(origFilename, 5);
 		return origFilename;
 	}
 
-	public long getDataSize(ObjectContainer container) {
+	public long getDataSize() {
 		if(data == null)
 			return finishedSize;
 		else {
-			if(persistenceType == PERSIST_FOREVER) container.activate(data, 1);
 			return data.size();
 		}
 	}
@@ -399,7 +394,7 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	public boolean restart(ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
-		setVarsRestart(null);
+		setVarsRestart();
 		try {
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -427,12 +422,12 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public void setVarsRestart(ObjectContainer container) {
-		super.setVarsRestart(container);
+	public void setVarsRestart() {
+		super.setVarsRestart();
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				cache.updateCompressionStatus(identifier, isCompressing(container));
+				cache.updateCompressionStatus(identifier, isCompressing());
 			}
 		}
 	}
@@ -460,8 +455,7 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	/** Probably not meaningful for ClientPutDir's */
-	public COMPRESS_STATE isCompressing(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER) container.activate(ctx, 1);
+	public COMPRESS_STATE isCompressing() {
 		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
 		synchronized(this) {
 			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
@@ -500,8 +494,8 @@ public class ClientPut extends ClientPutBase {
 
 	@Override
 	RequestStatus getStatus() {
-		FreenetURI finalURI = getFinalURI(null);
-		if(finalURI != null) finalURI = getFinalURI(null).clone();
+		FreenetURI finalURI = getFinalURI();
+		if(finalURI != null) finalURI = getFinalURI().clone();
 		int failureCode = -1;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
@@ -514,7 +508,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType == PERSIST_FOREVER) {
 			mimeType = clientMetadata.getMIMEType();
 		}
-		File fnam = getOrigFilename(null);
+		File fnam = getOrigFilename();
 		if(fnam != null) fnam = new File(fnam.getPath());
 		
 		int total=0, min=0, fetched=0, fatal=0, failed=0;
@@ -540,8 +534,8 @@ public class ClientPut extends ClientPutBase {
 		return new UploadFileRequestStatus(identifier, persistenceType, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, finalURI, origURI, failureCode,
-				failureReasonShort, failureReasonLong, getDataSize(null), mimeType,
-				fnam, isCompressing(null));
+				failureReasonShort, failureReasonLong, getDataSize(), mimeType,
+				fnam, isCompressing());
 	}
 	
 	@Override

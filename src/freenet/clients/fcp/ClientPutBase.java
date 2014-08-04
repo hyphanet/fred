@@ -154,7 +154,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
 		finish();
-		trySendFinalMessage(null, container);
+		trySendFinalMessage(null);
 		if(client != null)
 			client.notifySuccess(this);
 	}
@@ -172,7 +172,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
 		finish();
-		trySendFinalMessage(null, container);
+		trySendFinalMessage(null);
 		if(client != null)
 			client.notifyFailure(this);
 	}
@@ -202,12 +202,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 	}
 	
-	public FreenetURI getGeneratedURI(ObjectContainer container) {
+	public FreenetURI getGeneratedURI() {
 		if(generatedURI == null) return null;
 		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(generatedURI, Integer.MAX_VALUE);
 			FreenetURI ret = generatedURI.clone();
-			container.deactivate(generatedURI, 1);
 			return ret;
 		} else
 			return generatedURI;
@@ -248,7 +246,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				InsertException cancelled = new InsertException(InsertException.CANCELLED);
 				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
 			}
-			trySendFinalMessage(null, null);
+			trySendFinalMessage(null);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
@@ -351,20 +349,17 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 	}
 
-	private void trySendFinalMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
 
 		FCPMessage msg;
 		synchronized (this) {
 			FreenetURI uri = generatedURI;
 			if(persistenceType == PERSIST_FOREVER && uri != null) {
-				container.activate(uri, 5);
 				uri = uri.clone();
 			}
 			if(succeeded) {
 				msg = new PutSuccessfulMessage(identifier, global, uri, startupTime, completionTime);
 			} else {
-				if(persistenceType == PERSIST_FOREVER)
-					container.activate(putFailedMessage, 5);
 				msg = putFailedMessage;
 			}
 		}
@@ -490,7 +485,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(msg != null)
 			handler.queue(msg);
 		if(fin)
-			trySendFinalMessage(handler, null);
+			trySendFinalMessage(handler);
 	}
 
 	protected abstract String getTypeName();
@@ -582,28 +577,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		return putFailedMessage;
 	}
 	
-	public void setVarsRestart(ObjectContainer container) {
-		PutFailedMessage pfm;
-		FCPMessage progress;
-		synchronized(this) {
-			finished = false;
-			pfm = putFailedMessage;
-			progress = progressMessage;
-			this.putFailedMessage = null;
-			this.progressMessage = null;
-			started = false;
-		}
-		if(persistenceType == PERSIST_FOREVER) {
-			if(pfm != null) {
-				container.activate(pfm, 1);
-				pfm.removeFrom(container);
-			}
-			if(progress != null) {
-				container.activate(progress, 1);
-				progress.removeFrom(container);
-			}
-			container.store(this);
-		}
+	public synchronized void setVarsRestart() {
+	    finished = false;
+	    this.putFailedMessage = null;
+	    this.progressMessage = null;
+	    started = false;
 	}
 
 }

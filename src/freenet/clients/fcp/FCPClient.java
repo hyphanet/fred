@@ -118,7 +118,7 @@ public class FCPClient {
 		if(statusCache != null) {
 			if(get instanceof ClientGet) {
 				ClientGet download = (ClientGet)get;
-				GetFailedMessage msg = download.getFailureMessage(null);
+				GetFailedMessage msg = download.getFailureMessage();
 				int failureCode = -1;
 				String shortFailMessage = null;
 				String longFailMessage = null;
@@ -127,9 +127,9 @@ public class FCPClient {
 					shortFailMessage = msg.getShortFailedMessage();
 					longFailMessage = msg.getLongFailedMessage();
 				}
-				Bucket shadow = ((ClientGet) get).getFinalBucket(null);
+				Bucket shadow = ((ClientGet) get).getFinalBucket();
 				if(shadow != null) shadow = shadow.createShadow();
-				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(null), ((ClientGet) get).getMIMEType(null), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData(null));
+				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(), ((ClientGet) get).getMIMEType(), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData());
 			} else if(get instanceof ClientPutBase) {
 				ClientPutBase upload = (ClientPutBase)get;
 				PutFailedMessage msg = upload.getFailureMessage(null);
@@ -141,7 +141,7 @@ public class FCPClient {
 					shortFailMessage = msg.getShortFailedMessage();
 					longFailMessage = msg.getLongFailedMessage();
 				}
-				statusCache.finishedUpload(upload.getIdentifier(), upload.hasSucceeded(), upload.getGeneratedURI(null), failureCode, shortFailMessage, longFailMessage);
+				statusCache.finishedUpload(upload.getIdentifier(), upload.hasSucceeded(), upload.getGeneratedURI(), failureCode, shortFailMessage, longFailMessage);
 			} else assert(false);
 		}
 	}
@@ -484,7 +484,7 @@ public class FCPClient {
 			ClientRequest req = completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
-			if(getter.getURI(null).equals(key)) {
+			if(getter.getURI().equals(key)) {
 				return getter;
 			}
 		}

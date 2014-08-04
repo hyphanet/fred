@@ -390,7 +390,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(data != returnBucket) {
 				if(persistenceType == PERSIST_FOREVER)
 					returnBucket.removeFrom(container);
-				returnBucket = getBucket(container);
+				returnBucket = getBucket();
 			}
 			if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
 				returnBucket.storeTo(container);
@@ -463,10 +463,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			this.succeeded = true;
 			finished = true;
 		}
-		trySendDataFoundOrGetFailed(null, container);
+		trySendDataFoundOrGetFailed(null);
 
 		if(adm != null)
-			trySendAllDataMessage(adm, null, container);
+			trySendAllDataMessage(adm, null);
 		if(!dontFree) {
 			data.free();
 		}
@@ -479,7 +479,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			client.notifySuccess(this);
 	}
 
-	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
 		FCPMessage msg;
 
 		// Don't need to lock. succeeded is only ever set, never unset.
@@ -490,8 +490,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global, startupTime, completionTime != 0 ? completionTime : System.currentTimeMillis());
 		} else {
 			msg = getFailedMessage;
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(msg, 5);
 		}
 
 		if(handler == null && persistenceType == PERSIST_CONNECTION)
@@ -501,25 +499,18 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		else
 			client.queueClientRequestMessage(msg, 0);
 		if(postFetchProtocolErrorMessage != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(postFetchProtocolErrorMessage, 5);
 			if(handler != null)
 				handler.queue(postFetchProtocolErrorMessage);
 			else {
-				if(persistenceType == PERSIST_FOREVER)
-					container.activate(client, 1);
 				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0);
 			}
 		}
 
 	}
 
-	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-				container.store(this);
-			}
 			return;
 		}
         if(handler == null)
@@ -528,7 +519,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		handler.queue(msg);
 	}
 
-	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
 		FCPMessage oldProgress = null;
 		boolean noStore = false;
 		if(msg instanceof SimpleProgressMessage) {
@@ -545,15 +536,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else if(msg instanceof CompatibilityMode) {
 			CompatibilityMode compat = (CompatibilityMode)msg;
 			if(compatMessage != null) {
-				if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
 				compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
-				if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
 			} else {
 				compatMessage = compat;
-				if(persistenceType == PERSIST_FOREVER) {
-					container.store(compatMessage);
-					container.store(this);
-				}
 			}
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -566,15 +551,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
 			} else {
 				this.expectedHashes = (ExpectedHashes)msg;
-				if(persistenceType == PERSIST_FOREVER) {
-					container.store(this);
-				}
 			}
 		} else if(msg instanceof ExpectedMIME) {
 			foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
-			if(persistenceType == PERSIST_FOREVER) {
-				container.store(this);
-			}
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
@@ -583,9 +562,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(msg instanceof ExpectedDataLength) {
 			foundDataLength = ((ExpectedDataLength) msg).dataLength;
-			if(persistenceType == PERSIST_FOREVER) {
-				container.store(this);
-			}
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
@@ -597,23 +573,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			noStore = true;
 		} else
 			assert(false);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER && !noStore) {
-			container.store(this);
-			if(oldProgress != null) {
-				container.activate(oldProgress, 1);
-				oldProgress.removeFrom(container);
-			}
-		}
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(client, 1);
 		if(persistenceType == PERSIST_CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
 		else
 			client.queueClientRequestMessage(msg, verbosityMask);
-		if(persistenceType == PERSIST_FOREVER && !client.isGlobalQueue)
-			container.deactivate(client, 1);
 	}
 
 	@Override
@@ -629,7 +594,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(sentToNetwork)
 				handler.queue(new SendingToNetworkMessage(identifier, global));
 			if(finished)
-				trySendDataFoundOrGetFailed(handler, null);
+				trySendDataFoundOrGetFailed(handler);
 		}
 
 		if (onlyData && allDataPending  == null) {
@@ -685,7 +650,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);
-		trySendDataFoundOrGetFailed(null, container);
+		trySendDataFoundOrGetFailed(null);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
 		}
@@ -711,7 +676,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				FetchException cancelled = new FetchException(FetchException.CANCELLED);
 				getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
 			}
-			trySendDataFoundOrGetFailed(null, null);
+			trySendDataFoundOrGetFailed(null);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
@@ -780,7 +745,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 					@Override
 					public boolean run(ClientContext context) {
-						trySendProgress(progress, verbosityMask, null, null);
+						trySendProgress(progress, verbosityMask, null);
 						return false;
 					}
 
@@ -789,7 +754,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				// Not much we can do
 			}
 		} else {
-			trySendProgress(progress, verbosityMask, null, container);
+			trySendProgress(progress, verbosityMask, null);
 		}
 	}
 
@@ -823,37 +788,29 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return this.returnType == ClientGetMessage.RETURN_TYPE_DISK;
 	}
 
-	public FreenetURI getURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(uri, 5);
+	public FreenetURI getURI() {
 		return uri;
 	}
 
-	public long getDataSize(ObjectContainer container) {
+	public long getDataSize() {
 		if(foundDataLength > 0)
 			return foundDataLength;
 		if(getter != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(getter, 1);
 			return getter.expectedSize();
 		}
 		return -1;
 	}
 
-	public String getMIMEType(ObjectContainer container) {
+	public String getMIMEType() {
 		if(foundDataMimeType != null)
 			return foundDataMimeType;
 		if(getter != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(getter, 1);
 			return getter.expectedMIME();
 		}
 		return null;
 	}
 
-	public File getDestFilename(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(targetFile, 5);
+	public File getDestFilename() {
 		return targetFile;
 	}
 
@@ -905,25 +862,19 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			return 0;
 	}
 	
-	public InsertContext.CompatibilityMode[] getCompatibilityMode(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
-			container.activate(compatMessage, 2);
+	public InsertContext.CompatibilityMode[] getCompatibilityMode() {
 		if(compatMessage != null) {
 			return compatMessage.getModes();
 		} else
 			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
 	}
 	
-	public boolean getDontCompress(ObjectContainer container) {
+	public boolean getDontCompress() {
 		if(compatMessage == null) return false;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(compatMessage, 2);
 		return compatMessage.dontCompress;
 	}
 	
-	public byte[] getOverriddenSplitfileCryptoKey(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
-			container.activate(compatMessage, 2);
+	public byte[] getOverriddenSplitfileCryptoKey() {
 		if(compatMessage != null) {
 			return compatMessage.cryptoKey;
 		} else
@@ -940,18 +891,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return s;
 	}
 	
-	GetFailedMessage getFailureMessage(ObjectContainer container) {
+	GetFailedMessage getFailureMessage() {
 		if(getFailedMessage == null) return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(getFailedMessage, 5);
 		return getFailedMessage;
 	}
 	
-	public int getFailureReasonCode(ObjectContainer container) {
+	public int getFailureReasonCode() {
 		if(getFailedMessage == null)
 			return -1;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(getFailedMessage, 5);
 		return getFailedMessage.code;
 		
 	}
@@ -965,12 +912,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 	}
 
-	public Bucket getFinalBucket(ObjectContainer container) {
+	public Bucket getFinalBucket() {
 		synchronized(this) {
 			if(!finished) return null;
 			if(!succeeded) return null;
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(returnBucket, 1);
 			return returnBucket;
 		}
 	}
@@ -981,14 +926,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * @return The data in a {@link Bucket}, or <code>null</code> if this
 	 *         isn&rsquo;t applicable
 	 */
-	public Bucket getBucket(ObjectContainer container) {
+	public Bucket getBucket() {
 		synchronized(this) {
 			if(targetFile != null) {
 				if(succeeded || tempFile == null) {
-					if(persistenceType == PERSIST_FOREVER) container.activate(targetFile, 5);
 					return new FileBucket(targetFile, false, true, false, false, false);
 				} else {
-					if(persistenceType == PERSIST_FOREVER) container.activate(tempFile, 5);
 					return new FileBucket(tempFile, false, true, false, false, false);
 				}
 			} else return returnBucket;
@@ -1068,9 +1011,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// Do nothing, we called the removeFrom().
 	}
 
-	public boolean filterData(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(fctx, 1);
+	public boolean filterData() {
 		return fctx.filterData;
 	}
 
@@ -1104,11 +1045,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(dataSize <= 0)
 				dataSize = getter.expectedSize();
 		}
-		File target = getDestFilename(null);
+		File target = getDestFilename();
 		if(target != null)
 			target = new File(target.getPath());
 		
-		Bucket shadow = getFinalBucket(null);
+		Bucket shadow = getFinalBucket();
 		if(shadow != null) {
 			dataSize = shadow.size();
 			shadow = shadow.createShadow();
@@ -1122,8 +1063,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return new DownloadRequestStatus(identifier, persistenceType, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
-				getCompatibilityMode(null), getOverriddenSplitfileCryptoKey(null), 
-				getURI(null).clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress(null));
+				getCompatibilityMode(), getOverriddenSplitfileCryptoKey(), 
+				getURI().clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress());
 	}
 
 	private static final long CLIENT_DETAIL_MAGIC = 0x67145b675d2e22f4L;

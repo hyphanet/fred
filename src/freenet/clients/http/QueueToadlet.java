@@ -2378,35 +2378,35 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return;
 		}
 		if(req instanceof ClientGet) {
-			FreenetURI uri = ((ClientGet)req).getURI(container);
+			FreenetURI uri = ((ClientGet)req).getURI();
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
 			}
-			long size = ((ClientGet)req).getDataSize(container);
+			long size = ((ClientGet)req).getDataSize();
 			GetCompletedEvent event = new GetCompletedEvent(identifier, uri, size);
 			synchronized(completedGets) {
 				completedGets.put(identifier, event);
 			}
 			core.alerts.register(event);
 		} else if(req instanceof ClientPut) {
-			FreenetURI uri = ((ClientPut)req).getFinalURI(container);
+			FreenetURI uri = ((ClientPut)req).getFinalURI();
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
 			}
-			long size = ((ClientPut)req).getDataSize(container);
+			long size = ((ClientPut)req).getDataSize();
 			PutCompletedEvent event = new PutCompletedEvent(identifier, uri, size);
 			synchronized(completedPuts) {
 				completedPuts.put(identifier, event);
 			}
 			core.alerts.register(event);
 		} else if(req instanceof ClientPutDir) {
-			FreenetURI uri = ((ClientPutDir)req).getFinalURI(container);
+			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
 			if(uri == null) {

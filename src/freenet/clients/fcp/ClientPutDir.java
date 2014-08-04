@@ -74,7 +74,7 @@ public class ClientPutDir extends ClientPutBase {
 //		this.manifestElements.putAll(manifestElements);
 		this.defaultName = message.defaultName;
 		this.manifestPutterType = message.manifestPutterType;
-		makePutter(null, server.core.clientContext);
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -99,7 +99,7 @@ public class ClientPutDir extends ClientPutBase {
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles, includeHiddenFiles);
 		this.defaultName = defaultName;
 		this.manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
-		makePutter(null, server.core.clientContext);
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -118,7 +118,7 @@ public class ClientPutDir extends ClientPutBase {
 		this.manifestElements = elements;
 		this.defaultName = defaultName;
 		this.manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
-		makePutter(null, server.core.clientContext);
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -175,17 +175,17 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter(ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
+	private void makePutter(ClientContext context) throws TooManyFilesInsertException {
 		switch(manifestPutterType) {
 		case ManifestPutter.MANIFEST_DEFAULTPUTTER:
 			putter = new DefaultManifestPutter(this,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, container, context);
+					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, null, context);
 			break;
 		default:
 			putter = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, container, context);
+					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, null, context);
 		}
 	}
 
@@ -289,9 +289,7 @@ public class ClientPutDir extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(generatedURI, 5);
+	public FreenetURI getFinalURI() {
 		return generatedURI;
 	}
 
@@ -319,7 +317,7 @@ public class ClientPutDir extends ClientPutBase {
 	@Override
 	public boolean restart(ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
-		setVarsRestart(null);
+		setVarsRestart();
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
@@ -327,7 +325,7 @@ public class ClientPutDir extends ClientPutBase {
 			}
 		}
 		try {
-			makePutter(null, context);
+			makePutter(context);
 		} catch (TooManyFilesInsertException e) {
 			this.onFailure(new InsertException(e), null, null);
 		}
@@ -374,8 +372,8 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@Override
 	RequestStatus getStatus() {
-		FreenetURI finalURI = getFinalURI(null);
-		if(finalURI != null) finalURI = getFinalURI(null).clone();
+		FreenetURI finalURI = getFinalURI();
+		if(finalURI != null) finalURI = getFinalURI().clone();
 		int failureCode = (short)-1;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
