@@ -7,12 +7,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
+import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
+import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.PersistenceDisabledException;
-import freenet.client.async.SimpleManifestPutter;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.EventLogger;
@@ -307,8 +309,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	@Override
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass, byte[] forceCryptoKey) throws InsertException {
 		PutWaiter pw = new PutWaiter(this);
-		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, null, core.clientContext);
+		DefaultManifestPutter putter;
+        try {
+            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, null, core.clientContext);
+        } catch (TooManyFilesInsertException e1) {
+            throw new InsertException(InsertException.TOO_MANY_FILES);
+        }
 		try {
 			core.clientContext.start(putter);
 		} catch (PersistenceDisabledException e) {
