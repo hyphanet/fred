@@ -9,8 +9,6 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
-import freenet.client.async.DBJob;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.client.events.ClientEvent;

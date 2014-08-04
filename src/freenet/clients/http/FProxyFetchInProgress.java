@@ -22,7 +22,6 @@ import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;

@@ -106,44 +106,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
-	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
-		ObjectSet<HasKeyListener> results =
-			Db4oBugs.query(container, HasKeyListener.class);
-		while(true) {
-			HasKeyListener l;
-			try {
-				if(!results.hasNext()) break;
-				l = results.next();
-			} catch (RuntimeException e) {
-				throw new Db4oException("Something is broken: "+e, e);
-				// Allow caller to terminate database.
-				// IllegalArgumentException isn't caught, but here it is exclusively caused by corrupt database and/or database bugs. :(
-			}
-			container.activate(l, 1);
-			try {
-				if(l.isCancelled(container)) continue;
-				KeyListener listener = l.makeKeyListener(container, context, true);
-				if(listener != null) {
-					if(listener.isSSK())
-						context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
-					else
-						context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
-					if(logMINOR) Logger.minor(ClientRequestScheduler.class, "Loaded request key listener: "+listener+" for "+l);
-				}
-			} catch (KeyListenerConstructionException e) {
-				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
-				e.printStackTrace();
-				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
-			} catch (Throwable t) {
-				// Probably an error on last startup???
-				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST: "+t, t);
-				System.err.println("FAILED TO LOAD REQUEST: "+t);
-				t.printStackTrace();
-			}
-			container.deactivate(l, 1);
-		}
-	}
-
 	/** Called by the  config. Callback
 	 * 
 	 * @param val

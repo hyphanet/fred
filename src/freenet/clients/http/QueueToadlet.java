@@ -579,7 +579,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				BucketTools.copy(file.getData(), copiedBucket);
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.persistentJobRunner.queue(new PersistentJob() {
+					core.clientLayerPersister.queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -686,7 +686,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					target = file.getName();
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.persistentJobRunner.queue(new PersistentJob() {
+					core.clientLayerPersister.queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -781,7 +781,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				final CountDownLatch done = new CountDownLatch(1);
 				try {
-					core.persistentJobRunner.queue(new PersistentJob() {
+					core.clientLayerPersister.queue(new PersistentJob() {
 
 						@Override
 						public String toString() {
@@ -1110,8 +1110,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						if(count) {
 							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys(null) + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys(null);
 							Logger.minor(this, "Total waiting CHKs: "+queued);
-							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countPersistentQueuedRequests(null) + core.requestStarters.chkFetchSchedulerRT.countPersistentQueuedRequests(null);
-							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
+							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countQueuedRequests() + core.requestStarters.chkFetchSchedulerRT.countQueuedRequests();
+							Logger.minor(this, "Total queued CHK requests (including transient): "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
 							pageNode = page.outer;
 							HTMLNode contentNode = page.content;

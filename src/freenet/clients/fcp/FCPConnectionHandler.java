@@ -14,8 +14,6 @@ import java.util.Random;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;

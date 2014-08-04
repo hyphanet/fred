@@ -6,8 +6,6 @@ package freenet.clients.fcp;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
