@@ -5,18 +5,12 @@ package freenet.client.async;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.ListIterator;
-
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.Db4oException;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
-import freenet.client.async.ClientRequestSelector.SelectorReturn;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -38,7 +32,6 @@ import freenet.support.Fields;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
-import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 
 /**
@@ -195,70 +188,28 @@ public class ClientRequestScheduler implements RequestScheduler {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
 		}
-		if(persistent) {
-				innerRegister(hasListener, getters, blocks, noCheckStore, container);
-		} else {
-			final KeyListener listener;
-			if(hasListener != null) {
-				listener = hasListener.makeKeyListener(container, clientContext, false);
-				if(listener != null)
-					schedTransient.addPendingKeys(listener);
-				else
-					Logger.normal(this, "No KeyListener for "+hasListener);
-			} else
-				listener = null;
-			if(getters != null && !noCheckStore) {
-				for(SendableGet getter : getters)
-					datastoreChecker.queueTransientRequest(getter, blocks);
-			} else {
-				boolean anyValid = false;
-				for(SendableGet getter : getters) {
-					if(!(getter.isCancelled(null) || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
-						anyValid = true;
-				}
-				finishRegister(getters, false, container, anyValid, null);
-			}
-		}
-	}
-	
-	
-	private void innerRegister(final HasKeyListener hasListener, final SendableGet[] getters, final BlockSet blocks, boolean noCheckStore, ObjectContainer container) throws KeyListenerConstructionException {
 		final KeyListener listener;
 		if(hasListener != null) {
-			if(hasListener.isCancelled(container)) {
-				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: "+hasListener);
-				return;
-			}
-			container.store(hasListener);
-			listener = hasListener.makeKeyListener(container, clientContext, false);
-			schedCore.addPendingKeys(listener);
+		    listener = hasListener.makeKeyListener(container, clientContext, false);
+		    if(listener != null)
+		        schedTransient.addPendingKeys(listener);
+		    else
+		        Logger.normal(this, "No KeyListener for "+hasListener);
 		} else
-			listener = null;
-		
-		// Avoid NPEs due to deactivation.
-		if(getters != null) {
-			for(SendableGet getter : getters) {
-				container.activate(getter, 1);
-				container.store(getter);
-			}
-		}
-		
-		if(isInsertScheduler)
-			throw new IllegalStateException("finishRegister on an insert scheduler");
-		if(!noCheckStore) {
-			// Check the datastore before proceding.
-			for(SendableGet getter : getters) {
-				container.activate(getter, 1);
-				datastoreChecker.queuePersistentRequest(getter, blocks, container, clientContext);
-				container.deactivate(getter, 1);
-			}
-			
+		    listener = null;
+		if(getters != null && !noCheckStore) {
+		    for(SendableGet getter : getters)
+		        datastoreChecker.queueTransientRequest(getter, blocks);
 		} else {
-			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
-			this.finishRegister(getters, true, container, true, null);
+		    boolean anyValid = false;
+		    for(SendableGet getter : getters) {
+		        if(!(getter.isCancelled(null) || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
+		            anyValid = true;
+		    }
+		    finishRegister(getters, false, container, anyValid, null);
 		}
 	}
-
+	
 	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
 		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
