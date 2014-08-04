@@ -9,10 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.clients.fcp.ListPersistentRequestsMessage.PersistentListJob;
@@ -28,13 +24,10 @@ import freenet.support.api.Bucket;
  * An FCP client.
  * Identified by its Name which is sent on connection. 
  * Tracks persistent requests for either PERSISTENCE_REBOOT or PERSISTENCE_FOREVER.
- * 
- * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction. 
- * Hence the addition of the ObjectContainer parameter to all such methods.
  */
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
+	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -113,31 +106,19 @@ public class FCPClient {
 	 * Called when a client request has finished, but is persistent. It has not been
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
-	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
+	public void finishedClientRequest(ClientRequest get) {
 		if(logMINOR)
 			Logger.minor(this, "Finished client request", new Exception("debug"));
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
-		if(container != null) {
-			container.activate(runningPersistentRequests, 2);
-			container.activate(completedUnackedRequests, 2);
-		}
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
-				if(container != null) {
-					container.store(get);
-					// http://tracker.db4o.com/browse/COR-1436
-					// If we don't specify depth, we end up updating everything, resulting in Bad Things (especially on ClientPutDir.manifestElements!)
-					container.ext().store(runningPersistentRequests, 2);
-					container.ext().store(completedUnackedRequests, 2);
-				}
 			}	
 		}
 		if(statusCache != null) {
 			if(get instanceof ClientGet) {
 				ClientGet download = (ClientGet)get;
-				GetFailedMessage msg = download.getFailureMessage(container);
+				GetFailedMessage msg = download.getFailureMessage(null);
 				int failureCode = -1;
 				String shortFailMessage = null;
 				String longFailMessage = null;
@@ -146,14 +127,12 @@ public class FCPClient {
 					shortFailMessage = msg.getShortFailedMessage();
 					longFailMessage = msg.getLongFailedMessage();
 				}
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(msg, 1);
-				Bucket shadow = ((ClientGet) get).getFinalBucket(container);
+				Bucket shadow = ((ClientGet) get).getFinalBucket(null);
 				if(shadow != null) shadow = shadow.createShadow();
-				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData(container));
+				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(null), ((ClientGet) get).getMIMEType(null), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData(null));
 			} else if(get instanceof ClientPutBase) {
 				ClientPutBase upload = (ClientPutBase)get;
-				PutFailedMessage msg = upload.getFailureMessage(container);
+				PutFailedMessage msg = upload.getFailureMessage(null);
 				int failureCode = -1;
 				String shortFailMessage = null;
 				String longFailMessage = null;
@@ -162,14 +141,12 @@ public class FCPClient {
 					shortFailMessage = msg.getShortFailedMessage();
 					longFailMessage = msg.getLongFailedMessage();
 				}
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(msg, 1);
-				statusCache.finishedUpload(upload.getIdentifier(), upload.hasSucceeded(), upload.getGeneratedURI(container), failureCode, shortFailMessage, longFailMessage);
+				statusCache.finishedUpload(upload.getIdentifier(), upload.hasSucceeded(), upload.getGeneratedURI(null), failureCode, shortFailMessage, longFailMessage);
 			} else assert(false);
 		}
 	}
 
-	public void queuePendingMessagesOnConnectionRestartAsync(FCPConnectionOutputHandler outputHandler, ObjectContainer container, ClientContext context) {
+	public void queuePendingMessagesOnConnectionRestartAsync(FCPConnectionOutputHandler outputHandler, ClientContext context) {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			PersistentListJob job = new PersistentListJob(this, outputHandler, context) {
 
@@ -201,21 +178,15 @@ public class FCPClient {
 	 * requests, to be immediately sent. This happens automatically on startup and hopefully
 	 * will encourage clients to acknowledge persistent requests!
 	 */
-	public int queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, ObjectContainer container, int offset, int max) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+	public int queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, int offset, int max) {
 		Object[] reqs;
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-		}
 		synchronized(this) {
 			reqs = completedUnackedRequests.toArray();
 		}
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.activate(req, 1);
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, container);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, null);
 		}
 		return i;
 	}
@@ -223,35 +194,23 @@ public class FCPClient {
 	/**
 	 * Queue any and all pending messages from running requests. Happens on demand.
 	 */
-	public int queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, ObjectContainer container, int offset, int max) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+	public int queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, int offset, int max) {
 		Object[] reqs;
-		if(container != null) {
-			container.activate(runningPersistentRequests, 2);
-		}
 		synchronized(this) {
 			reqs = runningPersistentRequests.toArray();
 		}
 		int i = 0;
 		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.activate(req, 1);
-			req.sendPendingMessages(outputHandler, true, false, false, container);
+			req.sendPendingMessages(outputHandler, true, false, false, null);
 		}
 		return i;
 	}
 	
-	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
+	public void register(ClientRequest cg) throws IdentifierCollisionException {
 		assert(cg.persistenceType == persistenceType);
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(logMINOR)
 			Logger.minor(this, "Registering "+cg.getIdentifier());
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-			container.activate(clientRequestsByIdentifier, 2);
-		}
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = clientRequestsByIdentifier.get(ident);
@@ -259,38 +218,23 @@ public class FCPClient {
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished()) {
 				completedUnackedRequests.add(cg);
-				if(container != null) {
-					container.store(cg);
-					container.ext().store(completedUnackedRequests, 2);
-				}
 			} else {
 				runningPersistentRequests.add(cg);
-				if(container != null) {
-					cg.storeTo(container);
-					container.ext().store(runningPersistentRequests, 2);
-				}
 			}
 			clientRequestsByIdentifier.put(ident, cg);
-			if(container != null) container.ext().store(clientRequestsByIdentifier, 2);
 		}
 		if(statusCache != null) {
 			if(cg instanceof ClientGet) {
-				statusCache.addDownload((DownloadRequestStatus)(cg.getStatus(container)));
+				statusCache.addDownload((DownloadRequestStatus)(cg.getStatus(null)));
 			} else if(cg instanceof ClientPutBase) {
-				statusCache.addUpload((UploadRequestStatus)(cg.getStatus(container)));
+				statusCache.addUpload((UploadRequestStatus)(cg.getStatus(null)));
 			}
 		}
 	}
 
-	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ClientContext context) {
 		ClientRequest req;
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-			container.activate(clientRequestsByIdentifier, 2);
-		}
 		if(statusCache != null)
 			statusCache.removeByIdentifier(identifier);
 		synchronized(this) {
@@ -300,21 +244,15 @@ public class FCPClient {
 			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
-					if(persistenceType == ClientRequest.PERSIST_FOREVER)
-						container.activate(r, 1);
 					if(r.getIdentifier().equals(identifier)) {
 						req = r;
 						completedUnackedRequests.remove(r);
 						Logger.error(this, "Found completed unacked request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 						break;
 					}
-					if(persistenceType == ClientRequest.PERSIST_FOREVER)
-						container.deactivate(r, 1);
 				}
 				if(req == null) {
 					for(ClientRequest r : runningPersistentRequests) {
-						if(persistenceType == ClientRequest.PERSIST_FOREVER)
-							container.activate(r, 1);
 						if(r.getIdentifier().equals(identifier)) {
 							req = r;
 							runningPersistentRequests.remove(r);
@@ -322,8 +260,6 @@ public class FCPClient {
 							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 							break;
 						}
-						if(persistenceType == ClientRequest.PERSIST_FOREVER)
-							container.deactivate(r, 1);
 					}
 				}
 				if(req == null) return false;
@@ -333,19 +269,12 @@ public class FCPClient {
 				return false;
 			}
 			clientRequestsByIdentifier.remove(identifier);
-			if(container != null) {
-				if(removedFromRunning) container.ext().store(runningPersistentRequests, 2);
-				else container.ext().store(completedUnackedRequests, 2);
-				container.ext().store(clientRequestsByIdentifier, 2);
-			}
 		}
-		if(container != null)
-			container.activate(req, 1);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
-			req.cancel(container, context);
+			req.cancel(null, context);
 		}
-        req.requestWasRemoved(container, context);
+        req.requestWasRemoved(null, context);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
         	if(completionCallbacks != null)
@@ -353,39 +282,18 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.onRemove(req, container);
+				cb.onRemove(req, null);
 		}
 		return true;
 	}
 
-	public boolean hasPersistentRequests(ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(runningPersistentRequests == null) {
-			if(!container.ext().isActive(this))
-				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
-			throw new NullPointerException();
-		}
-		if(completedUnackedRequests == null) {
-			if(!container.ext().isActive(this))
-				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
-			throw new NullPointerException();
-		}
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-		}
+	public boolean hasPersistentRequests() {
 		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
 	}
 
-	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever, ObjectContainer container) {
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-			container.activate(clientRequestsByIdentifier, 2);
-		}
+	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever) {
 		synchronized(this) {
 			for(ClientRequest req: runningPersistentRequests) {
-				if(container != null) container.activate(req, 1);
 				if(req == null) {
 					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
 					continue;
@@ -393,24 +301,18 @@ public class FCPClient {
 				if((req.isPersistentForever()) || !onlyForever)
 					v.add(req);
 			}
-			if(container != null) {
-				for(ClientRequest req : completedUnackedRequests) {
-					container.activate(req, 1);
-				}
-			}
 			v.addAll(completedUnackedRequests);
 		}
 	}
 	
 	/** From database */
-	private void addPersistentRequestStatus(List<RequestStatus> status, boolean onlyForever,
-			ObjectContainer container) {
+	private void addPersistentRequestStatus(List<RequestStatus> status, boolean onlyForever) {
 		// FIXME OPT merge with addPersistentRequests? Locking looks tricky.
 		List<ClientRequest> reqs = new ArrayList<ClientRequest>();
-		addPersistentRequests(reqs, onlyForever, container);
+		addPersistentRequests(reqs, onlyForever);
 		for(ClientRequest req : reqs) {
 			try {
-				status.add(req.getStatus(container));
+				status.add(req.getStatus(null));
 			} catch (Throwable t) {
 				// Try to load the rest. :<
 				Logger.error(this, "BROKEN REQUEST LOADING PERSISTENT REQUEST STATUS: "+t, t);
@@ -431,8 +333,7 @@ public class FCPClient {
 	 * @param verbosityMask If so, what verbosity mask to use (to filter messages
 	 * generated by the global queue).
 	 */
-	public boolean setWatchGlobal(boolean enabled, int verbosityMask, FCPServer server, ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+	public boolean setWatchGlobal(boolean enabled, int verbosityMask, FCPServer server) {
 		if(isGlobalQueue) {
 			Logger.error(this, "Set watch global on global queue!: "+this, new Exception("debug"));
 			return false;
@@ -448,9 +349,9 @@ public class FCPClient {
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistenceType == ClientRequest.PERSIST_REBOOT)
-					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, container, server.core.clientContext);
+					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
 				else
-					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, container, server.core.clientContext);
+					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
 			}
 			watchGlobal = true;
 		}
@@ -459,11 +360,11 @@ public class FCPClient {
 		return true;
 	}
 
-	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, ObjectContainer container) {
-		queueClientRequestMessage(msg, verbosityLevel, false, container);
+	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel) {
+		queueClientRequestMessage(msg, verbosityLevel, false);
 	}
 	
-	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask, ObjectContainer container) {
+	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask) {
 		if(useGlobalMask && (verbosityLevel & watchGlobalVerbosityMask) != verbosityLevel)
 			return;
 		FCPConnectionHandler conn = getConnection();
@@ -480,12 +381,8 @@ public class FCPClient {
 			}
 			if(clients != null)
 			for(FCPClient client: clients) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.activate(client, 1);
 				if(client.persistenceType != persistenceType) continue;
-				client.queueClientRequestMessage(msg, verbosityLevel, true, container);
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(client, 1);
+				client.queueClientRequestMessage(msg, verbosityLevel, true);
 			}
 		}
 	}
@@ -507,14 +404,8 @@ public class FCPClient {
 		}
 	}
 
-	public synchronized ClientRequest getRequest(String identifier, ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(container != null) {
-			container.activate(clientRequestsByIdentifier, 2);
-		}
+	public synchronized ClientRequest getRequest(String identifier) {
 		ClientRequest req = clientRequestsByIdentifier.get(identifier);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			container.activate(req, 1);
 		return req;
 	}
 
@@ -526,7 +417,7 @@ public class FCPClient {
 	/**
 	 * Callback called when a request succeeds.
 	 */
-	public void notifySuccess(ClientRequest req, ObjectContainer container) {
+	public void notifySuccess(ClientRequest req) {
 		assert(req.persistenceType == persistenceType);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
@@ -535,7 +426,7 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.notifySuccess(req, container);
+				cb.notifySuccess(req, null);
 		}
 	}
 
@@ -543,7 +434,7 @@ public class FCPClient {
 	 * Callback called when a request fails
 	 * @param get
 	 */
-	public void notifyFailure(ClientRequest req, ObjectContainer container) {
+	public void notifyFailure(ClientRequest req) {
 		assert(req.persistenceType == persistenceType);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
@@ -552,7 +443,7 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.notifyFailure(req, container);
+				cb.notifyFailure(req, null);
 		}
 	}
 	
@@ -565,26 +456,8 @@ public class FCPClient {
 		if(completionCallbacks!=null) completionCallbacks.remove(cb);
 	}
 
-	public void removeFromDatabase(ObjectContainer container) {
-		container.activate(runningPersistentRequests, 2);
-		container.delete(runningPersistentRequests);
-		container.activate(completedUnackedRequests, 2);
-		container.delete(completedUnackedRequests);
-		container.activate(clientRequestsByIdentifier, 2);
-		container.delete(clientRequestsByIdentifier);
-		container.activate(lowLevelClient, 2);
-		lowLevelClient.removeFrom(container);
-		container.delete(this);
-		container.delete(clientsWatchingLock);
-	}
-
-	public void removeAll(ObjectContainer container, ClientContext context) {
+	public void removeAll(ClientContext context) {
 		HashSet<ClientRequest> toKill = new HashSet<ClientRequest>();
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-			container.activate(clientRequestsByIdentifier, 2);
-		}
 		if(statusCache != null)
 			statusCache.clear();
 		synchronized(this) {
@@ -593,105 +466,41 @@ public class FCPClient {
 			}
 			runningPersistentRequests.clear();
 			for(ClientRequest req : completedUnackedRequests) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
 				toKill.add(req);
 			}
 			completedUnackedRequests.clear();
 			for(ClientRequest req : clientRequestsByIdentifier.values()) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
-			if (persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.ext().store(clientRequestsByIdentifier, 2);
 		}
 	}
 
-	public ClientGet getCompletedRequest(FreenetURI key, ObjectContainer container) {
+	public ClientGet getCompletedRequest(FreenetURI key) {
 		// FIXME speed this up with another hashmap or something.
 		// FIXME keep a transient hashmap in RAM, use it for fproxy.
 		// FIXME consider supporting inserts too.
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-		}
 		for(int i=0;i<completedUnackedRequests.size();i++) {
 			ClientRequest req = completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.activate(getter, 1);
-			if(getter.getURI(container).equals(key)) {
+			if(getter.getURI(null).equals(key)) {
 				return getter;
-			} else {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(getter, 1);
 			}
 		}
 		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	public void init(ObjectContainer container) {
-		if(!container.ext().isActive(this))
-			throw new IllegalStateException("Initialising but not activated");
-		container.activate(runningPersistentRequests, 2);
-		container.activate(completedUnackedRequests, 2);
-		container.activate(clientRequestsByIdentifier, 2);
-		container.activate(lowLevelClient, 2);
-		assert runningPersistentRequests != null;
-		assert completedUnackedRequests != null;
-		assert clientRequestsByIdentifier != null;
-		if(lowLevelClient == null) {
-			System.err.println("No lowLevelClient for "+this+" but other fields exist.");
-			System.err.println("This means your database has been corrupted slightly, probably by a bug in Freenet.");
-			System.err.println("We are trying to recover ...");
-			Query q = container.query();
-			q.constrain(FCPClientRequestClient.class);
-			q.descend("client").constrain(this);
-			ObjectSet<FCPClientRequestClient> results = q.execute();
-			for(FCPClientRequestClient c : results) {
-				if(c.client != this) continue;
-				System.err.println("Found the old request client, eh???");
-				lowLevelClient = c;
-				break;
-			}
-			if(lowLevelClient == null)
-				lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER, false);
-			container.store(lowLevelClient);
-			container.store(this);
-		}
-		if(lowLevelClientRT == null) {
-			// FIXME remove
-			lowLevelClientRT = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER, true);
-		}
-		//assert lowLevelClient != null;
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		if(persistenceType != ClientRequest.PERSIST_FOREVER) {
-			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
-			return false;
-		}
-		if(lowLevelClient == null)
-			throw new NullPointerException(); // Better it happens here ...
-		return true;
-	}
-	
-	public void objectCanUpdate(ObjectContainer container) {
-		if(lowLevelClient == null)
-			throw new NullPointerException(); // Better it happens here ...
 	}
 
 	public RequestStatusCache getRequestStatusCache() {
 		return statusCache;
 	}
 	
-	public void setRequestStatusCache(RequestStatusCache cache, ObjectContainer container) {
+	public void setRequestStatusCache(RequestStatusCache cache) {
 		statusCache = cache;
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			System.out.println("Loading cache of request statuses...");
 			ArrayList<RequestStatus> statuses = new ArrayList<RequestStatus>();
-			addPersistentRequestStatus(statuses, true, container);
+			addPersistentRequestStatus(statuses, true);
 			for(RequestStatus status : statuses) {
 				if(status instanceof DownloadRequestStatus)
 					cache.addDownload((DownloadRequestStatus)status);
@@ -711,7 +520,7 @@ public class FCPClient {
 	private static final long CLIENT_DETAIL_MAGIC = 0xa6086aaab769aa4aL;
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
-    public void getClientDetail(ObjectContainer container, DataOutputStream dos) throws IOException {
+    public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
         dos.writeBoolean(this.isGlobalQueue);

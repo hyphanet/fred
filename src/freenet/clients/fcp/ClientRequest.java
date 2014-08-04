@@ -107,10 +107,6 @@ public abstract class ClientRequest implements Serializable {
 			this.client = null;
 		} else {
 			origHandler = null;
-			if(persistenceType == PERSIST_FOREVER) {
-				container.activate(client, 1);
-				client.init(container);
-			}
 			this.client = client;
 			assert client != null;
 			assert(client.persistenceType == persistenceType);
@@ -169,10 +165,6 @@ public abstract class ClientRequest implements Serializable {
 				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 			} else {
 				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
-			}
-			if(persistenceType == PERSIST_FOREVER) {
-				container.activate(client, 1);
-				client.init(container);
 			}
 			lowLevelClient = client.lowLevelClient(realTime);
 			if(lowLevelClient == null)
@@ -274,7 +266,7 @@ public abstract class ClientRequest implements Serializable {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
-			client.finishedClientRequest(this, container);
+			client.finishedClientRequest(this);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			container.store(this);
 	}
@@ -384,7 +376,7 @@ public abstract class ClientRequest implements Serializable {
 		} else {
 			return; // paranoia, we should not be here if nothing was changed!
 		}
-		client.queueClientRequestMessage(modifiedMsg, 0, container);
+		client.queueClientRequestMessage(modifiedMsg, 0);
 	}
 
 	public void restartAsync(final FCPServer server, final boolean disableFilterData) throws PersistenceDisabledException {
@@ -485,7 +477,7 @@ public abstract class ClientRequest implements Serializable {
         dos.writeLong(CLIENT_DETAIL_VERSION);
         if(persistenceType == PERSIST_FOREVER)
             container.activate(client, 1);
-        client.getClientDetail(container, dos);
+        client.getClientDetail(dos);
         dos.writeUTF(identifier);
         dos.writeInt(verbosity);
         dos.writeShort(priorityClass);

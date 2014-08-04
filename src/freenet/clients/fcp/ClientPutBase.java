@@ -156,7 +156,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		finish(container);
 		trySendFinalMessage(null, container);
 		if(client != null)
-			client.notifySuccess(this, container);
+			client.notifySuccess(this);
 	}
 
 	@Override
@@ -174,7 +174,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		finish(container);
 		trySendFinalMessage(null, container);
 		if(client != null)
-			client.notifyFailure(this, container);
+			client.notifyFailure(this);
 	}
 
 	@Override
@@ -255,7 +255,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(persistenceType == PERSIST_CONNECTION)
 			origHandler.outputHandler.queue(msg);
 		else
-		client.queueClientRequestMessage(msg, 0, container);
+		client.queueClientRequestMessage(msg, 0);
 
 		freeData(container);
 		Bucket meta;
@@ -406,7 +406,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(handler != null)
 				handler.queue(msg);
 			else
-				client.queueClientRequestMessage(msg, 0, container);
+				client.queueClientRequestMessage(msg, 0);
 		}
 	}
 
@@ -424,7 +424,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, 0, container);
+			client.queueClientRequestMessage(msg, 0);
 	}
 
 	/**
@@ -439,7 +439,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, 0, container);
+			client.queueClientRequestMessage(msg, 0);
 	}
 
 	/**
@@ -492,7 +492,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, verbosity, container);
+			client.queueClientRequestMessage(msg, verbosity);
 	}
 
 	@Override

@@ -132,10 +132,10 @@ public class ClientPutDir extends ClientPutBase {
 	@Override
 	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this, container);
+			client.register(this);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage(container);
-			client.queueClientRequestMessage(msg, 0, container);
+			client.queueClientRequestMessage(msg, 0);
 		}
 	}
 	
@@ -209,7 +209,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(logMINOR) Logger.minor(this, "Started "+putter+" for "+this+" persistence="+persistenceType);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
-				client.queueClientRequestMessage(msg, 0, container);
+				client.queueClientRequestMessage(msg, 0);
 			}
 			if(persistenceType == PERSIST_FOREVER)
 				container.store(this); // Update

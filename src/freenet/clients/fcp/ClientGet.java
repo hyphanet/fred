@@ -249,7 +249,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			assert(this.persistenceType == client.persistenceType);
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this, container);
+				client.register(this);
 			} catch (IdentifierCollisionException e) {
 				returnBucket.free();
 				if(persistenceType == PERSIST_FOREVER)
@@ -258,7 +258,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 			if(persistenceType != PERSIST_CONNECTION && !noTags) {
 				FCPMessage msg = persistentTagMessage(container);
-				client.queueClientRequestMessage(msg, 0, container);
+				client.queueClientRequestMessage(msg, 0);
 			}
 	}
 
@@ -273,7 +273,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter.start(container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
-				client.queueClientRequestMessage(msg, 0, container);
+				client.queueClientRequestMessage(msg, 0);
 			}
 			synchronized(this) {
 				started = true;
@@ -483,7 +483,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		finish(container);
 		if(client != null)
-			client.notifySuccess(this, container);
+			client.notifySuccess(this);
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, ObjectContainer container) {
@@ -506,7 +506,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, 0, container);
+			client.queueClientRequestMessage(msg, 0);
 		if(postFetchProtocolErrorMessage != null) {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(postFetchProtocolErrorMessage, 5);
@@ -515,7 +515,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			else {
 				if(persistenceType == PERSIST_FOREVER)
 					container.activate(client, 1);
-				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0, container);
+				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0);
 			}
 		}
 
@@ -618,7 +618,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, verbosityMask, container);
+			client.queueClientRequestMessage(msg, verbosityMask);
 		if(persistenceType == PERSIST_FOREVER && !client.isGlobalQueue)
 			container.deactivate(client, 1);
 	}
@@ -718,7 +718,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			container.store(getFailedMessage);
 		finish(container);
 		if(client != null)
-			client.notifyFailure(this, container);
+			client.notifyFailure(this);
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 	}
@@ -740,7 +740,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(persistenceType != PERSIST_CONNECTION) {
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
-		client.queueClientRequestMessage(msg, 0, container);
+		client.queueClientRequestMessage(msg, 0);
 		}
 
 		freeData(container);

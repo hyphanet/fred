@@ -36,25 +36,25 @@ public class FCPPersistentRoot {
 	}
 	
 	public FCPPersistentRoot() {
-		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, null);
+		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this);
 		clients = new TreeMap<String, FCPClient>();
 	}
 	
 	void setRequestStatusCache(RequestStatusCache cache) {
-        globalForeverClient.setRequestStatusCache(cache, null);
+        globalForeverClient.setRequestStatusCache(cache);
 	}
 
 	public synchronized FCPClient registerForeverClient(final String name, FCPConnectionHandler handler) {
 		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
 		FCPClient client = clients.get(name);
 		if(client != null) return client;
-		client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, null);
+		client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
 		clients.put(name, client);
 		return client;
 	}
 
 	public void maybeUnregisterClient(FCPClient client) {
-		if((!client.isGlobalQueue) && !client.hasPersistentRequests(null)) {
+		if((!client.isGlobalQueue) && !client.hasPersistentRequests()) {
 		    synchronized(this) {
 		        clients.remove(client.name);
 		    }

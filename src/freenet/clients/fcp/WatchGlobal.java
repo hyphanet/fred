@@ -45,13 +45,13 @@ public class WatchGlobal extends FCPMessage {
 	@Override
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		if(!handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer(), null)) {
+		if(!handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer())) {
 			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
 			handler.outputHandler.queue(err);
 		}
 		FCPClient client = handler.getForeverClient(null);
 		if(client != null)
-		    client.setWatchGlobal(enabled, verbosityMask, handler.server, null);
+		    client.setWatchGlobal(enabled, verbosityMask, handler.server);
 	}
 
 	@Override

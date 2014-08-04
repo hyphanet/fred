@@ -177,10 +177,10 @@ public class FCPConnectionHandler implements Closeable {
 		            
 		            @Override
 		            public boolean run(ClientContext context) {
-		                if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
+		                if((rebootClient != null) && !rebootClient.hasPersistentRequests())
 		                    server.unregisterClient(rebootClient, null);
 		                if(foreverClient != null) {
-		                    if(!foreverClient.hasPersistentRequests(null))
+		                    if(!foreverClient.hasPersistentRequests())
 		                        server.unregisterClient(foreverClient, null);
 		                }
 		                return false;
@@ -240,7 +240,7 @@ public class FCPConnectionHandler implements Closeable {
 	public void setClientName(final String name) {
 		this.clientName = name;
 		rebootClient = server.registerRebootClient(name, server.core, this);
-		rebootClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, null, server.core.clientContext);
+		rebootClient.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.core.clientContext);
 		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
@@ -255,7 +255,7 @@ public class FCPConnectionHandler implements Closeable {
 			foreverClient = client;
 			FCPConnectionHandler.this.notifyAll();
 		}
-		client.queuePendingMessagesOnConnectionRestartAsync(outputHandler, container, server.core.clientContext);
+		client.queuePendingMessagesOnConnectionRestartAsync(outputHandler, server.core.clientContext);
 		return foreverClient;
 	}
 
@@ -576,7 +576,6 @@ public class FCPConnectionHandler implements Closeable {
 				foreverClient = createForeverClient(clientName, container);
 			}
 			container.activate(foreverClient, 1);
-			foreverClient.init(container);
 			return foreverClient;
 		}
 	}
@@ -741,25 +740,25 @@ public class FCPConnectionHandler implements Closeable {
 	
 	ClientRequest getRebootRequest(boolean global, FCPConnectionHandler handler, String identifier) {
 		if(global)
-			return handler.server.globalRebootClient.getRequest(identifier, null);
+			return handler.server.globalRebootClient.getRequest(identifier);
 		else
-			return handler.getRebootClient().getRequest(identifier, null);
+			return handler.getRebootClient().getRequest(identifier);
 	}
 	
 	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier, ObjectContainer container) {
 		if(global)
-			return handler.server.globalForeverClient.getRequest(identifier, container);
+			return handler.server.globalForeverClient.getRequest(identifier);
 		else
-			return handler.getForeverClient(container).getRequest(identifier, container);
+			return handler.getForeverClient(container).getRequest(identifier);
 	}
 	
 	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
 		FCPClient client =
 			global ? server.globalRebootClient :
 			getRebootClient();
-		ClientRequest req = client.getRequest(identifier, null);
+		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, null, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
 		}
 		return req;
 	}
@@ -769,9 +768,9 @@ public class FCPConnectionHandler implements Closeable {
 			global ? server.globalForeverClient :
 			getForeverClient(container);
 		container.activate(client, 1);
-		ClientRequest req = client.getRequest(identifier, container);
+		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true, server, container, server.core.clientContext);
+			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
 		}
 		if(!global)
 			container.deactivate(client, 1);

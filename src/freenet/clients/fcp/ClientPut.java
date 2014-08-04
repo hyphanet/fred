@@ -263,10 +263,10 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this, container);
+			client.register(this);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage(container);
-			client.queueClientRequestMessage(msg, 0, container);
+			client.queueClientRequestMessage(msg, 0);
 		}
 	}
 	
@@ -283,7 +283,7 @@ public class ClientPut extends ClientPutBase {
 			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
-				client.queueClientRequestMessage(msg, 0, container);
+				client.queueClientRequestMessage(msg, 0);
 			}
 			synchronized(this) {
 				started = true;

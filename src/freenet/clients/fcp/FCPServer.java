@@ -100,8 +100,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 
-		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, null);
-		globalRebootClient.setRequestStatusCache(new RequestStatusCache(), null);
+		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
+		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
@@ -471,7 +471,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			oldClient = rebootClientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null, null);
+				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null);
 				rebootClientsByName.put(name, client);
 				return client;
 			} else {
@@ -519,7 +519,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, PersistenceDisabledException {
-		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null, core.clientContext)) {
+		if(!globalRebootClient.removeByIdentifier(identifier, true, this, core.clientContext)) {
 			final CountDownLatch done = new CountDownLatch(1);
 			final AtomicBoolean success = new AtomicBoolean();
 			core.clientContext.jobRunner.queue(new PersistentJob() {
@@ -533,7 +533,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					boolean succeeded = false;
 					try {
-						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, null, core.clientContext);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, core.clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {
@@ -556,7 +556,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean removeAllGlobalRequestsBlocking() throws PersistenceDisabledException {
-		globalRebootClient.removeAll(null, core.clientContext);
+		globalRebootClient.removeAll(core.clientContext);
 		final CountDownLatch done = new CountDownLatch(1);
 		final AtomicBoolean success = new AtomicBoolean();
 		core.clientContext.jobRunner.queue(new PersistentJob() {
@@ -570,7 +570,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ClientContext context) {
 				boolean succeeded = false;
 				try {
-					globalForeverClient.removeAll(null, core.clientContext);
+					globalForeverClient.removeAll(core.clientContext);
 					succeeded = true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught while processing panic: "+t, t);
@@ -662,7 +662,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) throws PersistenceDisabledException {
-		ClientRequest req = this.globalRebootClient.getRequest(identifier, null);
+		ClientRequest req = this.globalRebootClient.getRequest(identifier);
 		if(req != null) {
 			req.modifyRequest(newToken, newPriority, this, null);
 			return true;
@@ -683,7 +683,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					boolean success = false;
 					try {
-						ClientRequest req = globalForeverClient.getRequest(identifier, null);
+						ClientRequest req = globalForeverClient.getRequest(identifier);
 						if(req != null)
 							req.modifyRequest(newToken, newPriority, FCPServer.this, null);
 						success = true;
@@ -825,9 +825,9 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public ClientRequest getGlobalRequest(String identifier, ObjectContainer container) {
-		ClientRequest req = globalRebootClient.getRequest(identifier, null);
+		ClientRequest req = globalRebootClient.getRequest(identifier);
 		if(req == null)
-			req = globalForeverClient.getRequest(identifier, container);
+			req = globalForeverClient.getRequest(identifier);
 		return req;
 	}
 
@@ -918,7 +918,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws PersistenceDisabledException {
-		ClientRequest req = globalRebootClient.getRequest(identifier, null);
+		ClientRequest req = globalRebootClient.getRequest(identifier);
 		if(req != null) {
 			req.restart(null, core.clientContext, disableFilterData);
 			return true;
@@ -939,7 +939,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				public boolean run(ClientContext context) {
 					boolean success = false;
 					try {
-						ClientRequest req = globalForeverClient.getRequest(identifier, null);
+						ClientRequest req = globalForeverClient.getRequest(identifier);
 						if(req != null) {
 							req.restart(null, context, disableFilterData);
 							success = true;
@@ -974,7 +974,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 
 	public FetchResult getCompletedRequestBlocking(final FreenetURI key) throws PersistenceDisabledException {
-		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
+		ClientGet get = globalRebootClient.getCompletedRequest(key);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
 			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
@@ -1038,7 +1038,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	@Override
 	public CacheFetchResult lookupInstant(FreenetURI key, boolean noFilter, boolean mustCopy, Bucket preferred) {
-		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
+		ClientGet get = globalRebootClient.getCompletedRequest(key);
 
 		Bucket origData = null;
 		String mime = null;
@@ -1087,7 +1087,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
 			ObjectContainer container, boolean mustCopy, Bucket preferred) {
 		if(globalForeverClient == null) return null;
-		ClientGet get = globalForeverClient.getCompletedRequest(key, container);
+		ClientGet get = globalForeverClient.getCompletedRequest(key);
 		container.activate(get, 1);
 		if(get != null) {
 			boolean filtered = get.filterData(container);
