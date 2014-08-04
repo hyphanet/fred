@@ -28,8 +28,9 @@ public class KeyGenUtilsTest {
         HexUtil.hexToBytes("8c6c2e0a60b3b73e9dbef076b68b686bacc9d20081e8822725d14b10b5034f48"),
         HexUtil.hexToBytes("33a4a38b71c8e350d3a98357d1bc9ecd"),
         HexUtil.hexToBytes("be56dbec20bff9f6f343800367287b48c0c28bf47f14b46aad3a32e4f24f0f5e"),
-        HexUtil.hexToBytes("53e5a3fd40382755f582f4ff3a4ccb373babd087"),
-        HexUtil.hexToBytes("ad8ce252fcac490700b7cecc560391ca783794a5bc86ab5892679bbcbabb5b73"),
+        HexUtil.hexToBytes("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
+        HexUtil.hexToBytes("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
+        HexUtil.hexToBytes("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
         HexUtil.hexToBytes("a92e3fa63e8cbe50869fb352d883911271bf2b0e9048ad04c013b20e901f5806"),
         HexUtil.hexToBytes("45d6c9656b3b115263ba12739e90dcc1"),
         HexUtil.hexToBytes("f468986cbaeecabd4cf242607ac602b51a1adaf4f9a4fc5b298970cbda0b55c6")
