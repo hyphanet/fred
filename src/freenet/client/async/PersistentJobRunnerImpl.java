@@ -145,6 +145,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 runningJobs++;
                 executor.execute(new JobRunnable(job.job, job.threadPriority, context));
             }
+            queuedJobs.clear();
             sync.notifyAll();
         }
     }
