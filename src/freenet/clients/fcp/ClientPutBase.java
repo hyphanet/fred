@@ -80,16 +80,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		});
 	}
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	protected ClientPutBase() {
-		publicURI = null;
-		getCHKOnly = false;
-		earlyEncode = false;
-		ctx = null;
-	}
-
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server, ObjectContainer container) throws MalformedURLException {

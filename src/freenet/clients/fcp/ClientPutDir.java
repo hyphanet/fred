@@ -54,18 +54,6 @@ public class ClientPutDir extends ClientPutBase {
 		});
 	}
 
-	/**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	@SuppressWarnings("unused")
-	private ClientPutDir() {
-		wasDiskPut = false;
-		totalSize = 0;
-		numberOfFiles = 0;
-		defaultName = null;
-		overrideSplitfileCryptoKey = null;
-	}
-
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
 		super(checkEmptySSK(message.uri, message.targetFilename != null ? message.targetFilename : "site", server.core.clientContext), message.identifier, message.verbosity, null,
