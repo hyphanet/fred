@@ -20,7 +20,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.NullObject;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
@@ -77,7 +76,7 @@ public class FCPClient {
 	transient int watchGlobalVerbosityMask;
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
-	private final NullObject clientsWatchingLock = new NullObject();
+	private final Object clientsWatchingLock = new Object();
 	private RequestClient lowLevelClient;
 	private RequestClient lowLevelClientRT;
 	private transient List<RequestCompletionCallback> completionCallbacks;
