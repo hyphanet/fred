@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
@@ -2003,6 +2004,45 @@ public abstract class BaseManifestPutter extends ManifestPutter {
     @Override
     protected ClientBaseCallback getCallback() {
         return cb;
+    }
+    
+    public static HashMap<String, Object> bucketsByNameToManifestEntries(HashMap<String,Object> bucketsByName) {
+        HashMap<String,Object> manifestEntries = new HashMap<String,Object>();
+        for(Map.Entry<String,Object> entry: bucketsByName.entrySet()) {
+            String name = entry.getKey();
+            Object o = entry.getValue();
+            if(o instanceof ManifestElement) {
+                manifestEntries.put(name, o);
+            } else if(o instanceof Bucket) {
+                Bucket data = (Bucket) o;
+                manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
+            } else if(o instanceof HashMap) {
+                manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
+            } else
+                throw new IllegalArgumentException(String.valueOf(o));
+        }
+        return manifestEntries;
+    }
+    
+    public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
+        List<ManifestElement> v = new ArrayList<ManifestElement>();
+        flatten(manifestElements, v, "");
+        return v.toArray(new ManifestElement[v.size()]);
+    }
+    
+    public static void flatten(HashMap<String,Object> manifestElements, List<ManifestElement> v, String prefix) {
+        for(Map.Entry<String,Object> entry: manifestElements.entrySet()) {
+            String name = entry.getKey();
+            String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
+            Object o = entry.getValue();
+            if(o instanceof HashMap) {
+                flatten(Metadata.forceMap(o), v, fullName);
+            } else if(o instanceof ManifestElement) {
+                ManifestElement me = (ManifestElement) o;
+                v.add(new ManifestElement(me, fullName));
+            } else
+                throw new IllegalStateException(String.valueOf(o));
+        }
     }
 	
 }
