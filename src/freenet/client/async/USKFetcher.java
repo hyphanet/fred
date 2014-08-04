@@ -1450,11 +1450,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-			// Ignore
-		}
-
-		@Override
 		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 			unregister(container, context, getPriorityClass(container));
 			USKAttempt[] attempts;

@@ -88,13 +88,6 @@ public abstract class SendableGet extends BaseSendableGet {
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
-	/**
-	 * Requeue a key after it has been on the cooldown queue for a while.
-	 * Only requeue if our requeue time is less than or equal to the given time.
-	 * @param key
-	 */
-	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
-
 	@Override
 	public final boolean isInsert() {
 		return false;

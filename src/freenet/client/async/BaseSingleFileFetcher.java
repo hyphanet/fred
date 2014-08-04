@@ -150,7 +150,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				// Wake the CRS after clearing cache.
 				this.clearCooldown(container, context, true);
 			}
-			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
+			return true; // We will retry in any case, maybe not just not yet.
 		}
 		unregister(container, context, getPriorityClass(container));
 		return false;
@@ -300,30 +300,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		return tracker.cooldownWakeupTime;
-	}
-
-	@Override
-	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-		if(tracker.cooldownWakeupTime > time) {
-			if(logMINOR) Logger.minor(this, "Not requeueing as deadline has not passed yet");
-			return;
-		}
-		if(isEmpty(container)) {
-			if(logMINOR) Logger.minor(this, "Not requeueing as cancelled or finished");
-			return;
-		}
-		if(persistent)
-			container.activate(this.key, 5);
-		if(!(key.equals(this.key.getNodeKey(false)))) {
-			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey(false)+" for "+this.key);
-			return;
-		}
-		if(logMINOR)
-			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		reschedule(container, context);
-		if(persistent)
-			container.deactivate(this.key, 5);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {

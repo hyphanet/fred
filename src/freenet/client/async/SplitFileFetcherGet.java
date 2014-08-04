@@ -80,22 +80,6 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public void requeueAfterCooldown(Key key, long time, ObjectContainer container,
-            ClientContext context) {
-        if(this.getParentGrabArray() != null) {
-            if(logMINOR) Logger.minor(this, "Not rescheduling as already scheduled on "+getParentGrabArray());
-            return;
-        }
-        if(isCancelled(container)) return;
-        try {
-            // Don't check datastore as this is a natural wake-up after a cooldown.
-            schedule(context, true);
-        } catch (KeyListenerConstructionException e) {
-            Logger.error(this, "Impossible: "+e+" on "+this, e);
-        }
-    }
-
-    @Override
     public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
         if(!toNetwork) return false;
         storage.setHasCheckedStore();
