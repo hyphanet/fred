@@ -382,7 +382,6 @@ public class FCPClient implements Serializable {
 	}
 
 	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever, ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);
