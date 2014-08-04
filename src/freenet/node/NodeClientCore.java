@@ -232,8 +232,6 @@ public class NodeClientCore implements Persistable {
 		}
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
 		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory);
-		// FIXME with crypto this load() may happen much later.
-		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		
@@ -344,6 +342,9 @@ public class NodeClientCore implements Persistable {
 		        persistentRAFFactory, compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
+		
+		// FIXME with crypto this load() may happen much later.
+        clientLayerPersister.load(clientContext);
 
 		try {
 			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);

@@ -10,9 +10,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.util.Random;
 
-import freenet.crypt.RandomSource;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Executor;
@@ -45,8 +43,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.persistentTempFactory = persistentTempFactory;
     }
     
-    public void load(File ptbfDir, String ptbfPrefix, RandomSource random, Random fastWeakRandom, 
-            boolean encrypt) throws NodeInitException {
+    public void load(ClientContext context) throws NodeInitException {
         // FIXME check backups.
         if(filename.exists()) {
             InputStream fis = null;
