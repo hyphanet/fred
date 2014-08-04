@@ -7,7 +7,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.FECQueue;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.keys.Key;
@@ -41,8 +40,6 @@ public interface RequestScheduler {
 	
 	public void callFailure(SendableInsert insert, LowLevelPutException exception, int prio, boolean persistent);
 	
-	public FECQueue getFECQueue();
-
 	public ClientContext getContext();
 	
 	public boolean addToFetching(Key key);

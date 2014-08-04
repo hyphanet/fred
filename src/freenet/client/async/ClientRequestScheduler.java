@@ -9,7 +9,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.Db4oException;
 
-import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
@@ -587,11 +586,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	@Override
-	public FECQueue getFECQueue() {
-		return clientContext.fecQueue;
-	}
-
 	@Override
 	public ClientContext getContext() {
 		return clientContext;

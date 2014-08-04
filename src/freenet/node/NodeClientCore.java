@@ -15,10 +15,10 @@ import com.db4o.ObjectContainer;
 import com.db4o.ext.Db4oException;
 
 import freenet.client.ArchiveManager;
-import freenet.client.FECQueue;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.client.NewFECCodec;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
@@ -130,7 +130,6 @@ public class NodeClientCore implements Persistable {
 	public final RandomSource random;
 	final ProgramDirectory tempDir;	// Persistent temporary buckets
 	final ProgramDirectory persistentTempDir;
-	public FECQueue fecQueue;
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
@@ -169,7 +168,6 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
-		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
@@ -335,7 +333,7 @@ public class NodeClientCore implements Persistable {
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		long memoryLimitedJobsMemoryLimit = FECQueue.MIN_MEMORY_ALLOCATION; // FIXME
+		long memoryLimitedJobsMemoryLimit = NewFECCodec.MIN_MEMORY_ALLOCATION; // FIXME
 		if(!killedDatabase()) {
 		    LockableRandomAccessThingFactory raff = 
 		        new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
@@ -344,7 +342,7 @@ public class NodeClientCore implements Persistable {
 		} else {
 		    persistentRAFFactory = null;
 		}
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, fecQueue, node.executor, 
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), clientLayerPersister.persistentCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
@@ -519,8 +517,6 @@ public class NodeClientCore implements Persistable {
 		});
 		toadletContainer = toadlets;
 		toadletContainer.setBucketFactory(tempBucketFactory);
-		if(fecQueue == null) throw new NullPointerException();
-		//fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		
 		nodeConfig.register("alwaysCommit", false, sortOrder++, true, false, "NodeClientCore.alwaysCommit", "NodeClientCore.alwaysCommitLong",
 				new BooleanCallback() {
@@ -594,20 +590,9 @@ public class NodeClientCore implements Persistable {
         }
 	}
 
-	private FECQueue initFECQueue(long nodeDBHandle, ObjectContainer container, FECQueue oldQueue) {
-		FECQueue q;
-		oldFECQueue = oldQueue;
-		if(!killedDatabase()) q = FECQueue.create(node.nodeDBHandle, container, oldQueue);
-		else q = new FECQueue(node.nodeDBHandle);
-		return q;
-	}
-
-	private FECQueue oldFECQueue;
-
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
 		// Don't actually start the database thread yet, messy concurrency issues.
-		lateInitFECQueue(nodeDBHandle, container);
 		initPTBF(node.config.get("node"));
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
@@ -616,11 +601,6 @@ public class NodeClientCore implements Persistable {
 		this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 		System.out.println("Late database initialisation completed.");
 		return true;
-	}
-
-    private void lateInitFECQueue(long nodeDBHandle, ObjectContainer container) {
-		fecQueue = initFECQueue(nodeDBHandle, container, fecQueue);
-		clientContext.setFECQueue(fecQueue);
 	}
 
 	private static String l10n(String key) {

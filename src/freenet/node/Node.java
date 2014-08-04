@@ -57,7 +57,6 @@ import com.db4o.ext.Db4oException;
 import com.db4o.io.IoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;
 
-import freenet.client.FECQueue;
 import freenet.client.FetchContext;
 import freenet.clients.fcp.FCPMessage;
 import freenet.clients.fcp.FeedMessage;
@@ -2773,9 +2772,6 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
 		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		dbConfig.objectClass(freenet.clients.fcp.FCPClient.class).objectField("name").indexed(true);
 		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
@@ -3042,8 +3038,6 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println(entry.getKey()+" : "+entry.getValue());
 			total += entry.getValue();
 		}
-
-		FECQueue.dump(database, RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 
 		// Some structures e.g. collections are sensitive to the activation depth.
 		// If they are activated to depth 1, they are broken, and activating them to

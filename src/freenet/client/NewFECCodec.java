@@ -5,6 +5,8 @@ package freenet.client;
  * as needed. */
 public abstract class NewFECCodec {
     
+    public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024+256*1024;
+    
     /** Maximum memory usage with the given number of data blocks and check blocks, not including 
      * the blocks themselves. */
     public abstract long maxMemoryOverheadDecode(int dataBlocks, int checkBlocks);

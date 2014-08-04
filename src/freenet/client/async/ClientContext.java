@@ -8,7 +8,6 @@ import java.util.Random;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveManager;
-import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.client.filter.LinkFilterExceptionProvider;
@@ -36,7 +35,6 @@ import freenet.support.io.PersistentTempBucketFactory;
  */
 public class ClientContext {
 	
-    public transient FECQueue fecQueue;
 	private transient ClientRequestScheduler sskFetchSchedulerBulk;
 	private transient ClientRequestScheduler chkFetchSchedulerBulk;
 	private transient ClientRequestScheduler sskInsertSchedulerBulk;
@@ -81,7 +79,7 @@ public class ClientContext {
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
 
-	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
+	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
 			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,
@@ -91,7 +89,6 @@ public class ClientContext {
 			RealCompressor rc, DatastoreChecker checker, 
 			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
 		this.bootID = bootID;
-		this.fecQueue = fecQueue;
 		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
 		this.nodeDBHandle = nodeDBHandle;
@@ -286,11 +283,6 @@ public class ClientContext {
 		return false;
 	}
 	
-	/** Set the FEC queue after startup e.g. late startup when the database is encrypted. */
-	public void setFECQueue(FECQueue fecQueue2) {
-	    this.fecQueue = fecQueue2;
-	}
-
 	/** Set the persistent bucket factories after pulling them from the database. Normally called after
 	 * a late database startup e.g. when the database is encrypted.
 	 * @param persistentTempBucketFactory The persistent temporary bucket factory.
