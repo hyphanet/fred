@@ -19,7 +19,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.ManifestPutter;
-import freenet.client.async.SimpleManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
@@ -33,7 +32,6 @@ public class ClientPutDir extends ClientPutBase {
     private static final long serialVersionUID = 1L;
     private HashMap<String, Object> manifestElements;
 	private ManifestPutter putter;
-	private short manifestPutterType;
 	private final String defaultName;
 	private final long totalSize;
 	private final int numberOfFiles;
@@ -71,7 +69,6 @@ public class ClientPutDir extends ClientPutBase {
 //		this.manifestElements = new HashMap<String, Object>();
 //		this.manifestElements.putAll(manifestElements);
 		this.defaultName = message.defaultName;
-		this.manifestPutterType = message.manifestPutterType;
 		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
@@ -96,7 +93,6 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles, includeHiddenFiles);
 		this.defaultName = defaultName;
-		this.manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
 		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
@@ -115,7 +111,6 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = elements;
 		this.defaultName = defaultName;
-		this.manifestPutterType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
 		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
@@ -174,17 +169,9 @@ public class ClientPutDir extends ClientPutBase {
 	}
 	
 	private void makePutter(ClientContext context) throws TooManyFilesInsertException {
-		switch(manifestPutterType) {
-		case ManifestPutter.MANIFEST_DEFAULTPUTTER:
-			putter = new DefaultManifestPutter(this,
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, null, context);
-			break;
-		default:
-			putter = new SimpleManifestPutter(this, 
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, null, context);
-		}
+	    putter = new DefaultManifestPutter(this,
+	            manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
+	            earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, null, context);
 	}
 
 	@Override

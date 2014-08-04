@@ -19,26 +19,9 @@ public abstract class ManifestPutter extends BaseClientPutter {
 	public abstract int countFiles();
 	public abstract long totalSize();
 	public abstract void start(ObjectContainer container, ClientContext context) throws InsertException;
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		super.removeFrom(container, context);
-	}
 	
 	public byte[] getSplitfileCryptoKey() {
 		return null;
-	}
-	
-	public static final short MANIFEST_SIMPLEPUTTER = 0;
-	public static final short MANIFEST_DEFAULTPUTTER = 1;
-	
-	public static String manifestPutterTypeString(short type) {
-		switch(type) {
-		case MANIFEST_SIMPLEPUTTER:
-			return "Simple";
-		case MANIFEST_DEFAULTPUTTER:
-			return "Default";
-		default:
-			return Short.toString(type);
-		}
 	}
 	
 }

@@ -205,33 +205,6 @@ public class ClientContext {
 	}
 
 	/**
-	 * Start a site insert. Schedule a job on the database thread if it is persistent, otherwise start it 
-	 * immediately.
-	 * @param inserter The request to start.
-	 * @throws InsertException If the insert is transient and failed to start.
-	 * @throws DatabaseDisabledException If the insert is persistent and the database is disabled.
-	 */
-	public void start(final SimpleManifestPutter inserter) throws InsertException, PersistenceDisabledException {
-		if(inserter.persistent()) {
-			jobRunner.queue(new PersistentJob() {
-				
-				@Override
-				public boolean run(ClientContext context) {
-					try {
-						inserter.start(null, context);
-					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter);
-					}
-					return true;
-				}
-				
-			}, NativeThread.NORM_PRIORITY);
-		} else {
-			inserter.start(null, this);
-		}
-	}
-
-	/**
 	 * Start a new-style site insert. Schedule a job on the database thread if it is persistent, 
 	 * otherwise start it immediately.
 	 * @param inserter The request to start.

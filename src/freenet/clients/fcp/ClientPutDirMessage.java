@@ -7,7 +7,6 @@ import java.net.MalformedURLException;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
-import freenet.client.async.ManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -58,7 +57,6 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
 	final boolean realTimeFlag;
-	final short manifestPutterType;
 	final String targetFilename;
 	final boolean ignoreUSKDatehints;
 	
@@ -184,27 +182,6 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
-		String manifestPutter = fs.get("ManifestPutter");
-		short manifestType;
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			// Unfortunately default isn't known to work with persistent inserts yet.
-			// It might work but is probably leaky and buggy. 
-			// FIXME Make default work with persistent site inserts then change this.
-			// FIXME Make default work with overrideSplitfileCryptoKey - doesn't it already???
-			manifestType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
-		else
-			manifestType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
-		if("simple".equalsIgnoreCase(manifestPutter)) {
-			manifestType = ManifestPutter.MANIFEST_SIMPLEPUTTER;
-		} else if("default".equalsIgnoreCase(manifestPutter)) {
-			manifestType = ManifestPutter.MANIFEST_DEFAULTPUTTER;
-		} else if(manifestPutter != null) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid ManifestPutter value: "+manifestPutter, identifier, global);
-		}
-		manifestPutterType = manifestType;
-		if(manifestPutterType != ManifestPutter.MANIFEST_SIMPLEPUTTER && (persistenceType != ClientRequest.PERSIST_CONNECTION && persistenceType != ClientRequest.PERSIST_REBOOT)) {
-			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Only Connection or Reboot persistenace can only be used with the default ManifestPutter", identifier, global);
-		}
 		ignoreUSKDatehints = fs.getBoolean("IgnoreUSKDatehints", false);
 	}
 
@@ -224,7 +201,6 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			sfs.putSingle("Codecs", compressorDescriptor);
 		sfs.put("Global", global);
 		sfs.putSingle("DefaultName", defaultName);
-		sfs.putSingle("ManifestPutter", ManifestPutter.manifestPutterTypeString(manifestPutterType));
 		return sfs;
 	}
 
