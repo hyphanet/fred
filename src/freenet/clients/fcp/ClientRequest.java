@@ -61,7 +61,7 @@ public abstract class ClientRequest implements Serializable {
 	/** Timestamp: last activity. */
 	protected long lastActivity;
 
-	protected final RequestClient lowLevelClient;
+	protected transient RequestClient lowLevelClient;
 	private final int hashCode; // for debugging it is good to have a persistent id
 	
 	@Override
@@ -513,6 +513,7 @@ public abstract class ClientRequest implements Serializable {
 
     public void onResume(ClientContext context) {
         client = context.persistentRoot.resume(this, global, clientName);
+        lowLevelClient = client.lowLevelClient(realTime);
     }
     
     public RequestClient getRequestClient() {
