@@ -53,7 +53,7 @@ public class ClientContext {
 	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
-	public transient PersistentTempBucketFactory persistentBucketFactory;
+	public transient final PersistentTempBucketFactory persistentBucketFactory;
 	public transient PersistentFileTracker persistentFileTracker;
 	public transient final BucketFactory tempBucketFactory;
 	public transient final LockableRandomAccessThingFactory tempRAFFactory;
@@ -64,7 +64,7 @@ public class ClientContext {
 	public transient final long bootID;
 	public transient final Ticker ticker;
 	public transient final FilenameGenerator fg;
-	public transient FilenameGenerator persistentFG;
+	public transient final FilenameGenerator persistentFG;
 	public transient final InsertCompressorTracker persistentInsertCompressors;
 	public transient final InsertCompressorTracker transientInsertCompressors;
 	public transient final RealCompressor rc;
@@ -96,6 +96,7 @@ public class ClientContext {
 		this.random = strongRandom;
 		this.archiveManager = archiveManager;
 		this.persistentBucketFactory = ptbf;
+		this.persistentFileTracker = ptbf;
 		this.tempBucketFactory = tbf;
 		this.healingQueue = hq;
 		this.transientInsertCompressors = transientInsertCompressors;
@@ -283,17 +284,6 @@ public class ClientContext {
 		return false;
 	}
 	
-	/** Set the persistent bucket factories after pulling them from the database. Normally called after
-	 * a late database startup e.g. when the database is encrypted.
-	 * @param persistentTempBucketFactory The persistent temporary bucket factory.
-	 * @param persistentFilenameGenerator The filename generator underlying the persistent temporary bucket factory.
-	 * This generates filenames, remembers the directory where the files are, etc.
-	 */
-	public void setPersistentBucketFactory(PersistentTempBucketFactory persistentTempBucketFactory, FilenameGenerator persistentFilenameGenerator) {
-		this.persistentBucketFactory = persistentTempBucketFactory;
-		this.persistentFG = persistentFilenameGenerator;
-	}
-
 	public void postUserAlert(final UserAlert alert) {
 		if(alerts == null) {
 			// Wait until after startup

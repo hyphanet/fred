@@ -32,7 +32,8 @@ import freenet.support.io.NativeThread;
  */
 public abstract class ClientPutBase extends ClientRequest implements ClientPutCallback, ClientEventListener {
 
-	/** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
+    private static final long serialVersionUID = 1L;
+    /** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
 	final InsertContext ctx;
 	final boolean getCHKOnly;
 

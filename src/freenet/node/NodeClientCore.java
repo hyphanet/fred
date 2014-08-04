@@ -31,6 +31,7 @@ import freenet.client.filter.FilterCallback;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
+import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.clients.fcp.FCPServer;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -109,9 +110,9 @@ public class NodeClientCore implements Persistable {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	public final FilenameGenerator tempFilenameGenerator;
-	public FilenameGenerator persistentFilenameGenerator;
+	public final FilenameGenerator persistentFilenameGenerator;
 	public final TempBucketFactory tempBucketFactory;
-	public PersistentTempBucketFactory persistentTempBucketFactory;
+	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	public final DiskSpaceCheckingRandomAccessThingFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
@@ -123,6 +124,7 @@ public class NodeClientCore implements Persistable {
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
+	private final FCPPersistentRoot fcpPersistentRoot;
 	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
@@ -218,8 +220,18 @@ public class NodeClientCore implements Persistable {
 		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp").toString(),
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		
+		fcpPersistentRoot = new FCPPersistentRoot();
+		try {
+		    this.persistentTempBucketFactory = new PersistentTempBucketFactory(persistentTempDir.dir(), 
+		            "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
+		    this.persistentFilenameGenerator = persistentTempBucketFactory.fg;
+		} catch (IOException e) {
+		    String msg = "Could not find or create persistent temporary directory: "+e;
+		    e.printStackTrace();
+		    throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
+		}
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
-		        node.nodeDir.file("client.dat"), node);
+		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory);
 		// FIXME with crypto this load() may happen much later.
 		clientLayerPersister.load(getPersistentTempDir(), "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		
@@ -331,7 +343,7 @@ public class NodeClientCore implements Persistable {
 		}
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
-		        persistentTempBucketFactory, new InsertCompressorTracker(), clientLayerPersister.persistentCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
+		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
 		        persistentRAFFactory, compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
@@ -470,7 +482,7 @@ public class NodeClientCore implements Persistable {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
 			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase())
-				fcpServer.load(this.clientLayerPersister.getPersistentRoot());
+				fcpServer.load(this.fcpPersistentRoot);
 		} catch(IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: " + e);
 		} catch(InvalidConfigValueException e) {
@@ -570,11 +582,7 @@ public class NodeClientCore implements Persistable {
     }
 
 	private void initPTBF(SubConfig nodeConfig) throws NodeInitException {
-	    persistentTempBucketFactory = clientLayerPersister.persistentTempBucketFactory();
-	    persistentFilenameGenerator = persistentTempBucketFactory.fg;
-        if(clientContext != null) {
-            clientContext.setPersistentBucketFactory(persistentTempBucketFactory, persistentFilenameGenerator);
-        }
+	    // FIXME after onResume()'s done, call PTBF to cleanup.
 	}
 
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container) throws NodeInitException {
@@ -584,7 +592,7 @@ public class NodeClientCore implements Persistable {
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
 		InsertCompressor.load(clientContext);
-		fcpServer.load(this.clientLayerPersister.getPersistentRoot());
+		fcpServer.load(this.fcpPersistentRoot);
 		this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 		System.out.println("Late database initialisation completed.");
 		return true;

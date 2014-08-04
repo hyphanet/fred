@@ -2,6 +2,7 @@ package freenet.clients.fcp;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,9 +31,11 @@ import freenet.support.api.Bucket;
  * 
  * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction. 
  * Hence the addition of the ObjectContainer parameter to all such methods.
+ * 
+ * SERIALIZATION WARNING: Changing the non-transient fields in a back-compatible way will require
+ * e.g. implementing a new class and having the old one readResolve()
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class FCPClient {
+public class FCPClient implements Serializable {
 	
 	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
 		this.name = name2;

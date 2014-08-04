@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.IOException;
-import java.io.ObjectInput;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -15,13 +13,14 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 /**
- * Persistent root object for FCP.
+ * Tracks persistent requests by FCPClient. Not persistent itself. Populated on startup.
  * @author toad
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPPersistentRoot {
 
-	final FCPClient globalForeverClient;
+    private static final long serialVersionUID = 1L;
+    
+    final FCPClient globalForeverClient;
 	private final Map<String, FCPClient> clients;
 
         private static volatile boolean logMINOR;
@@ -42,11 +41,6 @@ public class FCPPersistentRoot {
 	void setRequestStatusCache(RequestStatusCache cache) {
         globalForeverClient.setRequestStatusCache(cache, null);
 	}
-
-    public static FCPPersistentRoot create(ObjectInput ois) throws ClassNotFoundException, IOException {
-        FCPPersistentRoot root = (FCPPersistentRoot) ois.readObject();
-        return root;
-    }
 
 	public synchronized FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server) {
 		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);

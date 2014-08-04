@@ -35,7 +35,8 @@ import freenet.support.api.Bucket;
 
 public class ClientPut extends ClientPutBase {
 
-	ClientPutter putter;
+    private static final long serialVersionUID = 1L;
+    ClientPutter putter;
 	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;

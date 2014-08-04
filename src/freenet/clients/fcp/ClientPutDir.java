@@ -32,7 +32,8 @@ import freenet.support.io.FileBucket;
 
 public class ClientPutDir extends ClientPutBase {
 
-	private HashMap<String, Object> manifestElements;
+    private static final long serialVersionUID = 1L;
+    private HashMap<String, Object> manifestElements;
 	private ManifestPutter putter;
 	private short manifestPutterType;
 	private final String defaultName;

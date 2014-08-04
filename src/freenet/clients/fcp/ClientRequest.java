@@ -2,6 +2,7 @@ package freenet.clients.fcp;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
@@ -21,9 +22,10 @@ import freenet.support.io.NativeThread;
  * A request process carried out by the node for an FCP client.
  * Examples: ClientGet, ClientPut, MultiGet.
  */
-public abstract class ClientRequest {
+public abstract class ClientRequest implements Serializable {
 
-	/** URI to fetch, or target URI to insert to */
+    private static final long serialVersionUID = 1L;
+    /** URI to fetch, or target URI to insert to */
 	protected FreenetURI uri;
 	/** Unique request identifier */
 	protected final String identifier;

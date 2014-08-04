@@ -5,6 +5,7 @@ package freenet.client;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Set;
 
 import com.db4o.ObjectContainer;
@@ -20,11 +21,10 @@ import freenet.support.api.BucketFactory;
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
  * about. FIXME these should be final or private, with getters/setters and 
  * checking for valid values e.g. maxRecursionLevel >= 1. */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-// Having said that, there is some support for schema evolution... new fields will be default valued etc IIRC
-public class FetchContext implements Cloneable {
+public class FetchContext implements Cloneable, Serializable {
 
-	public static final int IDENTICAL_MASK = 0;
+    private static final long serialVersionUID = 1L;
+    public static final int IDENTICAL_MASK = 0;
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	public static final int SPLITFILE_DEFAULT_MASK = 2;
 	public static final int SET_RETURN_ARCHIVES = 4;

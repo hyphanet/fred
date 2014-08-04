@@ -49,7 +49,8 @@ import freenet.support.io.NullBucket;
  */
 public class ClientGet extends ClientRequest implements ClientGetCallback, ClientEventListener, PersistentClientCallback {
 
-	/** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
+    private static final long serialVersionUID = 1L;
+    /** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
 	private final ClientGetter getter;
