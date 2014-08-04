@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.clients.fcp.DownloadRequestStatus;
 import freenet.clients.fcp.FCPServer;
@@ -419,6 +418,8 @@ public class DiagnosticToadlet extends Toadlet {
 			text += l10n("waiting") + ": " + String.valueOf(waitingThreadsByPriority[i]) + " (" + String.valueOf(i+1) + ")\n";
 		}
 		text += "\n";
+		
+		}
 
 		this.writeTextReply(ctx, 200, "OK", text);
 	}
