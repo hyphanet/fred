@@ -14,8 +14,8 @@ public enum KeyType {
     Rijndael256("RIJNDAEL", 256),
     AES128("AES", 128),
     AES256("AES", 256),
-    HMACSHA1("HMACSHA1", 160), 
     HMACSHA256("HMACSHA256", 256),
+    HMACSHA512("HMACSHA512", 512),
     POLY1305AES("POLY1305-AES", 256),
     ChaCha128("CHACHA", 128),
     ChaCha256("CHACHA", 256);
