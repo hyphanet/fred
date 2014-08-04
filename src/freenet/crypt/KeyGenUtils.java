@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -162,8 +163,8 @@ public final class KeyGenUtils {
      * @param length How long the nonce should be
      * @return The randomly generated nonce
      */
-    public static byte[] genNonce(int length){
-        return genRandomBytes(length);
+    public static ByteBuffer genNonce(int length){
+        return ByteBuffer.wrap(genRandomBytes(length));
     }
 
     /**
