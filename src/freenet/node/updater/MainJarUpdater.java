@@ -182,8 +182,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void onSuccess(FetchResult result, ClientGetter state,
-				ObjectContainer container) {
+		public void onSuccess(FetchResult result, ClientGetter state) {
 			synchronized(this) {
 				if(fetched) {
 					tempFile.delete();
@@ -211,8 +210,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void onFailure(FetchException e, ClientGetter state,
-				ObjectContainer container) {
+		public void onFailure(FetchException e, ClientGetter state) {
 			tempFile.delete();
 			synchronized(this) {
 				if(fetched) return;

@@ -1042,7 +1042,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
 			@Override
-			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+			public void onFailure(FetchException e, ClientGetter state) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source);
@@ -1079,7 +1079,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 			@Override
-			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got revocation certificate from " + source);
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlob);
 				if(!fromDisk)
@@ -1106,7 +1106,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(FetchException e1) {
 			System.err.println("Failed to decode UOM blob: " + e1);
 			e1.printStackTrace();
-			myCallback.onFailure(e1, cg, null);
+			myCallback.onFailure(e1, cg);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -1513,7 +1513,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		ClientGetCallback myCallback = new ClientGetCallback() {
 
 			@Override
-			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+			public void onFailure(FetchException e, ClientGetter state) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + toString);
@@ -1540,7 +1540,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 
 			@Override
-			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+			public void onSuccess(FetchResult result, ClientGetter state) {
 				System.err.println("Got main jar version " + version + " from " + toString);
 				if(result.size() == 0) {
 					System.err.println("Ignoring because 0 bytes long");
@@ -1575,7 +1575,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
 		} catch(FetchException e1) {
-			myCallback.onFailure(e1, cg, null);
+			myCallback.onFailure(e1, cg);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}

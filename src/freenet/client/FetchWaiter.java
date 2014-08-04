@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -23,7 +21,7 @@ public class FetchWaiter implements ClientGetCallback {
     }
 
     @Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		if(finished) return;
 		this.result = result;
 		finished = true;
@@ -31,7 +29,7 @@ public class FetchWaiter implements ClientGetCallback {
 	}
 
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		if(finished) return;
 		this.error = e;
 		finished = true;

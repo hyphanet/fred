@@ -3,8 +3,6 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -151,8 +149,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state,
-			ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		result.asBucket().free();
 		if(!FileUtil.renameTo(tempFile, saveTo)) {
 			Logger.error(this, "Fetched file but unable to rename temp file "+tempFile+" to "+saveTo+" : UOM FROM OLD NODES WILL NOT WORK!");
@@ -165,8 +162,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state,
-			ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			failed = true;
 		}

@@ -193,7 +193,7 @@ public class ClientContext {
 					try {
 						getter.start(null, context);
 					} catch (FetchException e) {
-						getter.clientCallback.onFailure(e, getter, null);
+						getter.clientCallback.onFailure(e, getter);
 					}
 					return true;
 				}

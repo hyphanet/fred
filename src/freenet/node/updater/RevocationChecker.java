@@ -6,8 +6,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -189,7 +187,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, state.getBlobBucket());
 	}
 	
@@ -262,7 +260,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		onFailure(e, state, state.getBlobBucket());
 	}
 	

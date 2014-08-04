@@ -413,19 +413,17 @@ public class NodeUpdateManager {
 			} catch (PersistenceDisabledException e) {
 				// Impossible
 			} catch (FetchException e) {
-				onFailure(e, null, null);
+				onFailure(e, null);
 			}
 		}
 
 		@Override
-		public void onFailure(FetchException e, ClientGetter state,
-				ObjectContainer container) {
+		public void onFailure(FetchException e, ClientGetter state) {
 			System.err.println("Failed to fetch " + filename + " : " + e);
 		}
 
 		@Override
-		public void onSuccess(FetchResult result, ClientGetter state,
-				ObjectContainer container) {
+		public void onSuccess(FetchResult result, ClientGetter state) {
 			File temp;
 			FileOutputStream fos = null;
 			try {

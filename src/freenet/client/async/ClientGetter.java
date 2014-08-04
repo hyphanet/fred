@@ -419,7 +419,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			state.removeFrom(container, context);
 		}
 
-			clientCallback.onSuccess(result, ClientGetter.this, container);
+			clientCallback.onSuccess(result, ClientGetter.this);
 	}
 
 	/**
@@ -533,7 +533,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				}
 			}
 			if(!alreadyFinished)
-				clientCallback.onFailure(e1, ClientGetter.this, container);
+				clientCallback.onFailure(e1, ClientGetter.this);
 			return;
 		}
 	}

@@ -37,7 +37,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -283,12 +282,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				started = true;
 			} // before the failure handler
-			onFailure(e, null, null);
+			onFailure(e, null);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null, null);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null);
 		}
 	}
 
@@ -300,20 +299,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
-		if(persistenceType == PERSIST_FOREVER) {
-			if(data != null)
-				container.activate(data, 5);
-			if(returnBucket != null)
-				container.activate(returnBucket, 5);
-			container.activate(client, 1);
-			if(tempFile != null)
-				container.activate(tempFile, 5);
-			if(targetFile != null)
-				container.activate(targetFile, 5);
-		}
 		// FIXME: Fortify thinks this is double-checked locking. Technically it is, but 
 		// since returnBucket is only set to non-null in this method and the constructor is it safe.
 		boolean bucketChanged = (returnBucket != data && !binaryBlob);
@@ -325,22 +313,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				if(finished) {
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
-					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
 					return; // Already failed - bucket error maybe??
 				}
 				// Check for no bucket on direct return type. Can work around.
 				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
 					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
 					// Recover...
-					returnBucket = data;
-					bucketChanged = false;
-				}
-			}
-			// Check for db4o bug. Can work around.
-			if(bucketChanged && persistenceType == PERSIST_FOREVER) {
-				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
-					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
-					// Succeed anyway, hope that the returned bucket is consistent...
 					returnBucket = data;
 					bucketChanged = false;
 				}
@@ -370,8 +348,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						}
 						if(shortCut) {
 							returnBucket.free();
-							if(persistenceType == PERSIST_FOREVER)
-								returnBucket.removeFrom(container);
 							returnBucket = data;
 							bucketChanged = false;
 						} // Otherwise the data will have to be copied.
@@ -388,27 +364,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(data != returnBucket)
 				returnBucket.free();
 			if(data != returnBucket) {
-				if(persistenceType == PERSIST_FOREVER)
-					returnBucket.removeFrom(container);
 				returnBucket = getBucket();
-			}
-			if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
-				returnBucket.storeTo(container);
-				container.store(this);
-				
-				Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
-				try {
-					BucketTools.copy(data, returnBucket);
-				} catch (IOException e) {
-					Logger.error(this, "Data != returnBucket and then failed to copy to "+returnBucket);
-					data.free();
-					returnBucket.free();
-					if(persistenceType == PERSIST_FOREVER) {
-						data.removeFrom(container);
-					}
-					onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
-					return;
-				}
 			}
 		}
 		boolean dontFree = false;
@@ -454,10 +410,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				// Needs to be set for all other cases too.
 				completionTime = System.currentTimeMillis();
 			}
-			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
-				container.activate(progressPending, 1);
-				progressPending.removeFrom(container);
-			}
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
 			this.succeeded = true;
@@ -469,10 +421,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			trySendAllDataMessage(adm, null);
 		if(!dontFree) {
 			data.free();
-		}
-		if(persistenceType == PERSIST_FOREVER) {
-			returnBucket.storeTo(container);
-			container.store(this);
 		}
 		finish();
 		if(client != null)
@@ -520,10 +468,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
-		FCPMessage oldProgress = null;
-		boolean noStore = false;
 		if(msg instanceof SimpleProgressMessage) {
-			oldProgress = progressPending;
 			progressPending = (SimpleProgressMessage)msg;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
@@ -570,7 +515,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(msg instanceof EnterFiniteCooldown) {
 			// Do nothing, it's not persistent.
-			noStore = true;
 		} else
 			assert(false);
 		if(persistenceType == PERSIST_CONNECTION && handler == null)
@@ -639,7 +583,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		if(finished) return;
 		synchronized(this) {
 			succeeded = false;
@@ -651,19 +595,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(client, 1);
-		}
 		// We do not want the data to be removed on failure, because the request
 		// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
 		//freeData(container);
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(getFailedMessage);
 		finish();
 		if(client != null)
 			client.notifyFailure(this);
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(this);
 	}
 
 	@Override
@@ -997,7 +934,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 			return true;
 		} catch (FetchException e) {
-			onFailure(e, null, null);
+			onFailure(e, null);
 			return false;
 		}
 	}

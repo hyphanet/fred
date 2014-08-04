@@ -276,14 +276,12 @@ public class USKManager {
 			}
 
 			@Override
-			public void onSuccess(FetchResult result, ClientGetter state,
-					ObjectContainer container) {
+			public void onSuccess(FetchResult result, ClientGetter state) {
 				cb.success(origURI, token);
 			}
 
 			@Override
-			public void onFailure(FetchException e, ClientGetter state,
-					ObjectContainer container) {
+			public void onFailure(FetchException e, ClientGetter state) {
 				if(e.isDataFound())
 					cb.success(origURI, token);
 				else if(e.isDNF())
@@ -419,7 +417,7 @@ public class USKManager {
 				final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 					
 					@Override
-					public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+					public void onFailure(FetchException e, ClientGetter state) {
 						if(e.newURI != null) {
 							if(logMINOR) Logger.minor(this, "Prefetch succeeded with redirect for "+key);
 							updateKnownGood(key, l, context);
@@ -431,7 +429,7 @@ public class USKManager {
 					}
 					
 					@Override
-					public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+					public void onSuccess(FetchResult result, ClientGetter state) {
 						if(logMINOR) Logger.minor(this, "Prefetch succeeded for "+key);
 						result.asBucket().free();
 						updateKnownGood(key, l, context);

@@ -200,13 +200,13 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
+	public abstract void onSuccess(FetchResult result, ClientGetter state);
 
 	/**
 	 * You have to do "finally { removeFetch() }" when using this function.
 	 */
 	@Override
-	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
+	public abstract void onFailure(FetchException e, ClientGetter state);
 
 	/* Inserts */
 	

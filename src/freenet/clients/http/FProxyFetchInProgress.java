@@ -206,12 +206,12 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				// Works as-is.
 				// Any time we re-use old content we need to remove the tracker because it may not remain available.
 				tracker.removeFetcher(this);
-				onSuccess(result, null, null);
+				onSuccess(result, null);
 				return true;
 			} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
 				// Change the MIME type.
 				tracker.removeFetcher(this);
-				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
+				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null);
 				return true;
 			} 
 		} else if(result.alreadyFiltered) {
@@ -222,7 +222,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				if(shouldAcceptCachedFilteredData(fctx, result)) {
 					if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
 						tracker.removeFetcher(this);
-						onSuccess(result, null, null);
+						onSuccess(result, null);
 						return true;
 					} // else re-filter
 				} else
@@ -246,11 +246,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
 			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
 			data.free();
-			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
+			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null);
 			return true;
 		} else if(type.safeToRead) {
 			tracker.removeFetcher(this);
-			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
+			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null);
 			return true;
 		} else {
 			// Try to filter it.
@@ -267,7 +267,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				os.close();
 				os = null;
 				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
-				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
+				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null);
 				output = null;
 				return true;
 			} catch (IOException e) {
@@ -385,7 +385,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			this.failed = e;
 			this.finished = true;
@@ -400,7 +400,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		Bucket droppedData = null;
 		synchronized(this) {
 			if(cancelled)

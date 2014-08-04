@@ -29,8 +29,8 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
     }
 
     @Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);
+	public void onFailure(FetchException e, ClientGetter state) {
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state, e);
 	}
 
 	@Override
@@ -54,8 +54,8 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
 	}
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess result=" + result + ", state=" + state + ", container=" + container);
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess result=" + result + ", state=" + state);
 		result.data.free();
 	}
 

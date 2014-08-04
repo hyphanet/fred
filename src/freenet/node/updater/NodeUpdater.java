@@ -253,7 +253,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		return new FileBucket(f, true, false, false, false, false);
 	}
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 
@@ -437,7 +437,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!isRunning)
 			return;
