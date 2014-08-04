@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -34,32 +32,17 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	@Override
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(container != null && persistent) {
-			container.activate(cb, 1);
-			container.activate(usk, 5);
-		}
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context) {
 		context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
-		cb.onSuccess(streamGenerator, clientMetadata, decompressors, state, container, context);
-		if(persistent) removeFrom(container);
-	}
-
-	private void removeFrom(ObjectContainer container) {
-		container.activate(usk, 5);
-		usk.removeFrom(container);
-		container.delete(this);
+		cb.onSuccess(streamGenerator, clientMetadata, decompressors, state, context);
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		switch(e.mode) {
 		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
 		case FetchException.PERMANENT_REDIRECT:
 			context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
-		}
-		if(persistent) {
-			container.activate(cb, 1);
-			container.activate(usk, 5);
 		}
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
@@ -67,56 +50,47 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}
-		cb.onFailure(e, state, container, context);
-		if(persistent) removeFrom(container);
+		cb.onFailure(e, state, context);
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(container != null && persistent)
-			container.activate(cb, 1);
-		cb.onBlockSetFinished(state, container, context);
+	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
+		cb.onBlockSetFinished(state, context);
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) throws FetchException {
-		if(container != null && persistent)
-			container.activate(cb, 1);
-		cb.onExpectedMIME(metadata, container, context);
+	public void onExpectedMIME(ClientMetadata metadata, ClientContext context) throws FetchException {
+		cb.onExpectedMIME(metadata, context);
 	}
 
 	@Override
-	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
-		if(container != null && persistent)
-			container.activate(cb, 1);
-		cb.onExpectedSize(size, container, context);
+	public void onExpectedSize(long size, ClientContext context) {
+		cb.onExpectedSize(size, context);
 	}
 
 	@Override
-	public void onFinalizedMetadata(ObjectContainer container) {
-		if(container != null && persistent)
-			container.activate(cb, 1);
-		cb.onFinalizedMetadata(container);
+	public void onFinalizedMetadata() {
+		cb.onFinalizedMetadata();
 	}
 
 	@Override
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
-		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
+		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, context);
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
-		cb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, bottomLayer, definitiveAnyway, container, context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
+		cb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, bottomLayer, definitiveAnyway, context);
 	}
 
 	@Override
-	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
-		cb.onHashes(hashes, container, context);
+	public void onHashes(HashResult[] hashes, ClientContext context) {
+		cb.onHashes(hashes, context);
 	}
 
 }

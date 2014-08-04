@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.support.compress.Compressor;
@@ -19,14 +17,14 @@ import freenet.crypt.HashResult;
  */
 public interface GetCompletionCallback {
 
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context);
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context);
 	
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context);
+	public void onFailure(FetchException e, ClientGetState state, ClientContext context);
 	
 	/** Called when the ClientGetState knows that it knows about
 	 * all the blocks it will need to fetch.
 	 */
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context);
+	public void onBlockSetFinished(ClientGetState state, ClientContext context);
 
 	/** Called when the ClientGetState handling the request yields control to another 
 	 * ClientGetState.
@@ -34,7 +32,7 @@ public interface GetCompletionCallback {
 	 * @param newState The new ClientGetState.
 	 * @param container The database handle. Must not be used by other threads.
 	 */
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
+	public void onTransition(ClientGetState oldState, ClientGetState newState);
 
 	/** Called when we know the size of the final data. Not the same as onExpectedTopSize(),
 	 * which is called for new metadata and gives more information. This might be called 
@@ -43,7 +41,7 @@ public interface GetCompletionCallback {
 	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
-	public void onExpectedSize(long size, ObjectContainer container, ClientContext context);
+	public void onExpectedSize(long size, ClientContext context);
 
 	/**
 	 * Called when we know the MIME type of the final data. Useful for e.g. determining whether it
@@ -55,9 +53,9 @@ public interface GetCompletionCallback {
 	 * @throws FetchException The callee can throw a FetchException to terminate the download e.g.
 	 * if they can't handle the MIME type.
 	 */
-	public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) throws FetchException;
+	public void onExpectedMIME(ClientMetadata metadata, ClientContext context) throws FetchException;
 
-	public void onFinalizedMetadata(ObjectContainer container);
+	public void onFinalizedMetadata();
 
 	/**
 	 * Called when we know the size of the final file, and the number of blocks needed etc. For 
@@ -69,7 +67,7 @@ public interface GetCompletionCallback {
 	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context);
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context);
 	
 	/**
 	 * Called when we know the settings for the splitfile.
@@ -85,7 +83,7 @@ public interface GetCompletionCallback {
 	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context);
 
 	/**
 	 * Called when we know the HashResult of the final file. This will be checked when we actually 
@@ -95,5 +93,5 @@ public interface GetCompletionCallback {
 	 * @param container The database handle. Must not be used by other threads.
 	 * @param context Utility object containing helpers, mostly not persistent, such as the Ticker, temporary storage factories etc.
 	 */
-	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context);
+	public void onHashes(HashResult[] hashes, ClientContext context);
 }

@@ -731,15 +731,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * what is passed in is different (in which case we remove that too).
 		 */
 		@Override
-		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+		public void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(newState == null) throw new NullPointerException();
 
 			// onTransition is *not* responsible for removing the old state, the caller is.
 			synchronized (this) {
 				if (currentState == oldState) {
 					currentState = newState;
-					if(persistent())
-						container.store(this);
 					if(logMINOR)
 						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
 					return;
@@ -901,7 +899,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
 
@@ -1663,12 +1661,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}
 
 	@Override
-	public void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container) {
+	public void onTransition(ClientPutState from, ClientPutState to) {
 		// Ignore
 	}
 

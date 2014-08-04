@@ -6,8 +6,6 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Properties;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -225,7 +223,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		private void start() throws FetchException {
-			getter.start(null, clientContext);
+			getter.start(clientContext);
 		}
 
 		public synchronized HTMLNode renderRow() {

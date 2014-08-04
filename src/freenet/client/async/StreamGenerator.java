@@ -18,7 +18,7 @@ public interface StreamGenerator {
 	 * @param context
 	 * @throws IOException
 	 */
-	public void writeTo(OutputStream os, ObjectContainer container, ClientContext context) throws IOException;
+	public void writeTo(OutputStream os, ClientContext context) throws IOException;
 
 	/**
 	 * @return The size of the underlying structure

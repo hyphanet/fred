@@ -916,7 +916,7 @@ public class SplitFileFetcherStorage {
         return new StreamGenerator() {
 
             @Override
-            public void writeTo(OutputStream os, ObjectContainer container, ClientContext context)
+            public void writeTo(OutputStream os, ClientContext context)
                     throws IOException {
                 LockableRandomAccessThing.RAFLock lock = raf.lockOpen();
                 try {

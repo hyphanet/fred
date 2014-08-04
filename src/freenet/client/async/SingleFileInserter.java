@@ -289,7 +289,7 @@ class SingleFileInserter implements ClientPutState {
 					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, container, context, shouldFreeData, forSplitfile);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
-				cb.onTransition(this, bi, container);
+				cb.onTransition(this, bi);
 				if(earlyEncode && bi instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)bi).getBlock(container, context, true);
 				bi.schedule(container, context);
@@ -320,7 +320,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes, container);
 				cb.onMetadata(meta, this, container, context);
-				cb.onTransition(this, dataPutter, container);
+				cb.onTransition(this, dataPutter);
 				dataPutter.schedule(container, context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
@@ -352,7 +352,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
 				mcb.add(dataPutter, container);
-				cb.onTransition(this, mcb, container);
+				cb.onTransition(this, mcb);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(container, context);
 				dataPutter.schedule(container, context);

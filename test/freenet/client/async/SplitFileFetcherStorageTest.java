@@ -311,7 +311,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             StreamGenerator g = storage.streamGenerator();
             Bucket out = bf.makeBucket(-1);
             OutputStream os = out.getOutputStream();
-            g.writeTo(os, null, null);
+            g.writeTo(os, null);
             os.close();
             assertTrue(BucketTools.equalBuckets(originalData, out));
             out.free();

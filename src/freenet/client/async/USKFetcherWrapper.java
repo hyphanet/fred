@@ -61,22 +61,22 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}
 
@@ -86,17 +86,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onExpectedMIME(ClientMetadata meta, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(ClientMetadata meta, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
+	public void onExpectedSize(long size, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onFinalizedMetadata(ObjectContainer container) {
+	public void onFinalizedMetadata() {
 		// Ignore
 	}
 
@@ -111,17 +111,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+	public void onHashes(HashResult[] hashes, ClientContext context) {
 		// Ignore
 	}
 

@@ -100,7 +100,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 			cb.onSuccess(this);
 		else {
 			try {
-				cg.start(null, context);
+				cg.start(context);
 			} catch (FetchException e) {
 				synchronized(this) {
 					failed = true;

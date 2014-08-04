@@ -112,7 +112,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
@@ -122,15 +122,15 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 		} catch (InsufficientDiskSpaceException e) {
-            onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), state, container, context);
+            onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), state, context);
             return;
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, context);
 			return;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
 			return;
 		}
 
@@ -141,31 +141,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			// Decompress
 			if(decompressors != null) {
 				if(logMINOR) Logger.minor(this, "Decompressing...");
-				if(persistent()) {
-					container.activate(decompressors, 5);
-					container.activate(ctx, 1);
-				}
 				pipeIn = new PipedInputStream();
 				pipeOut = new PipedOutputStream(pipeIn);
 				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 				pipeIn = decompressorManager.execute();
 				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 				worker.start();
-				streamGenerator.writeTo(pipeOut, container, context);
+				streamGenerator.writeTo(pipeOut, context);
 				worker.waitFinished();
 				// If this throws, we want the whole request to fail.
 				pipeOut.close(); pipeOut = null;
 			} else {
-					streamGenerator.writeTo(output, container, context);
+					streamGenerator.writeTo(output, context);
 					// If this throws, we want the whole request to fail.
 					output.close(); output = null;
 			}
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
 			return;
 		} finally {
 			Closer.close(output);
@@ -191,7 +187,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		switch(e.mode) {
 		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
 		case FetchException.PERMANENT_REDIRECT:
@@ -202,7 +198,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 		// Ignore
 	}
 
@@ -233,22 +229,22 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedMIME(ClientMetadata meta, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(ClientMetadata meta, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
+	public void onExpectedSize(long size, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onFinalizedMetadata(ObjectContainer container) {
+	public void onFinalizedMetadata() {
 		// Ignore
 	}
 
@@ -273,17 +269,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
 		// Ignore
 	}
 	
 	@Override
-	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+	public void onHashes(HashResult[] hashes, ClientContext context) {
 		// Ignore
 	}
 	

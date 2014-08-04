@@ -254,7 +254,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		// Parse metadata
 		try {
-			removeMetadata(container);
 			metadata = Metadata.construct(data);
 			if(persistent)
 				container.store(this);
@@ -288,14 +287,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	
 	@Override
 	protected void onSuccess(final FetchResult result, ObjectContainer container, final ClientContext context) {
-		if(persistent) {
-			container.activate(decompressors, 1);
-			container.activate(parent, 1);
-			container.activate(ctx, 1);
-			container.activate(rcb, 1);
-		}
-		removeMetadata(container);
-		removeArchiveMetadata(container);
 		synchronized(this) {
 			// So a SingleKeyListener isn't created.
 			finished = true;
@@ -315,7 +306,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// It would be useful to be able to fetch the data ...
 				// On the other hand such inserts could cause unpredictable results?
 				// Would be useful to make a redirect to the key we actually fetched.
-				rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this, container, context);
+				rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this, context);
 			} else {
 				// TOO_MANY_PATH_COMPONENTS
 				// report to user
@@ -324,25 +315,25 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				FreenetURI tryURI = uri;
 				tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
-				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this, container, context);
+				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this, context);
 			}
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 			return;
 		} else if(result.size() > ctx.maxOutputLength) {
-			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this, container, context);
+			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this, context);
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
 			if(persistent()) {
-				rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, container, context);
+				rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, context);
 			} else {
 				// Break locks, don't run filtering on FEC thread etc etc.
 				context.mainExecutor.execute(new Runnable() {
 					
 					@Override
 					public void run() {
-						rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, SingleFileFetcher.this, null, context);
+						rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, SingleFileFetcher.this, context);
 					}
 				
 				});
@@ -417,13 +408,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if(metadata.isSimpleRedirect() || metadata.isSplitfile()) clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
-					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
+					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, context);
 					topCompatibilityMode = metadata.getTopCompatibilityCode();
 					topDontCompress = metadata.getTopDontCompress();
 				}
 				HashResult[] hashes = metadata.getHashes();
 				if(hashes != null) {
-					rcb.onHashes(hashes, container, context);
+					rcb.onHashes(hashes, context);
 				}
 			}
 			if(metadata.isSimpleManifest()) {
@@ -601,7 +592,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					} catch (IOException e) {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
-					removeMetadata(container);
 					synchronized(this) {
 						metadata = newMetadata;
 					}
@@ -626,7 +616,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							final Metadata newMetadata;
 							try {
 								newMetadata = Metadata.construct(data);
-								removeMetadata(container);
 								synchronized(SingleFileFetcher.this) {
 									metadata = newMetadata;
 								}
@@ -675,7 +664,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							container.delete(this);
 						}
 					}, container, context);
-					removeMetadata(container);
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -684,7 +672,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(clientMetadata, container, context);
+				if(mime != null) rcb.onExpectedMIME(clientMetadata, context);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
@@ -765,7 +753,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							container.delete(this);
 						}
 					}, container, context);
-					removeMetadata(container);
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -780,7 +767,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) container.store(this);
 				if(persistent) container.store(f);
 				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
-				parent.onTransition(this, f, container);
+				parent.onTransition(this, f);
 				
 				if(persistent) {
 					f.innerWrapHandleMetadata(true, container, context);
@@ -802,7 +789,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
 				if(clientMetadata != null && !clientMetadata.isTrivial()) { 
-					rcb.onExpectedMIME(clientMetadata, container, context);
+					rcb.onExpectedMIME(clientMetadata, context);
 					if(logMINOR) Logger.minor(this, "MIME type is "+clientMetadata);
 				}
 
@@ -854,7 +841,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, deleteFetchContext, realTimeFlag, actx, ah, archiveMetadata, maxRetries, recursionLevel, false, token, true, isFinal, topDontCompress, topCompatibilityMode, container, context, false);
 				this.deleteFetchContext = false;
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata()) {
-					rcb.onBlockSetFinished(this, container, context);
+					rcb.onBlockSetFinished(this, context);
 					byte [] redirectedCryptoKey = ((ClientCHK)redirectedKey).getCryptoKey();
 					if (key instanceof ClientCHK && !Arrays.equals(
 							((ClientCHK)key).getCryptoKey(),
@@ -867,13 +854,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							redirectedCryptoKey,
 							!((ClientCHK)redirectedKey).isCompressed(),
 							true, true,
-							container, context);
+							context);
 				}
 				if(metadata.isCompressed()) {
 					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
 				}
-				parent.onTransition(this, f, container);
+				parent.onTransition(this, f);
 				if(persistent) {
 					container.store(metaStrings);
 					container.store(f); // Store *before* scheduling to avoid activation problems.
@@ -904,7 +891,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					continue;
 				} else {
 					if(clientMetadata != null && !clientMetadata.isTrivial()) 
-						rcb.onExpectedMIME(clientMetadata, container, context);
+						rcb.onExpectedMIME(clientMetadata, context);
 				}
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
@@ -932,13 +919,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							// It would be useful to be able to fetch the data ...
 							// On the other hand such inserts could cause unpredictable results?
 							// Would be useful to make a redirect to the key we actually fetched.
-							rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this, container, context);
+							rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this, context);
 						} else {
 							// TOO_MANY_PATH_COMPONENTS
 							// report to user
 							FreenetURI tryURI = uri;
 							tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
-							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this, container, context);
+							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this, context);
 						}
 						// Just in case...
 						if(persistent) removeFrom(container, context);
@@ -979,7 +966,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						Logger.error(this, "Not active: "+parent);
 					}
 				}
-				parent.onTransition(this, sf, container);
+				parent.onTransition(this, sf);
 				try {
 					sf.schedule(container, context);
 				} catch (KeyListenerConstructionException e) {
@@ -988,7 +975,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					return;
 				}
 				if(persistent) container.deactivate(sf, 1);
-				rcb.onBlockSetFinished(this, container, context);
+				rcb.onBlockSetFinished(this, context);
 				// Clear our own metadata, we won't need it any more.
 				// Note that SplitFileFetcher() above will have used the keys from the metadata,
 				// and will have removed them from it so they don't get removed here.
@@ -998,7 +985,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			} else {
 				Logger.error(this, "Don't know what to do with metadata: "+metadata);
-				removeMetadata(container);
 				throw new FetchException(FetchException.UNKNOWN_METADATA);
 			}
 		}
@@ -1038,7 +1024,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		// We need to transition here, so that everything gets deleted if we are cancelled during the archive fetch phase.
 		if(persistent) container.activate(parent, 1);
-		parent.onTransition(this, f, container);
+		parent.onTransition(this, f);
 		
 		if(!persistent) {
 			// Break locks. Must not call onFailure(), etc, from within SFF lock.
@@ -1092,15 +1078,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		@Override
-		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context) {
 			OutputStream output = null;
 			PipedInputStream pipeIn = new PipedInputStream();
 			PipedOutputStream pipeOut = new PipedOutputStream();
 			Bucket data = null;
-			if(persistent) {
-				container.activate(decompressors, 5);
-				container.activate(ctx, 2);
-			}
 			// FIXME not strictly correct and unnecessary - archive size already checked against ctx.max*Length inside SingleFileFetcher
 			long maxLen = Math.min(ctx.maxTempLength, ctx.maxOutputLength);
 			try {
@@ -1113,17 +1095,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, container, context);
+					streamGenerator.writeTo(pipeOut, context);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, container, context);
+				} else streamGenerator.writeTo(output, context);
 				// We want to see anything thrown when these are closed.
 				output.close(); output = null;
 				pipeOut.close(); pipeOut = null;
 				pipeIn.close(); pipeIn = null;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
 				return;
 			} finally {
 				Closer.close(pipeOut);
@@ -1132,20 +1114,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(key instanceof ClientSSK) {
 				// Fetching the container is essentially a full success, we should update the latest known good.
-				context.uskManager.checkUSK(uri, persistent, container, false);
+				context.uskManager.checkUSK(uri, persistent, null, false);
 			}
 
 			// Run directly, even if persistent.
-			parent.onTransition(state, SingleFileFetcher.this, container);
-			innerSuccess(data, container, context);
+			parent.onTransition(state, SingleFileFetcher.this);
+			innerSuccess(data, context);
 		}
 
-		private void innerSuccess(Bucket data, ObjectContainer container, ClientContext context) {
+		private void innerSuccess(Bucket data, ClientContext context) {
 			try {
 				if(hashes != null) {
 					InputStream is = null;
 					try {
-						if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
 						is = data.getInputStream();
 						MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
 						byte[] buf = new byte[32768];
@@ -1154,134 +1135,80 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						is = null;
 						HashResult[] results = hasher.getResults();
 						if(!HashResult.strictEquals(results, hashes)) {
-							onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), SingleFileFetcher.this, container, context);
+							onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), SingleFileFetcher.this, context);
 							return;
 						}
 					} catch (InsufficientDiskSpaceException e) {
-					    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), SingleFileFetcher.this, container, context);
+					    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), SingleFileFetcher.this, context);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), SingleFileFetcher.this, container, context);
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), SingleFileFetcher.this, context);
 						return;
 					} finally {
 						Closer.close(is);
 					}
 				}
-				ah.extractToCache(data, actx, element, callback, context.archiveManager, container, context);
+				ah.extractToCache(data, actx, element, callback, context.archiveManager, null, context);
 			} catch (ArchiveFailureException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(e), false, null, context);
 				return;
 			} catch (ArchiveRestartException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(e), false, null, context);
 				return;
 			} finally {
 				data.free();
-				if(persistent) data.removeFrom(container);
 			}
 			if(callback != null) return;
-			innerWrapHandleMetadata(true, container, context);
+			innerWrapHandleMetadata(true, null, context);
 		}
 
 		@Override
-		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				if(!wasActive)
-					container.activate(SingleFileFetcher.this, 1);
-			}
+		public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
-			SingleFileFetcher.this.onFailure(e, true, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(persistent) {
-				if(state != null)
-					state.removeFrom(container, context);
-				container.delete(this);
-				callback.removeFrom(container);
-				if(hashes != null) {
-					for(HashResult res : hashes) {
-						container.activate(res, Integer.MAX_VALUE);
-						res.removeFrom(container);
-					}
-				}
-			}
+			SingleFileFetcher.this.onFailure(e, true, null, context);
 		}
 
 		@Override
-		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				if(!wasActive)
-					container.activate(SingleFileFetcher.this, 1);
-			}
-			if(persistent)
-				container.activate(rcb, 1);
+		public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 			if(wasFetchingFinalData) {
-				rcb.onBlockSetFinished(SingleFileFetcher.this, container, context);
+				rcb.onBlockSetFinished(SingleFileFetcher.this, context);
 			}
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedMIME(ClientMetadata metadata, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata metadata, ClientContext context) {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				if(!wasActive)
-					container.activate(SingleFileFetcher.this, 1);
-			}
-			if(persistent)
-				container.activate(rcb, 1);
-			rcb.onExpectedSize(size, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
+		public void onExpectedSize(long size, ClientContext context) {
+			rcb.onExpectedSize(size, context);
 		}
 
 		@Override
-		public void onFinalizedMetadata(ObjectContainer container) {
+		public void onFinalizedMetadata() {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
 			// Ignore
 		}
 
 		@Override
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			boolean cbWasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				container.activate(SingleFileFetcher.this, 1);
-				cbWasActive = container.ext().isActive(rcb);
-				container.activate(rcb, 1);
-			}
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
 			// This is fetching an archive, which may or may not contain the file we are looking for (it includes metadata).
 			// So we are definitely not the bottom layer nor definitive.
-			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, false, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(!cbWasActive)
-				container.deactivate(rcb, 1);
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, false, context);
 		}
 
 		@Override
-		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+		public void onHashes(HashResult[] hashes, ClientContext context) {
 			this.hashes = hashes;
-			if(persistent) container.store(this);
 		}
 
 	}
@@ -1297,15 +1224,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		@Override
-		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ClientContext context) {
 			OutputStream output = null;
 			PipedInputStream pipeIn = new PipedInputStream();
 			PipedOutputStream pipeOut = new PipedOutputStream();
 			Bucket finalData = null;
-			if(persistent) {
-				container.activate(decompressors, 5);
-				container.activate(ctx, 2);
-			}
 			// does matter only on pre-1255 keys (1255 keys have top block sizes)
 			// FIXME would save at most few tics on decompression
 			// and block allocation;
@@ -1321,14 +1244,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, container, context);
+					streamGenerator.writeTo(pipeOut, context);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, container, context);
+				} else streamGenerator.writeTo(output, context);
 
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
 				return;
 			} finally {
 				Closer.close(pipeOut);
@@ -1336,132 +1259,75 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Closer.close(output);
 			}
 
-			boolean wasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				container.activate(SingleFileFetcher.this, 1);
-				container.activate(parent, 1);
-			}
 			try {
-				parent.onTransition(state, SingleFileFetcher.this, container);
+				parent.onTransition(state, SingleFileFetcher.this);
 				//FIXME: Pass an InputStream here, and save ourselves a Bucket
 				Metadata meta = Metadata.construct(finalData);
-				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
 					metadata = meta;
 				}
-				if(persistent) {
-					container.store(meta);
-					container.store(SingleFileFetcher.this);
-				}
-				innerWrapHandleMetadata(true, container, context);
+				innerWrapHandleMetadata(true, null, context);
 			} catch (MetadataParseException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, null, context);
 				return;
 			} catch (InsufficientDiskSpaceException e) {
-			    SingleFileFetcher.this.onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, container, context);
+			    SingleFileFetcher.this.onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, null, context);
 			    return;
 			} catch (IOException e) {
 				// Bucket error?
-				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, null, context);
 				return;
 			} finally {
 				finalData.free();
-				if(persistent)
-					finalData.removeFrom(container);
-			}
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(persistent) {
-				if(state != null) state.removeFrom(container, context);
-				container.delete(this);
 			}
 		}
 		
 		@Override
-		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				container.activate(SingleFileFetcher.this, 1);
-				container.activate(parent, 1);
-			}
-			parent.onTransition(state, SingleFileFetcher.this, container);
+		public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
+			parent.onTransition(state, SingleFileFetcher.this);
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
-			SingleFileFetcher.this.onFailure(e, true, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(persistent) {
-				if(state != null)
-					state.removeFrom(container, context);
-				// Conceivably removeFrom() could deactivate this, so don't recheck
-				container.delete(this);
-			}
+			SingleFileFetcher.this.onFailure(e, true, null, context);
 		}
 
 		@Override
-		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 			// Ignore as we are fetching metadata here
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedMIME(ClientMetadata mime, ObjectContainer container, ClientContext context) {
+		public void onExpectedMIME(ClientMetadata mime, ClientContext context) {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			boolean cbWasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				container.activate(SingleFileFetcher.this, 1);
-				cbWasActive = container.ext().isActive(rcb);
-				container.activate(rcb, 1);
-			}
-			rcb.onExpectedSize(size, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(!cbWasActive)
-				container.deactivate(rcb, 1);
+		public void onExpectedSize(long size, ClientContext context) {
+			rcb.onExpectedSize(size, context);
 		}
 
 		@Override
-		public void onFinalizedMetadata(ObjectContainer container) {
+		public void onFinalizedMetadata() {
 			// Ignore
 		}
 
 		@Override
-		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ClientContext context) {
 			// Ignore
 		}
 
 		@Override
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
-			boolean wasActive = true;
-			boolean cbWasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(SingleFileFetcher.this);
-				container.activate(SingleFileFetcher.this, 1);
-				cbWasActive = container.ext().isActive(rcb);
-				container.activate(rcb, 1);
-			}
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
 			// Pass through definitiveAnyway as the top block may include the details.
 			// Hence we can get them straight away rather than waiting for the bottom layer.
-			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, definitiveAnyway, container, context);
-			if(!wasActive)
-				container.deactivate(SingleFileFetcher.this, 1);
-			if(!cbWasActive)
-				container.deactivate(rcb, 1);
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, definitiveAnyway, context);
 		}
 
 		@Override
-		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+		public void onHashes(HashResult[] hashes, ClientContext context) {
 			// Ignore
 		}
 		
@@ -1497,7 +1363,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
-					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, context);
 					return null;
 				} else if(edition == -1 && 
 						context.uskManager.lookupLatestSlot(usk) == -1) { // We do not want to be going round and round here! 
@@ -1521,7 +1387,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					return sf;
 				}
 			} else {
-				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
+				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, context);
 				return null;
 			}
 		} else {
@@ -1595,18 +1461,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, container, context, false);
 					if(tag != null) {
 						if(persistent) container.activate(cb, 1);
-						cb.onTransition(tag, sf, container);
+						cb.onTransition(tag, sf);
 					}
 					sf.schedule(container, context);
 					if(persistent) removeFrom(container);
 				} else {
 					if(persistent) container.activate(cb, 1);
-					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, context);
 					if(persistent) removeFrom(container);
 				}
 			} catch (FetchException e) {
 				if(persistent) container.activate(cb, 1);
-				cb.onFailure(e, null, container, context);
+				cb.onFailure(e, null, context);
 				if(persistent) removeFrom(container);
 			}
 		}
@@ -1638,7 +1504,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) container.activate(cb, 1);
 			if(cb == null)
 				throw new NullPointerException("Callback is null in "+this+" for usk "+usk+" with datastoreOnly="+datastoreOnly);
-			cb.onFailure(e, null, container, context);
+			cb.onFailure(e, null, context);
 			if(persistent) removeFrom(container);
 		}
 
@@ -1646,7 +1512,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onCancelled(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(this, 2);
-			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null, container, context);
+			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null, context);
 			if(persistent) removeFrom(container);
 		}
 
@@ -1666,49 +1532,4 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 //		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
 //	}
 //	
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		if(thisKey != null) {
-			container.activate(thisKey, 5);
-			thisKey.removeFrom(container);
-		}
-		if(ah != null) {
-			ah.activateForExecution(container);
-			ah.removeFrom(container);
-		}
-		container.activate(metaStrings, 1);
-		metaStrings.clear();
-		container.delete(metaStrings);
-		container.activate(clientMetadata, 1);
-		clientMetadata.removeFrom(container);
-		// actx is global to the ClientRequest, not our problem
-		container.activate(decompressors, 1);
-		decompressors.clear();
-		removeMetadata(container);
-		removeArchiveMetadata(container);
-		container.delete(decompressors);
-		super.removeFrom(container, context);
-	}
-	
-	private void removeMetadata(ObjectContainer container) {
-		if(!persistent) return;
-		if(logMINOR) Logger.minor(this, "removeMetadata() on "+this);
-		if(metadata == null) return;
-		container.activate(metadata, 1);
-		metadata.removeFrom(container);
-		metadata = null;
-	}
-
-	private void removeArchiveMetadata(ObjectContainer container) {
-		if(!persistent) return;
-		if(logMINOR) Logger.minor(this, "removeArchiveMetadata() on "+this);
-		if(archiveMetadata == null) return;
-		container.activate(archiveMetadata, 1);
-		archiveMetadata.removeFrom(container);
-		archiveMetadata = null;
-	}
-	
 }

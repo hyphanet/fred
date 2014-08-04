@@ -38,7 +38,7 @@ public abstract class ClientRequester {
 		Logger.registerClass(ClientRequester.class);
 	}
 
-	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
+	public abstract void onTransition(ClientGetState oldState, ClientGetState newState);
 	
 	// FIXME move the priority classes from RequestStarter here
 	/** Priority class of the request or insert. */

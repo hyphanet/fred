@@ -90,7 +90,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			parent.fatallyFailedBlock(container, context);
 		else
 			parent.failedBlock(container, context);
-		rcb.onFailure(e, this, container, context);
+		rcb.onFailure(e, this, context);
 	}
 
 	/** Will be overridden by SingleFileFetcher */
@@ -105,7 +105,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
-		rcb.onSuccess(new SingleFileStreamGenerator(data.asBucket(), persistent), data.getMetadata(), null, this, container, context);
+		rcb.onSuccess(new SingleFileStreamGenerator(data.asBucket(), persistent), data.getMetadata(), null, this, context);
 	}
 
 	@Override
@@ -172,7 +172,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel(container, context);
 		if(persistent) container.activate(rcb, 1);
-		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, container, context);
+		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, context);
 	}
 
 	@Override

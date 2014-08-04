@@ -289,29 +289,25 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	@Override
-	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
 		if(generator == oldState)
 			generator = newState;
 		if(oldState == newState) return;
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingFor.get(i) == oldState) {
 				waitingFor.set(i, newState);
-				if(persistent) container.ext().store(waitingFor, 2);
 			}
 		}
 		for(int i=0;i<waitingForBlockSet.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				if(persistent) container.ext().store(waitingForBlockSet, 2);
 			}
 		}
 		for(int i=0;i<waitingForFetchable.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				if(persistent) container.ext().store(waitingForFetchable, 2);
 			}
 		}
-		if(persistent) container.store(this);
 	}
 
 	@Override

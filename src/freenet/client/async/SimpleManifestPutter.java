@@ -290,15 +290,13 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		 * what is passed in is different (in which case we remove that too).
 		 */
 		@Override
-		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+		public void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(newState == null) throw new NullPointerException();
 
 			// onTransition is *not* responsible for removing the old state, the caller is.
 			synchronized (this) {
 				if (currentState == oldState) {
 					currentState = newState;
-					if(persistent())
-						container.store(this);
 					if(logMINOR)
 						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState+" for "+this);
 					return;
@@ -505,7 +503,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
 
@@ -1582,31 +1580,19 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	@Override
-	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState) {
 		Metadata m = (Metadata) oldState.getToken();
-		if(persistent()) {
-			container.activate(m, Integer.MAX_VALUE);
-			container.activate(metadataPuttersUnfetchable, 2);
-			container.activate(metadataPuttersByMetadata, 2);
-		}
 		synchronized(this) {
 			ClientPutState prevState = metadataPuttersByMetadata.get(m);
 			if(prevState != null) {
 				if(prevState != oldState) {
 					if(logMINOR) Logger.minor(this, "Ignoring transition in "+this+" for metadata putter: "+oldState+" -> "+newState+" because current for "+m+" is "+prevState);
-					if(persistent()) {
-						container.deactivate(metadataPuttersUnfetchable, 1);
-						container.deactivate(metadataPuttersByMetadata, 1);
-					}
 					return;
 				}
-				if(persistent()) container.store(newState);
 				metadataPuttersByMetadata.put(m, newState);
-				if(persistent()) container.ext().store(metadataPuttersByMetadata, 2);
 				if(logMINOR) Logger.minor(this, "Metadata putter transition: "+oldState+" -> "+newState);
 				if(metadataPuttersUnfetchable.containsKey(m)) {
 					metadataPuttersUnfetchable.put(m, newState);
-					if(persistent()) container.ext().store(metadataPuttersUnfetchable, 2);
 					if(logMINOR) Logger.minor(this, "Unfetchable metadata putter transition: "+oldState+" -> "+newState);
 				}
 				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
@@ -1615,11 +1601,6 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 			}
 		}
 
-		if(persistent()) {
-			container.deactivate(m, 1);
-			container.deactivate(metadataPuttersUnfetchable, 2);
-			container.deactivate(metadataPuttersByMetadata, 2);
-		}
 	}
 
 	@Override
@@ -1881,7 +1862,7 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}
 

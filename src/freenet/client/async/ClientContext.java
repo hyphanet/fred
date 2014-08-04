@@ -191,7 +191,7 @@ public class ClientContext {
 				@Override
 				public boolean run(ClientContext context) {
 					try {
-						getter.start(null, context);
+						getter.start(context);
 					} catch (FetchException e) {
 						getter.clientCallback.onFailure(e, getter);
 					}
@@ -200,7 +200,7 @@ public class ClientContext {
 				
 			}, NativeThread.NORM_PRIORITY);
 		} else {
-			getter.start(null, this);
+			getter.start(this);
 		}
 	}
 

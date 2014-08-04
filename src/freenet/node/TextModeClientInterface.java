@@ -319,7 +319,7 @@ public class TextModeClientInterface implements Runnable {
 	        		FetchWaiter fw = new FetchWaiter((RequestClient)client);
 	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, null, null, null);
 	        		get.setMetaSnoop(new DumperSnoopMetadata());
-	            	get.start(null, n.clientCore.clientContext);
+	            	get.start(n.clientCore.clientContext);
 					FetchResult result = fw.waitForCompletion();
 					ClientMetadata cm = result.getMetadata();
 	                outsb.append("Content MIME type: ").append(cm.getMIMEType());

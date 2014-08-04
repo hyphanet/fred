@@ -125,9 +125,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             if(!wasActive)
                 container.activate(cb, 1);
         }
-        cb.onExpectedSize(eventualLength, container, context);
+        cb.onExpectedSize(eventualLength, context);
         if(metadata.uncompressedDataLength() > 0)
-            cb.onFinalizedMetadata(container);
+            cb.onFinalizedMetadata();
         if(!wasActive)
             container.deactivate(cb, 1);
         if(eventualLength > 0 && fetchContext.maxOutputLength > 0 && eventualLength > fetchContext.maxOutputLength)
@@ -167,7 +167,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         getter.cancel(context);
         if(storage != null)
             storage.cancel();
-        cb.onFailure(e, this, null, context);
+        cb.onFailure(e, this, context);
     }
 
     @Override
@@ -202,7 +202,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
         cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
-                this, null, context);
+                this, context);
         storage.finishedFetcher();
     }
     
@@ -227,7 +227,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max,
             byte[] customSplitfileKey, boolean compressed, boolean bottomLayer,
             boolean definitiveAnyway) {
-        cb.onSplitfileCompatibilityMode(min, max, customSplitfileKey, compressed, bottomLayer, definitiveAnyway, null, context);
+        cb.onSplitfileCompatibilityMode(min, max, customSplitfileKey, compressed, bottomLayer, definitiveAnyway, context);
     }
 
     @Override

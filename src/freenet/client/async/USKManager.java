@@ -201,7 +201,7 @@ public class USKManager {
 		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
 		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
 		try {
-			get.start(null, context);
+			get.start(context);
 		} catch (FetchException e) {
 			// Ignore
 		}
@@ -228,7 +228,7 @@ public class USKManager {
 		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
 		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
 		try {
-			get.start(null, context);
+			get.start(context);
 		} catch (FetchException e) {
 			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			// Ignore
@@ -302,7 +302,7 @@ public class USKManager {
 			
 		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
 		try {
-			get.start(null, context);
+			get.start(context);
 		} catch (FetchException e) {
 			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			if(e.isDataFound())
@@ -451,7 +451,7 @@ public class USKManager {
                     }
 				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
 				try {
-					get.start(null, context);
+					get.start(context);
 				} catch (FetchException e) {
 					if(logMINOR) Logger.minor(this, "Prefetch failed: "+e, e);
 					// Ignore

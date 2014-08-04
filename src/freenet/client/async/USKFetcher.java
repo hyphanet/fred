@@ -209,7 +209,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public void onSuccess(StreamGenerator streamGenerator,
 				ClientMetadata clientMetadata,
 				List<? extends Compressor> decompressors, ClientGetState state,
-				ObjectContainer container, ClientContext context) {
+				ClientContext context) {
 			OutputStream output = null;
 			PipedInputStream pipeIn = new PipedInputStream();
 			PipedOutputStream pipeOut = new PipedOutputStream();
@@ -225,10 +225,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					pipeIn = decompressorManager.execute();
 					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 					worker.start();
-					streamGenerator.writeTo(pipeOut, container, context);
+					streamGenerator.writeTo(pipeOut, context);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, container, context);
+				} else streamGenerator.writeTo(output, context);
 
 				output.close();
 				pipeOut.close();
@@ -238,10 +238,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				pipeIn = null;
 				
 				// Run directly - we are running on some thread somewhere, don't worry about it.
-				innerSuccess(data, container, context);
+				innerSuccess(data, context);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
 				return;
 			} finally {
 				boolean dbrsFinished;
@@ -257,7 +257,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					onDBRsFinished(context);
 			}
 		}
-		private void innerSuccess(Bucket bucket, ObjectContainer container,
+		private void innerSuccess(Bucket bucket, 
 				ClientContext context) {
 			byte[] data;
 			try {
@@ -295,15 +295,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
 				return;
 			}
-			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, null).getURI()+" for "+USKFetcher.this);
 			processDBRHint(hint, context, this);
 		}
 		
 		@Override
 		public void onFailure(FetchException e, ClientGetState state,
-				ObjectContainer container, ClientContext context) {
+				ClientContext context) {
 			// Okay.
-			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, null)+" for "+this+" for "+USKFetcher.this);
 			boolean dbrsFinished;
 			synchronized(USKFetcher.this) {
 				dbrAttempts.remove(this);
@@ -315,31 +315,31 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		@Override
 		public void onBlockSetFinished(ClientGetState state,
-				ObjectContainer container, ClientContext context) {
-			// Ignore
-		}
-		@Override
-		public void onTransition(ClientGetState oldState,
-				ClientGetState newState, ObjectContainer container) {
-			// Ignore
-		}
-		@Override
-		public void onExpectedSize(long size, ObjectContainer container,
 				ClientContext context) {
 			// Ignore
 		}
 		@Override
-		public void onExpectedMIME(ClientMetadata meta, ObjectContainer container,
+		public void onTransition(ClientGetState oldState,
+				ClientGetState newState) {
+			// Ignore
+		}
+		@Override
+		public void onExpectedSize(long size,
+				ClientContext context) {
+			// Ignore
+		}
+		@Override
+		public void onExpectedMIME(ClientMetadata meta,
 				ClientContext context) throws FetchException {
 			// Ignore
 		}
 		@Override
-		public void onFinalizedMetadata(ObjectContainer container) {
+		public void onFinalizedMetadata() {
 			// Ignore
 		}
 		@Override
 		public void onExpectedTopSize(long size, long compressed,
-				int blocksReq, int blocksTotal, ObjectContainer container,
+				int blocksReq, int blocksTotal,
 				ClientContext context) {
 			// Ignore
 		}
@@ -347,12 +347,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public void onSplitfileCompatibilityMode(CompatibilityMode min,
 				CompatibilityMode max, byte[] customSplitfileKey,
 				boolean compressed, boolean bottomLayer,
-				boolean definitiveAnyway, ObjectContainer container,
+				boolean definitiveAnyway,
 				ClientContext context) {
 			// Ignore
 		}
 		@Override
-		public void onHashes(HashResult[] hashes, ObjectContainer container,
+		public void onHashes(HashResult[] hashes,
 				ClientContext context) {
 			// Ignore
 		}
