@@ -55,6 +55,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(magic != MAGIC) throw new IOException("Bad magic");
                 int version = ois.readInt();
                 if(version != VERSION) throw new IOException("Bad version");
+                int requests = ois.readInt();
+                for(int i=0;i<requests;i++) {
+                    // FIXME write a simpler, more robust, non-serialized version first.
+                    ClientRequester requester = (ClientRequester) ois.readObject();
+                    requester.onResume(context);
+                }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
                 return;
             } catch (IOException e) {
@@ -92,6 +98,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeLong(MAGIC);
             oos.writeInt(VERSION);
+            ClientRequester[] requesters = getRequesters();
+            oos.writeInt(requesters.length);
+            for(ClientRequester req : requesters) {
+                // FIXME write a simpler, more robust, non-serialized version first.
+                oos.writeObject(req);
+            }
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
             persistentTempFactory.postCommit(this);
@@ -108,6 +120,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
+    private ClientRequester[] getRequesters() {
+        return node.clientCore.getPersistentRequesters();
+    }
+
     public PersistentStatsPutter getBandwidthStats() {
         return bandwidthStatsPutter;
     }
