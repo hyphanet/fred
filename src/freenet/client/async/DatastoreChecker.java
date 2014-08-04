@@ -91,7 +91,7 @@ public class DatastoreChecker implements PrioRunnable {
 
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
 		Key[] checkKeys = getter.listKeys(null);
-		short prio = getter.getPriorityClass(null);
+		short prio = getter.getPriorityClass();
 		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);

@@ -66,7 +66,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	protected final boolean persistent;
 	
 	/** Get the priority class of the request. */
-	public abstract short getPriorityClass(ObjectContainer container);
+	public abstract short getPriorityClass();
 	
 	/** Choose a key to fetch. Must not modify any persisted structures, but will update cooldowns
 	 * etc to avoid it being chosen again soon. There is a separate callback for when a fetch

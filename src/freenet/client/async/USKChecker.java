@@ -116,7 +116,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	@Override
-	public short getPriorityClass(ObjectContainer container) {
+	public short getPriorityClass() {
 		return cb.getPriority();
 	}
 	

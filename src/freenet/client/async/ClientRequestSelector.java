@@ -336,10 +336,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				} else {
 					req = (SendableRequest) val.item;
 				}
-				if(req.getPriorityClass(container) != choosenPriorityClass) {
+				if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
-					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
+					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					// Remove it.
 					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
 					if(clientGrabber != null) {
@@ -399,11 +399,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						}
 					}
 					if (altReq != null && altReq != req) {
-						int prio = altReq.getPriorityClass(container);
+						int prio = altReq.getPriorityClass();
 						if(prio <= choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
-								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
+								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass()+") is better than "+req+" (prio="+req.getPriorityClass()+"), using that");
 							// Don't need to reregister, because removeRandom doesn't actually remove!
 							req = altReq;
 						} else {
@@ -438,7 +438,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							}
 							if(altReq != null && altReq != req) {
 								container.activate(altReq, 1);
-								int prio = altReq.getPriorityClass(container);
+								int prio = altReq.getPriorityClass();
 								boolean useRecent = false;
 								if(prio <= choosenPriorityClass) {
 									if(altReq.getCooldownTime(container, context, now) != 0)
@@ -447,7 +447,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								if(useRecent) {
 									// Use the recent one instead
 									if(logMINOR)
-										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
+										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass()+") is better than "+req+" (prio="+req.getPriorityClass()+"), using that");
 									// Don't need to reregister, because removeRandom doesn't actually remove!
 									req = altReq;
 								} else {
@@ -466,7 +466,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				// Now we have chosen a request.
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
-						req.getPriorityClass(container)+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
+						req.getPriorityClass()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 				assert(req.realTimeFlag() == realTime);
 				return new SelectorReturn(req);

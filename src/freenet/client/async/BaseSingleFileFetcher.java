@@ -152,7 +152,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			}
 			return true; // We will retry in any case, maybe not just not yet.
 		}
-		unregister(container, context, getPriorityClass(container));
+		unregister(container, context, getPriorityClass());
 		return false;
 	}
 
@@ -196,10 +196,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public short getPriorityClass(ObjectContainer container) {
-		if(persistent) container.activate(parent, 1); // Not much point deactivating it
-		short retval = parent.getPriorityClass();
-		return retval;
+	public short getPriorityClass() {
+		return parent.getPriorityClass();
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -269,7 +267,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				return;
 			}
 		}
-		unregister(container, context, getPriorityClass(container)); // Key has already been removed from pendingKeys
+		unregister(container, context, getPriorityClass()); // Key has already been removed from pendingKeys
 		onSuccess(block, false, null, container, context);
 		if(persistent) {
 			container.deactivate(this, 1);

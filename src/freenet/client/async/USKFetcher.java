@@ -186,7 +186,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		@Override
-		public short getPriorityClass(ObjectContainer container) {
+		public short getPriorityClass() {
 			return progressPollPriority;
 		}
 		
@@ -1087,7 +1087,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			a.cancel(container, context);
 		if(storeChecker != null)
 			// Remove from the store checker queue.
-			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
+			storeChecker.unregister(container, context, storeChecker.getPriorityClass());
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually
@@ -1451,7 +1451,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		@Override
 		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-			unregister(container, context, getPriorityClass(container));
+			unregister(container, context, getPriorityClass());
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {
 				runningStoreChecker = null;
@@ -1528,7 +1528,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public short getPriorityClass(ObjectContainer container) {
+		public short getPriorityClass() {
 			return progressPollPriority; // FIXME
 		}
 

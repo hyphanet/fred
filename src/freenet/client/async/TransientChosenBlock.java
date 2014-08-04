@@ -60,7 +60,7 @@ public class TransientChosenBlock extends ChosenBlock {
 	
 	@Override
 	public short getPriority() {
-		return request.getPriorityClass(null);
+		return request.getPriorityClass();
 	}
 
 	@Override

@@ -98,7 +98,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
 		if(req.persistent() != persistent())
 			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
-		short prio = req.getPriorityClass(container);
+		short prio = req.getPriorityClass();
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
 		sched.selector.addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);

@@ -77,7 +77,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public short getPriorityClass(ObjectContainer container) {
+	public short getPriorityClass() {
 		return prioClass;
 	}
 

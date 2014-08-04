@@ -94,7 +94,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public short getPriorityClass(ObjectContainer container) {
+    public short getPriorityClass() {
         return parent.getPriorityClass();
     }
 

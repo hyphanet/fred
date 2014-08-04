@@ -116,7 +116,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		synchronized(getScheduler(container, context)) {
 			context.cooldownTracker.removeCachedWakeup(this);
 		}
-		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
+		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
 	}
 	
 	public static FetchException translateException(LowLevelGetException e) {

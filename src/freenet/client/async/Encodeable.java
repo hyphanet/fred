@@ -9,6 +9,6 @@ public interface Encodeable {
 
 	public boolean persistent();
 
-	public short getPriorityClass(ObjectContainer container);
+	public short getPriorityClass();
 	
 }
