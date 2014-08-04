@@ -35,7 +35,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 import freenet.support.io.Closer;
 
 public class SimpleManifestPutter extends ManifestPutter implements PutCompletionCallback {
@@ -572,6 +571,11 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
         @Override
         public void onResume(ClientContext context) {
             // Do nothing.
+        }
+
+        @Override
+        protected ClientBaseCallback getCallback() {
+            return null;
         }
 
 	}
@@ -2014,7 +2018,12 @@ public class SimpleManifestPutter extends ManifestPutter implements PutCompletio
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing.
+        super.onResume(context);
+    }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return cb;
     }
 
 }

@@ -282,6 +282,11 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			}
 		}
 
+	    @Override
+	    public void onResume(ClientContext context) {
+	        // Do nothing. Not persistent.
+	    }
+
 	}
 	
 	@Override

@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequester;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -58,11 +61,13 @@ public class FCPPersistentRoot {
 		    }
 		}
 	}
-	
-	public void onResume(ClientContext context) {
-	    globalForeverClient.onResume(context);
-	    for(FCPClient c : clients.values())
-	        c.onResume(context);
-	}
 
+    public ClientRequester[] getPersistentRequesters() {
+        List<ClientRequester> requesters = new ArrayList<ClientRequester>();
+        globalForeverClient.addPersistentRequesters(requesters);
+        for(FCPClient client : clients.values())
+            client.addPersistentRequesters(requesters);
+        return requesters.toArray(new ClientRequester[requesters.size()]);
+    }
+	
 }

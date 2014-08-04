@@ -3,6 +3,7 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
@@ -86,5 +87,10 @@ public class PutWaiter implements ClientPutCallback {
 		Logger.error(this, "onGeneratedMetadata() on PutWaiter from "+state, new Exception("error"));
 		metadata.free();
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        throw new UnsupportedOperationException(); // Not persistent.
+    }
 
 }

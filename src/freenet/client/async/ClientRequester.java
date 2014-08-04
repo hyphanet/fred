@@ -484,6 +484,10 @@ public abstract class ClientRequester {
     }
     
     /** Called for a persistent request after startup. */
-    public abstract void onResume(ClientContext context);
+    public void onResume(ClientContext context) {
+        getCallback().onResume(context);
+    }
+
+    protected abstract ClientBaseCallback getCallback();
     
 }

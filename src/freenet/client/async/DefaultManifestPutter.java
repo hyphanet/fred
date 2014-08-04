@@ -417,6 +417,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing.
+        super.onResume(context);
     }
 }

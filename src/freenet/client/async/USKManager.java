@@ -301,6 +301,11 @@ public class USKManager {
 				else
 					cb.failed(origURI, token, e);
 			}
+
+            @Override
+            public void onResume(ClientContext context) {
+                // Do nothing.
+            }
 			
 		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null, null);
 		try {
@@ -441,6 +446,11 @@ public class USKManager {
 					public void onMajorProgress(ObjectContainer container) {
 						// Ignore
 					}
+
+                    @Override
+                    public void onResume(ClientContext context) {
+                        // Do nothing. Not persistent.
+                    }
 				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null, null);
 				try {
 					get.start(null, context);

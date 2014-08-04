@@ -32,7 +32,6 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * <P>This class contains all the insert logic, but not any 'pack logic'.
@@ -969,6 +968,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         @Override
         public void onResume(ClientContext context) {
             // Do nothing.
+        }
+        
+        @Override
+        protected ClientBaseCallback getCallback() {
+            return null;
         }
 
 	}
@@ -1998,5 +2002,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 		}
 	}
+	
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return cb;
+    }
 	
 }

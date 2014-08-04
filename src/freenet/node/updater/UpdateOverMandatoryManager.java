@@ -35,6 +35,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
 import freenet.client.async.BinaryBlobWriter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -1085,6 +1086,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					temp.free();
 				insertBlob(updateManager.revocationChecker.getBlobBucket(), "revocation");
 			}
+			
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
@@ -1137,6 +1143,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				Logger.error(this, "Got onGeneratedMetadata inserting blob from "+state, new Exception("error"));
 				metadata.free();
 			}
+
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
 		};
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
@@ -1534,6 +1545,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				temp.delete();
 				insertBlob(mainUpdater.getBlobBucket(version), "main jar");
 			}
+
+            @Override
+            public void onResume(ClientContext context) {
+                // Not persistent.
+            }
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,

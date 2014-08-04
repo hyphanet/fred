@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 
@@ -49,4 +50,10 @@ public class FetchWaiter implements ClientGetCallback {
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        throw new UnsupportedOperationException();
+        // Not persistent.
+    }
 }

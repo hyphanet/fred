@@ -18,6 +18,7 @@ import freenet.client.NewFECCodec;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
+import freenet.client.async.ClientRequester;
 import freenet.client.async.InsertCompressorTracker;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
@@ -1717,6 +1718,10 @@ public class NodeClientCore implements Persistable {
 
     public boolean killedDatabase() {
         return this.clientLayerPersister.isKilledOrNotLoaded();
+    }
+
+    public ClientRequester[] getPersistentRequesters() {
+        return fcpPersistentRoot.getPersistentRequesters();
     }
 
 }

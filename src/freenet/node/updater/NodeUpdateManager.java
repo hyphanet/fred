@@ -17,6 +17,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.PersistenceDisabledException;
@@ -470,6 +471,11 @@ public class NodeUpdateManager {
 		public void onMajorProgress(ObjectContainer container) {
 			// Ignore
 		}
+
+        @Override
+        public void onResume(ClientContext context) {
+            // Not persistent.
+        }
 
 	}
 

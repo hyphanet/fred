@@ -555,4 +555,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		return true;
 	}
 
+    @Override
+    public void onResume(ClientContext context) {
+        throw new UnsupportedOperationException(); // Not persistent.
+    }
+
 }

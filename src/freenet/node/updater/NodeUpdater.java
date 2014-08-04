@@ -601,5 +601,9 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	public boolean realTimeFlag() {
 		return false;
 	}
-
+	
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
 }

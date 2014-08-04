@@ -110,7 +110,12 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing.
+        super.onResume(context);
+    }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return null;
     }
 
 }

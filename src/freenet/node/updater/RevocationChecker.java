@@ -12,6 +12,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.PersistenceDisabledException;
@@ -402,5 +403,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	public boolean realTimeFlag() {
 		return false;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Not persistent.
+    }
 
 }

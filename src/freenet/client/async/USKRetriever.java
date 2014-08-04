@@ -330,5 +330,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
         Logger.error(this, "Cannot be persistent");
         // Do nothing. Cannot be persistent.
     }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        // Not persistent.
+        return null;
+    }
 	
 }

@@ -11,6 +11,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.PersistenceDisabledException;
@@ -297,5 +298,10 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		Logger.error(this, "Bogus onGeneratedMetadata() on "+this+" from "+state, new Exception("error"));
 		metadata.free();
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Not persistent.
+    }
 
 }

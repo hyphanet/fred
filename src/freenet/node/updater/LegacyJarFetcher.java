@@ -179,4 +179,9 @@ class LegacyJarFetcher implements ClientGetCallback {
 		cb.onFailure(e, this);
 	}
 
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
+
 }

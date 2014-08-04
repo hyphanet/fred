@@ -925,10 +925,14 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     /** Called for a persistent request after startup. */
     @Override
     public void onResume(ClientContext context) {
+        super.onResume(context);
         if(currentState != null)
             currentState.onResume(context);
     }
-    
 
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return clientCallback;
+    }
 
 }

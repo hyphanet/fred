@@ -652,7 +652,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing.
+        super.onResume(context);
+    }
+
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return client;
     }
     
 }

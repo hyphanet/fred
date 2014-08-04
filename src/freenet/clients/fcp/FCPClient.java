@@ -15,6 +15,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequester;
 import freenet.clients.fcp.ListPersistentRequestsMessage.PersistentListJob;
 import freenet.clients.fcp.ListPersistentRequestsMessage.TransientListJob;
 import freenet.keys.FreenetURI;
@@ -723,9 +724,11 @@ public class FCPClient implements Serializable {
             dos.writeUTF(name);
     }
 
-    public void onResume(ClientContext context) {
+    public void addPersistentRequesters(List<ClientRequester> requesters) {
         for(ClientRequest req : runningPersistentRequests)
-            req.onResume(context);
+            requesters.add(req.getClientRequest());
+        for(ClientRequest req : completedUnackedRequests)
+            requesters.add(req.getClientRequest());
     }
 
 }

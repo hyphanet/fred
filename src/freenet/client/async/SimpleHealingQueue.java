@@ -192,4 +192,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
         // Do nothing. Not persisted.
     }
 
+    @Override
+    protected ClientBaseCallback getCallback() {
+        return null;
+    }
+
 }
