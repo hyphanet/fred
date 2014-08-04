@@ -42,6 +42,8 @@ public abstract class ClientRequest implements Serializable {
 	protected FCPClient client;
 	/** Priority class */
 	protected short priorityClass;
+	/** Is the request scheduled as "real-time" (as opposed to bulk)? */
+	protected final boolean realTime;
 	/** Persistence type */
 	protected final short persistenceType;
 	/** Charset of the request's contents */
@@ -94,6 +96,7 @@ public abstract class ClientRequest implements Serializable {
 		hashCode = 0;
 		identifier = null;
 		clientName = null;
+		realTime = false;
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
@@ -133,6 +136,7 @@ public abstract class ClientRequest implements Serializable {
 		}
 		assert lowLevelClient != null;
 		this.startupTime = System.currentTimeMillis();
+		this.realTime = realTime;
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
@@ -197,6 +201,7 @@ public abstract class ClientRequest implements Serializable {
 		if(client != null)
 			assert(client.persistenceType == persistenceType);
 		this.startupTime = System.currentTimeMillis();
+		this.realTime = realTime;
 	}
 
 	/** Lost connection */
