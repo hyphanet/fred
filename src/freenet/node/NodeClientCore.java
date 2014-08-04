@@ -340,7 +340,7 @@ public class NodeClientCore implements Persistable {
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        persistentRAFFactory, compressor, storeChecker, toadlets, memoryLimitedJobsMemoryLimit);
+		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		
