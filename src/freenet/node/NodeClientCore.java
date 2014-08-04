@@ -100,7 +100,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, ExecutorIdleCallback {
+public class NodeClientCore implements Persistable {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -1731,20 +1731,6 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 
 	public long countQueuedRequests() {
 		return requestStarters.countQueuedRequests();
-	}
-
-	@Override
-	public void onIdle() {
-		synchronized(NodeClientCore.this) {
-			if(killedDatabase) return;
-		}
-		persistentTempBucketFactory.preCommit(node.db);
-		node.db.commit();
-		synchronized(NodeClientCore.this) {
-			lastCommitted = System.currentTimeMillis();
-		}
-		if(logMINOR) Logger.minor(this, "COMMITTED");
-		persistentTempBucketFactory.postCommit(node.db);
 	}
 
 	public static int getMaxBackgroundUSKFetchers() {

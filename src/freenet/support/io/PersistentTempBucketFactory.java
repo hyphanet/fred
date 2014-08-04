@@ -11,17 +11,12 @@ import java.util.HashSet;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Predicate;
 
-import freenet.client.async.DBJob;
-import freenet.client.async.DBJobRunner;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.PersistentJobRunner;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -243,11 +238,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		synchronized(this) {
 			if(!modifiedBucketsToFree) return;
 			modifiedBucketsToFree = false;
-			for(DelayedFreeBucket bucket : bucketsToFree) {
-				db.activate(bucket, 1);
-				bucket.storeTo(db);
-			}
-			db.store(bucketsToFree);
 		}
 	}
 	
@@ -256,7 +246,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * of them, commits the transaction again.
 	 * @param db The database.
 	 */
-	public void postCommit(ObjectContainer db) {
+	public void postCommit(PersistentJobRunner jobRunner) {
 		DelayedFreeBucket[] toFree = grabBucketsToFree();
 		if(toFree == null || toFree.length == 0) return;
 		int x = 0;
@@ -265,18 +255,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				if(bucket.toFree())
 					bucket.realFree();
 				if(bucket.toRemove())
-					bucket.realRemoveFrom(db);
+					bucket.realRemoveFrom(null);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
 			}
 			x++;
 		}
 		if(x > 1024) {
-			synchronized(this) {
-				db.store(bucketsToFree);
-			}
-			// Lots of buckets freed, commit now to reduce memory footprint.
-			db.commit();
+            // Lots of buckets freed, commit now to reduce memory footprint.
+		    jobRunner.setCommitThisTransaction();
 		}
 	}
 

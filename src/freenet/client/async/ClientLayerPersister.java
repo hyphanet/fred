@@ -99,6 +99,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     protected void save() {
+        this.persistentTempFactory.preCommit(null);
         // FIXME backups.
         OutputStream fos = null;
         try {
@@ -112,6 +113,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeObject(persistentTempFactory);
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
+            this.persistentTempBucketFactory().postCommit(this);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
             e.printStackTrace();
