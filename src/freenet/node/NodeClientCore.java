@@ -107,7 +107,7 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 		Logger.registerClass(NodeClientCore.class);
 	}
 
-	public final PersistentStatsPutter bandwidthStatsPutter;
+	public PersistentStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -610,14 +610,9 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 
 	private FECQueue initFECQueue(long nodeDBHandle, ObjectContainer container, FECQueue oldQueue) {
 		FECQueue q;
-		try {
-			oldFECQueue = oldQueue;
-			if(!killedDatabase) q = FECQueue.create(node.nodeDBHandle, container, oldQueue);
-			else q = new FECQueue(node.nodeDBHandle);
-		} catch (Db4oException e) {
-			killedDatabase = true;
-			q = new FECQueue(node.nodeDBHandle);
-		}
+		oldFECQueue = oldQueue;
+		if(!killedDatabase()) q = FECQueue.create(node.nodeDBHandle, container, oldQueue);
+		else q = new FECQueue(node.nodeDBHandle);
 		return q;
 	}
 
@@ -625,43 +620,14 @@ public class NodeClientCore implements Persistable, ExecutorIdleCallback {
 
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
-		synchronized(this) {
-			killedDatabase = false;
-		}
 		// Don't actually start the database thread yet, messy concurrency issues.
 		lateInitFECQueue(nodeDBHandle, container);
-		initPTBF(container, node.config.get("node"));
+		initPTBF(node.config.get("node"));
 		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
-		if(!killedDatabase()) {
-		    InsertCompressor.load(clientContext);
-		}
-		if(!killedDatabase)
-			fcpServer.load(container);
-		synchronized(this) {
-			if(killedDatabase) {
-				fecQueue = oldFECQueue;
-				clientContext.setFECQueue(oldFECQueue);
-				persistentTempBucketFactory = null;
-				persistentFilenameGenerator = null;
-				clientContext.setPersistentBucketFactory(null, null);
-				return false;
-			}
-		}
-
-		bandwidthStatsPutter.restorePreviousData(container);
-		this.getTicker().queueTimedJob(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
-					getTicker().queueTimedJob(this, "BandwidthStatsPutter", PersistentStatsPutter.OFFSET, false, true);
-				} catch (DatabaseDisabledException e) {
-					// Should be safe to ignore.
-				}
-			}
-		}, PersistentStatsPutter.OFFSET);
-
+		InsertCompressor.load(clientContext);
+		fcpServer.load(this.clientLayerPersister.getPersistentRoot());
+		this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
 		// FIXME This is a hack!!
