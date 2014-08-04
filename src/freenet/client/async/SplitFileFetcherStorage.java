@@ -886,8 +886,9 @@ public class SplitFileFetcherStorage {
 
     /** A segment successfully completed. 
      * @throws PersistenceDisabledException */
-    public void finishedSuccess(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage) {
+    public void finishedSuccess(SplitFileFetcherSegmentStorage segment) {
         if(allSucceeded()) {
+            if(logMINOR) Logger.minor(this, "finishedSuccess on "+this+" from "+segment+" for "+fetcher, new Exception("debug"));
             jobRunner.queueLowOrDrop(new PersistentJob() {
 
                 @Override
@@ -985,6 +986,7 @@ public class SplitFileFetcherStorage {
     public void finishedFetcher() {
         synchronized(this) {
             if(finishedFetcher) {
+                if(logMINOR) Logger.minor(this, "Already finishedFetcher");
                 return;
             }
             finishedFetcher = true;
@@ -1004,6 +1006,7 @@ public class SplitFileFetcherStorage {
     private void finishedEncoding() {
         synchronized(this) {
             if(finishedEncoding) {
+                if(logMINOR) Logger.minor(this, "Already finishedEncoding");
                 return;
             }
             finishedEncoding = true;
@@ -1074,6 +1077,7 @@ public class SplitFileFetcherStorage {
     }
 
     public void failOnDiskError(final IOException e) {
+        Logger.error(this, "Failing on disk error: "+e, e);
         jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override

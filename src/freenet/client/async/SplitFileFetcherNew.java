@@ -191,6 +191,12 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void onSuccess() {
         synchronized(this) {
+            if(succeeded) {
+                Logger.error(this, "Called onSuccess() twice on "+this, new Exception("debug"));
+                return;
+            } else {
+                if(logMINOR) Logger.minor(this, "onSuccess() on "+this, new Exception("debug"));
+            }
             succeeded = true;
         }
         context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
