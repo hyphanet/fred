@@ -318,7 +318,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         }
         getter = new SplitFileFetcherGet(this, storage);
         try {
-            getter.schedule(context, false);
+            getter.schedule(context, storage.hasCheckedStore());
         } catch (KeyListenerConstructionException e) {
             Logger.error(this, "Key listener construction failed during resume: "+e, e);
             fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));

@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import java.util.List;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
@@ -12,7 +10,6 @@ import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
@@ -27,8 +24,6 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     final SplitFileFetcherNew parent;
     final SplitFileFetcherStorage storage;
-    /** Have we completed checking the datastore, and finished registering? */
-    private boolean hasCheckedStore;
 
     public SplitFileFetcherGet(SplitFileFetcherNew fetcher, SplitFileFetcherStorage storage) {
         super(fetcher.parent, fetcher.realTimeFlag);
@@ -103,9 +98,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
         if(!toNetwork) return false;
-        synchronized(this) {
-            hasCheckedStore = true;
-        }
+        storage.setHasCheckedStore();
         // Notify clients of all the work we've done checking the datastore.
         parent.parent.notifyClients(container, context);
         if(parent.localRequestOnly()) {
@@ -190,8 +183,8 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     /** Has preRegister() been called? */
-    public synchronized boolean hasQueued() {
-        return hasCheckedStore;
+    public boolean hasQueued() {
+        return storage.hasCheckedStore();
     }
 
 }

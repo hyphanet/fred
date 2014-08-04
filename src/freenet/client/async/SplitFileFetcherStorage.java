@@ -170,6 +170,8 @@ public class SplitFileFetcherStorage {
     final long offsetKeyList;
     /** Offset to start of the segment status'es in bytes */
     final long offsetSegmentStatus;
+    /** Offset to start of the general progress section */
+    final long offsetGeneralProgress;
     /** Offset to start of the bloom filters in bytes */
     final long offsetMainBloomFilter;
     /** Offset to start of the per-segment bloom filters in bytes */
@@ -188,6 +190,8 @@ public class SplitFileFetcherStorage {
     final int checksumLength;
     /** Checksum implementation */
     final ChecksumChecker checksumChecker;
+    private boolean hasCheckedDatastore;
+    static final long HAS_CHECKED_DATASTORE_FLAG = 1;
     /** Fixed value posted at the end of the file (if plaintext!) */
     static final long END_MAGIC = 0x28b32d99416eb6efL;
     /** Current format version */
@@ -325,14 +329,18 @@ public class SplitFileFetcherStorage {
         
         this.offsetKeyList = storedBlocksLength;
         this.offsetSegmentStatus = offsetKeyList + storedKeysLength;
+        
+        byte[] generalProgress = appendChecksum(encodeGeneralProgress());
+        
         if(persistent) {
-            this.offsetMainBloomFilter = offsetSegmentStatus + storedSegmentStatusLength;
+            offsetGeneralProgress = offsetSegmentStatus + storedSegmentStatusLength;
+            this.offsetMainBloomFilter = offsetGeneralProgress + generalProgress.length; 
             this.offsetSegmentBloomFilters = offsetMainBloomFilter + keyListener.paddedMainBloomFilterSize();
             this.offsetOriginalMetadata = offsetSegmentBloomFilters + 
                 keyListener.totalSegmentBloomFiltersSize();
         } else {
             // Don't store anything except the blocks and the key list.
-            offsetMainBloomFilter = offsetSegmentBloomFilters = offsetOriginalMetadata = offsetSegmentStatus;
+            offsetGeneralProgress = offsetMainBloomFilter = offsetSegmentBloomFilters = offsetOriginalMetadata = offsetSegmentStatus;
         }
             
         
@@ -451,6 +459,7 @@ public class SplitFileFetcherStorage {
             if(persistent) {
                 for(SplitFileFetcherSegmentStorage segment : segments)
                     segment.writeMetadata();
+                raf.pwrite(offsetGeneralProgress, generalProgress, 0, generalProgress.length);
                 keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
                 keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
                 BucketTools.copyTo(metadataTemp, raf, offsetOriginalMetadata, -1);
@@ -616,6 +625,9 @@ public class SplitFileFetcherStorage {
         offsetSegmentStatus = dis.readLong();
         if(offsetSegmentStatus < 0 || offsetSegmentStatus > rafLength) 
             throw new StorageFormatException("Invalid offset (segment status)");
+        offsetGeneralProgress = dis.readLong();
+        if(offsetGeneralProgress < 0 || offsetGeneralProgress > rafLength) 
+            throw new StorageFormatException("Invalid offset (general progress)");
         offsetMainBloomFilter = dis.readLong();
         if(offsetMainBloomFilter < 0 || offsetMainBloomFilter > rafLength) 
             throw new StorageFormatException("Invalid offset (main bloom filter)");
@@ -686,6 +698,40 @@ public class SplitFileFetcherStorage {
                 throw new StorageFormatException("Keys corrupted");
             }
         }
+        readGeneralProgress();
+    }
+    
+    static final int GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM = 8;
+    
+    private void readGeneralProgress() throws IOException {
+        try {
+            byte[] buf = new byte[GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM];
+            this.preadChecksummed(offsetGeneralProgress, buf, 0, buf.length);
+            ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+            DataInputStream dis = new DataInputStream(bais);
+            long flags = dis.readLong();
+            if((flags & HAS_CHECKED_DATASTORE_FLAG) != 0)
+                hasCheckedDatastore = true;
+        } catch (ChecksumFailedException e) {
+            // Reset general progress
+            this.hasCheckedDatastore = false;
+        }
+    }
+
+    private byte[] encodeGeneralProgress() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        long flags = 0;
+        if(hasCheckedDatastore)
+            flags |= HAS_CHECKED_DATASTORE_FLAG;
+        try {
+            dos.writeLong(flags);
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+        byte[] ret = baos.toByteArray();
+        assert(ret.length == GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM);
+        return ret;
     }
     
     public void start() {
@@ -738,6 +784,7 @@ public class SplitFileFetcherStorage {
                 dos.writeShort(c.metadataID);
             dos.writeLong(offsetKeyList);
             dos.writeLong(offsetSegmentStatus);
+            dos.writeLong(offsetGeneralProgress);
             dos.writeLong(offsetMainBloomFilter);
             dos.writeLong(offsetSegmentBloomFilters);
             dos.writeLong(offsetOriginalMetadata);
@@ -1343,6 +1390,28 @@ public class SplitFileFetcherStorage {
     /** Needed for resuming. */
     LockableRandomAccessThing getRAF() {
         return raf;
+    }
+
+    public synchronized void setHasCheckedStore() {
+        hasCheckedDatastore = true;
+        this.jobRunner.queueLowOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                byte[] generalProgress = appendChecksum(encodeGeneralProgress());
+                try {
+                    raf.pwrite(offsetGeneralProgress, generalProgress, 0, generalProgress.length);
+                } catch (IOException e) {
+                    failOnDiskError(e);
+                }
+                return false;
+            }
+            
+        });
+    }
+
+    public synchronized boolean hasCheckedStore() {
+        return hasCheckedDatastore;
     }
 
 }
