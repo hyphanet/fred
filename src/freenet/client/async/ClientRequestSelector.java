@@ -323,7 +323,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				SendableRequest req;
 				if(val == null) {
 					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
-					continue;
+					continue outer;
 				} else if(val.item == null) {
 					if(val.wakeupTime == -1)
 						Logger.normal(this, "Priority "+choosenPriorityClass+" returned cooldown time of -1 - nothing to schedule, should remove priority");
@@ -332,7 +332,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						if(val.wakeupTime > 0 && val.wakeupTime < wakeupTime)
 							wakeupTime = val.wakeupTime;
 					}
-					continue;
+					continue outer;
 				} else {
 					req = (SendableRequest) val.item;
 				}
