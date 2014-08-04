@@ -662,7 +662,6 @@ public class NodeClientCore implements Persistable {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
-		backgroundBlockEncoder.runPersistentQueue(clientContext);
 		node.executor.execute(compressor, "Compression scheduler");
 
 		node.executor.execute(new PrioRunnable() {

@@ -6,8 +6,6 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
@@ -32,32 +30,14 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	}
 	
 	public void queue(Encodeable sbi, ObjectContainer container, ClientContext context) {
-		if(sbi.persistent()) {
-			queuePersistent(sbi, container, context);
-			runPersistentQueue(context);
-		} else {
-			SoftReference<Encodeable> ref = new SoftReference<Encodeable>(sbi);
-			synchronized(this) {
-				queue.add(ref);
-				Logger.minor(this, "Queueing encode of "+sbi);
-				notifyAll();
-			}
+	    SoftReference<Encodeable> ref = new SoftReference<Encodeable>(sbi);
+	    synchronized(this) {
+	        queue.add(ref);
+	        Logger.minor(this, "Queueing encode of "+sbi);
+	        notifyAll();
 		}
 	}
 	
-	public void runPersistentQueue(ClientContext context) {
-		try {
-			context.jobRunner.queue(runner, NativeThread.LOW_PRIORITY, true);
-		} catch (DatabaseDisabledException e) {
-			// Ignore
-		}
-	}
-
-	private void queuePersistent(Encodeable sbi, ObjectContainer container, ClientContext context) {
-		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, sbi.getPriorityClass(container), context);
-		container.store(tag);
-	}
-
 	@Override
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
@@ -87,37 +67,4 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		return NativeThread.MIN_PRIORITY;
 	}
 
-	static final int JOBS_PER_SLOT = 1;
-	
-	private DBJob runner = new DBJob() {
-
-		@Override
-		public boolean run(ObjectContainer container, ClientContext context) {
-			Query query = container.query();
-			query.constrain(BackgroundBlockEncoderTag.class);
-			query.descend("nodeDBHandle").constrain(Long.valueOf(context.nodeDBHandle));
-			query.descend("priority").orderAscending();
-			query.descend("addedTime").orderAscending();
-			ObjectSet<BackgroundBlockEncoderTag> results = query.execute();
-			for(int x = 0; x < JOBS_PER_SLOT && results.hasNext(); x++) {
-				BackgroundBlockEncoderTag tag = results.next();
-				try {
-					Encodeable sbi = tag.inserter;
-					if(sbi == null) continue;
-					container.activate(sbi, 1);
-					sbi.tryEncode(container, context);
-					container.deactivate(sbi, 1);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				} finally {
-					container.delete(tag);
-				}
-			}
-			if(results.hasNext())
-				runPersistentQueue(context);
-			return true;
-		}
-		
-	};
-	
 }
