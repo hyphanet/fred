@@ -333,14 +333,10 @@ public class NodeClientCore implements Persistable {
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		long memoryLimitedJobsMemoryLimit = NewFECCodec.MIN_MEMORY_ALLOCATION; // FIXME
-		if(!killedDatabase()) {
-		    LockableRandomAccessThingFactory raff = 
-		        new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
-		    persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
-		            persistentTempDir.dir(), minDiskFreeLongTerm);
-		} else {
-		    persistentRAFFactory = null;
-		}
+		LockableRandomAccessThingFactory raff = 
+		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
+		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
+		        persistentTempDir.dir(), minDiskFreeLongTerm);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
