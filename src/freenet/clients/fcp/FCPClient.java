@@ -73,8 +73,8 @@ public class FCPClient {
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */
-	boolean watchGlobal;
-	int watchGlobalVerbosityMask;
+	transient boolean watchGlobal;
+	transient int watchGlobalVerbosityMask;
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
