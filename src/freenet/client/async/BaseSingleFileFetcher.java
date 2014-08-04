@@ -75,7 +75,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(persistent)
 			container.activate(key, 5);
 		Key k = key.getNodeKey(false);
-		if(fetching.hasKey(k, this, persistent, container)) return null;
+		if(fetching.hasKey(k, this)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
 		long now = System.currentTimeMillis();
 		if(l > 0 && l > now) {
@@ -140,7 +140,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.activate(key, 5);
 					tracker.cooldownWakeupTime = now + cachedCooldownTime;
-					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, context, true);
+					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
 						container.deactivate(key, 5);
@@ -182,7 +182,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	private MyCooldownTrackerItem makeCooldownTrackerItem(
 			ObjectContainer container, ClientContext context) {
-		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
+		return (MyCooldownTrackerItem) context.cooldownTracker.make(this);
 	}
 
 	@Override
@@ -225,7 +225,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
-		context.cooldownTracker.remove(this, persistent, container);
+		context.cooldownTracker.remove(this);
 		super.unregister(container, context, oldPrio);
 	}
 
@@ -424,14 +424,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(wakeTime <= now)
 			tracker.cooldownWakeupTime = wakeTime = 0;
 		KeysFetchingLocally fetching = getScheduler(container, context).fetchingKeys();
-		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this, cancelled, container)) {
+		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this)) {
 			wakeTime = Long.MAX_VALUE;
 			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.
 		}
 		if(wakeTime == 0)
 			return 0;
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
-		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, context, true);
+		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, context, true);
 		return wakeTime;
 	}
 	

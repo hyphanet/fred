@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -116,7 +115,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		if(keys.size() == 1) {
 			// Shortcut the common case
 			Key k = keysList.get(0);
-			if(fetching.hasKey(k, null, false, null)) return null;
+			if(fetching.hasKey(k, null)) return null;
 			// Ignore RecentlyFailed because an offered key overrides it.
 			keys.remove(k);
 			keysList.setSize(0);
@@ -128,7 +127,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			int ptr = random.nextInt(keysList.size());
 			// Avoid shuffling penalty by swapping the chosen element with the end.
 			Key k = keysList.get(ptr);
-			if(fetching.hasKey(k, null, false, null)) continue;
+			if(fetching.hasKey(k, null)) continue;
 			// Ignore RecentlyFailed because an offered key overrides it.
 			ListUtils.removeBySwapLast(keysList, ptr);
 			keys.remove(k);

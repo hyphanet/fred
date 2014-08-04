@@ -515,7 +515,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	@Override
 	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
-		return selector.hasKey(key, null, false, null);
+		return selector.hasKey(key, null);
 	}
 
 	public long countPersistentWaitingKeys(ObjectContainer container) {

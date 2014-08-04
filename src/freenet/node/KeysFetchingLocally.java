@@ -22,7 +22,7 @@ public interface KeysFetchingLocally {
 	 * Is this key currently being fetched locally?
 	 * LOCKING: This should be safe just about anywhere, the lock protecting it is always taken last.
 	 */
-	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting);
 	
 	/**
 	 * Is this request:token pair being executed? This applies only to

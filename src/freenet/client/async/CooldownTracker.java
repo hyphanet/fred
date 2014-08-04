@@ -3,7 +3,6 @@ package freenet.client.async;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -38,39 +37,20 @@ public class CooldownTracker {
 		Logger.registerClass(CooldownTracker.class);
 	}
 
-	/** Persistent CooldownTrackerItem's by Db4o ID */
-	private final HashMap<Long, CooldownTrackerItem> trackerItemsPersistent = new HashMap<Long, CooldownTrackerItem>();
-	/** Transient CooldownTrackerItem's by HasCooldownTrackerItem */
+	/** CooldownTrackerItem's by HasCooldownTrackerItem */
 	private final WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem> trackerItemsTransient = new WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem>();
 	
-	public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent, boolean persistent, ObjectContainer container) {
-		if(persistent) {
-			if(!container.ext().isStored(parent)) throw new IllegalArgumentException("Must store first!");
-			long uid = container.ext().getID(parent);
-			CooldownTrackerItem item = trackerItemsPersistent.get(uid);
-			if(item == null)
-				trackerItemsPersistent.put(uid, item = parent.makeCooldownTrackerItem());
-			return item;
-		} else {
-			CooldownTrackerItem item = trackerItemsTransient.get(parent);
-			if(item == null)
-				trackerItemsTransient.put(parent, item = parent.makeCooldownTrackerItem());
-			return item;
-		}
+	public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent) {
+	    CooldownTrackerItem item = trackerItemsTransient.get(parent);
+	    if(item == null)
+	        trackerItemsTransient.put(parent, item = parent.makeCooldownTrackerItem());
+	    return item;
 	}
 	
-	public synchronized CooldownTrackerItem remove(HasCooldownTrackerItem parent, boolean persistent, ObjectContainer container) {
-		if(persistent) {
-			if(!container.ext().isStored(parent)) throw new IllegalArgumentException("Must store first!");
-			long uid = container.ext().getID(parent);
-			return trackerItemsPersistent.remove(uid);
-		} else {
-			return trackerItemsTransient.remove(parent);
-		}
+	public synchronized CooldownTrackerItem remove(HasCooldownTrackerItem parent) {
+	    return trackerItemsTransient.remove(parent);
 	}
 	
-	/** Persistent CooldownCacheItem's by Db4o ID */
-	private final HashMap<Long, PersistentCooldownCacheItem> cacheItemsPersistent = new HashMap<Long, PersistentCooldownCacheItem>();
 	/** Transient CooldownCacheItem's by object */
 	private final WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem> cacheItemsTransient = new WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem>();
 	
@@ -79,114 +59,64 @@ public class CooldownTracker {
 	 * future times!
 	 * @return -1 if there is no cache, or a time before which the HasCooldownCacheItem is
 	 * guaranteed to have all of its keys in cooldown. */
-	public synchronized long getCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container, long now) {
+	public synchronized long getCachedWakeup(HasCooldownCacheItem toCheck, long now) {
 		if(toCheck == null) {
 			Logger.error(this, "Asked to check wakeup time for null!", new Exception("error"));
 			return -1;
 		}
-		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!: "+toCheck);
-			long uid = container.ext().getID(toCheck);
-			CooldownCacheItem item = cacheItemsPersistent.get(uid);
-			if(item == null) return -1;
-			if(item.timeValid < now) {
-				cacheItemsPersistent.remove(uid);
-				return -1;
-			}
-			return item.timeValid;
-		} else {
-			CooldownCacheItem item = cacheItemsTransient.get(toCheck);
-			if(item == null) return -1;
-			if(item.timeValid < now) {
-				cacheItemsTransient.remove(toCheck);
-				return -1;
-			}
-			return item.timeValid;
+		CooldownCacheItem item = cacheItemsTransient.get(toCheck);
+		if(item == null) return -1;
+		if(item.timeValid < now) {
+		    cacheItemsTransient.remove(toCheck);
+		    return -1;
 		}
+		return item.timeValid;
 	}
 
-	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, ClientContext context) {
-		setCachedWakeup(wakeupTime, toCheck, parent, persistent, container, context, false);
+	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context) {
+		setCachedWakeup(wakeupTime, toCheck, parent, context, false);
 	}
 	
-	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, ClientContext context, boolean dontLogOnClearingParents) {
+	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
 		synchronized(this) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
-		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
-			long uid = container.ext().getID(toCheck);
-			if(parent != null && !container.ext().isStored(parent)) throw new IllegalArgumentException("Must store first!");
-			long parentUID = parent == null ? -1 : container.ext().getID(parent);
-			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
-			if(item == null) {
-				cacheItemsPersistent.put(uid, item = new PersistentCooldownCacheItem(wakeupTime, parentUID));
-			} else {
-				if(item.timeValid < wakeupTime)
-					item.timeValid = wakeupTime;
-				item.parentID = parentUID;
-			}
-			if(parentUID != -1) {
-				// All items above this should have a wakeup time no later than this.
-				while(true) {
-					PersistentCooldownCacheItem checkParent = cacheItemsPersistent.get(parentUID);
-					if(checkParent == null) break;
-					if(checkParent.timeValid < item.timeValid) break;
-					else if(checkParent.timeValid > item.timeValid) {
-						if(!dontLogOnClearingParents)
-							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
-						else {
-							if(logMINOR) 
-								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
-						}
-						checkParent.timeValid = item.timeValid;
-					}
-					parentUID = checkParent.parentID;
-					if(parentUID < 0) break;
-				}
-			}
+		TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
+		if(item == null) {
+		    cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(wakeupTime, parent));
 		} else {
-			TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
-			if(item == null) {
-				cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(wakeupTime, parent));
-			} else {
-				if(item.timeValid < wakeupTime)
-					item.timeValid = wakeupTime;
-				if(item.parent.get() != parent) {
-					if(parent == null)
-						item.parent = null;
-					else
-						item.parent = new WeakReference<HasCooldownCacheItem>(parent);
-				}
-			}
-			if(parent != null) {
-				// All items above this should have a wakeup time no later than this.
-				while(true) {
-					TransientCooldownCacheItem checkParent = cacheItemsTransient.get(parent);
-					if(checkParent == null) break;
-					if(checkParent.timeValid < item.timeValid) break;
-					else if(checkParent.timeValid > item.timeValid) {
-						if(!dontLogOnClearingParents)
-							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
-						else {
-							if(logMINOR) 
-								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
-						}
-						checkParent.timeValid = item.timeValid;
-					}
-					parent = checkParent.parent.get();
-					if(parent == null) break;
-				}
-			}
+		    if(item.timeValid < wakeupTime)
+		        item.timeValid = wakeupTime;
+		    if(item.parent.get() != parent) {
+		        if(parent == null)
+		            item.parent = null;
+		        else
+		            item.parent = new WeakReference<HasCooldownCacheItem>(parent);
+		    }
+		}
+		if(parent != null) {
+		    // All items above this should have a wakeup time no later than this.
+		    while(true) {
+		        TransientCooldownCacheItem checkParent = cacheItemsTransient.get(parent);
+		        if(checkParent == null) break;
+		        if(checkParent.timeValid < item.timeValid) break;
+		        else if(checkParent.timeValid > item.timeValid) {
+		            if(!dontLogOnClearingParents)
+		                Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
+		            else {
+		                if(logMINOR) 
+		                    Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
+		            }
+		            checkParent.timeValid = item.timeValid;
+		        }
+		        parent = checkParent.parent.get();
+		        if(parent == null) break;
+		    }
 		}
 		}
 		if(toCheck instanceof RemoveRandomWithObject) {
 			Object client = ((RemoveRandomWithObject)toCheck).getObject();
 			if(client instanceof WantsCooldownCallback) {
-				boolean wasActive = true;
-				if(persistent) wasActive = container.ext().isActive(client);
-				if(!wasActive) container.activate(client, 1);
-				((WantsCooldownCallback)client).enterCooldown(wakeupTime, container, context);
-				if(!wasActive) container.deactivate(client, 1);
+				((WantsCooldownCallback)client).enterCooldown(wakeupTime, null, context);
 			}
 		}
 	}
@@ -197,14 +127,8 @@ public class CooldownTracker {
 	 * @param persistent
 	 * @param container
 	 */
-	public synchronized boolean removeCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
-		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
-			long uid = container.ext().getID(toCheck);
-			return cacheItemsPersistent.remove(uid) != null;
-		} else {
-			return cacheItemsTransient.remove(toCheck) != null;
-		}
+	public synchronized boolean removeCachedWakeup(HasCooldownCacheItem toCheck) {
+	    return cacheItemsTransient.remove(toCheck) != null;
 	}
 	
 	/** The cached item has become fetchable unexpectedly. It should be cleared along with
@@ -222,81 +146,38 @@ public class CooldownTracker {
 	 * @param persistent
 	 * @param container
 	 */
-	public boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
+	public boolean clearCachedWakeup(HasCooldownCacheItem toCheck) {
 		if(toCheck == null) {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
 		}
 		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for "+toCheck);
-		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
-			long uid = container.ext().getID(toCheck);
-			if(clearCachedWakeupPersistent(uid)) {
-				if(toCheck instanceof RemoveRandomWithObject) {
-					Object client = ((RemoveRandomWithObject)toCheck).getObject();
-					if(client instanceof WantsCooldownCallback) {
-						boolean wasActive = container.ext().isActive(client);
-						if(!wasActive) container.activate(client, 1);
-						((WantsCooldownCallback)client).clearCooldown(container);
-						if(!wasActive) container.deactivate(client, 1);
-					}
-				}
-				return true;
-			} else return false;
-		} else {
-			boolean ret = false;
-			synchronized(this) {
-				while(true) {
-					TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
-					if(item == null) break;
-					if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
-					ret = true;
-					cacheItemsTransient.remove(toCheck);
-					toCheck = item.parent.get();
-					if(toCheck == null) break;
-					if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
-				}
-			}
-			if(toCheck instanceof RemoveRandomWithObject) {
-				Object client = ((RemoveRandomWithObject)toCheck).getObject();
-				if(client instanceof WantsCooldownCallback) {
-					((WantsCooldownCallback)client).clearCooldown(container);
-				}
-			}
-			return ret;
-		}
-
-	}
-	
-	public synchronized boolean clearCachedWakeupPersistent(Long uid) {
 		boolean ret = false;
-		while(true) {
-			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
-			if(item == null) return ret;
-			if(logMINOR) Logger.minor(this, "Clearing "+uid);
-			ret = true;
-			cacheItemsPersistent.remove(uid);
-			uid = item.parentID;
-			if(uid == -1) return ret;
-			if(logMINOR) Logger.minor(this, "Parent is "+uid);
+		synchronized(this) {
+		    while(true) {
+		        TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
+		        if(item == null) break;
+		        if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
+		        ret = true;
+		        cacheItemsTransient.remove(toCheck);
+		        toCheck = item.parent.get();
+		        if(toCheck == null) break;
+		        if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
+		    }
 		}
+		if(toCheck instanceof RemoveRandomWithObject) {
+		    Object client = ((RemoveRandomWithObject)toCheck).getObject();
+		    if(client instanceof WantsCooldownCallback) {
+		        ((WantsCooldownCallback)client).clearCooldown(null);
+		    }
+		}
+		return ret;
 	}
-
-
 	
 	/** Clear expired items from the cache */
 	public synchronized void clearExpired(long now) {
 		// FIXME more efficient implementation using a queue???
 		int removedPersistent = 0;
-		Iterator<Map.Entry<Long, PersistentCooldownCacheItem>> it =
-			cacheItemsPersistent.entrySet().iterator();
-		while(it.hasNext()) {
-			Map.Entry<Long, PersistentCooldownCacheItem> item = it.next();
-			if(item.getValue().timeValid < now) {
-				removedPersistent++;
-				it.remove();
-			}
-		}
 		int removedTransient = 0;
 		Iterator<Map.Entry<HasCooldownCacheItem, TransientCooldownCacheItem>> it2 =
 			cacheItemsTransient.entrySet().iterator();
@@ -324,18 +205,6 @@ public class CooldownTracker {
 		}, MAINTENANCE_PERIOD);
 	}
 
-}
-
-class PersistentCooldownCacheItem extends CooldownCacheItem {
-	
-	public PersistentCooldownCacheItem(long wakeupTime, long parentUID) {
-		super(wakeupTime);
-		this.parentID = parentUID;
-	}
-
-	/** The Db4o ID of the parent object */
-	long parentID;
-	
 }
 
 class TransientCooldownCacheItem extends CooldownCacheItem {

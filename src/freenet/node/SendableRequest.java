@@ -199,11 +199,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		RandomGrabArray rga = getParentGrabArray();
 		ClientRequestScheduler sched = getScheduler(container, context);
 		synchronized(sched) {
-			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+			context.cooldownTracker.clearCachedWakeup(this);
 			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 			// We should wake up the parent as well even if this item is not in cooldown.
 			if(rga != null)
-				context.cooldownTracker.clearCachedWakeup(rga, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(rga);
 			// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
 		}
 		sched.wakeStarter();

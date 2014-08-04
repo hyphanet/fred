@@ -77,9 +77,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(context != null) {
 			// It's safest to always clear the parent too if we have one.
 			// FIXME strictly speaking it shouldn't be necessary, investigate callers of clearCachedWakeup(), but be really careful to avoid stalling!
-			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+			context.cooldownTracker.clearCachedWakeup(this);
 			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(parent);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -126,9 +126,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		addElement(client, requestGrabber);
 		if(persistent) container.store(this);
 		if(context != null) {
-			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+			context.cooldownTracker.clearCachedWakeup(this);
 			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(parent);
 		}
 	}
 
@@ -200,7 +200,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					container.deactivate(rga, 1);
 			}
 		}
-		context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+		context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 		return new RemoveRandomReturn(wakeupTime);
 	}
 
@@ -333,7 +333,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 				grabClients = new Object[] { grabClients[1-x] };
 				if(persistent) container.store(this);
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
@@ -379,7 +379,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
@@ -432,7 +432,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-			context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+			context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
 	}
@@ -520,7 +520,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			context.cooldownTracker.removeCachedWakeup(r, persistent, container);
+			context.cooldownTracker.removeCachedWakeup(r);
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
@@ -529,7 +529,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			boolean active = true;
 			if(persistent) active = container.ext().isActive(parent);
 			if(!active) container.activate(parent, 1);
-			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
+			context.cooldownTracker.removeCachedWakeup(this);
 			parent.maybeRemove(this, container, context);
 			if(!active) container.deactivate(parent, 1);
 		}

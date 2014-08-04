@@ -289,7 +289,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void clearCooldown() {
         if(hasFinished()) return;
-        context.cooldownTracker.clearCachedWakeup(getter, false, null);
+        context.cooldownTracker.clearCachedWakeup(getter);
     }
 
     @Override

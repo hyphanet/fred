@@ -56,7 +56,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		this.isRTScheduler = isRTScheduler;
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet<Key>();
-			persistentRequestsWaitingForKeysFetching = new HashMap<Key, Long[]>();
 			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
 			this.recentSuccesses = new ArrayDeque<RandomGrabArray>();
@@ -91,7 +90,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	 */
 	private transient HashSet<Key> keysFetching;
 	
-	private transient HashMap<Key, Long[]> persistentRequestsWaitingForKeysFetching;
 	private transient HashMap<Key, WeakReference<BaseSendableGet>[]> transientRequestsWaitingForKeysFetching;
 	
 	private static class RunningTransientInsert {
@@ -139,7 +137,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = newPriorities[priority];
 			if(result != null) {
-			    long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
+			    long cooldownTime = context.cooldownTracker.getCachedWakeup(result, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        if(logMINOR) {
@@ -312,7 +310,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				continue; // Try next priority
 			}
 			while(true) {
-			    long cooldownTime = context.cooldownTracker.getCachedWakeup(chosenTracker, false, container, now);
+			    long cooldownTime = context.cooldownTracker.getCachedWakeup(chosenTracker, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        Logger.normal(this, "Priority "+choosenPriorityClass+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
@@ -543,44 +541,26 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting) {
 		if(keysFetching == null) {
 			throw new NullPointerException();
-		}
-		long pid = -1;
-		if(getterWaiting != null && persistent) {
-			pid = container.ext().getID(getterWaiting);
 		}
 		synchronized(keysFetching) {
 			boolean ret = keysFetching.contains(key);
 			if(!ret) return ret;
 			// It is being fetched. Add the BaseSendableGet to the wait list so it gets woken up when the request finishes.
 			if(getterWaiting != null) {
-				if(persistent) {
-					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);
-					if(waiting == null) {
-						persistentRequestsWaitingForKeysFetching.put(key, new Long[] { pid });
-					} else {
-						for(long l : waiting) {
-							if(l == pid) return true;
-						}
-						Long[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
-						newWaiting[waiting.length] = pid;
-						persistentRequestsWaitingForKeysFetching.put(key, newWaiting);
-					}
-				} else {
-					WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
-					if(waiting == null) {
-						transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
-					} else {
-						for(WeakReference<BaseSendableGet> ref : waiting) {
-							if(ref.get() == getterWaiting) return true;
-						}
-						WeakReference<BaseSendableGet>[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
-						newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
-						transientRequestsWaitingForKeysFetching.put(key, newWaiting);
-					}
-				}
+			    WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
+			    if(waiting == null) {
+			        transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
+			    } else {
+			        for(WeakReference<BaseSendableGet> ref : waiting) {
+			            if(ref.get() == getterWaiting) return true;
+			        }
+			        WeakReference<BaseSendableGet>[] newWaiting = Arrays.copyOf(waiting, waiting.length+1);
+			        newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
+			        transientRequestsWaitingForKeysFetching.put(key, newWaiting);
+			    }
 			}
 			return true;
 		}
@@ -588,28 +568,22 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 
 	/** LOCKING: Caller should hold as few locks as possible */ 
 	public void removeFetchingKey(final Key key) {
-		Long[] persistentWaiting;
 		WeakReference<BaseSendableGet>[] transientWaiting;
 		if(logMINOR)
 			Logger.minor(this, "Removing from keysFetching: "+key);
 		if(key != null) {
 			synchronized(keysFetching) {
 				keysFetching.remove(key);
-				persistentWaiting = this.persistentRequestsWaitingForKeysFetching.remove(key);
 				transientWaiting = this.transientRequestsWaitingForKeysFetching.remove(key);
 			}
-			if(persistentWaiting != null || transientWaiting != null) {
+			if(transientWaiting != null) {
 				CooldownTracker tracker = sched.clientContext.cooldownTracker;
-				if(persistentWaiting != null) {
-					for(Long l : persistentWaiting)
-						tracker.clearCachedWakeupPersistent(l);
-				}
 				if(transientWaiting != null) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
 						synchronized(sched) {
-							tracker.clearCachedWakeup(get, false, null);
+							tracker.clearCachedWakeup(get);
 						}
 					}
 				}
@@ -704,7 +678,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                     clientGrabber.addGrabber(client, requestGrabber, container, context);
                     // FIXME unnecessary as it knows its parent and addGrabber() will call it???
-                    context.cooldownTracker.clearCachedWakeup(clientGrabber, false, container);
+                    context.cooldownTracker.clearCachedWakeup(clientGrabber);
                 }
                 requestGrabber.add(cr, req, container, context);
             }

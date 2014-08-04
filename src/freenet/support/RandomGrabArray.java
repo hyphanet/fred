@@ -63,10 +63,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		req.setParentGrabArray(this, container); // will store() self
 		synchronized(this) {
 			if(context != null) {
-				context.cooldownTracker.clearCachedWakeup(req, persistent, container);
-				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(req);
+				context.cooldownTracker.clearCachedWakeup(this);
 				if(parent != null)
-					context.cooldownTracker.clearCachedWakeup(parent, persistent, container);
+					context.cooldownTracker.clearCachedWakeup(parent);
 			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
@@ -444,7 +444,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						container.deactivate(blocks[blockNumWriting], 1);
 				}
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
+				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -504,7 +504,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 
 	public void remove(RandomGrabArrayItem it, ObjectContainer container, ClientContext context) {
-		context.cooldownTracker.removeCachedWakeup(it, persistent, container);
+		context.cooldownTracker.removeCachedWakeup(it);
 		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
 		if(logMINOR && container != null) {

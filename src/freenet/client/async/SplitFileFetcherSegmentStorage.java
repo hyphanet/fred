@@ -26,7 +26,6 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
-import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.NativeThread;
 
@@ -1115,7 +1114,7 @@ public class SplitFileFetcherSegmentStorage {
                         return -1;
                     }
                 }
-                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet(), false, null))
+                if(keysFetching.hasKey(keys.getNodeKey(i, null, false), parent.fetcher.getSendableGet()))
                     continue;
                 if(retry < minRetryCount) {
                     count = 0;

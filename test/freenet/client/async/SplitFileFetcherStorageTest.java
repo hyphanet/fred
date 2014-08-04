@@ -851,8 +851,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         @Override
-        public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent,
-                ObjectContainer container) {
+        public boolean hasKey(Key key, BaseSendableGet getterWaiting) {
             return keys.contains(key);
         }
 

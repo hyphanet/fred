@@ -323,7 +323,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	@Override
 	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
-		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
+		return core.clientContext.cooldownTracker.getCachedWakeup(item, now);
 	}
 
 }
