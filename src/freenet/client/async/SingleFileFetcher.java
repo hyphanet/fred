@@ -186,7 +186,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-		parent.completedBlock(fromStore, container, context);
+		parent.completedBlock(fromStore, context);
 		// Extract data
 		
 		if(block == null) {
@@ -229,7 +229,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	// Package-local so that ClientGetter can call it instead of schedule().
 	void startWithMetadata(Bucket data, ObjectContainer container, ClientContext context) {
-		parent.completedBlock(true, container, context);
+		parent.completedBlock(true, context);
 		handleMetadata(data, container, context);
 	}
 	
@@ -1372,7 +1372,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						context.uskManager.getFetcher(usk.copy(usk.suggestedEdition), ctx, false, requester.persistent(),
 								realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), true), false, container, context, true);
 					if(isEssential)
-						requester.addMustSucceedBlocks(1, container);
+						requester.addMustSucceedBlocks(1);
 					return tag;
 					
 				} else {
@@ -1396,7 +1396,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
 						realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), false), false, container, context, false);
 			if(isEssential)
-				requester.addMustSucceedBlocks(1, container);
+				requester.addMustSucceedBlocks(1);
 			return tag;
 		}
 	}

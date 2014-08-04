@@ -132,7 +132,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
 		super(persistent, realTimeFlag);
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
@@ -154,20 +154,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.getCHKOnly = getCHKOnly;
 		isSSK = uri.getKeyType().toUpperCase().equals("SSK");
 		if(addToParent) {
-			parent.addMustSucceedBlocks(1, container);
-			parent.notifyClients(container, context);
+			parent.addMustSucceedBlocks(1);
+			parent.notifyClients(context);
 		}
 		this.extraInserts = extraInserts;
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.cryptoKey = cryptoKey;
 	}
 
-	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
-		if(persistent) {
-			container.activate(uri, 1);
-			container.activate(sourceData, 1);
-			container.activate(ctx, 1);
-		}
+	protected ClientKeyBlock innerEncode(RandomSource random) throws InsertException {
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		try {
@@ -213,21 +208,26 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				
 				@Override
 				public void run() {
-					cb.onEncode(key, SingleBlockInserter.this, null, context);
+					cb.onEncode(key, SingleBlockInserter.this, context);
 				}
 			}, "Got URI");
 		} else {
-			cb.onEncode(key, this, container, context);
+		    context.jobRunner.queueLowOrDrop(new PersistentJob() {
+
+                @Override
+                public boolean run(ClientContext context) {
+                    cb.onEncode(key, SingleBlockInserter.this, context);
+                    return false;
+                }
+		        
+		    });
+			cb.onEncode(key, this, context);
 		}
 		if(persistent)
 			container.deactivate(cb, 1);
 	}
 	
-	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context, boolean calledByCB) throws InsertException {
-		if(persistent) {
-			container.activate(sourceData, 1);
-			container.activate(cb, 1);
-		}
+	protected ClientKeyBlock encode(ClientContext context, boolean calledByCB) throws InsertException {
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -236,18 +236,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				Logger.error(this, "Source data is null on "+this+" but not finished!");
 				return null;
 			}
-			block = innerEncode(context.random, container);
+			block = innerEncode(context.random);
 			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
 		}
 		if(logMINOR)
 			Logger.minor(this, "Encoded "+resultingURI+" for "+this+" shouldSend="+shouldSend+" dontSendEncoded="+dontSendEncoded);
 		if(shouldSend && !dontSendEncoded)
-			cb.onEncode(block.getClientKey(), this, container, context);
-		if(shouldSend && persistent)
-			container.store(this);
-		if(persistent && !calledByCB)
-			container.deactivate(cb, 1);
+			cb.onEncode(block.getClientKey(), this, context);
 		return block;
 	}
 	
@@ -332,9 +328,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent)
 			container.store(this);
 		if(e.isFatal() || forceFatal)
-			parent.fatallyFailedBlock(container, context);
+			parent.fatallyFailedBlock(context);
 		else
-			parent.failedBlock(container, context);
+			parent.failedBlock(context);
 		unregister(container, context, getPriorityClass(container));
 		if(freeData) {
 			if(persistent) container.activate(sourceData, 1);
@@ -346,37 +342,27 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(persistent)
 			container.activate(cb, 1);
-		cb.onFailure(e, this, container, context);
+		cb.onFailure(e, this, context);
 	}
 
-	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context, boolean calledByCB) {
+	public ClientKeyBlock getBlock(ClientContext context, boolean calledByCB) {
 		try {
 			synchronized (this) {
 				if(finished) return null;
 			}
-			if(persistent)
-				container.store(this);
-			return encode(container, context, calledByCB);
+			return encode(context, calledByCB);
 		} catch (InsertException e) {
-			if(persistent)
-				container.activate(cb, 1);
-			cb.onFailure(e, this, container, context);
-			if(persistent && !calledByCB)
-				container.deactivate(cb, 1);
+			cb.onFailure(e, this, context);
 			return null;
 		} catch (Throwable t) {
-			if(persistent)
-				container.activate(cb, 1);
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, container, context);
-			if(persistent && !calledByCB)
-				container.deactivate(cb, 1);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, context);
 			return null;
 		}
 	}
 
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+	public void schedule(ClientContext context) throws InsertException {
 		synchronized(this) {
 			if(finished) {
 				if(logMINOR)
@@ -385,10 +371,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 		}
 		if(getCHKOnly) {
-			tryEncode(container, context);
-			onSuccess(null, container, context);
+			tryEncode(null, context);
+			onSuccess(null, null, context);
 		} else {
-			getScheduler(container, context).registerInsert(this, persistent, container);
+			getScheduler(null, context).registerInsert(this, persistent, null);
 		}
 	}
 
@@ -397,17 +383,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return isSSK;
 	}
 
-	public FreenetURI getURI(ObjectContainer container, ClientContext context) {
+	public FreenetURI getURI(ClientContext context) {
 		synchronized(this) {
 			if(resultingURI != null) {
-				if(persistent) container.activate(resultingURI, 5);
 				return persistent ? resultingURI.clone() : resultingURI;
 			}
 		}
-		getBlock(container, context, true);
+		getBlock(context, true);
 		synchronized(this) {
 			// FIXME not really necessary? resultingURI is never dropped, only set.
-			if(persistent) container.activate(resultingURI, 5);
 			return persistent ? resultingURI.clone() : resultingURI;
 		}
 	}
@@ -451,12 +435,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent)
 				container.store(this);
 		}
-		parent.completedBlock(false, container, context);
+		parent.completedBlock(false, context);
 		unregister(container, context, getPriorityClass(container));
 		if(persistent)
 			container.activate(cb, 1);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
-		cb.onSuccess(this, container, context);
+		cb.onSuccess(this, context);
 		if(persistent)
 			container.deactivate(cb, 1);
 	}
@@ -467,30 +451,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		boolean wasActive = true;
-		if(persistent) {
-			container.store(this);
-			wasActive = container.ext().isActive(cb);
-			if(!wasActive)
-				container.activate(cb, 1);
-			container.activate(sourceData, 1);
-		}
 		if(freeData) {
 			sourceData.free();
-			if(persistent) sourceData.removeFrom(container);
 			sourceData = null;
-			if(persistent)
-				container.store(this);
 		}
-		super.unregister(container, context, getPriorityClass(container));
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
-		if(!wasActive)
-			container.deactivate(cb, 1);
+		super.unregister(null, context, getPriorityClass(null));
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
 	}
 
 	@Override
@@ -655,7 +626,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 		}
 		try {
-			encode(container, context, false);
+			encode(context, false);
 		} catch (InsertException e) {
 			fail(e, container, context);
 		} catch (Throwable t) {

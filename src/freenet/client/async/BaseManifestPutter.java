@@ -101,18 +101,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private final class ArchivePutHandler extends PutHandler {
 
 		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
-			super(bmp, parent, name, null, containerPutHandlers, null);
+			super(bmp, parent, name, null, containerPutHandlers);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
 
-			if(persistent) {
-				container.activate(key, 5);
-				container.activate(BaseManifestPutter.this, 2);
-			}
 			synchronized (BaseManifestPutter.this) {
 				// transform the placeholders to redirects (redirects to 'uri/name') and
 				// remove from waitfor lists
@@ -120,42 +116,28 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				for (PutHandler ph : phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
-					if(persistent) container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
 					if (ph.targetInArchive == null)
 						throw new NullPointerException();
 					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI().setMetaString(new String[] { ph.targetInArchive }), cm);
 					hm.put(ph.itemName, m);
-					if(persistent) container.ext().store(hm, 2);
 					putHandlersTransformMap.remove(ph);
-					if(persistent) container.ext().store(putHandlersTransformMap, 2);
 					try {
-						tryStartParentContainer(ph.parentPutHandler, container, context);
+						tryStartParentContainer(ph.parentPutHandler, context);
 					} catch (InsertException e) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), 	container, context);
+						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
 						return;
 					}
 				}
 				putHandlersArchiveTransformMap.remove(this);
-				if(persistent) container.ext().store(putHandlersArchiveTransformMap, 2);
 			}
-			if(persistent) {
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
-
 		}
 
 		@Override
-		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "Completed '" + this.itemName + "' " + this);
-			if(persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-			}
 			if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
 			
-			super.onSuccess(state, container, context);
-			if(persistent) {
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
+			super.onSuccess(state, context);
 		}
 	}
 
@@ -170,62 +152,38 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private final class ContainerPutHandler extends PutHandler {
 
 		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
-			super(bmp, parent, name, null, runningMap, null);
+			super(bmp, parent, name, null, runningMap);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
-
-			if(persistent) {
-				container.activate(key, 5);
-				container.activate(BaseManifestPutter.this, 1);
-			}
 
 			if (rootContainerPutHandler == this) {
 				finalURI = key.getURI();
-				if(persistent())
-					container.activate(cb, 1);
 				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
-				if(persistent()) {
-					container.deactivate(cb, 1);
-					container.store(this);
-				}
 			} else {
 				synchronized (BaseManifestPutter.this) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(this);
 					perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
 					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
 					hm.put(this.itemName, m);
-					if (persistent)
-						container.ext().store(hm, 2);
 					putHandlersTransformMap.remove(this);
-					if (persistent)
-						container.ext().store(putHandlersTransformMap, 2);
 
 					try {
-						tryStartParentContainer(parentPutHandler, container, context);
+						tryStartParentContainer(parentPutHandler, context);
 					} catch (InsertException e) {
-						fail(e, container, context);
+						fail(e, context);
 						return;
 					}
 				}
 			}
-
-			if(persistent) {
-				//System.out.println("BMP deactivated encode");
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
 		}
 
 		@Override
-		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "Completed '" + this.itemName + "' " + this);
-
-			if(persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-			}
 
 			if (rootContainerPutHandler == this) {
 				if (containerPutHandlers.contains(this)) throw new IllegalStateException("was in containerPutHandlers");
@@ -233,25 +191,20 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			} else {
 				if (!containerPutHandlers.remove(this)) throw new IllegalStateException("was not in containerPutHandlers");
 			}
-			super.onSuccess(state, container, context);
-
-			if(persistent) {
-				//System.out.println("BMP deactivated success");
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
+			super.onSuccess(state, context);
 		}
 	}
 
 	private final class ExternPutHandler extends PutHandler {
 
 		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
-			super(bmp, parent, name, cm2, runningPutHandlers, null);
+			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		}
 
 		@Override
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
 
 			//debugDecompose("ExternPutHandler.onEncode Begin");
@@ -261,20 +214,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			// The file was too small to have its own metadata, we get this instead.
 			// So we make the key into metadata.
-			if(persistent) {
-				container.activate(key, 5);
-				container.activate(BaseManifestPutter.this, 1);
-			}
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
-			onMetadata(m, state, container, context);
-			if(persistent) {
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
+			onMetadata(m, state, context);
 			//debugDecompose("ExternPutHandler.onEncode End");
 		}
 
 		@Override
-		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onMetadata(Metadata m, ClientPutState state, ClientContext context) {
 			//new Error("DEBUGME").printStackTrace();
 			//debugDecompose("ExternPutHandler.onMetadata Begin");
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for '"+this.itemName+"' "+this+" from "+state+" persistent="+persistent);
@@ -284,19 +230,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			metadata = m;
 
-			if(persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-			}
-
 			if (freeformMode) {
 				boolean allMetadatas = false;
 
 				synchronized(BaseManifestPutter.this) {
 					putHandlersWaitingForMetadata.remove(this);
-					if(persistent) {
-						container.ext().store(putHandlersWaitingForMetadata, 2);
-						container.store(this);
-					}
 					allMetadatas = putHandlersWaitingForMetadata.isEmpty();
 					if(!allMetadatas) {
 						if(logMINOR)
@@ -305,7 +243,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 				if(allMetadatas) {
 					// Will resolve etc.
-					gotAllMetadata(container, context);
+					gotAllMetadata(context);
 				} else {
 					// Resolve now to speed up the insert.
 					try {
@@ -314,12 +252,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 							throw new MetadataUnresolvedException(new Metadata[] { m }, "Too big");
 					} catch (MetadataUnresolvedException e) {
 						try {
-							resolve(e, container, context);
+							resolve(e, context);
 						} catch (IOException e1) {
-							fail(new InsertException(InsertException.BUCKET_ERROR, e1, null), container, context);
+							fail(new InsertException(InsertException.BUCKET_ERROR, e1, null), context);
 							return;
 						} catch (InsertException e1) {
-							fail(e1, container, context);
+							fail(e1, context);
 						}
 					}
 				}
@@ -327,32 +265,22 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				HashMap<String, Object> hm = putHandlersTransformMap.get(this);
 				perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
 				hm.put(this.itemName, m);
-				if(persistent) {
-					container.ext().store(hm, 2);
-				}
 				putHandlersTransformMap.remove(this);
-				if(persistent) {
-					container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
-					container.ext().store(putHandlersTransformMap, 2);
-				}
 				try {
-					tryStartParentContainer(parentPutHandler, container, context);
+					tryStartParentContainer(parentPutHandler, context);
 				} catch (InsertException e) {
-					fail(e, container, context);
+					fail(e, context);
 					return;
 				}
 			} else {
 				throw new RuntimeException("Neiter container nor freeform mode. Hu?");
 			}
 			//debugDecompose("ExternPutHandler.onMetadata End");
-			if(persistent) {
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
 		}
 
 		@Override
-		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-			super.onSuccess(state, container, context);
+		public void onSuccess(ClientPutState state, ClientContext context) {
+			super.onSuccess(state, context);
 		}
 	}
 
@@ -363,16 +291,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// Metadata is not put with a cryptokey. It is derived from other stuff that is already encrypted with random keys.
 		
 		// final metadata
-		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly, ObjectContainer container) {
-			super(smp, parent, null, null, null, container);
+		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly) {
+			super(smp, parent, null, null, null);
 			// Treat as splitfile for purposes of determining number of reinserts.
 			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 
 		// resolver
-		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, boolean getCHKOnly, BucketFactory bf, ObjectContainer container) throws MetadataUnresolvedException, IOException {
-			super(smp, parent, null, null, runningPutHandlers, container);
+		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, boolean getCHKOnly, BucketFactory bf) throws MetadataUnresolvedException, IOException {
+			super(smp, parent, null, null, runningPutHandlers);
 			Bucket b = toResolve.toBucket(bf);
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
@@ -382,18 +310,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key.getURI().toString(false, false) + ") for " + this);
 
 			if (rootMetaPutHandler == this) {
 				finalURI = key.getURI();
-				if(persistent())
-					container.activate(cb, 1);
 				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
-				if(persistent()) {
-					container.deactivate(cb, 1);
-					container.store(this);
-				}
 				return;
 			}
 
@@ -401,7 +323,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(ClientPutState state, ClientContext context) {
 			boolean wasRoot = false;
 			synchronized (BaseManifestPutter.this) {
 				if (rootMetaPutHandler == this) {
@@ -411,8 +333,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 			}
 			if (!wasRoot)
-				resolveAndStartBase(container, context);
-			super.onSuccess(state, container, context);
+				resolveAndStartBase(context);
+			super.onSuccess(state, context);
 
 		}
 	}
@@ -446,7 +368,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private abstract class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
 		// run me
-		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap, ObjectContainer container) {
+		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap) {
 			super(bmp.priorityClass, bmp.cb);
 			this.persistent = bmp.persistent();
 			this.cm = cm;
@@ -460,9 +382,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 						Logger.error(this, "PutHandler already in 'runningMap': "+runningMap, new Error("error"));
 					} else {
 						runningMap.add(this);
-						if (container != null) {
-							container.ext().store(runningMap, 2);
-						}
 					}
 				}
 			}
@@ -472,9 +391,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					Logger.error(this, "PutHandler already in 'waitingForBlockSets'!", new Error("error"));
 				} else {
 					putHandlerWaitingForBlockSets.add(this);
-					if (container != null) {
-						container.ext().store(putHandlerWaitingForBlockSets, 2);
-					}
 				}
 			}
 
@@ -483,9 +399,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					Logger.error(this, "PutHandler already in 'waitingForFetchable'!", new Error("error"));
 				} else {
 					putHandlersWaitingForFetchable.add(this);
-					if (container != null) {
-						container.ext().store(putHandlersWaitingForFetchable, 2);
-					}
 				}
 			}
 		}
@@ -511,17 +424,17 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		protected final boolean persistent;
 		protected final PutHandler parentPutHandler;
 
-		public void start(ObjectContainer container, ClientContext context) throws InsertException {
+		public void start(ClientContext context) throws InsertException {
 			//new Error("trace start "+this).printStackTrace();
 			if (logDEBUG)
 				Logger.debug(this, "Starting a PutHandler for '"+this.itemName+"' "+ this);
 
 			if (origSFI == null) {
-				fail(new IllegalStateException("origSFI is null on start(), impossible"), container, context);
+				fail(new IllegalStateException("origSFI is null on start(), impossible"), context);
 			}
 
 			if ((!(this instanceof MetaPutHandler)) && (metadata != null)) {
-				fail(new IllegalStateException("metdata=" + metadata + " on start(), impossible"), container, context);
+				fail(new IllegalStateException("metdata=" + metadata + " on start(), impossible"), context);
 			}
 
 			boolean ok;
@@ -545,11 +458,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 			}
 
-			if (persistent && !container.ext().isActive(putHandlerWaitingForBlockSets)) {
-				new Error("why deactivated? putHandlerWaitingForBlockSets "+this+" ["+BaseManifestPutter.this+"]").printStackTrace();
-				container.activate(putHandlerWaitingForBlockSets, 2);
-			}
-
 			synchronized (putHandlerWaitingForBlockSets) {
 				ok = putHandlerWaitingForBlockSets.contains(this);
 			}
@@ -564,18 +472,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentState = sfi;
 				origSFI = null;
 			}
-			if(persistent) {
-				container.activate(sfi, 1);
-				container.store(this);
-			}
-			sfi.schedule(container, context);
-			if(persistent) {
-				container.deactivate(sfi, 1);
-			}
+			sfi.schedule(context);
 		}
 
 		@Override
-		public void cancel(ObjectContainer container, ClientContext context) {
+		public void cancel(ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 			ClientPutState oldState = null;
 			synchronized(this) {
@@ -583,13 +484,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				super.cancel();
 				oldState = currentState;
 			}
-			if(persistent()) {
-				container.store(this);
-				if(oldState != null)
-					container.activate(oldState, 1);
-			}
-			if(oldState != null) oldState.cancel(container, context);
-			onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
+			if(oldState != null) oldState.cancel(context);
+			onFailure(new InsertException(InsertException.CANCELLED), oldState, context);
 		}
 
 		@Override
@@ -604,7 +500,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(ClientPutState state, ClientContext context) {
 			if (logDEBUG) {
 				//temp hack, ignored if called via super
 				Throwable t = new Throwable("DEBUG onSuccess");
@@ -616,13 +512,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 
 			if (logMINOR) Logger.minor(this, "Completed '" + this.itemName + "' " + this);
-			if (persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-				container.activate(runningPutHandlers, 2);
-			}
 
 			if (putHandlersWaitingForFetchable.contains(this))
-				BaseManifestPutter.this.onFetchable(this, container);
+				BaseManifestPutter.this.onFetchable(this);
 
 			ClientPutState oldState;
 			synchronized(this) {
@@ -630,99 +522,43 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentState = null;
 			}
 			synchronized(BaseManifestPutter.this) {
-				if(persistent) container.store(this);
 				runningPutHandlers.remove(this);
-				if(persistent) {
-					container.ext().store(runningPutHandlers, 2);
-					container.activate(putHandlersWaitingForMetadata, 2);
-				}
 				if(putHandlersWaitingForMetadata.remove(this)) {
-					if (persistent) {
-						container.ext().store(putHandlersWaitingForMetadata, 2);
-					}
 					Logger.error(this, "PutHandler '"+this.itemName+"' was in waitingForMetadata in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
 				}
 
-				if(persistent) {
-					container.deactivate(putHandlersWaitingForMetadata, 1);
-					container.activate(putHandlerWaitingForBlockSets, 2);
-				}
 				if(putHandlerWaitingForBlockSets.remove(this)) {
-					if(persistent) {
-						container.ext().store(putHandlerWaitingForBlockSets, 2);
-					}
 					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
 				}
-				if(persistent) {
-					container.deactivate(putHandlerWaitingForBlockSets, 1);
-					container.deactivate(putHandlersWaitingForFetchable, 1);
-					container.activate(putHandlersWaitingForFetchable, 2);
-				}
 				if(putHandlersWaitingForFetchable.remove(this)) {
-					if (persistent) {
-						container.ext().store(putHandlersWaitingForFetchable, 2);
-					}
 					Logger.error(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+BaseManifestPutter.this, new Error("debug"));
 				}
-				if(persistent)
-					container.deactivate(putHandlersWaitingForFetchable, 1);
 
 				if(!runningPutHandlers.isEmpty()) {
 					if(logMINOR) {
 						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
 						for(Object o : runningPutHandlers) {
-							boolean activated = true;
-							if(persistent) {
-								activated = container.ext().isActive(o);
-								if(!activated) container.activate(o, 1);
-							}
 							Logger.minor(this, "Still running: "+o);
-							if(!activated)
-								container.deactivate(o, 1);
 						}
 					}
 				}
 			}
-			if (persistent) {
-				if(oldState != null && oldState != state) {
-					container.activate(oldState, 1);
-					oldState.removeFrom(container, context);
-				} else if(state != null) {
-					state.removeFrom(container, context);
-				}
-			}
-			tryComplete(container, context);
-
-			if(persistent) {
-				container.deactivate(runningPutHandlers, 1);
-				container.deactivate(BaseManifestPutter.this, 1);
-				removeFrom(container, context);
-			}
+			tryComplete(null, context);
 		}
 
 		@Override
-		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 			ClientPutState oldState;
 			synchronized(this) {
 				oldState = currentState;
 				currentState = null;
 			}
-			if(oldState != null && oldState != state && persistent) {
-				container.activate(oldState, 1);
-				oldState.removeFrom(container, context);
-			} else if(state != null && persistent) {
-				state.removeFrom(container, context);
-			}
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			fail(e, container, context);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+			fail(e, context);
 		}
 
 		@Override
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -748,13 +584,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+		public void onMetadata(Metadata m, ClientPutState state, ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
 		
 		@Override
 		public void onMetadata(Bucket meta, ClientPutState state,
-				ObjectContainer container, ClientContext context) {
+				ClientContext context) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -762,83 +598,54 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		protected int minSuccessFetchBlocks;
 		
 		@Override
-		public void addBlock(ObjectContainer container) {
-			if(persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-			}
-			BaseManifestPutter.this.addBlock(container);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+		public void addBlock() {
+			BaseManifestPutter.this.addBlock();
 			synchronized(this) {
 				minSuccessFetchBlocks++;
 			}
-			super.addBlock(container);
+			super.addBlock();
 		}
 
 		@Override
-		public void addBlocks(int num, ObjectContainer container) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.addBlocks(num, container);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+		public void addBlocks(int num) {
+			BaseManifestPutter.this.addBlocks(num);
 			synchronized(this) {
 				minSuccessFetchBlocks+=num;
 			}
-			super.addBlocks(num, container);
+			super.addBlocks(num);
 		}
 
 		@Override
-		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.completedBlock(dontNotify, container, context);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
-			super.completedBlock(dontNotify, container, context);
+		public void completedBlock(boolean dontNotify, ClientContext context) {
+			BaseManifestPutter.this.completedBlock(dontNotify, context);
+			super.completedBlock(dontNotify, context);
 		}
 
 		@Override
-		public void failedBlock(ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.failedBlock(container, context);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
-			super.failedBlock(container, context);
+		public void failedBlock(ClientContext context) {
+			BaseManifestPutter.this.failedBlock(context);
+			super.failedBlock(context);
 		}
 
 		@Override
-		public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.fatallyFailedBlock(container, context);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
-			super.fatallyFailedBlock(container, context);
+		public void fatallyFailedBlock(ClientContext context) {
+			BaseManifestPutter.this.fatallyFailedBlock(context);
+			super.fatallyFailedBlock(context);
 		}
 
 		@Override
-		public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.addMustSucceedBlocks(blocks, container);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+		public synchronized void addMustSucceedBlocks(int blocks) {
+			BaseManifestPutter.this.addMustSucceedBlocks(blocks);
 			synchronized(this) {
 				minSuccessFetchBlocks += blocks;
 			}
-			super.addMustSucceedBlocks(blocks, container);
+			super.addMustSucceedBlocks(blocks);
 		}
 		
 		@Override
-		public synchronized void addRedundantBlocks(int blocks, ObjectContainer container) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.addRedundantBlocks(blocks, container);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
-			super.addRedundantBlocks(blocks, container);
+		public synchronized void addRedundantBlocks(int blocks) {
+			BaseManifestPutter.this.addRedundantBlocks(blocks);
+			super.addRedundantBlocks(blocks);
 		}
 		
 		@Override
@@ -847,25 +654,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		
 		@Override
-		public void notifyClients(ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.notifyClients(container, context);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+		public void notifyClients(ClientContext context) {
+			BaseManifestPutter.this.notifyClients(context);
 		}
 
 		@Override
-		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
-			if(persistent) {
-				container.activate(BaseManifestPutter.this, 1);
-				container.activate(putHandlerWaitingForBlockSets, 2);
-			}
+		public void onBlockSetFinished(ClientPutState state, ClientContext context) {
 			boolean allBlockSets = false;
 			synchronized(BaseManifestPutter.this) {
 				putHandlerWaitingForBlockSets.remove(this);
-				if(persistent)
-					container.ext().store(putHandlerWaitingForBlockSets, 2);
 				if (freeformMode) {
 					allBlockSets = hasResolvedBase && putHandlerWaitingForBlockSets.isEmpty();
 				} else {
@@ -873,11 +670,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				}
 			}
 			if(allBlockSets)
-				BaseManifestPutter.this.blockSetFinalized(container, context);
-			if(persistent) {
-				container.deactivate(putHandlerWaitingForBlockSets, 1);
-				container.deactivate(BaseManifestPutter.this, 1);
-			}
+				BaseManifestPutter.this.blockSetFinalized(context);
 		}
 
 		@Override
@@ -890,66 +683,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onFetchable(ClientPutState state, ObjectContainer container) {
+		public void onFetchable(ClientPutState state) {
 			if(logMINOR) Logger.minor(this, "onFetchable " + this, new Exception("debug"));
-			if(persistent)
-				container.activate(BaseManifestPutter.this, 1);
-			BaseManifestPutter.this.onFetchable(this, container);
-			if(persistent)
-				container.deactivate(BaseManifestPutter.this, 1);
+			BaseManifestPutter.this.onFetchable(this);
 		}
 
 		@Override
 		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Removing "+this);
-			ClientPutState oldSFI;
-			ClientPutState oldState;
-			synchronized(this) {
-				oldSFI = origSFI;
-				oldState = currentState;
-				origSFI = null;
-				currentState = null;
-			}
-			if(oldSFI != null) {
-				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+BaseManifestPutter.this, new Exception("debug"));
-				container.activate(oldSFI, 1);
-				oldSFI.cancel(container, context);
-				oldSFI.removeFrom(container, context);
-				if(oldState == oldSFI) oldState = null;
-			}
-			if(oldState != null) {
-				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+BaseManifestPutter.this, new Exception("debug"));
-				container.activate(oldState, 1);
-				oldState.cancel(container, context);
-				oldState.removeFrom(container, context);
-			}
-			if(cm != null) {
-				container.activate(cm, 5);
-				cm.removeFrom(container);
-			}
-			if(metadata != null) {
-				// Possible if cancelled
-				Logger.normal(this, "Metadata is set in removeFrom() on "+this+" for "+BaseManifestPutter.this);
-				container.activate(metadata, 1);
-				metadata.removeFrom(container);
-			}
-			// Data is responsibility of original caller (usually ClientPutDir), we don't support freeData atm
-			super.removeFrom(container, context);
-		}
-
-		@Override
-		public boolean objectCanNew(ObjectContainer container) {
-			if(cancelled) {
-				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
-				return false;
-			}
-			if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
-			return true;
 		}
 
 		@Override
@@ -959,7 +700,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		protected void innerToNetwork(ClientContext context) {
 			// Ignore
 		}
 		
@@ -1118,7 +859,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		try {
 			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
-				running[i].start(container, context);
+				running[i].start(context);
 				if(persistent && !container.ext().isActive(this))
 					container.activate(this, 1);
 				if (logMINOR)
@@ -1134,7 +875,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 			if (containerMode) {
 				for (int i = 0; i < containers.length; i++) {
-					containers[i].start(container, context);
+					containers[i].start(context);
 					if(persistent && !container.ext().isActive(this))
 						container.activate(this, 1);
 					if (logMINOR)
@@ -1152,13 +893,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (!containerMode && running.length == 0) {
 				if(persistent())
 					container.store(this);
-				gotAllMetadata(container, context);
+				gotAllMetadata(context);
 			}
 		} catch (InsertException e) {
 			synchronized(this) {
 				finished = true;
 			}
-			cancelAndFinish(container, context);
+			cancelAndFinish(context);
 			throw e;
 		}
 		//debugDecompose("Start - End");
@@ -1211,20 +952,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * @param container
 	 * @param context
 	 */
-	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
+	private void gotAllMetadata(ClientContext context) {
 		if (containerMode) throw new IllegalStateException();
 		if(logMINOR) Logger.minor(this, "Got all metadata");
-		baseMetadata = makeMetadata(rootDir, container);
-		if(persistent()) {
-			container.store(baseMetadata);
-			container.store(this);
-		}
+		baseMetadata = makeMetadata(rootDir);
 		context.jobRunner.setCommitThisTransaction();
-		resolveAndStartBase(container, context);
+		resolveAndStartBase(context);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Metadata makeMetadata(HashMap<String, Object> dir, ObjectContainer container) {
+	private Metadata makeMetadata(HashMap<String, Object> dir) {
 		SimpleManifestComposer smc = new SimpleManifestComposer();
 		for(Map.Entry<String, Object> entry:dir.entrySet()) {
 			String name = entry.getKey();
@@ -1232,19 +969,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (item == null) throw new NullPointerException();
 			Metadata m;
 			if (item instanceof HashMap) {
-				if(persistent())
-					container.activate(item, 2);
-				m = makeMetadata((HashMap<String, Object>) item, container);
+				m = makeMetadata((HashMap<String, Object>) item);
 				if (m == null) throw new NullPointerException("HERE!!");
 			} else {
-				if (persistent()) {
-					container.activate(item, 2);
-				}
 				m = ((PutHandler)item).metadata;
 				if (m == null) throw new NullPointerException("HERE!!" +item);
-				if (persistent()) {
-					container.deactivate(item, 1);
-				}
 			}
 			smc.addItem(name, m);
 		}
@@ -1259,7 +988,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * @param container
 	 * @param context
 	 */
-	private void resolveAndStartBase(ObjectContainer container, ClientContext context) {
+	private void resolveAndStartBase(ClientContext context) {
 		//new Error("DEBUG_ME_resolveAndStartBase").printStackTrace();
 		Bucket bucket = null;
 		synchronized(this) {
@@ -1267,33 +996,25 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		while(true) {
 			try {
-				if(persistent())
-					container.activate(baseMetadata, Integer.MAX_VALUE);
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				if(logMINOR)
 					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
 				break;
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
 					// Start the insert for the sub-Metadata.
 					// Eventually it will generate a URI and call onEncode(), which will call back here.
 					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: "+e);
-					resolve(e, container, context);
-					if(persistent())
-						container.deactivate(baseMetadata, 1);
+					resolve(e, context);
 					return;
 				} catch (IOException e1) {
-					if(persistent())
-						container.deactivate(baseMetadata, 1);
-					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
+					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
 					return;
 				} catch (InsertException e2) {
-					if(persistent())
-						container.deactivate(baseMetadata, 1);
-					fail(e2, container, context);
+					fail(e2, context);
 					return;
 				}
 			}
@@ -1303,25 +1024,16 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if(hasResolvedBase) return;
 			hasResolvedBase = true;
 		}
-		if(persistent()) {
-			container.store(this);
-		}
 		InsertBlock block;
 		block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
 		try {
-			rootMetaPutHandler = new MetaPutHandler(this, null, block, getCHKOnly, container);
+			rootMetaPutHandler = new MetaPutHandler(this, null, block, getCHKOnly);
 
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+rootMetaPutHandler+" for "+baseMetadata);
-			if(persistent()) {
-				container.deactivate(baseMetadata, 1);
-			}
-			rootMetaPutHandler.start(container, context);
+			rootMetaPutHandler.start(context);
 		} catch (InsertException e) {
-			fail(e, container, context);
+			fail(e, context);
 			return;
-		}
-		if(persistent()) {
-			container.deactivate(rootMetaPutHandler, 1);
 		}
 	}
 
@@ -1335,29 +1047,20 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * @throws InsertException
 	 * @throws IOException
 	 */
-	private void resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
+	private void resolve(MetadataUnresolvedException e, ClientContext context) throws InsertException, IOException {
 		new Error("RefactorME-resolve").printStackTrace();
 		Metadata[] metas = e.mustResolve;
 		for(Metadata m: metas) {
-			if(persistent()) container.activate(m, 100);
 			if(logMINOR) Logger.minor(this, "Resolving "+m);
 			if(m.isResolved()) {
 				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
-				if(persistent()) container.deactivate(m, 1);
 				continue;
 			}
 			try {
-
-				MetaPutHandler ph = new MetaPutHandler(this, null, m, getCHKOnly, context.getBucketFactory(persistent()), container);
-				ph.start(container, context);
-
-				if(persistent()) {
-					container.deactivate(ph, 1);
-					container.deactivate(m, 1);
-				}
+				MetaPutHandler ph = new MetaPutHandler(this, null, m, getCHKOnly, context.getBucketFactory(persistent()));
+				ph.start(context);
 			} catch (MetadataUnresolvedException e1) {
-				resolve(e1, container, context);
-				container.deactivate(m, 1);
+				resolve(e1, context);
 			}
 		}
 	}
@@ -1402,7 +1105,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
 		// Also doing it this way means we don't need to worry about
-		if(persistent()) removePutHandlers(container, context);
+		if(persistent()) removePutHandlers(context);
 		boolean deactivateCB = false;
 		if(persistent()) {
 			deactivateCB = !container.ext().isActive(cb);
@@ -1413,40 +1116,32 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			container.deactivate(cb, 1);
 	}
 
-	private void fail(Exception e, ObjectContainer container, ClientContext context) {
+	private void fail(Exception e, ClientContext context) {
 		InsertException ie = new InsertException(InsertException.INTERNAL_ERROR, e, null);
-		fail(ie, container, context);
+		fail(ie, context);
 	}
 
-	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
+	private void fail(InsertException e, ClientContext context) {
 		// Cancel all, then call the callback
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		cancelAndFinish(container, context);
-		if(persistent()) removePutHandlers(container, context);
+		cancelAndFinish(context);
+		if(persistent()) removePutHandlers(context);
 
-		if(persistent())
-			container.activate(cb, 1);
 		cb.onFailure(e, this);
 	}
 
-	private void removePutHandlers(ObjectContainer container, ClientContext context) {
+	private void removePutHandlers(ClientContext context) {
 		new Error("RefactorME").printStackTrace();
-		container.activate(runningPutHandlers, 2);
-		container.activate(putHandlersWaitingForMetadata, 2);
-		container.activate(putHandlerWaitingForBlockSets, 2);
-		container.activate(putHandlersWaitingForFetchable, 2);
 
 		if(!runningPutHandlers.isEmpty()) {
 			Logger.error(this, "Running put handlers not part of putHandlersByName: "+runningPutHandlers.size()+" in removePutHandlers() on "+this, new Exception("error"));
 			PutHandler[] handlers = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 			for(PutHandler handler : handlers) {
-				container.activate(handler, 1);
 				Logger.error(this, "Still running, but not in putHandlersByName: "+handler);
 				handler.cancel();
-				handler.removeFrom(container, context);
 			}
 			runningPutHandlers.clear();
 		}
@@ -1454,10 +1149,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: "+putHandlersWaitingForMetadata.size()+" in removePutHandlers() on "+this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForMetadata.toArray(new PutHandler[putHandlersWaitingForMetadata.size()]);
 			for(PutHandler handler : handlers) {
-				container.activate(handler, 1);
 				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: "+handler);
 				handler.cancel();
-				handler.removeFrom(container, context);
 			}
 			putHandlersWaitingForMetadata.clear();
 		}
@@ -1465,10 +1158,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: "+putHandlerWaitingForBlockSets.size()+" in removePutHandlers() on "+this, new Exception("error"));
 			PutHandler[] handlers = putHandlerWaitingForBlockSets.toArray(new PutHandler[putHandlerWaitingForBlockSets.size()]);
 			for(PutHandler handler : handlers) {
-				container.activate(handler, 1);
 				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: "+handler);
 				handler.cancel();
-				handler.removeFrom(container, context);
 			}
 			putHandlerWaitingForBlockSets.clear();
 		}
@@ -1476,47 +1167,30 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: "+putHandlersWaitingForFetchable.size()+" in removePutHandlers() on "+this, new Exception("error"));
 			PutHandler[] handlers = putHandlersWaitingForFetchable.toArray(new PutHandler[putHandlersWaitingForFetchable.size()]);
 			for(PutHandler handler : handlers) {
-				container.activate(handler, 1);
 				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: "+handler);
 				handler.cancel();
-				handler.removeFrom(container, context);
 			}
 			putHandlersWaitingForFetchable.clear();
 		}
 
-		container.delete(runningPutHandlers);
-		container.delete(putHandlersWaitingForMetadata);
-		container.delete(putHandlerWaitingForBlockSets);
-		container.delete(putHandlersWaitingForFetchable);
 		runningPutHandlers = null;
 		putHandlersWaitingForMetadata = null;
 		putHandlerWaitingForBlockSets = null;
 		putHandlersWaitingForFetchable = null;
-		container.store(this);
 	}
 
 	/**
 	 * Cancel all running inserters.
 	 */
-	private void cancelAndFinish(ObjectContainer container, ClientContext context) {
+	private void cancelAndFinish(ClientContext context) {
 		PutHandler[] running;
-		boolean persistent = persistent();
-		if(persistent)
-			container.activate(runningPutHandlers, 2);
 		synchronized(this) {
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
 
 		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
 		for(PutHandler putter : running) {
-			boolean active = true;
-			if(persistent) {
-				active = container.ext().isActive(putter);
-				if(!active) container.activate(putter, 1);
-			}
-			putter.cancel(container, context);
-			if(!active) container.deactivate(putter, 1);
-			if(persistent) container.activate(this, 1);
+			putter.cancel(context);
 		}
 		// TODO
 //		ClientPutState[] runningMeta;
@@ -1540,58 +1214,52 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			if(super.cancel()) return;
 		}
-		if(persistent())
-			container.store(this);
-		fail(new InsertException(InsertException.CANCELLED), container, context);
+		fail(new InsertException(InsertException.CANCELLED), context);
 	}
 
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
 	
 	@Override
-	public void addBlock(ObjectContainer container) {
+	public void addBlock() {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
 		}
-		super.addBlock(container);
+		super.addBlock();
 	}
 	
 	@Override
-	public void addBlocks(int num, ObjectContainer container) {
+	public void addBlocks(int num) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
 		}
-		super.addBlocks(num, container);
+		super.addBlocks(num);
 	}
 	
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
 	@Override
-	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+	public void addMustSucceedBlocks(int blocks) {
 		synchronized(this) {
 			minSuccessFetchBlocks += blocks;
 		}
-		super.addMustSucceedBlocks(blocks, container);
+		super.addMustSucceedBlocks(blocks);
 	}
 
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
 	@Override
-	public void addRedundantBlocks(int blocks, ObjectContainer container) {
-		super.addMustSucceedBlocks(blocks, container);
+	public void addRedundantBlocks(int blocks) {
+		super.addMustSucceedBlocks(blocks);
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(ctx.eventProducer, 1);
-		}
+	public void notifyClients(ClientContext context) {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized), context);
 	}
 
@@ -1601,12 +1269,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 	
 	@Override
-	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
-		if(persistent())
-			container.deactivate(putHandlerWaitingForBlockSets, 1);
-		super.blockSetFinalized(container, context);
-		if(persistent())
-			container.store(this);
+	public void blockSetFinalized(ClientContext context) {
+		super.blockSetFinalized(context);
 	}
 
 	public int countFiles() {
@@ -1628,25 +1292,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		if(deactivate) container.deactivate(cb, 1);
 	}
 
-	protected void onFetchable(PutHandler handler, ObjectContainer container) {
+	protected void onFetchable(PutHandler handler) {
 		//new Error("Trace_ME onFetchable").printStackTrace();
-		if(persistent()) {
-			container.activate(putHandlersWaitingForFetchable, 2);
-		}
 		if(checkFetchable(handler)) {
-			if(persistent()) {
-				container.ext().store(putHandlersWaitingForMetadata, 2);
-				container.store(this);
-				container.deactivate(putHandlersWaitingForFetchable, 1);
-				container.activate(cb, 1);
-			}
 			cb.onFetchable(this);
-			if(persistent())
-				container.deactivate(cb, 1);
-		} else {
-			if(persistent()) {
-				container.deactivate(putHandlersWaitingForFetchable, 1);
-			}
 		}
 	}
 
@@ -1672,27 +1321,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+	protected void innerToNetwork(ClientContext context) {
 		// Ignore
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if (logDEBUG) Logger.debug(this, "removeFrom", new Exception("debug"));
-		if(finalURI != null) {
-			container.activate(finalURI, 5);
-			finalURI.removeFrom(container);
-		}
-		container.activate(targetURI, 5);
-		targetURI.removeFrom(container);
-		// This is passed in. We should not remove it, because the caller (ClientPutDir) should remove it.
-		container.activate(ctx, 1);
-		ctx.removeFrom(container);
-		if(baseMetadata != null) {
-			container.activate(baseMetadata, 1);
-			baseMetadata.removeFrom(container);
-		}
-		super.removeFrom(container, context);
 	}
 
 	public void objectOnUpdate(ObjectContainer container) {
@@ -1700,26 +1330,13 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		//Logger.error(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
-	@Override
-	public boolean objectCanNew(ObjectContainer container) {
-		if(finished) {
-			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
-			return false;
-		}
-		if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
-		return true;
-	}
-
-	private void tryStartParentContainer(PutHandler containerHandle2, ObjectContainer container, ClientContext context) throws InsertException {
+	private void tryStartParentContainer(PutHandler containerHandle2, ClientContext context) throws InsertException {
 		//new Error("RefactorME").printStackTrace();
 		if (containerHandle2 == null) throw new NullPointerException();
 		//if (perContainerPutHandlersWaitingForMetadata.get(containerHandle2).isEmpty() && perContainerPutHandlersWaitingForFetchable.get(containerHandle2).isEmpty()) {
 		if (perContainerPutHandlersWaitingForMetadata.get(containerHandle2).isEmpty()) {
 			perContainerPutHandlersWaitingForMetadata.remove(containerHandle2);
-			if (persistent()) {
-				container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
-			}
-			containerHandle2.start(container, context);
+			containerHandle2.start(context);
 		} else {
 			//System.out.println(" waiting m:"+perContainerPutHandlersWaitingForMetadata.get(containerHandle2).size()+" F:"+perContainerPutHandlersWaitingForFetchable.get(containerHandle2).size() + " for "+containerHandle2);
 			if(logMINOR)
@@ -2023,7 +1640,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         }
         return manifestEntries;
     }
-    
+	
     public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
         List<ManifestElement> v = new ArrayList<ManifestElement>();
         flatten(manifestElements, v, "");
@@ -2044,5 +1661,4 @@ public abstract class BaseManifestPutter extends ManifestPutter {
                 throw new IllegalStateException(String.valueOf(o));
         }
     }
-	
 }

@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -56,7 +54,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
+	public void notifyClients(ClientContext context) {
 		// Do nothing
 	}
 
@@ -101,12 +99,12 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		super.cancel();
 	}
 
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+	protected void innerToNetwork(ClientContext context) {
 		// Ignore
 	}
 

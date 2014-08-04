@@ -107,7 +107,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int fcounter = 0;
 			for(ClientGetter fetch : fetches) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				fetch.cancel(null, mNode.clientCore.clientContext);
+				fetch.cancel(mNode.clientCore.clientContext);
 				++fcounter;
 			}
 			
@@ -122,7 +122,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			int icounter = 0;
 			for(BaseClientPutter insert : inserts) {
 				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
-				insert.cancel(null, mNode.clientCore.clientContext);
+				insert.cancel(mNode.clientCore.clientContext);
 				++icounter;
 			}
 			Logger.debug(this, "Stopped " + icounter + " current inserts.");

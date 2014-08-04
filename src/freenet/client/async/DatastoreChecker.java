@@ -97,7 +97,7 @@ public class DatastoreChecker implements PrioRunnable {
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>(checkKeys.length);
 		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
 		ClientRequester requestor = getter.getClientRequest();
-		requestor.addToRequests(getter, null);
+		requestor.addToRequests(getter);
 		synchronized(this) {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);

@@ -114,7 +114,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			}
 			// If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
 			// That does not matter.
-			clientRequest.addToRequests(req, container);
+			clientRequest.addToRequests(req);
 			if(deactivate) container.deactivate(clientRequest, 1);
 		}
 	}
@@ -138,13 +138,13 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	 */
 	protected SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
 		if(request != null || persistent()) // Client request null is only legal for transient requests
-			return request.getSendableRequests(container);
+			return request.getSendableRequests();
 		else return null;
 	}
 
 	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
 		if(cr != null || persistent()) // Client request null is only legal for transient requests
-			cr.removeFromRequests(req, container, dontComplain);
+			cr.removeFromRequests(req, dontComplain);
 	}
 	
 	public void reregisterAll(ClientRequester request, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {

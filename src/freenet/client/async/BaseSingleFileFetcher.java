@@ -411,7 +411,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			deactivate = !container.ext().isActive(parent);
 			container.activate(parent, 1);
 		}
-		parent.toNetwork(container, context);
+		parent.toNetwork(context);
 		if(deactivate) container.deactivate(parent, 1);
 		return false;
 	}

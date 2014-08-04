@@ -35,10 +35,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		this.token = l;
 		if(!dontAdd) {
 			if(isEssential)
-				parent.addMustSucceedBlocks(1, container);
+				parent.addMustSucceedBlocks(1);
 			else
-				parent.addBlock(container);
-			parent.notifyClients(container, context);
+				parent.addBlock();
+			parent.notifyClients(context);
 		}
 	}
 
@@ -87,9 +87,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(persistent)
 			container.store(this);
 		if(e.isFatal() || forceFatal)
-			parent.fatallyFailedBlock(container, context);
+			parent.fatallyFailedBlock(context);
 		else
-			parent.failedBlock(container, context);
+			parent.failedBlock(context);
 		rcb.onFailure(e, this, context);
 	}
 

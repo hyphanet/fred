@@ -130,17 +130,13 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		synchronized(this) {
 			if(cancelled) return;
 			cancelled = true;
 		}
-		if(persistent)
-			container.store(this);
-		if(persistent)
-			container.activate(cb, 1);
 		// Must call onFailure so get removeFrom()'ed
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
 	}
 
 	@Override
@@ -154,21 +150,15 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		// TODO
-		new Exception("ContainerInserter.removeFrom: TODO").printStackTrace();
-	}
-
-	@Override
-	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		start(container, context);
+	public void schedule(ClientContext context) throws InsertException {
+		start(context);
 	}
 
 
-	private void start(ObjectContainer container, ClientContext context) {
+	private void start(ClientContext context) {
 		if(logDEBUG) Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
 		
-		makeMetadata(context, container);
+		makeMetadata(context);
 		
 		synchronized(this) {
 			if(finished) return;
@@ -180,8 +170,8 @@ public class ContainerInserter implements ClientPutState {
 			Bucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
 			os = new BufferedOutputStream(outputBucket.getOutputStream());
 			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-				createTarBucket(os, container) :
-				createZipBucket(os, container));
+				createTarBucket(os) :
+				createZipBucket(os));
 			os = null; // create*Bucket closes os
 			if(logMINOR)
 				Logger.minor(this, "Archive size is "+outputBucket.size());
@@ -195,7 +185,7 @@ public class ContainerInserter implements ClientPutState {
 			// We ought to be able to !!
 			block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent ? targetURI.clone() : targetURI);
 		} catch (IOException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
+			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
 			return;
 		} finally {
 			Closer.close(os);
@@ -212,14 +202,14 @@ public class ContainerInserter implements ClientPutState {
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi);
 		try {
-			sfi.schedule(container, context);
+			sfi.schedule(context);
 		} catch (InsertException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
+			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
 			return;
 		}
 	}
 
-	private void makeMetadata(ClientContext context, ObjectContainer container) {
+	private void makeMetadata(ClientContext context) {
 
 		Bucket bucket = null;
 		int x = 0;
@@ -233,20 +223,20 @@ public class ContainerInserter implements ClientPutState {
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, null, null, container, context);
+					x = resolve(e, x, null, null, context);
 				} catch (IOException e1) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
+					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
 					return;
 				}
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
+				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
 				return;
 			}
 		}
 		
 	}
 
-	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ObjectContainer container, ClientContext context) throws IOException {
+	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ClientContext context) throws IOException {
 		Metadata[] metas = e.mustResolve;
 		for(Metadata m: metas) {
 			try {
@@ -255,21 +245,19 @@ public class ContainerInserter implements ClientPutState {
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
 				m.resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, key, element2, container, context);
+				x = resolve(e, x, key, element2, context);
 			}
 		}
 		return x;
 	}
 
-	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
+	private void fail(InsertException e, ClientContext context) {
 		// Cancel all, then call the callback
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		if(persistent)
-			container.activate(cb, 1);
-		cb.onFailure(e, this, container, context);
+		cb.onFailure(e, this, context);
 	}
 
 	// A persistent hashCode is helpful in debugging, and also means we can put
@@ -298,7 +286,7 @@ public class ContainerInserter implements ClientPutState {
 	/**
 	** OutputStream os will be close()d if this method returns successfully.
 	*/
-	private String createTarBucket(OutputStream os, ObjectContainer container) throws IOException {
+	private String createTarBucket(OutputStream os) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
@@ -324,7 +312,7 @@ public class ContainerInserter implements ClientPutState {
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
 	
-	private String createZipBucket(OutputStream os, ObjectContainer container) throws IOException {
+	private String createZipBucket(OutputStream os) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		
 		ZipOutputStream zos = new ZipOutputStream(os);

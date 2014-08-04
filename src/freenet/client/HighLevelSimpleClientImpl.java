@@ -392,7 +392,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		core.getTicker().queueTimedJob(new Runnable() {
 			@Override
 			public void run() {
-				get.cancel(null, core.clientContext);
+				get.cancel(core.clientContext);
 			}
 
 		}, timeout);

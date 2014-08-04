@@ -478,7 +478,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * send the client a cancel FetchException, and to removeFrom() the state.
 	 */
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
@@ -488,15 +488,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			}
 			s = currentState;
 		}
-		if(persistent())
-			container.store(this);
 		if(s != null) {
-			if(persistent())
-				container.activate(s, 1);
 			if(logMINOR) Logger.minor(this, "Cancelling "+s+" for "+this+" instance "+super.toString());
-			s.cancel(container, context);
-			if(persistent())
-				container.deactivate(s, 1);
+			s.cancel(null, context);
 		} else {
 			if(logMINOR) Logger.minor(this, "Nothing to cancel");
 		}
@@ -526,11 +520,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * SplitfileProgressEvent.
 	 */
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(ctx.eventProducer, 1);
-		}
+	public void notifyClients(ClientContext context) {
 		int total = this.totalBlocks;
 		int minSuccess = this.minSuccessBlocks;
 		boolean finalized = blockSetFinalized;
@@ -547,11 +537,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * checking the datastore for at least some part of the request. Sent once only for any given request.
 	 */
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(ctx.eventProducer, 1);
-		}
+	protected void innerToNetwork(ClientContext context) {
 		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
 	}
 
@@ -563,7 +549,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	public void onBlockSetFinished(ClientGetState state, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized(null, context);
+		blockSetFinalized(context);
 	}
 
 	/**
@@ -604,14 +590,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	 * @return True if we successfully restarted, false if we can't restart.
 	 * @throws FetchException If something went wrong.
 	 */
-	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
-		checkForBrokenClient(container, context);
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(ctx.filterData, 1);
-		}
+	public boolean restart(FreenetURI redirect, boolean filterData, ClientContext context) throws FetchException {
 		ctx.filterData = filterData;
-		if(persistent()) container.store(ctx);
 		return start(true, redirect, context);
 	}
 
@@ -717,23 +697,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return clientCallback;
 	}
 
-	/** Remove the ClientGetter from the database. You must call this on the database thread, and it must
-	 * be a persistent request. We do not remove anything we are not responsible for. */
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		container.activate(ctx, 1);
-		ctx.removeFrom(container);
-		container.activate(actx, 5);
-		actx.removeFrom(container);
-		if(returnBucket != null) {
-			container.activate(returnBucket, 1);
-			returnBucket.removeFrom(container);
-		}
-		super.removeFrom(container, context);
-	}
-
 	/** Get the metadata snoop callback */
 	public SnoopMetadata getMetaSnoop() {
 		return snoopMeta;
@@ -770,7 +733,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		onExpectedSize(size, context);
 		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
-		notifyClients(null, context);
+		notifyClients(context);
 	}
 
 	@Override

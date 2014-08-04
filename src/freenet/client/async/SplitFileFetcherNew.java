@@ -218,9 +218,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
 
     @Override
     public void setSplitfileBlocks(int requiredBlocks, int remainingBlocks) {
-        parent.addMustSucceedBlocks(requiredBlocks, null);
-        parent.addRedundantBlocks(remainingBlocks, null);
-        parent.notifyClients(null, context);
+        parent.addMustSucceedBlocks(requiredBlocks);
+        parent.addRedundantBlocks(remainingBlocks);
+        parent.notifyClients(context);
     }
 
     @Override
@@ -245,7 +245,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     public void toNetwork() {
-        parent.toNetwork(null, context);
+        parent.toNetwork(context);
     }
 
     public boolean hasFinished() {
@@ -254,12 +254,12 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
 
     @Override
     public void onFetchedBlock() {
-        parent.completedBlock(!getter.hasQueued(), null, context);
+        parent.completedBlock(!getter.hasQueued(), context);
     }
 
     @Override
     public void onFailedBlock() {
-        parent.failedBlock(null, context);
+        parent.failedBlock(context);
     }
 
     @Override

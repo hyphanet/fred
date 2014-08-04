@@ -114,7 +114,7 @@ class LegacyJarFetcher implements ClientGetCallback {
 		synchronized(this) {
 			if(fetched) return;
 		}
-		cg.cancel(null, context);
+		cg.cancel(context);
 	}
 
 	public long getBlobSize() {

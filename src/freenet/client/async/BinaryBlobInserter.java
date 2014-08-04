@@ -65,8 +65,8 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 
 		inserters = myInserters.toArray(new MySendableInsert[myInserters.size()]);
-		parent.addMustSucceedBlocks(inserters.length, container);
-		parent.notifyClients(container, context);
+		parent.addMustSucceedBlocks(inserters.length);
+		parent.notifyClients(context);
 	}
 
 	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
@@ -78,12 +78,12 @@ public class BinaryBlobInserter implements ClientPutState {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		for(MySendableInsert inserter: inserters) {
 			if(inserter != null)
-				inserter.cancel(container, context);
+				inserter.cancel(null, context);
 		}
-		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
+		parent.onFailure(new InsertException(InsertException.CANCELLED), this, context);
 	}
 
 	@Override
@@ -97,7 +97,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	}
 
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+	public void schedule(ClientContext context) throws InsertException {
 		for(MySendableInsert inserter: inserters) {
 			inserter.schedule();
 		}
@@ -122,7 +122,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				completedBlocks++;
 				succeededBlocks++;
 			}
-			parent.completedBlock(false, container, context);
+			parent.completedBlock(false, context);
 			maybeFinish(container, context);
 		}
 
@@ -186,9 +186,9 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(fatal) BinaryBlobInserter.this.fatal = true;
 			}
 			if(fatal)
-				parent.fatallyFailedBlock(container, context);
+				parent.fatallyFailedBlock(context);
 			else
-				parent.failedBlock(container, context);
+				parent.failedBlock(context);
 			maybeFinish(container, context);
 		}
 
@@ -204,17 +204,11 @@ public class BinaryBlobInserter implements ClientPutState {
 			wasFatal = fatal;
 		}
 		if(success) {
-			parent.onSuccess(this, container, context);
+			parent.onSuccess(this, context);
 		} else if(wasFatal)
-			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, container, context);
+			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, context);
 		else
-			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container, context);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		// FIXME: Persistent blob inserts are not supported.
-		throw new UnsupportedOperationException();
+			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, context);
 	}
 
 }

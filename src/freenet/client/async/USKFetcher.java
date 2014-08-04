@@ -1311,7 +1311,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		if(attempts.length > 0)
-			parent.toNetwork(null, context);
+			parent.toNetwork(context);
 		if(logMINOR)
 			Logger.minor(this, "Registering "+attempts.length+" USKChecker's for "+this+" running="+runningAttempts.size()+" polling="+pollingAttempts.size());
 		for(USKAttempt attempt: attempts) {
@@ -1465,7 +1465,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 			if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
 			if(attempts.length > 0) {
-				parent.toNetwork(container, context);
+				parent.toNetwork(context);
 				notifySendingToNetwork(context);
 			}
 			for(USKAttempt attempt: attempts) {

@@ -241,7 +241,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				// Impossible
 			}
 		if(cancelled != null)
-			cancelled.cancel(null, core.clientContext);
+			cancelled.cancel(core.clientContext);
 	}
 
 	final File getBlobFile(int availableVersion) {
@@ -491,7 +491,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 				c = cg;
 				cg = null;
 			}
-			c.cancel(null, core.clientContext);
+			c.cancel(core.clientContext);
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}

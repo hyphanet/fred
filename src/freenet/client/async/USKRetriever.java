@@ -224,7 +224,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
+	public void notifyClients(ClientContext context) {
 		// Ignore for now
 	}
 
@@ -259,12 +259,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		super.cancel();
 	}
 
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+	protected void innerToNetwork(ClientContext context) {
 		// Ignore
 	}
 

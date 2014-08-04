@@ -201,7 +201,7 @@ public class InsertCompressor implements CompressJob {
 					
 					@Override
 					public boolean run(ClientContext context) {
-						inserter.onCompressed(output, null, context);
+						inserter.onCompressed(output, context);
 						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
@@ -219,7 +219,7 @@ public class InsertCompressor implements CompressJob {
 					@Override
 					public void run() {
 						try {
-							inserter.onCompressed(output, null, context);
+							inserter.onCompressed(output, context);
 						} catch (Throwable t) {
 							Logger.error(this, "Caught "+t+" running compression job", t);
 						}
@@ -245,7 +245,7 @@ public class InsertCompressor implements CompressJob {
 					
 					@Override
 					public boolean run(ClientContext context) {
-						inserter.cb.onFailure(ie, inserter, null, context);
+						inserter.cb.onFailure(ie, inserter, context);
 						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
@@ -257,7 +257,7 @@ public class InsertCompressor implements CompressJob {
 					bestCompressedData.free();
 			}
 		} else {
-			inserter.cb.onFailure(ie, inserter, null, context);
+			inserter.cb.onFailure(ie, inserter, context);
 		}
 	}
 
@@ -295,7 +295,7 @@ public class InsertCompressor implements CompressJob {
 					
 					@Override
 					public boolean run(ClientContext context) {
-						inserter.cb.onFailure(e, inserter, null, context);
+						inserter.cb.onFailure(e, inserter, context);
 						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
@@ -305,7 +305,7 @@ public class InsertCompressor implements CompressJob {
 				// Can't do anything
 			}
 		} else {
-			inserter.cb.onFailure(e, inserter, null, context);
+			inserter.cb.onFailure(e, inserter, context);
 		}
 		
 	}

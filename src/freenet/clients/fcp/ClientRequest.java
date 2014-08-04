@@ -212,7 +212,7 @@ public abstract class ClientRequest implements Serializable {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
 		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
-		if(cr != null) cr.cancel(null, context);
+		if(cr != null) cr.cancel(context);
 		freeData();
 	}
 
@@ -328,8 +328,7 @@ public abstract class ClientRequest implements Serializable {
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
-			if(r.checkForBrokenClient(null, server.node.clientCore.clientContext)) return;
-			r.setPriorityClass(priorityClass, server.core.clientContext, null);
+			r.setPriorityClass(priorityClass, server.core.clientContext);
 			priorityClassChanged = true;
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();

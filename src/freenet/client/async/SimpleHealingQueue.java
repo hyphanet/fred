@@ -82,7 +82,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			try {
 				sbi = new SingleBlockInserter(this, data, (short)-1,
 							FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, this, false,
-							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0, cryptoAlgorithm, cryptoKey);
+							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, context, false, true, 0, cryptoAlgorithm, cryptoKey);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
@@ -90,7 +90,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.put(data, sbi);
 		}
 		try {
-			sbi.schedule(null, context);
+			sbi.schedule(context);
 			if(logMINOR)
 				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
 			return true;
@@ -122,12 +122,12 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void notifyClients(ObjectContainer container, ClientContext context) {
+	public void notifyClients(ClientContext context) {
 		// Do nothing
 	}
 
 	@Override
-	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(ClientPutState state, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -139,7 +139,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -151,7 +151,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onEncode(BaseClientKey usk, ClientPutState state, ClientContext context) {
 		// Ignore
 	}
 
@@ -162,18 +162,18 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onMetadata(Metadata m, ClientPutState state, ClientContext context) {
 		// Should never happen
 		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
 	}
 
 	@Override
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onBlockSetFinished(ClientPutState state, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onFetchable(ClientPutState state, ObjectContainer container) {
+	public void onFetchable(ClientPutState state) {
 		// Ignore
 	}
 
@@ -183,12 +183,12 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+	protected void innerToNetwork(ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		super.cancel();
 	}
 
@@ -199,7 +199,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 
 	@Override
 	public void onMetadata(Bucket meta, ClientPutState state,
-			ObjectContainer container, ClientContext context) {
+			ClientContext context) {
 		Logger.error(this, "onMetadata() in SimpleHealingQueue - impossible", new Exception("error"));
 		meta.free();
 	}

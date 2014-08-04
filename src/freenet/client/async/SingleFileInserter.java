@@ -142,20 +142,11 @@ class SingleFileInserter implements ClientPutState {
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
-	public void start(ObjectContainer container, ClientContext context) throws InsertException {
-		if(persistent) {
-			container.activate(block, 1); // will cascade
-		}
-		tryCompress(container, context);
+	public void start(ClientContext context) throws InsertException {
+		tryCompress(context);
 	}
 
-	void onCompressed(CompressionOutput output, ObjectContainer container, ClientContext context) {
-		boolean cbActive = true;
-		if(persistent) {
-			cbActive = container.ext().isActive(cb);
-			if(!cbActive)
-				container.activate(cb, 1);
-		}
+	void onCompressed(CompressionOutput output, ClientContext context) {
 		if(started) {
 			Logger.error(this, "Already started, not starting again", new Exception("error"));
 			return;
@@ -164,31 +155,22 @@ class SingleFileInserter implements ClientPutState {
 			Logger.error(this, "Already cancelled, not starting");
 			return;
 		}
-		if(persistent) container.activate(block, 1);
 		try {
-			onCompressedInner(output, container, context);
+			onCompressedInner(output, context);
 		} catch (InsertException e) {
-			cb.onFailure(e, SingleFileInserter.this, container, context);
+			cb.onFailure(e, SingleFileInserter.this, context);
         } catch (Throwable t) {
             Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
             System.err.println("Caught in OffThreadCompressor: "+t);
             t.printStackTrace();
             // Try to fail gracefully
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, container, context);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, context);
 		}
-		if(!cbActive)
-			container.deactivate(cb, 1);
 	}
 	
-	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
+	void onCompressedInner(CompressionOutput output, ClientContext context) throws InsertException {
 		HashResult[] hashes = output.hashes;
 		boolean parentWasActive = true;
-		if(container != null) {
-			container.activate(block, 2);
-			parentWasActive = container.ext().isActive(parent);
-			if(!parentWasActive)
-				container.activate(parent, 1);
-		}
 		long origSize = block.getData().size();
 		byte[] hashThisLayerOnly = null;
 		if(hashes != null && metadata) {
@@ -202,21 +184,14 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+res.hashAsHex());
 				}
 			}
-			if(persistent) {
-				container.activate(ctx, 1);
-				container.activate(ctx.eventProducer, 1);
-			}
 			HashResult[] clientHashes = hashes;
 			if(persistent) clientHashes = HashResult.copy(hashes);
 			ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), context);
 			
 			// So it is passed on.
 			origHashes = hashes;
-			if(persistent)
-				container.store(this);
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
-			if(persistent) container.activate(hashes, Integer.MAX_VALUE);
 		}
 		Bucket bestCompressedData = output.data;
 		long bestCompressedDataSize = bestCompressedData.size();
@@ -229,10 +204,8 @@ class SingleFileInserter implements ClientPutState {
 			shouldFreeData = true; // must be freed regardless of whether the original data was to be freed
 			if(freeData) {
 				block.getData().free();
-				if(persistent) block.getData().removeFrom(container);
 			}
 			block.nullData();
-			if(persistent) container.store(block);
 		} else {
 			data = block.getData();
 			bestCompressedDataSize = origSize;
@@ -242,7 +215,6 @@ class SingleFileInserter implements ClientPutState {
 		int oneBlockCompressedSize;
 		
 		boolean isCHK = false;
-		if(persistent) container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
 		boolean isUSK = false;
 		if(type.equals("SSK") || type.equals("KSK") || (isUSK = type.equals("USK"))) {
@@ -261,10 +233,6 @@ class SingleFileInserter implements ClientPutState {
 		// which then switches either to the database thread or to a new executable to run this method.
 		
 		if(parent == cb) {
-			if(persistent) {
-				container.activate(ctx, 1);
-				container.activate(ctx.eventProducer, 1);
-			}
 			short codecID = bestCodec == null ? -1 : bestCodec.metadataID;
 			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(codecID, origSize, bestCompressedDataSize), context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
@@ -286,24 +254,19 @@ class SingleFileInserter implements ClientPutState {
 					data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, container, context, shouldFreeData, forSplitfile);
+					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, context, shouldFreeData, forSplitfile);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi);
 				if(earlyEncode && bi instanceof SingleBlockInserter && isCHK)
-					((SingleBlockInserter)bi).getBlock(container, context, true);
-				bi.schedule(container, context);
+					((SingleBlockInserter)bi).getBlock(context, true);
+				bi.schedule(context);
 				if(!isUSK)
-					cb.onBlockSetFinished(this, container, context);
+					cb.onBlockSetFinished(this, context);
 				started = true;
 				if(persistent) {
-					if(!parentWasActive)
-						container.deactivate(parent, 1);
 					block.nullData();
-					block.removeFrom(container);
 					block = null;
-					// Deleting origHashes is fine, we are done with them.
-					removeFrom(container, context);
 				}
 				return;
 			}
@@ -314,16 +277,15 @@ class SingleFileInserter implements ClientPutState {
 				data = fixNotPersistent(data, context);
 			}
 			if(reportMetadataOnly) {
-				if(persistent) container.activate(ctx, 1);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes, container);
-				cb.onMetadata(meta, this, container, context);
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(context), hashes);
+				cb.onMetadata(meta, this, context);
 				cb.onTransition(this, dataPutter);
-				dataPutter.schedule(container, context);
+				dataPutter.schedule(context);
 				if(!isUSK)
-					cb.onBlockSetFinished(this, container, context);
+					cb.onBlockSetFinished(this, context);
 				synchronized(this) {
 					// Don't delete them because they are being passed on.
 					origHashes = null;
@@ -331,11 +293,10 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent, false, earlyEncode);
-				if(persistent) container.activate(ctx, 1);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes, container);
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(context), hashes);
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
@@ -347,30 +308,26 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, container, context, true, false);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, context, true, false);
 				if(logMINOR)
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
-				mcb.addURIGenerator(metaPutter, container);
-				mcb.add(dataPutter, container);
+				mcb.addURIGenerator(metaPutter);
+				mcb.add(dataPutter);
 				cb.onTransition(this, mcb);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
-				mcb.arm(container, context);
-				dataPutter.schedule(container, context);
+				mcb.arm(context);
+				dataPutter.schedule(context);
 				if(earlyEncode && metaPutter instanceof SingleBlockInserter)
-					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
-				metaPutter.schedule(container, context);
+					((SingleBlockInserter)metaPutter).getBlock(context, true);
+				metaPutter.schedule(context);
 				if(!isUSK)
-					cb.onBlockSetFinished(this, container, context);
+					cb.onBlockSetFinished(this, context);
 				// Deleting origHashes is fine, we are done with them.
 			}
 			started = true;
 			if(persistent) {
-				if(!parentWasActive)
-					container.deactivate(parent, 1);
 				block.nullData();
-				block.removeFrom(container);
 				block = null;
-				removeFrom(container, context);
 			}
 			return;
 		}
@@ -448,7 +405,7 @@ class SingleFileInserter implements ClientPutState {
 		return data;
 	}
 
-	private void tryCompress(ObjectContainer container, ClientContext context) throws InsertException {
+	private void tryCompress(ClientContext context) throws InsertException {
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
 		Bucket data = origData;
@@ -456,11 +413,7 @@ class SingleFileInserter implements ClientPutState {
 		int oneBlockCompressedSize;
 		boolean dontCompress = ctx.dontCompress;
 		
-		if(persistent)
-			container.activate(data, 1);
 		long origSize = data.size();
-		if(persistent)
-			container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType().toUpperCase();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
@@ -513,11 +466,11 @@ class SingleFileInserter implements ClientPutState {
 				hashes = hasher.getResults();
 			}
 			CompressionOutput output = new CompressionOutput(data, null, hashes);
-			onCompressed(output, container, context);
+			onCompressed(output, context);
 		}
 	}
 	
-	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, FreenetURI uri, HashResult[] hashes, ObjectContainer container) {
+	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, FreenetURI uri, HashResult[] hashes) {
 		Metadata meta = null;
 		boolean allowTopBlocks = origDataLength != 0;
 		int req = 0;
@@ -527,22 +480,10 @@ class SingleFileInserter implements ClientPutState {
 		boolean topDontCompress = false;
 		short topCompatibilityMode = 0;
 		if(allowTopBlocks) {
-			boolean wasActive = true;
-			boolean ctxWasActive = true;
-			if(persistent) {
-				wasActive = container.ext().isActive(parent);
-				if(!wasActive)
-					container.activate(parent, 1);
-				ctxWasActive = container.ext().isActive(ctx);
-				if(!ctxWasActive)
-					container.activate(ctx, 1);
-			}
 			req = parent.getMinSuccessFetchBlocks();
 			total = parent.totalBlocks;
-			if(!wasActive) container.deactivate(parent, 1);
 			topDontCompress = ctx.dontCompress;
 			topCompatibilityMode = (short) ctx.getCompatibilityCode();
-			if(!ctxWasActive) container.deactivate(ctx, 1);
 			data = origDataLength;
 			compressed = origCompressedDataLength;
 		}
@@ -564,26 +505,24 @@ class SingleFileInserter implements ClientPutState {
 	 * affects whether we do multiple inserts of the same block. */
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, ObjectContainer container, ClientContext context, boolean freeData, boolean forSplitfile) throws InsertException {
+			boolean addToParent, ClientContext context, boolean freeData, boolean forSplitfile) throws InsertException {
 		
 		FreenetURI uri = block.desiredURI;
 		uri.checkInsertURI(); // will throw an exception if needed
 		
-		if(persistent) container.activate(ctx, 1);
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, realTimeFlag, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+					getCHKOnly, addToParent, this.token, context, freeData, persistent, realTimeFlag, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, realTimeFlag, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+						getCHKOnly, addToParent, false, this.token, context, persistent, freeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 			// pass uri to SBI
 			block.nullURI();
-			if(persistent) container.store(block);
 			return sbi;
 		}
 		
@@ -1172,28 +1111,22 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancel "+this);
 		synchronized(this) {
 			if(cancelled) return;
 			cancelled = true;
 		}
 		if(freeData) {
-			if(persistent)
-				container.activate(block, 1);
-			block.free(container);
+			block.free(null);
 		}
-		if(persistent)
-			container.store(this);
-		if(persistent)
-			container.activate(cb, 1);
 		// Must call onFailure so get removeFrom()'ed
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
 	}
 
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		start(container, context);
+	public void schedule(ClientContext context) throws InsertException {
+		start(context);
 	}
 
 	@Override
@@ -1220,25 +1153,6 @@ class SingleFileInserter implements ClientPutState {
 		return started;
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
-		// parent removes self
-		// token is passed in, creator of token is responsible for removing it
-		if(block != null) {
-			container.activate(block, 1);
-			block.removeFrom(container);
-		}
-		// ctx is passed in, creator is responsible for removing it
-		// cb removes itself
-		if(origHashes != null)
-			for(HashResult h : origHashes) {
-				container.activate(h, Integer.MAX_VALUE);
-				h.removeFrom(container);
-			}
-		container.delete(this);
-	}
-	
 	public boolean objectCanUpdate(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));

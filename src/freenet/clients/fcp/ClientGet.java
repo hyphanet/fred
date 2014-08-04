@@ -916,7 +916,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		}
 		try {
-			if(getter.restart(redirect, fctx.filterData, null, context)) {
+			if(getter.restart(redirect, fctx.filterData, context)) {
 				synchronized(this) {
 					if(redirect != null) {
 						this.uri = redirect;

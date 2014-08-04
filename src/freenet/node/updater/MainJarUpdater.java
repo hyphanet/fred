@@ -157,7 +157,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 
 				@Override
 				public void run() {
-					getter.cancel(null, clientContext);
+					getter.cancel(clientContext);
 					if(f != null) f.cancel();
 				}
 				

@@ -448,7 +448,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public void finishCancel() {
 		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
 		try {
-			getter.cancel(null, tracker.context);
+			getter.cancel(tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
 			Logger.error(this, "Failed to cancel: "+t, t);
