@@ -249,11 +249,6 @@ public abstract class ClientRequester {
 					}
 
 					@Override
-					public void removeFrom(ObjectContainer container) {
-						container.delete(this);
-					}
-
-					@Override
 					public boolean realTimeFlag() {
 						return realTimeFlag;
 					}

@@ -5029,10 +5029,6 @@ public class Node implements TimeSkewDetectorCallback {
 			return false;
 		}
 		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -5041,10 +5037,6 @@ public class Node implements TimeSkewDetectorCallback {
 		@Override
 		public boolean persistent() {
 			return false;
-		}
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
 		}
 		@Override
 		public boolean realTimeFlag() {

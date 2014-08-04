@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 /**
  * Must be implemented by any client object returned by SendableRequest.getClient().
  * Mostly this is for scheduling, but it does have one key purpose: to identify whether
@@ -25,7 +23,5 @@ public interface RequestClient {
 	 * **Must not change!**
 	 */
 	public boolean realTimeFlag();
-
-	public void removeFrom(ObjectContainer container);
 
 }

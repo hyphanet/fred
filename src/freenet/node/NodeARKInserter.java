@@ -283,11 +283,6 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

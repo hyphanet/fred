@@ -182,11 +182,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
-		@Override
 		public void onSuccess(FetchResult result, ClientGetter state,
 				ObjectContainer container) {
 			synchronized(this) {

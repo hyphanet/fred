@@ -238,11 +238,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 		// Ignore
 		return false;

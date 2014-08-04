@@ -1647,11 +1647,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		return false;
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
 	public void disconnected(PeerNode pn) {
 		synchronized(this) {
 			nodesSayKeyRevoked.remove(pn);

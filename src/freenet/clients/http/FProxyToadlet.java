@@ -18,8 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -817,10 +815,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 							return false;
 						}
 						@Override
-						public void removeFrom(ObjectContainer container) {
-							throw new UnsupportedOperationException();
-						}
-						@Override
 						public boolean realTimeFlag() {
 							return true;
 						} }, fctx);
@@ -1133,11 +1127,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 
 			@Override
-			public void removeFrom(ObjectContainer container) {
-				// Do nothing.
-			}
-
-			@Override
 			public boolean realTimeFlag() {
 				return true;
 			}
@@ -1351,11 +1340,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

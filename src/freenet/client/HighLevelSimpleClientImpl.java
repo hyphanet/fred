@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -404,11 +402,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	@Override
 	public boolean persistent() {
 		return false;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

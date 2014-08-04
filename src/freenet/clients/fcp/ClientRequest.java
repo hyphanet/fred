@@ -149,11 +149,6 @@ public abstract class ClientRequest implements Serializable {
 				}
 
 				@Override
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
-				}
-
-				@Override
 				public boolean realTimeFlag() {
 					return realTime;
 				}

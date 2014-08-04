@@ -54,11 +54,6 @@ class LegacyJarFetcher implements ClientGetCallback {
 			return false;
 		}
 
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
 	};
 
 	public LegacyJarFetcher(FreenetURI uri, File saveTo, NodeClientCore core, LegacyFetchCallback cb) {

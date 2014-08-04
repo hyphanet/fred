@@ -593,11 +593,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override
 	public boolean realTimeFlag() {
 		return false;
 	}

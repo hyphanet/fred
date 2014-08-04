@@ -16,8 +16,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -274,11 +272,6 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				@Override
 				public boolean persistent() {
 					return false;
-				}
-
-				@Override
-				public void removeFrom(ObjectContainer container) {
-					// Ignore.
 				}
 
 				@Override

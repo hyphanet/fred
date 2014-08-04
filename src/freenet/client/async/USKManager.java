@@ -57,11 +57,6 @@ public class USKManager {
 			return true;
 		}
 
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
 	};
 	
 	static RequestClient rcBulk = new RequestClient() {
@@ -76,11 +71,6 @@ public class USKManager {
 			return false;
 		}
 
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
 	};
 	
 	static {

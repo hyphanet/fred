@@ -1073,11 +1073,6 @@ public class PluginManager {
 		}
 
 		@Override
-		public void removeFrom(ObjectContainer container) {
-			// Do nothing.
-		}
-
-		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}

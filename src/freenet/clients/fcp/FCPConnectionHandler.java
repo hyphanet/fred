@@ -97,11 +97,6 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		
 		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
 		public boolean realTimeFlag() {
 			return false;
 		}
@@ -114,11 +109,6 @@ public class FCPConnectionHandler implements Closeable {
 			return false;
 		}
 		
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-
 		@Override
 		public boolean realTimeFlag() {
 			return true;
