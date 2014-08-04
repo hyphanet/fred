@@ -984,6 +984,9 @@ public class SplitFileFetcherStorage {
 
     public void finishedFetcher() {
         synchronized(this) {
+            if(finishedFetcher) {
+                return;
+            }
             finishedFetcher = true;
             if(!finishedEncoding) return;
         }
@@ -1000,6 +1003,9 @@ public class SplitFileFetcherStorage {
     
     private void finishedEncoding() {
         synchronized(this) {
+            if(finishedEncoding) {
+                return;
+            }
             finishedEncoding = true;
             if(!finishedFetcher) return;
         }
