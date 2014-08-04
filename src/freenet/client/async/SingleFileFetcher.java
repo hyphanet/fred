@@ -27,7 +27,6 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -962,14 +961,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				ClientGetState sf;
 				// Use the new splitfile code only in certain circumstances.
 				// FIXME relax these conditions once know it works.
-				if((!persistent) // Transient only for now
-				        && !((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
+				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
 				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
 				            metadata.getMinCompatMode());
 				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
-				            topCompatibilityMode, false, thisKey, isFinal, container, context);
+				            topCompatibilityMode, persistent, thisKey, isFinal, container, context);
 				} else {
 				    Logger.error(this, "Splitfile not supported yet");
 				    onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Not supported yet"), false, container, context);

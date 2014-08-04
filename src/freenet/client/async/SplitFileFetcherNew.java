@@ -89,8 +89,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
             ObjectContainer container, ClientContext context) 
             throws FetchException, MetadataParseException {
-        if(persistent) throw new UnsupportedOperationException();
-        this.persistent = false;
+        this.persistent = persistent;
         this.cb = rcb;
         this.parent = parent;
         this.realTimeFlag = realTimeFlag;
