@@ -126,7 +126,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = UnsupportedTypeException.class)
     public void testGetPublicKeyDSAType() {
-        KeyGenUtils.getPublicKey(falseKeyPairType, null);
+        byte[] nullArray = null;
+        KeyGenUtils.getPublicKey(falseKeyPairType, nullArray);
     }
 
     @Test (expected = NullPointerException.class)
@@ -136,7 +137,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyNullInput2() {
-        KeyGenUtils.getPublicKey(trueKeyPairTypes[0], null);
+        byte[] nullArray = null;
+        KeyGenUtils.getPublicKey(trueKeyPairTypes[0], nullArray);
     }
 
     @Test
@@ -161,7 +163,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = UnsupportedTypeException.class)
     public void testGetPublicKeyPairDSAType() {
-        KeyGenUtils.getPublicKeyPair(falseKeyPairType, null);
+        byte[] nullArray = null;
+        KeyGenUtils.getPublicKeyPair(falseKeyPairType, nullArray);
     }
 
     @Test (expected = NullPointerException.class)
@@ -171,7 +174,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = NullPointerException.class)
     public void testGetPublicKeyPairNullInput2() {
-        KeyGenUtils.getPublicKeyPair(trueKeyPairTypes[0], null);
+        byte[] nullArray = null;
+        KeyGenUtils.getPublicKeyPair(trueKeyPairTypes[0], nullArray);
     }
 
     @Test
@@ -185,7 +189,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = UnsupportedTypeException.class)
     public void testGetKeyPairKeyPairTypeByteArrayDSAType() {
-        KeyGenUtils.getKeyPair(falseKeyPairType, null, null);
+        byte[] nullArray = null;
+        KeyGenUtils.getKeyPair(falseKeyPairType, nullArray, nullArray);
     }
 
     @Test (expected = NullPointerException.class)
@@ -261,7 +266,8 @@ public class KeyGenUtilsTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void testGetSecretKeyNullInput1() {
-        KeyGenUtils.getSecretKey(keyTypes[1], null);
+        byte[] nullArray = null;
+        KeyGenUtils.getSecretKey(keyTypes[1], nullArray);
     }
 
     @Test (expected = NullPointerException.class)

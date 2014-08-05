@@ -70,6 +70,16 @@ public final class KeyGenUtils {
         }
         return null;
     }
+    
+    /**
+     * Converts a specified key for a specified algorithm to a PublicKey. Can not handle DSA keys.
+     * @param type The type of key being passed in
+     * @param pub Public key as ByteBuffer
+     * @return Public key as PublicKey
+     */
+    public static PublicKey getPublicKey(KeyPairType type, ByteBuffer pub){
+        return getPublicKey(type, pub.array());
+    }
 
     /**
      * Converts a specified key for a specified algorithm to a PublicKey which is then stored in
@@ -80,6 +90,17 @@ public final class KeyGenUtils {
      */
     public static KeyPair getPublicKeyPair(KeyPairType type, byte[] pub) {
         return getKeyPair(getPublicKey(type, pub), null);
+    }
+    
+    /**
+     * Converts a specified key for a specified algorithm to a PublicKey which is then stored in
+     * a KeyPair. The private key of the KeyPair is null. Can not handle DSA keys.
+     * @param type The type of key being passed in
+     * @param pub Public key as ByteBuffer
+     * @return Public key as KeyPair with a null private key
+     */
+    public static KeyPair getPublicKeyPair(KeyPairType type, ByteBuffer pub) {
+        return  getPublicKeyPair(type, pub.array());
     }
 
     /**
@@ -109,6 +130,18 @@ public final class KeyGenUtils {
             Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
         }
         return null;
+    }
+    
+    /**
+     * Converts the specified keys for a specified algorithm to PrivateKey and PublicKey
+     * respectively. These are then placed in a KeyPair. Can not handle DSA keys.
+     * @param type The type of key being passed in
+     * @param pub Public key as ByteBuffer
+     * @param pri Private key as ByteBuffer
+     * @return The public key and private key in a KeyPair
+     */
+    public static KeyPair getKeyPair(KeyPairType type, ByteBuffer pub, ByteBuffer pri) {
+        return getKeyPair(type, pub.array(), pri.array());
     }
 
     /**
@@ -144,7 +177,20 @@ public final class KeyGenUtils {
      * @return The key as a SecretKey
      */
     public static SecretKey getSecretKey(KeyType type, byte[] key){
+        if(key.length != type.keySize){
+            throw new IllegalArgumentException("Key size does not match KeyType");
+        }
         return new SecretKeySpec(key, type.alg);
+    }
+    
+    /**
+     * Converts the specified key into a SecretKey for the specified algorithm
+     * @param key The ByteBuffer of the key
+     * @param type Type of key
+     * @return The key as a SecretKey
+     */
+    public static SecretKey getSecretKey(KeyType type, ByteBuffer key){
+        return getSecretKey(type, key.array());
     }
 
     /**
