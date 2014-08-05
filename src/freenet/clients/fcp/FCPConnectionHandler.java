@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
@@ -168,10 +166,10 @@ public class FCPConnectionHandler implements Closeable {
 		            @Override
 		            public boolean run(ClientContext context) {
 		                if((rebootClient != null) && !rebootClient.hasPersistentRequests())
-		                    server.unregisterClient(rebootClient, null);
+		                    server.unregisterClient(rebootClient);
 		                if(foreverClient != null) {
 		                    if(!foreverClient.hasPersistentRequests())
-		                        server.unregisterClient(foreverClient, null);
+		                        server.unregisterClient(foreverClient);
 		                }
 		                return false;
 		            }
@@ -236,11 +234,11 @@ public class FCPConnectionHandler implements Closeable {
 			Logger.minor(this, "Set client name: "+name);
 	}
 	
-	protected FCPClient createForeverClient(String name, ObjectContainer container) {
+	protected FCPClient createForeverClient(String name) {
 		synchronized(FCPConnectionHandler.this) {
 			if(foreverClient != null) return foreverClient;
 		}
-		FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this, container);
+		FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this);
 		synchronized(FCPConnectionHandler.this) {
 			foreverClient = client;
 			FCPConnectionHandler.this.notifyAll();
@@ -441,7 +439,7 @@ public class FCPConnectionHandler implements Closeable {
 			if(cp != null)
 			    cp.freeData();
 			else
-			    message.freeData(null);
+			    message.freeData();
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
@@ -563,7 +561,7 @@ public class FCPConnectionHandler implements Closeable {
 	public FCPClient getForeverClient() {
 		synchronized(this) {
 			if(foreverClient == null) {
-				foreverClient = createForeverClient(clientName, null);
+				foreverClient = createForeverClient(clientName);
 			}
 			return foreverClient;
 		}
@@ -734,7 +732,7 @@ public class FCPConnectionHandler implements Closeable {
 			return handler.getRebootClient().getRequest(identifier);
 	}
 	
-	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier, ObjectContainer container) {
+	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier) {
 		if(global)
 			return handler.server.globalForeverClient.getRequest(identifier);
 		else
@@ -752,25 +750,17 @@ public class FCPConnectionHandler implements Closeable {
 		return req;
 	}
 	
-	ClientRequest removePersistentForeverRequest(boolean global, String identifier, ObjectContainer container) throws MessageInvalidException {
+	ClientRequest removePersistentForeverRequest(boolean global, String identifier) throws MessageInvalidException {
 		FCPClient client =
 			global ? server.globalForeverClient :
 			getForeverClient();
-		container.activate(client, 1);
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
 			client.removeByIdentifier(identifier, true, server, server.core.clientContext);
 		}
-		if(!global)
-			container.deactivate(client, 1);
 		return req;
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing FCPConnectionHandler in database", new Exception("error"));
-		return false;
-	}
-
 	public synchronized void addUSKSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
 		if(uskSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
 		uskSubscriptions.put(identifier, subscribeUSK);

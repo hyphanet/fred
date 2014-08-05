@@ -55,7 +55,7 @@ public class RemovePersistentRequest extends FCPMessage {
                     @Override
                     public boolean run(ClientContext context) {
                         try {
-                            ClientRequest req = handler.removePersistentForeverRequest(global, identifier, null);
+                            ClientRequest req = handler.removePersistentForeverRequest(global, identifier);
                             if(req == null) {
                                 Logger.error(this, "Huh ? the request is null!");
                                 return false;

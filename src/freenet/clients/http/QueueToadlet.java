@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -594,7 +592,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, false, cmode, overrideSplitfileKey, fcp);
 								if(clientPut != null)
 									try {
-										fcp.startBlocking(clientPut, null, context);
+										fcp.startBlocking(clientPut, context);
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", path());
@@ -702,7 +700,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
-										fcp.startBlocking(clientPut, null, context);
+										fcp.startBlocking(clientPut, context);
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", path());
@@ -797,7 +795,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 								if(clientPutDir != null)
 									try {
-										fcp.startBlocking(clientPutDir, null, context);
+										fcp.startBlocking(clientPutDir, context);
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", path());
@@ -2266,7 +2264,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
 				for(String identifier: identifiers) {
-					ClientRequest req = fcp.getGlobalRequest(identifier, null);
+					ClientRequest req = fcp.getGlobalRequest(identifier);
 					if(req == null || req instanceof ClientGet == uploads) {
 						synchronized(completedRequestIdentifiers) {
 							completedRequestIdentifiers.remove(identifier);

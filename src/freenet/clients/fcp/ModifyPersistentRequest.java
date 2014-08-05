@@ -80,7 +80,7 @@ public class ModifyPersistentRequest extends FCPMessage {
                     
                     @Override
                     public boolean run(ClientContext context) {
-                        ClientRequest req = handler.getForeverRequest(global, handler, identifier, null);
+                        ClientRequest req = handler.getForeverRequest(global, handler, identifier);
                         if(req==null){
                             Logger.error(this, "Huh ? the request is null!");
                             ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);

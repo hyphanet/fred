@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import com.db4o.ObjectContainer;
 import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
@@ -160,10 +159,6 @@ public class FCPConnectionOutputHandler implements Runnable {
 				}
 			}
 		}
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		throw new UnsupportedOperationException("FCPConnectionOutputHandler storage in database not supported");
 	}
 
 	public boolean isQueueHalfFull() {

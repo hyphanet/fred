@@ -477,7 +477,7 @@ public class NodeClientCore implements Persistable {
 
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
-			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
+			fcpServer = FCPServer.maybeCreate(node, this, node.config);
 			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase())
 				fcpServer.load(this.fcpPersistentRoot);

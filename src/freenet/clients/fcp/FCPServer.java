@@ -15,8 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
@@ -80,7 +78,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	private boolean neverDropAMessage;
 	private int maxMessageQueueLength;
 
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength, ObjectContainer container) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
@@ -413,7 +411,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 
-	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, ObjectContainer container) throws IOException, InvalidConfigValueException {
+	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
@@ -436,7 +434,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			ssl = fcpConfig.getBoolean("ssl");
 		}
 
-		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), fcpConfig.getInt("maxMessageQueueLength"), container);
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), fcpConfig.getInt("maxMessageQueueLength"));
 
 		if(fcp != null) {
 			cb4.server = fcp;
@@ -493,13 +491,12 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler, ObjectContainer container) {
+	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		return persistentRoot.registerForeverClient(name, handler);
 	}
 
-	public void unregisterClient(FCPClient client, ObjectContainer container) {
+	public void unregisterClient(FCPClient client) {
 		if(client.persistenceType == ClientRequest.PERSIST_REBOOT) {
-			assert(container == null);
 		synchronized(this) {
 			String name = client.name;
 			rebootClientsByName.remove(name);
@@ -619,7 +616,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				IOException ioe = null;
 				try {
 					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType,
-					        persistenceTypeString, returnTypeString, realTimeFlag, null,
+					        persistenceTypeString, returnTypeString, realTimeFlag, 
 					        downloadsDir);
 					return true;
 				} catch (NotAllowedException e) {
@@ -715,8 +712,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container) throws NotAllowedException, IOException {
-		makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, container, core.getDownloadsDir());
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag) throws NotAllowedException, IOException {
+		makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, core.getDownloadsDir());
 	}
 	
 	/**
@@ -728,7 +725,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * @throws NotAllowedException
 	 * @throws IOException
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container, File downloadsDir) throws NotAllowedException, IOException {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, File downloadsDir) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
@@ -742,20 +739,20 @@ public class FCPServer implements Runnable, DownloadCache {
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
 
 		try {
-			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag, container);
+			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag);
 			return;
 		} catch (IdentifierCollisionException ee) {
 			try {
-				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag, container);
+				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag);
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag, container);
+					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, realTimeFlag, container);
+						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, realTimeFlag);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
@@ -763,7 +760,7 @@ public class FCPServer implements Runnable, DownloadCache {
 							try {
 								core.random.nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
-								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, realTimeFlag, container);
+								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, realTimeFlag);
 								return;
 							} catch (IdentifierCollisionException e3) {}
 						}
@@ -805,7 +802,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, short returnType, String id, File returnFilename,
-			File returnTempFilename, boolean realTimeFlag, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
+			File returnTempFilename, boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
 		final ClientGet cg =
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
@@ -824,7 +821,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return globalForeverClient;
 	}
 
-	public ClientRequest getGlobalRequest(String identifier, ObjectContainer container) {
+	public ClientRequest getGlobalRequest(String identifier) {
 		ClientRequest req = globalRebootClient.getRequest(identifier);
 		if(req == null)
 			req = globalForeverClient.getRequest(identifier);
@@ -857,7 +854,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * if we are shutting down, if we are waiting for the user to give us the decryption 
 	 * password etc.
 	 */
-	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
+	public void startBlocking(final ClientRequest req, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(core.clientContext);
 		} else {
@@ -865,13 +862,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				boolean done;
 				IdentifierCollisionException collided;
 			}
-			if(container != null) {
-				// Don't activate, it may not be stored yet.
-					req.register(false);
-					req.start(context);
-				container.deactivate(req, 1);
-			} else {
-				final OutputWrapper ow = new OutputWrapper();
+			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
@@ -913,7 +904,6 @@ public class FCPServer implements Runnable, DownloadCache {
 					}
 				}
 			}
-		}
 		}
 	}
 
@@ -1003,7 +993,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ClientContext context) {
 				FetchResult result = null;
 				try {
-					result = lookup(key, false, context, null, false, null);
+					result = lookup(key, false, context, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -1029,11 +1019,6 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 			}
 		}
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing FCPServer in database", new Exception("error"));
-		return false;
 	}
 
 	@Override
@@ -1085,14 +1070,12 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	@Override
 	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
-			ObjectContainer container, boolean mustCopy, Bucket preferred) {
+			boolean mustCopy, Bucket preferred) {
 		if(globalForeverClient == null) return null;
 		ClientGet get = globalForeverClient.getCompletedRequest(key);
-		container.activate(get, 1);
 		if(get != null) {
 			boolean filtered = get.filterData();
 			Bucket origData = get.getBucket();
-			container.activate(origData, 5);
 			Bucket newData = null;
 			if(!mustCopy)
 				newData = origData.createShadow();
@@ -1108,7 +1091,6 @@ public class FCPServer implements Runnable, DownloadCache {
 					return null;
 				}
 			}
-			container.deactivate(get, 1);
 			return new CacheFetchResult(new ClientMetadata(get.getMIMEType()), newData, filtered);
 		}
 		return null;

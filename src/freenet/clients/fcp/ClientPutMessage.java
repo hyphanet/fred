@@ -7,8 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
@@ -362,15 +360,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return global;
 	}
 
-	public void freeData(ObjectContainer container) {
+	public void freeData() {
 		if(bucket == null) {
 			if(dataLength() <= 0)
 				return; // Okay.
 			Logger.error(this, "bucket is null on "+this+" - freed twice?", new Exception("error"));
 			return;
 		}
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			container.activate(bucket, 5);
 		bucket.free();
 	}
 	

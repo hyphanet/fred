@@ -9,8 +9,6 @@ import java.io.InputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -150,10 +148,6 @@ public class FCPConnectionInputHandler implements Runnable {
 				return;
 			}
 		}
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		throw new UnsupportedOperationException("FCPConnectionInputHandler storage in database not supported");
 	}
 
 }
