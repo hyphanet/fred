@@ -43,7 +43,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private final int hashCode;
 	private final boolean realTimeFlag;
 	
-	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
+	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
 		this.nodeDBHandle = nodeDBHandle;
 		this.callback = callback;
 		this.origUSK = origUSK;
@@ -81,9 +81,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	 * @return
 	 */
 	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, 
-			ObjectContainer container, FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
-		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, realTime, container, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
-		if(persistent) container.store(tag);
+			FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
+		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, realTime, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
 		return tag;
 	}
 	
@@ -92,16 +91,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(persistent) container.store(this); // Update
 	}
 
-	public void start(USKManager manager, ClientContext context, ObjectContainer container) {
+	public void start(USKManager manager, ClientContext context) {
 		USK usk = origUSK;
-		if(persistent)
-			container.activate(origUSK, 5);
 		if(usk.suggestedEdition < edition)
 			usk = usk.copy(edition);
 		else if(persistent) // Copy it to avoid deactivation issues
 			usk = usk.copy();
-		if(persistent)
-			container.activate(ctx, 1);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
 		fetcher.schedule(null, context); // non-persistent
@@ -130,7 +125,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	@Override
 	public void schedule(ObjectContainer container, ClientContext context) {
-		start(context.uskManager, context, container);
+		start(context.uskManager, context);
 	}
 
 	@Override
@@ -281,15 +276,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
     @Override
     public void onResume(ClientContext context) {
         if(finished) return;
-        start(context.uskManager, context, null);
+        start(context.uskManager, context);
     }
 	
-//	public void objectOnNew(ObjectContainer container) {
-//		if(logDEBUG) Logger.debug(this, "Storing as new: "+this);
-//	}
-//	
-//	public void objectOnUpdate(ObjectContainer container) {
-//		if(logDEBUG) Logger.debug(this, "Updating: "+this, new Exception("debug"));
-//	}
-//	
 }

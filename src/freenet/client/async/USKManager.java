@@ -168,8 +168,8 @@ public class USKManager {
 	}
 
 	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, boolean realTime, 
-			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context, boolean checkStoreOnly) {
-		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, realTime, container, ctx, keepLast, 0, ownFetchContext, checkStoreOnly || ctx.localRequestOnly);
+			USKFetcherCallback callback, boolean ownFetchContext, ClientContext context, boolean checkStoreOnly) {
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, realTime, ctx, keepLast, 0, ownFetchContext, checkStoreOnly || ctx.localRequestOnly);
 	}
 
 	USKFetcher getFetcher(USK usk, FetchContext ctx,
@@ -177,14 +177,9 @@ public class USKManager {
 		return new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData, checkStoreOnly);
 	}
 	
-	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent, boolean ignoreUSKDatehints) {
+	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ClientContext context, boolean persistent, boolean ignoreUSKDatehints) {
 		FetchContext fctx = ignoreUSKDatehints ? backgroundFetchContextIgnoreDBR : backgroundFetchContext;
-		return getFetcher(usk, persistent ? new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null) : fctx, true, client.persistent(), client.realTimeFlag(), cb, true, container, context, false);
-	}
-	
-	@Deprecated
-	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
-		return getFetcherForInsertDontSchedule(usk, prioClass, cb, client, container, context, persistent, false);
+		return getFetcher(usk, persistent ? new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null) : fctx, true, client.persistent(), client.realTimeFlag(), cb, true, context, false);
 	}
 	
 	/**

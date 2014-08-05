@@ -1370,7 +1370,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Check the datastore first.
 					USKFetcherTag tag = 
 						context.uskManager.getFetcher(usk.copy(usk.suggestedEdition), ctx, false, requester.persistent(),
-								realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), true), false, container, context, true);
+								realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), true), false, context, true);
 					if(isEssential)
 						requester.addMustSucceedBlocks(1);
 					return tag;
@@ -1394,7 +1394,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), false), false, container, context, false);
+						realTimeFlag, new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, realTimeFlag, maxRetries, recursionLevel, dontTellClientGet, l, requester.persistent(), false), false, context, false);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1);
 			return tag;
