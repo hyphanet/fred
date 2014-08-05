@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.client.FetchException;
+
 /**
  * A ClientGetState.
  * Represents a stage in the fetch process.
@@ -21,6 +23,7 @@ public interface ClientGetState {
 	public long getToken();
 	
 	/** Called on restarting the node for a persistent request. The request must re-schedule 
-	 * itself, as neither the KeyListener's nor the RGA's are persistent now. */
-	public void onResume(ClientContext context);
+	 * itself, as neither the KeyListener's nor the RGA's are persistent now. 
+	 * @throws FetchException */
+	public void onResume(ClientContext context) throws FetchException;
 }

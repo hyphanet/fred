@@ -797,7 +797,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     public void onResume(ClientContext context) {
         super.onResume(context);
         if(currentState != null)
-            currentState.onResume(context);
+            try {
+                currentState.onResume(context);
+            } catch (FetchException e) {
+                currentState = null;
+                this.onFailure(e, null, context);
+                return;
+            }
         if(returnBucket != null)
             returnBucket.onResume(context);
     }

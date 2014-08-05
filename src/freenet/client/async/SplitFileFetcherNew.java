@@ -302,7 +302,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws FetchException {
         Logger.error(this, "Restarting SplitFileFetcher from storage...");
         this.context = context;
         try {
@@ -310,16 +310,16 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker());
         } catch (IOException e) {
+            raf.free();
             Logger.error(this, "Failed to resume due to I/O error: "+e, e);
-            fail(new FetchException(FetchException.BUCKET_ERROR, e));
-            return;
+            throw new FetchException(FetchException.BUCKET_ERROR, e);
         } catch (StorageFormatException e) {
+            raf.free();
             Logger.error(this, "Failed to resume due to storage error: "+e, e);
-            fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
-            return;
+            throw new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e);
         } catch (FetchException e) {
-            fail(e);
-            return;
+            raf.free();
+            throw e;
         }
         getter = new SplitFileFetcherGet(this, storage);
         try {
