@@ -817,8 +817,8 @@ public class SplitFileFetcherStorage {
             byte[] clientDetails, boolean isFinalFetch) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        FreenetURI.writeFullBinaryKeyWithLength(thisKey, dos);
-        FreenetURI.writeFullBinaryKeyWithLength(origKey, dos);
+        dos.writeUTF(thisKey.toASCIIString());
+        dos.writeUTF(origKey.toASCIIString());
         dos.writeBoolean(isFinalFetch);
         dos.writeInt(clientDetails.length);
         dos.write(clientDetails);
