@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 /**
  * A bucket is any arbitrary object can temporarily store data. In other 
  * words, it is the equivalent of a temporary file, but it could be in RAM,
@@ -70,5 +72,11 @@ public interface Bucket {
 	 * this is acceptable.
 	 */
 	public Bucket createShadow();
+
+	/** Called after restarting. The Bucket should do any necessary housekeeping after resuming,
+	 * e.g. registering itself with the appropriate persistent bucket tracker to avoid being 
+	 * garbage-collected. 
+	 * @param context All the necessary runtime support will be on this object. */
+	public void onResume(ClientContext context);
 
 }
