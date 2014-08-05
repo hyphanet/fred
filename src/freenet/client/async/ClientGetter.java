@@ -798,6 +798,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         super.onResume(context);
         if(currentState != null)
             currentState.onResume(context);
+        if(returnBucket != null)
+            returnBucket.onResume(context);
     }
 
     @Override
