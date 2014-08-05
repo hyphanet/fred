@@ -156,7 +156,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		Bucket rawBucket = null;
 		boolean mustWrap = true;
 		if(rawBucket == null)
-			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
+			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg, this);
 		if(encrypt)
 			rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
 		if(mustWrap)

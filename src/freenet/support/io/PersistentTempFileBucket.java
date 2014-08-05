@@ -9,13 +9,16 @@ import freenet.support.api.Bucket;
 public class PersistentTempFileBucket extends TempFileBucket implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    
+    transient PersistentFileTracker tracker;
 
-    public PersistentTempFileBucket(long id, FilenameGenerator generator) {
-		this(id, generator, true);
+    public PersistentTempFileBucket(long id, FilenameGenerator generator, PersistentFileTracker tracker) {
+		this(id, generator, tracker, true);
 	}
 	
-	protected PersistentTempFileBucket(long id, FilenameGenerator generator, boolean deleteOnFree) {
+	protected PersistentTempFileBucket(long id, FilenameGenerator generator, PersistentFileTracker tracker, boolean deleteOnFree) {
 		super(id, generator, deleteOnFree);
+		this.tracker = tracker;
 	}
 	
 	@Override
@@ -35,7 +38,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	 */
 	@Override
 	public Bucket createShadow() {
-		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, false);
+		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, tracker, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
@@ -45,6 +48,8 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
     public void onResume(ClientContext context) {
         // Ewww writing parent's field.
         generator = context.persistentFG;
+        tracker = context.persistentFileTracker;
+        tracker.register(getFile());
     }
 	
 }
