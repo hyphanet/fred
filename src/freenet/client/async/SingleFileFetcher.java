@@ -189,7 +189,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		Bucket data = extract(block, context);
 		if(key instanceof ClientSSK) {
-			context.uskManager.checkUSK(uri, persistent, null, data != null && !block.isMetadata());
+			context.uskManager.checkUSK(uri, persistent, data != null && !block.isMetadata());
 		}
 		if(data == null) {
 			if(logMINOR)
@@ -944,7 +944,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(key instanceof ClientSSK) {
 				// Fetching the container is essentially a full success, we should update the latest known good.
-				context.uskManager.checkUSK(uri, persistent, null, false);
+				context.uskManager.checkUSK(uri, persistent, false);
 			}
 
 			// Run directly, even if persistent.

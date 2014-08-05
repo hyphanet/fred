@@ -230,7 +230,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		// Fetching the container is essentially a full success, we should update the latest known good.
-		context.uskManager.checkUSK(uri, persistent(), null, false);
+		context.uskManager.checkUSK(uri, persistent(), false);
 		try {
 			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {

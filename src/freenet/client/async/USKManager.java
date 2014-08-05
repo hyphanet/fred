@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -751,18 +749,12 @@ public class USKManager {
 		return false;
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
 	ClientContext getContext() {
 		return context;
 	}
 
-	public void checkUSK(FreenetURI uri, boolean persistent,
-			ObjectContainer container, boolean isMetadata) {
+	public void checkUSK(FreenetURI uri, boolean persistent, boolean isMetadata) {
 		try {
-			if(persistent) container.activate(uri, 5);
 			FreenetURI uu;
 			if(uri.isSSK() && uri.isSSKForUSK()) {
 				uu = uri.setMetaString(null).uskForSSK();
