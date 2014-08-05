@@ -139,7 +139,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		RandomGrabArray arr = grabParentGrabArray();
 		if(arr != null) {
 			synchronized(getScheduler(context)) {
-				arr.remove(this, null, context);
+				arr.remove(this, context);
 			}
 		} else {
 			// Should this be a higher priority?

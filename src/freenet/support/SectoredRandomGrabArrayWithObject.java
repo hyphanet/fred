@@ -7,7 +7,7 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	private Object object;
 	
 	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
-		super(persistent, container, parent);
+		super(persistent, parent);
 		this.object = object;
 	}
 
@@ -22,9 +22,8 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	}
 
 	@Override
-	public void setObject(Object client, ObjectContainer container) {
+	public void setObject(Object client) {
 		object = client;
-		if(persistent) container.store(this);
 	}
 
 }

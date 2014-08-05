@@ -1,7 +1,5 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 
@@ -12,6 +10,6 @@ public interface RemoveRandomParent extends HasCooldownCacheItem {
 	 * RemoveRandom, because we take locks in order!
 	 * @param context 
 	 */
-	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context);
+	public void maybeRemove(RemoveRandom r, ClientContext context);
 
 }

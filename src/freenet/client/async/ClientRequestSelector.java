@@ -153,7 +153,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
-			if(((result != null) && (!result.isEmpty(persistent ? container : null)))) {
+			if(((result != null) && (!result.isEmpty()))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
@@ -319,7 +319,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				if(logMINOR)
 					Logger.minor(this, "Got priority tracker "+chosenTracker);
-				RemoveRandomReturn val = chosenTracker.removeRandom(starter, null, context, now);
+				RemoveRandomReturn val = chosenTracker.removeRandom(starter, context, now);
 				SendableRequest req;
 				if(val == null) {
 					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
@@ -351,7 +351,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								container.activate(baseRGA, 1);
 							// Must synchronize on scheduler to avoid nasty race conditions with cooldown.
 							synchronized(sched) {
-								baseRGA.remove(req, container, context);
+								baseRGA.remove(req, context);
 							}
 						} else {
 							// Okay, it's been removed already. Cool.
@@ -425,10 +425,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					if(altRGA != null) {
 						container.activate(altRGA, 1);
 						SendableRequest altReq = null;
-						if(container.ext().isStored(altRGA) && !altRGA.isEmpty(container)) {
+						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
 							if(logMINOR)
 								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
-							val = altRGA.removeRandom(starter, container, context, now);
+							val = altRGA.removeRandom(starter, context, now);
 							if(val != null) {
 								if(val.item == null) {
 									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+")" : ""));
@@ -663,7 +663,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
             if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(false, null, null);
+                clientGrabber = new SectoredRandomGrabArray(false, null);
                 newPriorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
@@ -676,11 +676,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                     requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, null, clientGrabber);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-                    clientGrabber.addGrabber(client, requestGrabber, null, context);
+                    clientGrabber.addGrabber(client, requestGrabber, context);
                     // FIXME unnecessary as it knows its parent and addGrabber() will call it???
                     context.cooldownTracker.clearCachedWakeup(clientGrabber);
                 }
-                requestGrabber.add(cr, req, null, context);
+                requestGrabber.add(cr, req, context);
             }
         }
         sched.wakeStarter();
@@ -691,7 +691,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         for(int i=0;i<newPriorities.length;i++) {
             SectoredRandomGrabArray prio = newPriorities[i];
             container.activate(prio, 1);
-            if(prio == null || prio.isEmpty(container))
+            if(prio == null || prio.isEmpty())
                 System.out.println("Priority "+i+" : empty");
             else {
                 System.out.println("Priority "+i+" : "+prio.size());
@@ -715,7 +715,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                             long sendable = 0;
                             long all = 0;
                             for(int m=0;m<rga.size();m++) {
-                                SendableRequest req = (SendableRequest) rga.get(m, container);
+                                SendableRequest req = (SendableRequest) rga.get(m);
                                 if(req == null) continue;
                                 container.activate(req, 1);
                                 sendable += req.countSendableKeys(context);
