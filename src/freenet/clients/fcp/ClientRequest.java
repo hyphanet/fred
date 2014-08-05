@@ -432,7 +432,10 @@ public abstract class ClientRequest implements Serializable {
         dos.writeUTF(identifier);
         dos.writeInt(verbosity);
         dos.writeShort(priorityClass);
-        dos.writeUTF(charset);
+        if(charset == null)
+            dos.writeUTF("");
+        else
+            dos.writeUTF(charset);
         dos.writeLong(startupTime);
     }
 

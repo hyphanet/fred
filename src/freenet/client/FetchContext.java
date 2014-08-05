@@ -302,7 +302,10 @@ public class FetchContext implements Cloneable, Serializable {
         } else {
             dos.writeInt(0);
         }
-        dos.writeUTF(charset);
+        if(charset == null)
+            dos.writeUTF("");
+        else
+            dos.writeUTF(charset);
         dos.writeBoolean(canWriteClientCache);
         if(prefetchHook != null) throw new UnsupportedOperationException("Prefetch hook not supported");
         if(tagReplacer != null) throw new UnsupportedOperationException("Tag replacer not supported");
