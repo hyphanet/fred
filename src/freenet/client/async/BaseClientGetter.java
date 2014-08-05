@@ -9,5 +9,9 @@ public abstract class BaseClientGetter extends ClientRequester implements
 	protected BaseClientGetter(short priorityClass, ClientBaseCallback cb) {
 		super(priorityClass, cb);
 	}
+	
+	protected BaseClientGetter() {
+	    // For serialization.
+	}
 
 }

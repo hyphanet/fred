@@ -54,7 +54,7 @@ public abstract class ClientRequester {
 	}
 
 	/**
-	 * zero arg c'tor for db4o on jamvm
+	 * zero arg c'tor for db4o on jamvm / for serialization.
 	 */
 	protected ClientRequester() {
 		realTimeFlag = false;

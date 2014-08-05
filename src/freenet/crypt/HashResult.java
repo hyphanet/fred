@@ -26,6 +26,12 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 		this.result = bs;
 		assert(bs.length == type.hashLength);
 	}
+	
+	protected HashResult() {
+        // For serialization.
+	    type = null;
+	    result = null;
+	}
 
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
 		int bitmask = dis.readInt();

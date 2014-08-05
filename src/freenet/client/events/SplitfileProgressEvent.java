@@ -45,6 +45,16 @@ public class SplitfileProgressEvent implements ClientEvent, Serializable {
 		if(logMINOR)
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
+	
+	protected SplitfileProgressEvent() {
+	    // For serialization.
+	    totalBlocks = 0;
+	    succeedBlocks = 0;
+	    failedBlocks = 0;
+	    fatallyFailedBlocks = 0;
+	    minSuccessFetchBlocks = 0;
+	    finalizedTotal = false;
+	}
 
 	@Override
 	public String getDescription() {

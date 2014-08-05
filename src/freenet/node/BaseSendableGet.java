@@ -9,6 +9,10 @@ public abstract class BaseSendableGet extends SendableRequest {
 	protected BaseSendableGet(boolean persistent, boolean realTimeFlag) {
 		super(persistent, realTimeFlag);
 	}
+	
+	protected BaseSendableGet() {
+	    // For serialization.
+	}
 
 	/** Get a numbered key to fetch. */
 	public abstract Key getNodeKey(SendableRequestItem token);

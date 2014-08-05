@@ -150,6 +150,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		archiveRestarts = 0;
 		this.forceCompatibleExtension = forceCompatibleExtension;
 	}
+	
+	protected ClientGetter() {
+	    // For serialization.
+	    clientCallback = null;
+	    ctx = null;
+	    actx = null;
+	    returnBucket = null;
+	    binaryBlobWriter = null;
+	    dontFinalizeBlobWriter = false;
+	    initialMetadata = null;
+	    forceCompatibleExtension = null;
+	}
 
 	public void start(ClientContext context) throws FetchException {
 		start(false, null, context);

@@ -6,8 +6,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 
@@ -27,6 +25,12 @@ public class AEADCryptBucket implements Bucket, Serializable {
     public AEADCryptBucket(Bucket underlying, byte[] key) {
         this.underlying = underlying;
         this.key = Arrays.copyOf(key, key.length);
+    }
+    
+    protected AEADCryptBucket() {
+        // For serialization.
+        underlying = null;
+        key = null;
     }
 
     @Override

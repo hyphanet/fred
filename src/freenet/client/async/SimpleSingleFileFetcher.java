@@ -43,6 +43,12 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			parent.notifyClients(context);
 		}
 	}
+    
+    protected SimpleSingleFileFetcher() {
+        // For serialization.
+        rcb = null;
+        token = 0;
+    }
 
 	final GetCompletionCallback rcb;
 	final long token;

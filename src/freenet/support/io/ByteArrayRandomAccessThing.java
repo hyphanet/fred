@@ -21,6 +21,11 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
 	public ByteArrayRandomAccessThing(byte[] initialContents, int offset, int size) {
 	    data = Arrays.copyOfRange(initialContents, offset, offset+size);
     }
+	
+	protected ByteArrayRandomAccessThing() {
+	    // For serialization.
+	    data = null;
+	}
 
     @Override
 	public void close() {

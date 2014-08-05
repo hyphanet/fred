@@ -69,6 +69,14 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		// (new Exception("get stack")).printStackTrace();
 		fileRestartCounter = 0;
 	}
+	
+	protected FileBucket() {
+	    // For serialization.
+	    super();
+	    file = null;
+	    deleteOnExit = false;
+	    createFileOnly = false;
+	}
 
 	/**
 	 * Returns the file object this buckets data is kept in.

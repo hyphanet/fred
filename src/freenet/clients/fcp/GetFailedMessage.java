@@ -101,6 +101,22 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 			this.redirectURI = null;
 		this.global = fs.getBoolean("Global", false);
 	}
+	
+	protected GetFailedMessage() {
+	    // For serialization.
+	    code = 0;
+	    codeDescription = null;
+	    shortCodeDescription = null;
+	    extraDescription = null;
+	    tracker = null;
+	    isFatal = false;
+	    identifier = null;
+	    global = false;
+	    expectedDataLength = 0;
+	    expectedMimeType = null;
+	    finalizedExpected = false;
+	    redirectURI = null;
+	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {

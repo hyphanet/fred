@@ -59,6 +59,10 @@ public abstract class BaseFileBucket implements Bucket {
 		this.length = file.length();
                 maybeSetDeleteOnExit(deleteOnExit, file);
 	}
+	
+	protected BaseFileBucket() {
+	    // For serialization.
+	}
 
         private void maybeSetDeleteOnExit(boolean deleteOnExit, File file) {
         	if(deleteOnExit)

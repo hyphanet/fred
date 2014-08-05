@@ -134,6 +134,16 @@ public class ClientCHK extends ClientKey implements Serializable {
 		dis.readFully(cryptoKey);
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
 	}
+	
+	protected ClientCHK() {
+	    // Only for serialization.
+	    routingKey = null;
+	    cryptoKey = null;
+	    controlDocument = false;
+	    cryptoAlgorithm = 0;
+	    compressionAlgorithm = 0;
+	    hashCode = 0;
+	}
 
 	/**
 	 * Write an ultra-compact representation.

@@ -32,6 +32,16 @@ public class AllDataMessage extends DataCarryingMessage implements Serializable 
 		this.completionTime = completionTime;
 		this.mimeType = mimeType;
 	}
+	
+	protected AllDataMessage() {
+	    // For serialization.
+	    dataLength = 0;
+	    global = false;
+	    identifier = null;
+	    startupTime = 0;
+	    completionTime = 0;
+	    mimeType = null;
+	}
 
 	@Override
 	long dataLength() {

@@ -258,6 +258,17 @@ public class ClientPut extends ClientPutBase {
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
+	protected ClientPut() {
+	    // For serialization.
+	    uploadFrom = 0;
+	    origFilename = null;
+	    targetURI = null;
+	    clientMetadata = null;
+	    finishedSize = 0;
+	    targetFilename = null;
+	    binaryBlob = false;
+	}
+	
 	@Override
 	void register(boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)

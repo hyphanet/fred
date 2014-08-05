@@ -95,6 +95,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
+	
+	protected ClientPutBase() {
+	    // For serialization.
+	    ctx = null;
+	    getCHKOnly = false;
+	    earlyEncode = false;
+	    publicURI = null;
+	}
 
 	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
 		if("SSK".equals(uri.getKeyType()) && uri.getDocName() == null && uri.getRoutingKey() == null) {

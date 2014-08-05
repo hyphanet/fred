@@ -16,7 +16,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator, boolean deleteOnFree) {
 		super(id, generator, deleteOnFree);
 	}
-
+	
 	@Override
 	protected boolean deleteOnFinalize() {
 		// Do not delete on finalize

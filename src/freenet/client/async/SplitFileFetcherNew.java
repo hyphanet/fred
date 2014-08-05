@@ -126,6 +126,17 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         getter = new SplitFileFetcherGet(this, storage);
         raf = storage.getRAF();
     }
+    
+    protected SplitFileFetcherNew() {
+        // For serialization.
+        parent = null;
+        cb = null;
+        realTimeFlag = false;
+        blockFetchContext = null;
+        token = 0;
+        wantBinaryBlob = false;
+        persistent = true;
+    }
 
     @Override
     public void schedule(ClientContext context) throws KeyListenerConstructionException {

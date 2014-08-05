@@ -87,6 +87,13 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
             throw e;
         }
     }
+    
+    protected PooledRandomAccessFileWrapper() {
+        // For serialization.
+        file = null;
+        mode = null;
+        length = 0;
+    }
 
     @Override
     public long size() throws IOException {

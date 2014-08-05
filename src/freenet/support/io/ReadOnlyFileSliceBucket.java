@@ -26,7 +26,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 	private final long length;
 
 	/**
-	 * zero arg c'tor for db4o on jamvm
+	 * zero arg c'tor for db4o on jamvm / serialization
 	 */
 	@SuppressWarnings("unused")
 	private ReadOnlyFileSliceBucket() {

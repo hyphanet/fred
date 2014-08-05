@@ -59,6 +59,17 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
 			extraBytesForKeys = new byte[EXTRA_BYTES_LENGTH * (dataBlocks + checkBlocks)];
 		}
 	}
+	
+	protected SplitFileSegmentKeys() {
+        // For serialization.
+	    dataBlocks = 0;
+	    checkBlocks = 0;
+	    commonDecryptKey = null;
+	    commonExtraBytes = null;
+	    routingKeys = null;
+	    decryptKeys = null;
+	    extraBytesForKeys = null;
+	}
 
 	public int getBlockNumber(ClientCHK key, boolean[] ignoreSlots) {
 		byte[] rkey = key.getRoutingKey();

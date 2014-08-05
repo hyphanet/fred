@@ -125,6 +125,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeObject(bandwidthStatsPutter);
             oos.close();
             fos = null;
+            System.out.println("Saved "+requesters.length+" requests to client.dat");
             persistentTempFactory.postCommit(this);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);

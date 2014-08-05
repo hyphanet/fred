@@ -20,6 +20,13 @@ public class ExpectedHashes extends FCPMessage implements Serializable {
 		this.global = global;
 		this.hashes = event.hashes;
 	}
+	
+	protected ExpectedHashes() {
+	    // For serialization.
+	    hashes = null;
+	    identifier = null;
+	    global = false;
+	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {

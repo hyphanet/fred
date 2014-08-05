@@ -170,6 +170,20 @@ public abstract class ClientRequest implements Serializable {
 		this.startupTime = System.currentTimeMillis();
 		this.realTime = realTime;
 	}
+	
+	protected ClientRequest() {
+	    // For serialization.
+	    identifier = null;
+	    verbosity = 0;
+	    origHandler = null;
+	    global = false;
+	    clientName = null;
+	    realTime = false;
+	    persistenceType = 0;
+	    charset = null;
+	    startupTime = 0;
+	    hashCode = 0;
+	}
 
 	/** Lost connection */
 	public abstract void onLostConnection(ClientContext context);

@@ -121,6 +121,15 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		if(logMINOR) Logger.minor(this, "Putting data from custom buckets "+identifier+" : "+priorityClass);
 	}
+	
+	protected ClientPutDir() {
+	    // For serialization.
+	    defaultName = null;
+	    totalSize = 0;
+	    numberOfFiles = 0;
+	    wasDiskPut = false;
+	    overrideSplitfileCryptoKey = null;
+	}
 
 	@Override
 	void register(boolean noTags) throws IdentifierCollisionException {

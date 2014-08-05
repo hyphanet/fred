@@ -30,6 +30,12 @@ public class CompatibilityMode extends FCPMessage implements Serializable {
 		this.definitive = definitive;
 	}
 	
+	protected CompatibilityMode() {
+	    // For serialization.
+	    identifier = null;
+	    global = false;
+	}
+	
 	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
 		if(this.definitive) {
 			Logger.warning(this, "merge() after definitive", new Exception("debug"));

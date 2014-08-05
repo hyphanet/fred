@@ -47,6 +47,11 @@ public class MultiReaderBucket implements Serializable {
 	public MultiReaderBucket(Bucket underlying) {
 		bucket = underlying;
 	}
+	
+	protected MultiReaderBucket() {
+	    // For serialization.
+	    bucket = null;
+	}
 
 	/** Get a reader bucket */
 	public Bucket getReaderBucket() {

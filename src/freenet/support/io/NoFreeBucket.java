@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 
 public class NoFreeBucket implements Bucket, Serializable {
@@ -16,6 +14,11 @@ public class NoFreeBucket implements Bucket, Serializable {
 	
 	public NoFreeBucket(Bucket orig) {
 		proxy = orig;
+	}
+	
+	protected NoFreeBucket() {
+	    // For serialization.
+	    proxy = null;
 	}
 
 	@Override

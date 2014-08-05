@@ -158,6 +158,15 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 		fatal = fs.getBoolean("Fatal", false);
 		global = fs.getBoolean("Global", false);
 	}
+	
+	protected ProtocolErrorMessage() {
+	    // For serialization.
+	    code = 0;
+	    extra = null;
+	    fatal = false;
+	    ident = null;
+	    global = false;
+	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {

@@ -498,6 +498,17 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 		metaStr = null;
 		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
+	
+	protected FreenetURI() {
+	    // For serialization only!
+	    this.metaStr = null;
+	    this.keyType = null;
+	    this.routingKey = null;
+	    this.cryptoKey = null;
+	    this.extra = null;
+	    this.docName = null;
+	    this.suggestedEdition = 0;
+	}
 
 	/** Dump the individual components of the key to System.out. */
 	public void decompose() {

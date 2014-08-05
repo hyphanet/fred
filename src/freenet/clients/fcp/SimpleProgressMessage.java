@@ -21,6 +21,13 @@ public class SimpleProgressMessage extends FCPMessage implements Serializable {
 		this.event = event;
 		this.global = global;
 	}
+	
+	protected SimpleProgressMessage() {
+	    // For serialization.
+	    ident = null;
+	    global = false;
+	    event = null;
+	}
 
 	@Override
 	public SimpleFieldSet getFieldSet() {

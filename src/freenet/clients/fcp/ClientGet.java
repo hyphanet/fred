@@ -234,6 +234,17 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					uri, fctx, priorityClass,
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, false, message.getInitialMetadata(), extensionCheck);
 	}
+	
+	protected ClientGet() {
+	    // For serialization.
+	    fctx = null;
+	    getter = null;
+	    returnType = 0;
+	    targetFile = null;
+	    tempFile = null;
+	    returnBucket = null;
+	    binaryBlob = false;
+	}
 
 	/**
 	 * Must be called just after construction, but within a transaction.

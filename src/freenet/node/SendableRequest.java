@@ -36,7 +36,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	}
 
 	/**
-	 * zero arg c'tor for db4o on jamvm
+	 * zero arg c'tor for db4o on jamvm and serialization.
 	 */
 	protected SendableRequest() {
 		hashCode = 0;

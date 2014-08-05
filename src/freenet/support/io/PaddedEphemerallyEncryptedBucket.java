@@ -92,6 +92,15 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 			iv = null;
 		}
 	}
+	
+	protected PaddedEphemerallyEncryptedBucket() {
+	    // For serialization.
+	    bucket = null;
+	    minPaddedSize = 0;
+	    key = null;
+	    iv = null;
+	    randomSeed = null;
+	}
 
 	@Override
 	public OutputStream getOutputStream() throws IOException {

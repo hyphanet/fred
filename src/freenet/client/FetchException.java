@@ -344,6 +344,14 @@ public class FetchException extends Exception implements Cloneable {
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
+	
+	protected FetchException() {
+	    // For serialization.
+	    mode = 0;
+	    newURI = null;
+	    errorCodes = null;
+	    extraMessage = null;
+	}
 
 	/** Get the short name of this exception's failure. */
 	public String getShortMessage() {

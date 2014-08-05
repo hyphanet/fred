@@ -28,6 +28,12 @@ public class ArchiveContext implements Serializable {
 		this.maxArchiveSize = maxArchiveSize;
 	}
 	
+	protected ArchiveContext() {
+	    // For serialization.
+	    maxArchiveLevels = 0;
+	    maxArchiveSize = 0;
+	}
+	
 	/**
 	 * Check for a loop.
 	 *
