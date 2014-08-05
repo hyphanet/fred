@@ -2,10 +2,7 @@ package freenet.client.async;
 
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.SendableRequest;
-import freenet.support.Logger;
 
 /**
  * Since we don't need to worry about activation, we can simply use a HashSet.
@@ -20,28 +17,18 @@ public class TransientSendableRequestSet implements SendableRequestSet {
 	}
 	
 	@Override
-	public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {
+	public synchronized boolean addRequest(SendableRequest req) {
 		return set.add(req);
 	}
 
 	@Override
-	public synchronized SendableRequest[] listRequests(ObjectContainer container) {
+	public synchronized SendableRequest[] listRequests() {
 		return set.toArray(new SendableRequest[set.size()]);
 	}
 
 	@Override
-	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
+	public synchronized boolean removeRequest(SendableRequest req) {
 		return set.remove(req);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransientSendableRequestSet in database", new Exception("error"));
-		return false;
 	}
 
 }

@@ -70,7 +70,7 @@ public abstract class ClientRequester {
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
-		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
+		requests = new TransientSendableRequestSet();
 		synchronized(allRequesters) {
 			if(!persistent())
 				allRequesters.put(this, dumbValue);
@@ -308,21 +308,21 @@ public abstract class ClientRequester {
 	/** Add a low-level request to the list of requests belonging to this high-level request (request here
 	 * includes inserts). */
 	public void addToRequests(SendableRequest req) {
-		requests.addRequest(req, null);
+		requests.addRequest(req);
 	}
 
 	/** Get all known low-level requests belonging to this high-level request.
 	 * @param container The database, must be non-null if this is a persistent request or persistent insert.
 	 */
 	public SendableRequest[] getSendableRequests() {
-		SendableRequest[] reqs = requests.listRequests(null);
+		SendableRequest[] reqs = requests.listRequests();
 		return reqs;
 	}
 
 	/** Remove a low-level request or insert from the list of known requests belonging to this 
 	 * high-level request or insert. */
 	public void removeFromRequests(SendableRequest req, boolean dontComplain) {
-		if(!requests.removeRequest(req, null) && !dontComplain) {
+		if(!requests.removeRequest(req) && !dontComplain) {
 			Logger.error(this, "Not in request list for "+this+": "+req);
 		}
 	}
