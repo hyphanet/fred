@@ -98,7 +98,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract RequestClient getClient();
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
-	@Override
 	public final boolean persistent() {
 		return persistent;
 	}

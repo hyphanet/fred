@@ -53,7 +53,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 	
 	public void add(RandomGrabArrayItem req, ClientContext context) {
-		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
 		if(context != null && req.getCooldownTime(context, System.currentTimeMillis()) < 0) { 
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
