@@ -3,8 +3,6 @@ package freenet.client.async;
 import java.io.IOException;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -13,7 +11,6 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.CRCChecksumChecker;
-import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
@@ -87,7 +84,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
             ClientMetadata clientMetadata, long token, boolean topDontCompress, 
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
-            ObjectContainer container, ClientContext context) 
+            ClientContext context) 
             throws FetchException, MetadataParseException {
         this.persistent = persistent;
         this.cb = rcb;
@@ -120,16 +117,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         }
         long eventualLength = Math.max(storage.finalLength, metadata.uncompressedDataLength());
         boolean wasActive = true;
-        if(persistent) {
-            wasActive = container.ext().isActive(cb);
-            if(!wasActive)
-                container.activate(cb, 1);
-        }
         cb.onExpectedSize(eventualLength, context);
         if(metadata.uncompressedDataLength() > 0)
             cb.onFinalizedMetadata();
-        if(!wasActive)
-            container.deactivate(cb, 1);
         if(eventualLength > 0 && fetchContext.maxOutputLength > 0 && eventualLength > fetchContext.maxOutputLength)
             throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
         getter = new SplitFileFetcherGet(this, storage);

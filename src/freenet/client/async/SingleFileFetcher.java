@@ -795,7 +795,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
 				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
-				            topCompatibilityMode, persistent, thisKey, isFinal, null, context);
+				            topCompatibilityMode, persistent, thisKey, isFinal, context);
 				} else {
 				    Logger.error(this, "Splitfile not supported yet");
 				    onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Not supported yet"), false, context);
