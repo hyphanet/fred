@@ -157,11 +157,13 @@ public class FetchContext implements Cloneable, Serializable {
 		this.ignoreUSKDatehints = false; // FIXME
 		hasOwnEventProducer = true;
 	}
-
+	
 	/** Copy a FetchContext.
-	 * @param ctx
-	 * @param maskID
-	 * @param keepProducer
+	 * @param ctx The old FetchContext to copy.
+	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
+	 * @param keepProducer If true, keep the existing EventProducer. Must be false if we are 
+	 * creating a new request. Can be true if we are masking the FetchContext within a single
+	 * request, e.g. to download a container. 
 	 * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 	 */
 	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
