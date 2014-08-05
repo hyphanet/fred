@@ -11,6 +11,7 @@ import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -18,7 +19,8 @@ import freenet.support.api.Bucket;
 
 public class DelayedFreeBucket implements Bucket {
 
-	private final PersistentFileTracker factory;
+    // Only set on construction and on onResume() on startup. So shouldn't need locking.
+	private transient PersistentFileTracker factory;
 	Bucket bucket;
 	boolean freed;
 	boolean removed;
@@ -142,5 +144,10 @@ public class DelayedFreeBucket implements Bucket {
 		assert(bucket != null);
 		return true;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        this.factory = context.persistentBucketFactory;
+    }
 
 }
