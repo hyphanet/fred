@@ -219,7 +219,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					ckey = null;
 			}
 			ChosenBlock ret;
-			assert(!req.persistent());
 			if(key != null && key.getRoutingKey() == null)
 				throw new NullPointerException();
 			boolean localRequestOnly;
