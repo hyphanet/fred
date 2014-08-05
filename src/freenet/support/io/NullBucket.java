@@ -13,8 +13,8 @@ import freenet.support.api.Bucket;
 public class NullBucket implements Bucket, Serializable {
 
     private static final long serialVersionUID = 1L;
-    public final OutputStream nullOut = new NullOutputStream();
-    public final InputStream  nullIn  = new NullInputStream();
+    public static final OutputStream nullOut = new NullOutputStream();
+    public static final InputStream  nullIn  = new NullInputStream();
 
     public final long length;
     
