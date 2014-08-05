@@ -135,7 +135,11 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
     private void checkpoint() {
         synchronized(serializeCheckpoints) {
-            innerCheckpoint();
+            try {
+                innerCheckpoint();
+            } catch (Throwable t) {
+                Logger.error(this, "Unable to save: "+t, t);
+            }
         }
         synchronized(sync) {
             mustCheckpoint = false;
