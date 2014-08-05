@@ -62,6 +62,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     requester.onResume(context);
                 }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
+                onStarted();
                 return;
             } catch (IOException e) {
                 // FIXME tell user more obviously.
