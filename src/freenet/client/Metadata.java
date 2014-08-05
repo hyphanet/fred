@@ -10,6 +10,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
@@ -40,9 +41,10 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
 /** Metadata parser/writer class. */
-public class Metadata implements Cloneable {
+public class Metadata implements Cloneable, Serializable {
 
-	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
+    private static final long serialVersionUID = 1L;
+    static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 1000*1000;

@@ -3,6 +3,7 @@ package freenet.client.async;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,9 +24,10 @@ import freenet.support.Fields;
  * 
  * @author toad
  */
-public class SplitFileSegmentKeys implements Cloneable {
+public class SplitFileSegmentKeys implements Cloneable, Serializable {
 	
-	public final int dataBlocks;
+    private static final long serialVersionUID = 1L;
+    public final int dataBlocks;
 	public final int checkBlocks;
 	/** Modern splitfiles have a common decrypt key */
 	public final byte[] commonDecryptKey;

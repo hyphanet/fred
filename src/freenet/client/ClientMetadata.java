@@ -6,6 +6,7 @@ package freenet.client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
@@ -16,9 +17,10 @@ import com.db4o.ObjectContainer;
  * whatever.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class ClientMetadata implements Cloneable {
+public class ClientMetadata implements Cloneable, Serializable {
 	
-	/** The document MIME type */
+    private static final long serialVersionUID = 1L;
+    /** The document MIME type */
 	private String mimeType;
 
 	public ClientMetadata(){
