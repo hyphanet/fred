@@ -116,7 +116,7 @@ public class CooldownTracker {
 		if(toCheck instanceof RemoveRandomWithObject) {
 			Object client = ((RemoveRandomWithObject)toCheck).getObject();
 			if(client instanceof WantsCooldownCallback) {
-				((WantsCooldownCallback)client).enterCooldown(wakeupTime, null, context);
+				((WantsCooldownCallback)client).enterCooldown(wakeupTime, context);
 			}
 		}
 	}
@@ -168,7 +168,7 @@ public class CooldownTracker {
 		if(toCheck instanceof RemoveRandomWithObject) {
 		    Object client = ((RemoveRandomWithObject)toCheck).getObject();
 		    if(client instanceof WantsCooldownCallback) {
-		        ((WantsCooldownCallback)client).clearCooldown(null);
+		        ((WantsCooldownCallback)client).clearCooldown();
 		    }
 		}
 		return ret;

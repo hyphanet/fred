@@ -757,23 +757,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	}
 
 	@Override
-	public void enterCooldown(long wakeupTime, ObjectContainer container,
-			ClientContext context) {
+	public void enterCooldown(long wakeupTime, ClientContext context) {
 		if(wakeupTime == Long.MAX_VALUE) {
 			// Ignore.
 			// FIXME implement when implement clearCooldown().
 			// It means everything that can be started has been started.
 		} else {
-			if(persistent()) {
-				container.activate(ctx, 1);
-				container.activate(ctx.eventProducer, 1);
-			}
 			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), context);
 		}
 	}
 
 	@Override
-	public void clearCooldown(ObjectContainer container) {
+	public void clearCooldown() {
 		// Ignore for now. FIXME.
 	}
 
