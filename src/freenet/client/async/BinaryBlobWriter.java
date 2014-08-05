@@ -9,8 +9,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.support.api.Bucket;
@@ -85,7 +83,7 @@ public final class BinaryBlobWriter {
 	 * @throws IOException
 	 * @throws BinaryBlobAlreadyClosedException 
 	 */
-	public synchronized void addKey(ClientKeyBlock block, ClientContext context, ObjectContainer container) throws IOException, BinaryBlobAlreadyClosedException {
+	public synchronized void addKey(ClientKeyBlock block, ClientContext context) throws IOException, BinaryBlobAlreadyClosedException {
 		Key key = block.getKey();
 		if(_binaryBlobKeysAddedAlready.contains(key)) return;
 		BinaryBlob.writeKey(getOutputStream(), block.getBlock(), key);

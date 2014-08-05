@@ -181,7 +181,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ClientContext context) {
 		if(parent instanceof ClientGetter)
-			((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
+			((ClientGetter)parent).addKeyToBinaryBlob(block, context);
 		parent.completedBlock(fromStore, context);
 		// Extract data
 		

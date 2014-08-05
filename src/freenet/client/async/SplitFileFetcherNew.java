@@ -259,7 +259,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     @Override
     public void maybeAddToBinaryBlob(ClientCHKBlock block) {
         if(parent instanceof ClientGetter) {
-            ((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
+            ((ClientGetter)parent).addKeyToBinaryBlob(block, context);
         }
     }
 

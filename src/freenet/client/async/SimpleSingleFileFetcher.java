@@ -100,7 +100,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, ClientContext context) {
 		if(parent instanceof ClientGetter)
-			((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
+			((ClientGetter)parent).addKeyToBinaryBlob(block, context);
 		Bucket data = extract(block, context);
 		if(data == null) return; // failed
 		context.uskManager.checkUSK(key.getURI(), fromStore, null, block.isMetadata());

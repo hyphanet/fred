@@ -11,8 +11,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -605,15 +603,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	/**
 	 * Add a block to the binary blob.
 	 */
-	protected void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	protected void addKeyToBinaryBlob(ClientKeyBlock block, ClientContext context) {
 		if(binaryBlobWriter == null) return;
-		if(persistent()) {
-			container.activate(binaryBlobWriter, 1);
-		}
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		try {
-			binaryBlobWriter.addKey(block, context, container);
+			binaryBlobWriter.addKey(block, context);
 		} catch (IOException e) {
 			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, context);
