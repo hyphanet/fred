@@ -232,4 +232,13 @@ public final class KeyGenUtils {
     public static IvParameterSpec getIvParameterSpec(byte[] iv, int offset, int length){
         return new IvParameterSpec(iv, offset, length);
     }
+    
+    /**
+     * Converts an iv in a ByteBuffer and places it in a IvParameterSpec.
+     * @param iv The ByteBuffer containing the iv
+     * @return Returns an IvParameterSpec containing the iv. 
+     */
+    public static IvParameterSpec getIvParameterSpec(ByteBuffer iv){
+        return new IvParameterSpec(iv.array());
+    }
 }
