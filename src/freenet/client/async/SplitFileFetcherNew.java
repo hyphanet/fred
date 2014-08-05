@@ -325,6 +325,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
             return;
         }
+        raf.onResume(context);
     }
 
 }
