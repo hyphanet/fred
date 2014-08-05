@@ -3,6 +3,7 @@ package freenet.crypt;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
@@ -10,9 +11,10 @@ import com.db4o.ObjectContainer;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-public class HashResult implements Comparable<HashResult>, Cloneable {
+public class HashResult implements Comparable<HashResult>, Cloneable, Serializable {
 
-	/** The type of hash. */
+    private static final long serialVersionUID = 1L;
+    /** The type of hash. */
 	public final HashType type;
 	/** The result of the hash. Immutable. */
 	private final byte[] result;

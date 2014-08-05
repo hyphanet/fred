@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
@@ -17,9 +18,10 @@ import freenet.support.api.Bucket;
 /**
  * FIXME: implement a hash verifying version of this.
  */
-public class ReadOnlyFileSliceBucket implements Bucket {
+public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 
-	private final File file;
+    private static final long serialVersionUID = 1L;
+    private final File file;
 	private final long startAt;
 	private final long length;
 

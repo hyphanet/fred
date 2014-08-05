@@ -4,13 +4,15 @@
 package freenet.support.io;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
 import freenet.support.api.Bucket;
 
-public class NullBucket implements Bucket {
+public class NullBucket implements Bucket, Serializable {
 
+    private static final long serialVersionUID = 1L;
     public final OutputStream nullOut = new NullOutputStream();
     public final InputStream  nullIn  = new NullInputStream();
 

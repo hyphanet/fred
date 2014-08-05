@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -28,9 +29,10 @@ import freenet.support.math.MersenneTwister;
  * 
  * CRYPTO WARNING: This uses PCFB with no IV. That means it is only safe if the key is unique!
  */
-public class PaddedEphemerallyEncryptedBucket implements Bucket {
+public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 
-	private final Bucket bucket;
+    private static final long serialVersionUID = 1L;
+    private final Bucket bucket;
 	private final int minPaddedSize;
 	/** The decryption key. */
 	private final byte[] key;

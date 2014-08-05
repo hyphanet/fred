@@ -5,6 +5,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
@@ -16,8 +17,9 @@ import freenet.support.api.Bucket;
  * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
-public class TrivialPaddedBucket implements Bucket {
+public class TrivialPaddedBucket implements Bucket, Serializable {
     
+    private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private long size;
     private boolean outputStreamOpen;

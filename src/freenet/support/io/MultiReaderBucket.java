@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
@@ -21,9 +22,11 @@ import freenet.support.api.Bucket;
  * only freed when all of the readers have freed it.
  * @author toad
  */
-public class MultiReaderBucket {
+public class MultiReaderBucket implements Serializable {
 	
-	private final Bucket bucket;
+    private static final long serialVersionUID = 1L;
+
+    private final Bucket bucket;
 	
 	// Assume there will be relatively few readers
 	private ArrayList<Bucket> readers;
@@ -59,9 +62,10 @@ public class MultiReaderBucket {
 		}
 	}
 
-	class ReaderBucket implements Bucket {
+	class ReaderBucket implements Bucket, Serializable {
 		
-		private boolean freed;
+        private static final long serialVersionUID = 1L;
+        private boolean freed;
 
 		@Override
 		public void free() {

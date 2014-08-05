@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
@@ -18,8 +19,9 @@ import freenet.support.api.Bucket;
  * 
  * @author oskar
  */
-public class ArrayBucket implements Bucket {
-	private volatile byte[] data;
+public class ArrayBucket implements Bucket, Serializable {
+    private static final long serialVersionUID = 1L;
+    private volatile byte[] data;
 	private String name;
 	private boolean readOnly;
 

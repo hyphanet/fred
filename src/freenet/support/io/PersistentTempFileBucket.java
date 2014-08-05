@@ -1,11 +1,15 @@
 package freenet.support.io;
 
+import java.io.Serializable;
+
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
-public class PersistentTempFileBucket extends TempFileBucket {
+public class PersistentTempFileBucket extends TempFileBucket implements Serializable {
 
-	public PersistentTempFileBucket(long id, FilenameGenerator generator) {
+    private static final long serialVersionUID = 1L;
+
+    public PersistentTempFileBucket(long id, FilenameGenerator generator) {
 		this(id, generator, true);
 	}
 	

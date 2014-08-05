@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
@@ -15,9 +16,10 @@ import freenet.support.api.Bucket;
  * Wraps a byte[], offset, length into a Bucket. Read-only. ArrayBucket on
  * the other hand is a chain of byte[]'s.
  */
-public class SimpleReadOnlyArrayBucket implements Bucket {
+public class SimpleReadOnlyArrayBucket implements Bucket, Serializable {
 
-	final byte[] buf;
+    private static final long serialVersionUID = 1L;
+    final byte[] buf;
 	final int offset;
 	final int length;
 	

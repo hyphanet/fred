@@ -3,6 +3,7 @@ package freenet.crypt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
@@ -15,8 +16,9 @@ import freenet.support.api.Bucket;
  * the end of the bucket is reached, which may be in read() or may be in close().
  * @author toad
  */
-public class AEADCryptBucket implements Bucket {
+public class AEADCryptBucket implements Bucket, Serializable {
     
+    private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private final byte[] key;
     private boolean readOnly;

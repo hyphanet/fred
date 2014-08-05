@@ -13,6 +13,8 @@ import com.db4o.ObjectContainer;
  * on disk, encrypted, part of a file on disk, composed from a chain of 
  * other buckets etc.
  * 
+ * Not all buckets are Serializable.
+ * 
  * @author oskar
  */
 public interface Bucket {
