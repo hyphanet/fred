@@ -496,7 +496,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
+		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG, false);
 		underlyingDiskRAFFactory.enableCrypto(reallyEncrypt);
 		this.minDiskSpace = minDiskSpace;
 		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
@@ -790,6 +790,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
         public synchronized boolean hasMigrated() {
             return hasMigrated;
+        }
+
+        @Override
+        public void onResume(ClientContext context) {
+            // Not persistent.
+            throw new UnsupportedOperationException();
         }
         
 	}

@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Random;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.math.MersenneTwister;
 
@@ -30,10 +31,12 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     private transient RandomAccessFile raf;
     private final long length;
     private boolean closed;
+    private final boolean persistentTemp;
     
-    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength, Random seedRandom) throws IOException {
+    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength, Random seedRandom, boolean persistentTemp) throws IOException {
         this.file = file;
         this.mode = mode;
+        this.persistentTemp = persistentTemp;
         lockLevel = 0;
         // Check the parameters and get the length.
         // Also, unlock() adds to the closeables queue, which is essential.
@@ -70,10 +73,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     }
 
     public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
-            int offset, int size) throws IOException {
+            int offset, int size, boolean persistentTemp) throws IOException {
         this.file = file;
         this.mode = mode;
         this.length = size;
+        this.persistentTemp = persistentTemp;
         lockLevel = 0;
         RAFLock lock = lockOpen();
         try {
@@ -93,6 +97,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         file = null;
         mode = null;
         length = 0;
+        persistentTemp = false;
     }
 
     @Override
@@ -258,6 +263,14 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         synchronized(closables) {
             return lockLevel != 0;
         }
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        if(persistentTemp) {
+            context.persistentFileTracker.register(file);
+        } else
+            throw new UnsupportedOperationException(); // Not persistent.
     }
 
 }
