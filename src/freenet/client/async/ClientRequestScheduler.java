@@ -184,11 +184,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
-							if(!getter.preRegister(container, clientContext, true)) {
+							if(!getter.preRegister(clientContext, true)) {
 								schedCore.innerRegister(getter, container, clientContext, getters);
 							}
 						} else
-							getter.preRegister(container, clientContext, false);
+							getter.preRegister(clientContext, false);
 
 					}
 					if(!wereAnyValid) {
@@ -204,10 +204,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			for(SendableGet getter : getters) {
 				
 				if((!anyValid) || getter.isCancelled()) {
-					getter.preRegister(container, clientContext, false);
+					getter.preRegister(clientContext, false);
 					continue;
 				} else {
-					if(getter.preRegister(container, clientContext, true)) continue;
+					if(getter.preRegister(clientContext, true)) continue;
 				}
 				if(!getter.isCancelled())
 					schedTransient.innerRegister(getter, null, clientContext, getters);
@@ -448,14 +448,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	@Override
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
 		if(!persistent) {
-			get.onFailure(e, null, null, clientContext);
+			get.onFailure(e, null, clientContext);
 		} else {
 			try {
 				jobRunner.queue(new PersistentJob() {
 
 					@Override
 					public boolean run(ClientContext context) {
-						get.onFailure(e, null, null, clientContext);
+						get.onFailure(e, null, clientContext);
 						return false;
 					}
                                         @Override

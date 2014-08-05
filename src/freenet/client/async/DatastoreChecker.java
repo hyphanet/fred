@@ -90,7 +90,7 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
-		Key[] checkKeys = getter.listKeys(null);
+		Key[] checkKeys = getter.listKeys();
 		short prio = getter.getPriorityClass();
 		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
@@ -207,7 +207,7 @@ public class DatastoreChecker implements PrioRunnable {
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to register "+get+": "+t, t);
 							try {
-								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, null, context);
+								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, context);
 							} catch (Throwable t1) {
 								Logger.error(this, "Failed to fail: "+t, t);
 							}

@@ -84,7 +84,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
 			} else {
-				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, null, context);
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, context);
 				return null;
 			}
 		}
@@ -92,15 +92,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
-		if(persistent)
-			container.activate(key, 5);
+	public ClientKey getKey(SendableRequestItem token) {
 		return key;
 	}
 	
 	@Override
-	public FetchContext getContext(ObjectContainer container) {
-		if(persistent) container.activate(ctx, 1);
+	public FetchContext getContext() {
 		return ctx;
 	}
 
@@ -110,8 +107,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	/** Try again - returns true if we can retry */
-	protected boolean retry(ObjectContainer container, ClientContext context) {
-		if(isEmpty(container)) {
+	protected boolean retry(ClientContext context) {
+		if(isEmpty(null)) {
 			if(logMINOR) Logger.minor(this, "Not retrying because empty");
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		}
@@ -125,9 +122,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+r+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
-			if(persistent && maxRetries != -1)
-				container.store(this);
-			checkCachedCooldownData(container);
+			checkCachedCooldownData();
 			if(cachedCooldownTries == 0 || r % cachedCooldownTries == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
@@ -135,13 +130,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(tracker.cooldownWakeupTime - now), new Exception("error"));
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
-					if(persistent)
-						container.activate(key, 5);
 					tracker.cooldownWakeupTime = now + cachedCooldownTime;
 					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
-					if(persistent)
-						container.deactivate(key, 5);
 				}
 				onEnterFiniteCooldown(context);
 			} else {
@@ -154,24 +145,18 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return false;
 	}
 
-	private void checkCachedCooldownData(ObjectContainer container) {
+	private void checkCachedCooldownData() {
 		// 0/0 is illegal, and it's also the default, so use it to indicate we haven't fetched them.
 		if(!(cachedCooldownTime == 0 && cachedCooldownTries == 0)) {
 			// Okay, we have already got them.
 			return;
 		}
-		innerCheckCachedCooldownData(container);
+		innerCheckCachedCooldownData();
 	}
 	
-	private void innerCheckCachedCooldownData(ObjectContainer container) {
-		boolean active = true;
-		if(persistent) {
-			active = container.ext().isActive(ctx);
-			container.activate(ctx, 1);
-		}
+	private void innerCheckCachedCooldownData() {
 		cachedCooldownTries = ctx.getCooldownRetries();
 		cachedCooldownTime = ctx.getCooldownTime();
-		if(!active) container.deactivate(ctx, 1);
 	}
 
 	protected void onEnterFiniteCooldown(ClientContext context) {
@@ -286,7 +271,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
 	
 	@Override
-	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		return tracker.cooldownWakeupTime;
 	}
@@ -318,15 +303,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public Key[] listKeys(ObjectContainer container) {
-		if(container != null && !persistent)
-			Logger.error(this, "listKeys() on "+this+" but persistent=false, stored is "+container.ext().isStored(this)+" active is "+container.ext().isActive(this));
+	public Key[] listKeys() {
 		synchronized(this) {
 			if(cancelled || finished)
 				return new Key[0];
 		}
-		if(persistent)
-			container.activate(key, 5);
 		return new Key[] { key.getNodeKey(true) };
 	}
 
@@ -350,29 +331,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return ret;
 	}
 
-	protected abstract void notFoundInStore(ObjectContainer container, ClientContext context);
+	protected abstract void notFoundInStore(ClientContext context);
 	
 	@Override
-	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+	public boolean preRegister(ClientContext context, boolean toNetwork) {
 		if(!toNetwork) return false;
-		boolean deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(ctx);
-			container.activate(ctx, 1);
-		}
 		boolean localOnly = ctx.localRequestOnly;
-		if(deactivate) container.deactivate(ctx, 1);
 		if(localOnly) {
-			notFoundInStore(container, context);
+			notFoundInStore(context);
 			return true;
 		}
-		deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(parent);
-			container.activate(parent, 1);
-		}
 		parent.toNetwork(context);
-		if(deactivate) container.deactivate(parent, 1);
 		return false;
 	}
 	
@@ -384,7 +353,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(wakeTime <= now)
 			tracker.cooldownWakeupTime = wakeTime = 0;
 		KeysFetchingLocally fetching = getScheduler(context).fetchingKeys();
-		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, null), this)) {
+		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null), this)) {
 			wakeTime = Long.MAX_VALUE;
 			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.
 		}
@@ -403,11 +372,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 * @param container The database if this is a persistent request.
 	 * @param context The context object.
 	 */
-	public void onChangedFetchContext(ObjectContainer container, ClientContext context) {
+	public void onChangedFetchContext(ClientContext context) {
 		synchronized(this) {
 			if(cancelled || finished) return;
 		}
-		innerCheckCachedCooldownData(container);
+		innerCheckCachedCooldownData();
 	}
 	
     public void onResume(ClientContext context) {

@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.async.SplitFileFetcherStorage.MyKey;
@@ -32,24 +30,24 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
+    public ClientKey getKey(SendableRequestItem token) {
         MyKey key = (MyKey) token;
         if(key.get != storage) throw new IllegalArgumentException();
         return storage.getKey(key);
     }
 
     @Override
-    public Key[] listKeys(ObjectContainer container) {
+    public Key[] listKeys() {
         return storage.listUnfetchedKeys();
     }
 
     @Override
-    public FetchContext getContext(ObjectContainer container) {
+    public FetchContext getContext() {
         return parent.blockFetchContext;
     }
 
     @Override
-    public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container,
+    public void onFailure(LowLevelGetException e, SendableRequestItem token,
             ClientContext context) {
         FetchException fe = translateException(e);
         if(fe.isDefinitelyFatal()) {
@@ -74,13 +72,13 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
+    public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
         MyKey key = (MyKey) token;
         return storage.segments[key.segmentNumber].getCooldownTime(key.blockNumber);
     }
 
     @Override
-    public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+    public boolean preRegister(ClientContext context, boolean toNetwork) {
         if(!toNetwork) return false;
         storage.setHasCheckedStore();
         // Notify clients of all the work we've done checking the datastore.

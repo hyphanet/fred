@@ -57,16 +57,12 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	
 	// Translate it, then call the real onFailure
 	@Override
-	public void onFailure(LowLevelGetException e, SendableRequestItem reqTokenIgnored, ObjectContainer container, ClientContext context) {
-	    onFailure(translateException(e), false, container, context);
+	public void onFailure(LowLevelGetException e, SendableRequestItem reqTokenIgnored, ClientContext context) {
+	    onFailure(translateException(e), false, context);
 	}
 
 	// Real onFailure
-	protected void onFailure(FetchException e, boolean forceFatal, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(parent, 1);
-			container.activate(rcb, 1);
-		}
+	protected void onFailure(FetchException e, boolean forceFatal, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
 		if(parent.isCancelled() || cancelled) {
 			if(logMINOR) Logger.minor(this, "Failing: cancelled");
@@ -74,7 +70,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
-			if(retry(container, context)) {
+			if(retry(context)) {
 				if(logMINOR) Logger.minor(this, "Retrying");
 				return;
 			}
@@ -84,8 +80,6 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		synchronized(this) {
 			finished = true;
 		}
-		if(persistent)
-			container.store(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(context);
 		else
@@ -102,7 +96,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			if(persistent) data.asBucket().removeFrom(container);
-			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
+			onFailure(new FetchException(FetchException.CANCELLED), false, context);
 			return;
 		}
 		rcb.onSuccess(new SingleFileStreamGenerator(data.asBucket(), persistent), data.getMetadata(), null, this, context);
@@ -121,7 +115,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(new ClientMetadata(null), data), container, context);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, container, context);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, context);
 		}
 	}
 
@@ -135,17 +129,17 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		} catch (KeyDecodeException e1) {
 			if(logMINOR)
 				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, container, context);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, context);
 			return null;
 		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e), false, container, context);
+			onFailure(new FetchException(FetchException.TOO_BIG, e), false, context);
 			return null;
 		} catch (InsufficientDiskSpaceException e) {
-		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, container, context);
+		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, context);
 		    return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, context);
 			return null;
 		}
 		return data;
@@ -159,7 +153,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 
 	@Override
 	public void onFailed(KeyListenerConstructionException e, ClientContext context) {
-		onFailure(e.getFetchException(), false, null, context);
+		onFailure(e.getFetchException(), false, context);
 	}
 
 	@Override
@@ -169,15 +163,14 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	protected void notFoundInStore(ObjectContainer container,
-			ClientContext context) {
-		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, container, context);
+	protected void notFoundInStore(ClientContext context) {
+		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, context);
 	}
 
 	@Override
 	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context) {
-		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, container, context);
+		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, context);
 	}
 
 }

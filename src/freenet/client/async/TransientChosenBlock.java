@@ -50,7 +50,7 @@ public class TransientChosenBlock extends ChosenBlock {
 
 	@Override
 	public void onFailure(LowLevelGetException e, ClientContext context) {
-		((SendableGet) request).onFailure(e, token, null, context);
+		((SendableGet) request).onFailure(e, token, context);
 	}
 
 	@Override

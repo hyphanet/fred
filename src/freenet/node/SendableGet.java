@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.async.ClientContext;
@@ -26,11 +24,11 @@ public abstract class SendableGet extends BaseSendableGet {
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(SendableRequestItem token, ObjectContainer container);
+	public abstract ClientKey getKey(SendableRequestItem token);
 	
 	@Override
-	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
-		ClientKey key = getKey(token, container);
+	public Key getNodeKey(SendableRequestItem token) {
+		ClientKey key = getKey(token);
 		if(key == null) return null;
 		return key.getNodeKey(true);
 	}
@@ -41,13 +39,13 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * smaller chunks.
 	 * @param container Database handle.
 	 */
-	public abstract Key[] listKeys(ObjectContainer container);
+	public abstract Key[] listKeys();
 
 	/** Get the fetch context (settings) object. */
-	public abstract FetchContext getContext(ObjectContainer container);
+	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context);
+	public abstract void onFailure(LowLevelGetException e, SendableRequestItem token, ClientContext context);
 	
 	// Implementation
 
@@ -77,7 +75,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context);
+	public abstract long getCooldownWakeup(SendableRequestItem token, ClientContext context);
 	
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.

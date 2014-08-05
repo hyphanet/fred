@@ -215,7 +215,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
+	public Key getNodeKey(SendableRequestItem token) {
 		return ((MySendableRequestItem) token).key;
 	}
 
@@ -238,7 +238,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+	public boolean preRegister(ClientContext context, boolean toNetwork) {
 		// Ignore
 		return false;
 	}

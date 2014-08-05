@@ -294,7 +294,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
 				return;
 			}
-			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, null).getURI()+" for "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null).getURI()+" for "+USKFetcher.this);
 			processDBRHint(hint, context, this);
 		}
 		
@@ -302,7 +302,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public void onFailure(FetchException e, ClientGetState state,
 				ClientContext context) {
 			// Okay.
-			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, null)+" for "+this+" for "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null)+" for "+this+" for "+USKFetcher.this);
 			boolean dbrsFinished;
 			synchronized(USKFetcher.this) {
 				dbrAttempts.remove(this);
@@ -475,7 +475,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public void reloadPollParameters(ClientContext context) {
 			USKChecker c = checker;
 			if(c == null) return;
-			c.onChangedFetchContext(null, context);
+			c.onChangedFetchContext(context);
 		}
 	}
 	
@@ -1416,32 +1416,32 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean done = false;
 
 		@Override
-		public FetchContext getContext(ObjectContainer container) {
+		public FetchContext getContext() {
 			return ctx;
 		}
 
 		@Override
-		public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
+		public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
 			return -1;
 		}
 
 		@Override
-		public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
+		public ClientKey getKey(SendableRequestItem token) {
 			return null;
 		}
 
 		@Override
-		public Key[] listKeys(ObjectContainer container) {
+		public Key[] listKeys() {
 			return checker.getKeys();
 		}
 
 		@Override
-		public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
+		public void onFailure(LowLevelGetException e, SendableRequestItem token, ClientContext context) {
 			// Ignore
 		}
 
 		@Override
-		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		public boolean preRegister(ClientContext context, boolean toNetwork) {
 			unregister(context, getPriorityClass());
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {

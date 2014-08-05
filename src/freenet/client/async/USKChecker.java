@@ -53,13 +53,9 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(cb, 1);
-		}
-                if(logMINOR)
-                    Logger.minor(this, "onFailure: "+e+" for "+this);
+	public void onFailure(LowLevelGetException e, SendableRequestItem token, ClientContext context) {
+	    if(logMINOR)
+	        Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
 		boolean canRetry;
 		switch(e.code) {
@@ -87,7 +83,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(container, context)) return;
+		if(canRetry && retry(context)) return;
 		
 		// Ran out of retries.
 		unregisterAll(context);
@@ -112,7 +108,7 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	@Override
 	public void onFailed(KeyListenerConstructionException e, ClientContext context) {
-		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "IMPOSSIBLE: Failed to create Bloom filters (we don't have any!)", e), null, null, context);
+		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "IMPOSSIBLE: Failed to create Bloom filters (we don't have any!)", e), null, context);
 	}
 	
 	@Override
@@ -126,8 +122,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	protected void notFoundInStore(ObjectContainer container,
-			ClientContext context) {
+	protected void notFoundInStore(ClientContext context) {
 		// Ran out of retries.
 		unregisterAll(context);
 		// Rest are non-fatal. If have DNFs, DNF, else network error.
@@ -137,7 +132,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	@Override
 	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context) {
-		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, container, context);
+		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, context);
 	}
 
 }
