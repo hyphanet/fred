@@ -175,11 +175,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Requeue after an internal error */
 	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
 
-	@Override
-	public boolean isStorageBroken(ObjectContainer container) {
-		return false;
-	}
-
 	/** Must be called when we retry a block. 
 	 * LOCKING: Caller should hold as few locks as possible */ 
 	public void clearCooldown(ObjectContainer container, ClientContext context, boolean definitelyExists) {

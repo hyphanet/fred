@@ -780,27 +780,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 	
 	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		if(resultingURI != null) {
-			container.activate(resultingURI, 5);
-			resultingURI.removeFrom(container);
-		}
-		// cb, parent are responsible for removing themselves
-		// ctx is passed in and unmodified - usually the ClientPutter removes it
-		container.activate(errors, 5);
-		errors.removeFrom(container);
-		if(freeData && sourceData != null && container.ext().isStored(sourceData)) {
-			Logger.error(this, "Data not removed!");
-			container.activate(sourceData, 1);
-			sourceData.removeFrom(container);
-		}
-		container.delete(this);
-	}
-
-	@Override
 	public boolean canWriteClientCache(ObjectContainer container) {
 		boolean deactivate = false;
 		if(persistent) {
@@ -858,13 +837,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 //	}
 //	
 	
-	@Override
-	public boolean isStorageBroken(ObjectContainer container) {
-		if(parent == null) return true;
-		if(ctx == null) return true;
-		return false;
-	}
-
 	@Override
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		onEncode(key, container, context);

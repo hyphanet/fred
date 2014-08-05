@@ -176,12 +176,6 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		// Transient-only
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean forkOnCacheable(ObjectContainer container) {
 		return Node.FORK_ON_CACHEABLE_DEFAULT;
 	}

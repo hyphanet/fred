@@ -163,12 +163,6 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		super.removeFrom(container, context);
-		// rcb is definitely not our responsibility.
-	}
-	
-	@Override
 	public void cancel(ClientContext context) {
 		super.cancel(context);
 		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, context);

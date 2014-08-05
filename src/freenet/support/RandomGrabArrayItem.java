@@ -33,7 +33,4 @@ public interface RandomGrabArrayItem extends HasCooldownCacheItem {
 	 * pass false into the constructor. */
 	public boolean persistent();
 	
-	public boolean isStorageBroken(ObjectContainer container);
-
-	public void removeFrom(ObjectContainer container, ClientContext context);
 }

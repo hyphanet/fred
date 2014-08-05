@@ -244,11 +244,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(isEmpty(container)) return Long.MAX_VALUE;
 		return 0;

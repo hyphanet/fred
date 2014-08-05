@@ -404,7 +404,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if((metadata.topSize > ctx.maxOutputLength) ||
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
 						// Just in case...
-						if(persistent) removeFrom(container, context);
 						if(metadata.isSimpleRedirect() || metadata.isSplitfile()) clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
@@ -869,7 +868,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				f.schedule(context);
 				// All done! No longer our problem!
 				archiveMetadata = null; // passed on
-				if(persistent) removeFrom(container, context);
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
@@ -898,7 +896,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						!ctx.allowedMIMETypes.contains(mimeType)) {
 					// Just in case...
 					long len = metadata.uncompressedDataLength();
-					if(persistent) removeFrom(container, context);
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, len, false, clientMetadata.getMIMEType());
 				}
 				
@@ -928,7 +925,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this, context);
 						}
 						// Just in case...
-						if(persistent) removeFrom(container, context);
 						return;
 					}
 				} else
@@ -941,7 +937,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						(len > ctx.maxTempLength)) {
 					// Just in case...
 					boolean compressed = metadata.isCompressed();
-					if(persistent) removeFrom(container, context);
 					throw new FetchException(FetchException.TOO_BIG, uncompressedLen, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
@@ -981,7 +976,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// and will have removed them from it so they don't get removed here.
 				// Lack of garbage collection in db4o is a PITA!
 				// For multi-level metadata etc see above.
-				if(persistent) removeFrom(container, context);
 				return;
 			} else {
 				Logger.error(this, "Don't know what to do with metadata: "+metadata);

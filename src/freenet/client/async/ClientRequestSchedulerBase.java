@@ -167,10 +167,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
-			if(persistent() && req.isStorageBroken(container)) {
-				Logger.error(this, "Broken request while changing priority: "+req);
-				continue;
-			}
 			if(req.persistent() != persistent()) {
 				Logger.error(this, "Request persistence is "+req.persistent()+" but scheduler's is "+persistent()+" on "+this+" for "+req);
 				continue;

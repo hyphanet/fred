@@ -201,19 +201,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(persistent)
 				container.activate(ret, 1);
 			oret = ret;
-			long itemWakeTime = -1;
-			boolean broken = false;
-			broken = persistent && ret.isStorageBroken(container);
-			if(broken) {
-				Logger.error(this, "Storage broken on "+ret);
-				try {
-					ret.removeFrom(container, context);
-				} catch (Throwable t) {
-					// Ignore
-					container.delete(ret);
-				}
-			} else itemWakeTime = ret.getCooldownTime(container, context, now);
-			if(broken || itemWakeTime == -1) {
+			long itemWakeTime = ret.getCooldownTime(container, context, now);
+			if(itemWakeTime == -1) {
 				if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 				ret = null;
 				// Will be removed in the do{} loop
@@ -339,18 +328,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(persistent)
 						container.activate(item, 1);
 					activated = true;
-					boolean broken = persistent && item.isStorageBroken(container);
-					long itemWakeTime = -1;
-					if(broken) {
-						Logger.error(this, "Storage broken on "+item);
-						try {
-							item.removeFrom(container, context);
-						} catch (Throwable t) {
-							// Ignore
-							container.delete(item);
-						}
-					} else itemWakeTime = item.getCooldownTime(container, context, now);
-					if(itemWakeTime == -1 || broken) {
+					long itemWakeTime = item.getCooldownTime(container, context, now);
+					if(itemWakeTime == -1) {
 						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
 						changedMe = true;
 						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
