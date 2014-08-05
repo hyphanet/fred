@@ -16,7 +16,9 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
+import freenet.support.Logger;
 import freenet.support.Ticker;
+import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PersistentTempBucketFactory;
 
@@ -69,6 +71,16 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     requester.onResume(context);
                 }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
+                int count = ois.readInt();
+                for(int i=0;i<count;i++) {
+                    DelayedFreeBucket bucket = (DelayedFreeBucket) ois.readObject();
+                    try {
+                        if(bucket.toFree())
+                            bucket.realFree();
+                    } catch (Throwable t) {
+                        Logger.error(this, "Unable to free old bucket "+bucket, t);
+                    }
+                }
                 ois.close();
                 fis = null;
                 System.out.println("Resumed from saved requests ...");
@@ -105,7 +117,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     protected void save() {
-        persistentTempFactory.preCommit(null);
+        DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
         // FIXME backups.
         OutputStream fos = null;
         try {
@@ -123,10 +135,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
+            oos.writeInt(buckets.length);
+            for(DelayedFreeBucket bucket : buckets)
+                oos.writeObject(bucket);
             oos.close();
             fos = null;
             System.out.println("Saved "+requesters.length+" requests to client.dat");
-            persistentTempFactory.postCommit(this);
+            persistentTempFactory.postCommit(buckets);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
             e.printStackTrace();

@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.PersistentJobRunner;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -56,9 +54,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 	
-	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
-	private transient boolean modifiedBucketsToFree;
-
         private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -176,7 +171,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void delayedFreeBucket(DelayedFreeBucket b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
-			modifiedBucketsToFree = true;
 		}
 	}
 
@@ -186,7 +180,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			if(bucketsToFree.isEmpty()) return null;
 			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
 			bucketsToFree.clear();
-			modifiedBucketsToFree = true;
 			return buckets;
 		}
 	}
@@ -230,23 +223,16 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	/**
-	 * Call this just before committing a transaction. Ensures that the list of buckets to free has been
-	 * stored if necessary.
-	 * @param db The database.
-	 */
-	public void preCommit(ObjectContainer db) {
-		synchronized(this) {
-			if(!modifiedBucketsToFree) return;
-			modifiedBucketsToFree = false;
-		}
+	 * Returns a list of buckets to free. The caller should write the buckets to the checkpoint, 
+	 * and free them after the checkpoint has written successfully, by calling postCommit(). */
+	public DelayedFreeBucket[] preCommit() {
+	    return this.grabBucketsToFree();
 	}
 	
 	/**
-	 * Call this just after committing a transaction. Deletes buckets pending deletion, and if there are lots
-	 * of them, commits the transaction again.
-	 * @param db The database.
+	 * Delete the buckets.
 	 */
-	public void postCommit(PersistentJobRunner jobRunner) {
+	public void postCommit(DelayedFreeBucket[] buckets) {
 		DelayedFreeBucket[] toFree = grabBucketsToFree();
 		if(toFree == null || toFree.length == 0) return;
 		int x = 0;
@@ -258,10 +244,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
 			}
 			x++;
-		}
-		if(x > 1024) {
-            // Lots of buckets freed, commit now to reduce memory footprint.
-		    jobRunner.setCommitThisTransaction();
 		}
 	}
 
