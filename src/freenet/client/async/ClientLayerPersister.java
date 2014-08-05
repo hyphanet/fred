@@ -10,9 +10,11 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Random;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
 import freenet.support.Ticker;
 import freenet.support.io.FileBucket;
@@ -26,6 +28,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private final Node node; // Needed for bandwidth stats putter
     private final PersistentTempBucketFactory persistentTempFactory;
     private PersistentStatsPutter bandwidthStatsPutter;
+    private byte[] salt;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
@@ -43,7 +46,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.persistentTempFactory = persistentTempFactory;
     }
     
-    public void load(ClientContext context) throws NodeInitException {
+    public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         // FIXME check backups.
         if(filename.exists()) {
             InputStream fis = null;
@@ -55,6 +58,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(magic != MAGIC) throw new IOException("Bad magic");
                 int version = ois.readInt();
                 if(version != VERSION) throw new IOException("Bad version");
+                salt = new byte[32];
+                // FIXME checksum.
+                ois.readFully(salt);
+                requestStarters.setGlobalSalt(salt);
                 int requests = ois.readInt();
                 for(int i=0;i<requests;i++) {
                     // FIXME write a simpler, more robust, non-serialized version first.
@@ -85,6 +92,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
         // FIXME backups etc!
         System.err.println("Starting request persistence layer without resuming ...");
+        salt = new byte[32];
+        random.nextBytes(salt);
+        requestStarters.setGlobalSalt(salt);
         bandwidthStatsPutter = new PersistentStatsPutter();
         onStarted();
     }

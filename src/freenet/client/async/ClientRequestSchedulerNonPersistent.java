@@ -22,7 +22,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	protected final Deque<BaseSendableGet>recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
-		super(forInserts, forSSKs, forRT, random, sched);
+		super(forInserts, forSSKs, forRT, random, sched, null);
 		if(!forInserts)
 			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		else

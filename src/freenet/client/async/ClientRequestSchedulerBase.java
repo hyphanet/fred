@@ -67,14 +67,17 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched, byte[] globalSalt) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
 		this.sched = sched;
 		keyListeners = new ArrayList<KeyListener>();
-		globalSalt = new byte[32];
-		random.nextBytes(globalSalt);
+		if(globalSalt == null) {
+		    globalSalt = new byte[32];
+		    random.nextBytes(globalSalt);
+		}
+		this.globalSalt = globalSalt;
 	}
 	
 	/**

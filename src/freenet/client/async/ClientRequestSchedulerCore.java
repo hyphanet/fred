@@ -32,10 +32,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		});
 	}
 
-	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, boolean forRT, long cooldownTime, ClientRequestScheduler sched) {
-		super(forInserts, forSSKs, forRT, node.random, sched);
+	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, boolean forRT, long cooldownTime, ClientRequestScheduler sched, byte[] globalSalt) {
+		super(forInserts, forSSKs, forRT, node.random, sched, globalSalt);
 		this.nodeDBHandle = node.nodeDBHandle;
-		this.globalSalt = null;
 	}
 
 	@Override

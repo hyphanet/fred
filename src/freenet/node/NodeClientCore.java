@@ -345,16 +345,15 @@ public class NodeClientCore implements Persistable {
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);
 		
-		// FIXME with crypto this load() may happen much later.
-        clientLayerPersister.load(clientContext);
-
 		try {
 			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
 		} catch (InvalidConfigValueException e1) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
-		
+        // FIXME with crypto this load() may happen much later.
+        clientLayerPersister.load(clientContext, requestStarters, random);
+
 		clientContext.init(requestStarters, alerts);
 		if(!killedDatabase()) {
 		    InsertCompressor.load(clientContext);

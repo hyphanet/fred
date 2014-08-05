@@ -387,4 +387,15 @@ public class RequestStarterGroup {
 		}
 	}
 
+    public void setGlobalSalt(byte[] salt) {
+        chkFetchSchedulerBulk.startCore(salt);
+        sskFetchSchedulerBulk.startCore(salt);
+        chkPutSchedulerBulk.startCore(salt);
+        sskPutSchedulerBulk.startCore(salt);
+        chkFetchSchedulerRT.startCore(salt);
+        sskFetchSchedulerRT.startCore(salt);
+        chkPutSchedulerRT.startCore(salt);
+        sskPutSchedulerRT.startCore(salt);
+    }
+
 }
