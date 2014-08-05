@@ -453,6 +453,14 @@ public abstract class ClientRequest implements Serializable {
         dos.writeLong(startupTime);
     }
 
+    /** Called just after serializing in the request. Called by the ClientRequester, i.e. the tree 
+     * starts there, and we MUST NOT call back to it or we get an infinite recursion. The main 
+     * purpose of this method is to give us an opportunity to connect to the various (transient) 
+     * system utilities we get from ClientContext, e.g. bucket factories, the FCP persistent root 
+     * etc. The base class implementation in ClientRequest will register the request with an 
+     * FCPClient via the new FCPPersistentRoot.
+     * @param context Contains all the important system utilities.
+     */
     public void onResume(ClientContext context) {
         client = context.persistentRoot.resume(this, global, clientName);
         lowLevelClient = client.lowLevelClient(realTime);
