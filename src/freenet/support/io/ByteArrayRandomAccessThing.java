@@ -8,7 +8,8 @@ import freenet.client.async.ClientContext;
 
 public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
 
-	private final byte[] data;
+    private static final long serialVersionUID = 1L;
+    private final byte[] data;
 	private boolean readOnly;
 	private boolean closed;
 	

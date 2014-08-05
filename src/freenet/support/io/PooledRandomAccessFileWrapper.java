@@ -17,6 +17,7 @@ import freenet.support.math.MersenneTwister;
  * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... */
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
     
+    private static final long serialVersionUID = 1L;
     private static int MAX_OPEN_FDS = 100;
     static int OPEN_FDS = 0;
     static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
