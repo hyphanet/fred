@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
@@ -126,7 +124,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * register the listener once.
 	 * @throws FetchException 
 	 */
-	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
+	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+hasListener+","+Fields.commaList(getters));
 		if(isInsertScheduler) {
@@ -151,33 +149,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 		        if(!(getter.isCancelled() || getter.getCooldownTime(clientContext, System.currentTimeMillis()) != 0))
 		            anyValid = true;
 		    }
-		    finishRegister(getters, false, container, anyValid, null);
+		    finishRegister(getters, false, anyValid, null);
 		}
 	}
 	
-	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
+	void finishRegister(final SendableGet[] getters, boolean persistent, final boolean anyValid, final DatastoreCheckerItem reg) {
 		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(SendableGet getter : getters) {
-				if(persistent)
-					container.activate(getter, 1);
 				getter.internalError(e, this, clientContext, persistent);
-				if(persistent)
-					container.deactivate(getter, 1);
 			}
 			throw e;
 		}
 		if(persistent) {
 			// Add to the persistent registration queue
-				if(persistent)
-					container.activate(getters, 1);
 				if(logMINOR)
 					Logger.minor(this, "finishRegister() for "+Fields.commaList(getters));
 				if(anyValid) {
 					boolean wereAnyValid = false;
 					for(SendableGet getter : getters) {
-						container.activate(getter, 1);
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
@@ -194,8 +185,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else {
 					Logger.normal(this, "No valid requests passed in");
 				}
-				if(reg != null)
-					container.delete(reg);
 		} else {
 			// Register immediately.
 			for(SendableGet getter : getters) {
@@ -521,7 +510,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return isInsertScheduler;
 	}
 
-	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get, boolean dontComplain, ObjectContainer container) {
+	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get, boolean dontComplain) {
 		if(get.persistent())
 			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 		else
@@ -532,11 +521,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.addPendingKeys(listener);
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing ClientRequestScheduler in database", new Exception("error"));
-		return false;
-	}
-
 	@Override
 	public void wakeStarter() {
 		starter.wakeUp();

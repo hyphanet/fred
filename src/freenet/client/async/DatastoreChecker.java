@@ -201,7 +201,7 @@ public class DatastoreChecker implements PrioRunnable {
 					@Override
 					public boolean run(ClientContext context) {
 						try {
-							scheduler.finishRegister(new SendableGet[] { get }, true, null, valid, it);
+							scheduler.finishRegister(new SendableGet[] { get }, true, valid, it);
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to register "+get+": "+t, t);
 							try {
@@ -223,7 +223,7 @@ public class DatastoreChecker implements PrioRunnable {
 				// Impossible
 			}
 		} else {
-			sched.finishRegister(new SendableGet[] { getter }, false, null, anyValid, item);
+			sched.finishRegister(new SendableGet[] { getter }, false, anyValid, item);
 		}
 	}
 

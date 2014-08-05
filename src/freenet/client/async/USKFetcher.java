@@ -1383,7 +1383,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		}
 		try {
-			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
+			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
 			synchronized(this) {
