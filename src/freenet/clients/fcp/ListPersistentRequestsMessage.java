@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
@@ -149,19 +147,18 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
 						@Override
 						void complete(ClientContext context) {
-							finishComplete(null, context);
+							finishComplete(context);
 						}
 						
 					};
 					job.run();
 				} else {
-					finishComplete(null, context);
+					finishComplete(context);
 				}
 				
 			}
 
-			private void finishComplete(ObjectContainer container,
-					ClientContext context) {
+			private void finishComplete(ClientContext context) {
 					try {
                         context.jobRunner.queue(new PersistentJob() {
 
