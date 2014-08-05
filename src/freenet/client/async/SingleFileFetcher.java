@@ -479,7 +479,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// the case of binary blobs.
 				if(ah == null || !ah.getKey().equals(thisKey)) {
 					// Do loop detection on the archive that we are about to fetch.
-					actx.doLoopDetection(thisKey, container);
+					actx.doLoopDetection(thisKey);
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
 				}

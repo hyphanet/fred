@@ -5,8 +5,6 @@ package freenet.client;
 
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 
 /**
@@ -33,35 +31,15 @@ public class ArchiveContext {
 	 *
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
-	public synchronized void doLoopDetection(FreenetURI key, ObjectContainer container) throws ArchiveFailureException {
-		if(container != null)
-			container.activate(soFar, Integer.MAX_VALUE);
+	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
 		if(soFar == null) {
 			soFar = new HashSet<FreenetURI>();
-			if(container != null)
-				container.store(soFar);
 		}
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 		FreenetURI uri = key;
-		if(container != null)
-			uri = uri.clone();
 		if(!soFar.add(uri)) {
 			throw new ArchiveFailureException(ArchiveFailureException.ARCHIVE_LOOP_DETECTED);
 		}
-		if(container != null) {
-			container.store(uri);
-			container.store(soFar);
-		}
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		if(soFar != null) {
-			for(FreenetURI uri : soFar) {
-				uri.removeFrom(container);
-			}
-			container.delete(soFar);
-		}
-		container.delete(this);
 	}
 }
