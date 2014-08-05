@@ -2,6 +2,7 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
+import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
@@ -17,8 +18,9 @@ import freenet.support.Logger;
  *
  * @author oskar
  **/
-public class SimpleEventProducer implements ClientEventProducer {
+public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
+    private static final long serialVersionUID = 1L;
     private Vector<ClientEventListener> listeners;
 
     /**
