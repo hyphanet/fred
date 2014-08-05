@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
 public class RandomAccessFileWrapper implements LockableRandomAccessThing {
@@ -97,6 +98,11 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
             System.err.println("Unable to delete temporary file "+file);
         }
         //FIXME filename.delete(); ??
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Ignore.
     }
 
 }

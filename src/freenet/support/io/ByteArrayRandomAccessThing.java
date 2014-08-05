@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import freenet.client.async.ClientContext;
+
 public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
 
 	private final byte[] data;
@@ -80,6 +82,11 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
     /** Package-local! */
     byte[] getBuffer() {
         return data;
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
     }
 
 }
