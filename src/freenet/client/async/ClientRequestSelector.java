@@ -7,8 +7,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
@@ -122,7 +120,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container, ClientContext context, long now){
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -170,14 +168,14 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, boolean realTime, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, boolean realTime, ClientContext context) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
 			SelectorReturn r;
 			synchronized(sched) {
-				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, container, now);
+				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, now);
 			}
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
@@ -187,13 +185,13 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				req.internalError(e, sched, context, req.persistent());
 				throw e;
 			}
-			ChosenBlock block = maybeMakeChosenRequest(req, container, context, now);
+			ChosenBlock block = maybeMakeChosenRequest(req, context, now);
 			if(block != null) return block;
 		}
 		return null;
 	}
 	
-	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
+	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ClientContext context, long now) {
 		if(req == null) return null;
 		if(req.isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
@@ -271,7 +269,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, ObjectContainer container, long now) {
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
@@ -284,7 +282,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.getCooldownTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
-		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
+		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
 			return null;
@@ -343,12 +341,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					// Remove it.
 					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
-						if(chosenTracker.persistent())
-							container.activate(clientGrabber, 1);
 						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
-							if(chosenTracker.persistent())
-								container.activate(baseRGA, 1);
 							// Must synchronize on scheduler to avoid nasty race conditions with cooldown.
 							synchronized(sched) {
 								baseRGA.remove(req, context);
@@ -423,9 +417,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						}
 					}
 					if(altRGA != null) {
-						container.activate(altRGA, 1);
 						SendableRequest altReq = null;
-						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
+						if(!altRGA.isEmpty()) {
 							if(logMINOR)
 								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
 							val = altRGA.removeRandom(starter, context, now);
@@ -437,7 +430,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								}
 							}
 							if(altReq != null && altReq != req) {
-								container.activate(altReq, 1);
 								int prio = altReq.getPriorityClass();
 								boolean useRecent = false;
 								if(prio <= choosenPriorityClass) {
@@ -458,8 +450,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 									}
 								}
 							}
-						} else {
-							container.deactivate(altRGA, 1);
 						}
 					}
 				}
@@ -622,9 +612,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
-	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
+	public void succeeded(BaseSendableGet succeeded) {
 		RandomGrabArray array = succeeded.getParentGrabArray();
-		container.activate(array, 1);
 		if(array == null) return; // Unregistered already?
 		synchronized(recentSuccesses) {
 			if(recentSuccesses.contains(array)) return;
@@ -686,11 +675,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         sched.wakeStarter();
     }
 
-    public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
+    public synchronized long countQueuedRequests(ClientContext context) {
         long total = 0;
         for(int i=0;i<newPriorities.length;i++) {
             SectoredRandomGrabArray prio = newPriorities[i];
-            container.activate(prio, 1);
             if(prio == null || prio.isEmpty())
                 System.out.println("Priority "+i+" : empty");
             else {
@@ -698,37 +686,26 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                     System.out.println("Clients: "+prio.size()+" for "+prio);
                     for(int k=0;k<prio.size();k++) {
                         Object client = prio.getClient(k);
-                        container.activate(client, 1);
                         System.out.println("Client "+k+" : "+client);
-                        container.deactivate(client, 1);
                         SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) prio.getGrabber(client);
-                        container.activate(requestGrabber, 1);
                         System.out.println("SRGA for client: "+requestGrabber);
                         for(int l=0;l<requestGrabber.size();l++) {
                             client = requestGrabber.getClient(l);
-                            container.activate(client, 1);
                             System.out.println("Request "+l+" : "+client);
-                            container.deactivate(client, 1);
                             RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(client);
-                            container.activate(rga, 1);
                             System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
                             long sendable = 0;
                             long all = 0;
                             for(int m=0;m<rga.size();m++) {
                                 SendableRequest req = (SendableRequest) rga.get(m);
                                 if(req == null) continue;
-                                container.activate(req, 1);
                                 sendable += req.countSendableKeys(context);
                                 all += req.countAllKeys(context);
-                                container.deactivate(req, 1);
                             }
                             System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));
                             total += all;
-                            container.deactivate(rga, 1);
                         }
-                        container.deactivate(requestGrabber, 1);
                     }
-                    container.deactivate(prio, 1);
             }
         }
         return total;

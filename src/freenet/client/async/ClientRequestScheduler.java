@@ -221,7 +221,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;
-		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext);
 	}
 	
 	/**
@@ -274,7 +274,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	        fuzz = -1;
 	    else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 	        fuzz = 0;
-	    return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, Short.MAX_VALUE, isRTScheduler, clientContext, null);
+	    return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, Short.MAX_VALUE, isRTScheduler, clientContext);
 	}
 	
 	/**
@@ -410,7 +410,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	@Override
 	public long countQueuedRequests() {
-	    return selector.countQueuedRequests(null, clientContext);
+	    return selector.countQueuedRequests(clientContext);
 	}
 
 	@Override
