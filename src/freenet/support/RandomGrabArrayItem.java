@@ -1,7 +1,5 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 
@@ -17,13 +15,13 @@ public interface RandomGrabArrayItem extends HasCooldownCacheItem {
 	 * @param excluding Can be null.
 	 * @param container Database handle.
 	 */
-	public long getCooldownTime(ObjectContainer container, ClientContext context, long now);
+	public long getCooldownTime(ClientContext context, long now);
 	
 	/** Does this RandomGrabArrayItem support remembering where it is registered? */
 	public boolean knowsParentGrabArray();
 	
 	/** Notify the item that it has been registered on a specific RandomGrabArray */
-	public void setParentGrabArray(RandomGrabArray parent, ObjectContainer container);
+	public void setParentGrabArray(RandomGrabArray parent);
 	
 	/** If the item remembers its parent RandomGrabArray, return it */
 	public RandomGrabArray getParentGrabArray();

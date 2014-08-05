@@ -66,8 +66,8 @@ public abstract class SendableInsert extends SendableRequest {
 	public abstract boolean isEmpty(ObjectContainer container);
 	
 	@Override
-	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
-		if(isEmpty(container)) return -1;
+	public long getCooldownTime(ClientContext context, long now) {
+		if(isEmpty(null)) return -1;
 		return 0;
 	}
 

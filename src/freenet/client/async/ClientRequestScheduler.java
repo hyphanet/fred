@@ -151,7 +151,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 		    boolean anyValid = false;
 		    for(SendableGet getter : getters) {
-		        if(!(getter.isCancelled() || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
+		        if(!(getter.isCancelled() || getter.getCooldownTime(clientContext, System.currentTimeMillis()) != 0))
 		            anyValid = true;
 		    }
 		    finishRegister(getters, false, container, anyValid, null);

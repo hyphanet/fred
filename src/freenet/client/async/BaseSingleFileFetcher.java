@@ -82,7 +82,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
 				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
-				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
 			} else {
@@ -118,7 +118,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		}
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		int r;
 		if(maxRetries == -1)
 			r = ++tracker.retryCount;
@@ -180,8 +180,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		// Do nothing.
 	}
 
-	private MyCooldownTrackerItem makeCooldownTrackerItem(
-			ObjectContainer container, ClientContext context) {
+	private MyCooldownTrackerItem makeCooldownTrackerItem(ClientContext context) {
 		return (MyCooldownTrackerItem) context.cooldownTracker.make(this);
 	}
 
@@ -291,7 +290,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	
 	@Override
 	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		return tracker.cooldownWakeupTime;
 	}
 
@@ -381,14 +380,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+	public synchronized long getCooldownTime(ClientContext context, long now) {
 		if(cancelled || finished) return -1;
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		long wakeTime = tracker.cooldownWakeupTime;
 		if(wakeTime <= now)
 			tracker.cooldownWakeupTime = wakeTime = 0;
-		KeysFetchingLocally fetching = getScheduler(container, context).fetchingKeys();
-		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this)) {
+		KeysFetchingLocally fetching = getScheduler(null, context).fetchingKeys();
+		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, null), this)) {
 			wakeTime = Long.MAX_VALUE;
 			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.
 		}

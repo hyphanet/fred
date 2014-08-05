@@ -199,7 +199,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
 			return null;
 		}
-		if(req.getCooldownTime(container, context, now) != 0) {
+		if(req.getCooldownTime(context, now) != 0) {
 			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
 			return null;
 		}
@@ -281,7 +281,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		if(tryOfferedKeys) {
-			if(offeredKeys.getCooldownTime(container, context, now) == 0)
+			if(offeredKeys.getCooldownTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
 		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
@@ -292,7 +292,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
-				if(offeredKeys != null && offeredKeys.getCooldownTime(container, context, now) == 0)
+				if(offeredKeys != null && offeredKeys.getCooldownTime(context, now) == 0)
 					return new SelectorReturn(offeredKeys);
 			}
 			if(logMINOR)
@@ -392,7 +392,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
-					if(altReq != null && (l = altReq.getCooldownTime(container, context, now)) != 0) {
+					if(altReq != null && (l = altReq.getCooldownTime(context, now)) != 0) {
 						if(logMINOR) {
 							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
 							altReq = null;
@@ -441,7 +441,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								int prio = altReq.getPriorityClass();
 								boolean useRecent = false;
 								if(prio <= choosenPriorityClass) {
-									if(altReq.getCooldownTime(container, context, now) != 0)
+									if(altReq.getCooldownTime(context, now) != 0)
 										useRecent = true;
 								}
 								if(useRecent) {

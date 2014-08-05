@@ -65,7 +65,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
     
     @Override
-    public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+    public long getCooldownTime(ClientContext context, long now) {
         return storage.getCooldownWakeupTime(now);
         // We do not call CooldownTracker.setCachedWakeup() because there isn't much point, since
         // this is as fast as using the cooldown tracker. Calling it for individual SendableGet's 

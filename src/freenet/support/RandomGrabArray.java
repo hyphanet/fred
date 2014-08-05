@@ -56,11 +56,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	
 	public void add(RandomGrabArrayItem req, ObjectContainer container, ClientContext context) {
 		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
-		if(context != null && req.getCooldownTime(container, context, System.currentTimeMillis()) < 0) { 
+		if(context != null && req.getCooldownTime(context, System.currentTimeMillis()) < 0) { 
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
-		req.setParentGrabArray(this, container); // will store() self
+		req.setParentGrabArray(this); // will store() self
 		synchronized(this) {
 			if(context != null) {
 				context.cooldownTracker.clearCachedWakeup(req);
@@ -201,13 +201,13 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(persistent)
 				container.activate(ret, 1);
 			oret = ret;
-			long itemWakeTime = ret.getCooldownTime(container, context, now);
+			long itemWakeTime = ret.getCooldownTime(context, now);
 			if(itemWakeTime == -1) {
 				if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 				ret = null;
 				// Will be removed in the do{} loop
 				// Tell it that it's been removed first.
-				oret.setParentGrabArray(null, container);
+				oret.setParentGrabArray(null);
 			}
 			if(itemWakeTime == 0)
 				itemWakeTime = excluding.exclude(ret, container, context, now);
@@ -328,13 +328,13 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(persistent)
 						container.activate(item, 1);
 					activated = true;
-					long itemWakeTime = item.getCooldownTime(container, context, now);
+					long itemWakeTime = item.getCooldownTime(context, now);
 					if(itemWakeTime == -1) {
 						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
 						changedMe = true;
 						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 						reqsReading[offset] = null;
-						item.setParentGrabArray(null, container);
+						item.setParentGrabArray(null);
 						if(persistent)
 							container.deactivate(item, 1);
 						continue;
@@ -557,7 +557,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		// Caller will typically clear it before calling for synchronization reasons.
 		RandomGrabArray oldArray = it.getParentGrabArray();
 		if(oldArray == this)
-			it.setParentGrabArray(null, container);
+			it.setParentGrabArray(null);
 		else if(oldArray != null)
 			Logger.error(this, "Removing item "+it+" from "+this+" but RGA is "+it.getParentGrabArray(), new Exception("debug"));
 		if(!matched) {
@@ -681,7 +681,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				RandomGrabArrayItem item = block.reqs[j];
 				if(item == null) continue;
 				if(persistent) container.activate(item, 1);
-				item.setParentGrabArray(null, container);
+				item.setParentGrabArray(null);
 				existingGrabber.add(item, container, null);
 				if(persistent) container.deactivate(item, 1);
 				block.reqs[j] = null;

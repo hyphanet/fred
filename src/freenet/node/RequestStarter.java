@@ -314,7 +314,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return -1;
 		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		return get.getCooldownTime(container, context, now);
+		return get.getCooldownTime(context, now);
 	}
 
 	/** Can this item be excluded based solely on the cooldown queue?
