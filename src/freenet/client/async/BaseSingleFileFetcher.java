@@ -335,35 +335,22 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) {
-		if(persistent) {
-			container.activate(key, 5);
-			container.activate(parent, 1);
-			container.activate(ctx, 1);
-		}
+	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
 		synchronized(this) {
 			if(finished) return null;
 			if(cancelled) return null;
 		}
 		if(key == null) {
 			Logger.error(this, "Key is null - left over BSSF? on "+this+" in makeKeyListener()", new Exception("error"));
-			if(persistent) container.delete(this);
 			return null;
 		}
 		Key newKey = key.getNodeKey(true);
 		if(parent == null) {
 			Logger.error(this, "Parent is null on "+this+" persistent="+persistent+" key="+key+" ctx="+ctx);
-			if(container != null)
-				Logger.error(this, "Stored = "+container.ext().isStored(this)+" active = "+container.ext().isActive(this));
 			return null;
 		}
 		short prio = parent.getPriorityClass();
 		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent, realTimeFlag);
-		if(persistent) {
-			container.deactivate(key, 5);
-			container.deactivate(parent, 1);
-			container.deactivate(ctx, 1);
-		}
 		return ret;
 	}
 

@@ -1548,12 +1548,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
+	public KeyListener makeKeyListener(ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
 		return this;
 	}
 
 	@Override
-	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
+	public void onFailed(KeyListenerConstructionException e, ClientContext context) {
 		Logger.error(this, "Failed to construct KeyListener on USKFetcher: "+e, e);
 	}
 

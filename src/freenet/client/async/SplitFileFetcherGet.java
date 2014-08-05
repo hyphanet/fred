@@ -150,14 +150,12 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public KeyListener makeKeyListener(ObjectContainer container, ClientContext context,
-            boolean onStartup) {
+    public KeyListener makeKeyListener(ClientContext context, boolean onStartup) {
         return storage.keyListener;
     }
 
     @Override
-    public void onFailed(KeyListenerConstructionException e, ObjectContainer container,
-            ClientContext context) {
+    public void onFailed(KeyListenerConstructionException e, ClientContext context) {
         // Impossible.
         throw new IllegalStateException();
     }
