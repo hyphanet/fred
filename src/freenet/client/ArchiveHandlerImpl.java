@@ -86,30 +86,25 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		Bucket data;
 
 		@Override
-		public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+		public void gotBucket(Bucket data, ClientContext context) {
 			this.data = data;
 		}
 
 		@Override
-		public void notInArchive(ObjectContainer container, ClientContext context) {
+		public void notInArchive(ClientContext context) {
 			this.data = null;
 		}
 
 		@Override
-		public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+		public void onFailed(ArchiveRestartException e, ClientContext context) {
 			// Must not be called.
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+		public void onFailed(ArchiveFailureException e, ClientContext context) {
 			// Must not be called.
 			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			container.delete(this);
 		}
 
 	}

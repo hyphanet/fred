@@ -431,7 +431,7 @@ outerTAR:		while(true) {
 						trimStoredData();
 					} else {
 						// We are here because they asked for this file.
-						callback.gotBucket(output, container, context);
+						callback.gotBucket(output, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 					}
@@ -446,7 +446,7 @@ outerTAR:		while(true) {
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
-				callback.notInArchive(container, context);
+				callback.notInArchive(context);
 
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -511,7 +511,7 @@ outerZIP:		while(true) {
 						trimStoredData();
 					} else {
 						// We are here because they asked for this file.
-						callback.gotBucket(output, container, context);
+						callback.gotBucket(output, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 					}
@@ -526,7 +526,7 @@ outerZIP:		while(true) {
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 
 			if((!gotElement.value) && element != null)
-				callback.notInArchive(container, context);
+				callback.notInArchive(context);
 
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -691,7 +691,7 @@ outerZIP:		while(true) {
 			}
 		}
 		if(matchBucket != null) {
-			callback.gotBucket(matchBucket, container, context);
+			callback.gotBucket(matchBucket, context);
 			gotElement.value = true;
 		}
 		return element;

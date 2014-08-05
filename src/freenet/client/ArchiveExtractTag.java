@@ -43,7 +43,7 @@ class ArchiveExtractTag {
 			Logger.error(this, error);
 			if(callback != null) {
 				container.activate(callback, 1);
-				callback.onFailed(new ArchiveFailureException(error), container, context);
+				callback.onFailed(new ArchiveFailureException(error), context);
 			}
 			if(data != null && freeBucket) {
 				container.activate(data, 1);

@@ -503,7 +503,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					final boolean persistent = this.persistent;
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
 						@Override
-						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+						public void gotBucket(Bucket data, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							if(logMINOR) Logger.minor(this, "gotBucket on "+SingleFileFetcher.this+" persistent="+persistent);
@@ -525,7 +525,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void notInArchive(ObjectContainer container, ClientContext context) {
+						public void notInArchive(ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, context);
@@ -533,7 +533,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveRestartException e, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
@@ -541,16 +541,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveFailureException e, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
-						}
-						@Override
-						public void removeFrom(ObjectContainer container) {
-							container.delete(this);
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.store(this);
@@ -594,7 +590,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
 						@Override
-						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+						public void gotBucket(Bucket data, ClientContext context) {
 							if(persistent) {
 								container.activate(SingleFileFetcher.this, 1);
 							}
@@ -622,7 +618,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							}
 						}
 						@Override
-						public void notInArchive(ObjectContainer container, ClientContext context) {
+						public void notInArchive(ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, context);
@@ -630,7 +626,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveRestartException e, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
@@ -638,16 +634,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveFailureException e,  ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
-						}
-						@Override
-						public void removeFrom(ObjectContainer container) {
-							container.delete(this);
 						}
 					}, container, context);
 					// Will call back into this function when it has been fetched.
@@ -698,7 +690,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
 						@Override
-						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+						public void gotBucket(Bucket data, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							if(logMINOR) Logger.minor(this, "Returning data");
@@ -711,7 +703,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void notInArchive(ObjectContainer container, ClientContext context) {
+						public void notInArchive(ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, context);
@@ -719,7 +711,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveRestartException e, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
@@ -727,16 +719,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						@Override
-						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+						public void onFailed(ArchiveFailureException e, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
-						}
-						@Override
-						public void removeFrom(ObjectContainer container) {
-							container.delete(this);
 						}
 					}, container, context);
 					// Will call back into this function when it has been fetched.
