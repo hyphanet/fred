@@ -164,7 +164,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             if(succeeded || failed) return;
             failed = true;
         }
-        context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
+        if(storage != null)
+            context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
         if(storage != null)
             storage.cancel();
