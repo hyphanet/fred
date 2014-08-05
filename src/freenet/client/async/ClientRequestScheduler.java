@@ -473,14 +473,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	@Override
 	public void callFailure(final SendableInsert insert, final LowLevelPutException e, int prio, boolean persistent) {
 		if(!persistent) {
-			insert.onFailure(e, null, null, clientContext);
+			insert.onFailure(e, null, clientContext);
 		} else {
 			try {
 				jobRunner.queue(new PersistentJob() {
 
 					@Override
 					public boolean run(ClientContext context) {
-						insert.onFailure(e, null, null, context);
+						insert.onFailure(e, null, context);
 						return false;
 					}
                                         @Override

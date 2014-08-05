@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.keys.ClientKey;
@@ -30,10 +28,10 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
+	public abstract void onSuccess(Object keyNum, ClientContext context);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
+	public abstract void onFailure(LowLevelPutException e, Object keyNum, ClientContext context);
 
 	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
@@ -54,20 +52,20 @@ public abstract class SendableInsert extends SendableRequest {
 			return context.getChkInsertScheduler(realTimeFlag);
 	}
 
-	public abstract boolean canWriteClientCache(ObjectContainer container);
+	public abstract boolean canWriteClientCache();
 	
-	public abstract boolean localRequestOnly(ObjectContainer container);
+	public abstract boolean localRequestOnly();
 
-	public abstract boolean forkOnCacheable(ObjectContainer container);
+	public abstract boolean forkOnCacheable();
 
 	/** Encoded a key */
-	public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
+	public abstract void onEncode(SendableRequestItem token, ClientKey key, ClientContext context);
 	
-	public abstract boolean isEmpty(ObjectContainer container);
+	public abstract boolean isEmpty();
 	
 	@Override
 	public long getCooldownTime(ClientContext context, long now) {
-		if(isEmpty(null)) return -1;
+		if(isEmpty()) return -1;
 		return 0;
 	}
 

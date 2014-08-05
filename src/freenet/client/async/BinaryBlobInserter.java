@@ -115,7 +115,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 
 		@Override
-		public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
+		public void onSuccess(Object keyNum, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -123,24 +123,24 @@ public class BinaryBlobInserter implements ClientPutState {
 				succeededBlocks++;
 			}
 			parent.completedBlock(false, context);
-			maybeFinish(container, context);
+			maybeFinish(context);
 		}
 
 		// FIXME duplicated code from SingleBlockInserter
 		// FIXME combine it somehow
 		@Override
-		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
+		public void onFailure(LowLevelPutException e, Object keyNum, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 			}
 			if(parent.isCancelled()) {
-				fail(new InsertException(InsertException.CANCELLED), true, container, context);
+				fail(new InsertException(InsertException.CANCELLED), true, context);
 				return;
 			}
 			logMINOR = Logger.shouldLog(LogLevel.MINOR, BinaryBlobInserter.this);
 			switch(e.code) {
 			case LowLevelPutException.COLLISION:
-				fail(new InsertException(InsertException.COLLISION), false, container, context);
+				fail(new InsertException(InsertException.COLLISION), false, context);
 				break;
 			case LowLevelPutException.INTERNAL_ERROR:
 				errors.inc(InsertException.INTERNAL_ERROR);
@@ -163,7 +163,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
 					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess(keyNum, container, context);
+					onSuccess(keyNum, context);
 					return;
 				}
 			} else
@@ -171,14 +171,14 @@ public class BinaryBlobInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Failed: "+e);
 			retries++;
 			if((retries > maxRetries) && (maxRetries != -1)) {
-				fail(InsertException.construct(errors), false, container, context);
+				fail(InsertException.construct(errors), false, context);
 				return;
 			}
 			// Retry *this block*
 			this.schedule();
 		}
 
-		private void fail(InsertException e, boolean fatal, ObjectContainer container, ClientContext context) {
+		private void fail(InsertException e, boolean fatal, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -189,12 +189,12 @@ public class BinaryBlobInserter implements ClientPutState {
 				parent.fatallyFailedBlock(context);
 			else
 				parent.failedBlock(context);
-			maybeFinish(container, context);
+			maybeFinish(context);
 		}
 
 	}
 
-	public void maybeFinish(ObjectContainer container, ClientContext context) {
+	public void maybeFinish(ClientContext context) {
 		boolean success;
 		boolean wasFatal;
 		synchronized(this) {

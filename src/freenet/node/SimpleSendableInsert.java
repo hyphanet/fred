@@ -64,14 +64,14 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	@Override
-	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
+	public void onSuccess(Object keyNum, ClientContext context) {
 		// Yay!
 		if(logMINOR)
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	@Override
-	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
@@ -93,14 +93,14 @@ public class SimpleSendableInsert extends SendableInsert {
 					// FIXME bulk flag
 					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
 				} catch (LowLevelPutException e) {
-					onFailure(e, req.token, null, context);
+					onFailure(e, req.token, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 					return true;
 				} finally {
 					finished = true;
 				}
 				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-				onSuccess(req.token, null, context);
+				onSuccess(req.token, context);
 				return true;
 			}
 
@@ -127,7 +127,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	@Override
-	public boolean isEmpty(ObjectContainer container) {
+	public boolean isEmpty() {
 		return finished;
 	}
 
@@ -171,22 +171,22 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public boolean canWriteClientCache(ObjectContainer container) {
+	public boolean canWriteClientCache() {
 		return false;
 	}
 
 	@Override
-	public boolean forkOnCacheable(ObjectContainer container) {
+	public boolean forkOnCacheable() {
 		return Node.FORK_ON_CACHEABLE_DEFAULT;
 	}
 
 	@Override
-	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+	public void onEncode(SendableRequestItem token, ClientKey key, ClientContext context) {
 		// Ignore.
 	}
 
 	@Override
-	public boolean localRequestOnly(ObjectContainer container) {
+	public boolean localRequestOnly() {
 		return false;
 	}
 
