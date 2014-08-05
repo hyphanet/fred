@@ -588,7 +588,6 @@ public class NodeClientCore implements Persistable {
 		System.out.println("Late database initialisation: starting middle phase");
 		// Don't actually start the database thread yet, messy concurrency issues.
 		initPTBF(node.config.get("node"));
-		requestStarters.lateStart(this, nodeDBHandle, container);
 		// Must create the CRSCore's before telling them to load stuff.
 		InsertCompressor.load(clientContext);
 		fcpServer.load(this.fcpPersistentRoot);

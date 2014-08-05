@@ -61,16 +61,17 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	final boolean isSSKScheduler;
 	final boolean isRTScheduler;
 	
-	protected transient ClientRequestScheduler sched;
+	protected final ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. There is one for each of transient, persistent. */
-	protected transient ArrayList<KeyListener> keyListeners;
+	protected final ArrayList<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
+		this.sched = sched;
 		keyListeners = new ArrayList<KeyListener>();
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
@@ -327,10 +328,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		}
 		if(list == null) return null;
 		else return list.toArray(new SendableGet[list.size()]);
-	}
-	
-	public void onStarted(ClientContext context) {
-		keyListeners = new ArrayList<KeyListener>();
 	}
 	
 	@Override

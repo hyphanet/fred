@@ -86,11 +86,7 @@ public class RequestStarterGroup {
 		chkRequestStarterBulk = new RequestStarter(core, chkRequestThrottleBulk, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, false);
 		chkRequestStarterRT = new RequestStarter(core, chkRequestThrottleRT, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, true);
 		chkFetchSchedulerBulk = new ClientRequestScheduler(false, false, false, random, chkRequestStarterBulk, node, core, "CHKrequester", ctx);
-		if(container != null)
-			chkFetchSchedulerBulk.startCore(core, dbHandle, container);
 		chkFetchSchedulerRT = new ClientRequestScheduler(false, false, true, random, chkRequestStarterRT, node, core, "CHKrequester", ctx);
-		if(container != null)
-			chkFetchSchedulerRT.startCore(core, dbHandle, container);
 		chkRequestStarterBulk.setScheduler(chkFetchSchedulerBulk);
 		chkRequestStarterRT.setScheduler(chkFetchSchedulerRT);
 		
@@ -103,11 +99,7 @@ public class RequestStarterGroup {
 		chkInsertStarterBulk = new RequestStarter(core, chkInsertThrottleBulk, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, false);
 		chkInsertStarterRT = new RequestStarter(core, chkInsertThrottleRT, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, true);
 		chkPutSchedulerBulk = new ClientRequestScheduler(true, false, false, random, chkInsertStarterBulk, node, core, "CHKinserter", ctx);
-		if(container != null)
-			chkPutSchedulerBulk.startCore(core, dbHandle, container);
 		chkPutSchedulerRT = new ClientRequestScheduler(true, false, true, random, chkInsertStarterRT, node, core, "CHKinserter", ctx);
-		if(container != null)
-			chkPutSchedulerRT.startCore(core, dbHandle, container);
 		chkInsertStarterBulk.setScheduler(chkPutSchedulerBulk);
 		chkInsertStarterRT.setScheduler(chkPutSchedulerRT);
 		
@@ -118,11 +110,7 @@ public class RequestStarterGroup {
 		sskRequestStarterBulk = new RequestStarter(core, sskRequestThrottleBulk, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, false);
 		sskRequestStarterRT = new RequestStarter(core, sskRequestThrottleRT, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, true);
 		sskFetchSchedulerBulk = new ClientRequestScheduler(false, true, false, random, sskRequestStarterBulk, node, core, "SSKrequester", ctx);
-		if(container != null)
-			sskFetchSchedulerBulk.startCore(core, dbHandle, container);
 		sskFetchSchedulerRT = new ClientRequestScheduler(false, true, true, random, sskRequestStarterRT, node, core, "SSKrequester", ctx);
-		if(container != null)
-			sskFetchSchedulerRT.startCore(core, dbHandle, container);
 		sskRequestStarterBulk.setScheduler(sskFetchSchedulerBulk);
 		sskRequestStarterRT.setScheduler(sskFetchSchedulerRT);
 		
@@ -135,11 +123,7 @@ public class RequestStarterGroup {
 		sskInsertStarterBulk = new RequestStarter(core, sskInsertThrottleBulk, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, false);
 		sskInsertStarterRT = new RequestStarter(core, sskInsertThrottleRT, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, true);
 		sskPutSchedulerBulk = new ClientRequestScheduler(true, true, false, random, sskInsertStarterBulk, node, core, "SSKinserter", ctx);
-		if(container != null)
-			sskPutSchedulerBulk.startCore(core, dbHandle, container);
 		sskPutSchedulerRT = new ClientRequestScheduler(true, true, true, random, sskInsertStarterRT, node, core, "SSKinserter", ctx);
-		if(container != null)
-			sskPutSchedulerRT.startCore(core, dbHandle, container);
 		sskInsertStarterBulk.setScheduler(sskPutSchedulerBulk);
 		sskInsertStarterRT.setScheduler(sskPutSchedulerRT);
 		
@@ -170,17 +154,6 @@ public class RequestStarterGroup {
 		sskInsertStarterBulk.start();
 	}
 	
-	void lateStart(NodeClientCore core, long dbHandle, ObjectContainer container) {
-		chkFetchSchedulerBulk.startCore(core, dbHandle, container);
-		chkPutSchedulerBulk.startCore(core, dbHandle, container);
-		sskFetchSchedulerBulk.startCore(core, dbHandle, container);
-		sskPutSchedulerBulk.startCore(core, dbHandle, container);
-		chkFetchSchedulerRT.startCore(core, dbHandle, container);
-		chkPutSchedulerRT.startCore(core, dbHandle, container);
-		sskFetchSchedulerRT.startCore(core, dbHandle, container);
-		sskPutSchedulerRT.startCore(core, dbHandle, container);
-	}
-
 	public class MyRequestThrottle implements BaseRequestThrottle {
 		private final BootstrappingDecayingRunningAverage roundTripTime;
 		/** Data size for purposes of getRate() */

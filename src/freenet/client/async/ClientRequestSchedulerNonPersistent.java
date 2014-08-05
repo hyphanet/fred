@@ -6,8 +6,6 @@ package freenet.client.async;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.RandomSource;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
@@ -24,8 +22,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	protected final Deque<BaseSendableGet>recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
-		super(forInserts, forSSKs, forRT, random);
-		this.sched = sched;
+		super(forInserts, forSSKs, forRT, random, sched);
 		if(!forInserts)
 			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		else
@@ -36,10 +33,6 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	@Override
 	boolean persistent() {
 		return false;
-	}
-
-	ObjectContainer container() {
-		return null;
 	}
 
 	@Override
@@ -58,10 +51,4 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		}
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing ClientRequestSchedulerNonPersistent in database", new Exception("error"));
-		return false;
-	}
-	
-	
 }
