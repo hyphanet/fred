@@ -2,6 +2,7 @@ package freenet.support.io;
 
 import java.io.Serializable;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -39,5 +40,11 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
 	}
+	
+    @Override
+    public void onResume(ClientContext context) {
+        // Ewww writing parent's field.
+        generator = context.persistentFG;
+    }
 	
 }

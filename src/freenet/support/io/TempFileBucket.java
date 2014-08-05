@@ -4,6 +4,7 @@ import java.io.File;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -21,7 +22,7 @@ import freenet.support.api.Bucket;
  */
 public class TempFileBucket extends BaseFileBucket implements Bucket {
 	long filenameID;
-	final FilenameGenerator generator;
+	protected transient FilenameGenerator generator;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
 
@@ -114,4 +115,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Plain TempFileBucket's are not persistent.
+        throw new UnsupportedOperationException();
+    }
 }
