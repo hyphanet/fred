@@ -309,9 +309,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker());
         } catch (IOException e) {
+            Logger.error(this, "Failed to resume due to I/O error: "+e, e);
             fail(new FetchException(FetchException.BUCKET_ERROR, e));
             return;
         } catch (StorageFormatException e) {
+            Logger.error(this, "Failed to resume due to storage error: "+e, e);
             fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
             return;
         } catch (FetchException e) {
