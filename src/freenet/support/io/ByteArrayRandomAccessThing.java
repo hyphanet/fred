@@ -1,9 +1,10 @@
 package freenet.support.io;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class ByteArrayRandomAccessThing implements LockableRandomAccessThing {
+public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
 
 	private final byte[] data;
 	private boolean readOnly;

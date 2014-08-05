@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -25,9 +26,11 @@ import freenet.support.io.InsufficientDiskSpaceException;
  * Fetch a single block file.
  * Used by SplitFileFetcherSegment.
  */
-public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
+public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState, Serializable {
 
-	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
+    private static final long serialVersionUID = 1L;
+
+    SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
 			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ClientContext context, boolean deleteFetchContext, boolean realTimeFlag) {
 		super(key, maxRetries, ctx, parent, deleteFetchContext, realTimeFlag);
 		this.rcb = rcb;

@@ -37,7 +37,7 @@ public abstract class ClientRequest implements Serializable {
     /** If the request isn't on the global queue, what is the client's name? */
     protected final String clientName;
 	/** Client */
-	protected FCPClient client;
+	protected transient FCPClient client;
 	/** Priority class */
 	protected short priorityClass;
 	/** Is the request scheduled as "real-time" (as opposed to bulk)? */

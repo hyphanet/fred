@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -889,7 +890,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	class ArchiveFetcherCallback implements GetCompletionCallback {
+	class ArchiveFetcherCallback implements GetCompletionCallback, Serializable {
 
 		private final boolean wasFetchingFinalData;
 		private final String element;
@@ -1043,9 +1044,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	}
 
-	class MultiLevelMetadataCallback implements GetCompletionCallback {
+	class MultiLevelMetadataCallback implements GetCompletionCallback, Serializable {
 		
-		private final boolean persistent;
+        private static final long serialVersionUID = 1L;
+        private final boolean persistent;
 		private final FetchContext ctx;
 		
 		MultiLevelMetadataCallback() {

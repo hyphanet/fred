@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 import freenet.client.ClientMetadata;
@@ -57,7 +58,7 @@ import freenet.support.io.LockableRandomAccessThing;
  * 
  * @author toad
  */
-public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback {
+public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback, Serializable {
     
     private static volatile boolean logMINOR;
     static {

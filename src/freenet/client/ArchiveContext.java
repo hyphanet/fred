@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.Serializable;
 import java.util.HashSet;
 
 import freenet.keys.FreenetURI;
@@ -15,9 +16,10 @@ import freenet.keys.FreenetURI;
  * name.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class ArchiveContext {
+public class ArchiveContext implements Serializable {
 
-	private HashSet<FreenetURI> soFar;
+    private static final long serialVersionUID = 1L;
+    private HashSet<FreenetURI> soFar;
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	

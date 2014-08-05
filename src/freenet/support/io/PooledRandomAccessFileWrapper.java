@@ -3,6 +3,7 @@ package freenet.support.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -13,7 +14,7 @@ import freenet.support.math.MersenneTwister;
 /** Random access files with a limited number of open files, using a pool. 
  * LOCKING OPTIMISATION: Contention on closables likely here. It's not clear how to avoid that, FIXME.
  * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... */
-public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing {
+public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
     
     private static int MAX_OPEN_FDS = 100;
     static int OPEN_FDS = 0;
@@ -26,7 +27,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing 
     private int lockLevel;
     /** The actual RAF. Non-null only if open. LOCKING: Synchronized on (this).
      * LOCKING: Always take (this) last, i.e. after closables. */
-    private RandomAccessFile raf;
+    private transient RandomAccessFile raf;
     private final long length;
     private boolean closed;
     
