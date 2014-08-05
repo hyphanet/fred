@@ -177,7 +177,7 @@ public final class KeyGenUtils {
      * @return The key as a SecretKey
      */
     public static SecretKey getSecretKey(KeyType type, byte[] key){
-        if(key.length != type.keySize){
+        if(key.length != type.keySize >> 3){
             throw new IllegalArgumentException("Key size does not match KeyType");
         }
         return new SecretKeySpec(key, type.alg);
