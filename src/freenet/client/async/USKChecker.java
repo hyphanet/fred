@@ -90,7 +90,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		if(canRetry && retry(container, context)) return;
 		
 		// Ran out of retries.
-		unregisterAll(container, context);
+		unregisterAll(context);
 		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled(context);
 			return;
@@ -129,7 +129,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	protected void notFoundInStore(ObjectContainer container,
 			ClientContext context) {
 		// Ran out of retries.
-		unregisterAll(container, context);
+		unregisterAll(context);
 		// Rest are non-fatal. If have DNFs, DNF, else network error.
 		cb.onDNF(context);
 	}

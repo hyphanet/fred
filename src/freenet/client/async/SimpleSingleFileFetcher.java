@@ -80,7 +80,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		}
 		// :(
-		unregisterAll(container, context);
+		unregisterAll(context);
 		synchronized(this) {
 			finished = true;
 		}
@@ -169,9 +169,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 	
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
-		super.cancel(container, context);
-		if(persistent) container.activate(rcb, 1);
+	public void cancel(ClientContext context) {
+		super.cancel(context);
 		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, context);
 	}
 

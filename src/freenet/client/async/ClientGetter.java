@@ -202,7 +202,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
 					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, null, context);
 				} else
-					currentState.schedule(null, context);
+					currentState.schedule(context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
@@ -490,7 +490,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		}
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+s+" for "+this+" instance "+super.toString());
-			s.cancel(null, context);
+			s.cancel(context);
 		} else {
 			if(logMINOR) Logger.minor(this, "Nothing to cancel");
 		}

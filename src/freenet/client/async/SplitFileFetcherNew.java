@@ -137,8 +137,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     @Override
-    public void schedule(ObjectContainer container, ClientContext context)
-            throws KeyListenerConstructionException {
+    public void schedule(ClientContext context) throws KeyListenerConstructionException {
         storage.start();
         getter.schedule(context, false);
     }
@@ -171,7 +170,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     @Override
-    public void cancel(ObjectContainer container, ClientContext context) {
+    public void cancel(ClientContext context) {
         fail(new FetchException(FetchException.CANCELLED));
     }
 
@@ -180,11 +179,6 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         return token;
     }
 
-    @Override
-    public void removeFrom(ObjectContainer container, ClientContext context) {
-        throw new UnsupportedOperationException();
-    }
-    
     /** The splitfile download succeeded. Generate a stream and send it to the 
      * GetCompletionCallback. See bug #6063 for a better way that probably is too much complexity
      * for the benefit. */

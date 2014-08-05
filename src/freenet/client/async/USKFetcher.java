@@ -356,11 +356,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// Ignore
 		}
 		public void start(ClientContext context) {
-			this.fetcher.schedule(null, context);
+			this.fetcher.schedule(context);
 		}
 		
-		public void cancel(ObjectContainer container, ClientContext context) {
-			this.fetcher.cancel(container, context);
+		public void cancel(ClientContext context) {
+			this.fetcher.cancel(context);
 		}
 	}
 	
@@ -418,22 +418,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			USKFetcher.this.onCancelled(this, context);
 		}
 		
-		public void cancel(ObjectContainer container, ClientContext context) {
-			assert(container == null);
+		public void cancel(ClientContext context) {
 			cancelled = true;
 			if(checker != null)
-				checker.cancel(container, context);
+				checker.cancel(context);
 			onCancelled(context);
 		}
 		
-		public void schedule(ObjectContainer container, ClientContext context) {
-			assert(container == null);
+		public void schedule(ClientContext context) {
 			if(checker == null) {
 				if(logMINOR)
 					Logger.minor(this, "Checker == null in schedule() for "+this, new Exception("debug"));
 			} else {
 				assert(!checker.persistent());
-				checker.schedule(container, context);
+				checker.schedule(context);
 			}
 		}
 		
@@ -563,7 +561,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(scheduleAfterDBRsDone) needSchedule = true; // FIXME other conditions???
 		}
 		if(needSchedule)
-			schedule(null, context);
+			schedule(context);
 		checkFinishedForNow(context);
 	}
 	
@@ -597,7 +595,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context, prio);
 			if(toCancel != null) {
 				for(DBRAttempt a : toCancel)
-					a.cancel(null, context);
+					a.cancel(context);
 			}
 		} catch (MalformedURLException e) {
 			// Impossible
@@ -901,7 +899,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				USKAttempt att = v.get(i);
-				att.cancel(null, context);
+				att.cancel(context);
 			}
 		}
 	}
@@ -954,19 +952,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public void schedule(long delay, ObjectContainer container, final ClientContext context) {
 		assert(container == null);
 		if (delay<=0) {
-			schedule(container, context);
+			schedule(context);
 		} else {
 			context.ticker.queueTimedJob(new Runnable() {
 				@Override
 				public void run() {
-					USKFetcher.this.schedule(null, context);
+					USKFetcher.this.schedule(context);
 				}
 			}, delay);
 		}
 	}
     
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Scheduling "+this);
 		DBRAttempt[] atts = null;
 		synchronized(this) {
@@ -1054,11 +1052,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		uskManager.unsubscribe(origUSK, this);
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
-		assert(container == null);
 		USKAttempt[] attempts;
 		USKAttempt[] polling;
 		DBRAttempt[] atts;
@@ -1079,14 +1076,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			runningStoreChecker = null;
 		}
 		for(USKAttempt attempt: attempts)
-			attempt.cancel(container, context);
+			attempt.cancel(context);
 		for(USKAttempt p: polling)
-			p.cancel(container, context);
+			p.cancel(context);
 		for(DBRAttempt a : atts)
-			a.cancel(container, context);
+			a.cancel(context);
 		if(storeChecker != null)
 			// Remove from the store checker queue.
-			storeChecker.unregister(container, context, storeChecker.getPriorityClass());
+			storeChecker.unregister(null, context, storeChecker.getPriorityClass());
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually
@@ -1215,11 +1212,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return -1;
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		throw new UnsupportedOperationException();
-	}
-	
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing USKFetcher in database", new Exception("error"));
 		return false;
@@ -1321,7 +1313,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
 			if(attempt == null) continue;
 			if(attempt.number > lastEd)
-				attempt.schedule(null, context);
+				attempt.schedule(context);
 			else {
 				synchronized(USKFetcher.this) {
 					runningAttempts.remove(attempt.number);
@@ -1474,7 +1466,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
 				if(attempt == null) continue;
 				if(attempt.number > lastEd)
-					attempt.schedule(container, context);
+					attempt.schedule(context);
 				else {
 					synchronized(USKFetcher.this) {
 						runningAttempts.remove(attempt.number);

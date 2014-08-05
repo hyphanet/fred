@@ -200,25 +200,20 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return parent.getPriorityClass();
 	}
 
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		synchronized(this) {
 			cancelled = true;
 		}
-		if(persistent) {
-			container.store(this);
-			container.activate(key, 5);
-		}
-		
-		unregisterAll(container, context);
+		unregisterAll(context);
 	}
 	
 	/**
 	 * Remove the pendingKeys item and then remove from the queue as well.
 	 * Call unregister(container) if you only want to remove from the queue.
 	 */
-	public void unregisterAll(ObjectContainer container, ClientContext context) {
-		getScheduler(container, context).removePendingKeys(this, false);
-		unregister(container, context, (short)-1);
+	public void unregisterAll(ClientContext context) {
+		getScheduler(null, context).removePendingKeys(this, false);
+		unregister(null, context, (short)-1);
 	}
 
 	@Override
@@ -300,15 +295,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return tracker.cooldownWakeupTime;
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ClientContext context) {
 		if(key == null) throw new NullPointerException();
-		if(persistent) {
-			container.activate(ctx, 1);
-			if(ctx.blocks != null)
-				container.activate(ctx.blocks, 5);
-		}
 		try {
-			getScheduler(container, context).register(this, new SendableGet[] { this }, persistent, container, ctx.blocks, false);
+			getScheduler(null, context).register(this, new SendableGet[] { this }, persistent, null, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -449,7 +439,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
     public void onResume(ClientContext context) {
-        schedule(null, context);
+        schedule(context);
     }
 
 }

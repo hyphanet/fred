@@ -364,10 +364,10 @@ public class USKManager {
 					if(cancelled != null) {
 						for(int i=0;i<cancelled.size();i++) {
 							USKFetcher fetcher = cancelled.get(i);
-							fetcher.cancel(null, USKManager.this.context);
+							fetcher.cancel(USKManager.this.context);
 						}
 					}
-					if(scheduleMe != null) scheduleMe.schedule(null, USKManager.this.context);
+					if(scheduleMe != null) scheduleMe.schedule(USKManager.this.context);
 				}
 				
 			});
@@ -609,7 +609,7 @@ public class USKManager {
 				@Override
 				public void run() {
 					if(logMINOR) Logger.minor(this, "Starting "+fetcher);
-					fetcher.schedule(null, context);
+					fetcher.schedule(context);
 				}
 			}, "USKManager.schedule for "+fetcher);
 		}
@@ -652,7 +652,7 @@ public class USKManager {
 			// They do not care about callbacks.
 		}
 		if(toCancel != null) {
-			toCancel.cancel(null, context);
+			toCancel.cancel(context);
 		} else {
 			if(logMINOR) Logger.minor(this, "Not found unsubscribing: "+cb+" for "+origUSK);
 		}

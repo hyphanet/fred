@@ -100,7 +100,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(logMINOR)
 				Logger.minor(this, "scheduled: "+fetcher);
 		}
-		fetcher.schedule(null, context);
+		fetcher.schedule(context);
 	}
 
 	@Override
@@ -315,7 +315,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			fetcher = null;
 		}
 		if(tag != null) {
-			tag.cancel(null, context);
+			tag.cancel(context);
 		}
 		if(sbi != null) {
 			sbi.cancel(context); // will call onFailure, which will removeFrom()

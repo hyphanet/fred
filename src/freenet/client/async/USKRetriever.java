@@ -10,8 +10,6 @@ import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -103,7 +101,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, uri, ctx, new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels), 
 						ctx.maxNonSplitfileRetries, 0, true, l, true, false, null, context, realTimeFlag, false);
-			getter.schedule(null, context);
+			getter.schedule(context);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
 		} catch (FetchException e) {
@@ -312,7 +310,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			p = proxy;
 		}
 		if(f != null)
-			f.cancel(null, manager.getContext());
+			f.cancel(manager.getContext());
 		if(p != null)
 			manager.unsubscribe(origUSK, p);
 	}

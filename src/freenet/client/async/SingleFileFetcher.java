@@ -210,7 +210,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(bucketSnoop, 1);
 			if(bucketSnoop.snoopBucket(data, block.isMetadata(), container, context)) {
-				cancel(container, context);
+				cancel(context);
 				if(persistent)
 					container.deactivate(bucketSnoop, 1);
 				data.free();
@@ -391,7 +391,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.activate(metaSnoop, 1);
 				if(metaSnoop.snoopMetadata(metadata, container, context)) {
-					cancel(container, context);
+					cancel(context);
 					if(persistent)
 						container.deactivate(metaSnoop, 1);
 					return;
@@ -866,7 +866,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.store(f); // Store *before* scheduling to avoid activation problems.
 					container.store(this);
 				}
-				f.schedule(container, context);
+				f.schedule(context);
 				// All done! No longer our problem!
 				archiveMetadata = null; // passed on
 				if(persistent) removeFrom(container, context);
@@ -968,7 +968,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				parent.onTransition(this, sf);
 				try {
-					sf.schedule(container, context);
+					sf.schedule(context);
 				} catch (KeyListenerConstructionException e) {
 					onFailure(e.getFetchException(), false, container, context);
 					if(persistent) container.deactivate(sf, 1);
@@ -1459,7 +1459,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(tag != null) {
 						cb.onTransition(tag, sf);
 					}
-					sf.schedule(null, context);
+					sf.schedule(context);
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, context);
 				}

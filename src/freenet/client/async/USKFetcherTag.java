@@ -99,14 +99,14 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			usk = usk.copy();
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
-		fetcher.schedule(null, context); // non-persistent
+		fetcher.schedule(context); // non-persistent
 		if(logMINOR) Logger.minor(this, "Starting "+fetcher+" for "+this);
 	}
 
 	@Override
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		USKFetcher f = fetcher;
-		if(f != null) fetcher.cancel(null, context);
+		if(f != null) fetcher.cancel(context);
 		synchronized(this) {
 			if(finished) {
 				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
@@ -124,7 +124,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	@Override
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ClientContext context) {
 		start(context.uskManager, context);
 	}
 
@@ -255,18 +255,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 //				logDEBUG = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
-	}
-	
-	@Override
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Removing "+this);
-		container.activate(origUSK, 5);
-		origUSK.removeFrom(container);
-		if(ownFetchContext) {
-			container.activate(ctx, 1);
-			ctx.removeFrom(container);
-		}
-		container.delete(this);
 	}
 	
 	public boolean objectCanDeactivate(ObjectContainer container) {
