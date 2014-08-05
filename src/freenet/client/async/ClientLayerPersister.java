@@ -62,6 +62,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     requester.onResume(context);
                 }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
+                System.out.println("Resumed from saved requests ...");
                 onStarted();
                 return;
             } catch (IOException e) {
@@ -80,6 +81,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
             }
         }
+        // FIXME backups etc!
+        System.err.println("Starting request persistence layer without resuming ...");
         bandwidthStatsPutter = new PersistentStatsPutter();
         onStarted();
     }
