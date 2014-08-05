@@ -8,6 +8,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
@@ -17,8 +18,9 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class DelayedFreeBucket implements Bucket {
+public class DelayedFreeBucket implements Bucket, Serializable {
 
+    private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
 	private transient PersistentFileTracker factory;
 	Bucket bucket;
