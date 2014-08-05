@@ -151,7 +151,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 		    boolean anyValid = false;
 		    for(SendableGet getter : getters) {
-		        if(!(getter.isCancelled(null) || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
+		        if(!(getter.isCancelled() || getter.getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
 		            anyValid = true;
 		    }
 		    finishRegister(getters, false, container, anyValid, null);
@@ -182,7 +182,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(SendableGet getter : getters) {
 						container.activate(getter, 1);
 						// Just check isCancelled, we have already checked the cooldown.
-						if(!(getter.isCancelled(container))) {
+						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
 							if(!getter.preRegister(container, clientContext, true)) {
 								schedCore.innerRegister(getter, container, clientContext, getters);
@@ -203,13 +203,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// Register immediately.
 			for(SendableGet getter : getters) {
 				
-				if((!anyValid) || getter.isCancelled(null)) {
+				if((!anyValid) || getter.isCancelled()) {
 					getter.preRegister(container, clientContext, false);
 					continue;
 				} else {
 					if(getter.preRegister(container, clientContext, true)) continue;
 				}
-				if(!getter.isCancelled(null))
+				if(!getter.isCancelled())
 					schedTransient.innerRegister(getter, null, clientContext, getters);
 			}
 			starter.wakeUp();

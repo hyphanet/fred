@@ -201,7 +201,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public boolean isCancelled(ObjectContainer container) {
+	public boolean isCancelled() {
 		return false;
 	}
 

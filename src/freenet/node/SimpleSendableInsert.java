@@ -122,7 +122,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public boolean isCancelled(ObjectContainer container) {
+	public boolean isCancelled() {
 		return finished;
 	}
 	

@@ -223,7 +223,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public synchronized boolean isCancelled(ObjectContainer container) {
+	public synchronized boolean isCancelled() {
 		return cancelled;
 	}
 	
@@ -252,7 +252,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			finished = true;
 			if(persistent)
 				container.store(this);
-			if(isCancelled(container)) return;
+			if(isCancelled()) return;
 			if(key == null)
 				throw new NullPointerException();
 			if(this.key == null)

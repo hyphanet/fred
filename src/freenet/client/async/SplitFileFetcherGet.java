@@ -116,7 +116,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public boolean isCancelled(ObjectContainer container) {
+    public boolean isCancelled() {
         // FIXME locking on this is a bit different to the old code ... is it safe?
         return parent.hasFinished();
     }

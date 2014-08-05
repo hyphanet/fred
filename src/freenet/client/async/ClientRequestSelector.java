@@ -195,7 +195,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
-		if(req.isCancelled(container)) {
+		if(req.isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
 			return null;
 		}
@@ -387,7 +387,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							}
 						}
 					}
-					if(altReq != null && (altReq.isCancelled(container))) {
+					if(altReq != null && (altReq.isCancelled())) {
 						if(logMINOR)
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;

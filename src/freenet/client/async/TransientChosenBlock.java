@@ -30,7 +30,7 @@ public class TransientChosenBlock extends ChosenBlock {
 
 	@Override
 	public boolean isCancelled() {
-		return request.isCancelled(null);
+		return request.isCancelled();
 	}
 
 	@Override
