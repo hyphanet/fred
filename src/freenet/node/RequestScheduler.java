@@ -5,8 +5,6 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.keys.Key;
@@ -46,7 +44,7 @@ public interface RequestScheduler {
 
 	public ChosenBlock grabRequest();
 
-	public void removeRunningRequest(SendableRequest request, ObjectContainer container);
+	public void removeRunningRequest(SendableRequest request);
 
 	/**
 	 * This only works for persistent requests, because transient requests are not
@@ -63,7 +61,7 @@ public interface RequestScheduler {
 	 * @param container
 	 * @return
 	 */
-	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent);
 
 	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
 

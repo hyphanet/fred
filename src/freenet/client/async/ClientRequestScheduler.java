@@ -244,7 +244,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final transient IdentityHashSet<SendableRequest> runningPersistentRequests = new IdentityHashSet<SendableRequest> ();
 	
 	@Override
-	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
+	public void removeRunningRequest(SendableRequest request) {
 		synchronized(runningPersistentRequests) {
 			if(runningPersistentRequests.remove(request)) {
 				if(logMINOR)
@@ -252,10 +252,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
-		boolean active = container.ext().isActive(request);
-		if(!active) container.activate(request, 1);
 		request.clearCooldown(clientContext, false);
-		if(!active) container.deactivate(request, 1);
 	}
 	
 	@Override
@@ -514,7 +511,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	@Override
-	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent) {
 		return selector.hasKey(key, null);
 	}
 
