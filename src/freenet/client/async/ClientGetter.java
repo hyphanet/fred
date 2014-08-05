@@ -192,13 +192,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				resetBlocks();
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, null, context, realTimeFlag, initialMetadata != null);
+						true, context, realTimeFlag, initialMetadata != null);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
 			if(currentState != null && !finished) {
 				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
-					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, null, context);
+					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, context);
 				} else
 					currentState.schedule(context);
 			}
