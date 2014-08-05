@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.util.HashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
@@ -47,7 +45,7 @@ public class PersistentPutDir extends FCPMessage {
 	
 	public PersistentPutDir(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey, ObjectContainer container) {
+	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey) {
 		this.identifier = identifier;
 		this.uri = publicURI;
 		this.privateURI = privateURI;
@@ -65,10 +63,10 @@ public class PersistentPutDir extends FCPMessage {
 		this.compressorDescriptor = compressorDescriptor;
 		this.realTime = realTime;
 		this.splitfileCryptoKey = splitfileCryptoKey;
-		cached = generateFieldSet(container);
+		cached = generateFieldSet();
 	}
 
-	private SimpleFieldSet generateFieldSet(ObjectContainer container) {
+	private SimpleFieldSet generateFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
@@ -104,10 +102,6 @@ public class PersistentPutDir extends FCPMessage {
 				Bucket origData = e.getData();
 				Bucket data = origData;
 				boolean deactivate = false;
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					deactivate = !container.ext().isActive(data);
-				if(deactivate)
-					container.activate(data, 1);
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
 				}
@@ -126,8 +120,6 @@ public class PersistentPutDir extends FCPMessage {
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
-				if(deactivate)
-					container.deactivate(origData, 1);
 			}
 			files.put(num, subset);
 		}
