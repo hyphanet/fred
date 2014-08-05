@@ -73,7 +73,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			selectorContainer.store(core);
 			System.err.println("Created new core...");
 		}
-		core.onStarted(selectorContainer, cooldownTime, sched, context);
+		core.onStarted(cooldownTime, sched, context);
 		return core;
 	}
 
@@ -85,8 +85,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 	private final byte[] globalSalt;
 
-	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
-		super.onStarted(container, context);
+	private void onStarted(long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
+		super.onStarted(context);
 		System.err.println("insert scheduler: "+isInsertScheduler);
 		this.sched = sched;
 		hintGlobalSalt(globalSalt);

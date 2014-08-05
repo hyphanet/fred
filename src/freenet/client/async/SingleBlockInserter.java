@@ -347,7 +347,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			tryEncode(null, context);
 			onSuccess(null, context);
 		} else {
-			getScheduler(context).registerInsert(this, persistent, null);
+			getScheduler(context).registerInsert(this, persistent);
 		}
 	}
 

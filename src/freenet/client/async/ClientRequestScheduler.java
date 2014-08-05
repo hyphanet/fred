@@ -105,14 +105,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	static final int QUEUE_THRESHOLD = 100;
 	
-	public void registerInsert(final SendableRequest req, boolean persistent, ObjectContainer container) {
+	public void registerInsert(final SendableRequest req, boolean persistent) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(persistent) {
-		    schedCore.innerRegister(req, container, clientContext, null);
+		    schedCore.innerRegister(req, clientContext, null);
 		    starter.wakeUp();
 		} else {
-			schedTransient.innerRegister(req, null, clientContext, null);
+			schedTransient.innerRegister(req, clientContext, null);
 			starter.wakeUp();
 		}
 	}
@@ -185,7 +185,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
 							if(!getter.preRegister(clientContext, true)) {
-								schedCore.innerRegister(getter, container, clientContext, getters);
+								schedCore.innerRegister(getter, clientContext, getters);
 							}
 						} else
 							getter.preRegister(clientContext, false);
@@ -210,7 +210,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(getter.preRegister(clientContext, true)) continue;
 				}
 				if(!getter.isCancelled())
-					schedTransient.innerRegister(getter, null, clientContext, getters);
+					schedTransient.innerRegister(getter, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -317,10 +317,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
-	public void reregisterAll(final ClientRequester request, ObjectContainer container, short oldPrio) {
-		schedTransient.reregisterAll(request, this, null, clientContext, oldPrio);
+	public void reregisterAll(final ClientRequester request, short oldPrio) {
+		schedTransient.reregisterAll(request, this, clientContext, oldPrio);
 		if(schedCore != null)
-			schedCore.reregisterAll(request, this, container, clientContext, oldPrio);
+			schedCore.reregisterAll(request, this, clientContext, oldPrio);
 		starter.wakeUp();
 	}
 	
@@ -338,7 +338,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					@Override
 					public boolean run(ClientContext context) {
-						schedCore.succeeded(succeeded, null);
+						schedCore.succeeded(succeeded);
 						return false;
 					}
                                         @Override
@@ -352,7 +352,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
 		} else
-			schedTransient.succeeded(succeeded, null);
+			schedTransient.succeeded(succeeded);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
@@ -367,7 +367,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 				@Override
 				public void run() {
-					schedTransient.tripPendingKey(key, block, null, clientContext);
+					schedTransient.tripPendingKey(key, block, clientContext);
 				}
 
 				@Override
@@ -385,7 +385,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					@Override
 					public boolean run(ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-						schedCore.tripPendingKey(key, block, null, clientContext);
+						schedCore.tripPendingKey(key, block, clientContext);
 						return false;
 					}
 					
@@ -518,9 +518,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return selector.hasKey(key, null);
 	}
 
-	public long countPersistentWaitingKeys(ObjectContainer container) {
+	public long countPersistentWaitingKeys() {
 		if(schedCore == null) return 0;
-		return schedCore.countWaitingKeys(container);
+		return schedCore.countWaitingKeys();
 	}
 	
 	public boolean isInsertScheduler() {
@@ -529,9 +529,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get, boolean dontComplain, ObjectContainer container) {
 		if(get.persistent())
-			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, container);
+			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 		else
-			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
+			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 	}
 
 	void addPersistentPendingKeys(KeyListener listener) {

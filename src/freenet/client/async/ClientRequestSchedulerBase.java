@@ -9,8 +9,6 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.keys.Key;
@@ -89,7 +87,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	 * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
 	 * or make req a SendableRequest[] and register them all at once.
 	 */
-	void innerRegister(SendableRequest req, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
+	void innerRegister(SendableRequest req, ClientContext context, SendableRequest[] maybeActive) {
 		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
@@ -100,22 +98,16 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
 		short prio = req.getPriorityClass();
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
-		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		sched.selector.addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, container, context);
+		addToRequestsByClientRequest(req.getClientRequest(), req);
+		sched.selector.addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
 	}
 	
-	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
+	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req) {
 		if(clientRequest != null || persistent()) { // Client request null is only legal for transient requests
-			boolean deactivate = false;
-			if(persistent()) {
-				deactivate = !container.ext().isActive(clientRequest);
-				if(deactivate) container.activate(clientRequest, 1);
-			}
 			// If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
 			// That does not matter.
 			clientRequest.addToRequests(req);
-			if(deactivate) container.deactivate(clientRequest, 1);
 		}
 	}
 	
@@ -136,20 +128,20 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	 * Note that this will return all kinds of requests, so the caller will have
 	 * to filter them according to isInsert and isSSKScheduler.
 	 */
-	protected SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
+	protected SendableRequest[] getSendableRequests(ClientRequester request) {
 		if(request != null || persistent()) // Client request null is only legal for transient requests
 			return request.getSendableRequests();
 		else return null;
 	}
 
-	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
+	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain) {
 		if(cr != null || persistent()) // Client request null is only legal for transient requests
 			cr.removeFromRequests(req, dontComplain);
 	}
 	
-	public void reregisterAll(ClientRequester request, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
+	public void reregisterAll(ClientRequester request, RequestScheduler lock, ClientContext context, short oldPrio) {
 		if(request.persistent() != persistent()) return;
-		SendableRequest[] reqs = getSendableRequests(request, container);
+		SendableRequest[] reqs = getSendableRequests(request);
 		
 		if(reqs == null) return;
 		for(int i=0;i<reqs.length;i++) {
@@ -159,12 +151,9 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 				Logger.error(this, "Request "+i+" is null reregistering for "+request);
 				continue;
 			}
-			if(persistent())
-				container.activate(req, 1);
 			boolean isInsert = req.isInsert();
 			// FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
 			if(isInsert != isInsertScheduler || req.isSSK() != isSSKScheduler) {
-				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
 			if(req.persistent() != persistent()) {
@@ -175,15 +164,11 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			req.unregister(context, oldPrio);
 			//Remove from the starterQueue
 			// Then can do innerRegister() (not register()).
-			if(persistent())
-				container.activate(req, 1);
-			innerRegister(req, container, context, null);
-			if(persistent())
-				container.deactivate(req, 1);
+			innerRegister(req, context, null);
 		}
 	}
 
-	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
+	public void succeeded(BaseSendableGet succeeded) {
 		// Do nothing.
 	}
 
@@ -231,7 +216,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return found;
 	}
 	
-	public short getKeyPrio(Key key, short priority, ObjectContainer container, ClientContext context) {
+	public short getKeyPrio(Key key, short priority, ClientContext context) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = null;
@@ -251,14 +236,14 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return priority;
 	}
 	
-	public synchronized long countWaitingKeys(ObjectContainer container) {
+	public synchronized long countWaitingKeys() {
 		long count = 0;
 		for(KeyListener listener : keyListeners)
 			count += listener.countKeys();
 		return count;
 	}
 	
-	public boolean anyWantKey(Key key, ObjectContainer container, ClientContext context) {
+	public boolean anyWantKey(Key key, ClientContext context) {
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = null;
@@ -288,7 +273,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return false;
 	}
 	
-	public boolean tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+	public boolean tripPendingKey(Key key, KeyBlock block, ClientContext context) {
 		if((key instanceof NodeSSK) != isSSKScheduler) {
 			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
 			return false;
@@ -327,7 +312,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		return ret;
 	}
 	
-	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
+	public SendableGet[] requestsForKey(Key key, ClientContext context) {
 		ArrayList<SendableGet> list = null;
 		assert(key instanceof NodeSSK == isSSKScheduler);
 		byte[] saltedKey = saltKey(key);
@@ -344,7 +329,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		else return list.toArray(new SendableGet[list.size()]);
 	}
 	
-	public void onStarted(ObjectContainer container, ClientContext context) {
+	public void onStarted(ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
 	}
 	

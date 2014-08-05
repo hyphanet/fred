@@ -1108,7 +1108,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					String plainText = null;
 					try {
 						if(count) {
-							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys(null) + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys(null);
+							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys() + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys();
 							Logger.minor(this, "Total waiting CHKs: "+queued);
 							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countQueuedRequests() + core.requestStarters.chkFetchSchedulerRT.countQueuedRequests();
 							Logger.minor(this, "Total queued CHK requests (including transient): "+reallyQueued);

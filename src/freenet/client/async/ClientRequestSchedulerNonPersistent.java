@@ -43,13 +43,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	}
 
 	@Override
-	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
+	public void succeeded(BaseSendableGet succeeded) {
 		// Do nothing.
 		// FIXME: Keep a list of recently succeeded ClientRequester's.
 		if(isInsertScheduler) return;
-		if(persistent()) {
-			container.activate(succeeded, 1);
-		}
 		if(succeeded.isCancelled()) return;
 		// Don't bother with getCooldownTime at this point.
 			if(logMINOR)

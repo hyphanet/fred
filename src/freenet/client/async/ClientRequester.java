@@ -290,10 +290,10 @@ public abstract class ClientRequester {
 			this.priorityClass = newPriorityClass;
 		}
 		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
-		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, null, oldPrio);
-		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, null, oldPrio);
-		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, null, oldPrio);
-		ctx.getSskInsertScheduler(realTimeFlag).reregisterAll(this, null, oldPrio);
+		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, oldPrio);
+		ctx.getSskInsertScheduler(realTimeFlag).reregisterAll(this, oldPrio);
 	}
 
 	public boolean realTimeFlag() {

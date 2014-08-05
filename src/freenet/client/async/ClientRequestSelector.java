@@ -360,9 +360,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 					}
 					if(req.persistent())
-						schedCore.innerRegister(req, container, context, null);
+						schedCore.innerRegister(req, context, null);
 					else
-						schedTransient.innerRegister(req, container, context, null);
+						schedTransient.innerRegister(req, context, null);
 					continue;
 				}
 				
@@ -656,14 +656,14 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
      * @param context The client context object, which contains links to all the important objects
      * that are not persisted in the database, e.g. executors, temporary filename generator, etc.
      */
-    void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ObjectContainer container, ClientContext context) {
+    void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, ClientContext context) {
         if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
             if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(false, container, null);
+                clientGrabber = new SectoredRandomGrabArray(false, null, null);
                 newPriorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
@@ -673,14 +673,14 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 // Request
                 SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
                 if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, container, clientGrabber);
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, null, clientGrabber);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-                    clientGrabber.addGrabber(client, requestGrabber, container, context);
+                    clientGrabber.addGrabber(client, requestGrabber, null, context);
                     // FIXME unnecessary as it knows its parent and addGrabber() will call it???
                     context.cooldownTracker.clearCachedWakeup(clientGrabber);
                 }
-                requestGrabber.add(cr, req, container, context);
+                requestGrabber.add(cr, req, null, context);
             }
         }
         sched.wakeStarter();
