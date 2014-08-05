@@ -62,6 +62,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     requester.onResume(context);
                 }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
+                ois.close();
+                fis = null;
                 System.out.println("Resumed from saved requests ...");
                 onStarted();
                 return;
