@@ -1032,6 +1032,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     
     @Override
     public void onResume(ClientContext context) {
+        super.onResume(context);
         // DO NOT call getter.onResume()! The tree starts at the ClientRequester, i.e. the ClientGetter.
         if(getter == null) {
             if(returnBucket != null) returnBucket.onResume(context);
