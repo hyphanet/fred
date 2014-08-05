@@ -303,7 +303,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * been activated already if it is persistent.
 	 */
 	@Override
-	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now) {
+	public long exclude(RandomGrabArrayItem item, ClientContext context, long now) {
 		if(sched.isRunningOrQueuedPersistentRequest((SendableRequest)item)) {
 			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
 			return Long.MAX_VALUE;
@@ -322,7 +322,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 */
 	@Override
 	public long excludeSummarily(HasCooldownCacheItem item,
-			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
+			HasCooldownCacheItem parent, long now) {
 		return core.clientContext.cooldownTracker.getCachedWakeup(item, now);
 	}
 

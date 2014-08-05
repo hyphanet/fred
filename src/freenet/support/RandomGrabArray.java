@@ -186,7 +186,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				changedMe = true;
 				continue;
 			}
-			if(excluding.excludeSummarily(ret, this, container, persistent, now) > 0) {
+			if(excluding.excludeSummarily(ret, this, now) > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
 					if(persistent) {
@@ -210,7 +210,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				oret.setParentGrabArray(null);
 			}
 			if(itemWakeTime == 0)
-				itemWakeTime = excluding.exclude(ret, container, context, now);
+				itemWakeTime = excluding.exclude(ret, context, now);
 			if(ret != null && itemWakeTime > 0) {
 				excluded++;
 				if(persistent)
@@ -319,7 +319,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				}
 				boolean excludeItem = false;
 				boolean activated = false;
-				long excludeTime = excluding.excludeSummarily(item, this, container, persistent, now);
+				long excludeTime = excluding.excludeSummarily(item, this, now);
 				if(excludeTime > 0) {
 					// In cooldown, will be wanted later.
 					excludeItem = true;
@@ -343,7 +343,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						excludeItem = true;
 					}
 					if(!excludeItem) {
-						itemWakeTime = excluding.exclude(item, container, context, now);
+						itemWakeTime = excluding.exclude(item, context, now);
 						if(itemWakeTime > 0) {
 							if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
 							excludeItem = true;

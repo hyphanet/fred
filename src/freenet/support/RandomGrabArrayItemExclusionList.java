@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 
@@ -13,11 +11,11 @@ public interface RandomGrabArrayItemExclusionList {
 	/** Can this item be excluded because of the cooldown queue, without activating it? 
 	 * @return The time at which the item should have valid requests, or -1 if it is 
 	 * valid already. */
-	public long excludeSummarily(HasCooldownCacheItem item, HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now);
+	public long excludeSummarily(HasCooldownCacheItem item, HasCooldownCacheItem parent, long now);
 	
 	/**
 	 * Whether this item can be returned right now.
 	 */
-	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now);
+	public long exclude(RandomGrabArrayItem item, ClientContext context, long now);
 
 }
