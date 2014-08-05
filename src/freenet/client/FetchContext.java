@@ -158,6 +158,14 @@ public class FetchContext implements Cloneable, Serializable {
 		hasOwnEventProducer = true;
 	}
 	
+	/** Copy a FetchContext, creating a new EventProducer and not changing the blocks list.
+     * @param ctx The old FetchContext to copy.
+     * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
+     */
+    public FetchContext(FetchContext ctx, int maskID) {
+        this(ctx, maskID, false, null);
+    }
+
 	/** Copy a FetchContext.
 	 * @param ctx The old FetchContext to copy.
 	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.

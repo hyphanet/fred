@@ -113,7 +113,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true);
 
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK);
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -165,7 +165,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				message.priorityClass, message.persistenceType, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;

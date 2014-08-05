@@ -124,7 +124,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		private final boolean executable;
 		
 		DependencyJarFetcher(File filename, FreenetURI chk, long expectedLength, byte[] expectedHash, JarFetcherCallback cb, boolean essential, boolean executable) throws FetchException {
-			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK, false, null);
+			FetchContext myCtx = new FetchContext(dependencyCtx, FetchContext.IDENTICAL_MASK);
 			File parent = filename.getParentFile();
 			if(parent == null) parent = new File(".");
 			try {

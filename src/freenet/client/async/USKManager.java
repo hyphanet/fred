@@ -177,7 +177,7 @@ public class USKManager {
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ClientContext context, boolean persistent, boolean ignoreUSKDatehints) {
 		FetchContext fctx = ignoreUSKDatehints ? backgroundFetchContextIgnoreDBR : backgroundFetchContext;
-		return getFetcher(usk, persistent ? new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null) : fctx, true, client.persistent(), client.realTimeFlag(), cb, true, context, false);
+		return getFetcher(usk, persistent ? new FetchContext(fctx, FetchContext.IDENTICAL_MASK) : fctx, true, client.persistent(), client.realTimeFlag(), cb, true, context, false);
 	}
 	
 	/**
@@ -192,7 +192,7 @@ public class USKManager {
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
 		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK), RequestStarter.UPDATE_PRIORITY_CLASS, new NullBucket(), null, null);
 		try {
 			get.start(context);
 		} catch (FetchException e) {
@@ -219,7 +219,7 @@ public class USKManager {
 		}
 		uri = uri.sskForUSK();
 		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
-		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(rcBulk), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK), priority, new NullBucket(), null, null);
 		try {
 			get.start(context);
 		} catch (FetchException e) {
@@ -293,7 +293,7 @@ public class USKManager {
                 return rcBulk;
             }
 			
-		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, new NullBucket(), null, null);
+		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK), priority, new NullBucket(), null, null);
 		try {
 			get.start(context);
 		} catch (FetchException e) {
@@ -406,7 +406,7 @@ public class USKManager {
 			for(final USK key : toFetch) {
 				final long l = key.suggestedEdition;
 				if(logMINOR) Logger.minor(this, "Prefetching content for background fetch for edition "+l+" on "+key);
-				FetchContext fctx = new FetchContext(realFetchContext, FetchContext.IDENTICAL_MASK, false, null);
+				FetchContext fctx = new FetchContext(realFetchContext, FetchContext.IDENTICAL_MASK);
 				final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 					
 					@Override

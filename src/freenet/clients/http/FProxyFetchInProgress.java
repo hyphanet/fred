@@ -131,7 +131,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.timeStarted = System.currentTimeMillis();
 		this.fctx = fctx;
         this.rc = rc;
-		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
+		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK);
 		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
 		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
