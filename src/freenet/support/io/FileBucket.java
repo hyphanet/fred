@@ -117,19 +117,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		return deleteOnFree;
 	}
 
-	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(file, 5);
-		if(logMINOR) Logger.minor(this, "Removing "+this);
-		container.delete(file);
-		container.delete(this);
-	}
-	
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(file, 5);
 	}

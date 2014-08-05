@@ -168,22 +168,6 @@ public class MultiReaderBucket implements Serializable {
 		}
 
 		@Override
-		public void storeTo(ObjectContainer container) {
-			container.store(this);
-		}
-
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			container.delete(this);
-			synchronized(MultiReaderBucket.this) {
-				if(!closed) return;
-			}
-			bucket.removeFrom(container);
-			container.delete(readers);
-			container.delete(MultiReaderBucket.this);
-		}
-
-		@Override
 		public Bucket createShadow() {
 			return null;
 		}

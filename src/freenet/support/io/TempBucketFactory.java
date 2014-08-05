@@ -438,16 +438,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			return currentBucket.createShadow();
 		}
 
-		@Override
-		public void removeFrom(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void storeTo(ObjectContainer container) {
-			throw new UnsupportedOperationException();
-		}
-		
 		public boolean objectCanNew(ObjectContainer container) {
 			Logger.error(this, "Not storing TempBucket in database", new Exception("error"));
 			throw new IllegalStateException();

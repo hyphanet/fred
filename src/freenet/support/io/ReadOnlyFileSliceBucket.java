@@ -137,17 +137,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 	public void free() {
 	}
 
-	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(file);
-		container.delete(this);
-	}
-	
 	public void objectOnActivate(ObjectContainer container) {
 		// Cascading activation of dependancies
 		container.activate(file, 5);

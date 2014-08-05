@@ -108,20 +108,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(generator);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
-		// filenameGenerator is a global, we don't need to worry about it.
-		container.delete(this);
-	}
-
-	@Override
 	public Bucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();

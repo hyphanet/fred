@@ -232,7 +232,7 @@ public class ClientPutDir extends ClientPutBase {
 			} else {
 				ManifestElement e = (ManifestElement) o;
 				if(logMINOR) Logger.minor(this, "Freeing "+e);
-				e.freeData(null, persistenceType == PERSIST_FOREVER);
+				e.freeData();
 			}
 		}
 	}

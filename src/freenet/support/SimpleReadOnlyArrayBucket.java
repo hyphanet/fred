@@ -69,16 +69,6 @@ public class SimpleReadOnlyArrayBucket implements Bucket, Serializable {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-
-	@Override
 	public Bucket createShadow() {
 		if(buf.length < 256*1024) {
 			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset+length));

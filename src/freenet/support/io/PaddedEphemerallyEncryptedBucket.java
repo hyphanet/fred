@@ -348,20 +348,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		return key;
 	}
 
-	@Override
-	public void storeTo(ObjectContainer container) {
-		bucket.storeTo(container);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
-		bucket.removeFrom(container);
-		container.delete(this);
-	}
-	
 	public void objectOnActivate(ObjectContainer container) {
 		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
 		// Cascading activation of dependancies

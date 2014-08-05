@@ -380,8 +380,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			container.activate(bucket, 5);
 		bucket.free();
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			bucket.removeFrom(container);
 	}
 	
 }

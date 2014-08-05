@@ -384,8 +384,6 @@ public class BucketTools {
 			}
 			Bucket[] buckets = ((FileBucket)origData).split(splitSize);
 			if(persistent)
-			for(Bucket bucket : buckets)
-				bucket.storeTo(container);
 			return buckets;
 		}
 		long length = origData.size();
@@ -423,12 +421,6 @@ public class BucketTools {
 		}
 		if(freeData)
 			origData.free();
-		if(persistent && freeData)
-			origData.removeFrom(container);
-		if(persistent) {
-			for(Bucket bucket : buckets)
-				bucket.storeTo(container);
-		}
 		return buckets;
 	}
 	

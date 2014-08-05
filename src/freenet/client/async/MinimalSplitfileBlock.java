@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.SplitfileBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -83,23 +81,4 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 //			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 //	}
 //
-	@Override
-	public synchronized void storeTo(ObjectContainer container) {
-		if(data != null)
-			data.storeTo(container);
-		container.store(this);
-		if(logMINOR)
-			Logger.minor(this, "Storing "+this+" with data: "+data+" id = "+container.ext().getID(this));
-	}
-
-	public synchronized void removeFrom(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Removing "+this+" with data: "+data);
-		if(data != null) {
-			container.activate(data, 1);
-			data.removeFrom(container);
-		}
-		container.delete(this);
-	}
-
 }

@@ -105,18 +105,6 @@ public class ArrayBucket implements Bucket, Serializable {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(data);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(data);
-		container.delete(this);
-	}
-
-	@Override
 	public Bucket createShadow() {
 		return null;
 	}

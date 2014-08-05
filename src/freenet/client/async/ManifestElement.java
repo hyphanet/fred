@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -98,17 +96,11 @@ public class ManifestElement {
 		return false;
 	}
 
-	public void freeData(ObjectContainer container, boolean persistForever) {
+	public void freeData() {
 		if(data != null) {
-			if(persistForever)
-				container.activate(data, 1);
 			data.free();
-			if(persistForever)
-				data.removeFrom(container);
 			data = null;
 		}
-		if(persistForever)
-			container.delete(this);
 	}
 
 	public String getName() {
@@ -131,11 +123,4 @@ public class ManifestElement {
 		return targetURI;
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.activate(data, 1);
-		data.removeFrom(container);
-		container.activate(targetURI, 5);
-		targetURI.removeFrom(container);
-		container.delete(this);
-	}
 }

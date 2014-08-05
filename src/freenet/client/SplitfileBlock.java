@@ -15,8 +15,6 @@ public interface SplitfileBlock {
 	/** Get data */
 	abstract Bucket getData();
 	
-	abstract void storeTo(ObjectContainer container);
-
 	/** Set the data but only if there is no data already. 
 	 * @return True if we set the data to the new bucket. */
 	abstract Bucket trySetData(Bucket data);

@@ -41,19 +41,11 @@ public class InsertBlock {
 			if(data == null) return;
 		}
 		data.free();
-		if(container != null) {
-			data.removeFrom(container);
-			data = null; // don't remove twice
-		}
 		if(container != null)
 			container.store(this);
 	}
 	
 	public void removeFrom(ObjectContainer container) {
-		if(data != null) {
-			container.activate(data, 1);
-			data.removeFrom(container);
-		}
 		if(desiredURI != null) {
 			container.activate(desiredURI, 5);
 			desiredURI.removeFrom(container);

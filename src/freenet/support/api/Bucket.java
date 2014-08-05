@@ -62,21 +62,6 @@ public interface Bucket {
 	public void free();
 	
 	/**
-	 * Write the bucket and all its dependancies to the database.
-	 * Update the stored copy and its dependancies if necessary.
-	 */
-	public void storeTo(ObjectContainer container);
-
-	/**
-	 * Remove the bucket and everything under it from the database.
-	 * You don't need to call this if it hasn't been storeTo()'ed: buckets 
-	 * that use the database internally will run a blocking job to delete 
-	 * internal structure in free().
-	 * @param container The database.
-	 */
-	public void removeFrom(ObjectContainer container);
-
-	/**
 	 * Create a shallow read-only copy of this bucket, using different 
 	 * objects but using the same external storage. If this is not possible, 
 	 * return null. Note that if the underlying bucket is deleted, the copy

@@ -74,7 +74,6 @@ public class DirectDirPutFile extends DirPutFile {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		data.free();
-		data.removeFrom(container);
 		container.delete(this);
 	}
 

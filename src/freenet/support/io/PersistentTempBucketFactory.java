@@ -254,8 +254,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			try {
 				if(bucket.toFree())
 					bucket.realFree();
-				if(bucket.toRemove())
-					bucket.realRemoveFrom(null);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
 			}

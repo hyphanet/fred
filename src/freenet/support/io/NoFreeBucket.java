@@ -54,16 +54,6 @@ public class NoFreeBucket implements Bucket, Serializable {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-
-	@Override
 	public Bucket createShadow() {
 		return proxy.createShadow();
 	}

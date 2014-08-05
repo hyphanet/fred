@@ -97,26 +97,6 @@ public class DelayedFreeBucket implements Bucket {
 	}
 
 	@Override
-	public void storeTo(ObjectContainer container) {
-		bucket.storeTo(container);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Removing from database: "+this);
-		synchronized(this) {
-			boolean wasQueued = freed || removed;
-			if(!freed)
-				Logger.error(this, "Asking to remove from database but not freed: "+this, new Exception("error"));
-			removed = true;
-			if(!wasQueued)
-				this.factory.delayedFreeBucket(this);
-		}
-	}
-
-	@Override
 	public String toString() {
 		return super.toString()+":"+bucket;
 	}
@@ -145,16 +125,6 @@ public class DelayedFreeBucket implements Bucket {
 		bucket.free();
 	}
 
-	public void realRemoveFrom(ObjectContainer container) {
-		synchronized(this) {
-			if(reallyRemoved)
-				Logger.error(this, "Calling realRemoveFrom() twice on "+this);
-			reallyRemoved = true;
-		}
-		bucket.removeFrom(container);
-		container.delete(this);
-	}
-	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));

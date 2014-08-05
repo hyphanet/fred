@@ -225,18 +225,6 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     }
 
     @Override
-    public void storeTo(ObjectContainer container) {
-        underlying.storeTo(container);
-        container.store(this);
-    }
-
-    @Override
-    public void removeFrom(ObjectContainer container) {
-        underlying.removeFrom(container);
-        container.delete(this);
-    }
-    
-    @Override
     public Bucket createShadow() {
         Bucket shadow = underlying.createShadow();
         TrivialPaddedBucket ret = new TrivialPaddedBucket(shadow, size);
