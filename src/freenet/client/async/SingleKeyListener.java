@@ -33,8 +33,7 @@ public class SingleKeyListener implements KeyListener {
 	}
 
 	@Override
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
-			ClientContext context) {
+	public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context) {
 		if(!key.equals(this.key)) return -1;
 		else return prio;
 	}
@@ -45,31 +44,25 @@ public class SingleKeyListener implements KeyListener {
 	}
 
 	@Override
-	public short getPriorityClass(ObjectContainer container) {
+	public short getPriorityClass() {
 		return prio;
 	}
 
 	@Override
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container,
-			ClientContext context) {
+	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
 		if(!key.equals(this.key)) return null;
 		return new SendableGet[] { fetcher };
 	}
 
 	@Override
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found,
-			ObjectContainer container, ClientContext context) {
+	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ClientContext context) {
 		if(!key.equals(this.key)) return false;
-		if(persistent)
-			container.activate(fetcher, 1);
 		try {
-			fetcher.onGotKey(key, found, container, context);
+			fetcher.onGotKey(key, found, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Failed: "+t, t);
 			fetcher.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), null, context);
 		}
-		if(persistent)
-			container.deactivate(fetcher, 1);
 		synchronized(this) {
 			done = true;
 		}

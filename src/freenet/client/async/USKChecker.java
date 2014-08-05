@@ -43,11 +43,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	@Override
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(cb, 1);
-		}
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ClientContext context) {
 		// No need to check from here since USKFetcher will be told anyway.
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
@@ -130,8 +126,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
-			ClientContext context) {
+	protected void onBlockDecodeError(SendableRequestItem token, ClientContext context) {
 		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, context);
 	}
 

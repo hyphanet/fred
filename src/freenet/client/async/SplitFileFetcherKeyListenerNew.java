@@ -7,8 +7,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.SHA256;
@@ -234,8 +232,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     }
 
     @Override
-    public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container,
-            ClientContext context) {
+    public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context) {
         // Caller has already called probablyWantKey(), so don't do it again.
         byte[] salted = localSaltKey(key);
         for(int i=0;i<segmentFilters.length;i++) {
@@ -248,15 +245,13 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     }
 
     @Override
-    public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container,
-            ClientContext context) {
+    public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
         // FIXME Ignored. We don't use the cooldown *queue*.
         return null;
     }
 
     @Override
-    public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock block,
-            ObjectContainer container, ClientContext context) {
+    public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock block, ClientContext context) {
         // Caller has already called probablyWantKey(), so don't do it again.
         boolean found = false;
         byte[] salted = localSaltKey(key);
@@ -293,7 +288,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     }
 
     @Override
-    public short getPriorityClass(ObjectContainer container) {
+    public short getPriorityClass() {
         return fetcher.getPriorityClass();
     }
 

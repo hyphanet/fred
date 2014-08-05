@@ -179,13 +179,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
 	@Override
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(parent, 1);
-			container.activate(ctx, 1);
-		}
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ClientContext context) {
 		if(parent instanceof ClientGetter)
-			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+			((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
 		parent.completedBlock(fromStore, context);
 		// Extract data
 		
@@ -193,9 +189,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
 			return;
 		}
-		Bucket data = extract(block, container, context);
+		Bucket data = extract(block, context);
 		if(key instanceof ClientSSK) {
-			context.uskManager.checkUSK(uri, persistent, container, data != null && !block.isMetadata());
+			context.uskManager.checkUSK(uri, persistent, null, data != null && !block.isMetadata());
 		}
 		if(data == null) {
 			if(logMINOR)
@@ -207,23 +203,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
 
 		if(bucketSnoop != null) {
-			if(persistent)
-				container.activate(bucketSnoop, 1);
-			if(bucketSnoop.snoopBucket(data, block.isMetadata(), container, context)) {
+			if(bucketSnoop.snoopBucket(data, block.isMetadata(), null, context)) {
 				cancel(context);
-				if(persistent)
-					container.deactivate(bucketSnoop, 1);
 				data.free();
 				return;
 			}
-			if(persistent)
-				container.deactivate(bucketSnoop, 1);
 		}
 
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult(clientMetadata, data), container, context);
+			onSuccess(new FetchResult(clientMetadata, data), context);
 		} else {
-			handleMetadata(data, container, context);
+			handleMetadata(data, null, context);
 		}
 	}
 
@@ -286,7 +276,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 	
 	@Override
-	protected void onSuccess(final FetchResult result, ObjectContainer container, final ClientContext context) {
+	protected void onSuccess(final FetchResult result, final ClientContext context) {
 		synchronized(this) {
 			// So a SingleKeyListener isn't created.
 			finished = true;
@@ -295,7 +285,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
 			result.asBucket().free();
-			if(persistent) result.asBucket().removeFrom(container);
 			onFailure(new FetchException(FetchException.CANCELLED), false, context);
 			return;
 		}
@@ -318,12 +307,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this, context);
 			}
 			result.asBucket().free();
-			if(persistent) result.asBucket().removeFrom(container);
 			return;
 		} else if(result.size() > ctx.maxOutputLength) {
 			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this, context);
 			result.asBucket().free();
-			if(persistent) result.asBucket().removeFrom(container);
 		} else {
 			if(persistent()) {
 				rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, context);
@@ -700,7 +687,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
 					// Return the data
-					onSuccess(new FetchResult(clientMetadata, out), container, context);
+					onSuccess(new FetchResult(clientMetadata, out), context);
 					
 					return;
 				} else {
@@ -719,7 +706,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							// we can simply pass in the output bucket, even if it is not persistent.
 							// If we ever change it so a StreamGenerator can be saved, we'll have to copy here.
 							// Transient buckets should throw if attempted to store.
-							onSuccess(new FetchResult(clientMetadata, data), container, context);
+							onSuccess(new FetchResult(clientMetadata, data), context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}

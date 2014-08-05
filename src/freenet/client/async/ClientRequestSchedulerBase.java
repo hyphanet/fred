@@ -244,7 +244,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		}
 		if(matches == null) return priority;
 		for(KeyListener listener : matches) {
-			short prio = listener.definitelyWantKey(key, saltedKey, container, sched.clientContext);
+			short prio = listener.definitelyWantKey(key, saltedKey, sched.clientContext);
 			if(prio == -1) continue;
 			if(prio < priority) priority = prio;
 		}
@@ -271,7 +271,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		}
 		if(matches != null) {
 			for(KeyListener listener : matches) {
-				if(listener.definitelyWantKey(key, saltedKey, container, sched.clientContext) >= 0)
+				if(listener.definitelyWantKey(key, saltedKey, sched.clientContext) >= 0)
 					return true;
 			}
 		}
@@ -311,7 +311,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		if(matches != null) {
 			for(KeyListener listener : matches) {
 				try {
-					if(listener.handleBlock(key, saltedKey, block, container, context))
+					if(listener.handleBlock(key, saltedKey, block, context))
 						ret = true;
 				} catch (Throwable t) {
 					Logger.error(this, format("Error in handleBlock callback for %s", listener), t);
@@ -334,7 +334,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		synchronized(this) {
 		for(KeyListener listener : keyListeners) {
 			if(!listener.probablyWantKey(key, saltedKey)) continue;
-			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, container, context);
+			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, context);
 			if(reqs == null) continue;
 			if(list == null) list = new ArrayList<SendableGet>();
 			for(SendableGet req: reqs) list.add(req);

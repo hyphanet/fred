@@ -37,18 +37,18 @@ public interface KeyListener {
 	 * @return -1 if we don't want the key, otherwise the priority of the request
 	 * interested in the key.
 	 */
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+	public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context);
 
 	/**
 	 * Find the requests related to a specific key, used in retrying after cooldown.
 	 * Caller should call probablyWantKey() first.
 	 */
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context);
+	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context);
 	
 	/**
 	 * Handle the found data, if we really want it.
 	 */
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context);
+	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ClientContext context);
 	
 	/**
 	 * Is this related to a persistent request?
@@ -61,7 +61,7 @@ public interface KeyListener {
 	 * within the CRSBase lock.
 	 * @param container Database handle.
 	 */
-	short getPriorityClass(ObjectContainer container);
+	short getPriorityClass();
 
 	public long countKeys();
 

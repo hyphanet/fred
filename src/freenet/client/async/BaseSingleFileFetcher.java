@@ -218,12 +218,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return parent.getClient();
 	}
 
-	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(key, 5);
-			container.activate(this.key, 5);
-		}
+	public void onGotKey(Key key, KeyBlock block, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
 				if(logMINOR)
@@ -231,8 +226,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				return;
 			}
 			finished = true;
-			if(persistent)
-				container.store(this);
 			if(isCancelled()) return;
 			if(key == null)
 				throw new NullPointerException();
@@ -244,31 +237,23 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			}
 		}
 		unregister(context, getPriorityClass()); // Key has already been removed from pendingKeys
-		onSuccess(block, false, null, container, context);
-		if(persistent) {
-			container.deactivate(this, 1);
-			container.deactivate(this.key, 1);
-		}
+		onSuccess(block, false, null, context);
 	}
 	
-	public void onSuccess(KeyBlock lowLevelBlock, boolean fromStore, SendableRequestItem token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(key, Integer.MAX_VALUE);
-		}
+	public void onSuccess(KeyBlock lowLevelBlock, boolean fromStore, SendableRequestItem token, ClientContext context) {
 		ClientKeyBlock block;
 		try {
 			block = Key.createKeyBlock(this.key, lowLevelBlock);
-			onSuccess(block, fromStore, token, container, context);
+			onSuccess(block, fromStore, token, context);
 		} catch (KeyVerifyException e) {
-			onBlockDecodeError(token, container, context);
+			onBlockDecodeError(token, context);
 		}
 	}
 	
-	protected abstract void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
-			ClientContext context);
+	protected abstract void onBlockDecodeError(SendableRequestItem token, ClientContext context);
 
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ClientContext context);
 	
 	@Override
 	public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {

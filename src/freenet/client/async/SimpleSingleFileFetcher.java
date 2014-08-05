@@ -88,14 +88,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	/** Will be overridden by SingleFileFetcher */
-	protected void onSuccess(FetchResult data, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(parent, 1);
-			container.activate(rcb, 1);
-		}
+	protected void onSuccess(FetchResult data, ClientContext context) {
 		if(parent.isCancelled()) {
 			data.asBucket().free();
-			if(persistent) data.asBucket().removeFrom(container);
 			onFailure(new FetchException(FetchException.CANCELLED), false, context);
 			return;
 		}
@@ -103,17 +98,14 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(parent, 1);
-		}
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, ClientContext context) {
 		if(parent instanceof ClientGetter)
-			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-		Bucket data = extract(block, container, context);
+			((ClientGetter)parent).addKeyToBinaryBlob(block, null, context);
+		Bucket data = extract(block, context);
 		if(data == null) return; // failed
-		context.uskManager.checkUSK(key.getURI(), fromStore, container, block.isMetadata());
+		context.uskManager.checkUSK(key.getURI(), fromStore, null, block.isMetadata());
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult(new ClientMetadata(null), data), container, context);
+			onSuccess(new FetchResult(new ClientMetadata(null), data), context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, context);
 		}
@@ -122,7 +114,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
 	 * and return null.
 	 */
-	protected Bucket extract(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	protected Bucket extract(ClientKeyBlock block, ClientContext context) {
 		Bucket data;
 		try {
 			data = block.decode(context.getBucketFactory(parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
@@ -168,8 +160,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
-			ClientContext context) {
+	protected void onBlockDecodeError(SendableRequestItem token, ClientContext context) {
 		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, context);
 	}
 

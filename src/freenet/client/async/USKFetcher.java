@@ -1562,7 +1562,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
+	public short definitelyWantKey(Key key, byte[] saltedKey, ClientContext context) {
 		if(!(key instanceof NodeSSK)) return -1;
 		NodeSSK k = (NodeSSK) key;
 		if(!origUSK.samePubKeyHash(k))
@@ -1580,17 +1580,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public short getPriorityClass(ObjectContainer container) {
+	public short getPriorityClass() {
 		return progressPollPriority;
 	}
 
 	@Override
-	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
+	public SendableGet[] getRequestsForKey(Key key, byte[] saltedKey, ClientContext context) {
 		return new SendableGet[0];
 	}
 
 	@Override
-	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context) {
+	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ClientContext context) {
 		if(!(found instanceof SSKBlock)) return false;
 		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 		long edition = watchingKeys.match((NodeSSK)key, lastSlot);
