@@ -10,6 +10,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 
 import freenet.support.ListUtils;
@@ -27,6 +29,7 @@ public class MultiReaderBucket implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Bucket bucket;
+    private boolean hasResumed;
 	
 	// Assume there will be relatively few readers
 	private ArrayList<Bucket> readers;
@@ -176,6 +179,15 @@ public class MultiReaderBucket implements Serializable {
 		public Bucket createShadow() {
 			return null;
 		}
+
+        @Override
+        public void onResume(ClientContext context) {
+            synchronized(MultiReaderBucket.this) {
+                if(hasResumed) return;
+                hasResumed = true;
+            }
+            bucket.onResume(context);
+        }
 		
 	}
 	

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 /** Pads a bucket to the next power of 2 file size. 
@@ -233,6 +234,11 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         TrivialPaddedBucket ret = new TrivialPaddedBucket(shadow, size);
         ret.setReadOnly();
         return ret;
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        underlying.onResume(context);
     }
     
 }

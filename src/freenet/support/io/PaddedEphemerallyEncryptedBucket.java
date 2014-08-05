@@ -12,6 +12,7 @@ import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
@@ -369,5 +370,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		if(newUnderlying == null) return null;
 		return new PaddedEphemerallyEncryptedBucket(this, newUnderlying);
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
 
 }

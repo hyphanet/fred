@@ -13,6 +13,7 @@ import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 /**
@@ -148,5 +149,10 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 		File newFile = new File(fnam);
 		return new ReadOnlyFileSliceBucket(newFile, startAt, length);
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
 
 }

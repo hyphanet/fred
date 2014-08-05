@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 public class NoFreeBucket implements Bucket, Serializable {
@@ -60,5 +61,10 @@ public class NoFreeBucket implements Bucket, Serializable {
 	public Bucket createShadow() {
 		return proxy.createShadow();
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        proxy.onResume(context);
+    }
 
 }

@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 /**
@@ -108,4 +109,9 @@ public class ArrayBucket implements Bucket, Serializable {
 	public Bucket createShadow() {
 		return null;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
 }

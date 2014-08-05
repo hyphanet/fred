@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 /**
@@ -74,5 +75,11 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		}
 		return null;
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Not persistent.
+        throw new UnsupportedOperationException();
+    }
 
 }

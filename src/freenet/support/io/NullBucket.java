@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 public class NullBucket implements Bucket, Serializable {
@@ -72,5 +73,10 @@ public class NullBucket implements Bucket, Serializable {
 	public Bucket createShadow() {
 		return new NullBucket();
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
 }
 

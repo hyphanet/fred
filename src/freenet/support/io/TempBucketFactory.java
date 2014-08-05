@@ -18,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeStarter;
@@ -477,6 +478,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         @Override
         public long creationTime() {
             return creationTime;
+        }
+
+        @Override
+        public void onResume(ClientContext context) {
+            // Not persistent.
+            throw new IllegalStateException();
         }
 	}
 	

@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -148,4 +149,9 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		File newFile = new File(fnam);
 		return new FileBucket(newFile, true, false, false, false, false);
 	}
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
 }
