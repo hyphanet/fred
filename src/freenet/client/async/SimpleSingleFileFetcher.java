@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.io.IOException;
-import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -29,7 +28,7 @@ import freenet.support.io.InsufficientDiskSpaceException;
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
 	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
-			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ObjectContainer container, ClientContext context, boolean deleteFetchContext, boolean realTimeFlag) {
+			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ClientContext context, boolean deleteFetchContext, boolean realTimeFlag) {
 		super(key, maxRetries, ctx, parent, deleteFetchContext, realTimeFlag);
 		this.rcb = rcb;
 		this.token = l;

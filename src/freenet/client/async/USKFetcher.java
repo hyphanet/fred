@@ -180,7 +180,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				boolean isEssential, boolean dontAdd, long l,
 				ObjectContainer container, ClientContext context,
 				boolean deleteFetchContext, boolean realTimeFlag) {
-			super(key, maxRetries, ctx, parent, rcb, isEssential, dontAdd, l, container,
+			super(key, maxRetries, ctx, parent, rcb, isEssential, dontAdd, l,
 					context, deleteFetchContext, realTimeFlag);
 		}
 		

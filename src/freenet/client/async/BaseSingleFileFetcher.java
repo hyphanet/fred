@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
@@ -108,7 +106,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ClientContext context) {
-		if(isEmpty(null)) {
+		if(isEmpty()) {
 			if(logMINOR) Logger.minor(this, "Not retrying because empty");
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		}
@@ -209,7 +207,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return cancelled;
 	}
 	
-	public synchronized boolean isEmpty(ObjectContainer container) {
+	public synchronized boolean isEmpty() {
 		return cancelled || finished;
 	}
 	
@@ -270,20 +268,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 	}
 	
-	public void reschedule(ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(ctx, 1);
-			if(ctx.blocks != null)
-				container.activate(ctx.blocks, 5);
-		}
+	public void reschedule(ClientContext context) {
 		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, ctx.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, null, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
 	}
 	
-	public SendableGet getRequest(Key key, ObjectContainer container) {
+	public SendableGet getRequest(Key key) {
 		return this;
 	}
 
