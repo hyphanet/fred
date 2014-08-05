@@ -2,6 +2,8 @@ package freenet.support.io;
 
 import java.io.IOException;
 
+import freenet.client.async.ClientContext;
+
 /** A RandomAccessThing which allows you to lock it open for a brief period to indicate that you are
  * using it and it would be a bad idea to close the pooled fd. Locking the RAF open does not provide
  * any concurrency guarantees but the implementation must guarantee to do the right thing, either
@@ -34,6 +36,10 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
 	    protected abstract void innerUnlock();
 	    
 	}
+
+	/** Called on resuming, i.e. after serialization. Use to e.g. register with the list of 
+	 * temporary files. */
+    public void onResume(ClientContext context);
 	
 }
 
