@@ -5,8 +5,6 @@ package freenet.client.events;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -85,10 +83,6 @@ public class SplitfileProgressEvent implements ClientEvent, Serializable {
 	@Override
 	public int getCode() {
 		return CODE;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }
