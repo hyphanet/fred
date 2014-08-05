@@ -282,7 +282,7 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.onRemove(req, null);
+				cb.onRemove(req);
 		}
 		return true;
 	}
@@ -426,7 +426,7 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.notifySuccess(req, null);
+				cb.notifySuccess(req);
 		}
 	}
 
@@ -443,7 +443,7 @@ public class FCPClient {
         }
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
-				cb.notifyFailure(req, null);
+				cb.notifyFailure(req);
 		}
 	}
 	

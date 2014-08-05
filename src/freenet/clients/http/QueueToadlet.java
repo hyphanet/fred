@@ -2214,17 +2214,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private final Map<String, PutDirCompletedEvent> completedPutDirs = new LinkedHashMap<String, PutDirCompletedEvent>();
 
 	@Override
-	public void notifyFailure(ClientRequest req, ObjectContainer container) {
+	public void notifyFailure(ClientRequest req) {
 		// FIXME do something???
 	}
 
 	@Override
-	public void notifySuccess(ClientRequest req, ObjectContainer container) {
+	public void notifySuccess(ClientRequest req) {
 		if(uploads == req instanceof ClientGet) return;
 		synchronized(completedRequestIdentifiers) {
 			completedRequestIdentifiers.add(req.getIdentifier());
 		}
-		registerAlert(req, container); // should be safe here
+		registerAlert(req); // should be safe here
 		saveCompletedIdentifiersOffThread();
 	}
 
@@ -2274,7 +2274,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						changed = true;
 						continue;
 					}
-					registerAlert(req, null);
+					registerAlert(req);
 				}
 				if(changed) saveCompletedIdentifiers();
 				return false;
@@ -2368,7 +2368,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 	}
 
-	private void registerAlert(ClientRequest req, ObjectContainer container) {
+	private void registerAlert(ClientRequest req) {
 		final String identifier = req.getIdentifier();
 		if(logMINOR)
 			Logger.minor(this, "Registering alert for "+identifier);
@@ -2379,8 +2379,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		if(req instanceof ClientGet) {
 			FreenetURI uri = ((ClientGet)req).getURI();
-			if(req.isPersistentForever() && uri != null)
-				container.activate(uri, 5);
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -2393,8 +2391,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			core.alerts.register(event);
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
-			if(req.isPersistentForever() && uri != null)
-				container.activate(uri, 5);
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -2407,8 +2403,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			core.alerts.register(event);
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
-			if(req.isPersistentForever() && uri != null)
-				container.activate(uri, 5);
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -2436,7 +2430,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	@Override
-	public void onRemove(ClientRequest req, ObjectContainer container) {
+	public void onRemove(ClientRequest req) {
 		String identifier = req.getIdentifier();
 		synchronized(completedRequestIdentifiers) {
 			completedRequestIdentifiers.remove(identifier);
