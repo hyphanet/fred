@@ -4,10 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.Arrays;
-
-import com.db4o.ObjectContainer;
 
 import freenet.support.api.Bucket;
 
@@ -15,8 +12,10 @@ import freenet.support.api.Bucket;
  * Simple read-only array bucket. Just an adapter class to save some RAM.
  * Wraps a byte[], offset, length into a Bucket. Read-only. ArrayBucket on
  * the other hand is a chain of byte[]'s.
+ * 
+ * Not serializable as it doesn't copy. Should only be used for short-lived hacks for that reason.
  */
-public class SimpleReadOnlyArrayBucket implements Bucket, Serializable {
+public class SimpleReadOnlyArrayBucket implements Bucket {
 
     private static final long serialVersionUID = 1L;
     final byte[] buf;
