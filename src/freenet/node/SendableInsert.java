@@ -36,7 +36,7 @@ public abstract class SendableInsert extends SendableRequest {
 	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
 
 	@Override
-	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error on "+this+" : "+t, t);
 		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
@@ -47,7 +47,7 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskInsertScheduler(realTimeFlag);
 		else

@@ -278,7 +278,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         if(hasFinished()) return;
         Logger.error(this, "Restarting download "+this+" after data corruption");
         // We need to fetch more blocks. Some of them may even be in the datastore.
-        getter.unregister(null, context, getPriorityClass());
+        getter.unregister(context, getPriorityClass());
         try {
             getter.schedule(context, false);
         } catch (KeyListenerConstructionException e) {

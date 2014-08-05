@@ -100,18 +100,17 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
 
     @Override
     /** Choose a random key to fetch. Must not modify anything that is persisted. */
-    public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container,
-            ClientContext context) {
+    public SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
         return storage.chooseRandomKey(keys);
     }
 
     @Override
-    public long countAllKeys(ObjectContainer container, ClientContext context) {
+    public long countAllKeys(ClientContext context) {
         return storage.countUnfetchedKeys();
     }
 
     @Override
-    public long countSendableKeys(ObjectContainer container, ClientContext context) {
+    public long countSendableKeys(ClientContext context) {
         return storage.countSendableKeys();
     }
 
@@ -122,7 +121,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     @Override
-    public RequestClient getClient(ObjectContainer container) {
+    public RequestClient getClient() {
         return parent.parent.getClient();
     }
 
@@ -161,7 +160,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
 
     public void cancel(ClientContext context) {
-        unregister(null, context, parent.getPriorityClass());
+        unregister(context, parent.getPriorityClass());
     }
 
     /** Has preRegister() been called? */

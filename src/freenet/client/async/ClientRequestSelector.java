@@ -184,7 +184,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(req == null) continue;
 			if(isInsertScheduler && req instanceof SendableGet) {
 				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
-				req.internalError(e, sched, container, context, req.persistent());
+				req.internalError(e, sched, context, req.persistent());
 				throw e;
 			}
 			ChosenBlock block = maybeMakeChosenRequest(req, container, context, now);
@@ -203,7 +203,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
 			return null;
 		}
-		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
+		SendableRequestItem token = req.chooseKey(this, context);
 		if(token == null) {
 			if(logMINOR) Logger.minor(this, "Choose key returned null: "+req);
 			return null;
@@ -341,7 +341,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					// maybe we should ask people to report that error if seen
 					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					// Remove it.
-					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
+					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
 						if(chosenTracker.persistent())
 							container.activate(clientGrabber, 1);
@@ -357,7 +357,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							// Okay, it's been removed already. Cool.
 						}
 					} else {
-						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
+						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 					}
 					if(req.persistent())
 						schedCore.innerRegister(req, container, context, null);
@@ -466,7 +466,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				// Now we have chosen a request.
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
-						req.getPriorityClass()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
+						req.getPriorityClass()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 				assert(req.realTimeFlag() == realTime);
 				return new SelectorReturn(req);
@@ -718,8 +718,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                                 SendableRequest req = (SendableRequest) rga.get(m, container);
                                 if(req == null) continue;
                                 container.activate(req, 1);
-                                sendable += req.countSendableKeys(container, context);
-                                all += req.countAllKeys(container, context);
+                                sendable += req.countSendableKeys(context);
+                                all += req.countAllKeys(context);
                                 container.deactivate(req, 1);
                             }
                             System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));

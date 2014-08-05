@@ -65,7 +65,7 @@ public class TransientChosenBlock extends ChosenBlock {
 
 	@Override
 	public SendableRequestSender getSender(ClientContext context) {
-		return request.getSender(null, context);
+		return request.getSender(context);
 	}
 	
 }

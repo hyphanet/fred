@@ -1083,7 +1083,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			a.cancel(context);
 		if(storeChecker != null)
 			// Remove from the store checker queue.
-			storeChecker.unregister(null, context, storeChecker.getPriorityClass());
+			storeChecker.unregister(context, storeChecker.getPriorityClass());
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually
@@ -1395,7 +1395,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			Logger.error(this, "Unable to start: "+t, t);
 			try {
-				runningStoreChecker.unregister(null, context, progressPollPriority);
+				runningStoreChecker.unregister(context, progressPollPriority);
 			} catch (Throwable ignored) {
 				// Ignore, hopefully it's already unregistered
 			}
@@ -1442,7 +1442,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		@Override
 		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-			unregister(container, context, getPriorityClass());
+			unregister(context, getPriorityClass());
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {
 				runningStoreChecker = null;
@@ -1494,22 +1494,22 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		public SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
 			return null;
 		}
 
 		@Override
-		public long countAllKeys(ObjectContainer container, ClientContext context) {
+		public long countAllKeys(ClientContext context) {
 			return watchingKeys.size();
 		}
 
 		@Override
-		public long countSendableKeys(ObjectContainer container, ClientContext context) {
+		public long countSendableKeys(ClientContext context) {
 			return 0;
 		}
 
 		@Override
-		public RequestClient getClient(ObjectContainer container) {
+		public RequestClient getClient() {
 			return realTimeFlag ? USKManager.rcRT : USKManager.rcBulk;
 		}
 

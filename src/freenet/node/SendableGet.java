@@ -59,12 +59,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	static final SendableGetRequestSender sender = new SendableGetRequestSender();
 	
 	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+	public SendableRequestSender getSender(ClientContext context) {
 		return sender;
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskFetchScheduler(realTimeFlag);
 		else
@@ -83,7 +83,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
 	 */
 	@Override
-	public void internalError(final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+	public void internalError(final Throwable t, final RequestScheduler sched, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error on "+this+" : "+t, t);
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
@@ -94,12 +94,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 
 	@Override
-	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
-		super.unregister(container, context, oldPrio);
-		synchronized(getScheduler(container, context)) {
+	public void unregister(ClientContext context, short oldPrio) {
+		super.unregister(context, oldPrio);
+		synchronized(getScheduler(context)) {
 			context.cooldownTracker.removeCachedWakeup(this);
 		}
-		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
+		context.checker.removeRequest(this, persistent, null, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
 	}
 	
 	public static FetchException translateException(LowLevelGetException e) {

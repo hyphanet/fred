@@ -82,7 +82,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+	public SendableRequestSender getSender(ClientContext context) {
 		return new SendableRequestSender() {
 
 			@Override
@@ -112,7 +112,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public RequestClient getClient(ObjectContainer container) {
+	public RequestClient getClient() {
 		return client;
 	}
 
@@ -141,23 +141,23 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister(container, context, prioClass);
+		super.unregister(context, prioClass);
 	}
 
 	@Override
-	public synchronized long countAllKeys(ObjectContainer container, ClientContext context) {
+	public synchronized long countAllKeys(ClientContext context) {
 		if(finished) return 0;
 		return 1;
 	}
 
 	@Override
-	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
+	public synchronized long countSendableKeys(ClientContext context) {
 		if(finished) return 0;
 		return 1;
 	}
 
 	@Override
-	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
 		if(keys.hasTransientInsert(this, NullSendableRequestItem.nullItem))
 			return null;
 		if(finished) return null;

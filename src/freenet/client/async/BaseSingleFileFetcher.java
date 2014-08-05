@@ -61,19 +61,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public long countAllKeys(ObjectContainer container, ClientContext context) {
+	public long countAllKeys(ClientContext context) {
 		return 1;
 	}
 	
 	@Override
-	public long countSendableKeys(ObjectContainer container, ClientContext context) {
+	public long countSendableKeys(ClientContext context) {
 		return 1;
 	}
 	
 	@Override
-	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
-		if(persistent)
-			container.activate(key, 5);
+	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ClientContext context) {
 		Key k = key.getNodeKey(false);
 		if(fetching.hasKey(k, this)) return null;
 		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
@@ -86,7 +84,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
 				return null;
 			} else {
-				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, container, context);
+				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, null, context);
 				return null;
 			}
 		}
@@ -148,11 +146,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				onEnterFiniteCooldown(context);
 			} else {
 				// Wake the CRS after clearing cache.
-				this.clearCooldown(container, context, true);
+				this.clearCooldown(context, true);
 			}
 			return true; // We will retry in any case, maybe not just not yet.
 		}
-		unregister(container, context, getPriorityClass());
+		unregister(context, getPriorityClass());
 		return false;
 	}
 
@@ -211,14 +209,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 * Call unregister(container) if you only want to remove from the queue.
 	 */
 	public void unregisterAll(ClientContext context) {
-		getScheduler(null, context).removePendingKeys(this, false);
-		unregister(null, context, (short)-1);
+		getScheduler(context).removePendingKeys(this, false);
+		unregister(context, (short)-1);
 	}
 
 	@Override
-	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
+	public void unregister(ClientContext context, short oldPrio) {
 		context.cooldownTracker.remove(this);
-		super.unregister(container, context, oldPrio);
+		super.unregister(context, oldPrio);
 	}
 
 	@Override
@@ -231,8 +229,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public RequestClient getClient(ObjectContainer container) {
-		if(persistent) container.activate(parent, 1);
+	public RequestClient getClient() {
 		return parent.getClient();
 	}
 
@@ -261,7 +258,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				return;
 			}
 		}
-		unregister(container, context, getPriorityClass()); // Key has already been removed from pendingKeys
+		unregister(context, getPriorityClass()); // Key has already been removed from pendingKeys
 		onSuccess(block, false, null, container, context);
 		if(persistent) {
 			container.deactivate(this, 1);
@@ -297,7 +294,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public void schedule(ClientContext context) {
 		if(key == null) throw new NullPointerException();
 		try {
-			getScheduler(null, context).register(this, new SendableGet[] { this }, persistent, null, ctx.blocks, false);
+			getScheduler(context).register(this, new SendableGet[] { this }, persistent, null, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -310,7 +307,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				container.activate(ctx.blocks, 5);
 		}
 		try {
-			getScheduler(container, context).register(null, new SendableGet[] { this }, persistent, container, ctx.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -386,7 +383,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		long wakeTime = tracker.cooldownWakeupTime;
 		if(wakeTime <= now)
 			tracker.cooldownWakeupTime = wakeTime = 0;
-		KeysFetchingLocally fetching = getScheduler(null, context).fetchingKeys();
+		KeysFetchingLocally fetching = getScheduler(context).fetchingKeys();
 		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, null), this)) {
 			wakeTime = Long.MAX_VALUE;
 			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.

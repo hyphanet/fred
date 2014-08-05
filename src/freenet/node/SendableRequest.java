@@ -1,9 +1,5 @@
 package freenet.node;
 
-import java.util.List;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -72,15 +68,15 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * etc to avoid it being chosen again soon. There is a separate callback for when a fetch
 	 * fails, succeeds, etc. Hence it is safe to call these outside of the PersistentJobRunner.
 	 * @return An object identifying a specific key. null indicates no keys available. */
-	public abstract SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
+	public abstract SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract long countAllKeys(ObjectContainer container, ClientContext context);
+	public abstract long countAllKeys(ClientContext context);
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */
-	public abstract long countSendableKeys(ObjectContainer container, ClientContext context);
+	public abstract long countSendableKeys(ClientContext context);
 
 	/**
 	 * Get or create a SendableRequestSender for this object. This is a non-persistent
@@ -89,7 +85,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * @param context A client context may also be necessary.
 	 * @return
 	 */
-	public abstract SendableRequestSender getSender(ObjectContainer container, ClientContext context);
+	public abstract SendableRequestSender getSender(ClientContext context);
 	
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.
@@ -99,7 +95,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get client context object. This isn't called as frequently as you might expect 
 	 * - once on registration, and then when there is an error. So it doesn't need to be
 	 * stored on the request itself, hence we pass in a container. */
-	public abstract RequestClient getClient(ObjectContainer container);
+	public abstract RequestClient getClient();
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
 	@Override
@@ -116,11 +112,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	}
 	
 	/** Grab it to avoid race condition when unregistering twice in parallel. */
-	private synchronized RandomGrabArray grabParentGrabArray(ObjectContainer container) {
+	private synchronized RandomGrabArray grabParentGrabArray() {
 		RandomGrabArray ret = parentGrabArray;
 		parentGrabArray = null;
-		if(persistent())
-			container.store(this);
 		return ret;
 	}
 	
@@ -141,13 +135,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * However the parent method, SendableRequest, ignores this. In any case, 
 	 * (short)-1 means not specified (look it up).
 	 */
-	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
-		RandomGrabArray arr = grabParentGrabArray(container);
+	public void unregister(ClientContext context, short oldPrio) {
+		RandomGrabArray arr = grabParentGrabArray();
 		if(arr != null) {
-			if(persistent)
-				container.activate(arr, 1);
-			synchronized(getScheduler(container, context)) {
-				arr.remove(this, container, context);
+			synchronized(getScheduler(context)) {
+				arr.remove(this, null, context);
 			}
 		} else {
 			// Should this be a higher priority?
@@ -155,14 +147,12 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
 		ClientRequester cr = getClientRequest();
-		if(persistent)
-			container.activate(cr, 1);
-		getScheduler(container, context).removeFromAllRequestsByClientRequest(cr, this, true, container);
+		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this, true, null);
 		// FIXME should we deactivate??
 		//if(persistent) container.deactivate(cr, 1);
 	}
 	
-	public abstract ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context);
+	public abstract ClientRequestScheduler getScheduler(ClientContext context);
 
 	/** Is this an SSK? For purposes of determining which scheduler to use. */
 	public abstract boolean isSSK();
@@ -171,26 +161,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract boolean isInsert();
 	
 	/** Requeue after an internal error */
-	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
+	public abstract void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent);
 
 	/** Must be called when we retry a block. 
 	 * LOCKING: Caller should hold as few locks as possible */ 
-	public void clearCooldown(ObjectContainer container, ClientContext context, boolean definitelyExists) {
-		if(persistent && !container.ext().isStored(this)) {
-			if(definitelyExists)
-				Logger.error(this, "Clear cooldown on persistent request "+this+" but already removed");
-			else if(hashCode != 0) // conceivably there might be a problem, but unlikely 
-				Logger.normal(this, "Clear cooldown on persistent request "+this+" but already removed");
-			else // removed, not likely to be an issue.
-				Logger.minor(this, "Clear cooldown on persistent request "+this+" but already removed");
-			return;
-		}
+	public void clearCooldown(ClientContext context, boolean definitelyExists) {
 		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
 		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
 		// we clear here for stuff that doesn't use it.
 		// Note also that the performance cost of going over that particular part of the tree again should be very low.
 		RandomGrabArray rga = getParentGrabArray();
-		ClientRequestScheduler sched = getScheduler(container, context);
+		ClientRequestScheduler sched = getScheduler(context);
 		synchronized(sched) {
 			context.cooldownTracker.clearCachedWakeup(this);
 			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.

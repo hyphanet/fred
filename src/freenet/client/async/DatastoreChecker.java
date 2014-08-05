@@ -164,7 +164,7 @@ public class DatastoreChecker implements PrioRunnable {
 				}
 			}
 		}
-		sched = getter.getScheduler(null, context);
+		sched = getter.getScheduler(context);
 		boolean anyValid = false;
 		for(Key key : keys) {
 			if(random != null) {

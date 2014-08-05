@@ -260,17 +260,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent)
 			container.activate(errors, 1);
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), container, context);
+			fail(new InsertException(InsertException.CANCELLED), context);
 			return;
 		}
 		if(logMINOR) Logger.minor(this, "onFailure() on "+e+" for "+this);
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
-			fail(new InsertException(InsertException.COLLISION), container, context);
+			fail(new InsertException(InsertException.COLLISION), context);
 			return;
 		case LowLevelPutException.INTERNAL_ERROR:
-			fail(new InsertException(InsertException.INTERNAL_ERROR), container, context);
+			fail(new InsertException(InsertException.INTERNAL_ERROR), context);
 			return;
 		case LowLevelPutException.REJECTED_OVERLOAD:
 			errors.inc(InsertException.REJECTED_OVERLOAD);
@@ -303,7 +303,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			fail(InsertException.construct(persistent ? errors.clone() : errors), container, context);
+			fail(InsertException.construct(persistent ? errors.clone() : errors), context);
 			if(persistent)
 				container.deactivate(ctx, 1);
 			return;
@@ -312,35 +312,27 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 			container.deactivate(ctx, 1);
 		}
-		clearCooldown(container, context, true);
+		clearCooldown(context, true);
 	}
 
-	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
-		fail(e, false, container, context);
+	private void fail(InsertException e, ClientContext context) {
+		fail(e, false, context);
 	}
 	
-	private void fail(InsertException e, boolean forceFatal, ObjectContainer container, ClientContext context) {
+	private void fail(InsertException e, boolean forceFatal, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		if(persistent)
-			container.store(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(context);
 		else
 			parent.failedBlock(context);
-		unregister(container, context, getPriorityClass());
+		unregister(context, getPriorityClass());
 		if(freeData) {
-			if(persistent) container.activate(sourceData, 1);
 			sourceData.free();
-			if(persistent) sourceData.removeFrom(container);
 			sourceData = null;
-			if(persistent)
-				container.store(this);
 		}
-		if(persistent)
-			container.activate(cb, 1);
 		cb.onFailure(e, this, context);
 	}
 
@@ -373,7 +365,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			tryEncode(null, context);
 			onSuccess(null, null, context);
 		} else {
-			getScheduler(null, context).registerInsert(this, persistent, null);
+			getScheduler(context).registerInsert(this, persistent, null);
 		}
 	}
 
@@ -405,7 +397,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent)
 			container.activate(parent, 1);
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), container, context);
+			fail(new InsertException(InsertException.CANCELLED), context);
 			return;
 		}
 		synchronized(this) {
@@ -435,7 +427,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.store(this);
 		}
 		parent.completedBlock(false, context);
-		unregister(container, context, getPriorityClass());
+		unregister(context, getPriorityClass());
 		if(persistent)
 			container.activate(cb, 1);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
@@ -459,7 +451,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			sourceData.free();
 			sourceData = null;
 		}
-		super.unregister(null, context, getPriorityClass());
+		super.unregister(context, getPriorityClass());
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
 	}
 
@@ -589,21 +581,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	
 	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+	public SendableRequestSender getSender(ClientContext context) {
 		String compress;
-		boolean active = true;
-		if(persistent) {
-			active = container.ext().isActive(ctx);
-			if(!active) container.activate(ctx, 1);
-		}
 		compress = ctx.compressorDescriptor;
-		if(!active) container.deactivate(ctx, 1);
 		return new MySendableRequestSender(compress, this);
 	}
 
 	@Override
-	public RequestClient getClient(ObjectContainer container) {
-		if(persistent) container.activate(parent, 1);
+	public RequestClient getClient() {
 		return parent.getClient();
 	}
 
@@ -627,7 +612,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		try {
 			encode(context, false);
 		} catch (InsertException e) {
-			fail(e, container, context);
+			fail(e, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			// Don't requeue on BackgroundBlockEncoder.
@@ -636,7 +621,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
+	public synchronized long countSendableKeys(ClientContext context) {
 		if(finished)
 			return 0;
 		else
@@ -644,12 +629,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized long countAllKeys(ObjectContainer container, ClientContext context) {
-		return countSendableKeys(container, context);
+	public synchronized long countAllKeys(ClientContext context) {
+		return countSendableKeys(context);
 	}
 
 	@Override
-	public SendableRequestItem chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
+	public SendableRequestItem chooseKey(KeysFetchingLocally ignored, ClientContext context) {
 		try {
 			BlockItemKey key;
 			synchronized(this) {
@@ -659,32 +644,25 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					if(ignored.hasTransientInsert(this, key))
 						return null;
 				}
-				return getBlockItem(key, container, context);
+				return getBlockItem(key, context);
 			}
 		} catch (InsertException e) {
-			fail(e, container, context);
+			fail(e, context);
 			return null;
 		}
 	}
 
-	private BlockItem getBlockItem(BlockItemKey key, ObjectContainer container, ClientContext context) throws InsertException {
+	private BlockItem getBlockItem(BlockItemKey key, ClientContext context) throws InsertException {
 		try {
 			synchronized(this) {
 				if(finished) return null;
 			}
 			if(persistent) {
 				if(sourceData == null) {
-					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this), new Exception("error"));
-					fail(new InsertException(InsertException.INTERNAL_ERROR), container, context);
+					Logger.error(this, "getBlockItem(): sourceData = null", new Exception("error"));
+					fail(new InsertException(InsertException.INTERNAL_ERROR), context);
 					return null;
 				}
-			}
-			boolean deactivateBucket = false;
-			if(persistent) {
-				container.activate(uri, 1);
-				deactivateBucket = !container.ext().isActive(sourceData);
-				if(deactivateBucket)
-					container.activate(sourceData, 1);
 			}
 			Bucket data = sourceData.createShadow();
 			FreenetURI u = uri;
@@ -694,19 +672,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				data = context.tempBucketFactory.makeBucket(sourceData.size());
 				BucketTools.copy(sourceData, data);
 			}
-			boolean ctxActive = true;
-			if(persistent) {
-				if(deactivateBucket)
-					container.deactivate(sourceData, 1);
-				container.deactivate(uri, 1);
-				ctxActive = container.ext().isActive(ctx);
-				if(!ctxActive)
-					container.activate(ctx, 1);
-			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
 			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
-			if(!ctxActive)
-				container.deactivate(ctx, 1);
 			return new BlockItem(key, data, isMetadata, compressionCodec, sourceLength, u, persistent, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);

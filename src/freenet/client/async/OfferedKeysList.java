@@ -83,13 +83,13 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public long countAllKeys(ObjectContainer container, ClientContext context) {
+	public long countAllKeys(ClientContext context) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public long countSendableKeys(ObjectContainer container, ClientContext context) {
+	public long countSendableKeys(ClientContext context) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
@@ -110,7 +110,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 	
 	@Override
-	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally fetching, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -138,7 +138,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public RequestClient getClient(ObjectContainer container) {
+	public RequestClient getClient() {
 		return this;
 	}
 
@@ -154,12 +154,12 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
 	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+	public SendableRequestSender getSender(ClientContext context) {
 		return new SendableRequestSender() {
 
 			@Override
@@ -230,7 +230,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK)
 			return context.getSskFetchScheduler(realTimeFlag);
 		else

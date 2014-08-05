@@ -101,7 +101,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		short prio = req.getPriorityClass();
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		sched.selector.addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, container, context);
+		sched.selector.addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
 	}
 	
@@ -172,7 +172,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 				continue;
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(container, context, oldPrio);
+			req.unregister(context, oldPrio);
 			//Remove from the starterQueue
 			// Then can do innerRegister() (not register()).
 			if(persistent())

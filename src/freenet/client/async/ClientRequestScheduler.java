@@ -165,7 +165,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			for(SendableGet getter : getters) {
 				if(persistent)
 					container.activate(getter, 1);
-				getter.internalError(e, this, container, clientContext, persistent);
+				getter.internalError(e, this, clientContext, persistent);
 				if(persistent)
 					container.deactivate(getter, 1);
 			}
@@ -254,7 +254,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
 		boolean active = container.ext().isActive(request);
 		if(!active) container.activate(request, 1);
-		request.clearCooldown(container, clientContext, false);
+		request.clearCooldown(clientContext, false);
 		if(!active) container.deactivate(request, 1);
 	}
 	
@@ -442,7 +442,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		selector.removeTransientInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
-		insert.clearCooldown(null, clientContext, false);
+		insert.clearCooldown(clientContext, false);
 	}
 	
 	@Override
