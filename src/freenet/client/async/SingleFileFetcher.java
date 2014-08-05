@@ -351,8 +351,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(metaStrings, Integer.MAX_VALUE);
 			container.activate(thisKey, 5);
 			container.activate(ctx, 2); // for event producer and allowed mime types
-			if(ah != null)
-				ah.activateForExecution(container);
 			container.activate(parent, 1);
 			container.activate(actx, 5);
 			container.activate(clientMetadata, 5);
@@ -487,7 +485,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = null; // Copied to archiveMetadata, so do not need to clear it
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
-				metadataBucket = ah.getMetadata(actx, context.archiveManager, persistent ? container : null);
+				metadataBucket = ah.getMetadata(actx, context.archiveManager);
 				if(metadataBucket != null) {
 					try {
 						metadata = Metadata.construct(metadataBucket);
@@ -561,7 +559,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
+				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Metadata newMetadata;
@@ -660,7 +658,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
+				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Bucket out;
@@ -1116,7 +1114,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						Closer.close(is);
 					}
 				}
-				ah.extractToCache(data, actx, element, callback, context.archiveManager, null, context);
+				ah.extractToCache(data, actx, element, callback, context.archiveManager, context);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, context);
 				return;
