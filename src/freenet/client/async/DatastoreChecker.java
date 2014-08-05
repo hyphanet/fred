@@ -8,8 +8,6 @@ import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
@@ -242,13 +240,8 @@ public class DatastoreChecker implements PrioRunnable {
 		return NativeThread.NORM_PRIORITY;
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing DatastoreChecker in database", new Exception("error"));
-		return false;
-	}
-
 	@SuppressWarnings("unchecked")
-	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context, short prio) {
+	public void removeRequest(SendableGet request, boolean persistent, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		QueueItem requestMatcher = new QueueItem(request);
 		synchronized(this) {
