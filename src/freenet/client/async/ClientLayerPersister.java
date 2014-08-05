@@ -114,6 +114,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeLong(MAGIC);
             oos.writeInt(VERSION);
+            oos.write(salt);
             ClientRequester[] requesters = getRequesters();
             oos.writeInt(requesters.length);
             for(ClientRequester req : requesters) {
