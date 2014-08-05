@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import freenet.client.async.ClientContext;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 
@@ -80,6 +81,11 @@ public class AEADCryptBucket implements Bucket, Serializable {
         AEADCryptBucket ret = new AEADCryptBucket(undershadow, key);
         ret.setReadOnly();
         return ret;
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        underlying.onResume(context);
     }
 
 }
