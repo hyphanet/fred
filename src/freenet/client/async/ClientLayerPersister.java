@@ -135,9 +135,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
-            oos.writeInt(buckets.length);
-            for(DelayedFreeBucket bucket : buckets)
-                oos.writeObject(bucket);
+            if(buckets == null) {
+                oos.writeInt(0);
+            } else {
+                oos.writeInt(buckets.length);
+                for(DelayedFreeBucket bucket : buckets)
+                    oos.writeObject(bucket);
+            }
             oos.close();
             fos = null;
             System.out.println("Saved "+requesters.length+" requests to client.dat");
