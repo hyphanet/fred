@@ -134,7 +134,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	@Override
-	public void onCancelled(ObjectContainer container, ClientContext context) {
+	public void onCancelled(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelled on "+this);
 		synchronized(this) {
 			finished = true;
@@ -148,8 +148,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					@Override
 					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
-						callback.onCancelled(null, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onCancelled(context);
 						return false;
 					}
 					
@@ -159,13 +159,13 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onCancelled(container, context);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onCancelled(context);
 		}
 	}
 
 	@Override
-	public void onFailure(ObjectContainer container, ClientContext context) {
+	public void onFailure(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Failed on "+this);
 		synchronized(this) {
 			if(finished) {
@@ -181,8 +181,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					@Override
 					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
-						callback.onFailure(null, context);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onFailure(context);
 						return true;
 					}
 					
@@ -192,8 +192,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onFailure(container, context);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onFailure(context);
 		}
 	}
 
@@ -208,7 +208,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	@Override
-	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
+	public void onFoundEdition(final long l, final USK key, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
 		if(logMINOR) Logger.minor(this, "Found edition "+l+" on "+this);
 		synchronized(this) {
 			if(fetcher == null) {
@@ -228,8 +228,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					@Override
 					public boolean run(ClientContext context) {
 						if(callback instanceof USKFetcherTagCallback)
-							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, null, context);
-						callback.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+						callback.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
 						return false;
 					}
 					
@@ -239,8 +239,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}
 		} else {
 			if(callback instanceof USKFetcherTagCallback)
-				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
-			callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, context);
+			callback.onFoundEdition(l, key, context, metadata, codec, data, newKnownGood, newSlotToo);
 		}
 	}
 

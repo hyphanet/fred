@@ -132,7 +132,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 	
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)

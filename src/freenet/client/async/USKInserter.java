@@ -8,8 +8,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
@@ -106,7 +104,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData, boolean newKnownGood, boolean newSlotToo) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
 			edition = Math.max(l, edition);
@@ -114,7 +112,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if((lastContentWasMetadata == isMetadata) && hisData != null
 					&& (codec == compressionCodec)) {
 				try {
-					if(persistent) container.activate(data, 1);
 					byte[] myData = BucketTools.toByteArray(data);
 					if(Arrays.equals(myData, hisData)) {
 						// Success
@@ -127,27 +124,16 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				}
 			}
 			if(persistent) {
-				container.activate(fetcher, 1);
-				container.activate(fetcher.ctx, 1);
-				fetcher.removeFrom(container, context);
-				fetcher.ctx.removeFrom(container);
 				fetcher = null;
-				container.store(this);
 			}
 		}
 		if(alreadyInserted) {
-			if(persistent) container.activate(parent, 1);
 			// Success!
 			parent.completedBlock(true, context);
-			if(persistent) {
-				container.activate(cb, 1);
-				container.activate(pubUSK, 5);
-			}
 			cb.onEncode(pubUSK.copy(edition), this, context);
 			insertSucceeded(context, l);
 			if(freeData) {
 				data.free();
-				if(persistent) data.removeFrom(container);
 			}
 		} else {
 			scheduleInsert(context);
@@ -157,7 +143,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	private void insertSucceeded(ClientContext context, long edition) {
 		if(ctx.ignoreUSKDatehints) {
 			if(logMINOR) Logger.minor(this, "Inserted to edition "+edition);
-			boolean cbActive = true;
 			cb.onSuccess(this, context);
 			return;
 		}
@@ -170,8 +155,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e); // Impossible
 		}
-		boolean cbActive = true;
-		boolean parentActive = true;
 		FreenetURI[] hintURIs = hint.getInsertURIs(privUSK);
 		boolean added = false;
 		for(FreenetURI uri : hintURIs) {
@@ -351,23 +334,15 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	@Override
-	public void onFailure(ObjectContainer container, ClientContext context) {
+	public void onFailure(ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Fetcher failed to find the given edition or any later edition on "+this);
 		scheduleInsert(context);
 	}
 
 	@Override
-	public void onCancelled(ObjectContainer container, ClientContext context) {
+	public void onCancelled(ClientContext context) {
 		synchronized(this) {
-			if(fetcher != null) {
-				if(persistent) {
-					container.activate(fetcher, 1);
-					container.activate(fetcher.ctx, 1);
-					fetcher.ctx.removeFrom(container);
-					fetcher.removeFrom(container, context);
-				}
-				fetcher = null;
-			}
+		    fetcher = null;
 			if(finished) return;
 		}
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));

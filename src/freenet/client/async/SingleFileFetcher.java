@@ -1420,9 +1420,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		private USKFetcherTag tag;
 		
 		@Override
-		public void setTag(USKFetcherTag tag, ObjectContainer container, ClientContext context) {
+		public void setTag(USKFetcherTag tag, ClientContext context) {
 			this.tag = tag;
-			if(persistent) container.store(this);
 		}
 		
 		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, boolean realTimeFlag, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean persistent, boolean datastoreOnly) {
@@ -1449,71 +1448,47 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
-			if(persistent)
-				container.activate(this, 2);
+		public void onFoundEdition(long l, USK newUSK, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(l < usk.suggestedEdition && datastoreOnly)
 				l = usk.suggestedEdition;
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
-							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, container, context, false);
+							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, null, context, false);
 					if(tag != null) {
-						if(persistent) container.activate(cb, 1);
 						cb.onTransition(tag, sf);
 					}
-					sf.schedule(container, context);
-					if(persistent) removeFrom(container);
+					sf.schedule(null, context);
 				} else {
-					if(persistent) container.activate(cb, 1);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, context);
-					if(persistent) removeFrom(container);
 				}
 			} catch (FetchException e) {
-				if(persistent) container.activate(cb, 1);
 				cb.onFailure(e, null, context);
-				if(persistent) removeFrom(container);
 			}
 		}
 		
-		private void removeFrom(ObjectContainer container) {
-			container.delete(metaStrings);
-			container.delete(this);
-			container.activate(usk, 5);
-			usk.removeFrom(container);
-		}
-
 		@Override
-		public void onFailure(ObjectContainer container, ClientContext context) {
+		public void onFailure(ClientContext context) {
 			FetchException e = null;
 			if(datastoreOnly) {
-				if(persistent)
-					container.activate(usk, Integer.MAX_VALUE);
 				try {
-					onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
+					onFoundEdition(usk.suggestedEdition, usk, context, false, (short) -1, null, false, false);
 					return;
 				} catch (Throwable t) {
 					e = new FetchException(FetchException.INTERNAL_ERROR, t);
 				}
 			}
-			if(persistent)
-				container.activate(this, 2);
 			if(e == null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
 			if(logMINOR) Logger.minor(this, "Failing USK with "+e, e);
-			if(persistent) container.activate(cb, 1);
 			if(cb == null)
 				throw new NullPointerException("Callback is null in "+this+" for usk "+usk+" with datastoreOnly="+datastoreOnly);
 			cb.onFailure(e, null, context);
-			if(persistent) removeFrom(container);
 		}
 
 		@Override
-		public void onCancelled(ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(this, 2);
+		public void onCancelled(ClientContext context) {
 			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null, context);
-			if(persistent) removeFrom(container);
 		}
 
 		@Override
@@ -1527,9 +1502,4 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 	}
-	
-//	public void objectOnActivate(ObjectContainer container) {
-//		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
-//	}
-//	
 }

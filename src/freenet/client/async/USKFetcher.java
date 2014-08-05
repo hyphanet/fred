@@ -46,7 +46,6 @@ import freenet.keys.USK;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
@@ -755,9 +754,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			for(USKFetcherCallback c: cb) {
 				try {
 					if(ed == -1)
-						c.onFailure(null, context);
+						c.onFailure(context);
 					else
-						c.onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
+						c.onFoundEdition(ed, origUSK.copy(ed), context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
 					Logger.error(this, "An exception occured while dealing with a callback:"+c.toString()+"\n"+e.getMessage(),e);
 				}
@@ -862,7 +861,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
 		for(USKFetcherCallback c: cb)
-			c.onCancelled(null, context);
+			c.onCancelled(context);
 	}
 
 	public void onFail(USKAttempt attempt, ClientContext context) {
@@ -1237,7 +1236,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	@Override
-	public void onFoundEdition(long ed, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long ed, USK key, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return; // Only interested in slots
 		// Because this is frequently run off-thread, it is actually possible that the looked up edition is not the same as the edition we are being notified of.
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);

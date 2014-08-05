@@ -497,7 +497,7 @@ public class USKManager {
 						context.mainExecutor.execute(new Runnable() {
 							@Override
 							public void run() {
-								callback.onFoundEdition(number, usk, null, // non-persistent
+								callback.onFoundEdition(number, usk, // non-persistent
 										context, false, (short)-1, null, true, newSlotToo);
 							}
 						}, "USKManager callback executor for " +callback);
@@ -531,7 +531,7 @@ public class USKManager {
 						context.mainExecutor.execute(new Runnable() {
 							@Override
 							public void run() {
-								callback.onFoundEdition(number, usk, null, // non-persistent
+								callback.onFoundEdition(number, usk, // non-persistent
 										context, false, (short)-1, null, false, false);
 							}
 						}, "USKManager callback executor for " +callback);
@@ -605,9 +605,9 @@ public class USKManager {
 			}
 		}
 		if(goodEd > ed)
-			cb.onFoundEdition(goodEd, origUSK.copy(curEd), null, context, false, (short)-1, null, true, curEd > ed);
+			cb.onFoundEdition(goodEd, origUSK.copy(curEd), context, false, (short)-1, null, true, curEd > ed);
 		else if(curEd > ed)
-			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null, false, false);
+			cb.onFoundEdition(curEd, origUSK.copy(curEd), context, false, (short)-1, null, false, false);
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
 			executor.execute(new Runnable() {

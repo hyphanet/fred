@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.client.async.USKProgressCallback;
@@ -43,7 +41,7 @@ public class SubscribeUSK implements USKProgressCallback {
 	}
 
 	@Override
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+	public void onFoundEdition(long l, USK key, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(handler.isClosed()) {
 			core.uskManager.unsubscribe(key, toUnsub);
 			return;
