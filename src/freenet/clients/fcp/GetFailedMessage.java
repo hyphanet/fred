@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
@@ -16,9 +17,10 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
-public class GetFailedMessage extends FCPMessage {
+public class GetFailedMessage extends FCPMessage implements Serializable {
 
-	final int code;
+    private static final long serialVersionUID = 1L;
+    final int code;
 	final String codeDescription;
 	final String shortCodeDescription;
 	final String extraDescription;

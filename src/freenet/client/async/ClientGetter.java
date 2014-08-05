@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -46,9 +47,10 @@ import freenet.support.io.InsufficientDiskSpaceException;
  * of the request is stored in currentState. The ClientGetState's do most of the work. SingleFileFetcher for
  * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
-public class ClientGetter extends BaseClientGetter implements WantsCooldownCallback {
+public class ClientGetter extends BaseClientGetter implements WantsCooldownCallback, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerClass(ClientGetter.class);

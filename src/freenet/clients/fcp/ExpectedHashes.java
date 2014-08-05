@@ -1,5 +1,7 @@
 package freenet.clients.fcp;
 
+import java.io.Serializable;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.events.ExpectedHashesEvent;
@@ -8,9 +10,10 @@ import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-public class ExpectedHashes extends FCPMessage {
+public class ExpectedHashes extends FCPMessage implements Serializable {
 
-	final HashResult[] hashes;
+    private static final long serialVersionUID = 1L;
+    final HashResult[] hashes;
 	final String identifier;
 	final boolean global;
 	

@@ -1,5 +1,6 @@
 package freenet.clients.fcp;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
@@ -10,7 +11,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-public class CompatibilityMode extends FCPMessage {
+public class CompatibilityMode extends FCPMessage implements Serializable {
 	
 	final String identifier;
 	long min;

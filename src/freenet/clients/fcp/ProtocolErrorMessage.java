@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.io.Serializable;
+
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
@@ -21,9 +23,10 @@ import freenet.support.SimpleFieldSet;
  * [Identifier=<ident> if we managed to parse one]
  * EndMessage
  */
-public class ProtocolErrorMessage extends FCPMessage {
+public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 
-	static final int CLIENT_HELLO_MUST_BE_FIRST_MESSAGE = 1;
+    private static final long serialVersionUID = 1L;
+    static final int CLIENT_HELLO_MUST_BE_FIRST_MESSAGE = 1;
 	static final int NO_LATE_CLIENT_HELLOS = 2;
 	static final int MESSAGE_PARSE_ERROR = 3;
 	static final int FREENET_URI_PARSE_ERROR = 4;
