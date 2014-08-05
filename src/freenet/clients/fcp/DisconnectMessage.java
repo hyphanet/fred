@@ -5,8 +5,6 @@
  */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -48,16 +46,6 @@ public class DisconnectMessage extends FCPMessage {
 	@Override
 	public String getName() {
 		return NAME;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see freenet.clients.fcp.FCPMessage#removeFrom(com.db4o.ObjectContainer)
-	 */
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 	/**

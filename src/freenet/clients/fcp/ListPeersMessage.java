@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.SimpleFieldSet;
@@ -47,9 +45,4 @@ public class ListPeersMessage extends FCPMessage {
 		handler.outputHandler.queue(new EndListPeersMessage(identifier));
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
 }

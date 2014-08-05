@@ -207,9 +207,4 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		job.run();
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
 }

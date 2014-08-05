@@ -2,8 +2,6 @@ package freenet.clients.fcp;
 
 import java.io.UnsupportedEncodingException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -42,11 +40,6 @@ public class FeedMessage extends MultipleDataCarryingMessage {
 		fs.put("PriorityClass", priorityClass);
 		fs.put("UpdatedTime", updatedTime);
 		return fs;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

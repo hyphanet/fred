@@ -3,12 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
-import freenet.client.async.ClientContext;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.NativeThread;
 
 public class WatchGlobal extends FCPMessage {
 
@@ -52,11 +48,6 @@ public class WatchGlobal extends FCPMessage {
 		FCPClient client = handler.getForeverClient();
 		if(client != null)
 		    client.setWatchGlobal(enabled, verbosityMask, handler.server);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }

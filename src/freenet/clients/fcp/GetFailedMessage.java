@@ -6,8 +6,6 @@ package freenet.clients.fcp;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
 import freenet.keys.FreenetURI;
@@ -152,19 +150,6 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "GetFailed goes from server to client not the other way around", identifier, global);
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(redirectURI != null) {
-			container.activate(redirectURI, 5);
-			redirectURI.removeFrom(container); // URI belongs to the parent which is also being removed.
-		}
-		if(tracker != null) {
-			container.activate(tracker, 5);
-			tracker.removeFrom(container);
-		}
-		container.delete(this);
-	}
-	
 	public String getShortFailedMessage() {
 		return shortCodeDescription;
 	}

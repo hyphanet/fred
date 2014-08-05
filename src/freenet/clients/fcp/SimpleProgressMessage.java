@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -76,13 +74,6 @@ public class SimpleProgressMessage extends FCPMessage implements Serializable {
 
 	public boolean isTotalFinalized() {
 		return event.finalizedTotal;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(event, 1);
-		event.removeFrom(container);
-		container.delete(this);
 	}
 
 	SplitfileProgressEvent getEvent() {

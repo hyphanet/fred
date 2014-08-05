@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.clients.fcp.FCPConnectionHandler.DDACheckJob;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -57,8 +55,4 @@ public class TestDDAReplyMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
 }

@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.clients.fcp.FCPConnectionHandler.DDACheckJob;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -64,9 +62,5 @@ public class TestDDARequestMessage extends FCPMessage {
 		TestDDAReplyMessage reply = new TestDDAReplyMessage(job);
 		handler.outputHandler.queue(reply);
 	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
+	
 }

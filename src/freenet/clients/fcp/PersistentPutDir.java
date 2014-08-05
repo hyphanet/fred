@@ -162,14 +162,4 @@ public class PersistentPutDir extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentPut goes from server to client not the other way around", identifier, global);
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		// manifestElements will be removed by ClientPutDir.freeData, not our problem.
-		container.activate(cached, Integer.MAX_VALUE);
-		cached.removeFrom(container);
-		container.delete(this);
-	}
-
 }

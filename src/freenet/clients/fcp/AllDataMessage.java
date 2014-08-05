@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -70,11 +68,6 @@ public class AllDataMessage extends DataCarryingMessage implements Serializable 
 	@Override
 	boolean isGlobal() {
 		return global;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }

@@ -1,7 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -35,11 +33,6 @@ public class ExpectedMIME extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		// Not supported
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }

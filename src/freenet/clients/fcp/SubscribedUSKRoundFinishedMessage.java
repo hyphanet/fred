@@ -1,7 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -28,11 +26,6 @@ public class SubscribedUSKRoundFinishedMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 

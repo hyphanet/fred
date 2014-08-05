@@ -15,8 +15,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
@@ -182,11 +180,6 @@ public class AddPeer extends FCPMessage {
 			System.out.println("Added darknet peer: "+pn);
 		}
 		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 }

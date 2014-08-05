@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -35,8 +33,4 @@ public class ShutdownMessage extends FCPMessage{
 		node.exit("Received FCP shutdown message");
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}	
 }

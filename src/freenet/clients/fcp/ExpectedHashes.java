@@ -2,8 +2,6 @@ package freenet.clients.fcp;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.crypt.HashResult;
 import freenet.node.Node;
@@ -47,18 +45,6 @@ public class ExpectedHashes extends FCPMessage implements Serializable {
 	@Override
 	public String getName() {
 		return "ExpectedHashes";
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		if(hashes != null) {
-			for(HashResult res : hashes) {
-				if(res == null) continue; // Pre-1411 persistence issue
-				container.activate(res, Integer.MAX_VALUE);
-				res.removeFrom(container);
-			}
-		}
-		container.delete(this);
 	}
 
 	@Override

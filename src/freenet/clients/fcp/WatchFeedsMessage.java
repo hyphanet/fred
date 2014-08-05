@@ -1,7 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -33,11 +31,6 @@ public class WatchFeedsMessage extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Enabled", enabled);
 		return fs;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 }

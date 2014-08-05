@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.File;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -93,17 +91,6 @@ public class PersistentGet extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentGet goes from server to client not the other way around", identifier, global);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		container.activate(targetFile, 5);
-		container.delete(targetFile);
-		container.activate(tempFile, 5);
-		container.delete(tempFile);
-		container.delete(this);
 	}
 
 }

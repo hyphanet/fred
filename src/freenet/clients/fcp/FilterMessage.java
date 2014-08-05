@@ -7,8 +7,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
@@ -213,11 +211,6 @@ public class FilterMessage extends DataCarryingMessage {
 			guessedMimeType = DefaultMIMETypes.guessMIMEType(filename, true);
 		}
 		return guessedMimeType;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 }

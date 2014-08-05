@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.File;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -116,17 +114,6 @@ public class PersistentPut extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentPut goes from server to client not the other way around", identifier, global);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.activate(uri, 5);
-		uri.removeFrom(container);
-		container.activate(origFilename, 5);
-		container.delete(origFilename);
-		container.activate(targetURI, 5);
-		targetURI.removeFrom(container);
-		container.delete(this);
 	}
 
 }

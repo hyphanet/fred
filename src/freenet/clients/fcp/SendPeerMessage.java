@@ -1,7 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -38,11 +36,6 @@ public abstract class SendPeerMessage extends DataCarryingMessage {
 		if(dataLength >= 0)
 			fs.put("DataLength", dataLength);
 		return fs;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

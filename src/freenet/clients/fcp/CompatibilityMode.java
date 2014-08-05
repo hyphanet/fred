@@ -3,8 +3,6 @@ package freenet.clients.fcp;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.node.Node;
 import freenet.support.HexUtil;
@@ -13,7 +11,8 @@ import freenet.support.SimpleFieldSet;
 
 public class CompatibilityMode extends FCPMessage implements Serializable {
 	
-	final String identifier;
+    private static final long serialVersionUID = 1L;
+    final String identifier;
 	long min;
 	long max;
 	final boolean global;
@@ -67,11 +66,6 @@ public class CompatibilityMode extends FCPMessage implements Serializable {
 	@Override
 	public String getName() {
 		return "CompatibilityMode";
-	}
-	
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 	
 	@Override

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -60,12 +58,6 @@ public class GeneratedMetadataMessage extends BaseDataCarryingMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		// Bucket is the responsibility of the insert.
-		container.delete(this);
 	}
 
 }

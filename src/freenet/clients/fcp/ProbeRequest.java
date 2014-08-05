@@ -1,6 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.probe.Error;
@@ -69,11 +68,6 @@ public class ProbeRequest extends FCPMessage {
 	@Override
 	public String getName() {
 		return NAME;
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

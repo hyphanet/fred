@@ -9,8 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -300,14 +298,6 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK))
 			return s;
 		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		uri.removeFrom(container);
-		container.delete(diskFile);
-		container.delete(tempFile);
-		container.delete(this);
 	}
 
 	@Override

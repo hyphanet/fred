@@ -6,8 +6,6 @@ package freenet.clients.fcp;
 import java.io.File;
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.clients.fcp.FCPConnectionHandler.DDACheckJob;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -81,10 +79,5 @@ public class TestDDACompleteMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 }

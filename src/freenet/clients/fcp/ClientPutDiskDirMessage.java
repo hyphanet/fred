@@ -9,8 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
@@ -135,12 +133,6 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	@Override
 	protected void writeData(OutputStream os) throws IOException {
 		// Do nothing
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(dirname);
-		container.delete(this);
 	}
 
 }

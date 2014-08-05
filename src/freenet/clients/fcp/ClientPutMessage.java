@@ -362,14 +362,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return global;
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		uri.removeFrom(container);
-		container.delete(origFilename);
-		if(redirectTarget != null)
-			redirectTarget.removeFrom(container);
-	}
-
 	public void freeData(ObjectContainer container) {
 		if(bucket == null) {
 			if(dataLength() <= 0)

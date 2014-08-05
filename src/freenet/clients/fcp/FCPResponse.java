@@ -1,6 +1,5 @@
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -33,8 +32,4 @@ public abstract class FCPResponse extends FCPMessage {
 		         " is a reply from the node; the client should not send it.", null, false);
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
 }

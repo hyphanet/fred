@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -177,25 +175,6 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				manifestElements.put(tempName, e);
 			}
 		}
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		filesToRead.clear();
-		container.activate(filesByName, Integer.MAX_VALUE);
-		removeFrom(container, filesByName);
-		container.delete(this);
-	}
-
-	private void removeFrom(ObjectContainer container, HashMap<String, Object> filesByName) {
-		for(Object val: filesByName.values()) {
-			if(val instanceof HashMap) {
-				removeFrom(container, (HashMap<String, Object>) val);
-			} else {
-				((DirPutFile)val).removeFrom(container);
-			}
-		}
-		container.delete(filesByName);
 	}
 
 }

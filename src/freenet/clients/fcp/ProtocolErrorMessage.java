@@ -5,8 +5,6 @@ package freenet.clients.fcp;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -185,11 +183,6 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 		return "ProtocolError";
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
 	@Override
 	public String toString() {
 		return super.toString()+":"+code+":"+extra+":"+fatal+":"+ident+":"+global;

@@ -6,8 +6,6 @@ package freenet.clients.fcp;
 import java.io.File;
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
@@ -142,8 +140,4 @@ public class LoadPlugin extends FCPMessage {
 		}, "Load Plugin");
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
 }

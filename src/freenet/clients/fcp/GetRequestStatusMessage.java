@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
@@ -69,11 +67,6 @@ public class GetRequestStatusMessage extends FCPMessage {
 		} else {
 			req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
 		}
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 }
