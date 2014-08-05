@@ -171,7 +171,9 @@ public class FetchContext implements Cloneable, Serializable {
 	 * @param maskID Mask mode for the copy operation e.g. SPLITFILE_DEFAULT_BLOCK_MASK.
 	 * @param keepProducer If true, keep the existing EventProducer. Must be false if we are 
 	 * creating a new request. Can be true if we are masking the FetchContext within a single
-	 * request, e.g. to download a container. 
+	 * request, e.g. to download a container. This is important so that we see the progress updates
+	 * for the request and not for other requests sharing the FetchContext, but also it could break
+	 * serialization.
 	 * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 	 */
 	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
