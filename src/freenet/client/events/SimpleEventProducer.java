@@ -7,8 +7,6 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
