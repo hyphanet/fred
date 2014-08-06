@@ -509,4 +509,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return node;
 	}
 
+    public KeySalter getGlobalKeySalter(boolean persistent) {
+        return persistent ? schedCore : schedTransient;
+    }
+
 }

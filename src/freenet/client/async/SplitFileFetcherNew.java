@@ -102,7 +102,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         if(parent.isCancelled())
             throw new FetchException(FetchException.CANCELLED);
         
-        KeySalter salter = context.getChkFetchScheduler(realTimeFlag).schedTransient;
+        KeySalter salter = context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
 
         try {
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
