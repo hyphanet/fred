@@ -540,6 +540,19 @@ public class FCPClient {
             completedUnackedRequests.add(clientRequest);
         else
             runningPersistentRequests.add(clientRequest);
+        String identifier = clientRequest.identifier;
+        if(clientRequestsByIdentifier.get(identifier) != null) {
+            if(clientRequest != clientRequestsByIdentifier.get(identifier))
+                throw new IllegalArgumentException("Adding new client request "+clientRequest+
+                        " with same name \""+identifier+"\" as "+
+                        clientRequestsByIdentifier.get(identifier));
+            else {
+                Logger.error(this, "Adding the same identifier twice: "+identifier);
+                return;
+            }
+        } else {
+            clientRequestsByIdentifier.put(identifier, clientRequest);
+        }
     }
 
 }
