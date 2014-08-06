@@ -146,6 +146,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
 
     private void checkpoint() {
+        synchronized(sync) {
+            if(!started) return;
+        }
         synchronized(serializeCheckpoints) {
             try {
                 innerCheckpoint();
