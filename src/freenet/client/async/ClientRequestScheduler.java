@@ -133,7 +133,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(hasListener != null) {
 		    listener = hasListener.makeKeyListener(clientContext, false);
 		    if(listener != null)
-		        schedTransient.addPendingKeys(listener);
+		        (persistent ? schedCore : schedTransient).addPendingKeys(listener);
 		    else
 		        Logger.normal(this, "No KeyListener for "+hasListener);
 		} else
@@ -494,10 +494,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 	}
 
-	void addPersistentPendingKeys(KeyListener listener) {
-		schedCore.addPendingKeys(listener);
-	}
-	
 	@Override
 	public void wakeStarter() {
 		starter.wakeUp();
