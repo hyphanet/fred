@@ -12,6 +12,7 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.CRCChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
@@ -143,8 +144,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
 
     @Override
     public void schedule(ClientContext context) throws KeyListenerConstructionException {
-        storage.start();
-        getter.schedule(context, false);
+        if(storage.start())
+            getter.schedule(context, false);
     }
     
     /** Fail the whole splitfile request when we get an IOException on writing to or reading from 
@@ -155,6 +156,14 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
      */
     @Override
     public void failOnDiskError(IOException e) {
+        fail(new FetchException(FetchException.BUCKET_ERROR));
+    }
+    
+    /** Fail the whole splitfile request when we get unrecoverable data corruption, e.g. can't 
+     * read the keys. FIXME ROBUSTNESS in some cases this could actually be recovered by 
+     * restarting from the metadata or the original URI. */
+    @Override
+    public void failOnDiskError(ChecksumFailedException e) {
         fail(new FetchException(FetchException.BUCKET_ERROR));
     }
     
@@ -327,8 +336,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         }
         getter = new SplitFileFetcherGet(this, storage);
         try {
-            storage.start();
-            getter.schedule(context, storage.hasCheckedStore());
+            if(storage.start())
+                getter.schedule(context, storage.hasCheckedStore());
         } catch (KeyListenerConstructionException e) {
             Logger.error(this, "Key listener construction failed during resume: "+e, e);
             fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
@@ -336,7 +345,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         }
         raf.onResume(context);
     }
-    
+
     @Override
     public KeySalter getSalter() {
         return context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);

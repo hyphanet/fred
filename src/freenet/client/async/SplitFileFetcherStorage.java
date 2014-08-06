@@ -41,6 +41,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.NativeThread;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
 
@@ -692,30 +693,15 @@ public class SplitFileFetcherStorage {
                 segmentsToTryDecode.add(segment);
             }
         }
-        boolean regenerateFilters = keyListener.needsKeys();
-        if(regenerateFilters) {
-            System.out.println("Regenerating filters for "+this);
-            Logger.error(this, "Regenerating filters for "+this);
-        }
         for(int i=0;i<segments.length;i++) {
             SplitFileFetcherSegmentStorage segment = segments[i];
             try {
-                SplitFileSegmentKeys keys = segment.readSegmentKeys();
-                if(regenerateFilters) {
-                    for(int j=0;j<keys.totalKeys();j++) {
-                        keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
-                    }
-                }
+                segment.readSegmentKeys();
             } catch (ChecksumFailedException e) {
                 throw new StorageFormatException("Keys corrupted");
             }
         }
-        keyListener.addedAllKeys();
         readGeneralProgress();
-        if(regenerateFilters) {
-            keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
-            keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
-        }
     }
     
     static final int GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM = 8;
@@ -750,19 +736,71 @@ public class SplitFileFetcherStorage {
         assert(ret.length == GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM);
         return ret;
     }
-    
-    public void start() {
+
+    /** Start the storage layer.
+     * @return True if it should be scheduled immediately. If false, the storage layer will 
+     * callback into the fetcher later.
+     */
+    public boolean start() {
         if(segmentsToTryDecode != null) {
             List<SplitFileFetcherSegmentStorage> brokenSegments;
             synchronized(SplitFileFetcherStorage.this) {
                 brokenSegments = segmentsToTryDecode;
                 segmentsToTryDecode = null;
             }
-            if(brokenSegments == null) return;
-            for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
-                segment.tryStartDecode();
+            if(brokenSegments != null) {
+                for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
+                    segment.tryStartDecode();
+                }
             }
         }
+        if(keyListener.needsKeys()) {
+            try {
+                this.jobRunner.queue(new PersistentJob() {
+
+                    @Override
+                    public boolean run(ClientContext context) {
+                        System.out.println("Regenerating filters for "+SplitFileFetcherStorage.this);
+                        Logger.error(this, "Regenerating filters for "+SplitFileFetcherStorage.this);
+                        KeySalter salt = fetcher.getSalter();
+                        for(int i=0;i<segments.length;i++) {
+                            SplitFileFetcherSegmentStorage segment = segments[i];
+                            try {
+                                try {
+                                    SplitFileSegmentKeys keys = segment.readSegmentKeys();
+                                    for(int j=0;j<keys.totalKeys();j++) {
+                                        keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
+                                    }
+                                } catch (IOException e) {
+                                    failOnDiskError(e);
+                                    return false;
+                                }
+                            } catch (ChecksumFailedException e) {
+                                failOnDiskError(e);
+                                return false;
+                            }
+                        }
+                        keyListener.addedAllKeys();
+                        try {
+                            keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
+                            keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
+                        } catch (IOException e) {
+                            if(persistent)
+                                failOnDiskError(e);
+                        }
+                        fetcher.restartedAfterDataCorruption();
+                        Logger.warning(this, "Finished regenerating filters for "+SplitFileFetcherStorage.this);
+                        System.out.println("Finished regenerating filters for "+SplitFileFetcherStorage.this);
+                        return false;
+                    }
+                    
+                }, NativeThread.LOW_PRIORITY+1);
+            } catch (PersistenceDisabledException e) {
+                // Ignore.
+            }
+            return false;
+        }
+        return true;
     }
     
     /** Thrown when the file being loaded appears not to be a stored splitfile */
@@ -1095,6 +1133,19 @@ public class SplitFileFetcherStorage {
 
     public void failOnDiskError(final IOException e) {
         Logger.error(this, "Failing on disk error: "+e, e);
+        jobRunner.queueLowOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                fetcher.failOnDiskError(e);
+                return true;
+            }
+            
+        });
+    }
+
+    public void failOnDiskError(final ChecksumFailedException e) {
+        Logger.error(this, "Failing on unrecoverable corrupt data: "+e, e);
         jobRunner.queueLowOrDrop(new PersistentJob() {
 
             @Override

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.node.BaseSendableGet;
@@ -29,6 +30,9 @@ public interface SplitFileFetcherCallback {
 
     /** Called when the splitfile storage layer receives an unrecoverable disk I/O error. */
     void failOnDiskError(IOException e);
+
+    /** Called when the splitfile storage layer receives unrecoverable data corruption. */
+    void failOnDiskError(ChecksumFailedException e);
 
     /** Called during construction to tell other layers how many blocks to expect.
      * @param requiredBlocks The number of blocks that must be fetched to complete the download.
@@ -91,7 +95,7 @@ public interface SplitFileFetcherCallback {
 
     /** Can be null. Provided for KeyListeners. */
     HasKeyListener getHasKeyListener();
-    
+
     KeySalter getSalter();
 
 }
