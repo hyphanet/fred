@@ -171,13 +171,15 @@ public final class KeyGenUtils {
     }
 
     /**
-     * Converts the specified key into a SecretKey for the specified algorithm
+     * Converts the specified key into a SecretKey for the specified algorithm. Checks the length of
+     * the key to make sure it is correct. HMAC does not have a set key length, so any key is 
+     * acceptable when using a key of this type.
      * @param key The byte[] of the key
      * @param type Type of key
      * @return The key as a SecretKey
      */
     public static SecretKey getSecretKey(KeyType type, byte[] key){
-        if(key.length != type.keySize >> 3){
+        if(!type.name().startsWith("HMAC") && key.length != type.keySize >> 3){
             throw new IllegalArgumentException("Key size does not match KeyType");
         }
         return new SecretKeySpec(key, type.alg);

@@ -14,7 +14,6 @@ import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
 import freenet.support.HexUtil;
