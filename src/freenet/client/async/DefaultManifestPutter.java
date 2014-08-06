@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.support.ContainerSizeEstimator;

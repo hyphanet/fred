@@ -6,8 +6,6 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;

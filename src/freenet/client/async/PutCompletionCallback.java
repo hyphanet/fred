@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;

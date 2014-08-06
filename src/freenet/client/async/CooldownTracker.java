@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Logger;
 import freenet.support.RemoveRandomWithObject;
 import freenet.support.Ticker;

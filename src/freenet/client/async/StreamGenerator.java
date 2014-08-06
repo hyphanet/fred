@@ -7,8 +7,6 @@ package freenet.client.async;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.db4o.ObjectContainer;
-
 /** Writes an underlying data structure to an output stream.*/
 public interface StreamGenerator {
 

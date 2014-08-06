@@ -1,7 +1,5 @@
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 
 public interface SplitfileBlock {

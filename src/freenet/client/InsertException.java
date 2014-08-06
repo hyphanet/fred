@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;

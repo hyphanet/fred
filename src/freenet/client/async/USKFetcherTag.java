@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
@@ -86,9 +84,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		return tag;
 	}
 	
-	synchronized void updatedEdition(long ed, ObjectContainer container) {
+	synchronized void updatedEdition(long ed) {
 		if(edition < ed) edition = ed;
-		if(persistent) container.store(this); // Update
 	}
 
 	public void start(USKManager manager, ClientContext context) {
@@ -257,10 +254,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		});
 	}
 	
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		return false;
-	}
-
     @Override
     public void onResume(ClientContext context) {
         if(finished) return;

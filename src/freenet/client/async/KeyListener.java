@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.node.SendableGet;

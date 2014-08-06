@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;

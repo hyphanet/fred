@@ -25,8 +25,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Map.Entry;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -178,7 +176,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		DBRFetcher(ClientKey key, int maxRetries, FetchContext ctx,
 				ClientRequester parent, GetCompletionCallback rcb,
 				boolean isEssential, boolean dontAdd, long l,
-				ObjectContainer container, ClientContext context,
+				ClientContext context,
 				boolean deleteFetchContext, boolean realTimeFlag) {
 			super(key, maxRetries, ctx, parent, rcb, isEssential, dontAdd, l,
 					context, deleteFetchContext, realTimeFlag);
@@ -200,7 +198,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final USKDateHint.Type type;
 		DBRAttempt(ClientKey key, ClientContext context, USKDateHint.Type type) {
 			fetcher = new DBRFetcher(key, ctxDBR.maxUSKRetries, ctxDBR, parent, 
-					this, false, true, 0, null, context, false, isRealTime());
+					this, false, true, 0, context, false, isRealTime());
 			this.type = type;
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
@@ -726,7 +724,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" for "+this);
 			}
-			schedule(end-now, null, context);
+			schedule(end-now, context);
 			checkFinishedForNow(context);
 		} else {
 			USKFetcherCallback[] cb;
@@ -949,8 +947,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return origUSK;
 	}
 	
-	public void schedule(long delay, ObjectContainer container, final ClientContext context) {
-		assert(container == null);
+	public void schedule(long delay, final ClientContext context) {
 		if (delay<=0) {
 			schedule(context);
 		} else {
@@ -1210,11 +1207,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	@Override
 	public long getToken() {
 		return -1;
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing USKFetcher in database", new Exception("error"));
-		return false;
 	}
 
 	@Override

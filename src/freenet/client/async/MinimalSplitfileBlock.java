@@ -75,10 +75,4 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		return ret;
 	}
 
-	// Useful for debugging duplicate object bugs. But use the new logging infrastructure if you reinstate it, please.
-//	public void objectOnDeactivate(ObjectContainer container) {
-//		if(Logger.shouldLog(LogLevel.MINOR, this))
-//			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
-//	}
-//
 }
