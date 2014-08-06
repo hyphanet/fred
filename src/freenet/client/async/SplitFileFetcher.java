@@ -299,7 +299,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         } catch (KeyListenerConstructionException e) {
             // Impossible.
         }
-        context.jobRunner.setCommitThisTransaction();
+        context.jobRunner.setCheckpointASAP();
     }
 
     @Override

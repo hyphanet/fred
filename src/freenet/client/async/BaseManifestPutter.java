@@ -940,7 +940,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		if (containerMode) throw new IllegalStateException();
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		baseMetadata = makeMetadata(rootDir);
-		context.jobRunner.setCommitThisTransaction();
+		context.jobRunner.setCheckpointASAP();
 		resolveAndStartBase(context);
 	}
 

@@ -30,7 +30,7 @@ public class SimplePersistentJobRunner implements PersistentJobRunner {
     }
 
     @Override
-    public void setCommitThisTransaction() {
+    public void setCheckpointASAP() {
         // Ignore.
     }
 

@@ -229,7 +229,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         });
     }
 
-    public void setCommitThisTransaction() {
+    public void setCheckpointASAP() {
         synchronized(sync) {
             mustCheckpoint = true;
         }

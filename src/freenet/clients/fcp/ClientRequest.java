@@ -356,7 +356,7 @@ public abstract class ClientRequest implements Serializable {
 			return; // quick return, nothing was changed
 		}
 		
-		server.core.clientContext.jobRunner.setCommitThisTransaction();
+		server.core.clientContext.jobRunner.setCheckpointASAP();
 		
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;

@@ -13,7 +13,7 @@ public interface PersistentJobRunner {
 
     /** Commit ASAP. Can also be set via returning true from a PersistentJob, but it's useful to be
      * able to do it "inline". */
-    void setCommitThisTransaction();
+    void setCheckpointASAP();
 
     /** Has the queue started yet? */
     boolean hasStarted();

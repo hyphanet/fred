@@ -41,7 +41,7 @@ public class DummyJobRunner implements PersistentJobRunner {
     }
 
     @Override
-    public void setCommitThisTransaction() {
+    public void setCheckpointASAP() {
         // Ignore.
     }
 
