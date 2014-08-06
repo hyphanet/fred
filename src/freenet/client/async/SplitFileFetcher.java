@@ -103,11 +103,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         if(parent.isCancelled())
             throw new FetchException(FetchException.CANCELLED);
         
-        KeySalter salter = context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
-
         try {
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
-                    topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
+                    topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, getSalter(),
                     thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(), 
                     context.random, context.tempBucketFactory, 
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
@@ -310,7 +308,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         Logger.error(this, "Restarting SplitFileFetcher from storage...");
         this.context = context;
         try {
-            KeySalter salter = context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
+            KeySalter salter = getSalter();
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
@@ -337,6 +335,11 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             return;
         }
         raf.onResume(context);
+    }
+    
+    @Override
+    public KeySalter getSalter() {
+        return context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
     }
 
 }

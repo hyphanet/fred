@@ -91,5 +91,7 @@ public interface SplitFileFetcherCallback {
 
     /** Can be null. Provided for KeyListeners. */
     HasKeyListener getHasKeyListener();
+    
+    KeySalter getSalter();
 
 }
