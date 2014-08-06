@@ -216,7 +216,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
 
 		if(bucketSnoop != null) {
-			if(bucketSnoop.snoopBucket(data, block.isMetadata(), null, context)) {
+			if(bucketSnoop.snoopBucket(data, block.isMetadata(), context)) {
 				cancel(context);
 				data.free();
 				return;
@@ -358,7 +358,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		while(true) {
 			if(metaSnoop != null) {
-				if(metaSnoop.snoopMetadata(metadata, null, context)) {
+				if(metaSnoop.snoopMetadata(metadata, context)) {
 					cancel(context);
 					return;
 				}

@@ -3,13 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 
 public interface SnoopBucket {
 
 	/** Spy on the bucket as a file is being fetched. Return true to cancel the request. */
-	public boolean snoopBucket(Bucket data, boolean isMetadata, ObjectContainer container, ClientContext context);
+	public boolean snoopBucket(Bucket data, boolean isMetadata, ClientContext context);
 	
 }
