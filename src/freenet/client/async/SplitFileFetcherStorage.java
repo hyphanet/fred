@@ -749,7 +749,7 @@ public class SplitFileFetcherStorage {
                 segmentsToTryDecode = null;
             }
             if(brokenSegments != null) {
-                for(SplitFileFetcherSegmentStorage segment : segmentsToTryDecode) {
+                for(SplitFileFetcherSegmentStorage segment : brokenSegments) {
                     segment.tryStartDecode();
                 }
             }
