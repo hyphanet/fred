@@ -74,6 +74,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 int count = ois.readInt();
                 for(int i=0;i<count;i++) {
                     DelayedFreeBucket bucket = (DelayedFreeBucket) ois.readObject();
+                    bucket.onResume(context);
                     try {
                         if(bucket.toFree())
                             bucket.realFree();
