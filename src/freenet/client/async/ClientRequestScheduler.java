@@ -106,13 +106,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void registerInsert(final SendableRequest req, boolean persistent) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
-		if(persistent) {
-		    schedCore.innerRegister(req, clientContext, null);
-		    starter.wakeUp();
-		} else {
-			schedTransient.innerRegister(req, clientContext, null);
-			starter.wakeUp();
-		}
+		selector.innerRegister(req, clientContext, null);
+		starter.wakeUp();
 	}
 	
 	/**
@@ -176,7 +171,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(!(getter.isCancelled())) {
 							wereAnyValid = true;
 							if(!getter.preRegister(clientContext, true)) {
-								schedCore.innerRegister(getter, clientContext, getters);
+								selector.innerRegister(getter, clientContext, getters);
 							}
 						} else
 							getter.preRegister(clientContext, false);
@@ -199,7 +194,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(getter.preRegister(clientContext, true)) continue;
 				}
 				if(!getter.isCancelled())
-					schedTransient.innerRegister(getter, clientContext, getters);
+					selector.innerRegister(getter, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -285,9 +280,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(final ClientRequester request, short oldPrio) {
-		schedTransient.reregisterAll(request, this, clientContext, oldPrio);
-		if(schedCore != null)
-			schedCore.reregisterAll(request, this, clientContext, oldPrio);
+		selector.reregisterAll(request, this, clientContext, oldPrio);
 		starter.wakeUp();
 	}
 	

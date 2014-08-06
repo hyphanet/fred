@@ -142,8 +142,9 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
      * @throws KeyListenerConstructionException
      */
     public void schedule(ClientContext context, boolean ignoreStore) throws KeyListenerConstructionException {
-        context.getChkFetchScheduler(realTimeFlag).register(this, new SendableGet[] { this }, 
-                false, parent.blockFetchContext.blocks, ignoreStore);
+        ClientRequestScheduler sched = context.getChkFetchScheduler(realTimeFlag);
+        BlockSet blocks = parent.blockFetchContext.blocks;
+        sched.register(this, new SendableGet[] { this }, false, blocks, ignoreStore);
     }
 
     @Override

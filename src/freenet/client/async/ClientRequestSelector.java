@@ -15,6 +15,7 @@ import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
 import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
@@ -30,7 +31,10 @@ import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.TimeUtil;
 
-/** Chooses requests from both CRSCore and CRSNP */
+/** The global request queue. Both transient and persistent requests are kept on this in-RAM 
+ * structure, which supports choosing a request to run. See ClientRequestSchedulerBase for the code
+ * that matches up a fetched block with whoever was waiting for it, which needs to be separate for
+ * various reasons. */
 class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final boolean isInsertScheduler;
@@ -352,10 +356,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					} else {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 					}
-					if(req.persistent())
-						schedCore.innerRegister(req, context, null);
-					else
-						schedTransient.innerRegister(req, context, null);
+					innerRegister(req, context, null);
 					continue;
 				}
 				
@@ -710,6 +711,72 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         return total;
     }   
     
+    /**
+     * @param req
+     * @param container
+     * @param maybeActive Array of requests, can be null, which are being registered
+     * in this group. These will be ignored for purposes of checking whether stuff
+     * is activated when it shouldn't be. It is perfectly okay to have req be a
+     * member of maybeActive.
+     * 
+     * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
+     * or make req a SendableRequest[] and register them all at once.
+     */
+    void innerRegister(SendableRequest req, ClientContext context, SendableRequest[] maybeActive) {
+        if(isInsertScheduler && req instanceof BaseSendableGet)
+            throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
+        if((!isInsertScheduler) && req instanceof SendableInsert)
+            throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
+        if(isInsertScheduler != req.isInsert())
+            throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
+        short prio = req.getPriorityClass();
+        if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
+        addToRequestsByClientRequest(req.getClientRequest(), req);
+        sched.selector.addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
+        if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
+    }
+    
+    protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req) {
+        if(clientRequest != null) {
+            // If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
+            // That does not matter.
+            clientRequest.addToRequests(req);
+        }
+    }
+    
+    public void reregisterAll(ClientRequester request, RequestScheduler lock, ClientContext context, short oldPrio) {
+        SendableRequest[] reqs = getSendableRequests(request);
+        
+        if(reqs == null) return;
+        for(int i=0;i<reqs.length;i++) {
+            SendableRequest req = reqs[i];
+            if(req == null) {
+                // We will get rid of SendableRequestSet soon, so this is low priority.
+                Logger.error(this, "Request "+i+" is null reregistering for "+request);
+                continue;
+            }
+            boolean isInsert = req.isInsert();
+            // FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
+            if(isInsert != isInsertScheduler || req.isSSK() != isSSKScheduler) {
+                continue;
+            }
+            // Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
+            req.unregister(context, oldPrio);
+            //Remove from the starterQueue
+            // Then can do innerRegister() (not register()).
+            innerRegister(req, context, null);
+        }
+    }
 
-	
+    /**
+     * Get SendableRequest's for a given ClientRequester.
+     * Note that this will return all kinds of requests, so the caller will have
+     * to filter them according to isInsert and isSSKScheduler.
+     */
+    protected SendableRequest[] getSendableRequests(ClientRequester request) {
+        if(request != null)
+            return request.getSendableRequests();
+        else return null;
+    }
+
 }
