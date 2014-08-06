@@ -273,5 +273,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         } else
             throw new UnsupportedOperationException(); // Not persistent.
     }
+    
+    public String toString() {
+        return super.toString()+":"+file;
+    }
 
 }

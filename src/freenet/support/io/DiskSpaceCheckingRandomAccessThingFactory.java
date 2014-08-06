@@ -54,5 +54,9 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             lock.unlock();
         }
     }
+    
+    public String toString() {
+        return super.toString()+":"+underlying.toString();
+    }
 
 }
