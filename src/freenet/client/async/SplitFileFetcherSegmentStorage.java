@@ -1091,7 +1091,7 @@ public class SplitFileFetcherSegmentStorage {
                 if(blocksFound[i]) continue;
                 if(ignoreLastBlock && i == dataBlocks-1) continue;
                 int retry = retries[i];
-                if(retry > maxRetries) continue;
+                if(retry > maxRetries && maxRetries != -1) continue;
                 if(retry > minRetryCount) continue;
                 if(cooldownTimes[i] > now) {
                     cooldownTime = Math.min(cooldownTime, cooldownTimes[i]);
