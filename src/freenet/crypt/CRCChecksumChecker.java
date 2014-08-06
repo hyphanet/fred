@@ -1,5 +1,6 @@
 package freenet.crypt;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -46,9 +47,9 @@ public class CRCChecksumChecker extends ChecksumChecker {
     }
 
     @Override
-    public byte[] generateChecksum(byte[] data) {
+    public byte[] generateChecksum(byte[] data, int offset, int length) {
         Checksum crc = new CRC32();
-        crc.update(data, 0, data.length);
+        crc.update(data, offset, length);
         return Fields.intToBytes((int)crc.getValue());
     }
 
@@ -84,6 +85,16 @@ public class CRCChecksumChecker extends ChecksumChecker {
         source.readFully(checksum);
         byte[] myChecksum = Fields.intToBytes((int)crc.getValue());
         if(!Arrays.equals(checksum, myChecksum))
+            throw new ChecksumFailedException();
+    }
+
+    @Override
+    public void readAndChecksum(DataInput is, byte[] buf, int offset, int length)
+            throws IOException, ChecksumFailedException {
+        is.readFully(buf, offset, length);
+        byte[] checksum = new byte[checksumLength()];
+        is.readFully(checksum);
+        if(!checkChecksum(buf, offset, length, checksum))
             throw new ChecksumFailedException();
     }
 

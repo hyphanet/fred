@@ -62,6 +62,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         // FIXME check backups.
+        boolean newSalt = false;
         if(filename.exists()) {
             long length = filename.length();
             InputStream fis = null;
@@ -77,6 +78,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 int version = ois.readInt();
                 if(version != VERSION) throw new IOException("Bad version");
                 salt = new byte[32];
+                try {
+                    checker.readAndChecksum(ois, salt, 0, salt.length);
+                } catch (ChecksumFailedException e1) {
+                    Logger.error(this, "Checksum failed for salt value");
+                    System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+                    newSalt = true;
+                }
                 // FIXME checksum.
                 ois.readFully(salt);
                 requestStarters.setGlobalSalt(salt);
@@ -169,6 +177,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeLong(MAGIC);
             oos.writeInt(VERSION);
+            checker.writeAndChecksum(oos, salt);
             oos.write(salt);
             ClientRequester[] requesters = getRequesters();
             oos.writeInt(requesters.length);

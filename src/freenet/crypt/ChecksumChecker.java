@@ -1,8 +1,9 @@
 package freenet.crypt;
 
+import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
 /** Simple utility to check and write checksums. */
@@ -24,7 +25,11 @@ public abstract class ChecksumChecker {
     /** Verify a checksum or report */
     public abstract boolean checkChecksum(byte[] data, int offset, int length, byte[] checksum);
 
-    public abstract byte[] generateChecksum(byte[] bufToChecksum);
+    public abstract byte[] generateChecksum(byte[] bufToChecksum, int offset, int length);
+
+    public byte[] generateChecksum(byte[] bufToChecksum) {
+        return generateChecksum(bufToChecksum, 0, bufToChecksum.length);
+    }
 
     public abstract int getChecksumTypeID();
     
@@ -37,4 +42,15 @@ public abstract class ChecksumChecker {
      * @throws ChecksumFailedException */
     public abstract void copyAndStripChecksum(InputStream is, OutputStream os, long length) throws IOException, ChecksumFailedException;
 
+    public abstract void readAndChecksum(DataInput is, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException;
+    
+    public void writeAndChecksum(OutputStream os, byte[] buf, int offset, int length) throws IOException {
+        os.write(buf, offset, length);
+        os.write(generateChecksum(buf, offset, length));
+    }
+
+    public void writeAndChecksum(ObjectOutputStream oos, byte[] buf) throws IOException {
+        writeAndChecksum(oos, buf, 0, buf.length);
+    }
+    
 }
