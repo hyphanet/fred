@@ -118,7 +118,6 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             throw new FetchException(FetchException.BUCKET_ERROR, e);
         }
         long eventualLength = Math.max(storage.finalLength, metadata.uncompressedDataLength());
-        boolean wasActive = true;
         cb.onExpectedSize(eventualLength, context);
         if(metadata.uncompressedDataLength() > 0)
             cb.onFinalizedMetadata();
@@ -126,7 +125,9 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
         getter = new SplitFileFetcherGet(this, storage);
         raf = storage.getRAF();
-        Logger.error(this, "Created "+(persistent?"persistent" : "transient")+" download for "+thisKey+" on "+raf+" for "+this);
+        if(logMINOR)
+            Logger.minor(this, "Created "+(persistent?"persistent" : "transient")+" download for "+
+                    thisKey+" on "+raf+" for "+this);
     }
     
     protected SplitFileFetcherNew() {
