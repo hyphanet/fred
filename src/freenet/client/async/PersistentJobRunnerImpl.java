@@ -165,6 +165,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 @Override
                 public void run() {
                     synchronized(sync) {
+                        willCheck = false;
                         if(!(mustCheckpoint || 
                                 System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
                             return;
