@@ -117,6 +117,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
                 ois.close();
                 fis = null;
+                onLoading();
                 // Resume the requests.
                 for(ClientRequester req : requests) {
                     if(req != null)

@@ -34,8 +34,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     private Object sync = new Object();
     private Object serializeCheckpoints = new Object();
     private boolean willCheck = false;
-    /** Has the process been properly started? E.g. we don't want to write to disk if we haven't 
-     * read from disk yet because we're waiting for a decryption key. */
+    /** Have we started the loading process? If so, we should accept jobs. */
+    private boolean loading = false;
+    /** Have we completed the loading process? If so, we should checkpoint. */
     private boolean started = false;
     /** True if checkpoint is in progress */
     private boolean writing = false;
@@ -59,7 +60,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     @Override
     public void queue(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
         synchronized(sync) {
-            if(!started) throw new PersistenceDisabledException();
+            if(!loading) throw new PersistenceDisabledException();
             if(killed) throw new PersistenceDisabledException();
             if(context == null) throw new IllegalStateException();
             if(mustCheckpoint) {
@@ -105,13 +106,14 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         mustCheckpoint = true;
                         if(logMINOR) Logger.minor(this, "Writing because "+job+" asked us to");
                     }
+                    runningJobs--;
+                    if(!started) return;
                     if(!mustCheckpoint) {
                         if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
                             mustCheckpoint = true;
                             if(logMINOR) Logger.minor(this, "Writing at interval");
                         }
                     }
-                    runningJobs--;
                     if(!mustCheckpoint) {
                         delayedCheckpoint();
                         return;
@@ -222,8 +224,15 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
     protected abstract void innerCheckpoint();
     
+    protected void onLoading() {
+        synchronized(sync) {
+            loading = true;
+        }
+    }
+    
     protected void onStarted() {
         synchronized(sync) {
+            loading = true;
             started = true;
             updateLastCheckpointed();
         }
