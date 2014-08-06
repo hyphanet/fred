@@ -214,7 +214,6 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     }
 
     public short getPriorityClass() {
-        // FIXME PERSISTENCE When this is temporarily in the database we'll need to pass ObjectContainer here?
         return this.parent.getPriorityClass();
     }
 
