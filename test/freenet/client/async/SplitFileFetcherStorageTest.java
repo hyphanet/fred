@@ -549,6 +549,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public HasKeyListener getHasKeyListener() {
             return null;
         }
+
+        @Override
+        public void failOnDiskError(ChecksumFailedException e) {
+            synchronized(this) {
+                failed = true;
+                notifyAll();
+            }
+        }
+
+        @Override
+        public KeySalter getSalter() {
+            return salt;
+        }
         
     }
 
