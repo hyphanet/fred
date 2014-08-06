@@ -127,8 +127,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(buckets != null) {
                     for(DelayedFreeBucket bucket : buckets) {
                         if(bucket == null) continue;
-                        bucket.onResume(context);
                         try {
+                            bucket.onResume(context);
                             if(bucket.toFree())
                                 bucket.realFree();
                         } catch (Throwable t) {
