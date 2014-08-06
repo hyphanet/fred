@@ -1,8 +1,7 @@
 package freenet.support.io;
 
 import java.io.File;
-
-import com.db4o.ObjectContainer;
+import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
@@ -20,8 +19,10 @@ import freenet.support.api.Bucket;
  *
  * @author     giannij
  */
-public class TempFileBucket extends BaseFileBucket implements Bucket {
-	long filenameID;
+public class TempFileBucket extends BaseFileBucket implements Bucket, Serializable {
+    // Should not be serialized but we need Serializable to save the parent state for PersistentTempFileBucket.
+    private static final long serialVersionUID = 1L;
+    long filenameID;
 	protected transient FilenameGenerator generator;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
@@ -66,6 +67,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket {
             if (logDEBUG) {
                 Logger.debug(this,"Initializing TempFileBucket(" + getFile());
             }
+	}
+	
+	protected TempFileBucket() {
+	    // For serialization.
+	    deleteOnFree = false;
 	}
 
 	@Override

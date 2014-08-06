@@ -21,6 +21,10 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 		this.tracker = tracker;
 	}
 	
+	protected PersistentTempFileBucket() {
+	    // For serialization.
+	}
+	
 	@Override
 	protected boolean deleteOnFinalize() {
 		// Do not delete on finalize
