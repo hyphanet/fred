@@ -346,7 +346,7 @@ public class NodeClientCore implements Persistable {
 		clientLayerPersister.start(clientContext);
 		
 		try {
-			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle);
 		} catch (InvalidConfigValueException e1) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}

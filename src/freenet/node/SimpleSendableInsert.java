@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
@@ -136,7 +134,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		scheduler.registerInsert(this, false);
 	}
 
-	public void cancel(ObjectContainer container, ClientContext context) {
+	public void cancel(ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;

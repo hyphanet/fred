@@ -5,8 +5,6 @@ package freenet.node;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
@@ -70,7 +68,7 @@ public class RequestStarterGroup {
 	public final ClientRequestScheduler sskPutSchedulerRT;
 
 	private final NodeStats stats;
-	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx, long dbHandle, ObjectContainer container) throws InvalidConfigValueException {
+	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx, long dbHandle) throws InvalidConfigValueException {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		this.stats = core.nodeStats;
 		
