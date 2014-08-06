@@ -82,7 +82,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	// - Use IdentityHashMap instead of HashMap.
 	// - Implement a custom class similar to IdentityHashMap which doesn't activate a bucket unless it needs to and uses db4o ID's.
 	
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {
@@ -100,7 +101,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ArchivePutHandler extends PutHandler {
 
-		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
+        private static final long serialVersionUID = 1L;
+
+        private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
 			super(bmp, parent, name, null, containerPutHandlers);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
@@ -151,7 +154,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ContainerPutHandler extends PutHandler {
 
-		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
+        private static final long serialVersionUID = 1L;
+
+        private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
@@ -197,7 +202,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private final class ExternPutHandler extends PutHandler {
 
-		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
+        private static final long serialVersionUID = 1L;
+
+        private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
@@ -290,7 +297,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		// Metadata is not put with a cryptokey. It is derived from other stuff that is already encrypted with random keys.
 		
-		// final metadata
+		/**
+         * 
+         */
+        private static final long serialVersionUID = 1L;
+
+        // final metadata
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly) {
 			super(smp, parent, null, null, null);
 			// Treat as splitfile for purposes of determining number of reinserts.
@@ -342,7 +354,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	/** Placeholder for Matadata, don't run it! */
 	private final class JokerPutHandler extends PutHandler {
 
-		/** a normal ( freeform) redirect */
+        private static final long serialVersionUID = 1L;
+
+        /** a normal ( freeform) redirect */
 		public JokerPutHandler(BaseManifestPutter bmp, 	String name, FreenetURI targetURI2, ClientMetadata cm2) {
 			super(bmp, null, name, null, (Metadata)null, cm2);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI2, cm2);
@@ -367,7 +381,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	// Only implements PutCompletionCallback for the final metadata insert
 	private abstract class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
-		// run me
+        private static final long serialVersionUID = 1L;
+
+        // run me
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap) {
 			super(bmp.priorityClass, bmp.cb);
 			this.persistent = bmp.persistent();

@@ -22,7 +22,8 @@ import freenet.support.Logger;
 
 public class PlainManifestPutter extends BaseManifestPutter {
 
-	private static volatile boolean logDEBUG;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerClass(PlainManifestPutter.class);

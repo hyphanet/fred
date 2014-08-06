@@ -9,7 +9,9 @@ import freenet.client.InsertException;
 
 public abstract class ManifestPutter extends BaseClientPutter {
 	
-	protected ManifestPutter() {
+    private static final long serialVersionUID = 1L;
+
+    protected ManifestPutter() {
 	}
 
 	protected ManifestPutter(short priorityClass, ClientBaseCallback cb) {

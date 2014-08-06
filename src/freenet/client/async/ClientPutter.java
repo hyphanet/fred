@@ -26,7 +26,8 @@ import freenet.support.api.Bucket;
 /** A high level insert. */
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 
-	/** Callback for when the insert completes. */
+    private static final long serialVersionUID = 1L;
+    /** Callback for when the insert completes. */
 	final ClientPutCallback client;
 	/** The data to insert. */
 	final Bucket data;

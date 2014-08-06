@@ -8,7 +8,9 @@ import com.db4o.ObjectContainer;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseClientPutter extends ClientRequester {
 
-	/**
+    private static final long serialVersionUID = 1L;
+
+    /**
 	 * zero arg c'tor for db4o on jamvm
 	 */
 	protected BaseClientPutter() {
