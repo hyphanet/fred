@@ -128,8 +128,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
 	 * because an attacker can usually only identify the datastream once he has the top block, or once you
 	 * have announced the key.
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all methods taking a container parameter.
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
@@ -143,8 +141,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * because an attacker can usually only identify the datastream once he has the top block, or once you
 	 * have announced the key.
 	 * @param restart If true, restart the insert even though it has completed before.
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all methods taking a container parameter.
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
@@ -519,8 +515,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Restart the insert.
 	 * @param earlyEncode See the description on @link start().
-	 * @param container The database. If the insert is persistent, this must be non-null, and we must be
-	 * running on the database thread. This is true for all places where we pass in an ObjectContainer.
 	 * @return True if the insert restarted successfully.
 	 * @throws InsertException If the insert could not be restarted for some reason.
 	 * */
