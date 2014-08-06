@@ -10,8 +10,6 @@ import java.util.Random;
 
 import net.i2p.util.NativeBigInteger;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -89,11 +87,6 @@ public class DSAPrivateKey extends CryptoKey {
 		return new DSAPrivateKey(y, group);
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(x);
-		container.delete(this);
-	}
-    
 //    public static void main(String[] args) throws Exception {
 //        Yarrow y=new Yarrow();
 //        DSAPrivateKey p=new DSAPrivateKey(Global.DSAgroupC, y);

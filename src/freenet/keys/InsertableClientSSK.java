@@ -244,7 +244,6 @@ public class InsertableClientSSK extends ClientSSK {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.activate(privKey, 5);
-		privKey.removeFrom(container);
 		super.removeFrom(container);
 	}
 	

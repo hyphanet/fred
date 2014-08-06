@@ -9,8 +9,6 @@ import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.FSParseException;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
@@ -243,10 +241,4 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return new DSAPublicKey(this);
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(y);
-		if(group != null)
-			group.removeFrom(container);
-		container.delete(this);
-	}
 }

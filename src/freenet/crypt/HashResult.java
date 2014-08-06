@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -82,12 +80,6 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 		if(type.bitmask == h.type.bitmask) return 0;
 		if(type.bitmask > h.type.bitmask) return 1;
 		/* else if(type.bitmask < h.type.bitmask) */ return -1;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		// HashType is an enum, so we don't need to worry about it.
-		// Db4o does the right thing with them.
-		container.delete(this);
 	}
 
 	public static long makeBitmask(HashResult[] hashes) {

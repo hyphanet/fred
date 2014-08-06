@@ -72,7 +72,6 @@ public class InsertableUSK extends USK {
 	public void removeFrom(ObjectContainer container) {
 		Logger.minor(this, "Removing "+this, new Exception("debug"));
 		container.activate(privKey, 5);
-		privKey.removeFrom(container);
 		super.removeFrom(container);
 	}
 	
