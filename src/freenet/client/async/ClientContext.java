@@ -47,7 +47,7 @@ public class ClientContext {
 	public transient final Executor mainExecutor;
 	/** We need to be able to suspend execution of jobs changing persistent state in order to write
 	 * it to disk consistently. Also, some jobs may want to request immediate serialization. */
-	public transient final PersistentJobRunner jobRunner;
+	public transient final ClientLayerPersister jobRunner;
 	public transient final long nodeDBHandle;
 	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
@@ -82,7 +82,7 @@ public class ClientContext {
 	 * avoiding having two different API's, e.g. in SplitFileFetcherStorage. */
     public PersistentJobRunner dummyJobRunner;
 
-	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, Executor mainExecutor,
+	public ClientContext(long bootID, long nodeDBHandle, ClientLayerPersister jobRunner, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
 			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,

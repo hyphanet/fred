@@ -344,4 +344,8 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
         return true;
     }
 
+    public int totalKeys() {
+        return checkBlocks + dataBlocks;
+    }
+
 }

@@ -310,9 +310,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
         Logger.error(this, "Restarting SplitFileFetcher from storage...");
         this.context = context;
         try {
+            KeySalter salter = context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
                     context.random, context.jobRunner, context.ticker, 
-                    context.memoryLimitedJobRunner, new CRCChecksumChecker());
+                    context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
+                    context.jobRunner.newSalt(), salter);
         } catch (IOException e) {
             raf.free();
             Logger.error(this, "Failed to resume due to I/O error: "+e+" raf = "+raf, e);

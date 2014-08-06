@@ -40,6 +40,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private final TempBucketFactory tempBucketFactory;
     private PersistentStatsPutter bandwidthStatsPutter;
     private byte[] salt;
+    private boolean newSalt;
     private final ChecksumChecker checker;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
@@ -62,7 +63,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         // FIXME check backups.
-        boolean newSalt = false;
         if(filename.exists()) {
             long length = filename.length();
             InputStream fis = null;
@@ -81,6 +81,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 try {
                     checker.readAndChecksum(ois, salt, 0, salt.length);
                 } catch (ChecksumFailedException e1) {
+                    random.nextBytes(salt);
                     Logger.error(this, "Checksum failed for salt value");
                     System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
                     newSalt = true;
@@ -250,6 +251,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
 
     public PersistentStatsPutter getBandwidthStats() {
         return bandwidthStatsPutter;
+    }
+    
+    public boolean newSalt() {
+        return newSalt;
     }
 
 }

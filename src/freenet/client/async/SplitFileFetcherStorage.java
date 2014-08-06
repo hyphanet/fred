@@ -508,7 +508,10 @@ public class SplitFileFetcherStorage {
     /** Construct a SplitFileFetcherStorage from a stored RandomAccessThing, and appropriate local
      * settings passed in. Ideally this would work with only basic system utilities such as 
      * those on ClientContext, i.e. we'd be able to restore the splitfile download without knowing
-     * anything about it. 
+     * anything about it.
+     * @param newSalt True if the global salt has changed.
+     * @param salt The global salter. Should be passed in even if the global salt hasn't changed,
+     * as we may not have completed regenerating bloom filters.
      * @throws IOException If the restore failed because of a failure to read from disk. 
      * @throws StorageFormatException 
      * @throws FetchException If the request has already failed (but it wasn't processed before 
@@ -516,7 +519,7 @@ public class SplitFileFetcherStorage {
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
             SplitFileFetcherCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker) throws IOException, StorageFormatException, FetchException {
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, boolean newSalt, KeySalter salt) throws IOException, StorageFormatException, FetchException {
         this.persistent = true;
         this.raf = raf;
         this.fetcher = callback;
@@ -667,11 +670,7 @@ public class SplitFileFetcherStorage {
         if(crossSegments != 0)
             throw new StorageFormatException("Cross-segment not supported yet");
         this.crossSegments = null; // FIXME cross-segment splitfile support
-        try {
-            this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
-        } catch (ChecksumFailedException e1) {
-            throw new StorageFormatException("Corrupted bloom filters!");
-        }
+        this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {
@@ -693,14 +692,30 @@ public class SplitFileFetcherStorage {
                 segmentsToTryDecode.add(segment);
             }
         }
-        for(SplitFileFetcherSegmentStorage segment : segments) {
+        boolean regenerateFilters = keyListener.needsKeys();
+        if(regenerateFilters) {
+            System.out.println("Regenerating filters for "+this);
+            Logger.error(this, "Regenerating filters for "+this);
+        }
+        for(int i=0;i<segments.length;i++) {
+            SplitFileFetcherSegmentStorage segment = segments[i];
             try {
-                segment.readSegmentKeys();
+                SplitFileSegmentKeys keys = segment.readSegmentKeys();
+                if(regenerateFilters) {
+                    for(int j=0;j<keys.totalKeys();j++) {
+                        keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
+                    }
+                }
             } catch (ChecksumFailedException e) {
                 throw new StorageFormatException("Keys corrupted");
             }
         }
+        keyListener.addedAllKeys();
         readGeneralProgress();
+        if(regenerateFilters) {
+            keyListener.initialWriteSegmentBloomFilters(offsetSegmentBloomFilters);
+            keyListener.innerWriteMainBloomFilter(offsetMainBloomFilter);
+        }
     }
     
     static final int GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM = 8;
