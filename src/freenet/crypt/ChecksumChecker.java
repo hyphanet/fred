@@ -1,5 +1,8 @@
 package freenet.crypt;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 
 /** Simple utility to check and write checksums. */
@@ -28,5 +31,10 @@ public abstract class ChecksumChecker {
     // Checksum IDs.
     // FIXME use an enum when we are creating them from ID's.
     public static final int CHECKSUM_CRC = 1;
+
+    /** Copy bytes from one stream to another, verifying and stripping the final checksum. 
+     * @throws IOException 
+     * @throws ChecksumFailedException */
+    public abstract void copyAndStripChecksum(InputStream is, OutputStream os, long length) throws IOException, ChecksumFailedException;
 
 }

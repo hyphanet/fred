@@ -231,8 +231,72 @@ public class NodeClientCore implements Persistable {
 		    e.printStackTrace();
 		    throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
+		
+	      // Allocate 10% of the RAM to the RAMBucketPool by default
+        int defaultRamBucketPoolSize;
+        long maxMemory = NodeStarter.getMemoryLimitMB();
+        if(maxMemory < 0)
+            defaultRamBucketPoolSize = 10;
+        else {
+            // 10% of memory above 64MB, with a minimum of 1MB.
+            defaultRamBucketPoolSize = (int)Math.min(Integer.MAX_VALUE, ((maxMemory - 64) / 10));
+            if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
+        }
+        
+        // Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
+        long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
+
+        nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+
+            @Override
+            public Long get() {
+                return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
+            }
+
+            @Override
+            public void set(Long val) throws InvalidConfigValueException {
+                if (get().equals(val) || (tempBucketFactory == null))
+                            return;
+                tempBucketFactory.setMaxRAMBucketSize(val);
+            }
+        }, true);
+
+        nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize+"MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+
+            @Override
+            public Long get() {
+                return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
+            }
+
+            @Override
+            public void set(Long val) throws InvalidConfigValueException {
+                if (get().equals(val) || (tempBucketFactory == null))
+                            return;
+                tempBucketFactory.setMaxRamUsed(val);
+            }
+        }, true);
+
+        nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
+
+            @Override
+            public Boolean get() {
+                return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
+            }
+
+            @Override
+            public void set(Boolean val) throws InvalidConfigValueException {
+                if (get().equals(val) || (tempBucketFactory == null))
+                            return;
+                tempBucketFactory.setEncryption(val);
+            }
+        });
+        
+        initDiskSpaceLimits(nodeConfig, sortOrder);
+        
+        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm);
+
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
-		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory);
+		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory, tempBucketFactory);
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		
@@ -260,69 +324,6 @@ public class NodeClientCore implements Persistable {
         this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 
 		initPTBF(nodeConfig);
-
-		// Allocate 10% of the RAM to the RAMBucketPool by default
-		int defaultRamBucketPoolSize;
-		long maxMemory = NodeStarter.getMemoryLimitMB();
-		if(maxMemory < 0)
-			defaultRamBucketPoolSize = 10;
-		else {
-			// 10% of memory above 64MB, with a minimum of 1MB.
-			defaultRamBucketPoolSize = (int)Math.min(Integer.MAX_VALUE, ((maxMemory - 64) / 10));
-			if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
-		}
-		
-		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
-		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
-
-		nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
-
-			@Override
-			public Long get() {
-				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException {
-				if (get().equals(val) || (tempBucketFactory == null))
-					        return;
-				tempBucketFactory.setMaxRAMBucketSize(val);
-			}
-		}, true);
-
-		nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize+"MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
-
-			@Override
-			public Long get() {
-				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException {
-				if (get().equals(val) || (tempBucketFactory == null))
-					        return;
-				tempBucketFactory.setMaxRamUsed(val);
-			}
-		}, true);
-
-		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException {
-				if (get().equals(val) || (tempBucketFactory == null))
-					        return;
-				tempBucketFactory.setEncryption(val);
-			}
-		});
-		
-	    initDiskSpaceLimits(nodeConfig, sortOrder);
-	    
-		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm);
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 

@@ -40,7 +40,7 @@ import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
 
-	private static final int BUFFER_SIZE = 32*1024;
+	public static final int BUFFER_SIZE = 32*1024;
 
 	/**
 	 * Returns a line reading stream for the content of <code>logfile</code>. The stream will
