@@ -351,10 +351,11 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
 		
+        clientContext.init(requestStarters, alerts);
+        
         // FIXME with crypto this load() may happen much later.
         clientLayerPersister.load(clientContext, requestStarters, random);
 
-		clientContext.init(requestStarters, alerts);
 		if(!killedDatabase()) {
 		    InsertCompressor.load(clientContext);
 		}
