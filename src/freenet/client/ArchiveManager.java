@@ -254,10 +254,6 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
-	 *
-	 * FIXME: This method *can* be called from the database thread, however it isn't at
-	 * present (check the call stack). Maybe we should get rid of the ObjectContainer?
-	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
 	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
