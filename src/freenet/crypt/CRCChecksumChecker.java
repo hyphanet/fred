@@ -94,8 +94,10 @@ public class CRCChecksumChecker extends ChecksumChecker {
         is.readFully(buf, offset, length);
         byte[] checksum = new byte[checksumLength()];
         is.readFully(checksum);
-        if(!checkChecksum(buf, offset, length, checksum))
+        if(!checkChecksum(buf, offset, length, checksum)) {
+            Arrays.fill(buf, offset, offset+length, (byte)0);
             throw new ChecksumFailedException();
+        }
     }
 
 }

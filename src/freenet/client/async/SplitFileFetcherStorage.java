@@ -1371,7 +1371,10 @@ public class SplitFileFetcherStorage {
         } finally {
             lock.unlock();
         }
-        checksumChecker.verifyChecksum(buf, offset, length, checksumBuf);
+        if(!checksumChecker.checkChecksum(buf, offset, length, checksumBuf)) {
+            Arrays.fill(buf, offset, offset+length, (byte)0);
+            throw new ChecksumFailedException();
+        }
     }
 
     /** Create an OutputStream that we can write formatted data to of a specific length. On 
