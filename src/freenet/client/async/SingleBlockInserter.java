@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -731,22 +729,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		boolean retval = ctx.forkOnCacheable;
 		return retval;
 	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(finished) {
-			Logger.error(this, "objectCanNew when already finished on "+this);
-			return false;
-		}
-		if(logDEBUG)
-			Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
-		return true;
-	}
-//	
-//	public boolean objectCanUpdate(ObjectContainer container) {
-//		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
-//		return true;
-//	}
-//	
 	
 	@Override
 	public void onEncode(SendableRequestItem token, ClientKey key, ClientContext context) {

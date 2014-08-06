@@ -8,8 +8,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
@@ -284,10 +282,6 @@ public class SplitFileSegmentKeys implements Cloneable, Serializable {
 			byte[] e = key.getExtra();
 			System.arraycopy(e, 0, extraBytesForKeys, i * EXTRA_BYTES_LENGTH, EXTRA_BYTES_LENGTH);
 		}
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 	public NodeCHK[] listNodeKeys(boolean[] foundKeys, boolean copy) {

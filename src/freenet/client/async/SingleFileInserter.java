@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
-import com.db4o.ObjectContainer;
-
-import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -20,7 +17,6 @@ import freenet.client.events.StartedCompressionEvent;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
 import freenet.crypt.MultiHashOutputStream;
-import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
@@ -1150,16 +1146,4 @@ class SingleFileInserter implements ClientPutState {
 		return started;
 	}
 
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
-		return true;
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
-		return true;
-	}
-	
 }
