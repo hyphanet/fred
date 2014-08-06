@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
 
 public abstract class ManifestPutter extends BaseClientPutter {
@@ -20,7 +18,7 @@ public abstract class ManifestPutter extends BaseClientPutter {
 
 	public abstract int countFiles();
 	public abstract long totalSize();
-	public abstract void start(ObjectContainer container, ClientContext context) throws InsertException;
+	public abstract void start(ClientContext context) throws InsertException;
 	
 	public byte[] getSplitfileCryptoKey() {
 		return null;

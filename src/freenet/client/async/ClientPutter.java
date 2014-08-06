@@ -169,7 +169,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			// randomised keys. This substantially improves security by making it impossible to identify blocks
 			// even if you know the content. In the user interface, we will offer the option of inserting as a
 			// random SSK to take advantage of this.
-			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent(), container);
+			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent());
 
 			if(data == null)
 				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
@@ -212,7 +212,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
-							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);
+							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context);
 				}
 			}
 			if(cancel) {
@@ -288,23 +288,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent, ObjectContainer container) {
+	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent) {
 		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
 		// randomised keys. This substantially improves security by making it impossible to identify blocks
 		// even if you know the content. In the user interface, we will offer the option of inserting as a
 		// random SSK to take advantage of this.
 		boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
 		if(randomiseSplitfileKeys) {
-			boolean ctxActive = true;
-			if(persistent) {
-				ctxActive = container.ext().isActive(ctx) || !container.ext().isStored(ctx);
-				if(ctxActive) container.activate(ctx, 1);
-			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
 			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
 				randomiseSplitfileKeys = false;
-			if(!ctxActive)
-				container.deactivate(ctx, 1);
 		}
 		return randomiseSplitfileKeys;
 	}

@@ -311,7 +311,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter(this);
 		DefaultManifestPutter putter;
         try {
-            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, null, core.clientContext);
+            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, core.clientContext);
         } catch (TooManyFilesInsertException e1) {
             throw new InsertException(InsertException.TOO_MANY_FILES);
         }

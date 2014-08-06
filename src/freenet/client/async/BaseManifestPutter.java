@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
@@ -546,7 +544,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					}
 				}
 			}
-			tryComplete(null, context);
+			tryComplete(context);
 		}
 
 		@Override
@@ -769,7 +767,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ObjectContainer container, ClientContext context) throws TooManyFilesInsertException {
+			InsertContext ctx, boolean getCHKOnly2, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
 		super(prioClass, cb);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -785,8 +783,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		this.forceCryptoKey = forceCryptoKey;
 		
-		if(client.persistent())
-			container.activate(ctx, 1);
 		CompatibilityMode mode = ctx.getCompatibilityMode();
 		if(!(mode == CompatibilityMode.COMPAT_CURRENT || mode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
 			this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
@@ -835,17 +831,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		return "";
 	}
 
-	public void start(ObjectContainer container, ClientContext context) throws InsertException {
+	public void start(ClientContext context) throws InsertException {
 		if (logMINOR)
 			Logger.minor(this, "Starting " + this+" persistence="+persistent()+ " containermode="+containerMode);
 		PutHandler[] running;
 		PutHandler[] containers;
 
-		if(persistent()) {
-			container.activate(runningPutHandlers, 2);
-			if (containerMode)
-				container.activate(putHandlerWaitingForBlockSets, 2);
-		}
 		synchronized (this) {
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 			if (containerMode) {
@@ -859,8 +850,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
 				running[i].start(context);
-				if(persistent && !container.ext().isActive(this))
-					container.activate(this, 1);
 				if (logMINOR)
 					Logger.minor(this, "Started " + i + " of " + running.length);
 				if (isFinished()) {
@@ -875,8 +864,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if (containerMode) {
 				for (int i = 0; i < containers.length; i++) {
 					containers[i].start(context);
-					if(persistent && !container.ext().isActive(this))
-						container.activate(this, 1);
 					if (logMINOR)
 						Logger.minor(this, "Started " + i + " of " + containers.length);
 					if (isFinished()) {
@@ -890,8 +877,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 			}
 			if (!containerMode && running.length == 0) {
-				if(persistent())
-					container.store(this);
 				gotAllMetadata(context);
 			}
 		} catch (InsertException e) {
@@ -1064,14 +1049,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 	}
 
-	private void tryComplete(ObjectContainer container, ClientContext context) {
+	private void tryComplete(ClientContext context) {
 		//debugDecompose("try complete");
 		if(logDEBUG) Logger.debug(this, "try complete", new Error("trace tryComplete()"));
 		synchronized(this) {
 			if(finished || cancelled) {
 				if(logMINOR) Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
-				if(persistent())
-					container.store(this);
 				return;
 			}
 			if (!runningPutHandlers.isEmpty()) {
@@ -1095,24 +1078,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			finished = true;
 		}
-		if(persistent())
-			container.store(this);
-		complete(container, context);
+		complete(context);
 	}
 
-	private void complete(ObjectContainer container, ClientContext context) {
+	private void complete(ClientContext context) {
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
 		// Also doing it this way means we don't need to worry about
 		if(persistent()) removePutHandlers(context);
-		boolean deactivateCB = false;
-		if(persistent()) {
-			deactivateCB = !container.ext().isActive(cb);
-			container.activate(cb, 1);
-		}
 		cb.onSuccess(this);
-		if(deactivateCB)
-			container.deactivate(cb, 1);
 	}
 
 	private void fail(Exception e, ClientContext context) {
@@ -1316,11 +1290,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	@Override
 	protected void innerToNetwork(ClientContext context) {
 		// Ignore
-	}
-
-	public void objectOnUpdate(ObjectContainer container) {
-		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
-		//Logger.error(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
 
 	private void tryStartParentContainer(PutHandler containerHandle2, ClientContext context) throws InsertException {

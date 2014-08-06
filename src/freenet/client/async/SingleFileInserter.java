@@ -1134,10 +1134,7 @@ class SingleFileInserter implements ClientPutState {
 		return token;
 	}
 
-	public void onStartCompression(COMPRESSOR_TYPE ctype, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(ctx, 2);
-		}
+	public void onStartCompression(COMPRESSOR_TYPE ctype, ClientContext context) {
 		if(parent == cb) {
 			if(ctx == null) throw new NullPointerException();
 			if(ctx.eventProducer == null) throw new NullPointerException();

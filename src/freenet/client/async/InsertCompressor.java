@@ -108,14 +108,14 @@ public class InsertCompressor implements CompressJob {
 
 							@Override
 							public boolean run(ClientContext context) {
-								inserter.onStartCompression(comp, null, context);
+								inserter.onStartCompression(comp, context);
 								return false;
 							}
 
 						}, NativeThread.NORM_PRIORITY+1);
 					} else {
 						try {
-							inserter.onStartCompression(comp, null, context);
+							inserter.onStartCompression(comp, context);
 						} catch (Throwable t) {
 							Logger.error(this, "Transient insert callback threw "+t, t);
 						}

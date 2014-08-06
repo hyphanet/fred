@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -35,7 +33,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	final InsertContext ctx;
 	final boolean realTimeFlag;
 
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context)
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.ctx = ctx;
@@ -60,7 +58,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		for(Key key: blocks.keys()) {
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
-				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);
+				new MySendableInsert(x++, block, prioClass, getScheduler(block, context), clientContext);
 			myInserters.add(inserter);
 		}
 
@@ -69,7 +67,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.notifyClients(context);
 	}
 
-	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
+	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
 		if(block instanceof CHKBlock)
 			return context.getChkInsertScheduler(realTimeFlag);
 		else if(block instanceof SSKBlock)

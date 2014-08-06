@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ArchiveManager;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
@@ -218,7 +216,7 @@ public class ClientContext {
 				@Override
 				public boolean run(ClientContext context) {
 					try {
-						inserter.start(null, context);
+						inserter.start(context);
 					} catch (InsertException e) {
 						inserter.cb.onFailure(e, inserter);
 					}
@@ -227,7 +225,7 @@ public class ClientContext {
 				
 			}, NativeThread.NORM_PRIORITY);
 		} else {
-			inserter.start(null, this);
+			inserter.start(this);
 		}
 	}
 
@@ -251,13 +249,6 @@ public class ClientContext {
 	public RequestScheduler getFetchScheduler(boolean ssk, boolean realTime) {
 		if(ssk) return realTime ? sskFetchSchedulerRT : sskFetchSchedulerBulk;
 		return realTime ? chkFetchSchedulerRT : chkFetchSchedulerBulk;
-	}
-	
-	/** Tell db4o never to store the ClientContext in the database. If it did it would pull in all sorts of
-	 * stuff and we end up persisting the entire node, which is both dangerous and expensive. */
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing ClientContext in database", new Exception("error"));
-		return false;
 	}
 	
 	public void postUserAlert(final UserAlert alert) {
