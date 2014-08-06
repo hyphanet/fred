@@ -60,6 +60,7 @@ import freenet.support.io.LockableRandomAccessThing;
  */
 public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback, Serializable {
     
+    private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
     static {
         Logger.registerClass(SplitFileFetcherNew.class);

@@ -52,7 +52,8 @@ import freenet.support.io.TempBucketFactory;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -905,7 +906,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	class ArchiveFetcherCallback implements GetCompletionCallback, Serializable {
 
-		private final boolean wasFetchingFinalData;
+        private static final long serialVersionUID = 1L;
+        private final boolean wasFetchingFinalData;
 		private final String element;
 		private final ArchiveExtractCallback callback;
 		/** For activation we need to know whether we are persistent even though the parent may not have been activated yet */
