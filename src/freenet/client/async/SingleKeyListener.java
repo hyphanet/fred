@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
@@ -67,10 +65,6 @@ public class SingleKeyListener implements KeyListener {
 			done = true;
 		}
 		return true;
-	}
-
-	public Key[] listKeys(ObjectContainer container) {
-		return new Key[] { key };
 	}
 
 	@Override
