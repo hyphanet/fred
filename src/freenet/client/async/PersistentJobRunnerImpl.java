@@ -14,6 +14,7 @@ import freenet.support.io.NativeThread;
 public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     
     private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
     static {
         Logger.registerClass(PersistentJobRunnerImpl.class);
     }
@@ -64,8 +65,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             if(killed) throw new PersistenceDisabledException();
             if(context == null) throw new IllegalStateException();
             if(mustCheckpoint) {
+                if(logDEBUG) Logger.debug(this, "Queueing job "+job);
                 queuedJobs.add(new QueuedJob(job, threadPriority));
             } else {
+                if(logDEBUG) Logger.debug(this, "Running job "+job);
                 runningJobs++;
                 executor.execute(new JobRunnable(job, threadPriority, context));
             }
@@ -97,17 +100,22 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         public void run() {
             boolean ret = false;
             try {
+                if(logDEBUG) Logger.debug(this, "Starting "+job);
                 ret = job.run(context);
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t+" running job "+job, t);
             } finally {
+                if(logDEBUG) Logger.debug(this, "Completed "+job+" with mustCheckpoint="+mustCheckpoint+" started="+started+" runningJobs="+runningJobs);
                 synchronized(sync) {
                     if(ret) {
                         mustCheckpoint = true;
                         if(logMINOR) Logger.minor(this, "Writing because "+job+" asked us to");
                     }
                     runningJobs--;
-                    if(!started) return;
+                    if(!started) {
+                        if(logMINOR) Logger.minor(this, "Not started yet");
+                        return;
+                    }
                     if(!mustCheckpoint) {
                         if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
                             mustCheckpoint = true;
@@ -118,7 +126,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         delayedCheckpoint();
                         return;
                     }
-                    if(runningJobs != 0) return;
+                    if(runningJobs != 0) {
+                        if(logDEBUG) Logger.debug(this, "Not writing yet");
+                        return;
+                    }
                     if(killed) {
                         sync.notifyAll();
                         return;
@@ -146,6 +157,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
 
     private void checkpoint() {
+        if(logMINOR) Logger.minor(this, "Writing checkpoint...");
         synchronized(sync) {
             if(!started) return;
         }
@@ -160,6 +172,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             mustCheckpoint = false;
             writing = false;
             QueuedJob[] jobs = queuedJobs.toArray(new QueuedJob[queuedJobs.size()]);
+            if(logDEBUG) Logger.debug(this, "Starting "+jobs.length+" queued jobs");
             for(QueuedJob job : jobs) {
                 runningJobs++;
                 executor.execute(new JobRunnable(job.job, job.threadPriority, context));
@@ -168,6 +181,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             queuedJobs.clear();
             sync.notifyAll();
         }
+        if(logMINOR) Logger.minor(this, "Completed writing checkpoint");
     }
     
     public void delayedCheckpoint() {

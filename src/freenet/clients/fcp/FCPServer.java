@@ -918,6 +918,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				boolean success;
 			}
 			final OutputWrapper ow = new OutputWrapper();
+            if(logMINOR) Logger.minor(this, "Queueing restart of "+identifier);
 			core.clientContext.jobRunner.queue(new PersistentJob() {
 
 				@Override
@@ -930,6 +931,7 @@ public class FCPServer implements Runnable, DownloadCache {
 					boolean success = false;
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier);
+	                    if(logMINOR) Logger.minor(this, "Restarting "+req+" for "+identifier);
 						if(req != null) {
 							req.restart(context, disableFilterData);
 							success = true;
