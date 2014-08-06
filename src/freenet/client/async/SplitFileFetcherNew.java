@@ -126,6 +126,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
         getter = new SplitFileFetcherGet(this, storage);
         raf = storage.getRAF();
+        Logger.error(this, "Created "+(persistent?"persistent" : "transient")+" download for "+thisKey+" on "+raf+" for "+this);
     }
     
     protected SplitFileFetcherNew() {
@@ -312,11 +313,11 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     context.memoryLimitedJobRunner, new CRCChecksumChecker());
         } catch (IOException e) {
             raf.free();
-            Logger.error(this, "Failed to resume due to I/O error: "+e, e);
+            Logger.error(this, "Failed to resume due to I/O error: "+e+" raf = "+raf, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);
         } catch (StorageFormatException e) {
             raf.free();
-            Logger.error(this, "Failed to resume due to storage error: "+e, e);
+            Logger.error(this, "Failed to resume due to storage error: "+e+" raf = "+raf, e);
             throw new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e);
         } catch (FetchException e) {
             raf.free();
