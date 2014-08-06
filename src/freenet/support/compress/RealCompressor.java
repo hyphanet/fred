@@ -6,8 +6,6 @@ package freenet.support.compress;
 import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.node.PrioRunnable;
@@ -104,11 +102,6 @@ public class RealCompressor implements PrioRunnable {
 				}
 			}, "Compressor thread for " + currentJob);
 		}
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing RealCompressor in database", new Exception("error"));
-		return false;
 	}
 	
 	private static int getMaxRunningCompressionThreads() {

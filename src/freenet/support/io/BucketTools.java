@@ -16,8 +16,6 @@ import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -377,7 +375,7 @@ public class BucketTools {
 	 * @throws IOException If there is an error creating buckets, reading from
 	 * the provided bucket, or writing to created buckets.
 	 */
-	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf, boolean freeData, boolean persistent, ObjectContainer container) throws IOException {
+	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf, boolean freeData, boolean persistent) throws IOException {
 		if(origData instanceof FileBucket) {
 			if(freeData) {
 				Logger.error(BucketTools.class, "Asked to free data when splitting a FileBucket ?!?!? Not freeing as this would clobber the split result...");

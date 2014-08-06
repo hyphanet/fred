@@ -1,12 +1,10 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray implements IntNumberedItem {
 
 	private final int number;
 
-	public SectoredRandomGrabArrayWithInt(int number, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+	public SectoredRandomGrabArrayWithInt(int number, boolean persistent, RemoveRandomParent parent) {
 		super(persistent, parent);
 		this.number = number;
 	}

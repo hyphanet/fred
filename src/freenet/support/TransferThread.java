@@ -9,8 +9,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.Collection;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -233,9 +231,4 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	@Override
 	public abstract void onMajorProgress();
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
-		return false;
-	}
-	
 }

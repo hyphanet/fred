@@ -6,8 +6,6 @@ package freenet.support.io;
 import java.io.File;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -126,23 +124,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 		return deleteOnFree;
 	}
 
-	public void objectOnActivate(ObjectContainer container) {
-		container.activate(file, 5);
-	}
-	
-	// Debugging stuff. If reactivate, add the logging infrastructure and use if(logDEBUG).
-//	public void objectOnNew(ObjectContainer container) {
-//		Logger.minor(this, "Storing "+this, new Exception("debug"));
-//	}
-//	
-//	public void objectOnUpdate(ObjectContainer container) {
-//		Logger.minor(this, "Updating "+this, new Exception("debug"));
-//	}
-//	
-//	public void objectOnDelete(ObjectContainer container) {
-//		Logger.minor(this, "Deleting "+this, new Exception("debug"));
-//	}
-//	
 	@Override
 	public Bucket createShadow() {
 		String fnam = file.getPath();

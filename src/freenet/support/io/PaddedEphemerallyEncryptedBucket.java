@@ -10,8 +10,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
@@ -358,12 +356,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		return key;
 	}
 
-	public void objectOnActivate(ObjectContainer container) {
-		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
-		// Cascading activation of dependancies
-		container.activate(bucket, 1);
-	}
-	
 	@Override
 	public Bucket createShadow() {
 		Bucket newUnderlying = bucket.createShadow();

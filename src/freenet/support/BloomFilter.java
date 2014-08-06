@@ -12,8 +12,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.support.math.MersenneTwister;
 
-import com.db4o.ObjectContainer;
-
 public abstract class BloomFilter {
 	protected ByteBuffer filter;
 
@@ -23,7 +21,7 @@ public abstract class BloomFilter {
 
 	protected transient ReadWriteLock lock = new ReentrantReadWriteLock();
 	
-	public void init(ObjectContainer container) {
+	public void init() {
 		lock = new ReentrantReadWriteLock();
 	}
 
@@ -218,11 +216,6 @@ public abstract class BloomFilter {
                 super.finalize();
 	}
 	
-	public void storeTo(ObjectContainer container) {
-		container.store(filter);
-		container.store(this);
-	}
-	
 	public int getSizeBytes() {
 		return filter.capacity();
 	}
@@ -236,11 +229,6 @@ public abstract class BloomFilter {
 		for(int i=0;i<length;i++)
 			if(getBit(i)) x++;
 		return x;
-	}
-	
-	public void removeFrom(ObjectContainer container) {
-		container.delete(filter);
-		container.delete(this);
 	}
 	
     public int copyTo(byte[] buf, int offset) {

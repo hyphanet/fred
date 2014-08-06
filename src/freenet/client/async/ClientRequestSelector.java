@@ -662,7 +662,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 // Request
                 SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
                 if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, null, clientGrabber);
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, clientGrabber);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                     clientGrabber.addGrabber(client, requestGrabber, context);

@@ -16,8 +16,6 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.RandomSource;
@@ -439,26 +437,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			return currentBucket.createShadow();
 		}
 
-		public boolean objectCanNew(ObjectContainer container) {
-			Logger.error(this, "Not storing TempBucket in database", new Exception("error"));
-			throw new IllegalStateException();
-		}
-		
-		public boolean objectCanUpdate(ObjectContainer container) {
-			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
-			throw new IllegalStateException();
-		}
-		
-		public boolean objectCanActivate(ObjectContainer container) {
-			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
-			return false;
-		}
-		
-		public boolean objectCanDeactivate(ObjectContainer container) {
-			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
-			return false;
-		}
-		
 		private WeakReference<Migratable> weakRef = new WeakReference<Migratable>(this);
 
 		public WeakReference<Migratable> getReference() {

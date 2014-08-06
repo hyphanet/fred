@@ -11,8 +11,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
@@ -136,11 +134,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 
 	@Override
 	public void free() {
-	}
-
-	public void objectOnActivate(ObjectContainer container) {
-		// Cascading activation of dependancies
-		container.activate(file, 5);
 	}
 
 	@Override

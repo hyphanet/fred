@@ -10,8 +10,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -105,21 +103,6 @@ public class DelayedFreeBucket implements Bucket, Serializable {
 		return super.toString()+":"+bucket;
 	}
 	
-	public void objectOnActivate(ObjectContainer container) {
-//		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-//		if(elements != null && elements.length > 100) {
-//			System.err.println("Infinite recursion in progress...");
-//		}
-		if(logMINOR)
-			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
-		if(bucket == this) {
-			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
-			return;
-		}
-		// Cascading activation of dependancies
-		container.activate(bucket, 1);
-	}
-
 	@Override
 	public Bucket createShadow() {
 		return bucket.createShadow();
@@ -127,24 +110,6 @@ public class DelayedFreeBucket implements Bucket, Serializable {
 
 	public void realFree() {
 		bucket.free();
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		if(reallyRemoved) {
-			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
-			return false;
-		}
-		assert(bucket != null);
-		return true;
-	}
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(reallyRemoved) {
-			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
-			return false;
-		}
-		assert(bucket != null);
-		return true;
 	}
 
     @Override

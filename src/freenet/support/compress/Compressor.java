@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -183,14 +181,6 @@ public interface Compressor {
 			if(name.equals("LZMA_NEW")) return LZMA_NEW;
 			if(name.equals("LZMA")) return LZMA_NEW;
 			return null;
-		}
-
-		public boolean objectCanDeactivate(ObjectContainer container) {
-			return false;
-		}
-
-		public boolean objectCanActivate(ObjectContainer container) {
-			return false;
 		}
 
 		public static int countCompressors() {

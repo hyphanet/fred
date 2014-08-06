@@ -15,8 +15,6 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -587,11 +585,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			finishOnFoundEdition(callFinishedFound);
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
-		return false;
-	}
-
 	@Override
 	public boolean realTimeFlag() {
 		return false;

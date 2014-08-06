@@ -1,12 +1,10 @@
 package freenet.support;
 
-import com.db4o.ObjectContainer;
-
 public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray implements RemoveRandomWithObject {
 
 	private Object object;
 	
-	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, RemoveRandomParent parent) {
 		super(persistent, parent);
 		this.object = object;
 	}
