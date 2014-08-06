@@ -108,7 +108,8 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, salter,
                     thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(), 
-                    context.random, context.tempBucketFactory, context.tempRAFFactory, 
+                    context.random, context.tempBucketFactory, 
+                    persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     context.jobRunner, context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
