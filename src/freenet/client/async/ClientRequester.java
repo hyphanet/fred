@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.WeakHashMap;
 
 import freenet.keys.FreenetURI;
@@ -24,8 +25,9 @@ import freenet.support.Logger.LogLevel;
  * inserts).
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public abstract class ClientRequester {
-	private static volatile boolean logMINOR;
+public abstract class ClientRequester implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerClass(ClientRequester.class);
