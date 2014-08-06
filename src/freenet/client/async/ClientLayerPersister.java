@@ -52,7 +52,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         // FIXME check backups.
         if(filename.exists()) {
             InputStream fis = null;
+            ClientRequester[] requests;
+            DelayedFreeBucket[] buckets = null;
             try {
+                // Read everything in first.
                 fis = bucket.getInputStream();
                 BufferedInputStream bis = new BufferedInputStream(fis);
                 ObjectInputStream ois = new ObjectInputStream(bis);
@@ -64,26 +67,36 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 // FIXME checksum.
                 ois.readFully(salt);
                 requestStarters.setGlobalSalt(salt);
-                int requests = ois.readInt();
-                for(int i=0;i<requests;i++) {
+                int requestCount = ois.readInt();
+                requests = new ClientRequester[requestCount];
+                for(int i=0;i<requestCount;i++) {
                     // FIXME write a simpler, more robust, non-serialized version first.
-                    ClientRequester requester = (ClientRequester) ois.readObject();
-                    requester.onResume(context);
+                    requests[i] = (ClientRequester) ois.readObject();
                 }
                 bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
                 int count = ois.readInt();
+                buckets = new DelayedFreeBucket[count];
                 for(int i=0;i<count;i++) {
-                    DelayedFreeBucket bucket = (DelayedFreeBucket) ois.readObject();
-                    bucket.onResume(context);
-                    try {
-                        if(bucket.toFree())
-                            bucket.realFree();
-                    } catch (Throwable t) {
-                        Logger.error(this, "Unable to free old bucket "+bucket, t);
-                    }
+                    buckets[i] = (DelayedFreeBucket) ois.readObject();
                 }
                 ois.close();
                 fis = null;
+                // Resume the requests.
+                for(ClientRequester req : requests) {
+                    req.onResume(context);
+                }
+                // Delete the unnecessary buckets.
+                if(buckets != null) {
+                    for(DelayedFreeBucket bucket : buckets) {
+                        bucket.onResume(context);
+                        try {
+                            if(bucket.toFree())
+                                bucket.realFree();
+                        } catch (Throwable t) {
+                            Logger.error(this, "Unable to free old bucket "+bucket, t);
+                        }
+                    }
+                }
                 System.out.println("Resumed from saved requests ...");
                 onStarted();
                 return;
