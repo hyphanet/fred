@@ -46,7 +46,7 @@ public abstract class ClientRequester {
 	protected transient RequestClient client;
 	/** The set of queued low-level requests or inserts for this request or
 	 * insert. */
-	protected final SendableRequestSet requests;
+	protected transient SendableRequestSet requests;
 
 	/** What is our priority class? */
 	public short getPriorityClass() {
@@ -355,8 +355,9 @@ public abstract class ClientRequester {
     /** Called for a persistent request after startup. */
     public void onResume(ClientContext context) {
         ClientBaseCallback cb = getCallback();
-        client = cb.getRequestClient();
         cb.onResume(context);
+        client = cb.getRequestClient();
+        requests = new TransientSendableRequestSet();
     }
 
     protected abstract ClientBaseCallback getCallback();
