@@ -238,7 +238,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             loading = true;
             started = true;
             updateLastCheckpointed();
+            if(!mustCheckpoint) return;
+            writing = true;
         }
+        checkpointOffThread();
     }
     
     public void shutdown() {
