@@ -808,7 +808,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// FIXME relax these conditions once know it works.
 				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
-				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
+				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
 				            topCompatibilityMode, persistent, thisKey, isFinal, context);
 				} else {

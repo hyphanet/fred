@@ -3,7 +3,7 @@ package freenet.client;
 /** Simple in-memory-only API for FEC encoding/decoding. Does not queue or throttle; see 
  * MemoryLimitedJobRunner for how to deal with that. Caches and creates individual codec engines
  * as needed. */
-public abstract class NewFECCodec {
+public abstract class FECCodec {
     
     public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024+256*1024;
     
@@ -39,7 +39,7 @@ public abstract class NewFECCodec {
     public abstract void encode(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] checkBlocksPresent,
             int blockLength);
 
-    public static NewFECCodec getInstance(short splitfileType) {
+    public static FECCodec getInstance(short splitfileType) {
         switch(splitfileType) {
         case Metadata.SPLITFILE_NONREDUNDANT:
             return null;

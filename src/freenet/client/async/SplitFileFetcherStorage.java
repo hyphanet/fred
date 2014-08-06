@@ -22,7 +22,7 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.NewFECCodec;
+import freenet.client.FECCodec;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.RandomSource;
@@ -102,7 +102,7 @@ import freenet.support.io.LockableRandomAccessThingFactory;
  * etc.
  * 
  * PERSISTENCE: This whole class is transient. It is recreated on startup by the 
- * SplitFileFetcherNew. Many of the fields are also transient, e.g. 
+ * SplitFileFetcher. Many of the fields are also transient, e.g. 
  * SplitFileFetcherSegmentStorage's cooldown fields.
  * @author toad
  */
@@ -126,7 +126,7 @@ public class SplitFileFetcherStorage {
     /** If the splitfile has a common encryption key, this is it. */
     final byte[] splitfileSingleCryptoKey;
     /** FEC codec for the splitfile, if needed. */
-    public final NewFECCodec fecCodec;
+    public final FECCodec fecCodec;
     final Ticker ticker;
     final PersistentJobRunner jobRunner;
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
@@ -159,7 +159,7 @@ public class SplitFileFetcherStorage {
     final CompatibilityMode finalMinCompatMode;
     
     /** Contains Bloom filters */
-    final SplitFileFetcherKeyListenerNew keyListener;
+    final SplitFileFetcherKeyListener keyListener;
     
     final RandomSource random;
     
@@ -226,7 +226,7 @@ public class SplitFileFetcherStorage {
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.finalLength = metadata.dataLength();
         this.splitfileType = metadata.getSplitfileType();
-        this.fecCodec = NewFECCodec.getInstance(splitfileType);
+        this.fecCodec = FECCodec.getInstance(splitfileType);
         this.decompressors = decompressors;
         this.random = random;
         this.errors = new FailureCodeTracker(false);
@@ -319,7 +319,7 @@ public class SplitFileFetcherStorage {
         byte[] localSalt = new byte[32];
         random.nextBytes(localSalt);
         
-        keyListener = new SplitFileFetcherKeyListenerNew(fetcher, this, realTime, false, 
+        keyListener = new SplitFileFetcherKeyListener(fetcher, this, realTime, false, 
                 localSalt, splitfileDataBlocks + splitfileCheckBlocks, blocksPerSegment + 
                 checkBlocksPerSegment, segmentCount);
 
@@ -592,7 +592,7 @@ public class SplitFileFetcherStorage {
         splitfileType = dis.readShort();
         if(!Metadata.isValidSplitfileType(splitfileType))
             throw new StorageFormatException("Invalid splitfile type "+splitfileType);
-        this.fecCodec = NewFECCodec.getInstance(splitfileType);
+        this.fecCodec = FECCodec.getInstance(splitfileType);
         splitfileSingleCryptoAlgorithm = dis.readByte();
         if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileSingleCryptoAlgorithm))
             throw new StorageFormatException("Invalid splitfile crypto algorithm "+splitfileType);
@@ -670,7 +670,7 @@ public class SplitFileFetcherStorage {
         if(crossSegments != 0)
             throw new StorageFormatException("Cross-segment not supported yet");
         this.crossSegments = null; // FIXME cross-segment splitfile support
-        this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false, newSalt);
+        this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, realTime, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {

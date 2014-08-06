@@ -7,7 +7,7 @@ import com.onionnetworks.util.Buffer;
 
 import freenet.support.LRUMap;
 
-public class OnionFECCodec extends NewFECCodec {
+public class OnionFECCodec extends FECCodec {
 
     @Override
     public void decode(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent, int blockLength) {

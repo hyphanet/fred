@@ -21,11 +21,11 @@ import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
 import freenet.support.Logger;
 
-public class SplitFileFetcherKeyListenerNew implements KeyListener {
+public class SplitFileFetcherKeyListener implements KeyListener {
     
     private static volatile boolean logMINOR;
     static {
-        Logger.registerClass(SplitFileFetcherKeyListenerNew.class);
+        Logger.registerClass(SplitFileFetcherKeyListener.class);
     }
     
     final SplitFileFetcherStorage storage;
@@ -66,7 +66,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     
     /** Create a set of bloom filters for a new download.
      * @throws FetchException */
-    public SplitFileFetcherKeyListenerNew(SplitFileFetcherCallback fetcher, SplitFileFetcherStorage storage, 
+    public SplitFileFetcherKeyListener(SplitFileFetcherCallback fetcher, SplitFileFetcherStorage storage, 
             boolean realTime, boolean persistent, byte[] localSalt, int origSize, int segBlocks, 
             int segments) throws FetchException {
         this.fetcher = fetcher;
@@ -111,7 +111,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         filter.setWarnOnRemoveFromEmpty();
     }
     
-    public SplitFileFetcherKeyListenerNew(SplitFileFetcherStorage storage, 
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage, 
             SplitFileFetcherCallback callback, DataInputStream dis, boolean realTime, boolean persistent, boolean newSalt) 
     throws IOException, StorageFormatException {
         this.storage = storage;

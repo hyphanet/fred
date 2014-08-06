@@ -20,10 +20,10 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
         Logger.registerClass(SplitFileFetcherGet.class);
     }
 
-    final SplitFileFetcherNew parent;
+    final SplitFileFetcher parent;
     final SplitFileFetcherStorage storage;
 
-    public SplitFileFetcherGet(SplitFileFetcherNew fetcher, SplitFileFetcherStorage storage) {
+    public SplitFileFetcherGet(SplitFileFetcher fetcher, SplitFileFetcherStorage storage) {
         super(fetcher.parent, fetcher.realTimeFlag);
         this.parent = fetcher;
         this.storage = storage;

@@ -19,7 +19,7 @@ public interface SplitFileFetcherCallback {
     /** Called when the splitfile has been successfully downloaded and decoded. E.g. 
      * streamGenerator() should work now. However the splitfile storage layer may still need the
      * data to e.g. encode healing blocks, so it cannot be freed until close(). The higher level
-     * code (e.g. SplitFileFetcherNew) must call finishedFetcher() when finished, and when that
+     * code (e.g. SplitFileFetcher) must call finishedFetcher() when finished, and when that
      * has been called *and* the storage layer has finished, it will close and free the underlying 
      * storage and call close() here. */
     void onSuccess();

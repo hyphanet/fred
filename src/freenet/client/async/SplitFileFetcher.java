@@ -58,12 +58,12 @@ import freenet.support.io.LockableRandomAccessThing;
  * 
  * @author toad
  */
-public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCallback, Serializable {
+public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallback, Serializable {
     
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
     static {
-        Logger.registerClass(SplitFileFetcherNew.class);
+        Logger.registerClass(SplitFileFetcher.class);
     }
 
     private transient SplitFileFetcherStorage storage;
@@ -82,7 +82,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
     private final boolean wantBinaryBlob;
     private final boolean persistent;
     
-    SplitFileFetcherNew(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
+    SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
             ClientMetadata clientMetadata, long token, boolean topDontCompress, 
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
@@ -132,7 +132,7 @@ public class SplitFileFetcherNew implements ClientGetState, SplitFileFetcherCall
                     thisKey+" on "+raf+" for "+this);
     }
     
-    protected SplitFileFetcherNew() {
+    protected SplitFileFetcher() {
         // For serialization.
         parent = null;
         cb = null;

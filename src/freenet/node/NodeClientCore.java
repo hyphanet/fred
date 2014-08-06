@@ -14,7 +14,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
-import freenet.client.NewFECCodec;
+import freenet.client.FECCodec;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
@@ -332,7 +332,7 @@ public class NodeClientCore implements Persistable {
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		long memoryLimitedJobsMemoryLimit = NewFECCodec.MIN_MEMORY_ALLOCATION; // FIXME
+		long memoryLimitedJobsMemoryLimit = FECCodec.MIN_MEMORY_ALLOCATION; // FIXME
 		LockableRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom, true);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
