@@ -672,7 +672,10 @@ public class SplitFileFetcherSegmentStorage {
             // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
             synchronized(this) {
                 if(succeeded || failed || finished) return true; // We decoded it, it's definitely OK.
-                if(blocksFound[blockNumber]) continue;
+                if(blocksFound[blockNumber]) {
+                    blockNumber = (short)keys.getBlockNumber(key, blocksFound);
+                    continue;
+                }
                 if(blocksFetchedCount >= blocksForDecode())
                     return true;
                 int slotNumber = findFreeSlot();

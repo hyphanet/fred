@@ -96,7 +96,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 Logger.error(this, "Caught "+t+" running job "+job, t);
             } finally {
                 synchronized(sync) {
-                    if(ret) mustCheckpoint = true;
+                    if(ret) {
+                        mustCheckpoint = true;
+                    }
                     if(!mustCheckpoint) {
                         mustCheckpoint = 
                             (System.currentTimeMillis() - lastCheckpointed > checkpointInterval);
