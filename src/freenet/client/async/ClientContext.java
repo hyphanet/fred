@@ -16,7 +16,6 @@ import freenet.node.RequestStarterGroup;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
-import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
@@ -162,7 +161,7 @@ public class ClientContext {
 				@Override
 				public boolean run(ClientContext context) {
 					try {
-						inserter.start(earlyEncode, false, null, context);
+						inserter.start(earlyEncode, false, context);
 					} catch (InsertException e) {
 						inserter.client.onFailure(e, inserter);
 					}
@@ -171,7 +170,7 @@ public class ClientContext {
 				
 			}, NativeThread.NORM_PRIORITY);
 		} else {
-			inserter.start(earlyEncode, false, null, this);
+			inserter.start(earlyEncode, false, this);
 		}
 	}
 

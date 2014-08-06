@@ -15,8 +15,6 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
@@ -270,19 +268,6 @@ public class ContainerInserter implements ClientPutState {
 		return hashCode;
 	}
 	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
-		return true;
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
-		return true;
-	}
-	
-
 	/**
 	** OutputStream os will be close()d if this method returns successfully.
 	*/

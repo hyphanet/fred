@@ -5,12 +5,8 @@ package freenet.client.async;
 
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
 import freenet.node.Node;
 import freenet.support.BandwidthStatsContainer;
-import freenet.support.Logger;
 import freenet.support.UptimeContainer;
 
 /**
@@ -29,45 +25,6 @@ public class PersistentStatsPutter implements Serializable {
 	private long latestUptimeVal = 0;
 	private BandwidthStatsContainer latestBW = new BandwidthStatsContainer();
 	private UptimeContainer latestUptime = new UptimeContainer();
-
-	/**
-	 * Initiates that putter by fetching the latest container stored.
-	 * This should be called only once.
-	 *
-	 * @param container Database to use.
-	 */
-	public void restorePreviousData(ObjectContainer container) {
-		BandwidthStatsContainer storedBSC = null;
-
-		ObjectSet<BandwidthStatsContainer> BSCresult = container.query(BandwidthStatsContainer.class);
-		for(BandwidthStatsContainer candidate : BSCresult) {
-			if(candidate == null)
-				Logger.error(this, "DB4O BUG??? Querying for BandwidthStatsContainer returned null");
-			else {
-				storedBSC = candidate;
-				break;
-			}
-		}
-		if(storedBSC == null)
-			storedBSC = new BandwidthStatsContainer();
-
-		this.latestBW = storedBSC;
-
-		UptimeContainer storedUC = null;
-		ObjectSet<UptimeContainer> UptimeResult = container.query(UptimeContainer.class);
-		for(UptimeContainer candidate : UptimeResult) {
-			if(candidate == null)
-				Logger.error(this, "DB4O BUG??? Querying for UptimeResult returned null");
-			else {
-				storedUC = candidate;
-				break;
-			}
-		}
-		if(storedUC == null)
-			storedUC = new UptimeContainer();
-
-		this.latestUptime = storedUC;
-	}
 
 	public BandwidthStatsContainer getLatestBWData() {
 		return this.latestBW;

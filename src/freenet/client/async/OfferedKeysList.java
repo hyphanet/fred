@@ -6,8 +6,6 @@ package freenet.client.async;
 import java.util.HashSet;
 import java.util.Vector;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
@@ -78,7 +76,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 	}
 	
-	public synchronized boolean isEmpty(ObjectContainer container) {
+	public synchronized boolean isEmpty() {
 		return keys.isEmpty();
 	}
 
@@ -245,7 +243,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	@Override
 	public long getCooldownTime(ClientContext context, long now) {
-		if(isEmpty(null)) return Long.MAX_VALUE;
+		if(isEmpty()) return Long.MAX_VALUE;
 		return 0;
 	}
 

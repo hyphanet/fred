@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
@@ -135,8 +133,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public void start(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
-		start(earlyEncode, false, container, context);
+	public void start(boolean earlyEncode, ClientContext context) throws InsertException {
+		start(earlyEncode, false, context);
 	}
 
 	/** Start the insert.
@@ -150,11 +148,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
-		if(persistent()) {
-			container.activate(ctx, 1);
-			container.activate(client, 1);
-		}
+	public boolean start(boolean earlyEncode, boolean restart, ClientContext context) throws InsertException {
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		byte cryptoAlgorithm;
@@ -224,8 +218,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, context);
-				if(persistent())
-					container.store(this);
 				return false;
 			}
 			if(logMINOR)
@@ -237,11 +229,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			synchronized(this) {
 				cancel = cancelled;
 			}
-			if(persistent()) {
-				container.store(this);
-				// It has scheduled, we can safely deactivate it now, so it won't hang around in memory.
-				container.deactivate(currentState, 1);
-			}
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, context);
 				return false;
@@ -252,8 +239,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(e, this);
@@ -264,8 +249,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
@@ -276,8 +259,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				finished = true;
 				currentState = null;
 			}
-			if(persistent())
-				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
@@ -323,10 +304,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
-		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
-			oldState = currentState;
 			currentState = null;
 		}
 		client.onFailure(e, this);
@@ -545,8 +524,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @return True if the insert restarted successfully.
 	 * @throws InsertException If the insert could not be restarted for some reason.
 	 * */
-	public boolean restart(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
-		return start(earlyEncode, true, container, context);
+	public boolean restart(boolean earlyEncode, ClientContext context) throws InsertException {
+		return start(earlyEncode, true, context);
 	}
 
 	@Override

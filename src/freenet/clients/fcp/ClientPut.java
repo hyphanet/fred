@@ -287,7 +287,7 @@ public class ClientPut extends ClientPutBase {
 			if(finished) return;
 		}
 		try {
-			putter.start(earlyEncode, false, null, context);
+			putter.start(earlyEncode, false, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
@@ -411,7 +411,7 @@ public class ClientPut extends ClientPutBase {
 					cache.updateStarted(identifier, false);
 				}
 			}
-			if(putter.restart(earlyEncode, null, context)) {
+			if(putter.restart(earlyEncode, context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;

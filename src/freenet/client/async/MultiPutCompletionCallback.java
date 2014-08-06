@@ -2,8 +2,6 @@ package freenet.client.async;
 
 import java.util.Vector;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
@@ -45,13 +43,6 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final boolean persistent;
 	private final boolean collisionIsOK;
 	private final boolean finishOnFailure;
-	
-	public void objectOnActivate(ObjectContainer container) {
-		// Only activate the arrays
-		container.activate(waitingFor, 1);
-		container.activate(waitingForBlockSet, 1);
-		container.activate(waitingForFetchable, 1);
-	}
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
 		this(cb, parent, token, persistent, false);
