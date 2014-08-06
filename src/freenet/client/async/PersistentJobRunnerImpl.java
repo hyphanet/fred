@@ -245,4 +245,10 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
+    public boolean hasStarted() {
+        synchronized(sync) {
+            return started;
+        }
+    }
+    
 }

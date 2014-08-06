@@ -15,4 +15,7 @@ public interface PersistentJobRunner {
      * able to do it "inline". */
     void setCommitThisTransaction();
 
+    /** Has the queue started yet? */
+    boolean hasStarted();
+
 }
