@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -34,35 +32,15 @@ public class InsertBlock {
 		return (isFreed ? null : data);
 	}
 	
-	public void free(ObjectContainer container){
+	public void free(){
 		synchronized (this) {
 			if(isFreed) return;
 			isFreed = true;
 			if(data == null) return;
 		}
 		data.free();
-		if(container != null)
-			container.store(this);
 	}
 	
-	public void removeFrom(ObjectContainer container) {
-		if(desiredURI != null) {
-			container.activate(desiredURI, 5);
-			desiredURI.removeFrom(container);
-		}
-		if(clientMetadata != null) {
-			container.activate(clientMetadata, 5);
-			clientMetadata.removeFrom(container);
-		}
-		container.delete(this);
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		// Cascading activation of dependancies
-		container.activate(data, 1); // will cascade
-		container.activate(desiredURI, 5);
-	}
-
 	/** Null out the data so it doesn't get removed in removeFrom().
 	 * Call this when the data becomes somebody else's problem. */
 	public void nullData() {

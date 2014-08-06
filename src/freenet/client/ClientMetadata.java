@@ -8,8 +8,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 /**
  * Stores the metadata that the client might actually be interested in.
  * Currently this is just the MIME type, but in future it might be more than
@@ -104,10 +102,6 @@ public class ClientMetadata implements Cloneable, Serializable {
 		return s;
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
     public void writeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
         dos.writeShort(VERSION);

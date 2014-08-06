@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Set;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.BlockSet;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -242,15 +240,6 @@ public class FetchContext implements Cloneable, Serializable {
 		}
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(hasOwnEventProducer) {
-			container.activate(eventProducer, 1);
-		}
-		// Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
-		// allowedMIMETypes is passed in, whoever passes it in is responsible for deleting it.
-		container.delete(this);
-	}
-	
 	public void setCooldownRetries(int cooldownRetries) {
 		if(cooldownRetries < 0)
 			throw new IllegalArgumentException("Bogus negative retries");

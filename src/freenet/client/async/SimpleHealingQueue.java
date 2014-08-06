@@ -107,7 +107,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 

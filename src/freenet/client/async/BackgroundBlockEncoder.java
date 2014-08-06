@@ -5,8 +5,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -29,7 +27,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		this.context = context;
 	}
 	
-	public void queue(Encodeable sbi, ObjectContainer container, ClientContext context) {
+	public void queue(Encodeable sbi, ClientContext context) {
 	    SoftReference<Encodeable> ref = new SoftReference<Encodeable>(sbi);
 	    synchronized(this) {
 	        queue.add(ref);

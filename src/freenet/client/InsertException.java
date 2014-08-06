@@ -254,23 +254,4 @@ public class InsertException extends Exception implements Cloneable {
 		return new InsertException(this);
 	}
 
-	/**
-	 * Remove the insert exception from the database.
-	 * @param container The database.
-	 */
-	public void removeFrom(ObjectContainer container) {
-		if(errorCodes != null) {
-			container.activate(errorCodes, 1);
-			errorCodes.removeFrom(container);
-		}
-		if(uri != null) {
-			container.activate(uri, 5);
-			uri.removeFrom(container);
-		}
-		StackTraceElement[] elements = getStackTrace();
-		if(elements != null)
-			for(StackTraceElement element : elements)
-				container.delete(element);
-		container.delete(this);
-	}
 }

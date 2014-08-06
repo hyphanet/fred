@@ -18,8 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.SplitFileSegmentKeys;
 import freenet.keys.BaseClientKey;
@@ -1618,49 +1616,6 @@ public class Metadata implements Cloneable, Serializable {
 		return clientMetadata.getMIMEType();
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(resolvedURI != null) {
-			container.activate(resolvedURI, 5);
-			resolvedURI.removeFrom(container);
-		}
-		if(simpleRedirectKey != null) {
-			container.activate(simpleRedirectKey, 5);
-			simpleRedirectKey.removeFrom(container);
-		}
-		if(splitfileDataKeys != null) {
-			for(ClientCHK key : splitfileDataKeys)
-				if(key != null) {
-					container.activate(key, 5);
-					key.removeFrom(container);
-				}
-		}
-		if(splitfileCheckKeys != null) {
-			for(ClientCHK key : splitfileCheckKeys)
-				if(key != null) {
-					container.activate(key, 5);
-					key.removeFrom(container);
-				}
-		}
-		if(manifestEntries != null) {
-			container.activate(manifestEntries, 2);
-			for(Object m : manifestEntries.values()) {
-				Metadata meta = (Metadata) m;
-				container.activate(meta, 1);
-				meta.removeFrom(container);
-			}
-			container.delete(manifestEntries);
-		}
-		if(clientMetadata != null) {
-			container.activate(clientMetadata, 1);
-			clientMetadata.removeFrom(container);
-		}
-		if(segments != null) {
-			for(int i=0;i<segments.length;i++)
-				segments[i].removeFrom(container);
-		}
-		container.delete(this);
-	}
-
 	public void clearSplitfileKeys() {
 		splitfileDataKeys = null;
 		splitfileCheckKeys = null;
@@ -1842,14 +1797,12 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	// FIXME gross hack due to database/memory issues... remove and make segments final.
-	public SplitFileSegmentKeys[] grabSegmentKeys(ObjectContainer container) throws FetchException {
+	public SplitFileSegmentKeys[] grabSegmentKeys() throws FetchException {
 		synchronized(this) {
 			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
 				throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
 			SplitFileSegmentKeys[] segs = segments;
 			segments = null;
-			if(container != null && container.ext().isStored(this))
-				container.store(this);
 			return segs;
 		}
 	}

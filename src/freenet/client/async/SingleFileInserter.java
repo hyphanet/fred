@@ -1118,7 +1118,7 @@ class SingleFileInserter implements ClientPutState {
 			cancelled = true;
 		}
 		if(freeData) {
-			block.free(null);
+			block.free();
 		}
 		// Must call onFailure so get removeFrom()'ed
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);

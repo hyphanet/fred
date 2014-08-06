@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -209,30 +207,6 @@ public class FailureCodeTracker implements Cloneable {
 		return map == null || map.isEmpty();
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		Item[] items;
-		Integer[] ints;
-		synchronized(this) {
-			items = map == null ? null : map.values().toArray(new Item[map.size()]);
-			ints = map == null ? null : map.keySet().toArray(new Integer[map.size()]);
-			if(map != null) map.clear();
-		}
-		if(items != null)
-			for(int i=0;i<items.length;i++) {
-				container.delete(items[i]);
-				container.delete(ints[i]);
-			}
-		if(map != null) {
-			container.activate(map, 5);
-			container.delete(map);
-		}
-		container.delete(this);
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		if(map != null) container.activate(map, 5);
-	}
-	
 	/** Copy the FailureCodeTracker. We implement Cloneable to shut up findbugs, but Object.clone() won't
 	 * work because it's a shallow copy, so we implement it with merge(). */
 	@Override
@@ -240,11 +214,6 @@ public class FailureCodeTracker implements Cloneable {
 		FailureCodeTracker tracker = new FailureCodeTracker(insert);
 		tracker.merge(this);
 		return tracker;
-	}
-
-	public void storeTo(ObjectContainer container) {
-		// Must store to at least depth 2 because of map.
-		container.ext().store(this, 5);
 	}
 
 	public synchronized boolean isDataFound() {

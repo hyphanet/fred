@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.filter.DataFilterException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
@@ -631,19 +629,6 @@ public class FetchException extends Exception implements Cloneable {
 		this.finalizedSizeAndMimeType = false;
 	}
 
-	/** Remove from the database. */
-	public void removeFrom(ObjectContainer container) {
-		if(errorCodes != null)
-			errorCodes.removeFrom(container);
-		if(newURI != null)
-			newURI.removeFrom(container);
-		StackTraceElement[] elements = getStackTrace();
-		if(elements != null)
-			for(StackTraceElement element : elements)
-				container.delete(element);
-		container.delete(this);
-	}
-	
 	@Override
 	public FetchException clone() {
 		// Cloneable shuts up findbugs but we need a deep copy.

@@ -341,9 +341,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called when significant milestones are passed. */
 	@Override
-	public void onMajorProgress(ObjectContainer container) {
-		if(persistent())
-			container.activate(client, 1);
+	public void onMajorProgress() {
 		client.onMajorProgress();
 	}
 
@@ -564,13 +562,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	@Override
-	public void dump(ObjectContainer container) {
-		container.activate(uri, 5);
+	public void dump() {
 		System.out.println("URI: "+uri);
-		container.activate(client, 1);
 		System.out.println("Client: "+client);
 		System.out.println("Finished: "+finished);
-		container.activate(data, 5);
 		System.out.println("Data: "+data);
 	}
 	

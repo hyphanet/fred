@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -88,30 +86,6 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	@Override
 	Bucket getReaderBucket() throws ArchiveFailureException {
 		return mb.getReaderBucket();
-	}
-	
-	@Override
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	@Override
-	public boolean objectCanUpdate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	@Override
-	public boolean objectCanActivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
-	}
-	
-	@Override
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		Logger.error(this, "Trying to store an ArchiveStoreItem!", new Exception("error"));
-		return false;
 	}
 	
 }
