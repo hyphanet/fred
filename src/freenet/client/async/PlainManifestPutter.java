@@ -62,6 +62,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
     @Override
     public void onResume(ClientContext context) {
         super.onResume(context);
+        notifyClients(context);
     }
 }
 

@@ -9,9 +9,8 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
-public class SimpleProgressMessage extends FCPMessage implements Serializable {
+public class SimpleProgressMessage extends FCPMessage {
 
-    private static final long serialVersionUID = 1L;
     private final String ident;
 	private final boolean global;
 	private final SplitfileProgressEvent event;

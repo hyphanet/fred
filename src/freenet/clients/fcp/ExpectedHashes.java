@@ -8,7 +8,7 @@ import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-public class ExpectedHashes extends FCPMessage implements Serializable {
+public class ExpectedHashes extends FCPMessage {
 
     private static final long serialVersionUID = 1L;
     final HashResult[] hashes;

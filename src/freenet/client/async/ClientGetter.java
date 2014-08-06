@@ -806,6 +806,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
             }
         if(returnBucket != null)
             returnBucket.onResume(context);
+        notifyClients(context);
     }
 
     @Override

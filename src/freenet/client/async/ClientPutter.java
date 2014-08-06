@@ -584,6 +584,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     @Override
     public void onResume(ClientContext context) {
         super.onResume(context);
+        notifyClients(context);
     }
 
     @Override

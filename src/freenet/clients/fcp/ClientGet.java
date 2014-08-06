@@ -83,11 +83,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private AllDataMessage allDataPending;
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
-	private SimpleProgressMessage progressPending;
+	private transient SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
 	private boolean sentToNetwork;
-	private CompatibilityMode compatMessage;
-	private ExpectedHashes expectedHashes;
+	private transient CompatibilityMode compatMessage;
+	private transient ExpectedHashes expectedHashes;
 
         private static volatile boolean logMINOR;
 	static {

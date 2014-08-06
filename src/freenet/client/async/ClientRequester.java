@@ -354,7 +354,8 @@ public abstract class ClientRequester implements Serializable {
         return baos.toByteArray();
     }
     
-    /** Called for a persistent request after startup. */
+    /** Called for a persistent request after startup. Should call notifyClients() at the end,
+     * after the callback has been registered etc. */
     public void onResume(ClientContext context) {
         ClientBaseCallback cb = getCallback();
         cb.onResume(context);
