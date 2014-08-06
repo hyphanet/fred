@@ -96,12 +96,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     try {
                         requests[i] = (ClientRequester) readChecksummedObject(ois, length);
                     } catch (ChecksumFailedException e) {
-                        Logger.error(this, "Failed to restore request (checksum failed)");
-                        System.err.println("Failed to restore a request (checksum failed)");
+                        Logger.error(this, "Failed to load request (checksum failed)");
+                        System.err.println("Failed to load a request (checksum failed)");
                     } catch (Throwable t) {
                         // Some more serious problem. Try to load the rest anyway.
-                        Logger.error(this, "Failed to restore request: "+t, t);
-                        System.err.println("Failed to restore a request: "+t);
+                        Logger.error(this, "Failed to load request: "+t, t);
+                        System.err.println("Failed to load a request: "+t);
                         t.printStackTrace();
                     }
                 }
@@ -120,8 +120,18 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 onLoading();
                 // Resume the requests.
                 for(ClientRequester req : requests) {
-                    if(req != null)
-                        req.onResume(context);
+                    try {
+                        if(req != null)
+                            req.onResume(context);
+                    } catch (Throwable t) {
+                        System.err.println("Unable to resume request "+req+" after loading it.");
+                        Logger.error(this, "Unable to resume request "+req+" after loading it.");
+                        try {
+                            req.cancel(context);
+                        } catch (Throwable t1) {
+                            Logger.error(this, "Unable to terminate "+req+" after failure");
+                        }
+                    }
                 }
                 // Delete the unnecessary buckets.
                 if(buckets != null) {
