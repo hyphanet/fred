@@ -366,6 +366,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+        bucket.onResume(context);
     }
 
 }
