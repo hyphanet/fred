@@ -15,6 +15,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.support.DummyJobRunner;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
@@ -77,6 +78,9 @@ public class ClientContext {
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
+	/** Transient version of the PersistentJobRunner, just starts stuff immediately. Helpful for
+	 * avoiding having two different API's, e.g. in SplitFileFetcherStorage. */
+    public PersistentJobRunner dummyJobRunner;
 
 	public ClientContext(long bootID, long nodeDBHandle, PersistentJobRunner jobRunner, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
@@ -113,6 +117,7 @@ public class ClientContext {
 		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
 		this.tempRAFFactory = rafFactory; 
 		this.persistentRoot = persistentRoot;
+		this.dummyJobRunner = new DummyJobRunner(mainExecutor, this);
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {

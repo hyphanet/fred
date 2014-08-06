@@ -13,6 +13,11 @@ import freenet.support.io.NativeThread;
  * innerCheckpoint(). */
 public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(PersistentJobRunnerImpl.class);
+    }
+    
     final Executor executor;
     final Ticker ticker;
     /** The number of jobs actually running. */
@@ -98,10 +103,13 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 synchronized(sync) {
                     if(ret) {
                         mustCheckpoint = true;
+                        if(logMINOR) Logger.minor(this, "Writing because "+job+" asked us to");
                     }
                     if(!mustCheckpoint) {
-                        mustCheckpoint = 
-                            (System.currentTimeMillis() - lastCheckpointed > checkpointInterval);
+                        if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
+                            mustCheckpoint = true;
+                            if(logMINOR) Logger.minor(this, "Writing at interval");
+                        }
                     }
                     runningJobs--;
                     if(!mustCheckpoint) {
