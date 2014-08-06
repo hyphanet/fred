@@ -3,14 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
-import java.io.Serializable;
-
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-public class SplitfileProgressEvent implements ClientEvent, Serializable {
-    private static final long serialVersionUID = 1L;
+public class SplitfileProgressEvent implements ClientEvent {
 
     private static volatile boolean logMINOR;
 
