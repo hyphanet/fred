@@ -56,7 +56,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				}
 			}
 			Logger.minor(this, "Encoding "+sbi);
-			sbi.tryEncode(null, context);
+			sbi.tryEncode(context);
 		}
 	}
 

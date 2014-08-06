@@ -344,7 +344,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 		}
 		if(getCHKOnly) {
-			tryEncode(null, context);
+			tryEncode(context);
 			onSuccess(null, context);
 		} else {
 			getScheduler(context).registerInsert(this, persistent);
@@ -572,7 +572,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	/** Attempt to encode the block, if necessary */
 	@Override
-	public void tryEncode(ObjectContainer container, ClientContext context) {
+	public void tryEncode(ClientContext context) {
 		synchronized(this) {
 			if(resultingURI != null) return;
 			if(finished) return;
