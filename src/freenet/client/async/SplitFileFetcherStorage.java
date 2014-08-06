@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
@@ -669,7 +667,11 @@ public class SplitFileFetcherStorage {
         if(crossSegments != 0)
             throw new StorageFormatException("Cross-segment not supported yet");
         this.crossSegments = null; // FIXME cross-segment splitfile support
-        this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
+        try {
+            this.keyListener = new SplitFileFetcherKeyListenerNew(this, fetcher, dis, realTime, false);
+        } catch (ChecksumFailedException e1) {
+            throw new StorageFormatException("Corrupted bloom filters!");
+        }
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {

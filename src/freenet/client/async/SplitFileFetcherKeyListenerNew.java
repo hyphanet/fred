@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 
 import freenet.client.FetchException;
 import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.SHA256;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -110,7 +111,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
     
     public SplitFileFetcherKeyListenerNew(SplitFileFetcherStorage storage, 
             SplitFileFetcherCallback callback, DataInputStream dis, boolean realTime, boolean persistent) 
-    throws IOException, StorageFormatException {
+    throws IOException, StorageFormatException, ChecksumFailedException {
         this.storage = storage;
         this.fetcher = callback;
         this.realTime = realTime;
@@ -133,6 +134,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
         int segments = storage.segments.length;
         segmentFilters = new BinaryBloomFilter[segments];
         byte[] segmentsFilterBuffer = new byte[perSegmentBloomFilterSizeBytes * segments];
+        storage.preadChecksummed(storage.offsetSegmentBloomFilters, segmentsFilterBuffer, 0, segmentsFilterBuffer.length);
         ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
         int start = 0;
         int end = perSegmentBloomFilterSizeBytes;
@@ -147,6 +149,7 @@ public class SplitFileFetcherKeyListenerNew implements KeyListener {
             end += perSegmentBloomFilterSizeBytes;
         }
         byte[] filterBuffer = new byte[mainBloomFilterSizeBytes];
+        storage.preadChecksummed(storage.offsetMainBloomFilter, filterBuffer, 0, mainBloomFilterSizeBytes);
         filter = new CountingBloomFilter(mainBloomFilterSizeBytes * 8 / 2, mainBloomK, filterBuffer);
         filter.setWarnOnRemoveFromEmpty();
     }
