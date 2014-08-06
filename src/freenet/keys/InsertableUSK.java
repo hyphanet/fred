@@ -5,8 +5,6 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
@@ -68,13 +66,6 @@ public class InsertableUSK extends USK {
 		}
 	}
 
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		Logger.minor(this, "Removing "+this, new Exception("debug"));
-		container.activate(privKey, 5);
-		super.removeFrom(container);
-	}
-	
 	public final DSAGroup getCryptoGroup() {
 		return Global.DSAgroupBigA;
 	}

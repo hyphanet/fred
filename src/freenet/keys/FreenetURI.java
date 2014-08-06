@@ -21,8 +21,6 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertException;
 import freenet.support.Base64;
 import freenet.support.Fields;
@@ -1108,31 +1106,6 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	/** Is this key an SSK? */
 	public boolean isSSK() {
 		return "SSK".equals(keyType);
-	}
-
-	/** Remove from the database. */
-	public void removeFrom(ObjectContainer container) {
-		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
-		container.delete(this);
-	}
-
-	public boolean objectCanNew(ObjectContainer container) {
-		if(this == FreenetURI.EMPTY_CHK_URI) {
-			throw new RuntimeException("Storing static CHK@ to database - can't remove it!");
-		}
-		return true;
-	}
-
-	public boolean objectCanUpdate(ObjectContainer container) {
-		if(!container.ext().isActive(this)) {
-			Logger.error(this, "Updating but not active!", new Exception("error"));
-			return false;
-		}
-		return true;
-	}
-
-	public void objectOnDelete(ObjectContainer container) {
-		if(logDEBUG) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 
 	/** Is this key a USK? */

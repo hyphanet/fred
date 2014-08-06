@@ -11,8 +11,6 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
@@ -325,10 +323,6 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 
 	/** Get the full key, including any crypto type bytes, everything needed to construct a Key object */
 	public abstract byte[] getFullKey();
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
 
 	/** Get a copy of the key with any unnecessary information stripped, for long-term
 	 * in-memory storage. E.g. for SSKs, strips the DSAPublicKey. Copies it whether or

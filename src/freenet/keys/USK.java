@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.regex.Pattern;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -210,10 +208,6 @@ public class USK extends BaseClientKey implements Comparable<USK> {
 			return new FreenetURI("USK", siteName, uri.getAllMetaStrings(), pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), edition);
 		}
 		return uri;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 	@Override

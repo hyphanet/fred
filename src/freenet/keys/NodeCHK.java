@@ -9,8 +9,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -135,11 +133,6 @@ public class NodeCHK extends Key {
 		if(arg0 instanceof NodeSSK) return 1;
 		NodeCHK key = (NodeCHK) arg0;
 		return Fields.compareBytes(routingKey, key.routingKey);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
 	}
 
 	@Override

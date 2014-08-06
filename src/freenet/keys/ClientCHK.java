@@ -11,8 +11,6 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.Base64;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
@@ -248,11 +246,6 @@ public class ClientCHK extends ClientKey implements Serializable {
 	}
 
 	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-	}
-	
-	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -277,14 +270,6 @@ public class ClientCHK extends ClientKey implements Serializable {
 		return cryptoKey;
 	}
 	
-	public boolean objectCanNew(ObjectContainer container) {
-		if(routingKey == null)
-			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
-		if(cryptoKey == null)
-			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
-		return true;
-	}
-
     public byte getCryptoAlgorithm() {
         return cryptoAlgorithm;
     }
