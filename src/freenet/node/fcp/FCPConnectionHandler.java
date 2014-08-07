@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import com.db4o.ObjectContainer;
 
@@ -73,7 +74,17 @@ public class FCPConnectionHandler implements Closeable {
 	private FCPClient foreverClient;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
+	
+	/**
+	 * 16 random bytes hex-encoded as String. Unique for each instance of this class. 
+	 * @deprecated Use {@link #connectionIdentifierUUID} instead.
+	 */
+	@Deprecated
 	protected final String connectionIdentifier;
+	
+	/** Random UUID unique for each instance of this class */
+	protected final UUID connectionIdentifierUUID;
+	
 	private static volatile boolean logMINOR;
 	private boolean killedDupe;
 
@@ -139,6 +150,10 @@ public class FCPConnectionHandler implements Closeable {
 		byte[] identifier = new byte[16];
 		server.node.random.nextBytes(identifier);
 		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
+		
+		// The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also 16 byetes, so we can re-use the bytes.
+		// TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
+		this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
 	}
 	
 	void start() {
