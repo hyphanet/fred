@@ -15,7 +15,11 @@ import java.util.UUID;
  * 
  * <p>For each {@link #pluginName}, a single {@link FCPConnectionHandler} can only have a single {@link FCPPluginClient} with the plugin of that name as
  * connection partner. This is enforced by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One {@link FCPConnectionHandler} can only 
- * have one connection to a certain plugin. If you need multiple connections to a plugin, you have to create multiple FCP connections.</p>
+ * have one connection to a certain plugin.<br/>
+ * The reason for this is the following: Certain plugins might need to store the ID of a client in their database so they are able to send data to the
+ * client if an event of interest to the client happens in the future. Therefore, the {@link FCPConnectionHandler} needs to store clients by ID. To 
+ * prevent excessive growth of that table, we need to re-use existing clients. One client per pluginName per {@link FCPConnectionHandler} is the re-use.<br/>
+ * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP connections.<br/></p>
  * 
  * <p>
  * In opposite to {@link FCPClient}, a {@link FCPPluginClient} only exists while its parent {@link FCPConnectionHandler} exists. There is no such thing as
