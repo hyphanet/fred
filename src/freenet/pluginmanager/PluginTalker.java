@@ -7,6 +7,7 @@ import java.lang.ref.WeakReference;
 
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -14,7 +15,9 @@ import freenet.support.api.Bucket;
 /**
  * @author saces, xor
  * 
+ * @deprecated Use {@link FCPPluginClient} instead.
  */
+@Deprecated
 public class PluginTalker {
 
 	protected Node node;
