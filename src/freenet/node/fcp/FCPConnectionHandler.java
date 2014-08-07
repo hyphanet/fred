@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.db4o.ObjectContainer;
 
@@ -74,7 +75,12 @@ public class FCPConnectionHandler implements Closeable {
 	private FCPClient foreverClient;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
-	
+
+	/**
+	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getPluginName()}.
+	 */
+	final ConcurrentHashMap<String, FCPPluginClient> pluginClientsByPluginName;
+
 	/**
 	 * 16 random bytes hex-encoded as String. Unique for each instance of this class. 
 	 * @deprecated Use {@link #connectionIdentifierUUID} instead.
@@ -154,6 +160,10 @@ public class FCPConnectionHandler implements Closeable {
 		// The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also 16 byetes, so we can re-use the bytes.
 		// TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
 		this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
+		
+		this.pluginClientsByPluginName = new ConcurrentHashMap<String, FCPPluginClient>(
+		        16 /* default map size */, 0.75f /* default load factor */,
+		        1 /* Use a concurrency level of 1 expected average writer thread as clients are only added and never removed or replaced */);
 	}
 	
 	void start() {
@@ -616,6 +626,27 @@ public class FCPConnectionHandler implements Closeable {
 	
 	public FCPClient getRebootClient() {
 		return rebootClient;
+	}
+
+	/**
+	 * @return The {@link FCPPluginClient} for the given {@link FCPPluginClient#pluginName}. Atomically creates and stores it if there does not exist one yet.
+	 *         This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a given pluginName.
+	 */
+	public FCPPluginClient getPluginClient(String pluginName) {
+		// pluginClientsByName is a ConcurrentHashMap, so get() does an unlocked but safe query, it will return the state as of the last completed modification.
+		// We never replace a client once it is in the map, so this is exactly what we need: If it returns non-null, we return the existing client, which
+		// will for ever be the right one as it is never replaced. If it returns null, we create one - which can possible happen in multiple threads,
+		// and use the return value of the thread-safe function ConcurrentHashMap.putAbsent() to ensure that concurrent creation of multiple clients returns
+		// the one which actually got into the map.
+		FCPPluginClient client = pluginClientsByPluginName.get(pluginName);
+		if(client != null)
+			return client;
+
+		FCPPluginClient newClient = new FCPPluginClient(this, pluginName);
+		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
+		FCPPluginClient oldClient = pluginClientsByPluginName.putIfAbsent(pluginName, newClient);
+
+		return oldClient != null ? oldClient : newClient;
 	}
 
 	public FCPClient getForeverClient(ObjectContainer container) {
