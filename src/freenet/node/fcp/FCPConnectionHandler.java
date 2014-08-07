@@ -633,6 +633,10 @@ public class FCPConnectionHandler implements Closeable {
 	 *         This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a given pluginName.
 	 */
 	public FCPPluginClient getPluginClient(String pluginName) {
+		// The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
+		// only happen at the start of a connection and then it will be re-used a lot.
+		// Therefore, it would cost a lot of performance to use synchronized() with a regular HashMap just so the minority of writes is safe.
+		// In conclusion, we use double-checked locking (notice that this programming pattern can be unsafe if done wrong, google it):
 		// pluginClientsByName is a ConcurrentHashMap, so get() does an unlocked but safe query, it will return the state as of the last completed modification.
 		// We never replace a client once it is in the map, so this is exactly what we need: If it returns non-null, we return the existing client, which
 		// will for ever be the right one as it is never replaced. If it returns null, we create one - which can possible happen in multiple threads,
