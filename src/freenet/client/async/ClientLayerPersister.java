@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.util.Random;
 
@@ -194,7 +195,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientRequester[] requesters = getRequesters();
             oos.writeInt(requesters.length);
             for(ClientRequester req : requesters) {
-                writeChecksummedObject(oos, req);
+                writeChecksummedObject(oos, req, req.toString());
             }
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
@@ -203,7 +204,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             } else {
                 oos.writeInt(buckets.length);
                 for(DelayedFreeBucket bucket : buckets)
-                    writeChecksummedObject(oos, bucket);
+                    writeChecksummedObject(oos, bucket, null);
             }
             oos.close();
             fos = null;
@@ -222,13 +223,39 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
-    private void writeChecksummedObject(ObjectOutputStream os, Object req) throws IOException {
+    private void writeChecksummedObject(ObjectOutputStream os, Object req, String name) throws IOException {
         // FIXME write a simpler, more robust, non-serialized version first.
         Bucket tmp = tempBucketFactory.makeBucket(-1);
         OutputStream tmpOS = tmp.getOutputStream();
         OutputStream checksummedOS = checker.checksumWriter(tmpOS);
         ObjectOutputStream oos = new ObjectOutputStream(checksummedOS);
-        oos.writeObject(req);
+        try {
+            oos.writeObject(req);
+        } catch (ObjectStreamException e) {
+            if(name != null) {
+                Logger.error(this, "Unable to write "+name+" : "+e, e);
+                System.err.println("Unable to write "+name+" : "+e);
+                e.printStackTrace();
+            } else {
+                Logger.error(this, "Unable to write "+req, e);
+            }
+            tmpOS.close();
+            os.writeLong(0);
+            os.write(checker.appendChecksum(new byte[] { }));
+            return;
+        } catch (Throwable e) {
+            if(name != null) {
+                Logger.error(this, "Unable to write "+name+" : "+e, e);
+                System.err.println("Unable to write "+name+" : "+e);
+                e.printStackTrace();
+            } else {
+                Logger.error(this, "Unable to write "+req, e);
+            }
+            tmpOS.close();
+            os.writeLong(0);
+            os.write(checker.appendChecksum(new byte[] { }));
+            return;
+        }
         oos.close();
         os.writeLong(tmp.size() - checker.checksumLength());
         BucketTools.copyTo(tmp, os, Long.MAX_VALUE);
