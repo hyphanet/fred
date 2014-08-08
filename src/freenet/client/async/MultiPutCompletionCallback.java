@@ -296,4 +296,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		cb.onFetchable(this);
 	}
 
+    @Override
+    public void onResume(ClientContext context) throws InsertException {
+        for(ClientPutState s : waitingFor)
+            s.onResume(context);
+        if(cb != parent) cb.onResume(context);
+    }
+
 }

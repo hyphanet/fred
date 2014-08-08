@@ -209,4 +209,10 @@ public class BinaryBlobInserter implements ClientPutState {
 			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, context);
 	}
 
+    @Override
+    public void onResume(ClientContext context) throws InsertException {
+        // TODO binary blob inserter isn't persistent yet, right?
+        throw new InsertException(InsertException.INTERNAL_ERROR, "Persistence not supported yet", null);
+    }
+
 }

@@ -545,6 +545,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     @Override
     public void onResume(ClientContext context) {
         super.onResume(context);
+        if(currentState != null) {
+            try {
+                currentState.onResume(context);
+            } catch (InsertException e) {
+                this.onFailure(e, null, context);
+                return;
+            }
+        }
+        if(data != null)
+            data.onResume(context);
         notifyClients(context);
     }
 

@@ -45,5 +45,10 @@ public interface PutCompletionCallback {
 	 * all the blocks it will need to put.
 	 */
 	public void onBlockSetFinished(ClientPutState state, ClientContext context);
+	
+    /** Called on restarting the node for a persistent request. The request must re-schedule 
+     * itself. 
+     * @throws InsertException */
+    public void onResume(ClientContext context) throws InsertException;
 
 }

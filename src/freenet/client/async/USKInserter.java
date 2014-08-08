@@ -420,4 +420,12 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		meta.free();
 	}
 
+    @Override
+    public void onResume(ClientContext context) throws InsertException {
+        if(data != null) data.onResume(context);
+        if(cb != null && cb != parent) cb.onResume(context);
+        if(fetcher != null) fetcher.onResume(context);
+        if(sbi != null) sbi.onResume(context);
+    }
+
 }

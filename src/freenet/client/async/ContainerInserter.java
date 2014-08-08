@@ -357,4 +357,16 @@ public class ContainerInserter implements ClientPutState {
 		}
 		return smc.getMetadata();
 	}
+
+    @Override
+    public void onResume(ClientContext context) throws InsertException {
+        if(cb != null && cb != parent)
+            cb.onResume(context);
+        if(containerItems != null) {
+            for(ContainerElement e : containerItems) {
+                if(e.data != null)
+                    e.data.onResume(context);
+            }
+        }
+    }
 }

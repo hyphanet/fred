@@ -26,4 +26,9 @@ public interface ClientPutState {
 	 * used by callers.
 	 */
 	public Object getToken();
+	
+    /** Called on restarting the node for a persistent request. The request must re-schedule 
+     * itself. 
+     * @throws InsertException */
+    public void onResume(ClientContext context) throws InsertException;
 }
