@@ -54,7 +54,7 @@ import freenet.support.api.Bucket;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class FCPPluginClient {
+public final class FCPPluginClient {
     
     /**
      * The connection to which this client belongs.
