@@ -5,6 +5,9 @@ package freenet.node.fcp;
 
 import java.util.UUID;
 
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
+
 /**
  * <p>An FCP client communicating with a plugin running within fred.</p>
  * 
