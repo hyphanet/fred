@@ -400,8 +400,7 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@Override
 	public void onResume(ClientContext context) {
-	    if(putter != null)
-	        putter.onResume(context);
+	    // Do not call putter.onResume(), we are called from it.
 	}
 
 }
