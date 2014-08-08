@@ -44,13 +44,29 @@ public class FCPPersistentRoot {
         globalForeverClient.setRequestStatusCache(cache);
 	}
 
-	public synchronized FCPClient registerForeverClient(final String name, FCPConnectionHandler handler) {
+	public FCPClient registerForeverClient(final String name, FCPConnectionHandler handler) {
 		if(logMINOR) Logger.minor(this, "Registering forever-client for "+name);
-		FCPClient client = clients.get(name);
-		if(client != null) return client;
-		client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
-		clients.put(name, client);
+		FCPClient client;
+		synchronized(this) {
+		    client = clients.get(name);
+		    if(client == null)
+		        client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
+		    clients.put(name, client);
+		}
+		client.setConnection(handler);
 		return client;
+	}
+
+	/** Get the FCPClient if it exists. 
+	 * @param handler */
+	public FCPClient getForeverClient(final String name, FCPConnectionHandler handler) {
+	    FCPClient client;
+	    synchronized(this) {
+	        client = clients.get(name);
+	        if(client == null) return null;
+	    }
+	    client.setConnection(handler);
+        return client;
 	}
 
 	public void maybeUnregisterClient(FCPClient client) {
