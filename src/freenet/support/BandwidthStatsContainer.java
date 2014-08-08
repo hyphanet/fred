@@ -35,4 +35,9 @@ public class BandwidthStatsContainer implements Serializable {
 		hash = 41 * hash + (int) (this.totalBytesIn ^ (this.totalBytesIn >>> 32));
 		return hash;
 	}
+
+    public void addFrom(BandwidthStatsContainer latestBW) {
+        this.totalBytesIn += latestBW.totalBytesIn;
+        this.totalBytesOut += latestBW.totalBytesOut;
+    }
 }

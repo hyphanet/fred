@@ -50,4 +50,9 @@ public class PersistentStatsPutter implements Serializable {
 		this.latestUptimeVal = uptime;
 	}
 
+    public void addFrom(PersistentStatsPutter stored) {
+        this.latestBW.addFrom(stored.latestBW);
+        this.latestUptime.addFrom(stored.latestUptime);
+    }
+
 }

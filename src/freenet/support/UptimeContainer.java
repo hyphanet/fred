@@ -32,4 +32,9 @@ public class UptimeContainer implements Serializable {
 		hash = 29 * hash + (int) (this.totalUptime ^ (this.totalUptime >>> 32));
 		return hash;
 	}
+
+    public void addFrom(UptimeContainer latestUptime) {
+        this.creationTime = latestUptime.creationTime;
+        this.totalUptime += latestUptime.totalUptime;
+    }
 }

@@ -96,7 +96,7 @@ public class NodeClientCore implements Persistable {
 		Logger.registerClass(NodeClientCore.class);
 	}
 
-	public PersistentStatsPutter bandwidthStatsPutter;
+	public final PersistentStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -295,8 +295,11 @@ public class NodeClientCore implements Persistable {
         
         tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm);
 
+        bandwidthStatsPutter = new PersistentStatsPutter();
+        
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
-		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory, tempBucketFactory);
+		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory, 
+		        tempBucketFactory, bandwidthStatsPutter);
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		
@@ -355,8 +358,6 @@ public class NodeClientCore implements Persistable {
         // FIXME with crypto this load() may happen much later.
         clientLayerPersister.load(clientContext, requestStarters, random);
         
-        this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
-
 		if(!killedDatabase()) {
 		    InsertCompressor.load(clientContext);
 		}
@@ -592,7 +593,6 @@ public class NodeClientCore implements Persistable {
 		// Must create the CRSCore's before telling them to load stuff.
 		InsertCompressor.load(clientContext);
 		fcpServer.load(this.fcpPersistentRoot);
-		this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 		System.out.println("Late database initialisation completed.");
 		return true;
 	}

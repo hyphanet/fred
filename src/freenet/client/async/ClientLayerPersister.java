@@ -39,7 +39,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
      * inserts. */
     private final TempBucketFactory tempBucketFactory;
-    private PersistentStatsPutter bandwidthStatsPutter;
+    private final PersistentStatsPutter bandwidthStatsPutter;
     private byte[] salt;
     private boolean newSalt;
     private final ChecksumChecker checker;
@@ -52,7 +52,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
      * everything else. */
     public ClientLayerPersister(Executor executor, Ticker ticker, File filename, Node node,
-            PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory) {
+            PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
+            PersistentStatsPutter stats) {
         super(executor, ticker, INTERVAL);
         this.filename = filename;
         this.bucket = new FileBucket(filename, false, false, false, false, false);
@@ -60,6 +61,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
         this.checker = new CRCChecksumChecker();
+        this.bandwidthStatsPutter = stats;
     }
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
@@ -106,7 +108,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         t.printStackTrace();
                     }
                 }
-                bandwidthStatsPutter = (PersistentStatsPutter) ois.readObject();
+                PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
+                this.bandwidthStatsPutter.addFrom(storedStatsPutter);
                 int count = ois.readInt();
                 buckets = new DelayedFreeBucket[count];
                 for(int i=0;i<count;i++) {
@@ -171,7 +174,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         salt = new byte[32];
         random.nextBytes(salt);
         requestStarters.setGlobalSalt(salt);
-        bandwidthStatsPutter = new PersistentStatsPutter();
         onStarted();
     }
 
@@ -287,10 +289,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         return node.clientCore.getPersistentRequesters();
     }
 
-    public PersistentStatsPutter getBandwidthStats() {
-        return bandwidthStatsPutter;
-    }
-    
     public boolean newSalt() {
         return newSalt;
     }
