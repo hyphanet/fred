@@ -488,10 +488,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				handler.queue(new SendingToNetworkMessage(identifier, global));
 			if(finished)
 				trySendDataFoundOrGetFailed(handler);
-		}
-
-		if (onlyData && allDataPending  == null) {
-			Logger.error(this, "No data pending !");
+		} else if(allDataPending == null && finished) {
+		    ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.WRONG_RETURN_TYPE, false, "No AllData", identifier, global);
+		    handler.queue(msg);
 		}
 
 		if(includeData && (allDataPending != null)) {
