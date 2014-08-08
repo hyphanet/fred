@@ -116,6 +116,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			if(fetching.hasKey(k, null)) return null;
 			// Ignore RecentlyFailed because an offered key overrides it.
 			keys.remove(k);
+			keysList.remove(0);
 			keysList.trimToSize();
 			return new MySendableRequestItem(k);
 		}
