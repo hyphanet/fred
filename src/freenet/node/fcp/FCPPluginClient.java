@@ -89,4 +89,15 @@ public class FCPPluginClient {
         return pluginName;
     }
 
+    public void send(SimpleFieldSet parameters, Bucket data) {
+        throw new UnsupportedOperationException("TODO FIXME: Implement");
+    }
+
+    @SuppressWarnings("serial")
+    public static final class FCPCallFailedException extends Exception { };
+
+    public void sendSynchronous(SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+        throw new UnsupportedOperationException("TODO FIXME: Implement");
+    }
+
 }
