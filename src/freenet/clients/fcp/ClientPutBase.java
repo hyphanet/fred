@@ -52,7 +52,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	// Not that important, so not saved on persistence.
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
-	protected FCPMessage progressMessage;
+	protected transient FCPMessage progressMessage;
 	
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
