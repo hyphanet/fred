@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
@@ -26,9 +27,10 @@ import freenet.support.io.BucketTools;
  * following slot. Thereafter, if we get a collision, increment our slot; if we get more than 5 consecutive
  * collisions, search for the latest slot again.
  */
-public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompletionCallback {
+public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompletionCallback, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -236,9 +238,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	@Override
 	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
-		ClientPutState oldSBI;
 		synchronized(this) {
-			oldSBI = sbi;
 			sbi = null;
 			if(e.getMode() == InsertException.COLLISION) {
 				// Try the next slot
@@ -298,6 +298,30 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.forceCryptoKey = forceCryptoKey;
 		this.realTimeFlag = realTimeFlag;
 	}
+	
+	protected USKInserter() {
+	    // For serialization.
+	    this.hashCode = 0;
+	    this.tokenObject = null;
+	    this.persistent = false;
+	    this.parent = null;
+	    this.data = null;
+	    this.compressionCodec = 0;
+	    this.ctx = null;
+	    this.cb = null;
+	    this.isMetadata = false;
+	    this.sourceLength = 0;
+	    this.token = 0;
+	    this.getCHKOnly = false;
+	    this.privUSK = null;
+	    this.pubUSK = null;
+	    this.edition = 0;
+	    this.freeData = false;
+	    this.extraInserts = 0;
+	    this.cryptoAlgorithm = 0;
+	    this.forceCryptoKey = null;
+	    this.realTimeFlag = false;
+	}
 
 	@Override
 	public BaseClientPutter getParent() {
@@ -307,7 +331,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	@Override
 	public void cancel(ClientContext context) {
 		USKFetcherTag tag;
-		boolean persist = persistent;
 		synchronized(this) {
 			if(finished) return;
 			finished = true;

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,9 +16,10 @@ import freenet.support.SimpleFieldSet;
  * FIXME maybe move this to support, give it a better name? Be careful, it's a persistent object, use the
  * db4o migration tools, or derive it from something in support?
  */
-public class FailureCodeTracker implements Cloneable {
+public class FailureCodeTracker implements Cloneable, Serializable {
 
-	public final boolean insert;
+    private static final long serialVersionUID = 1L;
+    public final boolean insert;
 	private int total;
 	
 	public FailureCodeTracker(boolean insert) {
@@ -43,6 +45,11 @@ public class FailureCodeTracker implements Cloneable {
 			map.put(Integer.valueOf(num), new Item(count));
 			total += count;
 		}
+	}
+	
+	protected FailureCodeTracker() {
+	    // For serialization.
+	    this.insert = false;
 	}
 	
 	private static class Item {

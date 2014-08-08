@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
@@ -48,9 +49,10 @@ import freenet.support.io.BucketTools;
 /**
  * Insert *ONE KEY*.
  */
-public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable {
+public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	
 	static {
@@ -89,7 +91,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final byte cryptoAlgorithm;
 
 	/**
-	 * zero arg c'tor for db4o on jamvm
+	 * zero arg c'tor for serialization
 	 */
 	@SuppressWarnings("unused")
 	private SingleBlockInserter() {
