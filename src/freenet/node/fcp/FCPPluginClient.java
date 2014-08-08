@@ -27,8 +27,8 @@ import freenet.support.api.Bucket;
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)} to parse the message and obtain the 
  *   actual {@link FCPPluginMessage}.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to obtain the {@link FCPPluginClient} which wants to send.<br/>
- * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SimpleFieldSet, Bucket)} or {@link FCPPluginClient#sendSynchronuous(SimpleFieldSet, Bucket)
- *   to send the message to the plugin.<br/>
+ * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket)} or
+ *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long)} to send the message to the plugin.<br/>
  * 2. Intra-node FCP connections (client and server plugin are running within the same node):</br>
  * - TODO FIXME: Document.
  * </p>
@@ -110,14 +110,29 @@ public final class FCPPluginClient {
         return pluginName;
     }
 
-    public void send(SimpleFieldSet parameters, Bucket data) {
+    /**
+     * There are two usecases for the send-functions of {@link FCPPluginClient}:<br/>
+     * - When the client wants to send a message to the server plugin.<br/>
+     * - When the server plugin processes a message from the client, it might want to send back a reply.</br>
+     * 
+     * To prevent us from having to duplicate the send functions, this enum specifies in which situation we are.
+     * 
+     * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket) User of this enum.
+     * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long) User of this enum.
+     */
+    public static enum SendDirection {
+        ToServer,
+        ToClient
+    }
+
+    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
     @SuppressWarnings("serial")
     public static final class FCPCallFailedException extends Exception { };
 
-    public void sendSynchronous(SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
