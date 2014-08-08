@@ -4,9 +4,8 @@
 package freenet.client.events;
 
 import java.io.Serializable;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
-import java.util.Vector;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
@@ -20,14 +19,14 @@ import freenet.support.Logger;
 public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     private static final long serialVersionUID = 1L;
-    private Vector<ClientEventListener> listeners;
+    private ArrayList<ClientEventListener> listeners;
 
     /**
      * Create a new SimpleEventProducer
      * 
      **/
     public SimpleEventProducer() {
-        listeners = new Vector<ClientEventListener>();
+        listeners = new ArrayList<ClientEventListener>();
     }
 
     /** Create a new SimpleEventProducer with the given listeners. */
@@ -38,16 +37,16 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
     }
 
     @Override
-    public void addEventListener(ClientEventListener cel) {
+    public synchronized void addEventListener(ClientEventListener cel) {
         if (cel != null)
-            listeners.addElement(cel);
+            listeners.add(cel);
         else
             throw new IllegalArgumentException("Adding a null listener!");
     }
 
     @Override
-    public boolean removeEventListener(ClientEventListener cel) {
-        boolean b = listeners.removeElement(cel);
+    public synchronized boolean removeEventListener(ClientEventListener cel) {
+        boolean b = listeners.remove(cel);
         listeners.trimToSize();
         return b;
     }
@@ -57,12 +56,14 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
      **/
     @Override
     public void produceEvent(ClientEvent ce, ClientContext context) {
-        for (Enumeration<ClientEventListener> e = listeners.elements(); e.hasMoreElements();) {
+        // Events are relatively uncommon. Consistency more important than speed.
+        ClientEventListener[] list;
+        synchronized(this) {
+            list = getEventListeners();
+        }
+        for (ClientEventListener cel : list) {
             try {
-                ClientEventListener cel = e.nextElement();
                 cel.receive(ce, context);
-            } catch (NoSuchElementException ne) {
-                Logger.normal(this, "Concurrent modification in " + "produceEvent!: " + this);
             } catch (Exception ue) {
                 System.err.println("---Unexpected Exception------------------");
                 ue.printStackTrace();
@@ -72,14 +73,13 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
     }
 
     /** Returns the listeners as an array. */
-    public ClientEventListener[] getEventListeners() {
+    public synchronized ClientEventListener[] getEventListeners() {
         ClientEventListener[] ret = new ClientEventListener[listeners.size()];
-        listeners.copyInto(ret);
-        return ret;
+        return listeners.toArray(ret);
     }
 
     /** Adds all listeners in the given array. */
-    public void addEventListeners(ClientEventListener[] cela) {
+    public synchronized void addEventListeners(ClientEventListener[] cela) {
         for (int i = 0; i < cela.length; i++)
             addEventListener(cela[i]);
     }
