@@ -3,16 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.Serializable;
+
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.support.Logger;
 import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class InsertContext implements Cloneable {
+public class InsertContext implements Cloneable, Serializable {
 
-	/** If true, don't try to compress the data */
+    private static final long serialVersionUID = 1L;
+    /** If true, don't try to compress the data */
 	public boolean dontCompress;
 	/** Splitfile algorithm. */
 	public final short splitfileAlgorithm;

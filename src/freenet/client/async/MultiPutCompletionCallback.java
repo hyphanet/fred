@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.Serializable;
 import java.util.Vector;
 
 import freenet.client.InsertException;
@@ -11,9 +12,10 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
+public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
