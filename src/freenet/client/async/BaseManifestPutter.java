@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.Vector;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -111,7 +110,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			synchronized (BaseManifestPutter.this) {
 				// transform the placeholders to redirects (redirects to 'uri/name') and
 				// remove from waitfor lists
-				Vector<PutHandler> phv = putHandlersArchiveTransformMap.get(this);
+				ArrayList<PutHandler> phv = putHandlersArchiveTransformMap.get(this);
 				for (PutHandler ph : phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
@@ -741,7 +740,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * the *PutHandler fills in its result here (Metadata)
 	 */
 	private HashMap<PutHandler, HashMap<String, Object>> putHandlersTransformMap;
-	private HashMap<ArchivePutHandler, Vector<PutHandler>> putHandlersArchiveTransformMap;
+	private HashMap<ArchivePutHandler, ArrayList<PutHandler>> putHandlersArchiveTransformMap;
 
 	// freeform stuff, all fields can be null'ed in container mode
 	private FreeFormBuilder rootBuilder;
@@ -795,7 +794,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		containerPutHandlers = new HashSet<PutHandler>();
 		perContainerPutHandlersWaitingForMetadata = new HashMap<PutHandler, HashSet<PutHandler>>();
 		putHandlersTransformMap = new HashMap<PutHandler, HashMap<String, Object>>();
-		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, Vector<PutHandler>>();
+		putHandlersArchiveTransformMap = new HashMap<ArchivePutHandler, ArrayList<PutHandler>>();
 		if(defaultName == null)
 			defaultName = findDefaultName(manifestElements, defaultName);
 		makePutHandlers(manifestElements, defaultName);
@@ -1510,7 +1509,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			perContainerPutHandlersWaitingForMetadata.put(selfHandle, new HashSet<PutHandler>());
 			//perContainerPutHandlersWaitingForFetchable.put(selfHandle, new HashSet<PutHandler>());
-			if (isArchive) putHandlersArchiveTransformMap.put((ArchivePutHandler)selfHandle, new Vector<PutHandler>());
+			if (isArchive) putHandlersArchiveTransformMap.put((ArchivePutHandler)selfHandle, new ArrayList<PutHandler>());
 		}
 
 		public ContainerBuilder makeSubContainer(String name) {

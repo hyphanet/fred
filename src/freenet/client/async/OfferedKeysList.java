@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
@@ -40,7 +40,7 @@ import freenet.support.Logger.LogLevel;
 public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	private final HashSet<Key> keys;
-	private final Vector<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
+	private final ArrayList<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
@@ -60,7 +60,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
 		super(false, realTimeFlag);
 		this.keys = new HashSet<Key>();
-		this.keysList = new Vector<Key>();
+		this.keysList = new ArrayList<Key>();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.isSSK = isSSK;
@@ -116,7 +116,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			if(fetching.hasKey(k, null)) return null;
 			// Ignore RecentlyFailed because an offered key overrides it.
 			keys.remove(k);
-			keysList.setSize(0);
+			keysList.trimToSize();
 			return new MySendableRequestItem(k);
 		}
 		for(int i=0;i<10;i++) {

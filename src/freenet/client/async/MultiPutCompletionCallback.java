@@ -1,7 +1,7 @@
 package freenet.client.async;
 
 import java.io.Serializable;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import freenet.client.InsertException;
 import freenet.client.Metadata;
@@ -27,12 +27,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		});
 	}
 	
-	// Vector's rather than HashSet's for memory reasons.
+	// ArrayLists rather than HashSet's for memory reasons.
 	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
 	// at least it is on memory!
-	private final Vector<ClientPutState> waitingFor;
-	private final Vector<ClientPutState> waitingForBlockSet;
-	private final Vector<ClientPutState> waitingForFetchable;
+	private final ArrayList<ClientPutState> waitingFor;
+	private final ArrayList<ClientPutState> waitingForBlockSet;
+	private final ArrayList<ClientPutState> waitingForFetchable;
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
@@ -58,9 +58,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		this.cb = cb;
 		this.collisionIsOK = collisionIsOK;
 		this.finishOnFailure = finishOnFailure;
-		waitingFor = new Vector<ClientPutState>();
-		waitingForBlockSet = new Vector<ClientPutState>();
-		waitingForFetchable = new Vector<ClientPutState>();
+		waitingFor = new ArrayList<ClientPutState>();
+		waitingForBlockSet = new ArrayList<ClientPutState>();
+		waitingForFetchable = new ArrayList<ClientPutState>();
 		this.parent = parent;
 		this.token = token;
 		cancelling = false;
