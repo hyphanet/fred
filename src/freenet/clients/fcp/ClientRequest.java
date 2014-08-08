@@ -123,13 +123,6 @@ public abstract class ClientRequest implements Serializable {
 		this.uri = uri2;
 		
 		this.identifier = identifier2;
-		if(global) {
-			this.verbosity = Integer.MAX_VALUE;
-            clientName = null;
-		} else {
-			this.verbosity = verbosity2;
-            this.clientName = client.name;
-		}
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
@@ -152,12 +145,18 @@ public abstract class ClientRequest implements Serializable {
 				}
 				
 			};
+			this.clientName = null;
+            this.verbosity = verbosity2;
 		} else {
 			origHandler = null;
 			if(global) {
 				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+	            this.verbosity = Integer.MAX_VALUE;
+	            clientName = null;
 			} else {
 				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient() : handler.getRebootClient();
+	            this.verbosity = verbosity2;
+	            this.clientName = client.name;
 			}
 			lowLevelClient = client.lowLevelClient(realTime);
 			if(lowLevelClient == null)
