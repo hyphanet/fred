@@ -321,8 +321,6 @@ public class NodeClientCore implements Persistable {
 
         });
         
-        this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
-
 		initPTBF(nodeConfig);
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
@@ -356,6 +354,8 @@ public class NodeClientCore implements Persistable {
         
         // FIXME with crypto this load() may happen much later.
         clientLayerPersister.load(clientContext, requestStarters, random);
+        
+        this.bandwidthStatsPutter = clientLayerPersister.getBandwidthStats();
 
 		if(!killedDatabase()) {
 		    InsertCompressor.load(clientContext);
