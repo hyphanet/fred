@@ -350,9 +350,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 					// Don't delete temp file, user might want it.
 	                returnBucket = new FileBucket(targetFile, false, true, false, false, false);
-				} else {
-				    returnBucket = new FileBucket(tempFile, false, true, false, false, false);
-				}
+				} // else returnBucket is already tempFile.
                 // Wait until after the potentially expensive rename.
                 completionTime = System.currentTimeMillis();
 			} else {
