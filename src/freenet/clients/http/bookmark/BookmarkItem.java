@@ -253,6 +253,14 @@ public class BookmarkItem extends Bookmark {
             return false;
         }
     }
+    
+    public boolean getUpdatedStatus() {
+    	return updated;
+    }
+    
+    public void setUpdatedStatus(boolean updated) {
+    	this.updated = updated;
+    }
 
     public boolean hasAnActivelink() {
         return hasAnActivelink;
