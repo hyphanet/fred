@@ -419,9 +419,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		Logger.error(this, "onMetadata on "+this+" from "+state, new Exception("error"));
 		meta.free();
 	}
+	
+	private transient boolean resumed = false;
 
     @Override
     public void onResume(ClientContext context) throws InsertException {
+        if(resumed) return;
+        resumed = true;
         if(data != null) data.onResume(context);
         if(cb != null && cb != parent) cb.onResume(context);
         if(fetcher != null) fetcher.onResume(context);

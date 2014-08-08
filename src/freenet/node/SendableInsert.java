@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.keys.ClientKey;
@@ -68,5 +69,15 @@ public abstract class SendableInsert extends SendableRequest {
 		if(isEmpty()) return -1;
 		return 0;
 	}
+	
+	private transient boolean resumed = false;
+	
+	public final void onResume(ClientContext context) throws InsertException {
+	    if(resumed) return;
+	    resumed = true;
+	    innerOnResume(context);
+	}
+	
+	protected abstract void innerOnResume(ClientContext context) throws InsertException;
 
 }

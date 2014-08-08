@@ -28,7 +28,8 @@ public interface ClientPutState {
 	public Object getToken();
 	
     /** Called on restarting the node for a persistent request. The request must re-schedule 
-     * itself. 
+     * itself. Caller must ensure that it is safe to call this method more than once, as we recurse
+     * through the graph of dependencies.
      * @throws InsertException */
     public void onResume(ClientContext context) throws InsertException;
 }

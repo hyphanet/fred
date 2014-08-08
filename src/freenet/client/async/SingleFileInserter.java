@@ -1145,9 +1145,13 @@ class SingleFileInserter implements ClientPutState {
 	boolean started() {
 		return started;
 	}
+	
+	private transient boolean resumed = false;
 
     @Override
-    public void onResume(ClientContext context) throws InsertException {
+    public final void onResume(ClientContext context) throws InsertException {
+        if(resumed) return;
+        resumed = true;
         if(block != null && block.getData() != null)
             block.getData().onResume(context);
         if(cb != null && cb != parent)

@@ -45,6 +45,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final boolean persistent;
 	private final boolean collisionIsOK;
 	private final boolean finishOnFailure;
+	private transient boolean resumed;
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
 		this(cb, parent, token, persistent, false);
@@ -298,6 +299,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
     @Override
     public void onResume(ClientContext context) throws InsertException {
+        if(resumed) return;
+        resumed = true;
         for(ClientPutState s : waitingFor)
             s.onResume(context);
         if(cb != parent) cb.onResume(context);

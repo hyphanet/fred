@@ -738,7 +738,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
     @Override
-    public void onResume(ClientContext context) throws InsertException {
+    public void innerOnResume(ClientContext context) throws InsertException {
         sourceData.onResume(context);
         if(cb != parent) cb.onResume(context);
         this.schedule(context);

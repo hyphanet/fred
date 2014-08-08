@@ -357,9 +357,13 @@ public class ContainerInserter implements ClientPutState {
 		}
 		return smc.getMetadata();
 	}
+	
+	private transient boolean resumed = false;
 
     @Override
     public void onResume(ClientContext context) throws InsertException {
+        if(resumed) return;
+        resumed = true;
         if(cb != null && cb != parent)
             cb.onResume(context);
         if(containerItems != null) {
