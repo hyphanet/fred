@@ -794,8 +794,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     
     /** Called for a persistent request after startup. */
     @Override
-    public void onResume(ClientContext context) {
-        super.onResume(context);
+    public void innerOnResume(ClientContext context) {
+        super.innerOnResume(context);
         if(currentState != null)
             try {
                 currentState.onResume(context);

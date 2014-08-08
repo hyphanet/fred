@@ -203,7 +203,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) {
         // Do nothing. Not persisted.
     }
 

@@ -701,8 +701,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		
         @Override
-        public void onResume(ClientContext context) {
-            // Do nothing.
+        public void innerOnResume(ClientContext context) {
+            super.innerOnResume(context);
         }
         
         @Override

@@ -354,9 +354,19 @@ public abstract class ClientRequester implements Serializable {
         return baos.toByteArray();
     }
     
+    private transient boolean resumed = false;
+    
     /** Called for a persistent request after startup. Should call notifyClients() at the end,
      * after the callback has been registered etc. */
-    public void onResume(ClientContext context) {
+    public final void onResume(ClientContext context) {
+        if(resumed) return;
+        resumed = true;
+        innerOnResume(context);
+    }
+
+    /** Called by onResume() once and only once after restarting. Must be overridden, and must call
+     * super.innerOnResume(). */
+    protected void innerOnResume(ClientContext context) {
         ClientBaseCallback cb = getCallback();
         cb.onResume(context);
         client = cb.getRequestClient();

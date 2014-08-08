@@ -333,7 +333,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) {
         Logger.error(this, "Cannot be persistent");
         // Do nothing. Cannot be persistent.
     }

@@ -543,8 +543,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     }
 
     @Override
-    public void onResume(ClientContext context) {
-        super.onResume(context);
+    public void innerOnResume(ClientContext context) {
+        super.innerOnResume(context);
         if(currentState != null) {
             try {
                 currentState.onResume(context);
