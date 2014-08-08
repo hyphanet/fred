@@ -5,10 +5,8 @@ package freenet.client.events;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.NoSuchElementException;
 
 import freenet.client.async.ClientContext;
-import freenet.support.Logger;
 
 /**
  * Event handeling for clients. SimpleEventProducer is a simple
