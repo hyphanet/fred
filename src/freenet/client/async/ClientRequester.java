@@ -368,7 +368,6 @@ public abstract class ClientRequester implements Serializable {
      * super.innerOnResume(). */
     protected void innerOnResume(ClientContext context) {
         ClientBaseCallback cb = getCallback();
-        cb.onResume(context);
         client = cb.getRequestClient();
         requests = new TransientSendableRequestSet();
     }

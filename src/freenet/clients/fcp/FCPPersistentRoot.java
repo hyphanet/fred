@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import freenet.client.async.ClientRequester;
-import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -77,12 +75,12 @@ public class FCPPersistentRoot {
 		}
 	}
 
-    public ClientRequester[] getPersistentRequesters() {
-        List<ClientRequester> requesters = new ArrayList<ClientRequester>();
-        globalForeverClient.addPersistentRequesters(requesters);
+    public ClientRequest[] getPersistentRequests() {
+        List<ClientRequest> requests = new ArrayList<ClientRequest>();
+        globalForeverClient.addPersistentRequests(requests, true);
         for(FCPClient client : clients.values())
-            client.addPersistentRequesters(requesters);
-        return requesters.toArray(new ClientRequester[requesters.size()]);
+            client.addPersistentRequests(requests, true);
+        return requests.toArray(new ClientRequest[requests.size()]);
     }
 
     FCPClient resume(ClientRequest clientRequest, boolean global, String clientName) {

@@ -13,6 +13,7 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.util.Random;
 
+import freenet.clients.fcp.ClientRequest;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -69,7 +70,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(filename.exists()) {
             long length = filename.length();
             InputStream fis = null;
-            ClientRequester[] requests;
+            ClientRequest[] requests;
             DelayedFreeBucket[] buckets = null;
             try {
                 // Read everything in first.
@@ -93,11 +94,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 ois.readFully(salt);
                 requestStarters.setGlobalSalt(salt);
                 int requestCount = ois.readInt();
-                requests = new ClientRequester[requestCount];
+                requests = new ClientRequest[requestCount];
                 for(int i=0;i<requestCount;i++) {
                     // FIXME write a simpler, more robust, non-serialized version first.
                     try {
-                        requests[i] = (ClientRequester) readChecksummedObject(ois, length);
+                        requests[i] = (ClientRequest) readChecksummedObject(ois, length);
                     } catch (ChecksumFailedException e) {
                         Logger.error(this, "Failed to load request (checksum failed)");
                         System.err.println("Failed to load a request (checksum failed)");
@@ -123,7 +124,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 fis = null;
                 onLoading();
                 // Resume the requests.
-                for(ClientRequester req : requests) {
+                for(ClientRequest req : requests) {
                     try {
                         if(req != null)
                             req.onResume(context);
@@ -194,9 +195,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeInt(VERSION);
             checker.writeAndChecksum(oos, salt);
             oos.write(salt);
-            ClientRequester[] requesters = getRequesters();
-            oos.writeInt(requesters.length);
-            for(ClientRequester req : requesters) {
+            ClientRequest[] requests = getRequests();
+            oos.writeInt(requests.length);
+            for(ClientRequest req : requests) {
                 writeChecksummedObject(oos, req, req.toString());
             }
             bandwidthStatsPutter.updateData(node);
@@ -210,7 +211,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             oos.close();
             fos = null;
-            System.out.println("Saved "+requesters.length+" requests to client.dat");
+            System.out.println("Saved "+requests.length+" requests to client.dat");
             persistentTempFactory.postCommit(buckets);
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
@@ -285,8 +286,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
 
-    private ClientRequester[] getRequesters() {
-        return node.clientCore.getPersistentRequesters();
+    private ClientRequest[] getRequests() {
+        return node.clientCore.getPersistentRequests();
     }
 
     public boolean newSalt() {

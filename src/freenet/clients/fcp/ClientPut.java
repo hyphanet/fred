@@ -545,7 +545,6 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	public void onResume(ClientContext context) {
 	    super.onResume(context);
-	    // Do not call putter.onResume(), we are called from it.
 	}
 
 }

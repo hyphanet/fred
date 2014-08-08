@@ -18,7 +18,6 @@ import freenet.client.FECCodec;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
-import freenet.client.async.ClientRequester;
 import freenet.client.async.InsertCompressorTracker;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
@@ -32,6 +31,7 @@ import freenet.client.filter.FilterCallback;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
+import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.clients.fcp.FCPServer;
 import freenet.clients.http.FProxyToadlet;
@@ -1721,8 +1721,8 @@ public class NodeClientCore implements Persistable {
         return this.clientLayerPersister.isKilledOrNotLoaded();
     }
 
-    public ClientRequester[] getPersistentRequesters() {
-        return fcpPersistentRoot.getPersistentRequesters();
+    public ClientRequest[] getPersistentRequests() {
+        return fcpPersistentRoot.getPersistentRequests();
     }
 
 }
