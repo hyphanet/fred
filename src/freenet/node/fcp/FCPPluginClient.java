@@ -16,6 +16,24 @@ import freenet.support.api.Bucket;
  * provides functions for interacting with the node only.
  * </p>
  * 
+ * <h1>Internals</h1>
+ * 
+ * <h2>Code path of sending messages</h2>
+ * <p>There are two possible code paths which make a client connection happen:<br/>
+ * 1. Networked FCP connections:<br/>
+ * - The client connects to the node via network and sends FCP message of type
+ *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">FCPPluginMessage</a><br/>
+ * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose {@link FCPConnectionInputHandler} receives the FCP message.<br/>
+ * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)} to parse the message and obtain the 
+ *   actual {@link FCPPluginMessage}.<br/>
+ * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to obtain the {@link FCPPluginClient} which wants to send.<br/>
+ * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SimpleFieldSet, Bucket)} or {@link FCPPluginClient#sendSynchronuous(SimpleFieldSet, Bucket)
+ *   to send the message to the plugin.<br/>
+ * 2. Intra-node FCP connections (client and server plugin are running within the same node):</br>
+ * - TODO FIXME: Document.
+ * </p>
+ * 
+ * <h2>Object lifecycle</h2>
  * <p>For each {@link #pluginName}, a single {@link FCPConnectionHandler} can only have a single {@link FCPPluginClient} with the plugin of that name as
  * connection partner. This is enforced by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One {@link FCPConnectionHandler} can only 
  * have one connection to a certain plugin.<br/>
