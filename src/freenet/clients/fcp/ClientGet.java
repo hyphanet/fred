@@ -78,9 +78,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private GetFailedMessage getFailedMessage;
 	/** Succeeded but failed to return data e.g. couldn't write to file */
 	private ProtocolErrorMessage postFetchProtocolErrorMessage;
-	/** AllData (the actual direct-send data) - do not persist, because the bucket
-	 * is not persistent. FIXME make the bucket persistent! */
-	private AllDataMessage allDataPending;
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
 	private transient SimpleProgressMessage progressPending;
@@ -315,7 +312,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// since returnBucket is only set to non-null in this method and the constructor is it safe.
 		assert(returnBucket == data || binaryBlob);
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
-		AllDataMessage adm = null;
 		synchronized(this) {
 			if(succeeded) {
 				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
@@ -335,9 +331,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				completionTime = System.currentTimeMillis();
 				// Send all the data at once
 				// FIXME there should be other options
-				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
-				if(persistenceType == PERSIST_CONNECTION)
-					adm.setFreeOnSent();
 				/*
 				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
@@ -361,9 +354,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = true;
 		}
 		trySendDataFoundOrGetFailed(null);
-
-		if(adm != null)
-			trySendAllDataMessage(adm, null);
+		trySendAllDataMessage(null);
 		finish();
 		if(client != null)
 			client.notifySuccess(this);
@@ -397,16 +388,23 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 
 	}
+	
+	private synchronized AllDataMessage getAllDataMessage() {
+	    if(returnType != ClientGetMessage.RETURN_TYPE_DIRECT)
+	        return null;
+	    AllDataMessage msg = new AllDataMessage(returnBucket, identifier, global, startupTime, 
+	            completionTime, foundDataMimeType);
+        if(persistenceType == PERSIST_CONNECTION)
+            msg.setFreeOnSent();
+        return msg;
+	}
 
-	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler) {
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			allDataPending = msg;
-			return;
-		}
-        if(handler == null)
-            handler = origHandler.outputHandler;
-
-		handler.queue(msg);
+	private void trySendAllDataMessage(FCPConnectionOutputHandler handler) {
+	    if(persistenceType == PERSIST_CONNECTION) {
+	        if(handler == null)
+	            handler = origHandler.outputHandler;
+	        handler.queue(getAllDataMessage());
+	    }
 	}
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
@@ -481,13 +479,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				handler.queue(new SendingToNetworkMessage(identifier, global));
 			if(finished)
 				trySendDataFoundOrGetFailed(handler);
-		} else if(allDataPending == null && finished) {
+		} else if(returnType != ClientGetMessage.RETURN_TYPE_DIRECT) {
 		    ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.WRONG_RETURN_TYPE, false, "No AllData", identifier, global);
 		    handler.queue(msg);
+		    return;
 		}
 
-		if(includeData && (allDataPending != null)) {
-			handler.queue(allDataPending);
+		if(includeData) {
+		    trySendAllDataMessage(handler);
 		}
 		
 		if(compatMessage != null) {
@@ -843,7 +842,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			} else if(getFailedMessage != null)
 				redirect = getFailedMessage.redirectURI;
 			this.getFailedMessage = null;
-			this.allDataPending = null;
 			this.postFetchProtocolErrorMessage = null;
 			this.progressPending = null;
 			compatMessage = null;

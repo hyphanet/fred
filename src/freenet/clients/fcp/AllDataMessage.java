@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.Serializable;
-
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -14,7 +12,7 @@ import freenet.support.api.Bucket;
  * all the data to send it. We do not want to have to block on a request,
  * especially as there may be errors.
  */
-public class AllDataMessage extends DataCarryingMessage implements Serializable {
+public class AllDataMessage extends DataCarryingMessage {
 
     private static final long serialVersionUID = 1L;
     final long dataLength;
