@@ -4,6 +4,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +19,10 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.util.Random;
 
+import com.onionnetworks.util.FileUtil;
+
 import freenet.clients.fcp.ClientRequest;
+import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -96,9 +105,21 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 int requestCount = ois.readInt();
                 requests = new ClientRequest[requestCount];
                 for(int i=0;i<requestCount;i++) {
-                    // FIXME write a simpler, more robust, non-serialized version first.
+                    RequestIdentifier req = readRequestIdentifier(ois);
+                    if(req != null && context.persistentRoot.hasRequest(req)) {
+                        Logger.error(this, "Not reading request because already have it");
+                        skipChecksummedObject(ois, length);
+                        continue;
+                    }
+                    // FIXME read the initial details.
                     try {
                         requests[i] = (ClientRequest) readChecksummedObject(ois, length);
+                        if(req != null) {
+                            if(!req.sameIdentifier(requests[i].getRequestIdentifier())) {
+                                Logger.error(this, "Request does not match request identifier, discarding");
+                                requests[i] = null;
+                            }
+                        }
                     } catch (ChecksumFailedException e) {
                         Logger.error(this, "Failed to load request (checksum failed)");
                         System.err.println("Failed to load a request (checksum failed)");
@@ -108,6 +129,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         System.err.println("Failed to load a request: "+t);
                         t.printStackTrace();
                     }
+                    
                 }
                 PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
                 this.bandwidthStatsPutter.addFrom(storedStatsPutter);
@@ -198,6 +220,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientRequest[] requests = getRequests();
             oos.writeInt(requests.length);
             for(ClientRequest req : requests) {
+                writeRequestIdentifier(oos, req.getRequestIdentifier());
                 writeChecksummedObject(oos, req, req.toString());
             }
             bandwidthStatsPutter.updateData(node);
@@ -286,6 +309,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
 
+    private void skipChecksummedObject(ObjectInputStream is, long totalLength) throws IOException {
+        long length = is.readLong();
+        if(length > totalLength) throw new IOException("Too long: "+length+" > "+totalLength);
+        FileUtil.skipFully(is, length + checker.checksumLength());
+    }
+
     private ClientRequest[] getRequests() {
         return node.clientCore.getPersistentRequests();
     }
@@ -293,5 +322,35 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public boolean newSalt() {
         return newSalt;
     }
-
+    
+    private RequestIdentifier readRequestIdentifier(DataInput is) throws IOException {
+        short length = is.readShort();
+        if(length <= 0) return null;
+        byte[] buf = new byte[length];
+        try {
+            checker.readAndChecksum(is, buf, 0, length);
+        } catch (ChecksumFailedException e) {
+            Logger.error(this, "Checksum failed reading RequestIdentifier. This is not serious but means we will have to read the next request even if we don't need it.");
+            return null;
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
+        try {
+            return new RequestIdentifier(dis);
+        } catch (IOException e) {
+            Logger.error(this, "Failed to parse RequestIdentifier in spite of valid checksum (probably a bug): "+e, e);
+            return null;
+        }
+    }
+    
+    private void writeRequestIdentifier(DataOutput os, RequestIdentifier req) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStream oos = checker.checksumWriter(baos);
+        DataOutputStream dos = new DataOutputStream(oos);
+        req.writeTo(dos);
+        dos.close();
+        byte[] buf = baos.toByteArray();
+        os.writeShort(buf.length - checker.checksumLength());
+        os.write(buf);
+    }
+    
 }

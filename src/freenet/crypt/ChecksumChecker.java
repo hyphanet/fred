@@ -12,7 +12,8 @@ public abstract class ChecksumChecker {
     /** Get the length of the checksum */
     public abstract int checksumLength();
     
-    /** Get an OutputStream that will write a checksum when closed. */
+    /** Get an OutputStream that will write a checksum when closed. It will not close the 
+     * underlying stream. */
     public abstract OutputStream checksumWriter(OutputStream os);
     
     public abstract byte[] appendChecksum(byte[] data);

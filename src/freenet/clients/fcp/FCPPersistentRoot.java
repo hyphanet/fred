@@ -51,7 +51,8 @@ public class FCPPersistentRoot {
 		        client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
 		    clients.put(name, client);
 		}
-		client.setConnection(handler);
+		if(handler != null)
+		    client.setConnection(handler);
 		return client;
 	}
 
@@ -63,7 +64,8 @@ public class FCPPersistentRoot {
 	        client = clients.get(name);
 	        if(client == null) return null;
 	    }
-	    client.setConnection(handler);
+	    if(handler != null)
+	        client.setConnection(handler);
         return client;
 	}
 
@@ -92,6 +94,16 @@ public class FCPPersistentRoot {
             client.resume(clientRequest);
             return client;
         }
+    }
+
+    public synchronized boolean hasRequest(RequestIdentifier req) {
+        FCPClient client;
+        if(req.globalQueue)
+            client = globalForeverClient;
+        else
+            client = getForeverClient(req.clientName, null);
+        if(client == null) return false;
+        return client.getRequest(req.identifier) != null;
     }
 	
 }

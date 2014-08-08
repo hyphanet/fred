@@ -21,6 +21,7 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.ManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
+import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -402,5 +403,10 @@ public class ClientPutDir extends ClientPutBase {
 	public void onResume(ClientContext context) {
 	    super.onResume(context);
 	}
+
+    @Override
+    RequestType getType() {
+        return RequestType.PUTDIR;
+    }
 
 }

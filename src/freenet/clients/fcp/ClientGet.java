@@ -30,6 +30,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -966,5 +967,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         if(getter == null) {
             if(returnBucket != null) returnBucket.onResume(context);
         } // Otherwise the returnBucket is the ClientGetter's responsibility.
+    }
+
+    @Override
+    RequestType getType() {
+        return RequestType.GET;
     }
 }

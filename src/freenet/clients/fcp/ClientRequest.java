@@ -469,4 +469,11 @@ public abstract class ClientRequest implements Serializable {
     public RequestClient getRequestClient() {
         return lowLevelClient;
     }
+
+    /** Get the RequestIdentifier. This just includes the queue and the identifier. */
+    public RequestIdentifier getRequestIdentifier() {
+        return new RequestIdentifier(global, clientName, identifier, getType());
+    }
+    
+    abstract RequestIdentifier.RequestType getType();
 }
