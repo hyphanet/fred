@@ -314,7 +314,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// FIXME: Fortify thinks this is double-checked locking. Technically it is, but 
 		// since returnBucket is only set to non-null in this method and the constructor is it safe.
 		assert(returnBucket == data || binaryBlob);
-		boolean dontFree = false;
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
 		AllDataMessage adm = null;
 		synchronized(this) {
@@ -339,7 +338,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
-				dontFree = true;
 				/*
 				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
@@ -366,9 +364,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 		if(adm != null)
 			trySendAllDataMessage(adm, null);
-		if(!dontFree) {
-			data.free();
-		}
 		finish();
 		if(client != null)
 			client.notifySuccess(this);
