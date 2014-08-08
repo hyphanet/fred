@@ -39,6 +39,7 @@ import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -1863,6 +1864,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 		sched.dequeueOfferedKey(key);
 		sched = requestStarters.getScheduler(key instanceof NodeSSK, false, true);
 		sched.dequeueOfferedKey(key);
+	}
+	
+	public BookmarkManager getBookmarkManager() {
+		return toadletContainer.getBookmarks();
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
