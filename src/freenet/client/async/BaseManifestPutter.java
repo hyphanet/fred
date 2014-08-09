@@ -643,9 +643,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		
 		@Override
-		public synchronized void addRedundantBlocks(int blocks) {
-			BaseManifestPutter.this.addRedundantBlocks(blocks);
-			super.addRedundantBlocks(blocks);
+		public synchronized void addRedundantBlocksInsert(int blocks) {
+			BaseManifestPutter.this.addRedundantBlocksInsert(blocks);
+			super.addRedundantBlocksInsert(blocks);
 		}
 		
 		@Override
@@ -1226,7 +1226,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
 	@Override
-	public void addRedundantBlocks(int blocks) {
+	public void addRedundantBlocksInsert(int blocks) {
 		super.addMustSucceedBlocks(blocks);
 	}
 

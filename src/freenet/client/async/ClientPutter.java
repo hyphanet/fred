@@ -467,7 +467,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
 	@Override
-	public void addRedundantBlocks(int blocks) {
+	public void addRedundantBlocksInsert(int blocks) {
 		super.addMustSucceedBlocks(blocks);
 	}
 	

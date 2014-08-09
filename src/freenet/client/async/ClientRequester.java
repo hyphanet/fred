@@ -239,7 +239,7 @@ public abstract class ClientRequester implements Serializable {
 	}
 
 	/** Insertors should override this. The method is duplicated rather than calling addMustSucceedBlocks to avoid confusing consequences when addMustSucceedBlocks does other things. */
-	public synchronized void addRedundantBlocks(int blocks) {
+	public synchronized void addRedundantBlocksInsert(int blocks) {
 		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
