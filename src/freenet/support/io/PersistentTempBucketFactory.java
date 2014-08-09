@@ -111,13 +111,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		bucketsToFree = new ArrayList<DelayedFreeBucket>();
 	}
 	
-	/** Re-initialise the bucket factory after restarting and pulling it from the database */
-	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
-		this.strongPRNG = strongPRNG;
-		this.weakPRNG = weakPRNG;
-		fg.init(dir, prefix, weakPRNG);
-	}
-	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
 	 * currently used. @see #completedInit() */
 	@Override
