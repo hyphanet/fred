@@ -10,8 +10,9 @@ import freenet.support.api.Bucket;
 /**
  * Plugins which provide FCP services to clients must implement this interface.
  * 
- * @see FCPPluginClient A client will be represented as this class to the server plugin. Its JavaDoc also contains a nice overview of the code path which 
- *                      FCP plugin messages flow through.
+ * @see FCPPluginClient A client will be represented as this class to the client and server plugin. Its JavaDoc also contains a nice overview of the code path 
+ *                       which FCP plugin messages flow through.
+ * @see FredPluginFCPClient The interface of the client plugin which handles the messages which the server sends back in reply.
  * @author xor (xor@freenetproject.org)
  */
 public interface FredPluginFCPServer {
