@@ -34,7 +34,7 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 	static final int INVALID_FIELD = 8;
 	static final int FILE_NOT_FOUND = 9;
 	static final int DISK_TARGET_EXISTS = 10;
-	static final int FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR = 11;
+	//static final int FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR = 11;
 	static final int COULD_NOT_CREATE_FILE = 12;
 	static final int COULD_NOT_WRITE_FILE = 13;
 	static final int COULD_NOT_RENAME_FILE = 14;
@@ -90,8 +90,6 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 			return "File not found, not a file or not readable";
 		case DISK_TARGET_EXISTS:
 			return "Disk target exists, refusing to overwrite for security reasons";
-		case FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR:
-			return "Filename and temp filename must be in same directory (so can rename)";
 		case COULD_NOT_CREATE_FILE:
 			return "Could not create file";
 		case COULD_NOT_WRITE_FILE:

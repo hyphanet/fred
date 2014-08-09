@@ -58,7 +58,6 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	final int maxRetries;
 	final short priorityClass;
 	final File diskFile;
-	final File tempFile;
 	final String clientToken;
 	final boolean global;
 	final boolean binaryBlob;
@@ -118,12 +117,10 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		returnType = parseReturnTypeFCP(returnTypeString);
 		if(returnType == RETURN_TYPE_DIRECT) {
 			diskFile = null;
-			tempFile = null;
 			// default just below FProxy
 			defaultPriority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		} else if(returnType == RETURN_TYPE_NONE) {
 			diskFile = null;
-			tempFile = null;
 			defaultPriority = RequestStarter.PREFETCH_PRIORITY_CLASS;
 		} else if(returnType == RETURN_TYPE_DISK) {
 			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
@@ -134,20 +131,12 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			String tempFilename = fs.get("TempFilename");
 			if(tempFilename == null)
 				tempFilename = filename + ".freenet-tmp";
-			tempFile = new File(tempFilename);
-			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile()))
-				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier, global);
-			if(tempFile.exists())
-				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, "Temp file exists", identifier, global);
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
-				// Check whether we can create it, so that we return an error early on.
-				// Then delete it, as we have to rename over it anyway (atomic creation of a file does not guarantee
-				// that it won't be replaced with a symlink).
-				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
-					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
-				tempFile.delete();
+				// Check whether we can create a temp file in the target directory.
+			    File temp = File.createTempFile(diskFile.getName(), ".freenet-tmp", diskFile.getParentFile());
+			    temp.delete();
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
 			}

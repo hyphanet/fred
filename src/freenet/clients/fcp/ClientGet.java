@@ -54,7 +54,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
-	private final File tempFile;
 	/** True only if returnType is RETURN_TYPE_DISK and we were unable to rename from the temp file 
 	 * to to final file. */
 	private boolean returningTempFile;
@@ -129,7 +128,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
-			this.tempFile = returnTempFilename;
 			if(!(server.core.allowDownloadTo(returnTempFilename) && server.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
@@ -144,11 +142,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
-			tempFile = null;
 			ret = new NullBucket();
 		} else {
 			targetFile = null;
-			tempFile = null;
 				if(persistenceType == PERSIST_FOREVER)
 					ret = server.core.persistentTempBucketFactory.makeBucket(maxOutputLength);
 				else
@@ -191,12 +187,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
-			this.tempFile = message.tempFile;
-			if(!(server.core.allowDownloadTo(tempFile) && server.core.allowDownloadTo(targetFile)))
-				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global);
-			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
-			ret = new FileBucket(message.tempFile, false, true, false, false, false);
+			if(!server.core.allowDownloadTo(targetFile))
+				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+targetFile, identifier, global);
+			else if(!(handler.allowDDAFrom(targetFile, true)))
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to " + targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
+			ret = new FileBucket(targetFile, false, true, false, false, false);
 			if(fctx.filterData) {
 				String name = targetFile.getName();
 				int idx = name.lastIndexOf('.');
@@ -208,11 +203,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
-			tempFile = null;
 			ret = new NullBucket();
 		} else {
 			targetFile = null;
-			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
 					ret = server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
@@ -240,7 +233,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    getter = null;
 	    returnType = 0;
 	    targetFile = null;
-	    tempFile = null;
 	    returnBucket = null;
 	    binaryBlob = false;
 	}
@@ -328,28 +320,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			// completionTime is set here rather than in finish() for two reasons:
 			// 1. It must be set inside the lock.
 			// 2. It must be set before AllData is sent so it is consistent.
-			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-				// Set it before we create the AllDataMessage.
-				completionTime = System.currentTimeMillis();
-				// Send all the data at once
-				// FIXME there should be other options
-				/*
-				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
-				// Do nothing
-				 */
-			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-				// Write to temp file, then rename over filename
-				if(!FileUtil.renameTo(tempFile, targetFile)) {
-				    this.returningTempFile = true;
-					// Don't delete temp file, user might want it.
-	                returnBucket = new FileBucket(targetFile, false, true, false, false, false);
-				} // else returnBucket is already tempFile.
-                // Wait until after the potentially expensive rename.
-                completionTime = System.currentTimeMillis();
-			} else {
-				// Needs to be set for all other cases too.
-				completionTime = System.currentTimeMillis();
-			}
+            completionTime = System.currentTimeMillis();
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
 			this.succeeded = true;
@@ -511,7 +482,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	protected FCPMessage persistentTagMessage() {
-		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
+		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
 	}
 	
 	// FIXME code duplication: ClientGet ClientPut ClientPutDir
@@ -809,13 +780,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 */
 	public Bucket getBucket() {
 		synchronized(this) {
-			if(targetFile != null) {
-				if(succeeded || tempFile == null) {
-					return new FileBucket(targetFile, false, true, false, false, false);
-				} else {
-					return new FileBucket(tempFile, false, true, false, false, false);
-				}
-			} else return returnBucket;
+		    return returnBucket;
 		}
 	}
 
@@ -950,7 +915,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         dos.writeLong(CLIENT_DETAIL_VERSION);
         dos.writeShort(returnType);
         writeFile(targetFile, dos);
-        writeFile(tempFile, dos);
         dos.writeBoolean(binaryBlob);
         fctx.writeTo(dos);
         super.getClientDetail(dos);

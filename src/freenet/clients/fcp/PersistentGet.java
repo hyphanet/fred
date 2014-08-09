@@ -25,7 +25,6 @@ public class PersistentGet extends FCPMessage {
 	final short returnType;
 	final short persistenceType;
 	final File targetFile;
-	final File tempFile;
 	final String clientToken;
 	final boolean global;
 	final boolean started;
@@ -36,7 +35,7 @@ public class PersistentGet extends FCPMessage {
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short returnType, short persistenceType, 
-			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize, boolean realTime) {
+			File targetFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize, boolean realTime) {
 		this.identifier = identifier;
 		this.uri = uri;
 		// This has been seen in practice (bug #3606), lets try to get an earlier stack trace...
@@ -46,7 +45,6 @@ public class PersistentGet extends FCPMessage {
 		this.returnType = returnType;
 		this.persistenceType = persistenceType;
 		this.targetFile = targetFile;
-		this.tempFile = tempFile;
 		this.clientToken = clientToken;
 		this.global = global;
 		this.started = started;
@@ -68,7 +66,6 @@ public class PersistentGet extends FCPMessage {
 		fs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			fs.putSingle("Filename", targetFile.getAbsolutePath());
-			fs.putSingle("TempFilename", tempFile.getAbsolutePath());
 		}
 		fs.put("PriorityClass", priorityClass);
 		if(clientToken != null)
