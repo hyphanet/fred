@@ -23,6 +23,6 @@ public interface FredPluginFCPServer {
     };
     
 
-    void handleFCPPluginClientMessage(FCPPluginClient client, SimpleFieldSet params, Bucket data, ClientPermissions permissions);
+    void handleFCPPluginClientMessage(FCPPluginClient client, SimpleFieldSet parameters, Bucket data, ClientPermissions permissions);
 
 }
