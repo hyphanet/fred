@@ -701,7 +701,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	
 	private final Queue<WeakReference<Migratable>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<Migratable>>();
 	
-	private Bucket _makeFileBucket() {
+	private Bucket _makeFileBucket() throws IOException {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {

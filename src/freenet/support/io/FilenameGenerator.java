@@ -80,14 +80,14 @@ public class FilenameGenerator {
 		}
 	}
 
-	public long makeRandomFilename() {
+	public long makeRandomFilename() throws IOException {
 		long randomFilename; // should be plenty
 		while(true) {
 			randomFilename = random.nextLong();
 			if(randomFilename == -1) continue; // Disallowed as used for error reporting
 			String filename = prefix + Long.toHexString(randomFilename);
 			File ret = new File(tmpDir, filename);
-			if(!ret.exists()) {
+			if(ret.createNewFile()) {
 				if(logMINOR)
 					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
 				return randomFilename;
@@ -100,10 +100,7 @@ public class FilenameGenerator {
 	}
 	
 	public File makeRandomFile() throws IOException {
-		while(true) {
-			File file = getFilename(makeRandomFilename());
-			if(file.createNewFile()) return file;
-		}
+	    return getFilename(makeRandomFilename());
 	}
 
 	public boolean matches(File file) {
