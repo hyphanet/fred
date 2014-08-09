@@ -98,7 +98,7 @@ public abstract class BaseFileBucket implements Bucket {
 				}
 				if(failed) throw new FileExistsException(file);
 			}
-			if(tempFileAlreadyExists() && !file.exists()) {
+			if(tempFileAlreadyExists() && !(file.exists() && file.canRead() && file.canWrite())) {
 			    throw new FileDoesNotExistException(file);
 			}
 			
