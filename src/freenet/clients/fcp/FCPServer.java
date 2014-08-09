@@ -732,7 +732,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, File downloadsDir) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
-		File returnFilename = null, returnTempFilename = null;
+		File returnFilename = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			returnFilename = makeReturnFilename(fetchURI, expectedMimeType, downloadsDir);
 		}
@@ -742,20 +742,20 @@ public class FCPServer implements Runnable, DownloadCache {
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
 
 		try {
-			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag);
+			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, realTimeFlag);
 			return;
 		} catch (IdentifierCollisionException ee) {
 			try {
-				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag);
+				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, realTimeFlag);
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag);
+					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, realTimeFlag);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, realTimeFlag);
+						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, realTimeFlag);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
@@ -763,7 +763,7 @@ public class FCPServer implements Runnable, DownloadCache {
 							try {
 								core.random.nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
-								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, realTimeFlag);
+								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, realTimeFlag);
 								return;
 							} catch (IdentifierCollisionException e3) {}
 						}
@@ -799,12 +799,12 @@ public class FCPServer implements Runnable, DownloadCache {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, short returnType, String id, File returnFilename,
-			File returnTempFilename, boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
+			boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
 		final ClientGet cg =
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_RETRIES, QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id,
-					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, null, false, realTimeFlag, this);
+					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, null, false, realTimeFlag, this);
 		cg.register(false);
 		cg.start(core.clientContext);
 	}

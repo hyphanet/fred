@@ -106,7 +106,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
-			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server) throws IdentifierCollisionException, NotAllowedException, IOException {
+			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true);
@@ -128,9 +128,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
-			if(!(server.core.allowDownloadTo(returnTempFilename) && server.core.allowDownloadTo(returnFilename)))
+			if(!(server.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
-			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
+			ret = new FileBucket(returnFilename, false, true, false, false, false);
 			if(filterData) {
 				String name = returnFilename.getName();
 				int idx = name.lastIndexOf('.');
