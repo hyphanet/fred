@@ -98,6 +98,9 @@ public abstract class BaseFileBucket implements Bucket {
 				}
 				if(failed) throw new FileExistsException(file);
 			}
+			if(tempFileAlreadyExists() && !file.exists()) {
+			    throw new FileDoesNotExistException(file);
+			}
 			
 			if(streams != null && !streams.isEmpty())
 				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
