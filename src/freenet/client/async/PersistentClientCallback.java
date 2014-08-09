@@ -10,12 +10,22 @@ import java.io.IOException;
 public interface PersistentClientCallback extends ClientBaseCallback {
 
     /**
-     * Called to get a representation of the client, e.g. for FCP this might include the 
-     * identifier, whether it is on the global queue, and the client name. This is written to the
-     * file storing the status of a persistent splitfile download, for easier recovery. It is legal
-     * to return an empty byte[0], and any non-empty implementation must contain a magic marker and 
-     * version number. Will only be called for persistent requests. Should not include progress 
-     * etc; this is supposed to be just enough to restart the download from scratch.
+     * Called to get a high level representation of the request. This will include:
+     * - Enough information to restart the request from scratch, including fields that can be 
+     * changed manually after starting it (priority and client token).
+     * - If the request has completed, full data on its completion, i.e. the MIME type, where it
+     * was eventually stored etc.
+     * - If the request has reached a *simple* final state, i.e. a splitfile download, enough 
+     * information to resume the request. This does NOT apply to single block fetches, multi-level
+     * metadata fetches, container fetches etc; it's basically the filename of the splitfile 
+     * download plus the metadata that the splitfile may not have (MIME type etc).
+     * 
+     * This is called in two cases:
+     * 1) When checkpointing, we write this data so that a request can be recovered even if 
+     * serialization fails.
+     * 2) When creating a splitfile, we store it, so that a request can be recovered just from the
+     * splitfile. We do not update this data later on, so when it is restored it may have an out
+     * of date priority or client token.
      */
     public void getClientDetail(DataOutputStream dos) throws IOException;
     
