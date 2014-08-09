@@ -228,7 +228,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     @Override
     public void setSplitfileBlocks(int requiredBlocks, int remainingBlocks) {
         parent.addMustSucceedBlocks(requiredBlocks);
-        parent.addRedundantBlocks(remainingBlocks);
+        parent.addBlocks(remainingBlocks);
         parent.notifyClients(context);
     }
 
