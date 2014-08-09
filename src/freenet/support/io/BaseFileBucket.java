@@ -91,14 +91,10 @@ public abstract class BaseFileBucket implements Bucket {
 			if(isReadOnly())
 				throw new IOException("Bucket is read-only: "+this);
 			
-			if(createFileOnly() && file.exists()) {
-			    if(fileRestartCounter != 0) {
-			        // We restarted.
-			        file.delete();
-			    } else {
-			        // Must not already exist.
-			        throw new FileExistsException(file);
-			    }
+			if(createFileOnly() && // Fail if file already exists 
+			        fileRestartCounter == 0 && // Ignore if we're just clobbering our own file after a previous getOutputStream() 
+			        !file.createNewFile()) {
+			    throw new FileExistsException(file);
 			}
 			if(tempFileAlreadyExists() && !(file.exists() && file.canRead() && file.canWrite())) {
 			    throw new FileDoesNotExistException(file);
