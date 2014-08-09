@@ -14,7 +14,13 @@ import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/** Tracks the current temporary files settings (dir and prefix), and translates between ID's and 
+ * filenames. Also provides functions for creating tempfiles (which should be safe against symlink
+ * attacks and race conditions). FIXME Consider using File.createTempFile(). Note that using our 
+ * own code could actually be more secure if we use a better PRNG than they do (they use 
+ * "new Random()" IIRC, but maybe that's fixed now?).
+ * @author toad
+ */
 public class FilenameGenerator {
 
     private transient Random random;
