@@ -20,13 +20,6 @@ public interface PersistentFileTracker {
 	 */
 	public File getDir();
 
-	/**
-	 * Is the file in question one of our persistent temp files?
-	 */
-	public boolean matches(File file);
-
 	public FilenameGenerator getGenerator();
-
-	public long getID(File file);
 	
 }

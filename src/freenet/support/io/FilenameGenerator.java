@@ -109,28 +109,6 @@ public class FilenameGenerator {
 	    return getFilename(makeRandomFilename());
 	}
 
-	public boolean matches(File file) {
-		return getID(file) != -1;
-	}
-
-	public long getID(File file) {
-		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) {
-			Logger.error(this, "Not the same dir: parent="+FileUtil.getCanonicalFile(file.getParentFile())+" but tmpDir="+tmpDir);
-			return -1;
-		}
-		String name = file.getName();
-		if(!name.startsWith(prefix)) {
-			Logger.error(this, "Does not start with prefix: "+name+" prefix "+prefix);
-			return -1;
-		}
-		try {
-			return Fields.hexToLong(name.substring(prefix.length()));
-		} catch (NumberFormatException e) {
-			Logger.error(this, "Cannot getID: "+e+" from "+(name.substring(prefix.length())), e);
-			return -1;
-		}
-	}
-
 	public File getDir() {
 		return tmpDir;
 	}

@@ -196,19 +196,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		return fg;
 	}
 
-	/** Is the file potentially one of ours? That is, is it in the right directory and does it have the
-	 * right prefix? */
-	@Override
-	public boolean matches(File file) {
-		return fg.matches(file);
-	}
-
-	/** Get the filename ID from the filename for a file that matches() */
-	@Override
-	public long getID(File file) {
-		return fg.getID(file);
-	}
-	
 	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
 		return encrypt;
