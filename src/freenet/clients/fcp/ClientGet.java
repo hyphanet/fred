@@ -55,6 +55,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private final short returnType;
 	private final File targetFile;
 	private final File tempFile;
+	/** True only if returnType is RETURN_TYPE_DISK and we were unable to rename from the temp file 
+	 * to to final file. */
+	private boolean returningTempFile;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
 	private Bucket returnBucket;
 	private final boolean binaryBlob;
@@ -77,8 +80,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private String foundDataMimeType;
 	/** Details of request failure */
 	private GetFailedMessage getFailedMessage;
-	/** Succeeded but failed to return data e.g. couldn't write to file */
-	private ProtocolErrorMessage postFetchProtocolErrorMessage;
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
 	private transient SimpleProgressMessage progressPending;
@@ -339,7 +340,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 				// Write to temp file, then rename over filename
 				if(!FileUtil.renameTo(tempFile, targetFile)) {
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
+				    this.returningTempFile = true;
 					// Don't delete temp file, user might want it.
 	                returnBucket = new FileBucket(targetFile, false, true, false, false, false);
 				} // else returnBucket is already tempFile.
@@ -380,7 +381,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			handler.queue(msg);
 		else
 			client.queueClientRequestMessage(msg, 0);
-		if(postFetchProtocolErrorMessage != null) {
+		if(returningTempFile) {
+            FCPMessage postFetchProtocolErrorMessage = 
+                new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
 			if(handler != null)
 				handler.queue(postFetchProtocolErrorMessage);
 			else {
@@ -843,7 +846,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			} else if(getFailedMessage != null)
 				redirect = getFailedMessage.redirectURI;
 			this.getFailedMessage = null;
-			this.postFetchProtocolErrorMessage = null;
 			this.progressPending = null;
 			compatMessage = null;
 			expectedHashes = null;
