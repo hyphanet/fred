@@ -765,6 +765,8 @@ final public class FileUtil {
 	}
 
 	public static boolean equals(File a, File b) {
+	    if(a == b) return true;
+	    if(a.equals(b)) return true;
 		a = getCanonicalFile(a);
 		b = getCanonicalFile(b);
 		return a.equals(b);
