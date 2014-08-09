@@ -44,8 +44,6 @@ public abstract class ClientRequest implements Serializable {
 	protected final boolean realTime;
 	/** Persistence type */
 	protected final short persistenceType;
-	/** Charset of the request's contents */
-	protected final String charset;
 	/** Has the request finished? */
 	protected boolean finished;
 	/** Client token (string to feed back to the client on a Persistent* when he does a
@@ -96,7 +94,6 @@ public abstract class ClientRequest implements Serializable {
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
-		this.charset = charset;
 		this.clientToken = clientToken2;
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
@@ -127,7 +124,6 @@ public abstract class ClientRequest implements Serializable {
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
-		this.charset = charset;
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
@@ -179,7 +175,6 @@ public abstract class ClientRequest implements Serializable {
 	    clientName = null;
 	    realTime = false;
 	    persistenceType = 0;
-	    charset = null;
 	    startupTime = 0;
 	    hashCode = 0;
 	}
@@ -445,10 +440,6 @@ public abstract class ClientRequest implements Serializable {
         dos.writeUTF(identifier);
         dos.writeInt(verbosity);
         dos.writeShort(priorityClass);
-        if(charset == null)
-            dos.writeUTF("");
-        else
-            dos.writeUTF(charset);
         dos.writeLong(startupTime);
     }
 
