@@ -57,7 +57,8 @@ public abstract class BaseFileBucket implements Bucket {
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();
-                maybeSetDeleteOnExit(deleteOnExit, file);
+		maybeSetDeleteOnExit(deleteOnExit, file);
+        assert(!(createFileOnly() && tempFileAlreadyExists())); // Mutually incompatible!
 	}
 	
 	protected BaseFileBucket() {
@@ -136,10 +137,11 @@ public abstract class BaseFileBucket implements Bucket {
 	}
 	
 	/** If true, then the file is temporary and must already exist, so we will just open it. 
-	 * Otherwise we will create a temporary file and then rename it over the target. */
+	 * Otherwise we will create a temporary file and then rename it over the target.
+	 * Incompatible with createFileOnly()! */
 	protected abstract boolean tempFileAlreadyExists();
 
-	/** If true, we will fail if the file already exist. */
+	/** If true, we will fail if the file already exist. Incompatible with tempFileAlreadyExists()! */
 	protected abstract boolean createFileOnly();
 	
 	protected abstract boolean deleteOnExit();
