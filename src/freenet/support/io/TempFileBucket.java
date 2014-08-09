@@ -137,6 +137,14 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
                 checkExists(file);
             } else {
                 // File must exist!
+                if(!file.exists()) {
+                    // Maybe moved after the last checkpoint?
+                    File f = generator.getFilename(filenameID);
+                    if(f.exists()) {
+                        file = f;
+                        return;
+                    }
+                }
                 checkExists(file);
                 file = generator.maybeMove(file, filenameID);
             }
