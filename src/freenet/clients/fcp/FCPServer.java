@@ -735,7 +735,6 @@ public class FCPServer implements Runnable, DownloadCache {
 		File returnFilename = null, returnTempFilename = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			returnFilename = makeReturnFilename(fetchURI, expectedMimeType, downloadsDir);
-			returnTempFilename = makeTempReturnFilename(returnFilename);
 		}
 //		public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 //				int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
@@ -774,10 +773,6 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	private File makeTempReturnFilename(File returnFilename) {
-		return new File(returnFilename.toString() + ".freenet-tmp");
-	}
-
 	private File makeReturnFilename(FreenetURI uri, String expectedMimeType, File downloadsDir) {
 		String ext;
 		if((expectedMimeType != null) && (expectedMimeType.length() > 0) &&
@@ -790,16 +785,14 @@ public class FCPServer implements Runnable, DownloadCache {
 		if(!(ext != null && preferredWithExt.endsWith(ext)))
 			preferredWithExt += extAdd;
 		File f = new File(downloadsDir, preferredWithExt);
-		File f1 = new File(downloadsDir, preferredWithExt + ".freenet-tmp");
 		int x = 0;
 		StringBuilder sb = new StringBuilder();
-		for(;f.exists() || f1.exists();sb.setLength(0)) {
+		for(;f.exists();sb.setLength(0)) {
 			sb.append(preferred);
 			sb.append('-');
 			sb.append(x);
 			sb.append(extAdd);
 			f = new File(downloadsDir, sb.toString());
-			f1 = new File(downloadsDir, sb.append(".freenet-tmp").toString());
 			x++;
 		}
 		return f;

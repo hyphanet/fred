@@ -128,9 +128,6 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			if(filename == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier, global);
 			diskFile = new File(filename);
-			String tempFilename = fs.get("TempFilename");
-			if(tempFilename == null)
-				tempFilename = filename + ".freenet-tmp";
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
 			try {
