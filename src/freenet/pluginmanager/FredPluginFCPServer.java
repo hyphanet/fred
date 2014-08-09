@@ -25,10 +25,10 @@ public interface FredPluginFCPServer {
     
     /**
      * @param client The client which sent the message.
+     * @param permissions Permissions of the client.
      * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
      * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
-     * @param permissions Permissions of the client.
      */
-    void handleFCPPluginClientMessage(FCPPluginClient client, SimpleFieldSet parameters, Bucket data, ClientPermissions permissions);
+    void handleFCPPluginClientMessage(FCPPluginClient client, ClientPermissions permissions, SimpleFieldSet parameters, Bucket data);
 
 }
