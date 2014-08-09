@@ -247,12 +247,6 @@ public abstract class BaseFileBucket implements Bucket {
 				throw e;
 			}
 			if(renaming) {
-			    if(createFileOnly() && file.exists()) {
-			        if(logMINOR)
-			            Logger.minor(this, "File exists creating file for "+this);
-			        tempfile.delete();
-			        throw new FileExistsException(file);
-			    }
 			    if(!tempfile.renameTo(file)) {
 			        if(logMINOR)
 			            Logger.minor(this, "Cannot rename file for "+this);
