@@ -127,4 +127,9 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         // Plain TempFileBucket's are not persistent.
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    protected boolean tempFileAlreadyExists() {
+        return true;
+    }
 }

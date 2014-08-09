@@ -135,4 +135,9 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
     public void onResume(ClientContext context) {
         // Do nothing.
     }
+
+    @Override
+    protected boolean tempFileAlreadyExists() {
+        return false;
+    }
 }

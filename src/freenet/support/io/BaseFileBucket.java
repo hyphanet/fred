@@ -102,7 +102,8 @@ public abstract class BaseFileBucket implements Bucket {
 			if(streams != null && !streams.isEmpty())
 				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
 			
-			File tempfile = createFileOnly() ? getTempfile() : file;
+			boolean rename = !tempFileAlreadyExists();
+			File tempfile = rename ? getTempfile() : file;
 			long streamNumber = ++fileRestartCounter;
 			
 			FileBucketOutputStream os = 
@@ -130,7 +131,12 @@ public abstract class BaseFileBucket implements Bucket {
 		streams.remove(stream);
 		if(streams.isEmpty()) streams = null;
 	}
+	
+	/** If true, then the file is temporary and must already exist, so we will just open it. 
+	 * Otherwise we will create a temporary file and then rename it over the target. */
+	protected abstract boolean tempFileAlreadyExists();
 
+	/** If true, we will fail if the file already exist. */
 	protected abstract boolean createFileOnly();
 	
 	protected abstract boolean deleteOnExit();
@@ -226,6 +232,7 @@ public abstract class BaseFileBucket implements Bucket {
 				closed = true;
 				file = getFile();
 			}
+			boolean renaming = !tempFileAlreadyExists();
 			removeStream(this);
 			if(logMINOR)
 				Logger.minor(this, "Closing "+BaseFileBucket.this);
@@ -234,25 +241,25 @@ public abstract class BaseFileBucket implements Bucket {
 			} catch (IOException e) {
 				if(logMINOR)
 					Logger.minor(this, "Failed closing "+BaseFileBucket.this+" : "+e, e);
-				if(createFileOnly()) tempfile.delete();
+				if(renaming) tempfile.delete();
 				throw e;
 			}
-			if(createFileOnly()) {
-				if(file.exists()) {
-					if(logMINOR)
-						Logger.minor(this, "File exists creating file for "+this);
-					tempfile.delete();
-					throw new FileExistsException(file);
-				}
-				if(!tempfile.renameTo(file)) {
-					if(logMINOR)
-						Logger.minor(this, "Cannot rename file for "+this);
-					if(file.exists()) throw new FileExistsException(file);
-					tempfile.delete();
-					if(logMINOR)
-						Logger.minor(this, "Deleted, cannot rename file for "+this);
-					throw new IOException("Cannot rename file");
-				}
+			if(renaming) {
+			    if(createFileOnly() && file.exists()) {
+			        if(logMINOR)
+			            Logger.minor(this, "File exists creating file for "+this);
+			        tempfile.delete();
+			        throw new FileExistsException(file);
+			    }
+			    if(!tempfile.renameTo(file)) {
+			        if(logMINOR)
+			            Logger.minor(this, "Cannot rename file for "+this);
+			        if(file.exists()) throw new FileExistsException(file);
+			        tempfile.delete();
+			        if(logMINOR)
+			            Logger.minor(this, "Deleted, cannot rename file for "+this);
+			        throw new IOException("Cannot rename file");
+			    }
 			}
 		}
 		
