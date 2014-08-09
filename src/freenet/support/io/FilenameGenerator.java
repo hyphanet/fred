@@ -18,7 +18,8 @@ import freenet.support.Logger.LogLevel;
  * filenames. Also provides functions for creating tempfiles (which should be safe against symlink
  * attacks and race conditions). FIXME Consider using File.createTempFile(). Note that using our 
  * own code could actually be more secure if we use a better PRNG than they do (they use 
- * "new Random()" IIRC, but maybe that's fixed now?).
+ * "new Random()" IIRC, but maybe that's fixed now?). If we do change to using 
+ * File.createTempFile(), we will need to change TempFileBucket accordingly.
  * @author toad
  */
 public class FilenameGenerator {
@@ -198,5 +199,22 @@ public class FilenameGenerator {
 			}
 		}
 	}
+	
+	protected boolean matches(File file) {
+	    return FileUtil.equals(file.getParentFile(), tmpDir) && 
+	        file.getName().startsWith(prefix);
+	}
+
+    public File maybeMove(File file, long id) {
+        if(matches(file)) return file;
+        File newFile = getFilename(id);
+        Logger.normal(this, "Moving tempfile "+file+" to "+newFile);
+        if(FileUtil.moveTo(file, newFile, false))
+            return newFile;
+        else {
+            Logger.error(this, "Unable to move old temporary file "+file+" to "+newFile);
+            return file;
+        }
+    }
 
 }

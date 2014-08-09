@@ -1,6 +1,7 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
@@ -26,6 +27,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected transient FilenameGenerator generator;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
+	private File file;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -46,6 +48,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		// they are deleted. This grows without bound, it's a major memory
 		// leak.
 		this(id, generator, true);
+		this.file = generator.getFilename(id);
 	}
 	
 	/**
@@ -63,6 +66,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		this.filenameID = id;
 		this.generator = generator;
 		this.deleteOnFree = deleteOnFree;
+		this.file = generator.getFilename(id);
 
             if (logDEBUG) {
                 Logger.debug(this,"Initializing TempFileBucket(" + getFile());
@@ -93,6 +97,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	public File getFile() {
+	    if(file != null) return file;
 		return generator.getFilename(filenameID);
 	}
 
@@ -124,8 +129,35 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
     @Override
     public void onResume(ClientContext context) {
-        // Plain TempFileBucket's are not persistent.
-        throw new UnsupportedOperationException();
+        if(persistent()) {
+            generator = context.persistentFG;
+            if(file == null) {
+                // Migrating from old tempfile, possibly db4o era.
+                file = generator.getFilename(filenameID);
+                checkExists(file);
+            } else {
+                // File must exist!
+                checkExists(file);
+                file = generator.maybeMove(file, filenameID);
+            }
+        } else {
+            // Plain TempFileBucket's are not persistent.
+            throw new UnsupportedOperationException();
+        }
+    }
+    
+    private void checkExists(File file) {
+        // File must exist!
+        try {
+            if(!(file.createNewFile() || file.exists()))
+                throw new IllegalStateException("Tempfile "+file+" does not exist and cannot be created");
+        } catch (IOException e) {
+            throw new IllegalStateException("Tempfile cannot be created");
+        }
+    }
+
+    protected boolean persistent() {
+        return false;
     }
 
     @Override

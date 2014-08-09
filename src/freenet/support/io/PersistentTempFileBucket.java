@@ -50,10 +50,14 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	
     @Override
     public void onResume(ClientContext context) {
-        // Ewww writing parent's field.
-        generator = context.persistentFG;
+        super.onResume(context);
         tracker = context.persistentFileTracker;
         tracker.register(getFile());
     }
-	
+    
+    @Override
+    protected boolean persistent() {
+        return true;
+    }
+
 }
