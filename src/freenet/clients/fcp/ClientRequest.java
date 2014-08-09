@@ -436,8 +436,8 @@ public abstract class ClientRequest implements Serializable {
     public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
-        client.getClientDetail(dos);
-        dos.writeUTF(identifier);
+        RequestIdentifier req = getRequestIdentifier();
+        req.writeTo(dos);
         dos.writeInt(verbosity);
         dos.writeShort(priorityClass);
         dos.writeLong(startupTime);

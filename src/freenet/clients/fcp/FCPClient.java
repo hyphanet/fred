@@ -517,17 +517,6 @@ public class FCPClient {
 			return lowLevelClient;
 	}
 	
-	private static final long CLIENT_DETAIL_MAGIC = 0xa6086aaab769aa4aL;
-	private static final int CLIENT_DETAIL_VERSION = 1;
-
-    public void getClientDetail(DataOutputStream dos) throws IOException {
-        dos.writeLong(CLIENT_DETAIL_MAGIC);
-        dos.writeLong(CLIENT_DETAIL_VERSION);
-        dos.writeBoolean(this.isGlobalQueue);
-        if(!isGlobalQueue)
-            dos.writeUTF(name);
-    }
-
     public void addPersistentRequesters(List<ClientRequester> requesters) {
         for(ClientRequest req : runningPersistentRequests)
             requesters.add(req.getClientRequest());
