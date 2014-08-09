@@ -17,12 +17,18 @@ import freenet.support.api.Bucket;
 public interface FredPluginFCPServer {
     
     public static enum ClientPermissions {
+        /** The client plugin is running within the same node as the server plugin. TODO FIXME: Is there any reason not to assume {@link #ACCESS_FCP_FULL}? */
         ACCESS_DIRECT,
         ACCESS_FCP_RESTRICTED,
         ACCESS_FCP_FULL
     };
     
-
+    /**
+     * @param client The client which sent the message.
+     * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
+     * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
+     * @param permissions Permissions of the client.
+     */
     void handleFCPPluginClientMessage(FCPPluginClient client, SimpleFieldSet parameters, Bucket data, ClientPermissions permissions);
 
 }
