@@ -56,8 +56,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/** True only if returnType is RETURN_TYPE_DISK and we were unable to rename from the temp file 
 	 * to to final file. */
 	private boolean returningTempFile;
-	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
-	private Bucket returnBucket;
+	/** Bucket returned when the request was completed, if returnType == RETURN_TYPE_DIRECT. */
+	private Bucket returnBucketDirect;
 	private final boolean binaryBlob;
 
 	// Verbosity bitmasks
@@ -146,9 +146,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    targetFile = null;
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
-		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
-					returnBucket, null, false, null, extensionCheck);
+					ret, null, false, null, extensionCheck);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
@@ -206,10 +205,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
-		returnBucket = ret;
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? new BinaryBlobWriter(returnBucket) : null, false, message.getInitialMetadata(), extensionCheck);
+					binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, message.getInitialMetadata(), extensionCheck);
 	}
 	
 	protected ClientGet() {
@@ -218,7 +216,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    getter = null;
 	    returnType = 0;
 	    targetFile = null;
-	    returnBucket = null;
 	    binaryBlob = false;
 	}
 
@@ -234,7 +231,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			try {
 				client.register(this);
 			} catch (IdentifierCollisionException e) {
-				returnBucket.free();
 				throw e;
 			}
 			if(persistenceType != PERSIST_CONNECTION && !noTags) {
@@ -287,10 +283,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
-		// FIXME: Fortify thinks this is double-checked locking. Technically it is, but 
-		// since returnBucket is only set to non-null in this method and the constructor is it safe.
-		assert(returnBucket == data || binaryBlob);
-		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
 		synchronized(this) {
 			if(succeeded) {
 				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
@@ -307,9 +299,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			// 2. It must be set before AllData is sent so it is consistent.
             completionTime = System.currentTimeMillis();
 			progressPending = null;
-			this.foundDataLength = returnBucket.size();
+			this.foundDataLength = data.size();
 			this.succeeded = true;
 			finished = true;
+			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT)
+			    returnBucketDirect = data;
 		}
 		trySendDataFoundOrGetFailed(null);
 		trySendAllDataMessage(null);
@@ -352,7 +346,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private synchronized AllDataMessage getAllDataMessage() {
 	    if(returnType != ClientGetMessage.RETURN_TYPE_DIRECT)
 	        return null;
-	    AllDataMessage msg = new AllDataMessage(returnBucket, identifier, global, startupTime, 
+	    AllDataMessage msg = new AllDataMessage(returnBucketDirect, identifier, global, startupTime, 
 	            completionTime, foundDataMimeType);
         if(persistenceType == PERSIST_CONNECTION)
             msg.setFreeOnSent();
@@ -604,8 +598,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	protected void freeData() {
 		Bucket data;
 		synchronized(this) {
-			data = returnBucket;
-			returnBucket = null;
+			data = returnBucketDirect;
+			returnBucketDirect = null;
 		}
 		if(data != null) {
 			data.free();
@@ -753,7 +747,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		synchronized(this) {
 			if(!finished) return null;
 			if(!succeeded) return null;
-			return returnBucket;
+			return returnBucketDirect;
 		}
 	}
 	
@@ -764,9 +758,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 *         isn&rsquo;t applicable
 	 */
 	public Bucket getBucket() {
-		synchronized(this) {
-		    return returnBucket;
-		}
+	    if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+	        synchronized(this) {
+	            return returnBucketDirect;
+	        }
+	    } else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+	        return new FileBucket(targetFile, true, false, false, false, false);
+	    } else {
+	        return null;
+	    }
 	}
 
 	@Override
@@ -915,9 +915,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     @Override
     public void onResume(ClientContext context) {
         super.onResume(context);
-        if(getter == null) {
-            if(returnBucket != null) returnBucket.onResume(context);
-        } // Otherwise the returnBucket is the ClientGetter's responsibility.
+        if(returnBucketDirect != null) returnBucketDirect.onResume(context);
     }
 
     @Override
