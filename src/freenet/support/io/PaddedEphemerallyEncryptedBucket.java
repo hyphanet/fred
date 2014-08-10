@@ -128,9 +128,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		
 		@Override
 		public void write(int b) throws IOException {
-			if(closed) throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+		    synchronized(PaddedEphemerallyEncryptedBucket.this) {
+		        if(closed) throw new IOException("Already closed!");
+		        if(streamNumber != lastOutputStream)
+		            throw new IllegalStateException("Writing to old stream in "+getName());
+		    }
 			//if((b < 0) || (b > 255))
 			//	throw new IllegalArgumentException();
 			int toWrite = pcfb.encipher(b);
@@ -143,18 +145,22 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 		// Override this or FOS will use write(int)
 		@Override
 		public void write(byte[] buf) throws IOException {
-			if(closed)
-				throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+            synchronized(PaddedEphemerallyEncryptedBucket.this) {
+                if(closed)
+                    throw new IOException("Already closed!");
+                if(streamNumber != lastOutputStream)
+                    throw new IllegalStateException("Writing to old stream in "+getName());
+            }
 			write(buf, 0, buf.length);
 		}
 		
 		@Override
 		public void write(byte[] buf, int offset, int length) throws IOException {
-			if(closed) throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
+			synchronized(PaddedEphemerallyEncryptedBucket.this) {
+	            if(closed) throw new IOException("Already closed!");
+			    if(streamNumber != lastOutputStream)
+			        throw new IllegalStateException("Writing to old stream in "+getName());
+			}
 			if(length == 0) return;
 			byte[] enc = Arrays.copyOfRange(buf, offset, offset + length);
 			pcfb.blockEncipher(enc, 0, enc.length);
@@ -167,14 +173,14 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         @Override
 		@SuppressWarnings("cast")
 		public void close() throws IOException {
-			if(closed) return;
 			try {
-				if(streamNumber != lastOutputStream) {
-					Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
-					return;
-				}
 				Random random = new MersenneTwister(randomSeed);
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
+		            if(closed) return;
+	                if(streamNumber != lastOutputStream) {
+	                    Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
+	                    return;
+	                }
 					long finalLength = paddedLength();
 					long padding = finalLength - dataLength;
 					int sz = 65536;
