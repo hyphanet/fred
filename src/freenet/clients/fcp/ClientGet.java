@@ -37,7 +37,6 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
 
@@ -144,11 +143,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			targetFile = null;
 			ret = new NullBucket();
 		} else {
-			targetFile = null;
-				if(persistenceType == PERSIST_FOREVER)
-					ret = server.core.persistentTempBucketFactory.makeBucket(maxOutputLength);
-				else
-					ret = server.core.tempBucketFactory.makeBucket(maxOutputLength);
+		    targetFile = null;
+		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
@@ -204,20 +200,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			ret = new NullBucket();
-		} else {
-			targetFile = null;
-			try {
-				if(persistenceType == PERSIST_FOREVER)
-					ret = server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
-				else
-					ret = server.core.tempBucketFactory.makeBucket(fctx.maxOutputLength);
-			} catch (IOException e) {
-				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-				getter = null;
-				returnBucket = null;
-				// This is *not* a FetchException since we don't register it: it's a protocol error.
-				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Cannot create bucket for temporary storage (out of disk space???): "+e, identifier, global);
-			}
+        } else {
+            targetFile = null;
+            ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
