@@ -78,14 +78,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
 	private boolean succeeded;
-	/** Length of the found data */
+	/** Length of the found data. Not persistent, ClientGetter sends events in onResume(). */
 	private transient long foundDataLength = -1;
-	/** MIME type of the found data */
+	/** MIME type of the found data. Not persistent, ClientGetter sends events in onResume(). */
 	private transient String foundDataMimeType;
-	/** Details of request failure */
+	/** Details of request failure. */
 	private GetFailedMessage getFailedMessage;
-	/** Last progress message. Not persistent - FIXME this will be made persistent
-	 * when we have proper persistence at the ClientGetter level. */
+	/** Last progress message. Not persistent, ClientGetter will update on onResume(). */
 	private transient SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
 	private transient boolean sentToNetwork;
@@ -93,6 +92,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * used e.g. to reinsert the file. This is NOT transient, as the ClientGetter does not retain 
 	 * this information. */
 	private CompatibilityAnalyser compatMode;
+	/** Expected hashes of the final data. Not persistent, ClientGetter sends events in onResume(). */
 	private transient ExpectedHashes expectedHashes;
 
         private static volatile boolean logMINOR;
