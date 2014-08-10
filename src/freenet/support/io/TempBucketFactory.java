@@ -5,6 +5,7 @@ package freenet.support.io;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -462,6 +463,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         public void onResume(ClientContext context) {
             // Not persistent.
             throw new IllegalStateException();
+        }
+
+        @Override
+        public void storeTo(DataOutputStream dos) throws IOException {
+            throw new UnsupportedOperationException(); // Not persistent.
         }
 	}
 	

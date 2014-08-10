@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -495,5 +496,15 @@ public abstract class BaseFileBucket implements Bucket {
 	 * Returns the file object this buckets data is kept in.
 	 */
 	public abstract File getFile();
+	
+	static final long MAGIC = 0xc4b7533d5216b404L;
+	static final int VERSION = 1;
+	
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeBoolean(freed);
+    }
 	
 }

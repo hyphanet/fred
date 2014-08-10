@@ -2,6 +2,7 @@ package freenet.support.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -113,5 +114,11 @@ public class ArrayBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) {
+        // Should not be used for persistent requests.
+        throw new UnsupportedOperationException();
     }
 }

@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -78,6 +79,12 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 
     @Override
     public void onResume(ClientContext context) {
+        // Not persistent.
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) {
         // Not persistent.
         throw new UnsupportedOperationException();
     }

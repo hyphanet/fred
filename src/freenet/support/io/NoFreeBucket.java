@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -65,6 +66,14 @@ public class NoFreeBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         proxy.onResume(context);
+    }
+    
+    static final long MAGIC = 0xa88da5c2a9cf6186L;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        proxy.storeTo(dos);
     }
 
 }

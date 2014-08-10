@@ -5,6 +5,7 @@
  */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -116,6 +117,16 @@ public class DelayedFreeBucket implements Bucket, Serializable {
     public void onResume(ClientContext context) {
         this.factory = context.persistentBucketFactory;
         bucket.onResume(context);
+    }
+    
+    static final long MAGIC = 0xa28f2a2d3149abd9L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        bucket.storeTo(dos);
     }
 
 }

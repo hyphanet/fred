@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -367,6 +368,27 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
     public void onResume(ClientContext context) {
         // Do nothing.
         bucket.onResume(context);
+    }
+    
+    static final long MAGIC = 0x66c71fc90125f9b4L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeInt(minPaddedSize);
+        dos.write(key);
+        if(iv != null) {
+            dos.writeBoolean(true);
+            dos.write(iv);
+        } else {
+            dos.writeBoolean(false);
+        }
+        // randomSeed should be recovered in onResume().
+        dos.writeLong(dataLength);
+        dos.writeBoolean(readOnly);
+        bucket.storeTo(dos);
     }
 
 }

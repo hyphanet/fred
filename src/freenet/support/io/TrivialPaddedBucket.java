@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -239,6 +240,18 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         underlying.onResume(context);
+    }
+    
+    static final long MAGIC = 0xdaff61856b5a5f92L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeLong(size);
+        dos.writeBoolean(readOnly);
+        underlying.storeTo(dos);
     }
     
 }

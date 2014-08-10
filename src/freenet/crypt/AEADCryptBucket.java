@@ -1,5 +1,6 @@
 package freenet.crypt;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -86,6 +87,18 @@ public class AEADCryptBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         underlying.onResume(context);
+    }
+    
+    static final long MAGIC = 0xb25b32d642614ba1L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.write(key);
+        dos.writeBoolean(readOnly);
+        underlying.storeTo(dos);
     }
 
 }

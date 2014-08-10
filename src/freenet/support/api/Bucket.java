@@ -2,11 +2,10 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 /**
@@ -80,5 +79,10 @@ public interface Bucket {
 	 * garbage-collected. 
 	 * @param context All the necessary runtime support will be on this object. */
 	public void onResume(ClientContext context);
+
+	/** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
+	 * for recovering in emergencies, should be versioned if necessary. 
+	 * @throws IOException */
+    public void storeTo(DataOutputStream dos) throws IOException;
 
 }

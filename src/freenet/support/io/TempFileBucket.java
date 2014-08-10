@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -171,5 +172,20 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
     @Override
     protected boolean tempFileAlreadyExists() {
         return true;
+    }
+    
+    static final long MAGIC = 0x2ffdd4cf4599f324L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        if(!persistent()) throw new UnsupportedOperationException();
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeLong(filenameID);
+        dos.writeBoolean(readOnly);
+        dos.writeBoolean(deleteOnFree);
+        dos.writeUTF(file.toString());
+        super.storeTo(dos);
     }
 }

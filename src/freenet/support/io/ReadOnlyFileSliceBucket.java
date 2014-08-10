@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -146,6 +147,18 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+    }
+    
+    static final long MAGIC = 0x99e54c48f516fff4L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeUTF(file.toString());
+        dos.writeLong(startAt);
+        dos.writeLong(length);
     }
 
 }

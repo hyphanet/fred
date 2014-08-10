@@ -2,6 +2,8 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -77,6 +79,11 @@ public class NullBucket implements Bucket, Serializable {
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        throw new UnsupportedOperationException();
     }
 }
 

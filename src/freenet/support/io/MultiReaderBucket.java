@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -187,6 +188,11 @@ public class MultiReaderBucket implements Serializable {
                 hasResumed = true;
             }
             bucket.onResume(context);
+        }
+
+        @Override
+        public void storeTo(DataOutputStream dos) throws IOException {
+            throw new UnsupportedOperationException();
         }
 		
 	}

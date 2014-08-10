@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
@@ -139,5 +141,21 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
     @Override
     protected boolean tempFileAlreadyExists() {
         return false;
+    }
+    
+    static final long MAGIC = 0x8fe6e41b4f98dbc7L;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeLong(MAGIC);
+        dos.writeInt(VERSION);
+        super.storeTo(dos);
+        dos.writeUTF(file.toString());
+        dos.writeBoolean(readOnly);
+        dos.writeBoolean(deleteOnFinalize);
+        dos.writeBoolean(deleteOnFree);
+        if(deleteOnExit) throw new IllegalStateException("Must not free on exit if persistent");
+        dos.writeBoolean(createFileOnly);
     }
 }
