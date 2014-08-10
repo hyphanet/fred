@@ -1,71 +1,39 @@
 package freenet.clients.fcp;
 
-import java.io.Serializable;
-import java.util.Arrays;
-
 import freenet.client.InsertContext;
+import freenet.client.async.CompatibilityAnalyser;
 import freenet.node.Node;
 import freenet.support.HexUtil;
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-public class CompatibilityMode extends FCPMessage implements Serializable {
+public class CompatibilityMode extends FCPMessage {
+    
+    public CompatibilityMode(String identifier, boolean global, CompatibilityAnalyser compat) {
+        this.identifier = identifier;
+        this.global = global;
+        this.compat = compat;
+    }
 	
     private static final long serialVersionUID = 1L;
+    
+    private final CompatibilityAnalyser compat;
     final String identifier;
-	long min;
-	long max;
-	final boolean global;
-	byte[] cryptoKey;
-	boolean dontCompress;
-	boolean definitive;
-	
-	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
-		this.identifier = id;
-		this.global = global;
-		this.min = min;
-		this.max = max;
-		this.cryptoKey = cryptoKey;
-		this.dontCompress = dontCompress;
-		this.definitive = definitive;
-	}
-	
-	protected CompatibilityMode() {
-	    // For serialization.
-	    identifier = null;
-	    global = false;
-	}
-	
-	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
-		if(this.definitive) {
-			Logger.warning(this, "merge() after definitive", new Exception("debug"));
-			return;
-		}
-		if(definitive) this.definitive = true;
-		if(!dontCompress) this.dontCompress = false;
-		if(min > this.min) this.min = min;
-		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
-		if(this.cryptoKey == null) {
-			this.cryptoKey = cryptoKey;
-		} else if(cryptoKey != null && !Arrays.equals(this.cryptoKey, cryptoKey)) {
-			Logger.error(this, "Two different crypto keys!");
-			this.cryptoKey = null;
-		}
-	}
-	
+    final boolean global;
+    
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putOverwrite("Min", InsertContext.CompatibilityMode.values()[(int)min].name());
-		fs.putOverwrite("Max", InsertContext.CompatibilityMode.values()[(int)max].name());
-		fs.put("Min.Number", min);
-		fs.put("Max.Number", max);
+		fs.putOverwrite("Min", compat.min().name());
+		fs.putOverwrite("Max", compat.max().name());
+		fs.put("Min.Number", compat.min().ordinal());
+		fs.put("Max.Number", compat.max().ordinal());
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
+		byte[] cryptoKey = compat.getCryptoKey();
 		if(cryptoKey != null)
 			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
-		fs.put("DontCompress", dontCompress);
-		fs.put("Definitive", definitive);
+		fs.put("DontCompress", compat.dontCompress());
+		fs.put("Definitive", compat.definitive());
 		return fs;
 	}
 	
@@ -80,10 +48,7 @@ public class CompatibilityMode extends FCPMessage implements Serializable {
 	}
 
 	public InsertContext.CompatibilityMode[] getModes() {
-		return new InsertContext.CompatibilityMode[] {
-				InsertContext.CompatibilityMode.values()[(int)min],
-				InsertContext.CompatibilityMode.values()[(int)max]
-		};
+	    return compat.getModes();
 	}
 
 }

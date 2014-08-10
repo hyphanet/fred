@@ -18,6 +18,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.CompatibilityAnalyser;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentClientCallback;
 import freenet.client.async.PersistentJob;
@@ -90,9 +91,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private transient boolean sentToNetwork;
 	/** Current compatibility mode. This is updated over time as the request progresses, and can be
 	 * used e.g. to reinsert the file. This is NOT transient, as the ClientGetter does not retain 
-	 * this information. FIXME consider moving this to ClientGetter (it's not really part of what
-	 * ClientGetter is for though). */
-	private CompatibilityMode compatMessage;
+	 * this information. */
+	private CompatibilityAnalyser compatMode;
 	private transient ExpectedHashes expectedHashes;
 
         private static volatile boolean logMINOR;
@@ -129,6 +129,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
+		compatMode = new CompatibilityAnalyser();
 		// FIXME fctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		Bucket ret = null;
 		this.returnType = returnType;
@@ -178,6 +179,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.canWriteClientCache = message.writeToClientCache;
 		fctx.filterData = message.filterData;
 		fctx.ignoreUSKDatehints = message.ignoreUSKDatehints;
+		compatMode = new CompatibilityAnalyser();
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
@@ -381,19 +383,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(msg instanceof SendingToNetworkMessage) {
 			sentToNetwork = true;
-		} else if(msg instanceof CompatibilityMode) {
-			CompatibilityMode compat = (CompatibilityMode)msg;
-			if(compatMessage != null) {
-				compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
-			} else {
-				compatMessage = compat;
-			}
-			if(client != null) {
-				RequestStatusCache cache = client.getRequestStatusCache();
-				if(cache != null) {
-					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey, compat.dontCompress);
-				}
-			}
 		} else if(msg instanceof ExpectedHashes) {
 			if(expectedHashes != null) {
 				Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
@@ -420,15 +409,19 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			// Do nothing, it's not persistent.
 		} else
 			assert(false);
-		if(persistenceType == PERSIST_CONNECTION && handler == null)
-			handler = origHandler.outputHandler;
-		if(handler != null)
-			handler.queue(msg);
-		else
-			client.queueClientRequestMessage(msg, verbosityMask);
+		queueProgressMessageInner(msg, handler, verbosityMask);
 	}
 
-	@Override
+	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
+	    if(persistenceType == PERSIST_CONNECTION && handler == null)
+	        handler = origHandler.outputHandler;
+	    if(handler != null)
+	        handler.queue(msg);
+	    else
+	        client.queueClientRequestMessage(msg, verbosityMask);
+    }
+
+    @Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(!onlyData) {
 			if(includePersistentRequest) {
@@ -452,9 +445,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    trySendAllDataMessage(handler);
 		}
 		
-		if(compatMessage != null) {
-			handler.queue(compatMessage);
-		}
+		handler.queue(new CompatibilityMode(identifier, global, compatMode));
 		
 		if(expectedHashes != null) {
 			handler.queue(expectedHashes);
@@ -535,6 +526,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(finished) return;
 		final FCPMessage progress;
 		final int verbosityMask;
+		// FIXME we are doing this backwards.
+		// FIXME update the internal state via a handle* method, possibly running a job.
+		// FIXME then check verbosityMask when sending messages.
 		if(ce instanceof SplitfileProgressEvent) {
 			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
 			if((verbosity & verbosityMask) == 0)
@@ -548,11 +542,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				return;
 			progress = new SendingToNetworkMessage(identifier, global);
 		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
-			verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
-			if((verbosity & verbosityMask) == 0)
-				return;
-			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
-			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode, event.splitfileCryptoKey, event.dontCompress, event.bottomLayer);
+		    handleCompatibilityMode((SplitfileCompatibilityModeEvent)ce, context);
+		    return;
 		} else if(ce instanceof ExpectedHashesEvent) {
 			verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
 			if((verbosity & verbosityMask) == 0)
@@ -597,8 +588,40 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			trySendProgress(progress, verbosityMask, null);
 		}
 	}
+	
+	private void handleCompatibilityMode(final SplitfileCompatibilityModeEvent ce, ClientContext context) {
+	    if(persistenceType == PERSIST_FOREVER && context.jobRunner.hasStarted()) {
+	        try {
+	            context.jobRunner.queue(new PersistentJob() {
+	                
+	                @Override
+	                public boolean run(ClientContext context) {
+	                    innerHandleCompatibilityMode(ce, context);
+	                    return false;
+	                }
+	                
+	            }, NativeThread.HIGH_PRIORITY);
+	        } catch (PersistenceDisabledException e) {
+	            // Not much we can do
+	        }
+	    } else {
+	        innerHandleCompatibilityMode(ce, context);
+	    }
+	}
 
-	@Override
+	private void innerHandleCompatibilityMode(SplitfileCompatibilityModeEvent ce, ClientContext context) {
+	    compatMode.merge(ce.minCompatibilityMode, ce.maxCompatibilityMode, ce.splitfileCryptoKey, ce.dontCompress, ce.bottomLayer);
+	    if(client != null) {
+	        RequestStatusCache cache = client.getRequestStatusCache();
+	        if(cache != null) {
+	            cache.updateDetectedCompatModes(identifier, compatMode.getModes(), compatMode.getCryptoKey(), compatMode.dontCompress());
+	        }
+	    }
+	    if((verbosity & VERBOSITY_COMPATIBILITY_MODE) != 0)
+	        queueProgressMessageInner(new CompatibilityMode(identifier, global, compatMode), null, VERBOSITY_COMPATIBILITY_MODE);
+    }
+
+    @Override
 	protected ClientRequester getClientRequest() {
 		return getter;
 	}
@@ -697,22 +720,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	public InsertContext.CompatibilityMode[] getCompatibilityMode() {
-		if(compatMessage != null) {
-			return compatMessage.getModes();
-		} else
-			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
+	    return compatMode.getModes();
 	}
 	
 	public boolean getDontCompress() {
-		if(compatMessage == null) return false;
-		return compatMessage.dontCompress;
+		return compatMode.dontCompress();
 	}
 	
 	public byte[] getOverriddenSplitfileCryptoKey() {
-		if(compatMessage != null) {
-			return compatMessage.cryptoKey;
-		} else
-			return null;
+	    return compatMode.getCryptoKey();
 	}
 
 	@Override
@@ -792,7 +808,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				redirect = getFailedMessage.redirectURI;
 			this.getFailedMessage = null;
 			this.progressPending = null;
-			compatMessage = null;
+			compatMode = new CompatibilityAnalyser();
 			expectedHashes = null;
 			started = false;
 			if(disableFilterData)
