@@ -37,10 +37,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 	/** The decryption key. */
 	private final byte[] key;
 	private final byte[] iv;
-	private final byte[] randomSeed;
+	private transient byte[] randomSeed;
 	private long dataLength;
 	private boolean readOnly;
-	private int lastOutputStream;
+	private transient int lastOutputStream;
 	 
         private static volatile boolean logMINOR;
 	static {
@@ -366,7 +366,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing.
+        randomSeed = new byte[32];
+        context.fastWeakRandom.nextBytes(randomSeed);
         bucket.onResume(context);
     }
     
