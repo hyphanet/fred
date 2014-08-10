@@ -10,8 +10,8 @@ import freenet.support.Logger;
 public class CompatibilityAnalyser implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    long min;
-    long max;
+    int min;
+    int max;
     byte[] cryptoKey;
     boolean dontCompress;
     boolean definitive;
@@ -21,7 +21,7 @@ public class CompatibilityAnalyser implements Serializable {
         this.max = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal();
     }
     
-    CompatibilityAnalyser(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
+    CompatibilityAnalyser(int min, int max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
         this.min = min;
         this.max = max;
         this.cryptoKey = cryptoKey;
@@ -29,7 +29,7 @@ public class CompatibilityAnalyser implements Serializable {
         this.definitive = definitive;
     }
     
-    public void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
+    public void merge(int min, int max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
         if(this.definitive) {
             Logger.warning(this, "merge() after definitive", new Exception("debug"));
             return;
