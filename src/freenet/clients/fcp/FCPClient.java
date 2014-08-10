@@ -127,7 +127,7 @@ public class FCPClient {
 					shortFailMessage = msg.getShortFailedMessage();
 					longFailMessage = msg.getLongFailedMessage();
 				}
-				Bucket shadow = ((ClientGet) get).getFinalBucket();
+				Bucket shadow = ((ClientGet) get).getBucket();
 				if(shadow != null) shadow = shadow.createShadow();
 				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(), ((ClientGet) get).getMIMEType(), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData());
 			} else if(get instanceof ClientPutBase) {

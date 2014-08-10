@@ -743,14 +743,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 	}
 
-	public Bucket getFinalBucket() {
-		synchronized(this) {
-			if(!finished) return null;
-			if(!succeeded) return null;
-			return returnBucketDirect;
-		}
-	}
-	
 	/**
 	 * Returns the {@link Bucket} that contains the downloaded data.
 	 *
@@ -873,7 +865,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(target != null)
 			target = new File(target.getPath());
 		
-		Bucket shadow = getFinalBucket();
+		Bucket shadow = getBucket();
 		if(shadow != null) {
 			dataSize = shadow.size();
 			shadow = shadow.createShadow();
