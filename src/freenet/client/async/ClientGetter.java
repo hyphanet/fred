@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -806,6 +807,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     @Override
     protected ClientBaseCallback getCallback() {
         return clientCallback;
+    }
+
+    /** If the request is simple, e.g. a single, final splitfile fetch, then write enough 
+     * information to continue the request. Otherwise write a marker indicating that this is not
+     * true, and return false. We don't need to write the expected MIME type, hashes etc, as the
+     * caller will write them.
+     * @throws IOException 
+     */
+    public boolean writeTrivialProgress(DataOutputStream dos) throws IOException {
+        // FIXME do something.
+        dos.writeBoolean(false);
+        return false;
     }
 
 }

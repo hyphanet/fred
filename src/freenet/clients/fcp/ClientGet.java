@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
+import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -903,20 +905,34 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
+        super.getClientDetail(dos);
+        // Basic details needed for restarting the request.
         dos.writeShort(returnType);
-        writeFile(targetFile, dos);
+        if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+            dos.writeUTF(targetFile.toString());
+        }
         dos.writeBoolean(binaryBlob);
         fctx.writeTo(dos);
-        super.getClientDetail(dos);
+        if(finished) {
+            dos.writeBoolean(succeeded);
+            if(succeeded) {
+                dos.writeLong(foundDataLength);
+                dos.writeUTF(foundDataMimeType);
+                compatMode.writeTo(dos);
+                HashResult.write(expectedHashes.hashes, dos);
+            } else {
+                getFailedMessage.writeTo(dos);
+            }
+        } else {
+            if(getter.writeTrivialProgress(dos)) {
+                dos.writeLong(foundDataLength);
+                dos.writeUTF(foundDataMimeType);
+                compatMode.writeTo(dos);
+                HashResult.write(expectedHashes.hashes, dos);
+            }
+        }
     }
 
-    private static void writeFile(File f, DataOutputStream dos) throws IOException {
-        if(f == null)
-            dos.writeUTF("");
-        else
-            dos.writeUTF(f.toString());
-    }
-    
     @Override
     public void onResume(ClientContext context) {
         super.onResume(context);

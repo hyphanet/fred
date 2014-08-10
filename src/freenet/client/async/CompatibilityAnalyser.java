@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -71,6 +73,22 @@ public class CompatibilityAnalyser implements Serializable {
                 InsertContext.CompatibilityMode.values()[(int)min],
                 InsertContext.CompatibilityMode.values()[(int)max]
         };
+    }
+    
+    static final int VERSION = 1;
+
+    public void writeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(VERSION);
+        dos.writeInt(min);
+        dos.writeInt(max);
+        if(cryptoKey == null) {
+            dos.writeBoolean(false);
+        } else {
+            dos.writeBoolean(true);
+            dos.write(cryptoKey);
+        }
+        dos.writeBoolean(dontCompress);
+        dos.writeBoolean(definitive);
     }
     
 

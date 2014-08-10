@@ -56,6 +56,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 	}
 
 	public static void write(HashResult[] hashes, DataOutputStream dos) throws IOException {
+	    if(hashes == null) hashes = new HashResult[0];
 		int bitmask = 0;
 		for(HashResult hash : hashes)
 			bitmask |= hash.type.bitmask;

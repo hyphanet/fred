@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 
@@ -176,5 +178,25 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		else
 			return shortCodeDescription;
 	}
+	
+	static final int VERSION = 1;
+
+    public void writeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(VERSION);
+        // Do not write anything redundant.
+        dos.writeInt(code);
+        writePossiblyNull(extraDescription, dos);
+        dos.writeBoolean(finalizedExpected);
+        writePossiblyNull(redirectURI == null ? null : redirectURI.toString(), dos);
+    }
+
+    private void writePossiblyNull(String s, DataOutputStream dos) throws IOException {
+        if(s != null) {
+            dos.writeBoolean(true);
+            dos.writeUTF(s);
+        } else {
+            dos.writeBoolean(false);
+        }
+    }
 
 }
