@@ -36,7 +36,7 @@ public abstract class BaseFileBucket implements Bucket {
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
 	protected long length;
-	protected long fileRestartCounter;
+	protected transient long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
 	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 

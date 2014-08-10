@@ -21,7 +21,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     private static final long serialVersionUID = 1L;
     private final Bucket underlying;
     private long size;
-    private boolean outputStreamOpen;
+    private transient boolean outputStreamOpen;
     private boolean readOnly;
 
     /** Create a TrivialPaddedBucket, assumed to be empty */
