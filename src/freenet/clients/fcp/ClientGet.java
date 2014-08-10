@@ -73,16 +73,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/** Did the request succeed? Valid if finished. */
 	private boolean succeeded;
 	/** Length of the found data */
-	private long foundDataLength = -1;
+	private transient long foundDataLength = -1;
 	/** MIME type of the found data */
-	private String foundDataMimeType;
+	private transient String foundDataMimeType;
 	/** Details of request failure */
 	private GetFailedMessage getFailedMessage;
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
 	private transient SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
-	private boolean sentToNetwork;
+	private transient boolean sentToNetwork;
 	private transient CompatibilityMode compatMessage;
 	private transient ExpectedHashes expectedHashes;
 

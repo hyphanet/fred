@@ -806,6 +806,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
             }
         if(returnBucket != null)
             returnBucket.onResume(context);
+        if(expectedMIME != null)
+            ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(expectedMIME), context);
+        if(expectedSize > 0)
+            ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(expectedSize), context);
         notifyClients(context);
     }
 

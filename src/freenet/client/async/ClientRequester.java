@@ -370,6 +370,8 @@ public abstract class ClientRequester implements Serializable {
         ClientBaseCallback cb = getCallback();
         client = cb.getRequestClient();
         requests = new TransientSendableRequestSet();
+        if(sentToNetwork)
+            innerToNetwork(context);
     }
 
     protected abstract ClientBaseCallback getCallback();
