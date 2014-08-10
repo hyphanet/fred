@@ -59,7 +59,9 @@ public interface Bucket {
     public void setReadOnly();
 
     /**
-     * Free the bucket, if supported.
+     * Free the bucket, if supported. Note that you must call free() even if you haven't used the 
+     * Bucket (haven't called getOutputStream()) for some kinds of Bucket's, as they may have
+     * allocated space (e.g. created a temporary file).
      */
 	public void free();
 	
