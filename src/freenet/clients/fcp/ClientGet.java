@@ -50,6 +50,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     /** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
+	/* Policy issue: Responsibility: Progress details, including the final size and MIME type, 
+	 * are kept in the ClientGetter, which is final i.e. we do not null it out once we are done.
+	 * Hence we fill the transient fields below from events fired by onResume(). This may not be
+	 * true for other kinds of ClientRequest, notably ClientPutDir, where we may want to delete the
+	 * ManifestPutter ASAP. */
 	private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
