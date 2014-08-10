@@ -436,11 +436,26 @@ public abstract class ClientRequest implements Serializable {
     public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeLong(CLIENT_DETAIL_VERSION);
+        // Identify the request first.
         RequestIdentifier req = getRequestIdentifier();
         req.writeTo(dos);
+        // Basic details needed for scheduling, reporting and completion.
+        dos.writeBoolean(realTime);
         dos.writeInt(verbosity);
-        dos.writeShort(priorityClass);
         dos.writeLong(startupTime);
+        // persistenceType is assumed to be PERSIST_FOREVER.
+        // uri will be handled by subclasses.
+        // This can change.
+        dos.writeShort(priorityClass);
+        // This can change and is variable size.
+        if(clientToken == null)
+            dos.writeBoolean(false);
+        else {
+            dos.writeBoolean(true);
+            dos.writeUTF(clientToken);
+        }
+        // Stuff that changes on completion
+        dos.writeBoolean(finished);
     }
 
     /** Called just after serializing in the request. Called by the ClientRequester, i.e. the tree 
