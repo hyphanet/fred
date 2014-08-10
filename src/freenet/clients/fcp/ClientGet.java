@@ -920,6 +920,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                 dos.writeUTF(foundDataMimeType);
                 compatMode.writeTo(dos);
                 HashResult.write(expectedHashes.hashes, dos);
+                if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                    returnBucketDirect.storeTo(dos);
+                }
             } else {
                 getFailedMessage.writeTo(dos);
             }
