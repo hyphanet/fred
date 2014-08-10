@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.client.async.ClientContext;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -34,8 +35,8 @@ public abstract class BaseFileBucket implements Bucket {
     }
 
 	// JVM caches File.size() and there is no way to flush the cache, so we
-	// need to track it ourselves
-	protected long length;
+	// need to track it ourselves. FIXME this hack is out of date, get rid?
+	protected transient long length;
 	protected transient long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
@@ -496,6 +497,11 @@ public abstract class BaseFileBucket implements Bucket {
 	 * Returns the file object this buckets data is kept in.
 	 */
 	public abstract File getFile();
+
+	@Override
+	public void onResume(ClientContext context) {
+	    length = getFile().length();
+	}
 	
 	static final long MAGIC = 0xc4b7533d5216b404L;
 	static final int VERSION = 1;
