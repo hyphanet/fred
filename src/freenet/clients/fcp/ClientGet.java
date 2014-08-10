@@ -88,7 +88,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private transient SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
 	private transient boolean sentToNetwork;
-	private transient CompatibilityMode compatMessage;
+	/** Current compatibility mode. This is updated over time as the request progresses, and can be
+	 * used e.g. to reinsert the file. This is NOT transient, as the ClientGetter does not retain 
+	 * this information. FIXME consider moving this to ClientGetter (it's not really part of what
+	 * ClientGetter is for though). */
+	private CompatibilityMode compatMessage;
 	private transient ExpectedHashes expectedHashes;
 
         private static volatile boolean logMINOR;
