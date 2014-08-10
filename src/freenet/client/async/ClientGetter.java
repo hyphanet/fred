@@ -691,16 +691,6 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return finalizedMetadata;
 	}
 
-	/** @return The expected MIME type, if we know it. */
-	public String expectedMIME() {
-		return expectedMIME;
-	}
-
-	/** @return The expected size of the returned data, if we know it. Could change. */
-	public long expectedSize() {
-		return expectedSize;
-	}
-
 	/** @return The callback to be notified when we complete the request. */
 	public ClientGetCallback getClientCallback() {
 		return clientCallback;

@@ -631,18 +631,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public long getDataSize() {
 		if(foundDataLength > 0)
 			return foundDataLength;
-		if(getter != null) {
-			return getter.expectedSize();
-		}
 		return -1;
 	}
 
 	public String getMIMEType() {
 		if(foundDataMimeType != null)
 			return foundDataMimeType;
-		if(getter != null) {
-			return getter.expectedMIME();
-		}
 		return null;
 	}
 
@@ -860,12 +854,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		String mimeType = foundDataMimeType;
 		long dataSize = foundDataLength;
-		if(getter != null) {
-			if(mimeType == null)
-				mimeType = getter.expectedMIME();
-			if(dataSize <= 0)
-				dataSize = getter.expectedSize();
-		}
 		File target = getDestFilename();
 		if(target != null)
 			target = new File(target.getPath());
