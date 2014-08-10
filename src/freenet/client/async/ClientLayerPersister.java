@@ -129,7 +129,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         System.err.println("Failed to load a request: "+t);
                         t.printStackTrace();
                     }
-                    
+                    // Skip the recovery data.
+                    // FIXME use the recovery data to restart if necessary.
+                    skipChecksummedObject(ois, length);
                 }
                 PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
                 this.bandwidthStatsPutter.addFrom(storedStatsPutter);
@@ -220,8 +222,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientRequest[] requests = getRequests();
             oos.writeInt(requests.length);
             for(ClientRequest req : requests) {
+                // Write the request identifier so we can skip reading the request if we already have it.
                 writeRequestIdentifier(oos, req.getRequestIdentifier());
+                // Write the actual request.
                 writeChecksummedObject(oos, req, req.toString());
+                // Write recovery data. This is just enough to restart the request from scratch, 
+                // but may support continuing the request in simple cases e.g. if a fetch is now
+                // just a single splitfile.
+                writeRecoveryData(oos, req);
             }
             bandwidthStatsPutter.updateData(node);
             oos.writeObject(bandwidthStatsPutter);
@@ -249,6 +257,24 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
+    private void writeRecoveryData(ObjectOutputStream os, ClientRequest req) throws IOException {
+        try {
+            Bucket bucket = tempBucketFactory.makeBucket(-1);
+            OutputStream baseOS = bucket.getOutputStream();
+            OutputStream cos = checker.checksumWriter(baseOS);
+            DataOutputStream dos = new DataOutputStream(cos);
+            req.getClientDetail(dos);
+            dos.close();
+            baseOS.close(); // checksumWriter doesn't close underlying.
+            os.writeLong(bucket.size() - checker.checksumLength());
+            BucketTools.copyTo(bucket, os, Long.MAX_VALUE);
+        } catch (Throwable e) {
+            Logger.error(this, "Unable to write recovery data for "+req+" : "+e, e);
+            os.writeLong(0);
+            os.write(checker.appendChecksum(new byte[] { }));
+        }
+    }
+
     private void writeChecksummedObject(ObjectOutputStream os, Object req, String name) throws IOException {
         // FIXME write a simpler, more robust, non-serialized version first.
         Bucket tmp = tempBucketFactory.makeBucket(-1);
