@@ -37,6 +37,7 @@ import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
@@ -939,7 +940,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
             if(succeeded) {
                 if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                    returnBucketDirect.storeTo(dos);
+                    DataOutputStream innerDOS = 
+                        new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
+                    returnBucketDirect.storeTo(innerDOS);
+                    innerDOS.close();
                 }
             } else {
                 getFailedMessage.writeTo(dos);
@@ -993,7 +997,30 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             readTransientProgressFields(dis);
             if(succeeded) {
                 if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                    returnBucketDirect = BucketTools.restoreFrom(dis);
+                    try {
+                        DataInputStream innerDIS =
+                            new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
+                        try {
+                            returnBucketDirect = BucketTools.restoreFrom(innerDIS);
+                            innerDIS.close();
+                            throw new IOException();
+                        } catch (IOException e) {
+                            Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
+                            returnBucketDirect = null;
+                            succeeded = false;
+                            finished = false;
+                        }
+                    } catch (ChecksumFailedException e) {
+                        Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
+                        returnBucketDirect = null;
+                        succeeded = false;
+                        finished = false;
+                    } catch (StorageFormatException e) {
+                        Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
+                        returnBucketDirect = null;
+                        succeeded = false;
+                        finished = false;
+                    }
                 }
             } else {
                 getFailedMessage = new GetFailedMessage(dis, reqID, foundDataLength, foundDataMimeType);
