@@ -1,6 +1,7 @@
 package freenet.crypt;
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,10 +89,10 @@ public abstract class ChecksumChecker {
      * be zero'ed out. */
     public abstract void readAndChecksum(DataInput is, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException;
     
-    public InputStream checksumReaderWithLength(ObjectInputStream dis, BucketFactory bf, long maxLength) throws IOException, ChecksumFailedException {
+    public InputStream checksumReaderWithLength(InputStream dis, BucketFactory bf, long maxLength) throws IOException, ChecksumFailedException {
         // IMHO it is better to implement this with copying, because then we don't start 
         // constructing objects from bad data...
-        long length = dis.readLong();
+        long length = new DataInputStream(dis).readLong();
         if(length < 0 || length > maxLength) throw new IOException("Bad length");
         final Bucket bucket = bf.makeBucket(-1);
         OutputStream os = bucket.getOutputStream();
