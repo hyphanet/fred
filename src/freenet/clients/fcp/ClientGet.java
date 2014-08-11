@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -386,7 +385,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
 		if(msg instanceof SimpleProgressMessage) {
-			progressPending = (SimpleProgressMessage)msg;
+		    synchronized(this) {
+		        progressPending = (SimpleProgressMessage)msg;
+		    }
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
@@ -394,15 +395,21 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				}
 			}
 		} else if(msg instanceof SendingToNetworkMessage) {
-			sentToNetwork = true;
+		    synchronized(this) {
+		        sentToNetwork = true;
+		    }
 		} else if(msg instanceof ExpectedHashes) {
-			if(expectedHashes != null) {
-				Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
-			} else {
-				this.expectedHashes = (ExpectedHashes)msg;
-			}
+		    synchronized(this) {
+		        if(expectedHashes != null) {
+		            Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
+		        } else {
+		            this.expectedHashes = (ExpectedHashes)msg;
+		        }
+		    }
 		} else if(msg instanceof ExpectedMIME) {
-			foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+		    synchronized(this) {
+		        foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+		    }
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
@@ -410,7 +417,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				}
 			}
 		} else if(msg instanceof ExpectedDataLength) {
-			foundDataLength = ((ExpectedDataLength) msg).dataLength;
+		    synchronized(this) {
+		        foundDataLength = ((ExpectedDataLength) msg).dataLength;
+		    }
 			if(client != null) {
 				RequestStatusCache cache = client.getRequestStatusCache();
 				if(cache != null) {
@@ -457,17 +466,29 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    trySendAllDataMessage(handler);
 		}
 		
-		handler.queue(new CompatibilityMode(identifier, global, compatMode));
+		CompatibilityMode cmsg;
+		ExpectedHashes expectedHashes;
+		ExpectedMIME mimeMsg = null;
+		ExpectedDataLength lengthMsg = null;
+		synchronized(this) {
+		    cmsg = new CompatibilityMode(identifier, global, compatMode);
+		    expectedHashes = this.expectedHashes;
+		    if(foundDataMimeType != null)
+		        mimeMsg = new ExpectedMIME(identifier, global, foundDataMimeType);
+		    if(foundDataLength > 0)
+		        lengthMsg = new ExpectedDataLength(identifier, global, foundDataLength);
+		}
+		handler.queue(cmsg);
 		
 		if(expectedHashes != null) {
 			handler.queue(expectedHashes);
 		}
 
-		if (foundDataMimeType != null) {
-			handler.queue(new ExpectedMIME(identifier, global, foundDataMimeType));
+		if (mimeMsg != null) {
+			handler.queue(mimeMsg);
 		}
-		if (foundDataLength > 0) {
-			handler.queue(new ExpectedDataLength(identifier, global, foundDataLength));
+		if (lengthMsg != null) {
+			handler.queue(lengthMsg);
 		}
 	}
 
@@ -870,7 +891,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	RequestStatus getStatus() {
+	synchronized RequestStatus getStatus() {
 		boolean totalFinalized = false;
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
 		if(progressPending != null) {
