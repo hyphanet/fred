@@ -42,6 +42,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
@@ -990,8 +991,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             readTransientProgressFields(dis);
             if(succeeded) {
                 if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                    throw new UnsupportedOperationException();
-                    // FIXME
+                    returnBucketDirect = BucketTools.restoreFrom(dis);
                 }
             } else {
                 getFailedMessage = new GetFailedMessage(dis, reqID, foundDataLength, foundDataMimeType);
@@ -1016,9 +1016,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             expectedHashes = null;
         } else {
             expectedHashes = new ExpectedHashes(hashes, identifier, global);
-            if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                throw new UnsupportedOperationException(); // FIXME
-            }
         }
     }
 
