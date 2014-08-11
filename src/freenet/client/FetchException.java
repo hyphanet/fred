@@ -485,6 +485,8 @@ public class FetchException extends Exception implements Cloneable {
 	public static final int MIME_INCOMPATIBLE_WITH_EXTENSION = 36;
 	/** Not enough disk space to start a download or the next stage of a download. */
 	public static final int NOT_ENOUGH_DISK_SPACE = 37;
+	
+	private static final int MAX_ERROR_CODE = 37;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -682,5 +684,9 @@ public class FetchException extends Exception implements Cloneable {
 			return false;
 		}
 	}
+
+    public static boolean isErrorCode(int code) {
+        return code >= 0 && code <= MAX_ERROR_CODE;
+    }
 
 }
