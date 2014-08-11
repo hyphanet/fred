@@ -910,7 +910,9 @@ public class PluginManager {
 	 * look for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the plugin or null if not found
+	 * @deprecated Use {@link #getPluginFCPServer(String)} instead. 
 	 */
+	@Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
@@ -920,6 +922,20 @@ public class PluginManager {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Get the {@link FredPluginFCPServer} of the plugin with the given class name.
+	 * 
+	 * @param pluginClassName See {@link #getPluginInfoByClassName(String)}.
+	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server.
+	 */
+	public FredPluginFCPServer getPluginFCPServer(String pluginClassName) throws PluginNotFoundException{
+		PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
+		if(piw != null & piw.isFCPServerPlugin())
+			return (FredPluginFCPServer)piw.plug;
+		else
+			throw new PluginNotFoundException(pluginClassName);
 	}
 
 	/**
