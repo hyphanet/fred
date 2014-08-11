@@ -3,12 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -79,7 +81,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	    createFileOnly = false;
 	}
 
-	/**
+    /**
 	 * Returns the file object this buckets data is kept in.
 	 */
 	@Override
@@ -149,8 +151,8 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
-        dos.writeInt(VERSION);
         super.storeTo(dos);
+        dos.writeInt(VERSION);
         dos.writeUTF(file.toString());
         dos.writeBoolean(readOnly);
         dos.writeBoolean(deleteOnFinalize);
@@ -158,4 +160,18 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         if(deleteOnExit) throw new IllegalStateException("Must not free on exit if persistent");
         dos.writeBoolean(createFileOnly);
     }
+    
+    protected FileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        super(dis);
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        file = new File(dis.readUTF());
+        readOnly = dis.readBoolean();
+        deleteOnFinalize = dis.readBoolean();
+        deleteOnFree = dis.readBoolean();
+        deleteOnExit = false;
+        createFileOnly = dis.readBoolean();
+    }
+
+
 }

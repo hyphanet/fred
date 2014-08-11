@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,6 +8,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.api.Bucket;
 
 public class NoFreeBucket implements Bucket, Serializable {
@@ -23,7 +25,7 @@ public class NoFreeBucket implements Bucket, Serializable {
 	    proxy = null;
 	}
 
-	@Override
+    @Override
 	public OutputStream getOutputStream() throws IOException {
 		return proxy.getOutputStream();
 	}
@@ -74,6 +76,10 @@ public class NoFreeBucket implements Bucket, Serializable {
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
         proxy.storeTo(dos);
+    }
+
+    protected NoFreeBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        proxy = BucketTools.restoreFrom(dis);
     }
 
 }

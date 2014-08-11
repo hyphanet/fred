@@ -16,6 +16,8 @@ import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
+import freenet.client.async.StorageFormatException;
+import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -537,6 +539,33 @@ public class BucketTools {
             return moved;
         } finally {
             is.close();
+        }
+    }
+    
+    /** Inverse of Bucket.storeTo(). Uses the magic value to identify the bucket type. 
+     * @throws IOException 
+     * @throws StorageFormatException */
+    public static Bucket restoreFrom(DataInputStream dis) throws IOException, StorageFormatException {
+        int magic = dis.readInt();
+        switch(magic) {
+        case AEADCryptBucket.MAGIC:
+            return new AEADCryptBucket(dis);
+        case FileBucket.MAGIC:
+            return new FileBucket(dis);
+        case PersistentTempFileBucket.MAGIC:
+            return new PersistentTempFileBucket(dis);
+        case DelayedFreeBucket.MAGIC:
+            return new DelayedFreeBucket(dis);
+        case NoFreeBucket.MAGIC:
+            return new NoFreeBucket(dis);
+        case PaddedEphemerallyEncryptedBucket.MAGIC:
+            return new PaddedEphemerallyEncryptedBucket(dis);
+        case ReadOnlyFileSliceBucket.MAGIC:
+            return new ReadOnlyFileSliceBucket(dis);
+        case TrivialPaddedBucket.MAGIC:
+            return new TrivialPaddedBucket(dis);
+        default:
+            throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }
     }
 

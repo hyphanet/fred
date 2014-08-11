@@ -5,6 +5,7 @@
  */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -51,7 +53,7 @@ public class DelayedFreeBucket implements Bucket, Serializable {
 		if(bucket == null) throw new NullPointerException();
 	}
 
-	@Override
+    @Override
 	public OutputStream getOutputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		return bucket.getOutputStream();
@@ -127,6 +129,12 @@ public class DelayedFreeBucket implements Bucket, Serializable {
         dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         bucket.storeTo(dos);
+    }
+
+    protected DelayedFreeBucket(DataInputStream dis) throws StorageFormatException, IOException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        bucket = BucketTools.restoreFrom(dis);
     }
 
 }

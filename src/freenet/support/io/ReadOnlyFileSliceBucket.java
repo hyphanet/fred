@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,6 +14,7 @@ import java.io.RandomAccessFile;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.api.Bucket;
 
 /**
@@ -41,7 +43,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 		this.length = length;
 	}
 
-	@Override
+    @Override
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Bucket is read-only");
 	}
@@ -159,6 +161,18 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
         dos.writeUTF(file.toString());
         dos.writeLong(startAt);
         dos.writeLong(length);
+    }
+
+    protected ReadOnlyFileSliceBucket(DataInputStream dis) throws StorageFormatException, IOException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        file = new File(dis.readUTF());
+        startAt = dis.readLong();
+        if(startAt < 0) throw new StorageFormatException("Bad start at");
+        length = dis.readLong();
+        if(length < 0) throw new StorageFormatException("Bad length");
+        if(!file.exists()) throw new StorageFormatException("File does not exist any more");
+        if(file.length() < startAt+length) throw new StorageFormatException("Slice does not fit in file");
     }
 
 }

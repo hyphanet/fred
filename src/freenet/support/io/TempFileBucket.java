@@ -1,11 +1,13 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -79,7 +81,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	    deleteOnFree = false;
 	}
 
-	@Override
+    @Override
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
@@ -174,18 +176,32 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         return true;
     }
     
-    public static final int MAGIC = 0x2ffdd4cf;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        if(!persistent()) throw new UnsupportedOperationException();
-        dos.writeInt(MAGIC);
+        dos.writeInt(magic());
+        super.storeTo(dos);
         dos.writeInt(VERSION);
         dos.writeLong(filenameID);
         dos.writeBoolean(readOnly);
         dos.writeBoolean(deleteOnFree);
         dos.writeUTF(file.toString());
-        super.storeTo(dos);
     }
+    
+    protected int magic() {
+        throw new UnsupportedOperationException();
+    }
+    
+    protected TempFileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        super(dis);
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        filenameID = dis.readLong();
+        if(filenameID == -1) throw new StorageFormatException("Bad filename ID");
+        readOnly = dis.readBoolean();
+        deleteOnFree = dis.readBoolean();
+        file = new File(dis.readUTF());
+    }
+
 }

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
@@ -102,7 +104,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 	    randomSeed = null;
 	}
 
-	@Override
+    @Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		OutputStream os = bucket.getOutputStream();
@@ -396,6 +398,23 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         dos.writeLong(dataLength);
         dos.writeBoolean(readOnly);
         bucket.storeTo(dos);
+    }
+    
+    protected PaddedEphemerallyEncryptedBucket(DataInputStream dis) throws StorageFormatException, IOException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        minPaddedSize = dis.readInt();
+        key = new byte[32];
+        dis.readFully(key);
+        if(dis.readBoolean()) {
+            iv = new byte[32];
+            dis.readFully(iv);
+        } else {
+            iv = null;
+        }
+        dataLength = dis.readLong();
+        readOnly = dis.readBoolean();
+        bucket = BucketTools.restoreFrom(dis);
     }
 
 }

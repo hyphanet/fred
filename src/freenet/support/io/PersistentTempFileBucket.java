@@ -1,8 +1,11 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -25,7 +28,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	    // For serialization.
 	}
 	
-	@Override
+    @Override
 	protected boolean deleteOnFinalize() {
 		// Do not delete on finalize
 		return false;
@@ -58,6 +61,16 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
     @Override
     protected boolean persistent() {
         return true;
+    }
+    
+    public static final int MAGIC = 0x2ffdd4cf;
+    
+    protected int magic() {
+        return MAGIC;
+    }
+    
+    protected PersistentTempFileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        super(dis);
     }
 
 }

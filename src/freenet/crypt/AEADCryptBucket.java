@@ -1,5 +1,6 @@
 package freenet.crypt;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,8 +9,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
 
 /** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
  * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 
@@ -96,9 +99,23 @@ public class AEADCryptBucket implements Bucket, Serializable {
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
+        dos.writeByte(key.length);
         dos.write(key);
         dos.writeBoolean(readOnly);
         underlying.storeTo(dos);
+    }
+
+    public AEADCryptBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        // Magic already read by caller.
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Unknown version "+version);
+        int keyLength = dis.readByte();
+        if(keyLength < 0 || !(keyLength == 16 || keyLength == 24 || keyLength == 32))
+            throw new StorageFormatException("Unknown key length "+keyLength); // FIXME validate this in a more permanent way
+        key = new byte[keyLength];
+        dis.readFully(key);
+        readOnly = dis.readBoolean();
+        underlying = BucketTools.restoreFrom(dis);
     }
 
 }

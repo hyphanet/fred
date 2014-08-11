@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +15,7 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -513,4 +515,13 @@ public abstract class BaseFileBucket implements Bucket {
         dos.writeBoolean(freed);
     }
 	
+    protected BaseFileBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        // Not constructed directly, so we DO need to read the magic value.
+        int magic = dis.readInt();
+        if(magic != MAGIC) throw new StorageFormatException("Bad magic");
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        freed = dis.readBoolean();
+    }
+
 }

@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
@@ -9,6 +10,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.StorageFormatException;
 import freenet.support.api.Bucket;
 
 /** Pads a bucket to the next power of 2 file size. 
@@ -253,5 +255,15 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         dos.writeBoolean(readOnly);
         underlying.storeTo(dos);
     }
+    
+    protected TrivialPaddedBucket(DataInputStream dis) throws IOException, StorageFormatException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        size = dis.readLong();
+        readOnly = dis.readBoolean();
+        underlying = BucketTools.restoreFrom(dis);
+    }
+
+
     
 }
