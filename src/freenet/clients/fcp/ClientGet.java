@@ -781,12 +781,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 *         isn&rsquo;t applicable
 	 */
 	public Bucket getBucket() {
+	    return makeBucket(true);
+	}
+	
+	private Bucket makeBucket(boolean readOnly) {
 	    if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 	        synchronized(this) {
 	            return returnBucketDirect;
 	        }
 	    } else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-	        return new FileBucket(targetFile, true, false, false, false, false);
+	        return new FileBucket(targetFile, readOnly, false, false, false, false);
 	    } else {
 	        return null;
 	    }
@@ -929,7 +933,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             dos.writeLong(foundDataLength);
             dos.writeUTF(foundDataMimeType);
             compatMode.writeTo(dos);
-            HashResult.write(expectedHashes.hashes, dos);
+            HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
             if(succeeded) {
                 if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
                     returnBucketDirect.storeTo(dos);
@@ -980,6 +984,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         binaryBlob = dis.readBoolean();
         fctx = new FetchContext(dis);
+        fctx.eventProducer.addEventListener(this);
         if(finished) {
             succeeded = dis.readBoolean();
             readTransientProgressFields(dis);
@@ -996,8 +1001,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             if(getter != null) {
                 readTransientProgressFields(dis);
             }
+            compatMode = new CompatibilityAnalyser();
         }
-        if(getter == null) getter = makeGetter(getBucket(), null, null); // FIXME support initialMetadata, extensionCheck
+        if(getter == null) getter = makeGetter(makeBucket(false), null, null); // FIXME support initialMetadata, extensionCheck
         this.getter = getter;
     }
 
