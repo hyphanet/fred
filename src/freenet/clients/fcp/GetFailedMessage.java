@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.fcp;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -10,6 +11,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
+import freenet.client.async.StorageFormatException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
@@ -120,7 +122,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	    redirectURI = null;
 	}
 
-	@Override
+    @Override
 	public SimpleFieldSet getFieldSet() {
 		return getFieldSet(true);
 	}
@@ -188,6 +190,44 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
         writePossiblyNull(extraDescription, dos);
         dos.writeBoolean(finalizedExpected);
         writePossiblyNull(redirectURI == null ? null : redirectURI.toString(), dos);
+    }
+    
+    public GetFailedMessage(DataInputStream dis, RequestIdentifier reqID,
+            long expectedSize, String expectedType) throws StorageFormatException, IOException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version in GetFailedMessage");
+        code = dis.readInt();
+        if(!FetchException.isErrorCode(code))
+            throw new StorageFormatException("Bad error code");
+        this.isFatal = FetchException.isFatal(code);
+        this.codeDescription = FetchException.getMessage(code);
+        this.shortCodeDescription = FetchException.getShortMessage(code);
+        this.extraDescription = readPossiblyNull(dis);
+        this.finalizedExpected = dis.readBoolean();
+        String s = readPossiblyNull(dis);
+        if(s != null) {
+            try {
+                redirectURI = new FreenetURI(s);
+            } catch (MalformedURLException e) {
+                throw new StorageFormatException("Bad redirect URI in GetFailedMessage: "+e);
+            }
+        } else {
+            redirectURI = null;
+        }
+        this.global = reqID.globalQueue;
+        this.identifier = reqID.identifier;
+        this.tracker = null; // Don't save that level of detail.
+        this.expectedDataLength = expectedSize;
+        this.expectedMimeType = expectedType;
+        
+    }
+
+    private String readPossiblyNull(DataInputStream dis) throws IOException {
+        if(dis.readBoolean()) {
+            return dis.readUTF();
+        } else {
+            return null;
+        }
     }
 
     private void writePossiblyNull(String s, DataOutputStream dos) throws IOException {
