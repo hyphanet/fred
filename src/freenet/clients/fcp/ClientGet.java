@@ -221,8 +221,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             targetFile = null;
             ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
-		if(ret == null)
-			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		getter = makeGetter(ret, message.getInitialMetadata(), extensionCheck);
 	}
 	
