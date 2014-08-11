@@ -300,6 +300,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos = null;
         } catch (Throwable e) {
             Logger.error(this, "Unable to write recovery data for "+req+" : "+e, e);
+            System.err.println("Unable to write recovery data for "+req+" : "+e);
+            e.printStackTrace();
             oos.abort();
         } finally {
             if(oos != null) oos.close();
