@@ -119,12 +119,12 @@ public class DelayedFreeBucket implements Bucket, Serializable {
         bucket.onResume(context);
     }
     
-    static final long MAGIC = 0xa28f2a2d3149abd9L;
+    static final int MAGIC = 0xa28f2a2d;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         bucket.storeTo(dos);
     }

@@ -89,12 +89,12 @@ public class AEADCryptBucket implements Bucket, Serializable {
         underlying.onResume(context);
     }
     
-    static final long MAGIC = 0xb25b32d642614ba1L;
+    public static final int MAGIC = 0xb25b32d6;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.write(key);
         dos.writeBoolean(readOnly);

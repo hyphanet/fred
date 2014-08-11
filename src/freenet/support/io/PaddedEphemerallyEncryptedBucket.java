@@ -377,12 +377,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         bucket.onResume(context);
     }
     
-    static final long MAGIC = 0x66c71fc90125f9b4L;
+    public static final int MAGIC = 0x66c71fc9;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeInt(minPaddedSize);
         dos.write(key);

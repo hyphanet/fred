@@ -149,12 +149,12 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
         // Do nothing.
     }
     
-    static final long MAGIC = 0x99e54c48f516fff4L;
+    static final int MAGIC = 0x99e54c4;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeUTF(file.toString());
         dos.writeLong(startAt);

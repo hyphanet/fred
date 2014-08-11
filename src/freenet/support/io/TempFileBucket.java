@@ -174,13 +174,13 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         return true;
     }
     
-    static final long MAGIC = 0x2ffdd4cf4599f324L;
+    public static final int MAGIC = 0x2ffdd4cf;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         if(!persistent()) throw new UnsupportedOperationException();
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeLong(filenameID);
         dos.writeBoolean(readOnly);

@@ -242,12 +242,12 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         underlying.onResume(context);
     }
     
-    static final long MAGIC = 0xdaff61856b5a5f92L;
+    static final int MAGIC = 0xdaff6185;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeLong(size);
         dos.writeBoolean(readOnly);

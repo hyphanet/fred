@@ -503,12 +503,12 @@ public abstract class BaseFileBucket implements Bucket {
 	    length = getFile().length();
 	}
 	
-	static final long MAGIC = 0xc4b7533d5216b404L;
+	public static final int MAGIC = 0xc4b7533d;
 	static final int VERSION = 1;
 	
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         dos.writeBoolean(freed);
     }

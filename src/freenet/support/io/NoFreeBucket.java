@@ -68,11 +68,11 @@ public class NoFreeBucket implements Bucket, Serializable {
         proxy.onResume(context);
     }
     
-    static final long MAGIC = 0xa88da5c2a9cf6186L;
+    static final int MAGIC = 0xa88da5c2;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         proxy.storeTo(dos);
     }
 

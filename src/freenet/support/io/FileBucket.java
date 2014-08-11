@@ -143,12 +143,12 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         return false;
     }
     
-    static final long MAGIC = 0x8fe6e41b4f98dbc7L;
+    public static final int MAGIC = 0x8fe6e41b;
     static final int VERSION = 1;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        dos.writeLong(MAGIC);
+        dos.writeInt(MAGIC);
         dos.writeInt(VERSION);
         super.storeTo(dos);
         dos.writeUTF(file.toString());
