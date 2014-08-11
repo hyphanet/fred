@@ -967,7 +967,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         innerDOS.close();
                     }
                 } else {
-                    getFailedMessage.writeTo(dos);
+                    DataOutputStream innerDOS = 
+                        new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
+                    getFailedMessage.writeTo(innerDOS);
+                    innerDOS.close();
                 }
                 return;
             }
@@ -1050,7 +1053,23 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                     }
                 }
             } else {
-                getFailedMessage = new GetFailedMessage(dis, reqID, foundDataLength, foundDataMimeType);
+                try {
+                    DataInputStream innerDIS =
+                        new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
+                    try {
+                        getFailedMessage = new GetFailedMessage(innerDIS, reqID, foundDataLength, foundDataMimeType);
+                    } catch (IOException e) {
+                        Logger.error(this, "Unable to restore reason for failure, restarting request : "+e, e);
+                        finished = false;
+                        getFailedMessage = null;
+                    } finally {
+                        innerDIS.close();
+                    }
+                } catch (ChecksumFailedException e) {
+                    Logger.error(this, "Unable to restore reason for failure, restarting request");
+                    finished = false;
+                    getFailedMessage = null;
+                }
             }
         } else {
             getter = ClientGetter.resumeFromTrivialProgress(dis);
