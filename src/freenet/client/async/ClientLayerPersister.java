@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.util.Random;
 
@@ -26,17 +25,17 @@ import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
+import freenet.crypt.ChecksumChecker.AbortableChecksummedOutputStream;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Ticker;
-import freenet.support.api.Bucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PersistentTempBucketFactory;
+import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.TempBucketFactory;
 
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
@@ -293,106 +292,66 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     private void writeRecoveryData(ObjectOutputStream os, ClientRequest req) throws IOException {
+        AbortableChecksummedOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
+        DataOutputStream dos = new DataOutputStream(oos);
         try {
-            Bucket bucket = tempBucketFactory.makeBucket(-1);
-            OutputStream baseOS = bucket.getOutputStream();
-            OutputStream cos = checker.checksumWriter(baseOS);
-            DataOutputStream dos = new DataOutputStream(cos);
             req.getClientDetail(dos);
             dos.close();
-            baseOS.close(); // checksumWriter doesn't close underlying.
-            os.writeLong(bucket.size() - checker.checksumLength());
-            BucketTools.copyTo(bucket, os, Long.MAX_VALUE);
+            oos = null;
         } catch (Throwable e) {
             Logger.error(this, "Unable to write recovery data for "+req+" : "+e, e);
-            os.writeLong(0);
-            os.write(checker.appendChecksum(new byte[] { }));
+            oos.abort();
+        } finally {
+            if(oos != null) oos.close();
         }
     }
     
-    private ClientRequest readRequestFromRecoveryData(ObjectInputStream ois, long totalLength, RequestIdentifier reqID) throws IOException, ChecksumFailedException, StorageFormatException {
-        long length = ois.readLong();
-        if(length > totalLength) throw new IOException("Too long: "+length+" > "+totalLength);
-        Bucket tmp = null;
-        OutputStream os = null;
-        DataInputStream tmpIS = null;
+    private ClientRequest readRequestFromRecoveryData(ObjectInputStream is, long totalLength, RequestIdentifier reqID) throws IOException, ChecksumFailedException, StorageFormatException {
+        InputStream tmp = checker.checksumReaderWithLength(is, this.tempBucketFactory, totalLength);
         try {
-            tmp = tempBucketFactory.makeBucket(length);
-            os = tmp.getOutputStream();
-            checker.copyAndStripChecksum(ois, os, length);
-            os.close();
-            tmpIS = new DataInputStream(tmp.getInputStream());
-            try {
-                return ClientRequest.restartFrom(tmpIS, reqID, getClientContext());
-            } catch (Throwable t) {
-                Logger.error(this, "Failed to recover even though checksum passed: "+t, t);
-                return null;
-            }
+            DataInputStream dis = new DataInputStream(tmp);
+            ClientRequest request = ClientRequest.restartFrom(dis, reqID, getClientContext());
+            dis.close();
+            dis = null;
+            tmp = null;
+            return request;
+        } catch (Throwable t) {
+            Logger.error(this, "Serialization failed: "+t, t);
+            return null;
         } finally {
-            // Don't use Closer because we *DO* want the IOException's.
-            if(tmpIS != null) tmpIS.close();
-            if(os != null) os.close();
-            if(tmp != null) tmp.free();
+            if(tmp != null) tmp.close();
         }
     }
 
     private void writeChecksummedObject(ObjectOutputStream os, Object req, String name) throws IOException {
-        // FIXME write a simpler, more robust, non-serialized version first.
-        Bucket tmp = tempBucketFactory.makeBucket(-1);
-        OutputStream tmpOS = tmp.getOutputStream();
-        OutputStream checksummedOS = checker.checksumWriter(tmpOS);
-        ObjectOutputStream oos = new ObjectOutputStream(checksummedOS);
+        AbortableChecksummedOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
         try {
-            oos.writeObject(req);
-        } catch (ObjectStreamException e) {
-            if(name != null) {
-                Logger.error(this, "Unable to write "+name+" : "+e, e);
-                System.err.println("Unable to write "+name+" : "+e);
-                e.printStackTrace();
-            } else {
-                Logger.error(this, "Unable to write "+req, e);
-            }
-            tmpOS.close();
-            os.writeLong(0);
-            os.write(checker.appendChecksum(new byte[] { }));
-            return;
+            ObjectOutputStream innerOOS = new ObjectOutputStream(oos);
+            innerOOS.writeObject(req);
+            innerOOS.close();
+            oos = null;
         } catch (Throwable e) {
-            if(name != null) {
-                Logger.error(this, "Unable to write "+name+" : "+e, e);
-                System.err.println("Unable to write "+name+" : "+e);
-                e.printStackTrace();
-            } else {
-                Logger.error(this, "Unable to write "+req, e);
-            }
-            tmpOS.close();
-            os.writeLong(0);
-            os.write(checker.appendChecksum(new byte[] { }));
-            return;
+            Logger.error(this, "Unable to write recovery data for "+name+" : "+e, e);
+            oos.abort();
+        } finally {
+            if(oos != null) oos.close();
         }
-        oos.close();
-        os.writeLong(tmp.size() - checker.checksumLength());
-        BucketTools.copyTo(tmp, os, Long.MAX_VALUE);
-        tmp.free();
     }
     
     private Object readChecksummedObject(ObjectInputStream is, long totalLength) throws IOException, ChecksumFailedException, ClassNotFoundException {
-        long length = is.readLong();
-        if(length > totalLength) throw new IOException("Too long: "+length+" > "+totalLength);
-        Bucket tmp = null;
-        OutputStream os = null;
-        InputStream tmpIS = null;
+        InputStream ois = checker.checksumReaderWithLength(is, this.tempBucketFactory, totalLength);
         try {
-            tmp = tempBucketFactory.makeBucket(length);
-            os = tmp.getOutputStream();
-            checker.copyAndStripChecksum(is, os, length);
-            os.close();
-            tmpIS = tmp.getInputStream();
-            return new ObjectInputStream(tmpIS).readObject();
+            ObjectInputStream oo = new ObjectInputStream(ois);
+            Object ret = oo.readObject();
+            oo.close();
+            oo = null;
+            ois = null;
+            return ret;
+        } catch (Throwable t) {
+            Logger.error(this, "Serialization failed: "+t, t);
+            return null;
         } finally {
-            // Don't use Closer because we *DO* want the IOException's.
-            if(tmpIS != null) tmpIS.close();
-            if(os != null) os.close();
-            if(tmp != null) tmp.free();
+            if(ois != null) ois.close();
         }
     }
 
