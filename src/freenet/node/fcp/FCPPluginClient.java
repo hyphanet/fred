@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.UUID;
 
+import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -71,29 +74,39 @@ public final class FCPPluginClient {
     /**
      * The class name of the plugin to which this {@link FCPPluginClient} is connected.
      */
-    private final String pluginName;    
+    private final String pluginName;
+    
+    /**
+     * The plugin to which this client is connected.
+     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
+     *                 {@link FCPServer} and {@link FCPConnectionHandler} if this reference is nulled.
+     */
+    private final WeakReference<FredPluginFCPServer> plugin;
 
     
     /**
      * Regular constructor for being used by networked FCP connections.
      */
-    public FCPPluginClient(FCPConnectionHandler connection, String pluginName) {
+    public FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
         assert(connection != null);
         assert(pluginName != null);
+        assert(plugin != null);
         
         this.connection = connection;
         this.pluginName = pluginName;
+        this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
     }
     
     /**
      * Special-purpose constructor for being used by intra-node connections to a plugin.
      * Since there is no network connection, there will be no {@link FCPConnectionHandler}, so this constructor works without one.
      */
-    public FCPPluginClient(String pluginName) {
+    public FCPPluginClient(String pluginName, FredPluginFCPServer plugin) {
         assert(pluginName != null);
         
         connection = null;
         this.pluginName = pluginName;
+        this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
     }
     
     /**
