@@ -85,6 +85,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             long length = filename.length();
             InputStream fis = null;
             ClientRequest[] requests;
+            boolean[] recovered;
             DelayedFreeBucket[] buckets = null;
             try {
                 // Read everything in first.
@@ -109,6 +110,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 requestStarters.setGlobalSalt(salt);
                 int requestCount = ois.readInt();
                 requests = new ClientRequest[requestCount];
+                recovered = new boolean[requestCount];
                 for(int i=0;i<requestCount;i++) {
                     RequestIdentifier req = readRequestIdentifier(ois);
                     if(req != null && context.persistentRoot.hasRequest(req)) {
@@ -138,7 +140,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     if(requests[i] == null || logMINOR) {
                         try {
                             ClientRequest restored = readRequestFromRecoveryData(ois, length, req);
-                            if(requests[i] == null) requests[i] = restored;
+                            if(requests[i] == null) {
+                                requests[i] = restored;
+                                recovered[i] = true;
+                            }
                         } catch (ChecksumFailedException e) {
                             if(requests[i] == null) {
                                 Logger.error(this, "Failed to recovery a request (checksum failed)");
@@ -174,10 +179,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 fis = null;
                 onLoading();
                 // Resume the requests.
-                for(ClientRequest req : requests) {
+                for(int i=0; i<requests.length;i++) {
+                    ClientRequest req = requests[i];
                     try {
-                        if(req != null)
+                        if(req != null) {
                             req.onResume(context);
+                            if(recovered[i])
+                                req.start(context);
+                        }
                     } catch (Throwable t) {
                         System.err.println("Unable to resume request "+req+" after loading it.");
                         Logger.error(this, "Unable to resume request "+req+" after loading it.");
