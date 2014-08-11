@@ -78,8 +78,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/** Number of RNFs on insert that make a success, or -1 on large networks */
 	static final int CONSECUTIVE_RNFS_ASSUME_SUCCESS = 2;
 	// going by memory usage only; 4kB per stripe
-	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
-	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
+	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 256;
+	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 256;
 	// For scaling purposes, 128 data 128 check blocks i.e. one check block per data block.
 	public static final int SPLITFILE_SCALING_BLOCKS_PER_SEGMENT = 128;
 	/* The number of data blocks in a segment depends on how many segments there are.
