@@ -20,6 +20,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.node.RequestClient;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -631,8 +632,9 @@ public class FCPConnectionHandler implements Closeable {
 	/**
 	 * @return The {@link FCPPluginClient} for the given {@link FCPPluginClient#pluginName}. Atomically creates and stores it if there does not exist one yet.
 	 *         This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a given pluginName.
+	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server. 
 	 */
-	public FCPPluginClient getPluginClient(String pluginName) {
+	public FCPPluginClient getPluginClient(String pluginName) throws PluginNotFoundException {
 		// The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
 		// only happen at the start of a connection and then it will be re-used a lot.
 		// Therefore, it would cost a lot of performance to use synchronized() with a regular HashMap just so the minority of writes is safe.
@@ -646,7 +648,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(client != null)
 			return client;
 
-		FCPPluginClient newClient = new FCPPluginClient(this, pluginName);
+		FCPPluginClient newClient = new FCPPluginClient(this, pluginName, server.node.getPluginManager().getPluginFCPServer(pluginName));
 		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
 		FCPPluginClient oldClient = pluginClientsByPluginName.putIfAbsent(pluginName, newClient);
 
