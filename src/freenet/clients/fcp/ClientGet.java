@@ -952,24 +952,31 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         dos.writeBoolean(binaryBlob);
         fctx.writeTo(dos);
-        if(finished) {
-            dos.writeBoolean(succeeded);
-            dos.writeLong(foundDataLength);
-            dos.writeUTF(foundDataMimeType);
-            compatMode.writeTo(dos);
-            HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
-            if(succeeded) {
-                if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                    DataOutputStream innerDOS = 
-                        new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
-                    returnBucketDirect.storeTo(innerDOS);
-                    innerDOS.close();
+        synchronized(this) {
+            if(finished) {
+                dos.writeBoolean(succeeded);
+                dos.writeLong(foundDataLength);
+                dos.writeUTF(foundDataMimeType);
+                compatMode.writeTo(dos);
+                HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
+                if(succeeded) {
+                    if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                        DataOutputStream innerDOS = 
+                            new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
+                        returnBucketDirect.storeTo(innerDOS);
+                        innerDOS.close();
+                    }
+                } else {
+                    getFailedMessage.writeTo(dos);
                 }
-            } else {
-                getFailedMessage.writeTo(dos);
+                return;
             }
-        } else {
-            if(getter.writeTrivialProgress(dos)) {
+        }
+        // Not finished, or was recently not finished.
+        // Don't hold lock while calling getter.
+        // If it's just finished we get a race and restart. That's okay.
+        if(getter.writeTrivialProgress(dos)) {
+            synchronized(this) {
                 dos.writeLong(foundDataLength);
                 dos.writeUTF(foundDataMimeType);
                 compatMode.writeTo(dos);
