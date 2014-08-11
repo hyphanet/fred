@@ -1079,8 +1079,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     public void onResume(ClientContext context) {
         super.onResume(context);
         if(returnBucketDirect != null) returnBucketDirect.onResume(context);
-        this.foundDataLength = getter.expectedSize();
-        this.foundDataMimeType = getter.expectedMIME();
+        // We might already have these if we've just restored.
+        if(foundDataLength <= 0)
+            this.foundDataLength = getter.expectedSize();
+        if(foundDataMimeType == null)
+            this.foundDataMimeType = getter.expectedMIME();
     }
 
     @Override
