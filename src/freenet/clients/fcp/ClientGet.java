@@ -949,14 +949,20 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             dos.writeUTF(targetFile.toString());
         }
         dos.writeBoolean(binaryBlob);
-        fctx.writeTo(dos);
+        DataOutputStream innerDOS = 
+            new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));        
+        try {
+            fctx.writeTo(innerDOS);
+        } finally {
+            innerDOS.close();
+        }
         synchronized(this) {
             if(finished) {
                 dos.writeBoolean(succeeded);
                 writeTransientProgressFields(dos);
                 if(succeeded) {
                     if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-                        DataOutputStream innerDOS = 
+                        innerDOS = 
                             new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
                         try {
                             returnBucketDirect.storeTo(innerDOS);
@@ -965,7 +971,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         }
                     }
                 } else {
-                    DataOutputStream innerDOS = 
+                    innerDOS = 
                         new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
                     try {
                         getFailedMessage.writeTo(innerDOS);
@@ -1021,7 +1027,24 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             targetFile = null;
         }
         binaryBlob = dis.readBoolean();
-        fctx = new FetchContext(dis);
+        FetchContext fctx = null;
+        try {
+            DataInputStream innerDIS =
+                new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
+            try {
+                fctx = new FetchContext(innerDIS);
+            } catch (IOException e) {
+                Logger.error(this, "Unable to read fetch settings, will use default settings: "+e, e);
+            } finally {
+                innerDIS.close();
+            }
+        } catch (ChecksumFailedException e) {
+            Logger.error(this, "Unable to read fetch settings, will use default settings");
+        }
+        if(fctx == null) {
+            fctx = context.getDefaultPersistentFetchContext();
+        }
+        this.fctx = fctx;
         fctx.eventProducer.addEventListener(this);
         if(finished) {
             succeeded = dis.readBoolean();
