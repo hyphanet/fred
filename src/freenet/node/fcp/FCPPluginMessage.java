@@ -6,6 +6,7 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
+import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
@@ -99,6 +100,34 @@ public class FCPPluginMessage extends DataCarryingMessage {
 
 	@Override
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
+		// There are 2 code paths for deploying plugin messages:
+		// 1. The new class FCPPluginClient. This is only available if the plugin implements the new interface FredPluginFCPServer.
+		// 2. The old class PluginTalker. This is available if the plugin implements the old interface FredPluginFCP.
+		// We first try code path 1 by doing FCPConnectionHandler.getPluginClient(): That function will only yield a result if the new interface is implemented.
+		// If that fails, we try the old code path of PluginTalker, which will fail if the plugin also does not implement the old interface and thus is no FCP
+		// server at all.
+		// If both fail, we finally send a MessageInvalidException.
+		
+		FCPPluginClient client = null;
+		
+		try {
+			client = handler.getPluginClient(pluginname);
+		} catch (PluginNotFoundException e1) {
+			// Do not send an error yet: Allow plugins which only implement the old interface to keep working.
+			// TODO: Once we remove class PluginTalker, we should throw here as we do below.
+		}
+		
+		if(client != null) {
+			// Call this here instead of in the above try{} because client.send() might also throw PluginNotFoundException in the future and we don't want to
+			// mix that up with the one whose reason is that the plugin does not support the new interface: In the case of send() throwing, it would indicate
+			// that the plugin DOES support the new interface but was unloaded meanwhile. So we can exit the function then, we don't have to try the old 
+			// interface.
+			client.send(SendDirection.ToServer, plugparams, this.bucket);
+			return;
+		}
+		
+		// Now follows the legacy code
+		
 		PluginTalker pt;
 		try {
 			pt = new PluginTalker(node, handler, pluginname, identifier, handler.hasFullAccess());
