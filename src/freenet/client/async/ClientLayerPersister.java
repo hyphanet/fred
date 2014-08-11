@@ -56,7 +56,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
-
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(ClientLayerPersister.class);
+    }
+    
     /** Load everything.
      * @param persistentTempFactory Only passed in so that we can call its pre- and post- commit
      * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
@@ -130,9 +135,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         System.err.println("Failed to load a request: "+t);
                         t.printStackTrace();
                     }
-                    if(requests[i] == null) {
+                    if(requests[i] == null || logMINOR) {
                         try {
-                            requests[i] = readRequestFromRecoveryData(ois, length, req);
+                            ClientRequest restored = readRequestFromRecoveryData(ois, length, req);
+                            if(requests[i] == null) requests[i] = restored;
                         } catch (ChecksumFailedException e) {
                             Logger.error(this, "Failed to recovery a request (checksum failed)");
                             System.err.println("Failed to recovery a request (checksum failed)");
