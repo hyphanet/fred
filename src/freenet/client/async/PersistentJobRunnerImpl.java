@@ -290,4 +290,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
+    protected ClientContext getClientContext() {
+        return context;
+    }
+
 }

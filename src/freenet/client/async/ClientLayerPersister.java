@@ -299,7 +299,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             checker.copyAndStripChecksum(ois, os, length);
             os.close();
             tmpIS = new DataInputStream(tmp.getInputStream());
-            return ClientRequest.restartFrom(tmpIS, reqID);
+            return ClientRequest.restartFrom(tmpIS, reqID, getClientContext());
         } finally {
             // Don't use Closer because we *DO* want the IOException's.
             if(tmpIS != null) tmpIS.close();

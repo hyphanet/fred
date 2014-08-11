@@ -947,13 +947,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
     }
     
-    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID) throws StorageFormatException, IOException {
-        return new ClientGet(dis, reqID);
+    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID, 
+            ClientContext context) throws StorageFormatException, IOException {
+        return new ClientGet(dis, reqID, context);
     }
     
-    private ClientGet(DataInputStream dis, RequestIdentifier reqID) 
+    private ClientGet(DataInputStream dis, RequestIdentifier reqID, ClientContext context) 
     throws IOException, StorageFormatException {
-        super(dis, reqID);
+        super(dis, reqID, context);
         ClientGetter getter = null;
         long magic = dis.readLong();
         if(magic != CLIENT_DETAIL_MAGIC) 

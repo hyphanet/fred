@@ -86,13 +86,16 @@ public class FCPPersistentRoot {
     }
 
     FCPClient resume(ClientRequest clientRequest, boolean global, String clientName) {
+        FCPClient client = makeClient(global, clientName);
+        client.resume(clientRequest);
+        return client;
+    }
+    
+    FCPClient makeClient(boolean global, String clientName) {
         if(global) {
-            globalForeverClient.resume(clientRequest);
             return globalForeverClient;
         } else {
-            FCPClient client = registerForeverClient(clientName, null);
-            client.resume(clientRequest);
-            return client;
+            return registerForeverClient(clientName, null);
         }
     }
 

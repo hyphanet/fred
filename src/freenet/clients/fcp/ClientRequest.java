@@ -463,7 +463,8 @@ public abstract class ClientRequest implements Serializable {
         dos.writeBoolean(finished);
     }
     
-    protected ClientRequest(DataInputStream dis, RequestIdentifier reqID) throws IOException, StorageFormatException {
+    protected ClientRequest(DataInputStream dis, RequestIdentifier reqID, 
+            ClientContext context) throws IOException, StorageFormatException {
         long magic = dis.readLong();
         if(magic != CLIENT_DETAIL_MAGIC)
             throw new StorageFormatException("Bad magic");
@@ -491,6 +492,10 @@ public abstract class ClientRequest implements Serializable {
         global = reqID.globalQueue;
         clientName = reqID.clientName;
         hashCode = super.hashCode();
+        // We can't wait until onResume() to get the client, because it may be used in the 
+        // constructors.
+        this.client = context.persistentRoot.makeClient(global, clientName);
+        this.lowLevelClient = client.lowLevelClient(realTime);
     }
 
     /** Called just after serializing in the request. Called by the ClientRequester, i.e. the tree 
@@ -518,10 +523,11 @@ public abstract class ClientRequest implements Serializable {
     
     abstract RequestIdentifier.RequestType getType();
 
-    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID) throws StorageFormatException, IOException {
+    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID,
+            ClientContext context) throws StorageFormatException, IOException {
         switch(reqID.type) {
         case GET:
-            return ClientGet.restartFrom(dis, reqID);
+            return ClientGet.restartFrom(dis, reqID, context);
         default:
             return null;
         }
