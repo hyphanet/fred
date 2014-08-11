@@ -394,6 +394,7 @@ public class FetchException extends Exception implements Cloneable {
 
 	/** Get the (localised) long explanation for this failure mode. */
 	public static String getMessage(int mode) {
+	    if(!isErrorCode(mode)) throw new IllegalArgumentException();
 		String ret = NodeL10n.getBase().getString("FetchException.longError."+mode);
 		if(ret == null)
 			return "Unknown fetch error code: "+mode;
