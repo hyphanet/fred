@@ -1030,7 +1030,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         try {
                             returnBucketDirect = BucketTools.restoreFrom(innerDIS);
                             innerDIS.close();
-                            throw new IOException();
                         } catch (IOException e) {
                             Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
                             returnBucketDirect = null;
