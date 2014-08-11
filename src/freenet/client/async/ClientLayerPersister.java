@@ -140,12 +140,20 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                             ClientRequest restored = readRequestFromRecoveryData(ois, length, req);
                             if(requests[i] == null) requests[i] = restored;
                         } catch (ChecksumFailedException e) {
-                            Logger.error(this, "Failed to recovery a request (checksum failed)");
-                            System.err.println("Failed to recovery a request (checksum failed)");
+                            if(requests[i] == null) {
+                                Logger.error(this, "Failed to recovery a request (checksum failed)");
+                                System.err.println("Failed to recovery a request (checksum failed)");
+                            } else {
+                                Logger.error(this, "Test recovery failed: Checksum failed for "+req);
+                            }
                         } catch (StorageFormatException e) {
-                            Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
-                            System.err.println("Failed to recovery a request (storage format): "+e);
-                            e.printStackTrace();
+                            if(requests[i] == null) {
+                                Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
+                                System.err.println("Failed to recovery a request (storage format): "+e);
+                                e.printStackTrace();
+                            } else {
+                                Logger.error(this, "Test recovery failed for "+req+" : "+e, e);
+                            }
                         }
                     } else {
                         skipChecksummedObject(ois, length);
