@@ -539,7 +539,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public void receive(ClientEvent ce, ClientContext context) {
 		// Don't need to lock, verbosity is final and finished is never unset.
-		if(finished) return;
 		final FCPMessage progress;
 		final int verbosityMask;
 		// FIXME we are doing this backwards.
