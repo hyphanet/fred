@@ -803,15 +803,6 @@ public class SplitFileFetcherStorage {
         return true;
     }
     
-    /** Thrown when the file being loaded appears not to be a stored splitfile */
-    static class StorageFormatException extends Exception {
-
-        public StorageFormatException(String message) {
-            super(message);
-        }
-        
-    }
-    
     OutputStream checksumOutputStream(OutputStream os) {
         return checksumChecker.checksumWriter(os);
     }

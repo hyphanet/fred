@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
 import freenet.client.FetchException;
-import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.SHA256;
 import freenet.keys.CHKBlock;

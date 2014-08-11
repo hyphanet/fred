@@ -10,7 +10,6 @@ import freenet.client.FetchException;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
-import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.ClientCHKBlock;

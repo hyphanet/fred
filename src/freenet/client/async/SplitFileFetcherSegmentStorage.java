@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Random;
 
 import freenet.client.FetchException;
-import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;

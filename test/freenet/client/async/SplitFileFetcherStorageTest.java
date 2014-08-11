@@ -22,7 +22,6 @@ import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.OnionFECCodec;
 import freenet.client.async.SplitFileFetcherStorage.MyKey;
-import freenet.client.async.SplitFileFetcherStorage.StorageFormatException;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
