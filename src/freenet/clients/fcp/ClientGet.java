@@ -1030,8 +1030,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             if(getter != null) {
                 readTransientProgressFields(dis);
             }
-            compatMode = new CompatibilityAnalyser();
         }
+        if(compatMode == null)
+            compatMode = new CompatibilityAnalyser();
         if(getter == null) getter = makeGetter(makeBucket(false), null, null); // FIXME support initialMetadata, extensionCheck
         this.getter = getter;
     }
