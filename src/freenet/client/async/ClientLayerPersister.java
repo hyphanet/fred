@@ -322,7 +322,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             checker.copyAndStripChecksum(ois, os, length);
             os.close();
             tmpIS = new DataInputStream(tmp.getInputStream());
-            return ClientRequest.restartFrom(tmpIS, reqID, getClientContext());
+            try {
+                return ClientRequest.restartFrom(tmpIS, reqID, getClientContext());
+            } catch (Throwable t) {
+                Logger.error(this, "Failed to recover even though checksum passed: "+t, t);
+                return null;
+            }
         } finally {
             // Don't use Closer because we *DO* want the IOException's.
             if(tmpIS != null) tmpIS.close();
