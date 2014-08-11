@@ -108,7 +108,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     RequestIdentifier req = readRequestIdentifier(ois);
                     if(req != null && context.persistentRoot.hasRequest(req)) {
                         Logger.error(this, "Not reading request because already have it");
-                        skipChecksummedObject(ois, length);
+                        skipChecksummedObject(ois, length); // Request itself
+                        skipChecksummedObject(ois, length); // Recovery data
                         continue;
                     }
                     // FIXME read the initial details.
