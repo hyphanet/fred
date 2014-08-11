@@ -25,7 +25,6 @@ import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
-import freenet.crypt.ChecksumChecker.AbortableChecksummedOutputStream;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
@@ -292,7 +291,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     private void writeRecoveryData(ObjectOutputStream os, ClientRequest req) throws IOException {
-        AbortableChecksummedOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
+        PrependLengthOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
         DataOutputStream dos = new DataOutputStream(oos);
         try {
             req.getClientDetail(dos, checker);
@@ -326,7 +325,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
 
     private void writeChecksummedObject(ObjectOutputStream os, Object req, String name) throws IOException {
-        AbortableChecksummedOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
+        PrependLengthOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
         try {
             ObjectOutputStream innerOOS = new ObjectOutputStream(oos);
             innerOOS.writeObject(req);

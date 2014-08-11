@@ -12,23 +12,41 @@ public class ChecksumOutputStream extends FilterOutputStream {
     final Checksum crc;
     private boolean closed;
     private final boolean writeChecksum;
+    // FIXME unit test the skipping mechanism, or move it to another file?
+    private final int skipPrefix;
+    private int bytesInsidePrefix;
 
-    public ChecksumOutputStream(OutputStream out, final Checksum crc, boolean writeChecksum) {
+    public ChecksumOutputStream(OutputStream out, final Checksum crc, boolean writeChecksum, int skipPrefix) {
         super(out);
         this.crc = crc;
         this.writeChecksum = writeChecksum;
+        this.skipPrefix = skipPrefix;
     }
     
     @Override
     public void write(int b) throws IOException {
-        crc.update(b);
+        if(bytesInsidePrefix++ >= skipPrefix) {
+            crc.update(b);
+        }
         out.write(b);
     }
     
     @Override
     public void write(byte[] buf, int offset, int length) throws IOException {
-        crc.update(buf, offset, length);
-        out.write(buf, offset, length);
+        int chop = Math.min(skipPrefix - bytesInsidePrefix, length);
+        if(chop <= 0) {
+            // Finished writing prefix. Count everything later.
+            crc.update(buf, offset, length);
+            out.write(buf, offset, length);
+        } else {
+            if(length - chop > 0) {
+                crc.update(buf, offset+chop, length-chop);
+                bytesInsidePrefix = skipPrefix;
+            } else {
+                bytesInsidePrefix += length;
+            }
+            out.write(buf, offset, length);
+        }
     }
     
     @Override
@@ -45,7 +63,6 @@ public class ChecksumOutputStream extends FilterOutputStream {
             }
             out.write(Fields.intToBytes((int)crc.getValue()));
         }
-        out.close();
     }
     
     public long getValue() {

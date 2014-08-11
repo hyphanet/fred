@@ -2,10 +2,8 @@ package freenet.crypt;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
@@ -22,40 +20,20 @@ public abstract class ChecksumChecker {
     
     /** Get an OutputStream that will write a checksum when closed. It will not close the 
      * underlying stream. */
-    public abstract OutputStream checksumWriter(OutputStream os);
-
-    /** Wraps a stream wrapping a PrependLengthOutputStream, providing a way to get to the abort()
-     * on the PrependLengthOutputStream. */
-    public class AbortableChecksummedOutputStream extends FilterOutputStream {
-        public AbortableChecksummedOutputStream(OutputStream out, PrependLengthOutputStream underlying) {
-            super(out);
-            this.underlying = underlying;
-        }
-        private final PrependLengthOutputStream underlying;
-        public void abort() throws IOException {
-            underlying.abort();
-        }
-        @Override
-        public void write(byte[] buf, int offset, int length) throws IOException {
-            // Unfortunately this is necessary because FilterOutputStream passes everything through write(int).
-            out.write(buf, offset, length);
-        }
-        
-        @Override
-        public void write(byte[] buf) throws IOException {
-            write(buf, 0, buf.length);
-        }
-    }
+    public abstract OutputStream checksumWriter(OutputStream os, int skipPrefix);
     
+    public OutputStream checksumWriter(OutputStream os) {
+        return checksumWriter(os, 0);
+    }
+
     /** Get an OutputStream that will write to a temporary Bucket, append a checksum and prepend a
      * length.
      * @param os The underlying stream, which will not be closed.
      * @param bf Used to allocate temporary storage.
      * @throws IOException 
      */
-    public AbortableChecksummedOutputStream checksumWriterWithLength(final OutputStream dos, BucketFactory bf) throws IOException {
-        PrependLengthOutputStream lengthAdder = PrependLengthOutputStream.create(dos, bf, checksumLength());
-        return new AbortableChecksummedOutputStream(checksumWriter(lengthAdder), lengthAdder);
+    public PrependLengthOutputStream checksumWriterWithLength(final OutputStream dos, BucketFactory bf) throws IOException {
+        return PrependLengthOutputStream.create(checksumWriter(dos, 8), bf, 0, true);
     }
     
     public abstract byte[] appendChecksum(byte[] data);

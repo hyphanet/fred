@@ -21,8 +21,8 @@ public class CRCChecksumChecker extends ChecksumChecker {
     }
 
     @Override
-    public OutputStream checksumWriter(OutputStream os) {
-        return new ChecksumOutputStream(os, new CRC32(), true);
+    public OutputStream checksumWriter(OutputStream os, int prefix) {
+        return new ChecksumOutputStream(os, new CRC32(), true, prefix);
     }
 
     @Override
