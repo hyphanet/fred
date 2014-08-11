@@ -955,10 +955,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         synchronized(this) {
             if(finished) {
                 dos.writeBoolean(succeeded);
-                dos.writeLong(foundDataLength);
-                dos.writeUTF(foundDataMimeType);
-                compatMode.writeTo(dos);
-                HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
+                writeTransientProgressFields(dos);
                 if(succeeded) {
                     if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
                         DataOutputStream innerDOS = 
@@ -1085,7 +1082,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     private void readTransientProgressFields(DataInputStream dis) throws IOException, StorageFormatException {
         foundDataLength = dis.readLong();
-        foundDataMimeType = dis.readUTF();
+        if(dis.readBoolean())
+            foundDataMimeType = dis.readUTF();
+        else
+            foundDataMimeType = null;
         compatMode = new CompatibilityAnalyser(dis);
         HashResult[] hashes = HashResult.readHashes(dis);
         if(hashes.length == 0) {
@@ -1093,6 +1093,18 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         } else {
             expectedHashes = new ExpectedHashes(hashes, identifier, global);
         }
+    }
+    
+    private void writeTransientProgressFields(DataOutputStream dos) throws IOException {
+        dos.writeLong(foundDataLength);
+        if(foundDataMimeType != null) {
+            dos.writeBoolean(true);
+            dos.writeUTF(foundDataMimeType);
+        } else {
+            dos.writeBoolean(false);
+        }
+        compatMode.writeTo(dos);
+        HashResult.write(expectedHashes == null ? null : expectedHashes.hashes, dos);
     }
 
     @Override
