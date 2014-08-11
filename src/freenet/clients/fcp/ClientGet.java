@@ -958,14 +958,20 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                     if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
                         DataOutputStream innerDOS = 
                             new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
-                        returnBucketDirect.storeTo(innerDOS);
-                        innerDOS.close();
+                        try {
+                            returnBucketDirect.storeTo(innerDOS);
+                        } finally {
+                            innerDOS.close();
+                        }
                     }
                 } else {
                     DataOutputStream innerDOS = 
                         new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
-                    getFailedMessage.writeTo(innerDOS);
-                    innerDOS.close();
+                    try {
+                        getFailedMessage.writeTo(innerDOS);
+                    } finally {
+                        innerDOS.close();
+                    }
                 }
                 return;
             }
