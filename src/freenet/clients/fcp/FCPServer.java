@@ -19,8 +19,6 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertContext;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DownloadCache;
@@ -69,8 +67,6 @@ public class FCPServer implements Runnable, DownloadCache {
 	final WeakHashMap<String, FCPClient> rebootClientsByName;
 	final FCPClient globalRebootClient;
 	FCPClient globalForeverClient;
-	final FetchContext defaultFetchContext;
-	public InsertContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
 	private boolean assumeDownloadDDAIsAllowed;
@@ -91,12 +87,6 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.neverDropAMessage = neverDropAMessage;
 		this.maxMessageQueueLength = maxMessageQueueLength;
 		rebootClientsByName = new WeakHashMap<String, FCPClient>();
-
-		// This one is only used to get the default settings. Individual FCP conns
-		// will make their own.
-		HighLevelSimpleClient client = core.makeClient((short)0, false, false);
-		defaultFetchContext = client.getFetchContext();
-		defaultInsertContext = client.getInsertContext(false);
 
 		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
 		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
@@ -800,6 +790,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, short returnType, String id, File returnFilename,
 			boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
+	    FetchContext defaultFetchContext = core.clientContext.getDefaultPersistentFetchContext();
 		final ClientGet cg =
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,

@@ -11,6 +11,7 @@ import java.util.HashSet;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveManager;
+import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
@@ -338,11 +339,15 @@ public class NodeClientCore implements Persistable {
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom, true);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
 		        persistentTempDir.dir(), minDiskFreeLongTerm);
+		HighLevelSimpleClient client = makeClient((short)0, false, false);
+		FetchContext defaultFetchContext = client.getFetchContext();
+		InsertContext defaultInsertContext = client.getInsertContext(false);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit);
+		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit,
+		        defaultFetchContext, defaultInsertContext);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);

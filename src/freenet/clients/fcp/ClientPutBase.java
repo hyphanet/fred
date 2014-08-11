@@ -80,7 +80,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
-		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
+		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -120,7 +120,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
-		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
+		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;

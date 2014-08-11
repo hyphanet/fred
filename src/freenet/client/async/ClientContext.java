@@ -6,8 +6,11 @@ package freenet.client.async;
 import java.util.Random;
 
 import freenet.client.ArchiveManager;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.fcp.FCPPersistentRoot;
 import freenet.crypt.RandomSource;
@@ -75,6 +78,8 @@ public class ClientContext {
 	 * entirely in memory, which saves a lot of seeks and improves robustness. */
 	public transient final MemoryLimitedJobRunner memoryLimitedJobRunner;
 	public transient final FCPPersistentRoot persistentRoot;
+	private transient FetchContext defaultPersistentFetchContext;
+	private transient InsertContext defaultPersistentInsertContext;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -90,7 +95,8 @@ public class ClientContext {
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
 			RealCompressor rc, DatastoreChecker checker, FCPPersistentRoot persistentRoot,
-			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
+			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit,
+			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
 		this.bootID = bootID;
 		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
@@ -118,6 +124,8 @@ public class ClientContext {
 		this.tempRAFFactory = rafFactory; 
 		this.persistentRoot = persistentRoot;
 		this.dummyJobRunner = new DummyJobRunner(mainExecutor, this);
+		this.defaultPersistentFetchContext = defaultPersistentFetchContext;
+		this.defaultPersistentInsertContext = defaultPersistentInsertContext;
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
@@ -277,6 +285,14 @@ public class ClientContext {
 
     public InsertCompressorTracker getInsertCompressors(boolean persistent) {
         return persistent ? persistentInsertCompressors : transientInsertCompressors;
+    }
+
+    public FetchContext getDefaultPersistentFetchContext() {
+        return new FetchContext(defaultPersistentFetchContext, FetchContext.IDENTICAL_MASK);
+    }
+    
+    public InsertContext getDefaultPersistentInsertContext() {
+        return new InsertContext(defaultPersistentInsertContext, new SimpleEventProducer());
     }
 	
 }
