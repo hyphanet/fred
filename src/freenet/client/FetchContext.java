@@ -3,12 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import freenet.client.async.BlockSet;
+import freenet.client.async.StorageFormatException;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.FoundURICallback;
@@ -229,7 +232,7 @@ public class FetchContext implements Cloneable, Serializable {
 		else throw new IllegalArgumentException();
 	}
 
-	/** Make public, but just call parent for a field for field copy */
+    /** Make public, but just call parent for a field for field copy */
 	@Override
 	public FetchContext clone() {
 		try {
@@ -319,4 +322,80 @@ public class FetchContext implements Cloneable, Serializable {
         dos.writeBoolean(ignoreUSKDatehints);
         // Ignore useNewSplitfileCodeTransient, it will go away soon.
     }
+    
+    /** Create from a saved form, e.g. for restarting a request from scratch. Will create its own
+     * SimpleEventProducer.
+     * @param dis
+     * @throws StorageFormatException If the data is badly formatted or cannot be read.
+     * @throws IOException If unable to read from the stream.
+     */
+    public FetchContext(DataInputStream dis) throws StorageFormatException, IOException {
+        long magic = dis.readLong();
+        if(magic != CLIENT_DETAIL_MAGIC) 
+            throw new StorageFormatException("Bad magic for fetch settings (FetchContext)");
+        int version = dis.readInt();
+        if(version != CLIENT_DETAIL_VERSION)
+            throw new StorageFormatException("Bad version for fetch settings (FetchContext)");
+        maxOutputLength = dis.readLong();
+        if(maxOutputLength < 0) throw new StorageFormatException("Bad max output length");
+        maxTempLength = dis.readLong();
+        if(maxTempLength < 0) throw new StorageFormatException("Bad max temp length");
+        maxRecursionLevel = dis.readInt();
+        if(maxRecursionLevel < 0) throw new StorageFormatException("Bad max recursion level");
+        maxArchiveRestarts = dis.readInt();
+        if(maxArchiveRestarts < 0) throw new StorageFormatException("Bad max archive restarts");
+        maxArchiveLevels = dis.readInt();
+        if(maxArchiveLevels < 0) throw new StorageFormatException("Bad max archive levels");
+        dontEnterImplicitArchives = dis.readBoolean();
+        maxSplitfileBlockRetries = dis.readInt();
+        if(maxSplitfileBlockRetries < -1) throw new StorageFormatException("Bad max splitfile block retries");
+        maxNonSplitfileRetries = dis.readInt();
+        if(maxNonSplitfileRetries < -1) throw new StorageFormatException("Bad non-splitfile retries");
+        maxUSKRetries = dis.readInt();
+        if(maxUSKRetries < -1) throw new StorageFormatException("Bad max USK retries");
+        allowSplitfiles = dis.readBoolean();
+        followRedirects = dis.readBoolean();
+        localRequestOnly = dis.readBoolean();
+        ignoreStore = dis.readBoolean();
+        maxMetadataSize = dis.readInt();
+        if(maxMetadataSize < 0) throw new StorageFormatException("Bad max metadata size");
+        maxDataBlocksPerSegment = dis.readInt();
+        if(maxDataBlocksPerSegment < 0 || maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new StorageFormatException("Bad max blocks per segment");
+        maxCheckBlocksPerSegment = dis.readInt();
+        if(maxCheckBlocksPerSegment < 0 || maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new StorageFormatException("Bad max blocks per segment");
+        returnZIPManifests = dis.readBoolean();
+        filterData = dis.readBoolean();
+        ignoreTooManyPathComponents = dis.readBoolean();
+        int x = dis.readInt();
+        if(x < 0) throw new StorageFormatException("Bad allowed MIME types length "+x);
+        if(x == 0) {
+            allowedMIMETypes = null;
+        } else {
+            allowedMIMETypes = new HashSet<String>();
+            for(int i=0;i<x;i++) {
+                allowedMIMETypes.add(dis.readUTF());
+            }
+        }
+        String s = dis.readUTF();
+        if(s.equals(""))
+            charset = null;
+        else
+            charset = s;
+        canWriteClientCache = dis.readBoolean();
+        s = dis.readUTF();
+        if(s.equals(""))
+            overrideMIME = null;
+        else
+            overrideMIME = s;
+        cooldownRetries = dis.readInt();
+        cooldownTime = dis.readLong();
+        ignoreUSKDatehints = dis.readBoolean();
+        hasOwnEventProducer = true;
+        eventProducer = new SimpleEventProducer();
+        blocks = null;
+    }
+
+
 }

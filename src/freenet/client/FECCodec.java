@@ -6,6 +6,7 @@ package freenet.client;
 public abstract class FECCodec {
     
     public static final long MIN_MEMORY_ALLOCATION = 8*1024*1024+256*1024;
+    public static final int MAX_TOTAL_BLOCKS_PER_SEGMENT = 256;
     
     /** Maximum memory usage with the given number of data blocks and check blocks, not including 
      * the blocks themselves. */
