@@ -129,9 +129,20 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         System.err.println("Failed to load a request: "+t);
                         t.printStackTrace();
                     }
-                    // Skip the recovery data.
-                    // FIXME use the recovery data to restart if necessary.
-                    skipChecksummedObject(ois, length);
+                    if(requests[i] == null) {
+                        try {
+                            requests[i] = readRequestFromRecoveryData(ois, length, req);
+                        } catch (ChecksumFailedException e) {
+                            Logger.error(this, "Failed to recovery a request (checksum failed)");
+                            System.err.println("Failed to recovery a request (checksum failed)");
+                        } catch (StorageFormatException e) {
+                            Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
+                            System.err.println("Failed to recovery a request (storage format): "+e);
+                            e.printStackTrace();
+                        }
+                    } else {
+                        skipChecksummedObject(ois, length);
+                    }
                 }
                 PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
                 this.bandwidthStatsPutter.addFrom(storedStatsPutter);
@@ -272,6 +283,27 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             Logger.error(this, "Unable to write recovery data for "+req+" : "+e, e);
             os.writeLong(0);
             os.write(checker.appendChecksum(new byte[] { }));
+        }
+    }
+    
+    private ClientRequest readRequestFromRecoveryData(ObjectInputStream ois, long totalLength, RequestIdentifier reqID) throws IOException, ChecksumFailedException, StorageFormatException {
+        long length = ois.readLong();
+        if(length > totalLength) throw new IOException("Too long: "+length+" > "+totalLength);
+        Bucket tmp = null;
+        OutputStream os = null;
+        DataInputStream tmpIS = null;
+        try {
+            tmp = tempBucketFactory.makeBucket(length);
+            os = tmp.getOutputStream();
+            checker.copyAndStripChecksum(ois, os, length);
+            os.close();
+            tmpIS = new DataInputStream(tmp.getInputStream());
+            return ClientRequest.restartFrom(tmpIS, reqID);
+        } finally {
+            // Don't use Closer because we *DO* want the IOException's.
+            if(tmpIS != null) tmpIS.close();
+            if(os != null) os.close();
+            if(tmp != null) tmp.free();
         }
     }
 

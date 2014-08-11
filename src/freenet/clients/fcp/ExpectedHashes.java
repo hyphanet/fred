@@ -21,6 +21,12 @@ public class ExpectedHashes extends FCPMessage {
 		this.hashes = event.hashes;
 	}
 	
+    ExpectedHashes(HashResult[] hashes, String identifier, boolean global) {
+        this.identifier = identifier;
+        this.global = global;
+        this.hashes = hashes;
+    }
+    
 	protected ExpectedHashes() {
 	    // For serialization.
 	    hashes = null;

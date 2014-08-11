@@ -1,16 +1,21 @@
 package freenet.clients.fcp;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
+import freenet.client.async.StorageFormatException;
+import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
+import freenet.node.RequestStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -179,7 +184,7 @@ public abstract class ClientRequest implements Serializable {
 	    hashCode = 0;
 	}
 
-	/** Lost connection */
+    /** Lost connection */
 	public abstract void onLostConnection(ClientContext context);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
@@ -435,7 +440,7 @@ public abstract class ClientRequest implements Serializable {
 
     public void getClientDetail(DataOutputStream dos) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
-        dos.writeLong(CLIENT_DETAIL_VERSION);
+        dos.writeInt(CLIENT_DETAIL_VERSION);
         // Identify the request first.
         RequestIdentifier req = getRequestIdentifier();
         req.writeTo(dos);
@@ -456,6 +461,36 @@ public abstract class ClientRequest implements Serializable {
         }
         // Stuff that changes on completion
         dos.writeBoolean(finished);
+    }
+    
+    protected ClientRequest(DataInputStream dis, RequestIdentifier reqID) throws IOException, StorageFormatException {
+        long magic = dis.readLong();
+        if(magic != CLIENT_DETAIL_MAGIC)
+            throw new StorageFormatException("Bad magic");
+        int version = dis.readInt();
+        if(version != CLIENT_DETAIL_VERSION)
+            throw new StorageFormatException("Bad version");
+        RequestIdentifier copyReq = new RequestIdentifier(dis);
+        if(!copyReq.equals(reqID))
+            throw new StorageFormatException("Request identifier has changed");
+        realTime = dis.readBoolean();
+        verbosity = dis.readInt();
+        startupTime = dis.readLong();
+        priorityClass = dis.readShort();
+        if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || 
+                priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+            throw new StorageFormatException("Bogus priority");
+        if(dis.readBoolean())
+            clientToken = dis.readUTF();
+        else
+            clientToken = null;
+        finished = dis.readBoolean();
+        persistenceType = PERSIST_FOREVER;
+        origHandler = null;
+        identifier = reqID.identifier;
+        global = reqID.globalQueue;
+        clientName = reqID.clientName;
+        hashCode = super.hashCode();
     }
 
     /** Called just after serializing in the request. Called by the ClientRequester, i.e. the tree 
@@ -482,4 +517,13 @@ public abstract class ClientRequest implements Serializable {
     }
     
     abstract RequestIdentifier.RequestType getType();
+
+    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID) throws StorageFormatException, IOException {
+        switch(reqID.type) {
+        case GET:
+            return ClientGet.restartFrom(dis, reqID);
+        default:
+            return null;
+        }
+    }
 }

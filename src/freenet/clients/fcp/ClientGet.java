@@ -4,6 +4,7 @@
 package freenet.clients.fcp;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import freenet.client.async.CompatibilityAnalyser;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentClientCallback;
 import freenet.client.async.PersistentJob;
+import freenet.client.async.StorageFormatException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.EnterFiniteCooldownEvent;
@@ -158,8 +160,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    targetFile = null;
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
-			getter = new ClientGetter(this, uri, fctx, priorityClass,
-					ret, null, false, null, extensionCheck);
+		getter = makeGetter(ret, null, null);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
@@ -218,9 +219,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
-			getter = new ClientGetter(this,
-					uri, fctx, priorityClass,
-					binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, message.getInitialMetadata(), extensionCheck);
+		getter = makeGetter(ret, message.getInitialMetadata(), extensionCheck);
+	}
+	
+	private ClientGetter makeGetter(Bucket ret, Bucket initialMetadata, String extensionCheck) {
+	    return new ClientGetter(this,
+                uri, fctx, priorityClass,
+                binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, initialMetadata, extensionCheck);
 	}
 	
 	protected ClientGet() {
@@ -482,6 +487,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public void onFailure(FetchException e, ClientGetter state) {
 		if(finished) return;
 		synchronized(this) {
+		    if(e.expectedSize != 0)
+		        this.foundDataLength = e.expectedSize;
+		    if(e.getExpectedMimeType() != null)
+		        this.foundDataMimeType = e.getExpectedMimeType();
 			succeeded = false;
 			getFailedMessage = new GetFailedMessage(e, identifier, global);
 			finished = true;
@@ -903,9 +912,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     @Override
     public void getClientDetail(DataOutputStream dos) throws IOException {
-        dos.writeLong(CLIENT_DETAIL_MAGIC);
-        dos.writeLong(CLIENT_DETAIL_VERSION);
         super.getClientDetail(dos);
+        dos.writeLong(CLIENT_DETAIL_MAGIC);
+        dos.writeInt(CLIENT_DETAIL_VERSION);
         // Basic details needed for restarting the request.
         dos.writeShort(returnType);
         if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
@@ -915,11 +924,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         fctx.writeTo(dos);
         if(finished) {
             dos.writeBoolean(succeeded);
+            dos.writeLong(foundDataLength);
+            dos.writeUTF(foundDataMimeType);
+            compatMode.writeTo(dos);
+            HashResult.write(expectedHashes.hashes, dos);
             if(succeeded) {
-                dos.writeLong(foundDataLength);
-                dos.writeUTF(foundDataMimeType);
-                compatMode.writeTo(dos);
-                HashResult.write(expectedHashes.hashes, dos);
                 if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
                     returnBucketDirect.storeTo(dos);
                 }
@@ -932,6 +941,68 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                 dos.writeUTF(foundDataMimeType);
                 compatMode.writeTo(dos);
                 HashResult.write(expectedHashes.hashes, dos);
+            }
+        }
+    }
+    
+    public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID) throws StorageFormatException, IOException {
+        return new ClientGet(dis, reqID);
+    }
+    
+    private ClientGet(DataInputStream dis, RequestIdentifier reqID) 
+    throws IOException, StorageFormatException {
+        super(dis, reqID);
+        ClientGetter getter = null;
+        long magic = dis.readLong();
+        if(magic != CLIENT_DETAIL_MAGIC) 
+            throw new StorageFormatException("Bad magic for request");
+        int version = dis.readInt();
+        if(version != CLIENT_DETAIL_VERSION)
+            throw new StorageFormatException("Bad version "+version);
+        returnType = dis.readShort();
+        if(!(returnType == ClientGetMessage.RETURN_TYPE_DIRECT || 
+                returnType == ClientGetMessage.RETURN_TYPE_DISK || 
+                returnType == ClientGetMessage.RETURN_TYPE_NONE))
+            throw new StorageFormatException("Bad return type "+returnType);
+        if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+            targetFile = new File(dis.readUTF());
+        } else {
+            targetFile = null;
+        }
+        binaryBlob = dis.readBoolean();
+        fctx = new FetchContext(dis);
+        if(finished) {
+            succeeded = dis.readBoolean();
+            readTransientProgressFields(dis);
+            if(succeeded) {
+                if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                    throw new UnsupportedOperationException();
+                    // FIXME
+                }
+            } else {
+                getFailedMessage = new GetFailedMessage(dis, reqID, foundDataLength, foundDataMimeType);
+            }
+        } else {
+            getter = ClientGetter.resumeFromTrivialProgress(dis);
+            if(getter != null) {
+                readTransientProgressFields(dis);
+            }
+        }
+        if(getter == null) getter = makeGetter(getBucket(), null, null); // FIXME support initialMetadata, extensionCheck
+        this.getter = getter;
+    }
+
+    private void readTransientProgressFields(DataInputStream dis) throws IOException, StorageFormatException {
+        foundDataLength = dis.readLong();
+        foundDataMimeType = dis.readUTF();
+        compatMode = new CompatibilityAnalyser(dis);
+        HashResult[] hashes = HashResult.readHashes(dis);
+        if(hashes.length == 0) {
+            expectedHashes = null;
+        } else {
+            expectedHashes = new ExpectedHashes(hashes, identifier, global);
+            if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                throw new UnsupportedOperationException(); // FIXME
             }
         }
     }

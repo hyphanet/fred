@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -819,6 +820,11 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         // FIXME do something.
         dos.writeBoolean(false);
         return false;
+    }
+
+    public static ClientGetter resumeFromTrivialProgress(DataInputStream dis) {
+        // FIXME do something.
+        return null;
     }
 
 }
