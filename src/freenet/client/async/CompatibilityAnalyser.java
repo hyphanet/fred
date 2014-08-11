@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -85,11 +86,29 @@ public class CompatibilityAnalyser implements Serializable {
             dos.writeBoolean(false);
         } else {
             dos.writeBoolean(true);
+            assert(cryptoKey.length == 32);
             dos.write(cryptoKey);
         }
         dos.writeBoolean(dontCompress);
         dos.writeBoolean(definitive);
     }
     
+    public CompatibilityAnalyser(DataInputStream dis) throws IOException, StorageFormatException {
+        int ver = dis.readInt();
+        if(ver != VERSION) throw new StorageFormatException("Unknown version for CompatibilityAnalyser");
+        min = dis.readInt();
+        if(min < 0 || min >= InsertContext.CompatibilityMode.values().length)
+            throw new StorageFormatException("Bad min value");
+        max = dis.readInt();
+        if(max < 0 || max >= InsertContext.CompatibilityMode.values().length)
+            throw new StorageFormatException("Bad max value");
+        if(dis.readBoolean()) {
+            cryptoKey = new byte[32];
+            dis.readFully(cryptoKey);
+        }
+        dontCompress = dis.readBoolean();
+        definitive = dis.readBoolean();
+    }
+
 
 }
