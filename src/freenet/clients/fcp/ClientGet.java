@@ -1029,12 +1029,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                             new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
                         try {
                             returnBucketDirect = BucketTools.restoreFrom(innerDIS);
-                            innerDIS.close();
                         } catch (IOException e) {
                             Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
                             returnBucketDirect = null;
                             succeeded = false;
                             finished = false;
+                        } finally {
+                            innerDIS.close();
                         }
                     } catch (ChecksumFailedException e) {
                         Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
