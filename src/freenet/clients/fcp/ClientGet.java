@@ -1055,6 +1055,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
                     try {
                         getFailedMessage = new GetFailedMessage(innerDIS, reqID, foundDataLength, foundDataMimeType);
+                        started = true;
                     } catch (IOException e) {
                         Logger.error(this, "Unable to restore reason for failure, restarting request : "+e, e);
                         finished = false;
