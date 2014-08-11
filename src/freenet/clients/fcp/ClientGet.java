@@ -8,6 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashSet;
 
 import freenet.client.FetchContext;
@@ -915,6 +916,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         super.getClientDetail(dos);
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);
+        dos.writeUTF(uri.toString());
         // Basic details needed for restarting the request.
         dos.writeShort(returnType);
         if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
@@ -959,6 +961,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         int version = dis.readInt();
         if(version != CLIENT_DETAIL_VERSION)
             throw new StorageFormatException("Bad version "+version);
+        String s = dis.readUTF();
+        try {
+            uri = new FreenetURI(s);
+        } catch (MalformedURLException e) {
+            throw new StorageFormatException("Bad URI");
+        }
         returnType = dis.readShort();
         if(!(returnType == ClientGetMessage.RETURN_TYPE_DIRECT || 
                 returnType == ClientGetMessage.RETURN_TYPE_DISK || 
