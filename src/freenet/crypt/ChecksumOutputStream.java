@@ -25,9 +25,9 @@ public class ChecksumOutputStream extends FilterOutputStream {
     
     @Override
     public void write(int b) throws IOException {
-        if(bytesInsidePrefix++ >= skipPrefix) {
+        if(bytesInsidePrefix >= skipPrefix) {
             crc.update(b);
-        }
+        } else bytesInsidePrefix++;
         out.write(b);
     }
     
