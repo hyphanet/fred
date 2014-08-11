@@ -99,9 +99,6 @@ public class FCPPluginMessage extends DataCarryingMessage {
 
 	@Override
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
-
-		Bucket data2 = this.bucket;
-		
 		PluginTalker pt;
 		try {
 			pt = new PluginTalker(node, handler, pluginname, identifier, handler.hasFullAccess());
@@ -109,7 +106,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN, pluginname + " not found or is not a FCPPlugin", identifier, false);
 		}
 		
-		pt.send(plugparams, data2);
+		pt.send(plugparams, this.bucket);
 
 	}
 
