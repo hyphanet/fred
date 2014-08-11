@@ -13,6 +13,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.crypt.ChecksumChecker;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -535,9 +536,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		System.out.println("Data: "+data);
 	}
 	
-    public byte[] getClientDetail() throws IOException {
+    public byte[] getClientDetail(ChecksumChecker checker) throws IOException {
         if(client instanceof PersistentClientCallback) {
-            return getClientDetail((PersistentClientCallback)client);
+            return getClientDetail((PersistentClientCallback)client, checker);
         } else
             return new byte[0];
     }

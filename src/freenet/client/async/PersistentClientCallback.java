@@ -3,6 +3,8 @@ package freenet.client.async;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import freenet.crypt.ChecksumChecker;
+
 /** Fetches which may be persistent need getClientDetail() so that we can save that data to the 
  * file a splitfile download is using, so that it can be recovered later.
  * @author toad
@@ -27,6 +29,6 @@ public interface PersistentClientCallback extends ClientBaseCallback {
      * splitfile. We do not update this data later on, so when it is restored it may have an out
      * of date priority or client token.
      */
-    public void getClientDetail(DataOutputStream dos) throws IOException;
+    public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException;
     
 }

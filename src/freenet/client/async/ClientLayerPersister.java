@@ -295,7 +295,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         AbortableChecksummedOutputStream oos = checker.checksumWriterWithLength(os, tempBucketFactory);
         DataOutputStream dos = new DataOutputStream(oos);
         try {
-            req.getClientDetail(dos);
+            req.getClientDetail(dos, checker);
             dos.close();
             oos = null;
         } catch (Throwable e) {
@@ -310,7 +310,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         InputStream tmp = checker.checksumReaderWithLength(is, this.tempBucketFactory, totalLength);
         try {
             DataInputStream dis = new DataInputStream(tmp);
-            ClientRequest request = ClientRequest.restartFrom(dis, reqID, getClientContext());
+            ClientRequest request = ClientRequest.restartFrom(dis, reqID, getClientContext(), checker);
             dis.close();
             dis = null;
             tmp = null;

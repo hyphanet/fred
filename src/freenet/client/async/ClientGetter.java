@@ -32,6 +32,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FilterMIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
+import freenet.crypt.ChecksumChecker;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
@@ -777,9 +778,9 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		return binaryBlobWriter.getFinalBucket();
 	}
 	
-    public byte[] getClientDetail() throws IOException {
+    public byte[] getClientDetail(ChecksumChecker checker) throws IOException {
         if(clientCallback instanceof PersistentClientCallback) {
-            return getClientDetail((PersistentClientCallback)clientCallback);
+            return getClientDetail((PersistentClientCallback)clientCallback, checker);
         } else
             return new byte[0];
     }

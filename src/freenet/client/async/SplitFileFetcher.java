@@ -11,6 +11,7 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.crypt.CRCChecksumChecker;
+import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
@@ -104,13 +105,14 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             throw new FetchException(FetchException.CANCELLED);
         
         try {
+            ChecksumChecker checker = new CRCChecksumChecker();
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, getSalter(),
-                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(), 
+                    thisKey, parent.getURI(), isFinalFetch, parent.getClientDetail(checker), 
                     context.random, context.tempBucketFactory, 
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     persistent ? context.jobRunner : context.dummyJobRunner, 
-                    context.ticker, context.memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
+                    context.ticker, context.memoryLimitedJobRunner, checker, persistent);
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {

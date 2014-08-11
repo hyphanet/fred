@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.WeakHashMap;
 
+import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
@@ -342,15 +343,17 @@ public abstract class ClientRequester implements Serializable {
     /** @return A byte[] representing the original client, to be written to the file storing a 
      * persistent download. E.g. for FCP, this will include the Identifier, whether it is on the 
      * global queue and the client name. 
+     * @param checker Used to checksum and isolate large components where we can recover if they 
+     * fail.
      * @throws IOException */
-    public byte[] getClientDetail() throws IOException {
+    public byte[] getClientDetail(ChecksumChecker checker) throws IOException {
         return new byte[0];
     }
     
-    protected static byte[] getClientDetail(PersistentClientCallback callback) throws IOException {
+    protected static byte[] getClientDetail(PersistentClientCallback callback, ChecksumChecker checker) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        callback.getClientDetail(dos);
+        callback.getClientDetail(dos, checker);
         return baos.toByteArray();
     }
     

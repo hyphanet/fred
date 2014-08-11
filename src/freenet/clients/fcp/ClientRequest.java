@@ -12,6 +12,7 @@ import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.StorageFormatException;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
+import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
@@ -438,7 +439,7 @@ public abstract class ClientRequest implements Serializable {
 	private static final long CLIENT_DETAIL_MAGIC = 0xebf0b4f4fa9f6721L;
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
-    public void getClientDetail(DataOutputStream dos) throws IOException {
+    public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);
         // Identify the request first.
@@ -524,10 +525,10 @@ public abstract class ClientRequest implements Serializable {
     abstract RequestIdentifier.RequestType getType();
 
     public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID,
-            ClientContext context) throws StorageFormatException, IOException {
+            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException {
         switch(reqID.type) {
         case GET:
-            return ClientGet.restartFrom(dis, reqID, context);
+            return ClientGet.restartFrom(dis, reqID, context, checker);
         default:
             return null;
         }

@@ -36,12 +36,14 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
+import freenet.crypt.ChecksumChecker;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
@@ -917,8 +919,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
     @Override
-    public void getClientDetail(DataOutputStream dos) throws IOException {
-        super.getClientDetail(dos);
+    public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
+        super.getClientDetail(dos, checker);
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);
         dos.writeUTF(uri.toString());
@@ -953,11 +955,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     }
     
     public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID, 
-            ClientContext context) throws StorageFormatException, IOException {
-        return new ClientGet(dis, reqID, context);
+            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException {
+        return new ClientGet(dis, reqID, context, checker);
     }
     
-    private ClientGet(DataInputStream dis, RequestIdentifier reqID, ClientContext context) 
+    private ClientGet(DataInputStream dis, RequestIdentifier reqID, ClientContext context, ChecksumChecker checker) 
     throws IOException, StorageFormatException {
         super(dis, reqID, context);
         ClientGetter getter = null;
