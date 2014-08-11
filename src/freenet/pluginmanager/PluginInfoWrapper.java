@@ -32,7 +32,12 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isBandwidthIndicator;
 	private final boolean isPortForwardPlugin;
 	private final boolean isMultiplePlugin;
+	/**
+	 * Use {@link #isFCPServerPlugin} instead.
+	 */
+	@Deprecated
 	private final boolean isFCPPlugin;
+	private final boolean isFCPServerPlugin;
 	private final boolean isVersionedPlugin;
 	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
@@ -59,6 +64,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		isFCPPlugin = (plug instanceof FredPluginFCP);
+		isFCPServerPlugin = (plug instanceof FredPluginFCPServer);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
@@ -228,10 +234,18 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return isMultiplePlugin;
 	}
 	
+	/**
+	 * @deprecated Use {@link #isFCPServerPlugin()}
+	 */
+	@Deprecated
 	public boolean isFCPPlugin() {
 		return isFCPPlugin;
 	}
-	
+
+	public boolean isFCPServerPlugin() {
+		return isFCPServerPlugin;
+	}
+
 	public boolean isThemedPlugin() {
 		return isThemedPlugin;
 	}
