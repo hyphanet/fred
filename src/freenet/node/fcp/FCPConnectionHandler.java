@@ -644,9 +644,9 @@ public class FCPConnectionHandler implements Closeable {
 		// will for ever be the right one as it is never replaced. If it returns null, we create one - which can possible happen in multiple threads,
 		// and use the return value of the thread-safe function ConcurrentHashMap.putAbsent() to ensure that concurrent creation of multiple clients returns
 		// the one which actually got into the map.
-		FCPPluginClient client = pluginClientsByPluginName.get(pluginName);
-		if(client != null)
-			return client;
+		FCPPluginClient peekOldClient = pluginClientsByPluginName.get(pluginName);
+		if(peekOldClient != null)
+			return peekOldClient;
 
 		FCPPluginClient newClient = new FCPPluginClient(this, pluginName, server.node.getPluginManager().getPluginFCPServer(pluginName));
 		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
