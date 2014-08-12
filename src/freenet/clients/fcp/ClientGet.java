@@ -679,6 +679,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(data != null) {
 			data.free();
 		}
+		if(initialMetadata != null)
+		    initialMetadata.free();
 	}
 
 	@Override
