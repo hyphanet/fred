@@ -1161,6 +1161,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     public void onResume(ClientContext context) {
         super.onResume(context);
         if(returnBucketDirect != null) returnBucketDirect.onResume(context);
+        if(initialMetadata != null) initialMetadata.onResume(context);
         // We might already have these if we've just restored.
         if(foundDataLength <= 0)
             this.foundDataLength = getter.expectedSize();
