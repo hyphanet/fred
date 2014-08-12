@@ -216,12 +216,18 @@ public abstract class ClientRequester implements Serializable {
 	
 	transient static final UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
 
+    /** A block failed. Count it and notify our clients. */
+    public void failedBlock(boolean dontNotify, ClientContext context) {
+        synchronized(this) {
+            failedBlocks++;
+        }
+        if(!dontNotify)
+            notifyClients(context);
+    }
+
 	/** A block failed. Count it and notify our clients. */
 	public void failedBlock(ClientContext context) {
-		synchronized(this) {
-			failedBlocks++;
-		}
-		notifyClients(context);
+	    failedBlock(false, context);
 	}
 
 	/** A block failed fatally. Count it and notify our clients. */
@@ -378,5 +384,5 @@ public abstract class ClientRequester implements Serializable {
     }
 
     protected abstract ClientBaseCallback getCallback();
-    
+
 }
