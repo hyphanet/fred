@@ -1169,7 +1169,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
     }
     
-    private void writeTransientProgressFields(DataOutputStream dos) throws IOException {
+    private synchronized void writeTransientProgressFields(DataOutputStream dos) throws IOException {
         dos.writeLong(foundDataLength);
         if(foundDataMimeType != null) {
             dos.writeBoolean(true);
