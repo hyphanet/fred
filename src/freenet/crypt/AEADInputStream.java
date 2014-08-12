@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
-import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
@@ -37,7 +36,7 @@ public class AEADInputStream extends FilterInputStream {
         super(is);
         byte[] nonce = new byte[mainCipher.getBlockSize()];
         new DataInputStream(is).readFully(nonce);
-        cipher = new OCBBlockCipher(hashCipher, mainCipher);
+        cipher = new OCBBlockCipher_v149(hashCipher, mainCipher);
         KeyParameter keyParam = new KeyParameter(key);
         AEADParameters params = new AEADParameters(keyParam, MAC_SIZE_BITS, nonce);
         cipher.init(false, params);
