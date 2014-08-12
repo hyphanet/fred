@@ -42,35 +42,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
             innerTestSize(size);
     }
     
-    /** Test that we can read up to the limit, and it is correctly initialised to all 0's. */
-    public void testInitialized() throws IOException {
-        Random r = new Random(21172506);
-        for(long size : fullSizeList)
-            innerTestInitialised(size, r);
-    }
-    
     private static final int BUFFER_SIZE = 65536;
-    
-    protected void innerTestInitialised(long sz, Random r) throws IOException {
-        RandomAccessThing raf = construct(sz);
-        assertEquals(raf.size(), sz);
-        int x = 0;
-        while(x < sz) {
-            int maxRead = (int)Math.min(BUFFER_SIZE, sz - x);
-            int toRead = maxRead == 1 ? 1 : r.nextInt(maxRead-1)+1;
-            byte[] buf = new byte[toRead];
-            raf.pread(x, buf, 0, toRead);
-            assertAllNull(buf);
-            x += toRead;
-        }
-        raf.close();
-        raf.free();
-    }
-    
-    private void assertAllNull(byte[] buf) {
-        for(byte b : buf)
-            assert(b == 0);
-    }
     
     public void testFormula() throws IOException {
         Random r = new Random(2126);
