@@ -14,7 +14,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	private boolean closed = false;
 	private final long length;
 	private final boolean readOnly;
-	private boolean plainDelete;
+	private boolean secureDelete;
 	
 	public RandomAccessFileWrapper(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
 		this.raf = raf;
@@ -98,7 +98,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
     @Override
     public void free() {
         close();
-        if(plainDelete) {
+        if(secureDelete) {
             file.delete();
         } else {
             try {
@@ -110,8 +110,8 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
         }
     }
     
-    public void setPlainDelete(boolean plainDelete) {
-        this.plainDelete = plainDelete;
+    public void setSecureDelete(boolean secureDelete) {
+        this.secureDelete = secureDelete;
     }
 
     @Override
