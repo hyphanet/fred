@@ -521,7 +521,8 @@ public class SplitFileFetcherStorage {
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
             SplitFileFetcherCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec,
-            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, boolean newSalt, KeySalter salt) throws IOException, StorageFormatException, FetchException {
+            Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
+            boolean newSalt, KeySalter salt, boolean resumed) throws IOException, StorageFormatException, FetchException {
         this.persistent = true;
         this.raf = raf;
         this.fetcher = callback;
@@ -742,7 +743,22 @@ public class SplitFileFetcherStorage {
      * @return True if it should be scheduled immediately. If false, the storage layer will 
      * callback into the fetcher later.
      */
-    public boolean start() {
+    public boolean start(boolean resume) {
+        if(resume) {
+            int splitfileDataBlocks = 0, splitfileCheckBlocks = 0, totalCrossCheckBlocks = 0;
+            int succeededBlocks = 0;
+            int failedBlocks = 0;
+            for(SplitFileFetcherSegmentStorage segment : segments) {
+                splitfileDataBlocks += segment.dataBlocks;
+                splitfileCheckBlocks += segment.checkBlocks;
+                totalCrossCheckBlocks += segment.crossSegmentCheckBlocks;
+                succeededBlocks += segment.foundBlocks();
+                failedBlocks += segment.failedBlocks();
+            }
+            fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
+            fetcher.onResume(succeededBlocks, failedBlocks, clientMetadata, finalLength);
+            
+        }
         if(segmentsToTryDecode != null) {
             List<SplitFileFetcherSegmentStorage> brokenSegments;
             synchronized(SplitFileFetcherStorage.this) {

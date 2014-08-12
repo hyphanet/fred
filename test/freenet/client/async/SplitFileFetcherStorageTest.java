@@ -299,7 +299,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessThing raf) throws IOException, StorageFormatException, FetchException {
             assertTrue(persistent);
-            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null);
+            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false);
         }
 
         public FetchContext makeFetchContext() {
@@ -561,6 +561,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
         @Override
         public KeySalter getSalter() {
             return salt;
+        }
+
+        @Override
+        public void onResume(int succeeded, int failed, ClientMetadata mimeType, long finalSize) {
+            // Ignore.
         }
         
     }
@@ -1087,7 +1092,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             try {
                 storage = test.createStorage(cb, ctx, cb.getRAF());
                 assertTrue(i != 2);
-                storage.start();
+                storage.start(false);
             } catch (FetchException e) {
                 if(i != 2) throw e; // Already failed on the final iteration, otherwise is an error.
                 return;
@@ -1127,7 +1132,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 exec.waitForIdle();
                 storage = test.createStorage(cb, test.makeFetchContext(), cb.getRAF());
                 segment = storage.segments[0];
-                storage.start();
+                storage.start(false);
             }
         }
         //printChosenBlocks(hits);

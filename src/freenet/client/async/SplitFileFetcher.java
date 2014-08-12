@@ -149,7 +149,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
 
     @Override
     public void schedule(ClientContext context) throws KeyListenerConstructionException {
-        if(storage.start())
+        if(storage.start(false))
             getter.schedule(context, false);
     }
     
@@ -275,6 +275,26 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     public void onFailedBlock() {
         parent.failedBlock(context);
     }
+    
+    @Override
+    public void onResume(int succeededBlocks, int failedBlocks, ClientMetadata meta, long finalSize) {
+        for(int i=0;i<succeededBlocks-1;i++)
+            parent.completedBlock(true, context);
+        if(succeededBlocks > 0)
+            parent.completedBlock(false, context);
+        for(int i=0;i<failedBlocks-1;i++)
+            parent.failedBlock(true, context);
+        if(failedBlocks > 0)
+            parent.failedBlock(false, context);
+        parent.blockSetFinalized(context);
+        try {
+            cb.onExpectedMIME(meta, context);
+        } catch (FetchException e) {
+            fail(e);
+            return;
+        }
+        cb.onExpectedSize(finalSize, context);
+    }
 
     @Override
     public void maybeAddToBinaryBlob(ClientCHKBlock block) {
@@ -321,6 +341,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     @Override
     public void onResume(ClientContext context) throws FetchException {
         Logger.error(this, "Restarting SplitFileFetcher from storage...");
+        boolean resumed = parent instanceof ClientGetter && ((ClientGetter)parent).resumedFetcher();
         this.context = context;
         try {
             KeySalter salter = getSalter();
@@ -328,7 +349,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
-                    context.jobRunner.newSalt(), salter);
+                    context.jobRunner.newSalt(), salter, resumed);
         } catch (ResumeFailedException e) {
             raf.free();
             Logger.error(this, "Failed to resume storage file: "+e+" for "+raf, e);
@@ -347,7 +368,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         }
         getter = new SplitFileFetcherGet(this, storage);
         try {
-            if(storage.start())
+            if(storage.start(resumed))
                 getter.schedule(context, storage.hasCheckedStore());
         } catch (KeyListenerConstructionException e) {
             Logger.error(this, "Key listener construction failed during resume: "+e, e);
@@ -373,11 +394,13 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         dos.writeBoolean(true);
         raf.storeTo(dos);
         dos.writeLong(token);
+        System.err.println("Stored splitfile progress for "+this);
         return true;
     }
     
     public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context) 
     throws StorageFormatException, ResumeFailedException, IOException {
+        System.err.println("Trying to load splitfile progress");
         this.raf = BucketTools.restoreRAFFrom(dis, context);
         this.parent = getter;
         this.cb = getter;
@@ -387,6 +410,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         this.blockFetchContext = getter.ctx;
         this.wantBinaryBlob = getter.collectingBinaryBlob();
         // onResume() will do the rest.
+        System.err.println("Loaded splitfile progress");
     }
 
 }

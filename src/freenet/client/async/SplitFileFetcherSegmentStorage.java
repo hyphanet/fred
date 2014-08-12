@@ -1179,4 +1179,12 @@ public class SplitFileFetcherSegmentStorage {
         return blocksFetchedCount == blocksForDecode();
     }
 
+    public synchronized int foundBlocks() {
+        return blocksFetchedCount;
+    }
+
+    public synchronized int failedBlocks() {
+        return failedBlocks;
+    }
+
 }
