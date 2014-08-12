@@ -21,6 +21,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.StorageFormatException;
 
 /** Splitfile fetcher based on keeping as much state as possible, and in particular the downloaded blocks,
  * in a single file.

@@ -42,6 +42,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NativeThread;
+import freenet.support.io.StorageFormatException;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
 

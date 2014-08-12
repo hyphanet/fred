@@ -11,12 +11,12 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
-import freenet.client.async.StorageFormatException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.StorageFormatException;
 import freenet.support.SimpleFieldSet;
 
 public class GetFailedMessage extends FCPMessage implements Serializable {

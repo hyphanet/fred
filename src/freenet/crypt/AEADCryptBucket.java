@@ -9,10 +9,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.StorageFormatException;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.StorageFormatException;
 
 /** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
  * Avoid using Closer.close() on InputStream's opened on this Bucket. The MAC is only checked when 

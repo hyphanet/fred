@@ -11,13 +11,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import freenet.client.async.BlockSet;
-import freenet.client.async.StorageFormatException;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.TagReplacerCallback;
 import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.StorageFormatException;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know 
  * about. FIXME these should be final or private, with getters/setters and 

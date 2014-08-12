@@ -53,6 +53,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThingFactory;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThingFactory;
+import freenet.support.io.StorageFormatException;
 import junit.framework.TestCase;
 
 public class SplitFileFetcherStorageTest extends TestCase {

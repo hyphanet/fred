@@ -24,7 +24,6 @@ import freenet.client.async.CompatibilityAnalyser;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentClientCallback;
 import freenet.client.async.PersistentJob;
-import freenet.client.async.StorageFormatException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.EnterFiniteCooldownEvent;
@@ -48,6 +47,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
+import freenet.support.io.StorageFormatException;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large

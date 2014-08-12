@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.StorageFormatException;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;

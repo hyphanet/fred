@@ -9,6 +9,7 @@ import java.util.Arrays;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.support.Logger;
+import freenet.support.io.StorageFormatException;
 
 public class CompatibilityAnalyser implements Serializable {
 

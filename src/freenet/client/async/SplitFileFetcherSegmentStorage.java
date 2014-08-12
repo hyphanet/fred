@@ -27,6 +27,7 @@ import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.NativeThread;
+import freenet.support.io.StorageFormatException;
 
 /** Represents a single segment, in memory and on disk. Handles storage and decoding. Note that the
  * on-disk data, and therefore the read-in metadata, may be inaccurate; we check everything 

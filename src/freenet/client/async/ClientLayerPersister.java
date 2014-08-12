@@ -35,6 +35,7 @@ import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PrependLengthOutputStream;
+import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempBucketFactory;
 
 public class ClientLayerPersister extends PersistentJobRunnerImpl {

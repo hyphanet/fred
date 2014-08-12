@@ -10,7 +10,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
-import freenet.client.async.StorageFormatException;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
@@ -21,6 +20,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
+import freenet.support.io.StorageFormatException;
 
 /**
  * A request process carried out by the node for an FCP client.
