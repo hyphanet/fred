@@ -284,10 +284,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     }
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         if(persistentTemp) {
             context.persistentFileTracker.register(file);
-            // FIXME move file if necessary, like in Bucket.
+            if(!file.exists()) throw new ResumeFailedException("File does not exist");
+            if(length > file.length()) throw new ResumeFailedException("Bad length");
         } else
             throw new UnsupportedOperationException(); // Not persistent.
     }
@@ -322,9 +323,6 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         persistentTemp = dis.readBoolean();
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
-        // FIXME check for existence and length after moving in onResume().
-        if(!file.exists()) throw new IOException("File does not exist");
-        if(length > file.length()) throw new StorageFormatException("Bad length");
     }
 
 }

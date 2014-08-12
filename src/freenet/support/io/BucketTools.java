@@ -569,7 +569,7 @@ public class BucketTools {
     }
     
     public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis) 
-    throws IOException, StorageFormatException {
+    throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
         case PooledRandomAccessFileWrapper.MAGIC:

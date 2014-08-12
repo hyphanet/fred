@@ -134,7 +134,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
         dos.writeBoolean(secureDelete);
     }
 
-    public RandomAccessFileWrapper(DataInputStream dis) throws IOException, StorageFormatException {
+    public RandomAccessFileWrapper(DataInputStream dis) throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         file = new File(dis.readUTF());
@@ -142,9 +142,9 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
         length = dis.readLong();
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
-        // FIXME check for existence and length after moving in onResume().
-        if(!file.exists()) throw new IOException("File does not exist");
-        if(length > file.length()) throw new StorageFormatException("Bad length");
+        // Have to check here because we need the RAF immediately.
+        if(!file.exists()) throw new ResumeFailedException("File does not exist");
+        if(length > file.length()) throw new ResumeFailedException("Bad length");
         this.raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
     }
 
