@@ -371,7 +371,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		File f = getBlobFile();
 		if(f == null) return null;
 		try {
-			return new RandomAccessFileWrapper(f, "r");
+			return new RandomAccessFileWrapper(f, true);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
 			return null;

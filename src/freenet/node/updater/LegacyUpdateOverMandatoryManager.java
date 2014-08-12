@@ -82,7 +82,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		try {
 			
 			try {
-				raf = new RandomAccessFileWrapper(data, "r");
+				raf = new RandomAccessFileWrapper(data, true);
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;

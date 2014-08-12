@@ -24,7 +24,7 @@ public class RandomAccessFileWrapperTest extends RandomAccessThingTestBase {
     @Override
     protected RandomAccessThing construct(long size) throws IOException {
         File f = File.createTempFile("test", ".tmp", base);
-        return new RandomAccessFileWrapper(f, size);
+        return new RandomAccessFileWrapper(f, size, false);
     }
 
 }

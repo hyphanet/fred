@@ -956,7 +956,7 @@ public class DarknetPeerNode extends PeerNode {
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
-				data = new RandomAccessFileWrapper(dest, "rw");
+				data = new RandomAccessFileWrapper(dest, false);
 			} catch (IOException e) {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
@@ -1457,7 +1457,7 @@ public class DarknetPeerNode extends PeerNode {
 	public int sendFileOffer(File file, String message) throws IOException {
 		String fnam = file.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		RandomAccessThing data = new RandomAccessFileWrapper(file, "r");
+		RandomAccessThing data = new RandomAccessFileWrapper(file, true);
 		return sendFileOffer(fnam, mime, message, data);
 	}
 

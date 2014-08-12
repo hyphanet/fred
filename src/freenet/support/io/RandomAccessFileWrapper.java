@@ -14,30 +14,35 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	final File file;
 	private boolean closed = false;
 	private final long length;
+	private final boolean readOnly;
 	
-	public RandomAccessFileWrapper(RandomAccessFile raf, File filename) throws IOException {
+	public RandomAccessFileWrapper(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
 		this.raf = raf;
 		this.file = filename;
 		length = raf.length();
+        this.readOnly = readOnly;
 	}
 	
-	public RandomAccessFileWrapper(File filename, String mode) throws IOException {
-		raf = new RandomAccessFile(filename, mode);
-		length = raf.length();
-		this.file = filename;
-	}
-
-    public RandomAccessFileWrapper(File filename, long length) throws IOException {
-        raf = new RandomAccessFile(filename, "rw");
+    public RandomAccessFileWrapper(File filename, long length, boolean readOnly) throws IOException {
+        raf = new RandomAccessFile(filename, readOnly ? "r" : "rw");
         raf.setLength(length);
         this.length = length;
         this.file = filename;
+        this.readOnly = readOnly;
+    }
+
+    public RandomAccessFileWrapper(File filename, boolean readOnly) throws IOException {
+        raf = new RandomAccessFile(filename, readOnly ? "r" : "rw");
+        this.length = raf.length();
+        this.file = filename;
+        this.readOnly = readOnly;
     }
 
 	@Override
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 	    if(fileOffset < 0) throw new IllegalArgumentException();
+	    if(readOnly) throw new IOException("Read only");
         // FIXME Use NIO (which has proper pread, with concurrency)! This is absurd!
 		synchronized(this) {
 			raf.seek(fileOffset);
