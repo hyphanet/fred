@@ -97,6 +97,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	/** If set, and filtering is enabled, the MIME type we filter with must 
 	 * be compatible with this extension. */
 	final String forceCompatibleExtension;
+	private transient boolean resumedFetcher;
 
 	// Shorter constructors for convenience and backwards compatibility.
 
@@ -209,14 +210,15 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				finalBlocksRequired = 0;
 				finalBlocksTotal = 0;
 				resetBlocks();
-				currentState = SingleFileFetcher.create(this, this,
-						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, context, realTimeFlag, initialMetadata != null);
+				if(!resumedFetcher)
+				    currentState = SingleFileFetcher.create(this, this,
+				            uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
+				            true, context, realTimeFlag, initialMetadata != null);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
 			if(currentState != null && !finished) {
-				if(initialMetadata != null && currentState instanceof SingleFileFetcher) {
+				if(initialMetadata != null && currentState instanceof SingleFileFetcher && !resumedFetcher) {
 					((SingleFileFetcher)currentState).startWithMetadata(initialMetadata, context);
 				} else
 					currentState.schedule(context);
@@ -850,6 +852,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         if(dis.readBoolean()) {
             try {
                 currentState = new SplitFileFetcher(this, dis, context);
+                resumedFetcher = true;
                 return true;
             } catch (StorageFormatException e) {
                 Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
