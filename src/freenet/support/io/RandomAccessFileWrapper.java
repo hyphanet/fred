@@ -44,7 +44,6 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	    if(fileOffset < 0) throw new IllegalArgumentException();
         if(fileOffset + length > this.length)
             throw new IOException("Length limit exceeded");
-	    if(readOnly) throw new IOException("Read only");
         // FIXME Use NIO (which has proper pread, with concurrency)! This is absurd!
 		synchronized(this) {
 			raf.seek(fileOffset);
@@ -58,6 +57,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
         if(fileOffset < 0) throw new IllegalArgumentException();
 	    if(fileOffset + length > this.length)
 	        throw new IOException("Length limit exceeded");
+	    if(readOnly) throw new IOException("Read only");
         // FIXME Use NIO (which has proper pwrite, with concurrency)! This is absurd!
 		synchronized(this) {
 			raf.seek(fileOffset);
