@@ -9,12 +9,12 @@ import freenet.support.Logger;
 
 public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 
-	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
 	final File file;
 	private boolean closed = false;
 	private final long length;
 	private final boolean readOnly;
+	private boolean plainDelete;
 	
 	public RandomAccessFileWrapper(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
 		this.raf = raf;
@@ -98,13 +98,20 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
     @Override
     public void free() {
         close();
-        try {
-            FileUtil.secureDelete(file);
-        } catch (IOException e) {
-            Logger.error(this, "Unable to delete "+file+" : "+e, e);
-            System.err.println("Unable to delete temporary file "+file);
+        if(plainDelete) {
+            file.delete();
+        } else {
+            try {
+                FileUtil.secureDelete(file);
+            } catch (IOException e) {
+                Logger.error(this, "Unable to delete "+file+" : "+e, e);
+                System.err.println("Unable to delete temporary file "+file);
+            }
         }
-        //FIXME filename.delete(); ??
+    }
+    
+    public void setPlainDelete(boolean plainDelete) {
+        this.plainDelete = plainDelete;
     }
 
     @Override
