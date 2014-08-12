@@ -21,6 +21,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 /** Splitfile fetcher based on keeping as much state as possible, and in particular the downloaded blocks,
@@ -321,10 +322,15 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         this.context = context;
         try {
             KeySalter salter = getSalter();
+            raf.onResume(context);
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
                     context.jobRunner.newSalt(), salter);
+        } catch (ResumeFailedException e) {
+            raf.free();
+            Logger.error(this, "Failed to resume storage file: "+e+" for "+raf, e);
+            throw new FetchException(FetchException.BUCKET_ERROR, e);
         } catch (IOException e) {
             raf.free();
             Logger.error(this, "Failed to resume due to I/O error: "+e+" raf = "+raf, e);
@@ -346,7 +352,6 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
             return;
         }
-        raf.onResume(context);
     }
 
     @Override

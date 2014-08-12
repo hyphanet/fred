@@ -40,7 +40,7 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
 
 	/** Called on resuming, i.e. after serialization. Use to e.g. register with the list of 
 	 * temporary files. */
-    public void onResume(ClientContext context);
+    public void onResume(ClientContext context) throws ResumeFailedException;
 
     /** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
      * for recovering in emergencies, should be versioned if necessary. 
