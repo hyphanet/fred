@@ -73,6 +73,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/** Bucket returned when the request was completed, if returnType == RETURN_TYPE_DIRECT. */
 	private Bucket returnBucketDirect;
 	private final boolean binaryBlob;
+	private final String extensionCheck;
 
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -164,6 +165,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    targetFile = null;
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
+		this.extensionCheck = extensionCheck;
 		getter = makeGetter(ret, null, extensionCheck);
 	}
 
@@ -221,6 +223,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             targetFile = null;
             ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
+		this.extensionCheck = extensionCheck;
 		getter = makeGetter(ret, message.getInitialMetadata(), extensionCheck);
 	}
 	
@@ -237,6 +240,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    returnType = 0;
 	    targetFile = null;
 	    binaryBlob = false;
+	    extensionCheck = null;
 	}
 
 	/**
@@ -956,6 +960,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         } finally {
             innerDOS.close();
         }
+        if(extensionCheck != null) {
+            dos.writeBoolean(true);
+            dos.writeUTF(extensionCheck);
+        } else {
+            dos.writeBoolean(false);
+        }
         synchronized(this) {
             if(finished) {
                 dos.writeBoolean(succeeded);
@@ -1046,6 +1056,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         this.fctx = fctx;
         fctx.eventProducer.addEventListener(this);
+        if(dis.readBoolean())
+            extensionCheck = dis.readUTF();
+        else
+            extensionCheck = null;
         if(finished) {
             succeeded = dis.readBoolean();
             readTransientProgressFields(dis);
@@ -1104,7 +1118,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         if(compatMode == null)
             compatMode = new CompatibilityAnalyser();
-        if(getter == null) getter = makeGetter(makeBucket(false), null, null); // FIXME support initialMetadata, extensionCheck
+        if(getter == null) getter = makeGetter(makeBucket(false), null, extensionCheck); // FIXME support initialMetadata, extensionCheck
         this.getter = getter;
     }
 
