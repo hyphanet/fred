@@ -370,6 +370,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             dos.writeBoolean(false);
             return false;
         }
+        dos.writeBoolean(true);
         raf.storeTo(dos);
         dos.writeLong(token);
         return true;
