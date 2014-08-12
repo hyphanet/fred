@@ -43,6 +43,8 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
 import freenet.support.io.InsufficientDiskSpaceException;
+import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -824,14 +826,42 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
      * @throws IOException 
      */
     public boolean writeTrivialProgress(DataOutputStream dos) throws IOException {
-        // FIXME do something.
-        dos.writeBoolean(false);
-        return false;
+        if(this.binaryBlobWriter == null && this.snoopBucket == null && this.snoopMeta == null) {
+            dos.writeBoolean(false);
+            return false;
+        }
+        ClientGetState state = null;
+        synchronized(this) {
+            state = currentState;
+        }
+        if(state == null || !(state instanceof SplitFileFetcher)) {
+            dos.writeBoolean(false);
+            return false;
+        }
+        SplitFileFetcher fetcher = (SplitFileFetcher) state;
+        if(fetcher.cb != this) {
+            dos.writeBoolean(false);
+            return false;
+        }
+        return ((SplitFileFetcher)state).writeTrivialProgress(dos);
     }
 
-    public static ClientGetter resumeFromTrivialProgress(DataInputStream dis) {
-        // FIXME do something.
-        return null;
+    public boolean resumeFromTrivialProgress(DataInputStream dis, ClientContext context) throws IOException {
+        if(dis.readBoolean()) {
+            try {
+                currentState = new SplitFileFetcher(this, dis, context);
+                return true;
+            } catch (StorageFormatException e) {
+                Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
+                return false;
+            } catch (ResumeFailedException e) {
+                Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
+                return false;
+            } catch (IOException e) {
+                Logger.error(this, "Failed to restore from splitfile, restarting: "+e, e);
+                return false;
+            }
+        } else return false;
     }
 
 }

@@ -1130,14 +1130,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                 }
             }
         } else {
-            getter = ClientGetter.resumeFromTrivialProgress(dis);
-            if(getter != null) {
+            getter = makeGetter(makeBucket(false));
+            if(getter.resumeFromTrivialProgress(dis, context)) {
                 readTransientProgressFields(dis);
             }
         }
         if(compatMode == null)
             compatMode = new CompatibilityAnalyser();
-        if(getter == null) getter = makeGetter(makeBucket(false)); 
+        if(getter == null) getter = makeGetter(makeBucket(false));
         this.getter = getter;
     }
 

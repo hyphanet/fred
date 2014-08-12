@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -357,6 +359,33 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     @Override
     public KeySalter getSalter() {
         return context.getChkFetchScheduler(realTimeFlag).getGlobalKeySalter(persistent);
+    }
+
+    public boolean writeTrivialProgress(DataOutputStream dos) throws IOException {
+        boolean done = false;
+        synchronized(this) {
+            done = failed || succeeded;
+        }
+        if(done) {
+            dos.writeBoolean(false);
+            return false;
+        }
+        raf.storeTo(dos);
+        dos.writeLong(token);
+        return true;
+    }
+    
+    public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context) 
+    throws StorageFormatException, ResumeFailedException, IOException {
+        this.raf = BucketTools.restoreRAFFrom(dis, context);
+        this.parent = getter;
+        this.cb = getter;
+        this.persistent = true;
+        this.realTimeFlag = parent.realTimeFlag();
+        token = dis.readLong();
+        this.blockFetchContext = getter.ctx;
+        this.wantBinaryBlob = getter.collectingBinaryBlob();
+        // onResume() will do the rest.
     }
 
 }
