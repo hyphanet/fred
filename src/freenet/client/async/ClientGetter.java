@@ -828,7 +828,7 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
      * @throws IOException 
      */
     public boolean writeTrivialProgress(DataOutputStream dos) throws IOException {
-        if(this.binaryBlobWriter == null && this.snoopBucket == null && this.snoopMeta == null) {
+        if(!(this.binaryBlobWriter == null && this.snoopBucket == null && this.snoopMeta == null && initialMetadata == null)) {
             dos.writeBoolean(false);
             return false;
         }
