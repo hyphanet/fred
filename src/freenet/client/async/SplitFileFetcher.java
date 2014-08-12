@@ -394,13 +394,13 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         dos.writeBoolean(true);
         raf.storeTo(dos);
         dos.writeLong(token);
-        System.err.println("Stored splitfile progress for "+this);
+        Logger.normal(this, "Written splitfile progress (for emergency recovery) for "+this);
         return true;
     }
     
     public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context) 
     throws StorageFormatException, ResumeFailedException, IOException {
-        System.err.println("Trying to load splitfile progress");
+        Logger.normal(this, "Resuming splitfile download for "+this);
         this.raf = BucketTools.restoreRAFFrom(dis, context);
         this.parent = getter;
         this.cb = getter;
@@ -410,7 +410,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         this.blockFetchContext = getter.ctx;
         this.wantBinaryBlob = getter.collectingBinaryBlob();
         // onResume() will do the rest.
-        System.err.println("Loaded splitfile progress");
+        Logger.normal(this, "Resumed splitfile download for "+this);
+        // This is something the user might be interested in, especially if something breaks.
+        System.out.println("Emergency recovery of download successful. Your download will continue from where it left off, in spite of corruption or incompatible serialization changes.");
     }
 
 }
