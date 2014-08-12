@@ -296,7 +296,6 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
         if(persistentTempID != -1) {
-            context.persistentFileTracker.register(file);
             if(!file.exists()) throw new ResumeFailedException("File does not exist");
             if(length > file.length()) throw new ResumeFailedException("Bad length");
         } else
@@ -323,16 +322,32 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     /** Caller has already checked magic 
      * @throws StorageFormatException 
-     * @throws IOException */
-    PooledRandomAccessFileWrapper(DataInputStream dis) throws StorageFormatException, IOException {
+     * @throws IOException 
+     * @throws ResumeFailedException */
+    PooledRandomAccessFileWrapper(DataInputStream dis, ClientContext context) 
+    throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
-        file = new File(dis.readUTF());
+        File f = new File(dis.readUTF());
         readOnly = dis.readBoolean();
         length = dis.readLong();
         persistentTempID = dis.readLong();
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
+        FilenameGenerator fg = context.persistentFG;
+        // File must exist!
+        if(!f.exists()) {
+            // Maybe moved after the last checkpoint?
+            f = fg.getFilename(persistentTempID);
+            if(f.exists()) {
+                context.persistentFileTracker.register(f);
+                file = f;
+                return;
+            }
+        }
+        file = fg.maybeMove(f, persistentTempID);
+        if(!f.exists())
+            throw new ResumeFailedException("Persistent tempfile lost");
     }
 
 }

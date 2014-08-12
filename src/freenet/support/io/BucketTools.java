@@ -16,6 +16,7 @@ import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
@@ -568,12 +569,12 @@ public class BucketTools {
         }
     }
     
-    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis) 
+    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, ClientContext context) 
     throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
         case PooledRandomAccessFileWrapper.MAGIC:
-            return new PooledRandomAccessFileWrapper(dis);
+            return new PooledRandomAccessFileWrapper(dis, context);
         case RandomAccessFileWrapper.MAGIC:
             return new RandomAccessFileWrapper(dis);
         default:
