@@ -567,5 +567,18 @@ public class BucketTools {
             throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }
     }
+    
+    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis) 
+    throws IOException, StorageFormatException {
+        int magic = dis.readInt();
+        switch(magic) {
+        case PooledRandomAccessFileWrapper.MAGIC:
+            return new PooledRandomAccessFileWrapper(dis);
+        case RandomAccessFileWrapper.MAGIC:
+            return new RandomAccessFileWrapper(dis);
+        default:
+            throw new StorageFormatException("Unknown magic value for RAF "+magic);
+        }
+    }
 
 }

@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -286,6 +287,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     public void onResume(ClientContext context) {
         if(persistentTemp) {
             context.persistentFileTracker.register(file);
+            // FIXME move file if necessary, like in Bucket.
         } else
             throw new UnsupportedOperationException(); // Not persistent.
     }
@@ -306,6 +308,23 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         dos.writeLong(length);
         dos.writeBoolean(persistentTemp);
         dos.writeBoolean(secureDelete);
+    }
+
+    /** Caller has already checked magic 
+     * @throws StorageFormatException 
+     * @throws IOException */
+    PooledRandomAccessFileWrapper(DataInputStream dis) throws StorageFormatException, IOException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        file = new File(dis.readUTF());
+        readOnly = dis.readBoolean();
+        length = dis.readLong();
+        persistentTemp = dis.readBoolean();
+        secureDelete = dis.readBoolean();
+        if(length < 0) throw new StorageFormatException("Bad length");
+        // FIXME check for existence and length after moving in onResume().
+        if(!file.exists()) throw new IOException("File does not exist");
+        if(length > file.length()) throw new StorageFormatException("Bad length");
     }
 
 }
