@@ -201,19 +201,20 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 					cancelled = false;
 					finished = false;
 				}
-				expectedMIME = null;
-				if(overrideMIME != null)
-					expectedMIME = overrideMIME;
-				expectedSize = 0;
-				oldHashes = hashes;
-				hashes = null;
-				finalBlocksRequired = 0;
-				finalBlocksTotal = 0;
-				resetBlocks();
-				if(!resumedFetcher)
+				if(!resumedFetcher) {
+	                expectedMIME = null;
+	                expectedSize = 0;
+	                oldHashes = hashes;
+	                hashes = null;
+	                finalBlocksRequired = 0;
+	                finalBlocksTotal = 0;
+	                resetBlocks();
 				    currentState = SingleFileFetcher.create(this, this,
 				            uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
 				            true, context, realTimeFlag, initialMetadata != null);
+				}
+                if(overrideMIME != null)
+                    expectedMIME = overrideMIME;
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
@@ -867,4 +868,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         } else return false;
     }
 
+    public boolean resumedFetcher() {
+        return resumedFetcher;
+    }
+    
 }
