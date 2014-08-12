@@ -1008,8 +1008,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         // Not finished, or was recently not finished.
         // Don't hold lock while calling getter.
         // If it's just finished we get a race and restart. That's okay.
-        if(getter.writeTrivialProgress(dos)) {
-            writeTransientProgressFields(dos);
+        innerDOS = 
+            new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
+        try {
+            if(getter.writeTrivialProgress(innerDOS)) {
+                writeTransientProgressFields(innerDOS);
+            }
+        } finally {
+            innerDOS.close();
         }
     }
     
@@ -1126,8 +1132,20 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             }
         } else {
             getter = makeGetter(makeBucket(false));
-            if(getter.resumeFromTrivialProgress(dis, context)) {
-                readTransientProgressFields(dis);
+            try {
+                DataInputStream innerDIS =
+                    new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
+                try {
+                    if(getter.resumeFromTrivialProgress(innerDIS, context)) {
+                        readTransientProgressFields(innerDIS);
+                    }
+                } catch (IOException e) {
+                    Logger.error(this, "Unable to restore splitfile, restarting: "+e);
+                } finally {
+                    innerDIS.close();
+                }
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Unable to restore splitfile, restarting (checksum failed)");
             }
         }
         if(compatMode == null)
