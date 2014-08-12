@@ -251,14 +251,14 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     public void free() {
         close();
         if(secureDelete) {
-            file.delete();
-        } else {
             try {
                 FileUtil.secureDelete(file);
             } catch (IOException e) {
                 Logger.error(this, "Unable to delete "+file+" : "+e, e);
                 System.err.println("Unable to delete temporary file "+file);
             }
+        } else {
+            file.delete();
         }
     }
     
