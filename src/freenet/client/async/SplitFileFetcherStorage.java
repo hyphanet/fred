@@ -132,7 +132,12 @@ public class SplitFileFetcherStorage {
     final Ticker ticker;
     final PersistentJobRunner jobRunner;
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
+    /** Final length of the downloaded data. *BEFORE* decompression, filtering, etc. I.e. this is 
+     * the length of the data on disk, which will be written by the StreamGenerator. */
     final long finalLength;
+    /** Final length of the downloaded data, after decompression. (May change if the data is 
+     * filtered). */
+    final long decompressedLength;
     final short splitfileType;
     /** MIME type etc. Set on construction and passed to onSuccess(). */
     final ClientMetadata clientMetadata;
@@ -227,6 +232,7 @@ public class SplitFileFetcherStorage {
         this.ticker = ticker;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.finalLength = metadata.dataLength();
+        this.decompressedLength = metadata.uncompressedDataLength();
         this.splitfileType = metadata.getSplitfileType();
         this.fecCodec = FECCodec.getInstance(splitfileType);
         this.decompressors = decompressors;
@@ -608,6 +614,9 @@ public class SplitFileFetcherStorage {
         finalLength = dis.readLong();
         if(finalLength < 0)
             throw new StorageFormatException("Invalid final length "+finalLength);
+        decompressedLength = dis.readLong();
+        if(decompressedLength < 0)
+            throw new StorageFormatException("Invalid decompressed length "+decompressedLength);
         try {
             clientMetadata = ClientMetadata.construct(dis);
         } catch (MetadataParseException e) {
@@ -756,7 +765,7 @@ public class SplitFileFetcherStorage {
                 failedBlocks += segment.failedBlocks();
             }
             fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
-            fetcher.onResume(succeededBlocks, failedBlocks, clientMetadata, finalLength);
+            fetcher.onResume(succeededBlocks, failedBlocks, clientMetadata, decompressedLength);
             
         }
         if(segmentsToTryDecode != null) {
@@ -841,6 +850,7 @@ public class SplitFileFetcherStorage {
                 dos.write(splitfileSingleCryptoKey);
             }
             dos.writeLong(this.finalLength);
+            dos.writeLong(this.decompressedLength);
             clientMetadata.writeTo(dos);
             dos.writeInt(decompressors.size()); // FIXME enforce size limits???
             for(COMPRESSOR_TYPE c : decompressors)

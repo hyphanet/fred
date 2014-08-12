@@ -123,7 +123,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
             throw new FetchException(FetchException.BUCKET_ERROR, e);
         }
-        long eventualLength = Math.max(storage.finalLength, metadata.uncompressedDataLength());
+        long eventualLength = Math.max(storage.decompressedLength, metadata.uncompressedDataLength());
         cb.onExpectedSize(eventualLength, context);
         if(metadata.uncompressedDataLength() > 0)
             cb.onFinalizedMetadata();
