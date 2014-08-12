@@ -929,8 +929,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		
 		Bucket shadow = (finished && succeeded) ? getBucket() : null;
 		if(shadow != null) {
-			dataSize = shadow.size();
-			shadow = shadow.createShadow();
+		    if(dataSize != shadow.size()) {
+		        Logger.error(this, "Size of downloaded data has changed: "+dataSize+" -> "+shadow.size());
+		        shadow = null;
+		    } else {
+		        shadow = shadow.createShadow();
+		    }
 		}
 		
 		boolean filterData;
