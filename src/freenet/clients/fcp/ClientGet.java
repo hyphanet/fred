@@ -164,7 +164,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    targetFile = null;
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
-		getter = makeGetter(ret, null, null);
+		getter = makeGetter(ret, null, extensionCheck);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
