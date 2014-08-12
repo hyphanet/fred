@@ -973,6 +973,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         } else {
             dos.writeBoolean(false);
         }
+        if(initialMetadata != null) {
+            dos.writeBoolean(true);
+            initialMetadata.storeTo(innerDOS);
+        } else {
+            dos.writeBoolean(false);
+        }
         synchronized(this) {
             if(finished) {
                 dos.writeBoolean(succeeded);
@@ -1067,7 +1073,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             extensionCheck = dis.readUTF();
         else
             extensionCheck = null;
-        initialMetadata = null; // FIXME support initialMetadata
+        if(dis.readBoolean()) {
+            initialMetadata = BucketTools.restoreFrom(dis);
+            // No way to recover if we don't have the initialMetadata.
+        } else {
+            initialMetadata = null;
+        }
         if(finished) {
             succeeded = dis.readBoolean();
             readTransientProgressFields(dis);
