@@ -1009,12 +1009,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         // Don't hold lock while calling getter.
         // If it's just finished we get a race and restart. That's okay.
         if(getter.writeTrivialProgress(dos)) {
-            synchronized(this) {
-                dos.writeLong(foundDataLength);
-                dos.writeUTF(foundDataMimeType);
-                compatMode.writeTo(dos);
-                HashResult.write(expectedHashes.hashes, dos);
-            }
+            writeTransientProgressFields(dos);
         }
     }
     
