@@ -927,7 +927,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(target != null)
 			target = new File(target.getPath());
 		
-		Bucket shadow = getBucket();
+		Bucket shadow = (finished && succeeded) ? getBucket() : null;
 		if(shadow != null) {
 			dataSize = shadow.size();
 			shadow = shadow.createShadow();
