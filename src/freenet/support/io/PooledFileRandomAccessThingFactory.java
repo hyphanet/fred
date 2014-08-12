@@ -25,7 +25,7 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
     @Override
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
         File file = fg.makeRandomFile();
-        return new PooledRandomAccessFileWrapper(file, "rw", size, enableCrypto ? seedRandom : null, persistentTemp);
+        return new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, persistentTemp);
     }
 
     @Override

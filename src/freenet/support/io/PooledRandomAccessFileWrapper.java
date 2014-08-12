@@ -23,7 +23,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
     
     public final File file;
-    private final String mode;
+    private final boolean readOnly;
     /** >0 means locked. We will wait until we get the lock if necessary, this is always accurate. 
      * LOCKING: Synchronized on closables (i.e. static, but not the class). */
     private int lockLevel;
@@ -35,9 +35,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     private final boolean persistentTemp;
     private boolean secureDelete;
     
-    public PooledRandomAccessFileWrapper(File file, String mode, long forceLength, Random seedRandom, boolean persistentTemp) throws IOException {
+    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, boolean persistentTemp) throws IOException {
         this.file = file;
-        this.mode = mode;
+        this.readOnly = readOnly;
         this.persistentTemp = persistentTemp;
         lockLevel = 0;
         // Check the parameters and get the length.
@@ -77,7 +77,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
             int offset, int size, boolean persistentTemp) throws IOException {
         this.file = file;
-        this.mode = mode;
+        this.readOnly = false;
         this.length = size;
         this.persistentTemp = persistentTemp;
         lockLevel = 0;
@@ -97,7 +97,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     protected PooledRandomAccessFileWrapper() {
         // For serialization.
         file = null;
-        mode = null;
+        readOnly = false;
         length = 0;
         persistentTemp = false;
     }
@@ -125,6 +125,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
         if(fileOffset < 0) throw new IllegalArgumentException();
+        if(readOnly) throw new IOException("Read only");
         RAFLock lock = lockOpen();
         try {
             if(fileOffset + length > this.length)
@@ -172,7 +173,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                     lockLevel++;
                     OPEN_FDS++;
                     try {
-                        raf = new RandomAccessFile(file, mode);
+                        raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
                     } catch (IOException e) {
                         // Don't call unlock(), don't want to add to closables.
                         lockLevel--;
