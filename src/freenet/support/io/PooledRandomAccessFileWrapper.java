@@ -33,6 +33,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     private final long length;
     private boolean closed;
     private final boolean persistentTemp;
+    private boolean secureDelete;
     
     public PooledRandomAccessFileWrapper(File file, String mode, long forceLength, Random seedRandom, boolean persistentTemp) throws IOException {
         this.file = file;
@@ -228,11 +229,24 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
             closables.notify();
         }
     }
+    
+    public void setSecureDelete(boolean secureDelete) {
+        this.secureDelete = secureDelete;
+    }
 
     @Override
     public void free() {
         close();
-        file.delete();
+        if(secureDelete) {
+            file.delete();
+        } else {
+            try {
+                FileUtil.secureDelete(file);
+            } catch (IOException e) {
+                Logger.error(this, "Unable to delete "+file+" : "+e, e);
+                System.err.println("Unable to delete temporary file "+file);
+            }
+        }
     }
     
     /** Set the size of the fd pool */
