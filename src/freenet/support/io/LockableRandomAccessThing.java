@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
@@ -40,6 +41,11 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
 	/** Called on resuming, i.e. after serialization. Use to e.g. register with the list of 
 	 * temporary files. */
     public void onResume(ClientContext context);
+
+    /** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
+     * for recovering in emergencies, should be versioned if necessary. 
+     * @throws IOException */
+    public void storeTo(DataOutputStream dos) throws IOException;
 	
 }
 

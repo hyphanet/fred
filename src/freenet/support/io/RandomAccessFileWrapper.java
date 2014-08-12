@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -117,6 +118,19 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
     @Override
     public void onResume(ClientContext context) {
         // Ignore.
+    }
+    
+    static final int MAGIC = 0xdd0f4ab2;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeUTF(file.toString());
+        dos.writeBoolean(readOnly);
+        dos.writeLong(length);
+        dos.writeBoolean(secureDelete);
     }
 
 }

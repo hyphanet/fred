@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -88,6 +89,11 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
     @Override
     public void onResume(ClientContext context) {
         // Do nothing.
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) {
+        throw new UnsupportedOperationException();
     }
 
 }

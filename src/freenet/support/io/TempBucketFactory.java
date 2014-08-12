@@ -781,6 +781,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             // Not persistent.
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void storeTo(DataOutputStream dos) throws IOException {
+            throw new UnsupportedOperationException();
+        }
         
 	}
 
