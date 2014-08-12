@@ -222,6 +222,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
 			headers.put("Cache-Control", "private");
 			headers.put("Content-Transfer-Encoding", "binary");
+            headers.put("X-Content-Type-Options", "nosniff");
 			// really the above should be enough, but ...
 			// was application/x-msdownload, but some unix browsers offer to open that in Wine as default!
 			// it is important that this type not be understandable, but application/octet-stream doesn't work.
@@ -265,10 +266,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
 				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + size);
+                retHdr.put("X-Content-Type-Options", "nosniff");
 				context.sendReplyHeadersFProxy(206, "Partial content", retHdr, mimeType, tmpRange.size());
 				context.writeData(tmpRange);
 			} else {
-				context.sendReplyHeadersFProxy(200, "OK", new MultiValueTable<String, String>(), mimeType, size);
+                MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
+                retHdr.put("X-Content-Type-Options", "nosniff");
+                context.sendReplyHeadersFProxy(200, "OK", retHdr, mimeType, size);
 				context.writeData(data);
 			}
 		}
@@ -685,7 +689,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			try {
 				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 			} catch (FetchException e) {
-				fe = fr.failed;
+            fe = e;
 			}
 			if(fetch != null)
 			while(true) {
@@ -700,7 +704,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					try {
 						fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 					} catch (FetchException e) {
-						fe = fr.failed;
+                            fe = e;
 					}
 					if(fetch == null) break;
 					continue;

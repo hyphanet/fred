@@ -36,8 +36,8 @@ public class USKDateHint {
 	}
 	
 	private GregorianCalendar cal;
-	
-	USKDateHint() {
+
+	private USKDateHint() {
 		cal = new GregorianCalendar(TimeZone.getTimeZone("GMT"), Locale.US);
 	}
 	
