@@ -10,12 +10,10 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
     private final FilenameGenerator fg;
     private final Random seedRandom;
     private volatile boolean enableCrypto;
-    private final boolean persistentTemp;
 
-    public PooledFileRandomAccessThingFactory(FilenameGenerator filenameGenerator, Random seedRandom, boolean persistentTemp) {
+    public PooledFileRandomAccessThingFactory(FilenameGenerator filenameGenerator, Random seedRandom) {
         fg = filenameGenerator;
         this.seedRandom = seedRandom;
-        this.persistentTemp = persistentTemp;
     }
     
     public void enableCrypto(boolean enable) {
@@ -24,15 +22,17 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
 
     @Override
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
-        File file = fg.makeRandomFile();
-        return new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, persistentTemp);
+        long id = fg.makeRandomFilename();
+        File file = fg.getFilename(id);
+        return new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, id);
     }
 
     @Override
     public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
             throws IOException {
-        File file = fg.makeRandomFile();
-        return new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, persistentTemp);
+        long id = fg.makeRandomFilename();
+        File file = fg.getFilename(id);
+        return new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id);
     }
 
 }

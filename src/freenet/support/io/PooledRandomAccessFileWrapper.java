@@ -34,13 +34,23 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     private transient RandomAccessFile raf;
     private final long length;
     private boolean closed;
-    private final boolean persistentTemp;
+    /** -1 = not persistent-temp. Otherwise the ID. We need the ID so we can move files if the 
+     * prefix changes. */
+    private final long persistentTempID;
     private boolean secureDelete;
     
-    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, boolean persistentTemp) throws IOException {
+    /** Create a RAF backed by a file.
+     * @param file 
+     * @param readOnly
+     * @param forceLength
+     * @param seedRandom
+     * @param persistentTempID The tempfile ID, or -1.
+     * @throws IOException
+     */
+    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
-        this.persistentTemp = persistentTemp;
+        this.persistentTempID = persistentTempID;
         lockLevel = 0;
         // Check the parameters and get the length.
         // Also, unlock() adds to the closeables queue, which is essential.
@@ -77,11 +87,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     }
 
     public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
-            int offset, int size, boolean persistentTemp) throws IOException {
+            int offset, int size, long persistentTempID) throws IOException {
         this.file = file;
         this.readOnly = false;
         this.length = size;
-        this.persistentTemp = persistentTemp;
+        this.persistentTempID = persistentTempID;
         lockLevel = 0;
         RAFLock lock = lockOpen();
         try {
@@ -101,7 +111,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         file = null;
         readOnly = false;
         length = 0;
-        persistentTemp = false;
+        persistentTempID = -1;
     }
 
     @Override
@@ -285,7 +295,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        if(persistentTemp) {
+        if(persistentTempID != -1) {
             context.persistentFileTracker.register(file);
             if(!file.exists()) throw new ResumeFailedException("File does not exist");
             if(length > file.length()) throw new ResumeFailedException("Bad length");
@@ -307,7 +317,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         dos.writeUTF(file.toString());
         dos.writeBoolean(readOnly);
         dos.writeLong(length);
-        dos.writeBoolean(persistentTemp);
+        dos.writeLong(persistentTempID);
         dos.writeBoolean(secureDelete);
     }
 
@@ -320,7 +330,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         file = new File(dis.readUTF());
         readOnly = dis.readBoolean();
         length = dis.readLong();
-        persistentTemp = dis.readBoolean();
+        persistentTempID = dis.readLong();
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
     }

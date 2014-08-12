@@ -480,7 +480,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG, false);
+		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
 		underlyingDiskRAFFactory.enableCrypto(reallyEncrypt);
 		this.minDiskSpace = minDiskSpace;
 		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 

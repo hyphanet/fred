@@ -336,7 +336,7 @@ public class NodeClientCore implements Persistable {
 
 		long memoryLimitedJobsMemoryLimit = FECCodec.MIN_MEMORY_ALLOCATION; // FIXME
 		LockableRandomAccessThingFactory raff = 
-		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom, true);
+		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
 		        persistentTempDir.dir(), minDiskFreeLongTerm);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
