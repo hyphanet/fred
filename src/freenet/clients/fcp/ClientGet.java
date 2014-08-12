@@ -74,6 +74,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private Bucket returnBucketDirect;
 	private final boolean binaryBlob;
 	private final String extensionCheck;
+	private final Bucket initialMetadata;
 
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -166,7 +167,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
-		getter = makeGetter(ret, null);
+		this.initialMetadata = null;
+		getter = makeGetter(ret);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
@@ -224,10 +226,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
-		getter = makeGetter(ret, message.getInitialMetadata());
+		initialMetadata = message.getInitialMetadata();
+		getter = makeGetter(ret);
 	}
 	
-	private ClientGetter makeGetter(Bucket ret, Bucket initialMetadata) {
+	private ClientGetter makeGetter(Bucket ret) {
 	    return new ClientGetter(this,
                 uri, fctx, priorityClass,
                 binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, initialMetadata, extensionCheck);
@@ -241,6 +244,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    targetFile = null;
 	    binaryBlob = false;
 	    extensionCheck = null;
+	    initialMetadata = null;
 	}
 
 	/**
@@ -666,6 +670,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	protected void freeData() {
+	    // We don't remove the data if written to a file.
 		Bucket data;
 		synchronized(this) {
 			data = returnBucketDirect;
@@ -1060,6 +1065,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             extensionCheck = dis.readUTF();
         else
             extensionCheck = null;
+        initialMetadata = null; // FIXME support initialMetadata
         if(finished) {
             succeeded = dis.readBoolean();
             readTransientProgressFields(dis);
@@ -1118,7 +1124,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         if(compatMode == null)
             compatMode = new CompatibilityAnalyser();
-        if(getter == null) getter = makeGetter(makeBucket(false), null); // FIXME support initialMetadata
+        if(getter == null) getter = makeGetter(makeBucket(false)); 
         this.getter = getter;
     }
 
