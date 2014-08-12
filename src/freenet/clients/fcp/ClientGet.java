@@ -166,7 +166,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
-		getter = makeGetter(ret, null, extensionCheck);
+		getter = makeGetter(ret, null);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
@@ -224,10 +224,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             ret = null; // Let the ClientGetter allocate the Bucket later on.
 		}
 		this.extensionCheck = extensionCheck;
-		getter = makeGetter(ret, message.getInitialMetadata(), extensionCheck);
+		getter = makeGetter(ret, message.getInitialMetadata());
 	}
 	
-	private ClientGetter makeGetter(Bucket ret, Bucket initialMetadata, String extensionCheck) {
+	private ClientGetter makeGetter(Bucket ret, Bucket initialMetadata) {
 	    return new ClientGetter(this,
                 uri, fctx, priorityClass,
                 binaryBlob ? new NullBucket() : ret, binaryBlob ? new BinaryBlobWriter(ret) : null, false, initialMetadata, extensionCheck);
@@ -1118,7 +1118,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         }
         if(compatMode == null)
             compatMode = new CompatibilityAnalyser();
-        if(getter == null) getter = makeGetter(makeBucket(false), null, extensionCheck); // FIXME support initialMetadata, extensionCheck
+        if(getter == null) getter = makeGetter(makeBucket(false), null); // FIXME support initialMetadata
         this.getter = getter;
     }
 
