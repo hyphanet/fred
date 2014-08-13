@@ -125,6 +125,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         PartialLoad loaded = new PartialLoad();
         innerLoad(loaded, filename, true, context, requestStarters, random);
+        if(loaded.salt == null) {
+            salt = new byte[32];
+            random.nextBytes(salt);
+            Logger.error(this, "Checksum failed for salt value");
+            System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+            newSalt = true;
+        } else {
+            salt = loaded.salt;
+        }
         if(!loaded.isEmpty()) {
             onLoading();
             // Resume the requests.
@@ -177,14 +186,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(magic != MAGIC) throw new IOException("Bad magic");
                 int version = ois.readInt();
                 if(version != VERSION) throw new IOException("Bad version");
-                salt = new byte[32];
+                byte[] salt = new byte[32];
                 try {
                     checker.readAndChecksum(ois, salt, 0, salt.length);
+                    if(loaded.salt != null)
+                        loaded.salt = salt;
                 } catch (ChecksumFailedException e1) {
-                    random.nextBytes(salt);
-                    Logger.error(this, "Checksum failed for salt value");
-                    System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
-                    newSalt = true;
+                    Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
                 }
                 // FIXME checksum.
                 ois.readFully(salt);
