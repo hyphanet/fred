@@ -104,9 +104,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests 
             = new HashMap<RequestIdentifier, PartiallyLoadedRequest>();
         
-        byte[] salt;
+        private byte[] salt;
         
-        boolean somethingFailed;
+        private boolean somethingFailed;
         
         /** Add a partially loaded request. 
          * @param reqID The request identifier. Must be non-null; caller should regenerate it if
@@ -132,6 +132,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         public boolean somethingFailed() {
             return somethingFailed;
         }
+
+        public void setSalt(byte[] loadedSalt) {
+            if(salt == null)
+                salt = loadedSalt;
+        }
+
+        public byte[] getSalt() {
+            return salt;
+        }
     }
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
@@ -155,7 +164,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             innerLoad(loaded, backupFilename, true, context, requestStarters, random);
         }
         
-        if(loaded.salt == null) {
+        if(loaded.getSalt() == null) {
             salt = new byte[32];
             random.nextBytes(salt);
             Logger.error(this, "Checksum failed for salt value");
@@ -217,8 +226,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             byte[] salt = new byte[32];
             try {
                 checker.readAndChecksum(ois, salt, 0, salt.length);
-                if(loaded.salt == null)
-                    loaded.salt = salt;
+                loaded.setSalt(salt);
             } catch (ChecksumFailedException e1) {
                 Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
             }
