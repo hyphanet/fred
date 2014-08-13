@@ -29,12 +29,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	}
 
-	final ClientKey key;
+	protected final ClientKey key;
 	protected boolean cancelled;
 	protected boolean finished;
 	final int maxRetries;
 	private int retryCount;
-	final FetchContext ctx;
+	protected final FetchContext ctx;
 	protected boolean deleteFetchContext;
 	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	private int cachedCooldownTries;
