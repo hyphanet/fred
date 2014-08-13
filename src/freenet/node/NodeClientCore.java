@@ -316,8 +316,9 @@ public class NodeClientCore implements Persistable {
         bandwidthStatsPutter = new PersistentStatsPutter();
         
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
-		        node.nodeDir.file("client.dat"), node, persistentTempBucketFactory, 
-		        tempBucketFactory, bandwidthStatsPutter, null);
+		        node, persistentTempBucketFactory, tempBucketFactory, bandwidthStatsPutter);
+		
+		clientLayerPersister.setFiles(node.nodeDir.file("client.dat"), null);
 		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		

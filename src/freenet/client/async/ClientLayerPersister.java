@@ -73,10 +73,6 @@ import freenet.support.io.TempBucketFactory;
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     static final long INTERVAL = MINUTES.toMillis(10);
-    private final File filename;
-    private final File backupFilename;
-    private final Bucket bucket;
-    private final Bucket backupBucket;
     private final Node node; // Needed for bandwidth stats putter
     private final PersistentTempBucketFactory persistentTempFactory;
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
@@ -86,6 +82,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private byte[] salt;
     private boolean newSalt;
     private final ChecksumChecker checker;
+
+    // These can be set later...
+    private File filename;
+    private File backupFilename;
+    private Bucket bucket;
+    private Bucket backupBucket;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
@@ -99,25 +101,30 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      * @param persistentTempFactory Only passed in so that we can call its pre- and post- commit
      * hooks. We don't explicitly save it; it must be populated lazily in onResume() like 
      * everything else. */
-    public ClientLayerPersister(Executor executor, Ticker ticker, File filename, Node node,
+    public ClientLayerPersister(Executor executor, Ticker ticker, Node node,
             PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
-            PersistentStatsPutter stats, DatabaseKey encryptionKey) {
+            PersistentStatsPutter stats) {
         super(executor, ticker, INTERVAL);
-        this.filename = filename;
-        Bucket b = new FileBucket(filename, false, false, false, false, false);
-        if(encryptionKey != null)
-            b = encryptionKey.createEncryptedBucketForClientLayer(b);
-        this.bucket = b;
-        this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
-        b = new FileBucket(backupFilename, true, false, false, false, false);
-        if(encryptionKey != null)
-            b = encryptionKey.createEncryptedBucketForClientLayer(b);
-        this.backupBucket = b;
         this.node = node;
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
         this.checker = new CRCChecksumChecker();
         this.bandwidthStatsPutter = stats;
+    }
+    
+    public void setFiles(File filename, DatabaseKey encryptionKey) {
+        synchronized(serializeCheckpoints) {
+            this.filename = filename;
+            Bucket b = new FileBucket(filename, false, false, false, false, false);
+            if(encryptionKey != null)
+                b = encryptionKey.createEncryptedBucketForClientLayer(b);
+            this.bucket = b;
+            this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
+            b = new FileBucket(backupFilename, true, false, false, false, false);
+            if(encryptionKey != null)
+                b = encryptionKey.createEncryptedBucketForClientLayer(b);
+            this.backupBucket = b;
+        }
     }
     
     private enum RequestLoadStatus {
