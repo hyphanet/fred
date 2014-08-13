@@ -159,8 +159,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             if(loaded.getSalt() == null) {
                 salt = new byte[32];
                 random.nextBytes(salt);
-                Logger.error(this, "Checksum failed for salt value");
-                System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+                if(loaded.doneSomething()) {
+                    Logger.error(this, "Checksum failed for salt value");
+                    System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+                }
                 newSalt = true;
             } else {
                 salt = loaded.salt;
