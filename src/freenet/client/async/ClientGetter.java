@@ -812,6 +812,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
                 currentState = null;
                 Logger.error(this, "Failed to resume: "+e, e);
                 throw new ResumeFailedException(e);
+            } catch (RuntimeException e) {
+                // Severe serialization problems, lost a class silently etc.
+                Logger.error(this, "Failed to resume: "+e, e);
+                throw new ResumeFailedException(e);
             }
         if(returnBucket != null)
             returnBucket.onResume(context);
