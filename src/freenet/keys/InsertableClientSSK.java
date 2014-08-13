@@ -32,7 +32,9 @@ import freenet.support.compress.InvalidCompressionCodecException;
 /** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
 
-	public final DSAPrivateKey privKey;
+    private static final long serialVersionUID = 1L;
+
+    public final DSAPrivateKey privKey;
 	
 	private static boolean logMINOR;
 	static {

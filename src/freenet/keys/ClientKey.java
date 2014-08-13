@@ -1,5 +1,7 @@
 package freenet.keys;
 
+import java.io.Serializable;
+
 /**
  * Base class for client keys.
  * Client keys are decodable. Node keys are not. When data has been fetched
@@ -9,9 +11,11 @@ package freenet.keys;
  * does not know about, but which are in the URI - usually the second part,
  * after the comma.
  */
-public abstract class ClientKey extends BaseClientKey {
+public abstract class ClientKey extends BaseClientKey implements Serializable {
 
-	/**
+    private static final long serialVersionUID = 1L;
+
+    /**
 	 * @return a NodeCHK corresponding to this key. Basically keep the 
 	 * routingKey and lose everything else.
 	 */

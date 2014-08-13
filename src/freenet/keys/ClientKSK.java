@@ -18,7 +18,8 @@ import freenet.crypt.SHA256;
 
 public class ClientKSK extends InsertableClientSSK {
 
-	final String keyword;
+    private static final long serialVersionUID = 1L;
+    final String keyword;
 	
 	private ClientKSK(String keyword, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] keywordHash) throws MalformedURLException {
 		super(keyword, pubKeyHash, pubKey, privKey, keywordHash, Key.ALGO_AES_PCFB_256_SHA256);

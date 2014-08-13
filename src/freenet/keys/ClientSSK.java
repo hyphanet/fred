@@ -23,7 +23,8 @@ import freenet.support.Logger;
  */
 public class ClientSSK extends ClientKey {
 
-	/** Crypto type */
+    private static final long serialVersionUID = 1L;
+    /** Crypto type */
 	public final byte cryptoAlgorithm;
 	/** Document name */
 	public final String docName;
