@@ -202,7 +202,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         try {
                             req.cancel(context);
                         } catch (Throwable t1) {
-                            Logger.error(this, "Unable to terminate "+req+" after failure");
+                            Logger.error(this, "Unable to terminate "+req+" after failure: "+t1, t1);
                         }
                     }
                 }
