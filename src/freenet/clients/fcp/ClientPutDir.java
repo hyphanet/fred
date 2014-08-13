@@ -409,4 +409,9 @@ public class ClientPutDir extends ClientPutBase {
         return RequestType.PUTDIR;
     }
 
+    @Override
+    public boolean fullyResumed() {
+        return false;
+    }
+
 }

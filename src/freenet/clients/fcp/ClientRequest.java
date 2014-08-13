@@ -533,4 +533,9 @@ public abstract class ClientRequest implements Serializable {
             return null;
         }
     }
+
+    /** Return true if we resumed the original fetch from stored data (usually a file for a 
+     * splitfile download), rather than having to restart it (which happens in most other cases
+     * when we resume). */
+    public abstract boolean fullyResumed();
 }

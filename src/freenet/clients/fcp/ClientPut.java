@@ -553,4 +553,10 @@ public class ClientPut extends ClientPutBase {
         return RequestType.PUT;
     }
 
+    @Override
+    public boolean fullyResumed() {
+        // FIXME we might need this in future.
+        return false;
+    }
+
 }

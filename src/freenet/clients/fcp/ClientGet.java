@@ -1201,4 +1201,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     RequestType getType() {
         return RequestType.GET;
     }
+
+    @Override
+    public boolean fullyResumed() {
+        return getter != null && getter.resumedFetcher();
+    }
 }
