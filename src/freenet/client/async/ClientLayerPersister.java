@@ -189,93 +189,95 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
-        PartialLoad loaded = new PartialLoad();
-        if(filename.exists()) {
-            innerLoad(loaded, bucket, true, context, requestStarters, random);
-            if(loaded.somethingFailed()) {
-                if(backupFilename.exists()) {
-                    Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
-                    System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
-                    System.err.println("Some downloads/uploads may be lost or restarted");
-                    innerLoad(loaded, backupBucket, false, context, requestStarters, random);
-                } else {
-                    Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
-                    System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
-                    System.err.println("Some of your downloads/uploads may have been lost or restarted");
+        synchronized(serializeCheckpoints) {
+            PartialLoad loaded = new PartialLoad();
+            if(filename.exists()) {
+                innerLoad(loaded, bucket, true, context, requestStarters, random);
+                if(loaded.somethingFailed()) {
+                    if(backupFilename.exists()) {
+                        Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
+                        System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
+                        System.err.println("Some downloads/uploads may be lost or restarted");
+                        innerLoad(loaded, backupBucket, false, context, requestStarters, random);
+                    } else {
+                        Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
+                        System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
+                        System.err.println("Some of your downloads/uploads may have been lost or restarted");
+                    }
                 }
+            } else {
+                Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
+                innerLoad(loaded, backupBucket, true, context, requestStarters, random);
             }
-        } else {
-            Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
-            innerLoad(loaded, backupBucket, true, context, requestStarters, random);
-        }
-        
-        if(loaded.getSalt() == null) {
-            salt = new byte[32];
-            random.nextBytes(salt);
-            Logger.error(this, "Checksum failed for salt value");
-            System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
-            newSalt = true;
-        } else {
-            salt = loaded.salt;
-        }
-        if(!loaded.isEmpty()) {
-            onLoading();
-            int success = 0;
-            int restoredRestarted = 0;
-            int restoredFully = 0;
-            int failed = 0;
-            // Resume the requests.
-            for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
-                ClientRequest req = partial.request;
-                if(req == null) continue;
-                try {
-                    req.onResume(context);
-                    if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
-                            partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
-                        req.start(context);
-                    }
-                    switch(partial.status) {
-                    case LOADED:
-                        success++;
-                        break;
-                    case RESTORED_FULLY:
-                        restoredFully++;
-                        break;
-                    case RESTORED_RESTARTED:
-                        restoredRestarted++;
-                        break;
-                    case FAILED:
-                        failed++;
-                        break;
-                    }
-                } catch (Throwable t) {
-                    failed++;
-                    System.err.println("Unable to resume request "+req+" after loading it.");
-                    Logger.error(this, "Unable to resume request "+req+" after loading it.");
+            
+            if(loaded.getSalt() == null) {
+                salt = new byte[32];
+                random.nextBytes(salt);
+                Logger.error(this, "Checksum failed for salt value");
+                System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+                newSalt = true;
+            } else {
+                salt = loaded.salt;
+            }
+            if(!loaded.isEmpty()) {
+                onLoading();
+                int success = 0;
+                int restoredRestarted = 0;
+                int restoredFully = 0;
+                int failed = 0;
+                // Resume the requests.
+                for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
+                    ClientRequest req = partial.request;
+                    if(req == null) continue;
                     try {
-                        req.cancel(context);
-                    } catch (Throwable t1) {
-                        Logger.error(this, "Unable to terminate "+req+" after failure");
+                        req.onResume(context);
+                        if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
+                                partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
+                            req.start(context);
+                        }
+                        switch(partial.status) {
+                        case LOADED:
+                            success++;
+                            break;
+                        case RESTORED_FULLY:
+                            restoredFully++;
+                            break;
+                        case RESTORED_RESTARTED:
+                            restoredRestarted++;
+                            break;
+                        case FAILED:
+                            failed++;
+                            break;
+                        }
+                    } catch (Throwable t) {
+                        failed++;
+                        System.err.println("Unable to resume request "+req+" after loading it.");
+                        Logger.error(this, "Unable to resume request "+req+" after loading it.");
+                        try {
+                            req.cancel(context);
+                        } catch (Throwable t1) {
+                            Logger.error(this, "Unable to terminate "+req+" after failure");
+                        }
                     }
                 }
+                if(success > 0)
+                    System.out.println("Resumed "+success+" requests ...");
+                if(restoredFully > 0)
+                    System.out.println("Restored "+restoredFully+" requests (in spite of data corruption)");
+                if(restoredRestarted > 0)
+                    System.out.println("Restarted "+restoredRestarted+" requests (due to data corruption)");
+                if(failed > 0)
+                    System.err.println("Failed to restore "+failed+" requests due to data corruption");
+                onStarted();
+                return;
+            } else {
+                // FIXME backups etc!
+                System.err.println("Starting request persistence layer without resuming ...");
+                salt = new byte[32];
+                random.nextBytes(salt);
+                requestStarters.setGlobalSalt(salt);
+                onStarted();
             }
-            if(success > 0)
-                System.out.println("Resumed "+success+" requests ...");
-            if(restoredFully > 0)
-                System.out.println("Restored "+restoredFully+" requests (in spite of data corruption)");
-            if(restoredRestarted > 0)
-                System.out.println("Restarted "+restoredRestarted+" requests (due to data corruption)");
-            if(failed > 0)
-                System.err.println("Failed to restore "+failed+" requests due to data corruption");
-            onStarted();
-            return;
-        } else {
-            // FIXME backups etc!
-            System.err.println("Starting request persistence layer without resuming ...");
-            salt = new byte[32];
-            random.nextBytes(salt);
-            requestStarters.setGlobalSalt(salt);
-            onStarted();
         }
     }
 

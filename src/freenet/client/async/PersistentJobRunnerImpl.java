@@ -33,7 +33,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     final long checkpointInterval;
     /** Not to be used by child classes. */
     private Object sync = new Object();
-    private Object serializeCheckpoints = new Object();
+    protected Object serializeCheckpoints = new Object();
     private boolean willCheck = false;
     /** Have we started the loading process? If so, we should accept jobs. */
     private boolean loading = false;
