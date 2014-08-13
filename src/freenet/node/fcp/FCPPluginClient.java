@@ -22,8 +22,9 @@ import freenet.support.api.Bucket;
  * <h1>Internals</h1>
  * 
  * <h2>Code path of sending messages</h2>
- * <p>There are two possible code paths which make a client connection happen:<br/>
- * 1. Networked FCP connections:<br/>
+ * <p>There are two possible code paths for client connections, depending upon the location of the client. The server is always running inside the node. 
+ * The two possible paths are:<br/>
+ * 1. The server is running in the node, the client is not - also called networked FCP connections:<br/>
  * - The client connects to the node via network and sends FCP message of type
  *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">FCPPluginMessage</a><br/>
  * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose {@link FCPConnectionInputHandler} receives the FCP message.<br/>
@@ -32,7 +33,7 @@ import freenet.support.api.Bucket;
  * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to obtain the {@link FCPPluginClient} which wants to send.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket)} or
  *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long)} to send the message to the plugin.<br/>
- * 2. Intra-node FCP connections (client and server plugin are running within the same node):</br>
+ * 2. The server and the client are running in the same node, also called intra-node FCP connections:</br>
  * - TODO FIXME: Document.
  * </p>
  * 
