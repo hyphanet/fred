@@ -268,101 +268,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             onStarted();
         }
     }
-    
+
     private void innerLoad(PartialLoad loaded, File filename, boolean latest, 
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws NodeInitException {
         long length = filename.length();
         InputStream fis = null;
         try {
-            // Read everything in first.
             fis = bucket.getInputStream();
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            ObjectInputStream ois = new ObjectInputStream(bis);
-            long magic = ois.readLong();
-            if(magic != MAGIC) throw new IOException("Bad magic");
-            int version = ois.readInt();
-            if(version != VERSION) throw new IOException("Bad version");
-            byte[] salt = new byte[32];
-            try {
-                checker.readAndChecksum(ois, salt, 0, salt.length);
-                loaded.setSalt(salt);
-            } catch (ChecksumFailedException e1) {
-                Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
-            }
-            requestStarters.setGlobalSalt(salt);
-            int requestCount = ois.readInt();
-            for(int i=0;i<requestCount;i++) {
-                ClientRequest request = null;
-                RequestIdentifier reqID = readRequestIdentifier(ois);
-                if(reqID != null && context.persistentRoot.hasRequest(reqID)) {
-                    Logger.error(this, "Not reading request because already have it");
-                    skipChecksummedObject(ois, length); // Request itself
-                    skipChecksummedObject(ois, length); // Recovery data
-                    continue;
-                }
-                try {
-                    request = (ClientRequest) readChecksummedObject(ois, length);
-                    if(reqID != null) {
-                        if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
-                            Logger.error(this, "Request does not match request identifier, discarding");
-                            request = null;
-                        } else {
-                            loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
-                        }
-                    }
-                } catch (ChecksumFailedException e) {
-                    Logger.error(this, "Failed to load request (checksum failed)");
-                    System.err.println("Failed to load a request (checksum failed)");
-                } catch (Throwable t) {
-                    // Some more serious problem. Try to load the rest anyway.
-                    Logger.error(this, "Failed to load request: "+t, t);
-                    System.err.println("Failed to load a request: "+t);
-                    t.printStackTrace();
-                }
-                if(request == null || logMINOR) {
-                    try {
-                        ClientRequest restored = readRequestFromRecoveryData(ois, length, reqID);
-                        if(request == null && restored != null) {
-                            request = restored;
-                            boolean loadedFully = restored.fullyResumed();
-                            loaded.addPartiallyLoadedRequest(reqID, request, 
-                                    loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
-                        }
-                    } catch (ChecksumFailedException e) {
-                        if(request == null) {
-                            Logger.error(this, "Failed to recovery a request (checksum failed)");
-                            System.err.println("Failed to recovery a request (checksum failed)");
-                        } else {
-                            Logger.error(this, "Test recovery failed: Checksum failed for "+reqID);
-                        }
-                        if(request == null)
-                            loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
-                    } catch (StorageFormatException e) {
-                        if(request == null) {
-                            Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
-                            System.err.println("Failed to recovery a request (storage format): "+e);
-                            e.printStackTrace();
-                        } else {
-                            Logger.error(this, "Test recovery failed for "+reqID+" : "+e, e);
-                        }
-                        if(request == null)
-                            loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
-                    }
-                } else {
-                    skipChecksummedObject(ois, length);
-                }
-            }
-            if(latest) {
-                try {
-                    // Don't bother with the buckets to free or the stats unless reading from the latest version (client.dat not client.dat.bak).
-                    readStatsAndBuckets(ois, length, context);
-                } catch (Throwable t) {
-                    Logger.error(this, "Failed to restore stats and delete old temp files: "+t, t);
-                }
-            }
-            ois.close();
-            fis = null;
+            innerLoad(loaded, fis, length, latest, context, requestStarters, random);
         } catch (IOException e) {
             // FIXME tell user more obviously.
             Logger.error(this, "Failed to load persistent requests: "+e, e);
@@ -382,6 +296,97 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 e.printStackTrace();
             }
         }
+    }
+    
+    private void innerLoad(PartialLoad loaded, InputStream fis, long length, boolean latest, 
+            ClientContext context, RequestStarterGroup requestStarters, Random random) 
+    throws NodeInitException, IOException {
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        long magic = ois.readLong();
+        if(magic != MAGIC) throw new IOException("Bad magic");
+        int version = ois.readInt();
+        if(version != VERSION) throw new IOException("Bad version");
+        byte[] salt = new byte[32];
+        try {
+            checker.readAndChecksum(ois, salt, 0, salt.length);
+            loaded.setSalt(salt);
+        } catch (ChecksumFailedException e1) {
+            Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
+        }
+        requestStarters.setGlobalSalt(salt);
+        int requestCount = ois.readInt();
+        for(int i=0;i<requestCount;i++) {
+            ClientRequest request = null;
+            RequestIdentifier reqID = readRequestIdentifier(ois);
+            if(reqID != null && context.persistentRoot.hasRequest(reqID)) {
+                Logger.error(this, "Not reading request because already have it");
+                skipChecksummedObject(ois, length); // Request itself
+                skipChecksummedObject(ois, length); // Recovery data
+                continue;
+            }
+            try {
+                request = (ClientRequest) readChecksummedObject(ois, length);
+                if(reqID != null) {
+                    if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
+                        Logger.error(this, "Request does not match request identifier, discarding");
+                        request = null;
+                    } else {
+                        loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
+                    }
+                }
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Failed to load request (checksum failed)");
+                System.err.println("Failed to load a request (checksum failed)");
+            } catch (Throwable t) {
+                // Some more serious problem. Try to load the rest anyway.
+                Logger.error(this, "Failed to load request: "+t, t);
+                System.err.println("Failed to load a request: "+t);
+                t.printStackTrace();
+            }
+            if(request == null || logMINOR) {
+                try {
+                    ClientRequest restored = readRequestFromRecoveryData(ois, length, reqID);
+                    if(request == null && restored != null) {
+                        request = restored;
+                        boolean loadedFully = restored.fullyResumed();
+                        loaded.addPartiallyLoadedRequest(reqID, request, 
+                                loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
+                    }
+                } catch (ChecksumFailedException e) {
+                    if(request == null) {
+                        Logger.error(this, "Failed to recovery a request (checksum failed)");
+                        System.err.println("Failed to recovery a request (checksum failed)");
+                    } else {
+                        Logger.error(this, "Test recovery failed: Checksum failed for "+reqID);
+                    }
+                    if(request == null)
+                        loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
+                } catch (StorageFormatException e) {
+                    if(request == null) {
+                        Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
+                        System.err.println("Failed to recovery a request (storage format): "+e);
+                        e.printStackTrace();
+                    } else {
+                        Logger.error(this, "Test recovery failed for "+reqID+" : "+e, e);
+                    }
+                    if(request == null)
+                        loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
+                }
+            } else {
+                skipChecksummedObject(ois, length);
+            }
+        }
+        if(latest) {
+            try {
+                // Don't bother with the buckets to free or the stats unless reading from the latest version (client.dat not client.dat.bak).
+                readStatsAndBuckets(ois, length, context);
+            } catch (Throwable t) {
+                Logger.error(this, "Failed to restore stats and delete old temp files: "+t, t);
+            }
+        }
+        ois.close();
+        fis = null;
     }
 
     private void readStatsAndBuckets(ObjectInputStream ois, long length, ClientContext context) throws IOException, ClassNotFoundException {
