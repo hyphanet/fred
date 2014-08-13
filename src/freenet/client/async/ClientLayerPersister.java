@@ -88,6 +88,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private Bucket writeToBucket;
     private File writeToFilename;
     private File writeToBackupFilename;
+    private File deleteAfterSuccessfulWrite;
+    private File otherDeleteAfterSuccessfulWrite;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
@@ -146,6 +148,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             if(clientDatBakCryptExists && loaded.needsMore()) {
                 innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), context, requestStarters, random);
             }
+            
+            deleteAfterSuccessfulWrite = writeEncrypted ? clientDat : clientDatCrypt;
+            otherDeleteAfterSuccessfulWrite = writeEncrypted ? clientDatBak : clientDatBakCrypt;
             
             writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
             writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
@@ -476,10 +481,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(writeToFilename.exists()) {
             FileUtil.renameTo(writeToFilename, writeToBackupFilename);
         }
-        innerSave();
+        if(innerSave()) {
+            if(deleteAfterSuccessfulWrite != null)
+                deleteAfterSuccessfulWrite.delete();
+            if(otherDeleteAfterSuccessfulWrite != null)
+                otherDeleteAfterSuccessfulWrite.delete();
+        }
     }
     
-    private void innerSave() {
+    private boolean innerSave() {
         DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
         OutputStream fos = null;
         try {
@@ -514,9 +524,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             fos = null;
             System.out.println("Saved "+requests.length+" requests to client.dat");
             persistentTempFactory.postCommit(buckets);
+            return true;
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);
             e.printStackTrace();
+            return false;
         } finally {
             try {
                 if(fos != null) fos.close();
