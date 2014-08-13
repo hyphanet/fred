@@ -156,19 +156,17 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
             writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
             
-            if(loaded.getSalt() == null) {
-                salt = new byte[32];
-                random.nextBytes(salt);
-                if(loaded.doneSomething()) {
+            if(loaded.doneSomething()) {
+                onLoading();
+                if(loaded.getSalt() == null) {
+                    salt = new byte[32];
+                    random.nextBytes(salt);
                     Logger.error(this, "Checksum failed for salt value");
                     System.err.println("Salt value corrupted, downloads will need to regenerate Bloom filters, this may cause some delay and disk/CPU usage...");
+                    newSalt = true;
+                } else {
+                    salt = loaded.salt;
                 }
-                newSalt = true;
-            } else {
-                salt = loaded.salt;
-            }
-            if(!loaded.isEmpty()) {
-                onLoading();
                 int success = 0;
                 int restoredRestarted = 0;
                 int restoredFully = 0;
