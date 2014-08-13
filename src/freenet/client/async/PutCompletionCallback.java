@@ -4,6 +4,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.api.Bucket;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Callback called when part of a put request completes.
@@ -49,6 +50,6 @@ public interface PutCompletionCallback {
     /** Called on restarting the node for a persistent request. The request must re-schedule 
      * itself. 
      * @throws InsertException */
-    public void onResume(ClientContext context) throws InsertException;
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException;
 
 }

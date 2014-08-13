@@ -9,6 +9,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.keys.ClientKey;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
@@ -72,12 +73,12 @@ public abstract class SendableInsert extends SendableRequest {
 	
 	private transient boolean resumed = false;
 	
-	public final void onResume(ClientContext context) throws InsertException {
+	public final void onResume(ClientContext context) throws InsertException, ResumeFailedException {
 	    if(resumed) return;
 	    resumed = true;
 	    innerOnResume(context);
 	}
 	
-	protected abstract void innerOnResume(ClientContext context) throws InsertException;
+	protected abstract void innerOnResume(ClientContext context) throws InsertException, ResumeFailedException;
 
 }

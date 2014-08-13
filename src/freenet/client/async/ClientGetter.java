@@ -800,17 +800,18 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
             return new byte[0];
     }
     
-    /** Called for a persistent request after startup. */
+    /** Called for a persistent request after startup. 
+     * @throws ResumeFailedException */
     @Override
-    public void innerOnResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
         super.innerOnResume(context);
         if(currentState != null)
             try {
                 currentState.onResume(context);
             } catch (FetchException e) {
                 currentState = null;
-                this.onFailure(e, null, context);
-                return;
+                Logger.error(this, "Failed to resume: "+e, e);
+                throw new ResumeFailedException(e);
             }
         if(returnBucket != null)
             returnBucket.onResume(context);

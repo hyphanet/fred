@@ -13,6 +13,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.compress.Compressor;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
@@ -124,7 +125,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
     @Override
-    public void innerOnResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
         super.innerOnResume(context);
     }
 

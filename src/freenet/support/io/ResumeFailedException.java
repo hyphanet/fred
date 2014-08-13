@@ -6,4 +6,9 @@ public class ResumeFailedException extends Exception {
         super(message);
     }
 
+    public ResumeFailedException(Throwable e) {
+        super(e.toString());
+        this.initCause(e);
+    }
+
 }

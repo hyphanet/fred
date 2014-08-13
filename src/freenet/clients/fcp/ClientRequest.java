@@ -20,6 +20,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 /**
@@ -506,8 +507,9 @@ public abstract class ClientRequest implements Serializable {
      * etc. The base class implementation in ClientRequest will register the request with an 
      * FCPClient via the new FCPPersistentRoot.
      * @param context Contains all the important system utilities.
+     * @throws ResumeFailedException 
      */
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         client = context.persistentRoot.resume(this, global, clientName);
         lowLevelClient = client.lowLevelClient(realTime);
         this.getClientRequest().onResume(context);

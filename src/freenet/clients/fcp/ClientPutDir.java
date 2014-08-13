@@ -27,6 +27,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileBucket;
+import freenet.support.io.ResumeFailedException;
 
 public class ClientPutDir extends ClientPutBase {
 
@@ -400,7 +401,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 	
 	@Override
-	public void onResume(ClientContext context) {
+	public void onResume(ClientContext context) throws ResumeFailedException {
 	    super.onResume(context);
 	}
 

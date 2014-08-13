@@ -28,6 +28,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NotPersistentBucket;
 import freenet.support.io.NullOutputStream;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -1149,7 +1150,7 @@ class SingleFileInserter implements ClientPutState {
 	private transient boolean resumed = false;
 
     @Override
-    public final void onResume(ClientContext context) throws InsertException {
+    public final void onResume(ClientContext context) throws InsertException, ResumeFailedException {
         if(resumed) return;
         resumed = true;
         if(block != null && block.getData() != null)

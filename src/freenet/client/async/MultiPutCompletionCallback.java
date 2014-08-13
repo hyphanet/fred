@@ -11,6 +11,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ResumeFailedException;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState, Serializable {
 
@@ -298,7 +299,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
     @Override
-    public void onResume(ClientContext context) throws InsertException {
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
         if(resumed) return;
         resumed = true;
         for(ClientPutState s : waitingFor)

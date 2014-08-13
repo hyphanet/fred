@@ -47,6 +47,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
+import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 /**
@@ -1186,7 +1187,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     }
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         super.onResume(context);
         if(returnBucketDirect != null) returnBucketDirect.onResume(context);
         if(initialMetadata != null) initialMetadata.onResume(context);

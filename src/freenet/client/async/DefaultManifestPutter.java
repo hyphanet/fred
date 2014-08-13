@@ -12,6 +12,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.ContainerSizeEstimator;
 import freenet.support.Logger;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * <P>The default manifest putter. It should be choosen if no alternative putter
@@ -414,7 +415,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	}
 
     @Override
-    public void innerOnResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
         super.innerOnResume(context);
         notifyClients(context);
     }

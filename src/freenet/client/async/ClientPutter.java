@@ -21,6 +21,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ResumeFailedException;
 
 /** A high level insert. */
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
@@ -544,7 +545,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     }
 
     @Override
-    public void innerOnResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
         super.innerOnResume(context);
         if(currentState != null) {
             try {

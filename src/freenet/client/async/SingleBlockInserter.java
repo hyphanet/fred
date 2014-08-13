@@ -45,6 +45,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Insert *ONE KEY*.
@@ -738,7 +739,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
     @Override
-    public void innerOnResume(ClientContext context) throws InsertException {
+    public void innerOnResume(ClientContext context) throws InsertException, ResumeFailedException {
         sourceData.onResume(context);
         if(cb != parent) cb.onResume(context);
         this.schedule(context);

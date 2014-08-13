@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import freenet.client.InsertException;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * ClientPutState
@@ -30,6 +31,7 @@ public interface ClientPutState {
     /** Called on restarting the node for a persistent request. The request must re-schedule 
      * itself. Caller must ensure that it is safe to call this method more than once, as we recurse
      * through the graph of dependencies.
-     * @throws InsertException */
-    public void onResume(ClientContext context) throws InsertException;
+     * @throws InsertException 
+     * @throws ResumeFailedException */
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException;
 }

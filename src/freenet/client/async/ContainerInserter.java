@@ -29,6 +29,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Insert a bunch of files as single Archive with .metadata
@@ -361,7 +362,7 @@ public class ContainerInserter implements ClientPutState {
 	private transient boolean resumed = false;
 
     @Override
-    public void onResume(ClientContext context) throws InsertException {
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
         if(resumed) return;
         resumed = true;
         if(cb != null && cb != parent)

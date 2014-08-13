@@ -17,6 +17,7 @@ import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.ResumeFailedException;
 
 /** A high level request or insert. This may create any number of low-level requests of inserts,
  * for example a request may follow redirects, download splitfiles and unpack containers, while an
@@ -366,16 +367,18 @@ public abstract class ClientRequester implements Serializable {
     private transient boolean resumed = false;
     
     /** Called for a persistent request after startup. Should call notifyClients() at the end,
-     * after the callback has been registered etc. */
-    public final void onResume(ClientContext context) {
+     * after the callback has been registered etc. 
+     * @throws ResumeFailedException */
+    public final void onResume(ClientContext context) throws ResumeFailedException {
         if(resumed) return;
         resumed = true;
         innerOnResume(context);
     }
 
     /** Called by onResume() once and only once after restarting. Must be overridden, and must call
-     * super.innerOnResume(). */
-    protected void innerOnResume(ClientContext context) {
+     * super.innerOnResume(). 
+     * @throws ResumeFailedException */
+    protected void innerOnResume(ClientContext context) throws ResumeFailedException {
         ClientBaseCallback cb = getCallback();
         client = cb.getRequestClient();
         requests = new TransientSendableRequestSet();

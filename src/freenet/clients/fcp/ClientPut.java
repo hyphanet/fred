@@ -31,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {
 
@@ -544,7 +545,7 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public void onResume(ClientContext context) {
+	public void onResume(ClientContext context) throws ResumeFailedException {
 	    super.onResume(context);
 	}
 

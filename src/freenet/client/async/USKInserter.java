@@ -21,6 +21,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Insert a USK. The algorithm is simply to do a thorough search for the latest edition, and insert at the
@@ -423,7 +424,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	private transient boolean resumed = false;
 
     @Override
-    public void onResume(ClientContext context) throws InsertException {
+    public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
         if(resumed) return;
         resumed = true;
         if(data != null) data.onResume(context);

@@ -9,6 +9,7 @@ import java.util.Map;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * <P>plain/dumb manifest putter: every file item is a redirect (no containers at all)
@@ -58,7 +59,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
     @Override
-    public void innerOnResume(ClientContext context) {
+    public void innerOnResume(ClientContext context) throws ResumeFailedException {
         super.innerOnResume(context);
         notifyClients(context);
     }
