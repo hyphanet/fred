@@ -340,7 +340,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
 
     @Override
     public void onResume(ClientContext context) throws FetchException {
-        Logger.error(this, "Restarting SplitFileFetcher from storage...");
+        if(logMINOR) Logger.minor(this, "Restarting SplitFileFetcher from storage...");
         boolean resumed = parent instanceof ClientGetter && ((ClientGetter)parent).resumedFetcher();
         this.context = context;
         try {
