@@ -45,7 +45,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private final File filename;
     private final File backupFilename;
     private final FileBucket bucket;
-    private final FileBucket backupBucket;
     private final Node node; // Needed for bandwidth stats putter
     private final PersistentTempBucketFactory persistentTempFactory;
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
@@ -75,7 +74,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.filename = filename;
         this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
         this.bucket = new FileBucket(filename, false, false, false, false, false);
-        this.backupBucket = new FileBucket(backupFilename, true, false, false, false, false);
         this.node = node;
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
@@ -247,8 +245,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     throws NodeInitException {
         long length = filename.length();
         InputStream fis = null;
-        ClientRequest[] requests;
-        boolean[] recovered;
         try {
             // Read everything in first.
             fis = bucket.getInputStream();
@@ -267,9 +263,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             requestStarters.setGlobalSalt(salt);
             int requestCount = ois.readInt();
-            requests = new ClientRequest[requestCount];
-            recovered = new boolean[requestCount];
             for(int i=0;i<requestCount;i++) {
+                ClientRequest request = null;
                 RequestIdentifier reqID = readRequestIdentifier(ois);
                 if(reqID != null && context.persistentRoot.hasRequest(reqID)) {
                     Logger.error(this, "Not reading request because already have it");
@@ -278,13 +273,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     continue;
                 }
                 try {
-                    requests[i] = (ClientRequest) readChecksummedObject(ois, length);
+                    request = (ClientRequest) readChecksummedObject(ois, length);
                     if(reqID != null) {
-                        if(!reqID.sameIdentifier(requests[i].getRequestIdentifier())) {
+                        if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
                             Logger.error(this, "Request does not match request identifier, discarding");
-                            requests[i] = null;
+                            request = null;
                         } else {
-                            loaded.addPartiallyLoadedRequest(reqID, requests[i], RequestLoadStatus.LOADED);
+                            loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
                         }
                     }
                 } catch (ChecksumFailedException e) {
@@ -296,34 +291,33 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     System.err.println("Failed to load a request: "+t);
                     t.printStackTrace();
                 }
-                if(requests[i] == null || logMINOR) {
+                if(request == null || logMINOR) {
                     try {
                         ClientRequest restored = readRequestFromRecoveryData(ois, length, reqID);
-                        if(requests[i] == null) {
-                            requests[i] = restored;
-                            recovered[i] = true;
+                        if(request == null) {
+                            request = restored;
                             boolean loadedFully = restored.fullyResumed();
-                            loaded.addPartiallyLoadedRequest(reqID, requests[i], 
+                            loaded.addPartiallyLoadedRequest(reqID, request, 
                                     loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
                         }
                     } catch (ChecksumFailedException e) {
-                        if(requests[i] == null) {
+                        if(request == null) {
                             Logger.error(this, "Failed to recovery a request (checksum failed)");
                             System.err.println("Failed to recovery a request (checksum failed)");
                         } else {
                             Logger.error(this, "Test recovery failed: Checksum failed for "+reqID);
                         }
-                        if(requests[i] == null)
+                        if(request == null)
                             loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
                     } catch (StorageFormatException e) {
-                        if(requests[i] == null) {
+                        if(request == null) {
                             Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
                             System.err.println("Failed to recovery a request (storage format): "+e);
                             e.printStackTrace();
                         } else {
                             Logger.error(this, "Test recovery failed for "+reqID+" : "+e, e);
                         }
-                        if(requests[i] == null)
+                        if(request == null)
                             loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
                     }
                 } else {
