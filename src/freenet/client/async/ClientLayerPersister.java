@@ -198,7 +198,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     } catch (Throwable t) {
                         failed++;
                         System.err.println("Unable to resume request "+req+" after loading it.");
-                        Logger.error(this, "Unable to resume request "+req+" after loading it.");
+                        Logger.error(this, "Unable to resume request "+req+" after loading it: "+t, t);
                         try {
                             req.cancel(context);
                         } catch (Throwable t1) {
