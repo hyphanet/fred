@@ -121,6 +121,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
+            // Some serialization failures cause us to fail only at the point of scheduling the request.
+            // So if that happens we need to retry with serialization turned off.
+            // The requests that loaded fine already will not be affected as we check for duplicates.
             if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context, 
                     requestStarters, random)) {
                 Logger.error(this, "Some requests failed to restart after serializing. Trying to recover/restart ...");
