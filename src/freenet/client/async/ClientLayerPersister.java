@@ -113,6 +113,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
          * necessary. */
         void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request, 
                 RequestLoadStatus status) {
+            if(reqID == null) {
+                if(request == null) {
+                    somethingFailed = true;
+                    return;
+                } else {
+                    reqID = request.getRequestIdentifier();
+                }
+            }
             PartiallyLoadedRequest old = partiallyLoadedRequests.get(reqID);
             if(old == null || old.status.ordinal() > status.ordinal()) {
                 partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
@@ -180,6 +188,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             // Resume the requests.
             for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
                 ClientRequest req = partial.request;
+                if(req == null) continue;
                 try {
                     req.onResume(context);
                     if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
@@ -288,7 +297,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         } else {
                             Logger.error(this, "Test recovery failed: Checksum failed for "+req);
                         }
-                        loaded.setSomethingFailed();
+                        if(requests[i] == null)
+                            loaded.addPartiallyLoadedRequest(req, null, RequestLoadStatus.FAILED);
                     } catch (StorageFormatException e) {
                         if(requests[i] == null) {
                             Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
@@ -297,7 +307,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         } else {
                             Logger.error(this, "Test recovery failed for "+req+" : "+e, e);
                         }
-                        loaded.setSomethingFailed();
+                        if(requests[i] == null)
+                            loaded.addPartiallyLoadedRequest(req, null, RequestLoadStatus.FAILED);
                     }
                 } else {
                     skipChecksummedObject(ois, length);
