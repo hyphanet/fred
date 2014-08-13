@@ -509,12 +509,16 @@ public abstract class ClientRequest implements Serializable {
      * @param context Contains all the important system utilities.
      * @throws ResumeFailedException 
      */
-    public void onResume(ClientContext context) throws ResumeFailedException {
-        client = context.persistentRoot.resume(this, global, clientName);
+    public final void onResume(ClientContext context) throws ResumeFailedException {
+        client = context.persistentRoot.makeClient(global, clientName);
         lowLevelClient = client.lowLevelClient(realTime);
+        innerResume(context);
         this.getClientRequest().onResume(context);
+        context.persistentRoot.resume(this, global, clientName);
     }
     
+    protected abstract void innerResume(ClientContext context) throws ResumeFailedException;
+
     public RequestClient getRequestClient() {
         return lowLevelClient;
     }

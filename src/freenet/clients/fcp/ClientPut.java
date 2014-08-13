@@ -545,8 +545,8 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public void onResume(ClientContext context) throws ResumeFailedException {
-	    super.onResume(context);
+	public void innerResume(ClientContext context) throws ResumeFailedException {
+	    // Do nothing.
 	}
 
     @Override

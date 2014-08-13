@@ -1187,8 +1187,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     }
 
     @Override
-    public void onResume(ClientContext context) throws ResumeFailedException {
-        super.onResume(context);
+    protected void innerResume(ClientContext context) throws ResumeFailedException {
         if(returnBucketDirect != null) returnBucketDirect.onResume(context);
         if(initialMetadata != null) initialMetadata.onResume(context);
         // We might already have these if we've just restored.
