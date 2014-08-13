@@ -103,7 +103,8 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	class MySendableInsert extends SimpleSendableInsert {
 
-		final int blockNum;
+        private static final long serialVersionUID = 1L;
+        final int blockNum;
 		private int consecutiveRNFs;
 		private int retries;
 

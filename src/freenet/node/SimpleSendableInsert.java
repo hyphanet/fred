@@ -23,7 +23,8 @@ import freenet.support.Logger.LogLevel;
  */
 public class SimpleSendableInsert extends SendableInsert {
 
-	public final KeyBlock block;
+    private static final long serialVersionUID = 1L;
+    public final KeyBlock block;
 	public final short prioClass;
 	private boolean finished;
 	public final RequestClient client;

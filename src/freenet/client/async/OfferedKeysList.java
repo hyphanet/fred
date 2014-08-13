@@ -37,6 +37,7 @@ import freenet.support.Logger.LogLevel;
  * @author toad
  *
  */
+@SuppressWarnings("serial") // We don't serialize this.
 public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	private final HashSet<Key> keys;

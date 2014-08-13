@@ -171,7 +171,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return true;
 	}
 	
-	class DBRFetcher extends SimpleSingleFileFetcher {
+	@SuppressWarnings("serial")
+    class DBRFetcher extends SimpleSingleFileFetcher {
 
 		DBRFetcher(ClientKey key, int maxRetries, FetchContext ctx,
 				ClientRequester parent, GetCompletionCallback rcb,
@@ -1396,7 +1397,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return true;
 	}
 	
-	class StoreCheckerGetter extends SendableGet {
+	@SuppressWarnings("serial")
+    class StoreCheckerGetter extends SendableGet {
 		
 		public StoreCheckerGetter(ClientRequester parent, USKStoreChecker c) {
 			super(parent, USKFetcher.this.realTimeFlag);

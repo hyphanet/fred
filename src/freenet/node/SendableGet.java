@@ -20,7 +20,8 @@ import freenet.support.io.NativeThread;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableGet extends BaseSendableGet {
 
-	/** Parent BaseClientGetter. Required for schedulers. */
+    private static final long serialVersionUID = 1L;
+    /** Parent BaseClientGetter. Required for schedulers. */
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */

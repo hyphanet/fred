@@ -22,7 +22,9 @@ import freenet.support.TimeUtil;
 
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
 
-	public static class MyCooldownTrackerItem implements CooldownTrackerItem {
+    private static final long serialVersionUID = 1L;
+
+    public static class MyCooldownTrackerItem implements CooldownTrackerItem {
 
 		public int retryCount;
 		public long cooldownWakeupTime;

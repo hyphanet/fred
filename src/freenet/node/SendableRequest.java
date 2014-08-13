@@ -1,5 +1,7 @@
 package freenet.node;
 
+import java.io.Serializable;
+
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -17,9 +19,11 @@ import freenet.support.Logger.LogLevel;
  * not call any subclass methods inside it.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public abstract class SendableRequest implements RandomGrabArrayItem {
+public abstract class SendableRequest implements RandomGrabArrayItem, Serializable {
 	
-	/** Since we put these into Set's etc, hashCode must be persistent.
+    private static final long serialVersionUID = 1L;
+
+    /** Since we put these into Set's etc, hashCode must be persistent.
 	 * Guaranteed not to be 0 unless this is a persistent object that is deactivated. */
 	private final int hashCode;
 	
