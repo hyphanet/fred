@@ -538,4 +538,10 @@ public abstract class ClientRequest implements Serializable {
      * splitfile download), rather than having to restart it (which happens in most other cases
      * when we resume). */
     public abstract boolean fullyResumed();
+
+    /** Do any easy checks on whether a (serialized) request is broken. Return false if it is, in
+     * which case we'll restart the request from the recovery data. */
+    public boolean canResume() {
+        return true;
+    }
 }

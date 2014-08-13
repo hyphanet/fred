@@ -383,7 +383,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             try {
                 request = (ClientRequest) readChecksummedObject(ois, length);
-                if(reqID != null) {
+                if(!request.canResume()) {
+                    request = null;
+                } else if(reqID != null) {
                     if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
                         Logger.error(this, "Request does not match request identifier, discarding");
                         request = null;
