@@ -121,42 +121,58 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
-            if(writeEncrypted && encryptionKey == null)
+            if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context, 
+                    requestStarters, random)) {
+                Logger.error(this, "Some requests failed to restart after serializing. Trying to recover/restart ...");
+                System.err.println("Some requests failed to restart after serializing. Trying to recover/restart ...");
+                innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context, 
+                        requestStarters, random);
+            }
+            onStarted();
+        }
+    }
+    
+    private boolean innerSetFilesAndLoad(boolean noSerialize, File dir, String baseName, 
+            boolean writeEncrypted, DatabaseKey encryptionKey, ClientContext context, 
+            RequestStarterGroup requestStarters, Random random) throws MasterKeysWrongPasswordException {
+        if(writeEncrypted && encryptionKey == null)
+            throw new MasterKeysWrongPasswordException();
+        File clientDat = new File(dir, baseName);
+        File clientDatCrypt = new File(dir, baseName+".crypt");
+        File clientDatBak = new File(dir, baseName+".bak");
+        File clientDatBakCrypt = new File(dir, baseName+".bak.crypt");
+        boolean clientDatExists = clientDat.exists();
+        boolean clientDatCryptExists = clientDatCrypt.exists();
+        boolean clientDatBakExists = clientDatBak.exists();
+        boolean clientDatBakCryptExists = clientDatBakCrypt.exists();
+        if(encryptionKey == null) {
+            if(clientDatCryptExists || clientDatBakCryptExists)
                 throw new MasterKeysWrongPasswordException();
-            File clientDat = new File(dir, baseName);
-            File clientDatCrypt = new File(dir, baseName+".crypt");
-            File clientDatBak = new File(dir, baseName+".bak");
-            File clientDatBakCrypt = new File(dir, baseName+".bak.crypt");
-            boolean clientDatExists = clientDat.exists();
-            boolean clientDatCryptExists = clientDatCrypt.exists();
-            boolean clientDatBakExists = clientDatBak.exists();
-            boolean clientDatBakCryptExists = clientDatBakCrypt.exists();
-            if(encryptionKey == null) {
-                if(clientDatCryptExists || clientDatBakCryptExists)
-                    throw new MasterKeysWrongPasswordException();
-            }
-            PartialLoad loaded = new PartialLoad();
-            if(clientDatExists) {
-                innerLoad(loaded, makeBucket(dir, baseName, false, null), context, requestStarters, random);
-            }
-            if(clientDatCryptExists && loaded.needsMore()) {
-                innerLoad(loaded, makeBucket(dir, baseName, false, encryptionKey), context, requestStarters, random);
-            }
-            if(clientDatBakExists) {
-                innerLoad(loaded, makeBucket(dir, baseName, true, null), context, requestStarters, random);
-            }
-            if(clientDatBakCryptExists && loaded.needsMore()) {
-                innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), context, requestStarters, random);
-            }
-            
-            deleteAfterSuccessfulWrite = writeEncrypted ? clientDat : clientDatCrypt;
-            otherDeleteAfterSuccessfulWrite = writeEncrypted ? clientDatBak : clientDatBakCrypt;
-            
-            writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
-            writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
-            writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
-            
-            if(loaded.doneSomething()) {
+        }
+        boolean failedSerialize = false;
+        PartialLoad loaded = new PartialLoad();
+        if(clientDatExists) {
+            innerLoad(loaded, makeBucket(dir, baseName, false, null), noSerialize, context, requestStarters, random);
+        }
+        if(clientDatCryptExists && loaded.needsMore()) {
+            innerLoad(loaded, makeBucket(dir, baseName, false, encryptionKey), noSerialize, context, requestStarters, random);
+        }
+        if(clientDatBakExists) {
+            innerLoad(loaded, makeBucket(dir, baseName, true, null), noSerialize, context, requestStarters, random);
+        }
+        if(clientDatBakCryptExists && loaded.needsMore()) {
+            innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), noSerialize, context, requestStarters, random);
+        }
+        
+        deleteAfterSuccessfulWrite = writeEncrypted ? clientDat : clientDatCrypt;
+        otherDeleteAfterSuccessfulWrite = writeEncrypted ? clientDatBak : clientDatBakCrypt;
+        
+        writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
+        writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
+        writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
+        
+        if(loaded.doneSomething()) {
+            if(!noSerialize) {
                 onLoading();
                 if(loaded.getSalt() == null) {
                     salt = new byte[32];
@@ -167,63 +183,65 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 } else {
                     salt = loaded.salt;
                 }
-                int success = 0;
-                int restoredRestarted = 0;
-                int restoredFully = 0;
-                int failed = 0;
-                // Resume the requests.
-                for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
-                    ClientRequest req = partial.request;
-                    if(req == null) continue;
-                    try {
-                        req.onResume(context);
-                        if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
-                                partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
-                            req.start(context);
-                        }
-                        switch(partial.status) {
-                        case LOADED:
-                            success++;
-                            break;
-                        case RESTORED_FULLY:
-                            restoredFully++;
-                            break;
-                        case RESTORED_RESTARTED:
-                            restoredRestarted++;
-                            break;
-                        case FAILED:
-                            failed++;
-                            break;
-                        }
-                    } catch (Throwable t) {
+            }
+            int success = 0;
+            int restoredRestarted = 0;
+            int restoredFully = 0;
+            int failed = 0;
+            // Resume the requests.
+            for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
+                ClientRequest req = partial.request;
+                if(req == null) continue;
+                try {
+                    req.onResume(context);
+                    if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
+                            partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
+                        req.start(context);
+                    }
+                    switch(partial.status) {
+                    case LOADED:
+                        success++;
+                        break;
+                    case RESTORED_FULLY:
+                        restoredFully++;
+                        break;
+                    case RESTORED_RESTARTED:
+                        restoredRestarted++;
+                        break;
+                    case FAILED:
                         failed++;
-                        System.err.println("Unable to resume request "+req+" after loading it.");
-                        Logger.error(this, "Unable to resume request "+req+" after loading it: "+t, t);
-                        try {
-                            req.cancel(context);
-                        } catch (Throwable t1) {
-                            Logger.error(this, "Unable to terminate "+req+" after failure: "+t1, t1);
-                        }
+                        break;
+                    }
+                } catch (Throwable t) {
+                    if(partial.status == RequestLoadStatus.LOADED)
+                        failedSerialize = true;
+                    failed++;
+                    System.err.println("Unable to resume request "+req+" after loading it.");
+                    Logger.error(this, "Unable to resume request "+req+" after loading it: "+t, t);
+                    try {
+                        req.cancel(context);
+                    } catch (Throwable t1) {
+                        Logger.error(this, "Unable to terminate "+req+" after failure: "+t1, t1);
                     }
                 }
-                if(success > 0)
-                    System.out.println("Resumed "+success+" requests ...");
-                if(restoredFully > 0)
-                    System.out.println("Restored "+restoredFully+" requests (in spite of data corruption)");
-                if(restoredRestarted > 0)
-                    System.out.println("Restarted "+restoredRestarted+" requests (due to data corruption)");
-                if(failed > 0)
-                    System.err.println("Failed to restore "+failed+" requests due to data corruption");
-                onStarted();
-                return;
-            } else {
-                // FIXME backups etc!
-                System.err.println("Starting request persistence layer without resuming ...");
-                salt = new byte[32];
-                random.nextBytes(salt);
-                requestStarters.setGlobalSalt(salt);
-                onStarted();
             }
+            if(success > 0)
+                System.out.println("Resumed "+success+" requests ...");
+            if(restoredFully > 0)
+                System.out.println("Restored "+restoredFully+" requests (in spite of data corruption)");
+            if(restoredRestarted > 0)
+                System.out.println("Restarted "+restoredRestarted+" requests (due to data corruption)");
+            if(failed > 0)
+                System.err.println("Failed to restore "+failed+" requests due to data corruption");
+            return failedSerialize;
+        } else {
+            // FIXME backups etc!
+            System.err.println("Starting request persistence layer without resuming ...");
+            salt = new byte[32];
+            random.nextBytes(salt);
+            requestStarters.setGlobalSalt(salt);
+            onStarted();
+            return false;
         }
     }
     
@@ -326,13 +344,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
-    private void innerLoad(PartialLoad loaded, Bucket bucket, 
+    private void innerLoad(PartialLoad loaded, Bucket bucket, boolean noSerialize,
             ClientContext context, RequestStarterGroup requestStarters, Random random) {
         long length = bucket.size();
         InputStream fis = null;
         try {
             fis = bucket.getInputStream();
-            innerLoad(loaded, fis, length, !loaded.doneSomething(), context, requestStarters, random);
+            innerLoad(loaded, fis, length, !noSerialize && !loaded.doneSomething(), context, 
+                    requestStarters, random, noSerialize);
         } catch (IOException e) {
             // FIXME tell user more obviously.
             Logger.error(this, "Failed to load persistent requests: "+e, e);
@@ -355,8 +374,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     private void innerLoad(PartialLoad loaded, InputStream fis, long length, boolean latest, 
-            ClientContext context, RequestStarterGroup requestStarters, Random random) 
-    throws NodeInitException, IOException {
+            ClientContext context, RequestStarterGroup requestStarters, Random random, boolean noSerialize) throws NodeInitException, IOException {
         BufferedInputStream bis = new BufferedInputStream(fis);
         ObjectInputStream ois = new ObjectInputStream(bis);
         long magic = ois.readLong();
@@ -382,17 +400,20 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 continue;
             }
             try {
-                request = (ClientRequest) readChecksummedObject(ois, length);
-                if(!request.canResume()) {
-                    request = null;
-                } else if(reqID != null) {
-                    if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
-                        Logger.error(this, "Request does not match request identifier, discarding");
+                if(!noSerialize) {
+                    request = (ClientRequest) readChecksummedObject(ois, length);
+                    if(!request.canResume()) {
                         request = null;
-                    } else {
-                        loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
+                    } else if(reqID != null) {
+                        if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
+                            Logger.error(this, "Request does not match request identifier, discarding");
+                            request = null;
+                        } else {
+                            loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
+                        }
                     }
-                }
+                } else
+                    skipChecksummedObject(ois, length);
             } catch (ChecksumFailedException e) {
                 Logger.error(this, "Failed to load request (checksum failed)");
                 System.err.println("Failed to load a request (checksum failed)");
