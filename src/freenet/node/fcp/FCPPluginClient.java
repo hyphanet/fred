@@ -85,10 +85,21 @@ public final class FCPPluginClient {
      *                 {@link FCPServer} and {@link FCPConnectionHandler} if this reference is nulled.
      */
     private final WeakReference<FredPluginFCPServer> plugin;
+    
+    /**
+     * For intra-node plugin connections, this is the connecting client.
+     * For networked plugin connections, this is null.
+     * 
+     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
+     *                 {@link FCPServer}.
+     */
+    private final WeakReference<FredPluginFCPClient> client;
 
     
     /**
-     * Regular constructor for being used by networked FCP connections.
+     * For being used by networked FCP connections:<br/>
+     * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
+     * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
      */
     public FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
         assert(connection != null);
@@ -98,18 +109,22 @@ public final class FCPPluginClient {
         this.connection = connection;
         this.pluginName = pluginName;
         this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
+        this.client = null;
     }
     
     /**
-     * Special-purpose constructor for being used by intra-node connections to a plugin.
-     * Since there is no network connection, there will be no {@link FCPConnectionHandler}, so this constructor works without one.
+     * For being used by intra-node connections to a plugin:<br/>
+     * Both the server and the client are running within the same node, so objects of their FCP message handling interfaces are available:<br/>
+     * The server's message is accessible as an implementor of {@link FredPluginFCPServer}.
+     * The client's message is accessible as an implementor of {@link FredPluginFCPClient}.
      */
-    public FCPPluginClient(String pluginName, FredPluginFCPServer plugin) {
+    public FCPPluginClient(String pluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
         assert(pluginName != null);
         
         connection = null;
         this.pluginName = pluginName;
-        this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
+        this.plugin = new WeakReference<FredPluginFCPServer>(server);
+        this.client = new WeakReference<FredPluginFCPClient>(client);
     }
     
     /**
