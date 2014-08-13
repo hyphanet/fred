@@ -39,6 +39,35 @@ import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempBucketFactory;
 
+/** Top level of persistence mechanism for ClientRequest's (persistent downloads and uploads).
+ * Note that we use three different persistence mechanisms here:
+ * 1) Splitfile persistence. The downloaded data and all the status for a splitfile is kept in a 
+ * single random access file (technically a LockableRandomAccessThing).
+ * 2) Java persistence. The overall list of ClientRequest's is stored to client.dat using 
+ * serialization, by this class.
+ * 3) A simple binary fallback. For complicated requests this will just record enough information 
+ * to restart the request, but for simple splitfile downloads, we can resume from (1).
+ * 
+ * The reason for this seemingly unnecessary complexity is:
+ * 1) Robustness, even against (reasonable) data corruption (e.g. on writing frequently written 
+ * parts of files), and against problems in serialization.
+ * 2) Minimising disk I/O (particularly disk seeks), especially in splitfile fetches. Decoding a 
+ * segment takes effectively a single read and a couple of writes, for example. 
+ * 3) Allowing us to store all the important information about a download, including the downloaded
+ * data and the status, in a temporary file close to where the final file will be saved. Then we 
+ * can (if there is no compression or filtering) simply truncate the file to complete.
+ * 
+ * Also, most of the important global structures are kept in RAM and recreated after downloads are
+ * read in. Notably ClientRequestScheduler/Selector, which keep a tree of requests to choose from,
+ * and a set of Bloom filters to identify which blocks belong to which request (we won't always get
+ * a block as the direct result of doing our own requests).
+ * 
+ * Please don't shove it all into a database without serious consideration of the performance and
+ * reliability implications! One query per block is not feasible on typical end user hardware, and
+ * disks aren't reliable. Losing all downloads when there is a one byte data corruption is 
+ * unacceptable. And blocks should be kept close to where they are supposed to end up...
+ * @author toad
+ */
 public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     static final long INTERVAL = MINUTES.toMillis(10);
