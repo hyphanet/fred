@@ -270,8 +270,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             requests = new ClientRequest[requestCount];
             recovered = new boolean[requestCount];
             for(int i=0;i<requestCount;i++) {
-                RequestIdentifier req = readRequestIdentifier(ois);
-                if(req != null && context.persistentRoot.hasRequest(req)) {
+                RequestIdentifier reqID = readRequestIdentifier(ois);
+                if(reqID != null && context.persistentRoot.hasRequest(reqID)) {
                     Logger.error(this, "Not reading request because already have it");
                     skipChecksummedObject(ois, length); // Request itself
                     skipChecksummedObject(ois, length); // Recovery data
@@ -279,12 +279,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
                 try {
                     requests[i] = (ClientRequest) readChecksummedObject(ois, length);
-                    if(req != null) {
-                        if(!req.sameIdentifier(requests[i].getRequestIdentifier())) {
+                    if(reqID != null) {
+                        if(!reqID.sameIdentifier(requests[i].getRequestIdentifier())) {
                             Logger.error(this, "Request does not match request identifier, discarding");
                             requests[i] = null;
                         } else {
-                            loaded.addPartiallyLoadedRequest(req, requests[i], RequestLoadStatus.LOADED);
+                            loaded.addPartiallyLoadedRequest(reqID, requests[i], RequestLoadStatus.LOADED);
                         }
                     }
                 } catch (ChecksumFailedException e) {
@@ -298,12 +298,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
                 if(requests[i] == null || logMINOR) {
                     try {
-                        ClientRequest restored = readRequestFromRecoveryData(ois, length, req);
+                        ClientRequest restored = readRequestFromRecoveryData(ois, length, reqID);
                         if(requests[i] == null) {
                             requests[i] = restored;
                             recovered[i] = true;
                             boolean loadedFully = restored.fullyResumed();
-                            loaded.addPartiallyLoadedRequest(req, requests[i], 
+                            loaded.addPartiallyLoadedRequest(reqID, requests[i], 
                                     loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
                         }
                     } catch (ChecksumFailedException e) {
@@ -311,20 +311,20 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                             Logger.error(this, "Failed to recovery a request (checksum failed)");
                             System.err.println("Failed to recovery a request (checksum failed)");
                         } else {
-                            Logger.error(this, "Test recovery failed: Checksum failed for "+req);
+                            Logger.error(this, "Test recovery failed: Checksum failed for "+reqID);
                         }
                         if(requests[i] == null)
-                            loaded.addPartiallyLoadedRequest(req, null, RequestLoadStatus.FAILED);
+                            loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
                     } catch (StorageFormatException e) {
                         if(requests[i] == null) {
                             Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
                             System.err.println("Failed to recovery a request (storage format): "+e);
                             e.printStackTrace();
                         } else {
-                            Logger.error(this, "Test recovery failed for "+req+" : "+e, e);
+                            Logger.error(this, "Test recovery failed for "+reqID+" : "+e, e);
                         }
                         if(requests[i] == null)
-                            loaded.addPartiallyLoadedRequest(req, null, RequestLoadStatus.FAILED);
+                            loaded.addPartiallyLoadedRequest(reqID, null, RequestLoadStatus.FAILED);
                     }
                 } else {
                     skipChecksummedObject(ois, length);
