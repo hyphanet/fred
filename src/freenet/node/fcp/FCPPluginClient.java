@@ -7,7 +7,9 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
+import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
+import freenet.pluginmanager.FredPluginFCPServer.ClientPermissions;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -31,8 +33,8 @@ import freenet.support.api.Bucket;
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)} to parse the message and obtain the 
  *   actual {@link FCPPluginMessage}.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to obtain the {@link FCPPluginClient} which wants to send.<br/>
- * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket)} or
- *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long)} to send the message to the plugin.<br/>
+ * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket, String)} or
+ *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} to send the message to the server plugin.<br/>
  * 2. The server and the client are running in the same node, also called intra-node FCP connections:</br>
  * - TODO FIXME: Document.
  * </p>
@@ -131,23 +133,54 @@ public final class FCPPluginClient {
      * 
      * To prevent us from having to duplicate the send functions, this enum specifies in which situation we are.
      * 
+     * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket, String) User of this enum.
      * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket) User of this enum.
+     * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String) User of this enum.
      * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long) User of this enum.
      */
     public static enum SendDirection {
         ToServer,
         ToClient
     }
-
-    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
+    
+    /**
+     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
+     *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
+     *                          {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet, Bucket)}
+     *                          and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     * @see #send(SendDirection, SimpleFieldSet, Bucket) Uses a random messageIdentifier. Should be prefered when possible.
+     */
+    void send(SendDirection direction, SimpleFieldSet parameters, Bucket data, String messageIdentifier) {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
-
+    
+    /**
+     * Same as {@link #send(SendDirection, SimpleFieldSet, Bucket, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
+     */
+    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
+        send(direction, parameters, data, UUID.randomUUID().toString());
+    }
+    
     @SuppressWarnings("serial")
     public static final class FCPCallFailedException extends Exception { };
 
-    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+    /**
+     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
+     *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
+     *                          {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet, Bucket)}
+     *                          and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     * @see #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String) Uses a random messageIdentifier. Should be prefered when possible.
+     */
+    void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds, String messageIdentifier)
+            throws FCPCallFailedException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
+    }
+    
+    /**
+     * Same as {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
+     */
+    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+        sendSynchronous(direction, parameters, data, timeoutMilliseconds, UUID.randomUUID().toString());
     }
 
 }

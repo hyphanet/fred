@@ -10,7 +10,6 @@ import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 
 /**
  * @author saces
@@ -122,7 +121,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
 			// mix that up with the one whose reason is that the plugin does not support the new interface: In the case of send() throwing, it would indicate
 			// that the plugin DOES support the new interface but was unloaded meanwhile. So we can exit the function then, we don't have to try the old 
 			// interface.
-			client.send(SendDirection.ToServer, plugparams, this.bucket);
+			client.send(SendDirection.ToServer, plugparams, this.bucket, identifier);
 			return;
 		}
 		
