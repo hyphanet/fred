@@ -181,10 +181,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         } else {
             salt = loaded.salt;
         }
-        boolean someRestarted = false;
-        boolean someRestoredFully = false;
         if(!loaded.isEmpty()) {
             onLoading();
+            int success = 0;
+            int restoredRestarted = 0;
+            int restoredFully = 0;
+            int failed = 0;
             // Resume the requests.
             for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
                 ClientRequest req = partial.request;
@@ -194,16 +196,23 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
                             partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
                         req.start(context);
-                        if(partial.status == RequestLoadStatus.RESTORED_FULLY && !someRestoredFully) {
-                            someRestoredFully = true;
-                            System.out.println("Some downloads resumed in spite of data corruption");
-                        }
-                        if(partial.status == RequestLoadStatus.RESTORED_RESTARTED && !someRestarted) {
-                            someRestarted = true;
-                            System.err.println("Some downloads restarted");
-                        }
+                    }
+                    switch(partial.status) {
+                    case LOADED:
+                        success++;
+                        break;
+                    case RESTORED_FULLY:
+                        restoredFully++;
+                        break;
+                    case RESTORED_RESTARTED:
+                        restoredRestarted++;
+                        break;
+                    case FAILED:
+                        failed++;
+                        break;
                     }
                 } catch (Throwable t) {
+                    failed++;
                     System.err.println("Unable to resume request "+req+" after loading it.");
                     Logger.error(this, "Unable to resume request "+req+" after loading it.");
                     try {
@@ -213,7 +222,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     }
                 }
             }
-            System.out.println("Resumed from saved requests ...");
+            if(success > 0)
+                System.out.println("Resumed "+success+" requests ...");
+            if(restoredFully > 0)
+                System.out.println("Restored "+restoredFully+" requests (in spite of data corruption)");
+            if(restoredRestarted > 0)
+                System.out.println("Restarted "+restoredRestarted+" requests (due to data corruption)");
+            if(failed > 0)
+                System.err.println("Failed to restore "+failed+" requests due to data corruption");
             onStarted();
             return;
         } else {
