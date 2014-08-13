@@ -170,7 +170,7 @@ public class NodeClientCore implements Persistable {
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
@@ -318,8 +318,6 @@ public class NodeClientCore implements Persistable {
 		clientLayerPersister = new ClientLayerPersister(node.executor, node.ticker, 
 		        node, persistentTempBucketFactory, tempBucketFactory, bandwidthStatsPutter);
 		
-		clientLayerPersister.setFiles(node.nodeDir.file("client.dat"), null);
-		
 		SemiOrderedShutdownHook shutdownHook = SemiOrderedShutdownHook.get();
 		
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
@@ -378,13 +376,13 @@ public class NodeClientCore implements Persistable {
 		
         clientContext.init(requestStarters, alerts);
         
-        // FIXME with crypto this load() may happen much later.
-        clientLayerPersister.load(clientContext, requestStarters, random);
+        try {
+            initStorage(databaseKey);
+        } catch (MasterKeysWrongPasswordException e) {
+            System.err.println("Cannot load persistent requests, awaiting password ...");
+            node.setDatabaseAwaitingPassword();
+        }
         
-		if(!killedDatabase()) {
-		    InsertCompressor.load(clientContext);
-		}
-		
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 			@Override
@@ -609,18 +607,29 @@ public class NodeClientCore implements Persistable {
 	    // FIXME after onResume()'s done, call PTBF to cleanup.
 	}
 
-	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container) throws NodeInitException {
+	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container, DatabaseKey databaseKey) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
+		try {
+		    initStorage(databaseKey);
+		} catch (MasterKeysWrongPasswordException e) {
+		    Logger.error(this, "Impossible: can't load even though have key? "+(databaseKey != null));
+		    return true;
+		}
 		// Don't actually start the database thread yet, messy concurrency issues.
 		initPTBF(node.config.get("node"));
-		// Must create the CRSCore's before telling them to load stuff.
-		InsertCompressor.load(clientContext);
 		fcpServer.load(this.fcpPersistentRoot);
 		System.out.println("Late database initialisation completed.");
 		return true;
 	}
 
-	private static String l10n(String key) {
+	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
+	    File f = node.nodeDir.file("client.dat" + databaseKey == null ? "" : ".crypt");
+	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
+	            node.wantEncryptedDatabase(), databaseKey, clientContext, requestStarters, random);
+        InsertCompressor.load(clientContext);
+    }
+
+    private static String l10n(String key) {
 		return NodeL10n.getBase().getString("NodeClientCore." + key);
 	}
 

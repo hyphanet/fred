@@ -1717,7 +1717,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
 
 		// clientCore needs new load management and other settings from stats.
-		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle);
+		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey);
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isTooOld()) {
@@ -2724,7 +2724,7 @@ public class Node implements TimeSkewDetectorCallback {
 			db.commit();
 			if(logMINOR) Logger.minor(this, "COMMITTED");
 			try {
-				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
+				if(!clientCore.lateInitDatabase(nodeDBHandle, db, databaseKey))
 					failLateInitDatabase();
 			} catch (NodeInitException e) {
 				failLateInitDatabase();
@@ -3215,6 +3215,14 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCacheAwaitingPassword = true;
 		}
 	}
+
+	/** Called when the client layer (not necessarily the old db4o database) needs the decryption 
+	 * password. */
+    void setDatabaseAwaitingPassword() {
+        synchronized(this) {
+            databaseAwaitingPassword = true;
+        }
+    }
 
 	private final UserAlert masterPasswordUserAlert = new UserAlert() {
 
@@ -5197,9 +5205,12 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
-
 	public boolean isDatabaseEncrypted() {
 		return databaseEncrypted;
+	}
+	
+	public boolean wantEncryptedDatabase() {
+	    return this.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW;
 	}
 
 	public boolean hasDatabase() {
@@ -5418,5 +5429,6 @@ public class Node implements TimeSkewDetectorCallback {
 	public PluginManager getPluginManager() {
 		return pluginManager;
 	}
+
 
 }

@@ -26,6 +26,7 @@ import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.node.DatabaseKey;
+import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
@@ -83,11 +84,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private boolean newSalt;
     private final ChecksumChecker checker;
 
-    // These can be set later...
-    private File filename;
-    private File backupFilename;
-    private Bucket bucket;
-    private Bucket backupBucket;
+    // Can be set later ...
+    private Bucket writeToBucket;
+    private File writeToFilename;
+    private File writeToBackupFilename;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
@@ -112,122 +112,44 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.bandwidthStatsPutter = stats;
     }
     
-    public void setFiles(File filename, DatabaseKey encryptionKey) {
+    /** Set the files to write to and set up encryption 
+     * @throws MasterKeysWrongPasswordException If we need the encryption key but it has not been 
+     * supplied. */
+    public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, DatabaseKey encryptionKey,
+            ClientContext context, RequestStarterGroup requestStarters, Random random) 
+    throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
-            this.filename = filename;
-            Bucket b = new FileBucket(filename, false, false, false, false, false);
-            if(encryptionKey != null)
-                b = encryptionKey.createEncryptedBucketForClientLayer(b);
-            this.bucket = b;
-            this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
-            b = new FileBucket(backupFilename, true, false, false, false, false);
-            if(encryptionKey != null)
-                b = encryptionKey.createEncryptedBucketForClientLayer(b);
-            this.backupBucket = b;
-        }
-    }
-    
-    private enum RequestLoadStatus {
-        // In order of preference, best first.
-        LOADED,
-        RESTORED_FULLY,
-        RESTORED_RESTARTED,
-        FAILED
-    }
-    
-    private class PartiallyLoadedRequest {
-        final ClientRequest request;
-        final RequestLoadStatus status;
-        PartiallyLoadedRequest(ClientRequest request, RequestLoadStatus status) {
-            this.request = request;
-            this.status = status;
-        }
-    }
-    
-    private class PartialLoad {
-        private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests 
-            = new HashMap<RequestIdentifier, PartiallyLoadedRequest>();
-        
-        private byte[] salt;
-        
-        private boolean somethingFailed;
-        
-        private boolean doneSomething;
-        
-        /** Add a partially loaded request. 
-         * @param reqID The request identifier. Must be non-null; caller should regenerate it if
-         * necessary. */
-        void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request, 
-                RequestLoadStatus status) {
-            if(reqID == null) {
-                if(request == null) {
-                    somethingFailed = true;
-                    return;
-                } else {
-                    reqID = request.getRequestIdentifier();
-                }
+            if(writeEncrypted && encryptionKey == null)
+                throw new MasterKeysWrongPasswordException();
+            File clientDat = new File(dir, baseName);
+            File clientDatCrypt = new File(dir, baseName+".crypt");
+            File clientDatBak = new File(dir, baseName+".bak");
+            File clientDatBakCrypt = new File(dir, baseName+".bak.crypt");
+            boolean clientDatExists = clientDat.exists();
+            boolean clientDatCryptExists = clientDatCrypt.exists();
+            boolean clientDatBakExists = clientDatBak.exists();
+            boolean clientDatBakCryptExists = clientDatBakCrypt.exists();
+            if(encryptionKey == null) {
+                if(clientDatCryptExists || clientDatBakCryptExists)
+                    throw new MasterKeysWrongPasswordException();
             }
-            PartiallyLoadedRequest old = partiallyLoadedRequests.get(reqID);
-            if(old == null || old.status.ordinal() > status.ordinal()) {
-                partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
-                if(!(status == RequestLoadStatus.LOADED || status == RequestLoadStatus.RESTORED_FULLY))
-                    somethingFailed = true;
-                doneSomething = true;
-            }
-        }
-        
-        public boolean needsMore() {
-            return somethingFailed || !doneSomething;
-        }
-
-        public boolean isEmpty() {
-            return partiallyLoadedRequests.isEmpty();
-        }
-
-        public void setSomethingFailed() {
-            somethingFailed = true;
-        }
-        
-        public boolean somethingFailed() {
-            return somethingFailed;
-        }
-
-        public void setSalt(byte[] loadedSalt) {
-            if(salt == null)
-                salt = loadedSalt;
-            doneSomething = true;
-        }
-
-        public byte[] getSalt() {
-            return salt;
-        }
-        
-        public boolean doneSomething() {
-            return doneSomething;
-        }
-    }
-    
-    public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
-        synchronized(serializeCheckpoints) {
             PartialLoad loaded = new PartialLoad();
-            if(filename.exists()) {
-                innerLoad(loaded, bucket,  context, requestStarters, random);
-                if(loaded.somethingFailed()) {
-                    if(backupFilename.exists()) {
-                        Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
-                        System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
-                        System.err.println("Some downloads/uploads may be lost or restarted");
-                        innerLoad(loaded, backupBucket, context, requestStarters, random);
-                    } else {
-                        Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
-                        System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
-                        System.err.println("Some of your downloads/uploads may have been lost or restarted");
-                    }
-                }
-            } else {
-                Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
-                innerLoad(loaded, backupBucket, context, requestStarters, random);
+            if(clientDatExists) {
+                innerLoad(loaded, makeBucket(dir, baseName, false, null), context, requestStarters, random);
             }
+            if(clientDatCryptExists && loaded.needsMore()) {
+                innerLoad(loaded, makeBucket(dir, baseName, false, encryptionKey), context, requestStarters, random);
+            }
+            if(clientDatBakExists) {
+                innerLoad(loaded, makeBucket(dir, baseName, true, null), context, requestStarters, random);
+            }
+            if(clientDatBakCryptExists && loaded.needsMore()) {
+                innerLoad(loaded, makeBucket(dir, baseName, true, encryptionKey), context, requestStarters, random);
+            }
+            
+            writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
+            writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
+            writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
             
             if(loaded.getSalt() == null) {
                 salt = new byte[32];
@@ -299,10 +221,108 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         }
     }
+    
+    /** Create a Bucket for client.dat[.bak][.crypt].
+     * @param dir The parent directory.
+     * @param baseName The base name, usually "client.dat".
+     * @param backup True if we want the .bak file.
+     * @param encryptionKey Non-null if we want an encrypted file.
+     */
+    private Bucket makeBucket(File dir, String baseName, boolean backup, DatabaseKey encryptionKey) {
+        File filename = makeFilename(dir, baseName, backup, encryptionKey != null);
+        Bucket bucket = new FileBucket(filename, false, false, false, false, false);
+        if(encryptionKey != null)
+            bucket = encryptionKey.createEncryptedBucketForClientLayer(bucket);
+        return bucket;
+    }
+    
+    private File makeFilename(File parent, String baseName, boolean backup, boolean encrypted) {
+        return new File(parent, baseName + (backup ? ".bak" : "") + (encrypted ? ".crypt" : ""));
+                
+    }
 
+    private enum RequestLoadStatus {
+        // In order of preference, best first.
+        LOADED,
+        RESTORED_FULLY,
+        RESTORED_RESTARTED,
+        FAILED
+    }
+    
+    private class PartiallyLoadedRequest {
+        final ClientRequest request;
+        final RequestLoadStatus status;
+        PartiallyLoadedRequest(ClientRequest request, RequestLoadStatus status) {
+            this.request = request;
+            this.status = status;
+        }
+    }
+    
+    private class PartialLoad {
+        private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests 
+            = new HashMap<RequestIdentifier, PartiallyLoadedRequest>();
+        
+        private byte[] salt;
+        
+        private boolean somethingFailed;
+        
+        private boolean doneSomething;
+        
+        /** Add a partially loaded request. 
+         * @param reqID The request identifier. Must be non-null; caller should regenerate it if
+         * necessary. */
+        void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request, 
+                RequestLoadStatus status) {
+            if(reqID == null) {
+                if(request == null) {
+                    somethingFailed = true;
+                    return;
+                } else {
+                    reqID = request.getRequestIdentifier();
+                }
+            }
+            PartiallyLoadedRequest old = partiallyLoadedRequests.get(reqID);
+            if(old == null || old.status.ordinal() > status.ordinal()) {
+                partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
+                if(!(status == RequestLoadStatus.LOADED || status == RequestLoadStatus.RESTORED_FULLY))
+                    somethingFailed = true;
+                doneSomething = true;
+            }
+        }
+
+        public boolean needsMore() {
+            return somethingFailed || !doneSomething;
+        }
+
+        public boolean isEmpty() {
+            return partiallyLoadedRequests.isEmpty();
+        }
+
+        public void setSomethingFailed() {
+            somethingFailed = true;
+        }
+        
+        public boolean somethingFailed() {
+            return somethingFailed;
+        }
+
+        public void setSalt(byte[] loadedSalt) {
+            if(salt == null)
+                salt = loadedSalt;
+            doneSomething = true;
+        }
+
+        public byte[] getSalt() {
+            return salt;
+        }
+        
+        public boolean doneSomething() {
+            return doneSomething;
+        }
+    }
+    
     private void innerLoad(PartialLoad loaded, Bucket bucket, 
-            ClientContext context, RequestStarterGroup requestStarters, Random random) 
-    throws NodeInitException {
+            ClientContext context, RequestStarterGroup requestStarters, Random random) {
         long length = bucket.size();
         InputStream fis = null;
         try {
@@ -343,7 +363,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             checker.readAndChecksum(ois, salt, 0, salt.length);
             loaded.setSalt(salt);
         } catch (ChecksumFailedException e1) {
-            Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
+            Logger.error(this, "Unable to read global salt (checksum failed)");
         }
         requestStarters.setGlobalSalt(salt);
         int requestCount = ois.readInt();
@@ -453,8 +473,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     protected void save() {
-        if(filename.exists()) {
-            FileUtil.renameTo(filename, backupFilename);
+        if(writeToFilename.exists()) {
+            FileUtil.renameTo(writeToFilename, writeToBackupFilename);
         }
         innerSave();
     }
@@ -463,7 +483,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
         OutputStream fos = null;
         try {
-            fos = bucket.getOutputStream();
+            fos = writeToBucket.getOutputStream();
             BufferedOutputStream bos = new BufferedOutputStream(fos);
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeLong(MAGIC);
