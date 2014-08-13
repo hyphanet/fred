@@ -297,8 +297,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             fis = null;
         } catch (IOException e) {
             // FIXME tell user more obviously.
+            Logger.error(this, "Failed to load persistent requests: "+e, e);
             System.err.println("Failed to load persistent requests: "+e);
             e.printStackTrace();
+            loaded.setSomethingFailed();
+        } catch (Throwable t) {
+            Logger.error(this, "Failed to load persistent requests: "+t, t);
+            System.err.println("Failed to load persistent requests: "+t);
+            t.printStackTrace();
             loaded.setSomethingFailed();
         } finally {
             try {
