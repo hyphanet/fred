@@ -47,6 +47,11 @@ public class InsertableClientSSK extends ClientSSK {
 		this.privKey = privKey;
 	}
 	
+	protected InsertableClientSSK() {
+	    // For serialization.
+	    privKey = null;
+	}
+	
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
 		if(uri.getKeyType().equalsIgnoreCase("KSK"))
 			return ClientKSK.create(uri);

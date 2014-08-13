@@ -39,6 +39,13 @@ public class DSAGroup extends CryptoKey {
     	this.q = new NativeBigInteger(1, group.q.toByteArray());
     	this.g = new NativeBigInteger(1, group.g.toByteArray());
 	}
+    
+    protected DSAGroup() {
+        // For serialization.
+        p = null;
+        q = null;
+        g = null;
+    }
 
 	/**
      * Parses a DSA Group from a string, where p, q, and g are in unsigned

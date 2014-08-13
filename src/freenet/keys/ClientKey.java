@@ -26,5 +26,9 @@ public abstract class ClientKey extends BaseClientKey implements Serializable {
 	}
 
 	public abstract ClientKey cloneKey();
+	
+	protected ClientKey() {
+	    // For serialization.
+	}
 
 }

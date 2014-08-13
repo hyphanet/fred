@@ -39,6 +39,11 @@ public class DSAPrivateKey extends CryptoKey {
         } while (tempX.compareTo(g.getQ()) > -1 || tempX.compareTo(BigInteger.ZERO) < 1);
         this.x = tempX;
     }
+    
+    protected DSAPrivateKey() {
+        // For serialization.
+        x = null;
+    }
 
     @Override
 	public String keyType() {

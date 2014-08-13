@@ -25,6 +25,11 @@ public class ClientKSK extends InsertableClientSSK {
 		super(keyword, pubKeyHash, pubKey, privKey, keywordHash, Key.ALGO_AES_PCFB_256_SHA256);
 		this.keyword = keyword;
 	}
+	
+	protected ClientKSK() {
+	    // For serialization.
+	    keyword = null;
+	}
 
 	@Override
 	public FreenetURI getURI() {

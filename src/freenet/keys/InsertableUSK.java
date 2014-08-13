@@ -22,7 +22,8 @@ import freenet.support.Logger;
  */
 public class InsertableUSK extends USK {
 	
-	public final DSAPrivateKey privKey;
+    private static final long serialVersionUID = 1L;
+    public final DSAPrivateKey privKey;
 	
 	public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))

@@ -111,6 +111,16 @@ public class ClientSSK extends ClientKey {
 			throw new MalformedURLException();
 	}
 	
+	protected ClientSSK() {
+	    // For serialization.
+	    this.cryptoAlgorithm = 0;
+	    this.docName = null;
+	    this.pubKeyHash = null;
+	    this.cryptoKey = null;
+	    this.ehDocname = null;
+	    this.hashCode = 0;
+	}
+	
 	public synchronized void setPublicKey(DSAPublicKey pubKey) {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
