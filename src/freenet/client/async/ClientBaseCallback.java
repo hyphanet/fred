@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import freenet.node.RequestClient;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * A client process. Something that initiates requests, and can cancel them. FCP, FProxy, and the
@@ -21,7 +22,7 @@ public interface ClientBaseCallback {
 	 * infrastructure the request is using, e.g. FCPPersistentRoot, persistent temp buckets etc.
 	 * @param context
 	 */
-	public void onResume(ClientContext context);
+	public void onResume(ClientContext context) throws ResumeFailedException;
 	
 	/** Get the RequestClient context object used to indicate which requests are related to each
 	 * other for scheduling purposes. */
