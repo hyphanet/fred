@@ -18,8 +18,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import com.onionnetworks.util.FileUtil;
-
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
@@ -33,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.StorageFormatException;
@@ -42,7 +41,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     static final long INTERVAL = MINUTES.toMillis(10);
     private final File filename;
+    private final File backupFilename;
     private final FileBucket bucket;
+    private final FileBucket backupBucket;
     private final Node node; // Needed for bandwidth stats putter
     private final PersistentTempBucketFactory persistentTempFactory;
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
@@ -70,7 +71,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             PersistentStatsPutter stats) {
         super(executor, ticker, INTERVAL);
         this.filename = filename;
+        this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
         this.bucket = new FileBucket(filename, false, false, false, false, false);
+        this.backupBucket = new FileBucket(backupFilename, true, false, false, false, false);
         this.node = node;
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
@@ -242,8 +245,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     protected void save() {
+        if(filename.exists()) {
+            FileUtil.renameTo(filename, backupFilename);
+        }
+        innerSave();
+    }
+    
+    private void innerSave() {
         DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
-        // FIXME backups.
         OutputStream fos = null;
         try {
             fos = bucket.getOutputStream();
