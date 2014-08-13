@@ -173,6 +173,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         } else {
             salt = loaded.salt;
         }
+        boolean someRestarted = false;
+        boolean someRestoredFully = false;
         if(!loaded.isEmpty()) {
             onLoading();
             // Resume the requests.
@@ -183,6 +185,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
                             partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
                         req.start(context);
+                        if(partial.status == RequestLoadStatus.RESTORED_FULLY && !someRestoredFully) {
+                            someRestoredFully = true;
+                            System.out.println("Some downloads resumed in spite of data corruption");
+                        }
+                        if(partial.status == RequestLoadStatus.RESTORED_RESTARTED && !someRestarted) {
+                            someRestarted = true;
+                            System.err.println("Some downloads restarted");
+                        }
                     }
                 } catch (Throwable t) {
                     System.err.println("Unable to resume request "+req+" after loading it.");

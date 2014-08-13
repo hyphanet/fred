@@ -411,8 +411,6 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         this.wantBinaryBlob = getter.collectingBinaryBlob();
         // onResume() will do the rest.
         Logger.normal(this, "Resumed splitfile download for "+this);
-        // This is something the user might be interested in, especially if something breaks.
-        System.out.println("Emergency recovery of download successful. Your download will continue from where it left off, in spite of corruption or incompatible serialization changes.");
     }
 
 }
