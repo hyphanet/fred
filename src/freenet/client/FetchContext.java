@@ -133,21 +133,34 @@ public class FetchContext implements Cloneable, Serializable {
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
+		if(maxOutputLength < 0) throw new IllegalArgumentException("Bad max output length");
 		this.maxTempLength = curMaxTempLength;
+		if(maxTempLength < 0) throw new IllegalArgumentException("Bad max temp length");
 		this.maxMetadataSize = maxMetadataSize;
+        if(maxMetadataSize < 0) throw new IllegalArgumentException("Bad max metadata size");
 		this.maxRecursionLevel = maxRecursionLevel;
+		if(maxRecursionLevel < 0) throw new IllegalArgumentException("Bad max recursion level");
 		this.maxArchiveRestarts = maxArchiveRestarts;
+		if(maxArchiveRestarts < 0) throw new IllegalArgumentException("Bad max archive restarts");
 		this.maxArchiveLevels = maxArchiveLevels;
+		if(maxArchiveLevels < 0) throw new IllegalArgumentException("Bad max archive levels");
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
+		if(maxSplitfileBlockRetries < -1) throw new IllegalArgumentException("Bad max splitfile block retries");
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
+		if(maxNonSplitfileRetries < -1) throw new IllegalArgumentException("Bad non-splitfile retries");
 		this.maxUSKRetries = maxUSKRetries;
+		if(maxUSKRetries < -1) throw new IllegalArgumentException("Bad max USK retries");
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
+        if(maxDataBlocksPerSegment < 0 || maxDataBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new IllegalArgumentException("Bad max blocks per segment");
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
+        if(maxCheckBlocksPerSegment < 0 || maxCheckBlocksPerSegment > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new IllegalArgumentException("Bad max blocks per segment");
 		this.filterData = filterData;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
