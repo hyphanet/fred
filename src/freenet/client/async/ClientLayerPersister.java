@@ -194,8 +194,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 } catch (ChecksumFailedException e1) {
                     Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
                 }
-                // FIXME checksum.
-                ois.readFully(salt);
                 requestStarters.setGlobalSalt(salt);
                 int requestCount = ois.readInt();
                 requests = new ClientRequest[requestCount];
@@ -332,7 +330,6 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeLong(MAGIC);
             oos.writeInt(VERSION);
             checker.writeAndChecksum(oos, salt);
-            oos.write(salt);
             ClientRequest[] requests = getRequests();
             oos.writeInt(requests.length);
             for(ClientRequest req : requests) {
