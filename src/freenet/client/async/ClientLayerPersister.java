@@ -106,6 +106,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         
         byte[] salt;
         
+        boolean somethingFailed;
+        
         /** Add a partially loaded request. 
          * @param reqID The request identifier. Must be non-null; caller should regenerate it if
          * necessary. */
@@ -114,18 +116,44 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             PartiallyLoadedRequest old = partiallyLoadedRequests.get(reqID);
             if(old == null || old.status.ordinal() > status.ordinal()) {
                 partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
+                if(!(status == RequestLoadStatus.LOADED || status == RequestLoadStatus.RESTORED_FULLY))
+                    somethingFailed = true;
             }
         }
 
         public boolean isEmpty() {
             return partiallyLoadedRequests.isEmpty();
         }
+
+        public void setSomethingFailed() {
+            somethingFailed = true;
+        }
+        
+        public boolean somethingFailed() {
+            return somethingFailed;
+        }
     }
     
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         PartialLoad loaded = new PartialLoad();
-        if(filename.exists())
+        if(filename.exists()) {
             innerLoad(loaded, filename, true, context, requestStarters, random);
+            if(loaded.somethingFailed()) {
+                if(backupFilename.exists()) {
+                    Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
+                    System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
+                    System.err.println("Some downloads/uploads may be lost or restarted");
+                    innerLoad(loaded, backupFilename, false, context, requestStarters, random);
+                } else {
+                    Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
+                    System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
+                    System.err.println("Some of your downloads/uploads may have been lost or restarted");
+                }
+            }
+        } else {
+            Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
+            innerLoad(loaded, backupFilename, true, context, requestStarters, random);
+        }
         
         if(loaded.salt == null) {
             salt = new byte[32];
@@ -242,6 +270,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         } else {
                             Logger.error(this, "Test recovery failed: Checksum failed for "+req);
                         }
+                        loaded.setSomethingFailed();
                     } catch (StorageFormatException e) {
                         if(requests[i] == null) {
                             Logger.error(this, "Failed to recovery a request (storage format): "+e, e);
@@ -250,6 +279,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         } else {
                             Logger.error(this, "Test recovery failed for "+req+" : "+e, e);
                         }
+                        loaded.setSomethingFailed();
                     }
                 } else {
                     skipChecksummedObject(ois, length);
@@ -269,6 +299,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             // FIXME tell user more obviously.
             System.err.println("Failed to load persistent requests: "+e);
             e.printStackTrace();
+            loaded.setSomethingFailed();
         } finally {
             try {
                 if(fis != null) fis.close();
