@@ -152,6 +152,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         
         private boolean somethingFailed;
         
+        private boolean doneSomething;
+        
         /** Add a partially loaded request. 
          * @param reqID The request identifier. Must be non-null; caller should regenerate it if
          * necessary. */
@@ -170,7 +172,12 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
                 if(!(status == RequestLoadStatus.LOADED || status == RequestLoadStatus.RESTORED_FULLY))
                     somethingFailed = true;
+                doneSomething = true;
             }
+        }
+        
+        public boolean needsMore() {
+            return somethingFailed || !doneSomething;
         }
 
         public boolean isEmpty() {
@@ -188,10 +195,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         public void setSalt(byte[] loadedSalt) {
             if(salt == null)
                 salt = loadedSalt;
+            doneSomething = true;
         }
 
         public byte[] getSalt() {
             return salt;
+        }
+        
+        public boolean doneSomething() {
+            return doneSomething;
         }
     }
     
@@ -199,13 +211,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         synchronized(serializeCheckpoints) {
             PartialLoad loaded = new PartialLoad();
             if(filename.exists()) {
-                innerLoad(loaded, bucket, true, context, requestStarters, random);
+                innerLoad(loaded, bucket,  context, requestStarters, random);
                 if(loaded.somethingFailed()) {
                     if(backupFilename.exists()) {
                         Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
                         System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
                         System.err.println("Some downloads/uploads may be lost or restarted");
-                        innerLoad(loaded, backupBucket, false, context, requestStarters, random);
+                        innerLoad(loaded, backupBucket, context, requestStarters, random);
                     } else {
                         Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
                         System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
@@ -214,7 +226,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
             } else {
                 Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
-                innerLoad(loaded, backupBucket, true, context, requestStarters, random);
+                innerLoad(loaded, backupBucket, context, requestStarters, random);
             }
             
             if(loaded.getSalt() == null) {
@@ -288,14 +300,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
 
-    private void innerLoad(PartialLoad loaded, Bucket bucket, boolean latest, 
+    private void innerLoad(PartialLoad loaded, Bucket bucket, 
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws NodeInitException {
         long length = bucket.size();
         InputStream fis = null;
         try {
             fis = bucket.getInputStream();
-            innerLoad(loaded, fis, length, latest, context, requestStarters, random);
+            innerLoad(loaded, fis, length, !loaded.doneSomething(), context, requestStarters, random);
         } catch (IOException e) {
             // FIXME tell user more obviously.
             Logger.error(this, "Failed to load persistent requests: "+e, e);
