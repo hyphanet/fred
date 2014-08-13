@@ -144,7 +144,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
                     File f = generator.getFilename(filenameID);
                     if(f.exists()) {
                         file = f;
-                        return;
                     }
                 }
                 checkExists(file);
@@ -154,6 +153,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
             // Plain TempFileBucket's are not persistent.
             throw new UnsupportedOperationException();
         }
+        super.onResume(context);
     }
     
     private void checkExists(File file) {
