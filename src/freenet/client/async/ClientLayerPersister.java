@@ -16,6 +16,8 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import freenet.clients.fcp.ClientRequest;
@@ -81,14 +83,91 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.bandwidthStatsPutter = stats;
     }
     
+    private enum RequestLoadStatus {
+        // In order of preference, best first.
+        LOADED,
+        RESTORED_FULLY,
+        RESTORED_RESTARTED,
+        FAILED
+    }
+    
+    private class PartiallyLoadedRequest {
+        final ClientRequest request;
+        final RequestLoadStatus status;
+        PartiallyLoadedRequest(ClientRequest request, RequestLoadStatus status) {
+            this.request = request;
+            this.status = status;
+        }
+    }
+    
+    private class PartialLoad {
+        private final Map<RequestIdentifier, PartiallyLoadedRequest> partiallyLoadedRequests 
+            = new HashMap<RequestIdentifier, PartiallyLoadedRequest>();
+        
+        byte[] salt;
+        
+        /** Add a partially loaded request. 
+         * @param reqID The request identifier. Must be non-null; caller should regenerate it if
+         * necessary. */
+        void addPartiallyLoadedRequest(RequestIdentifier reqID, ClientRequest request, 
+                RequestLoadStatus status) {
+            PartiallyLoadedRequest old = partiallyLoadedRequests.get(reqID);
+            if(old == null || old.status.ordinal() > status.ordinal()) {
+                partiallyLoadedRequests.put(reqID, new PartiallyLoadedRequest(request, status));
+            }
+        }
+
+        public boolean isEmpty() {
+            return partiallyLoadedRequests.isEmpty();
+        }
+    }
+    
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
+        PartialLoad loaded = new PartialLoad();
+        innerLoad(loaded, filename, true, context, requestStarters, random);
+        if(!loaded.isEmpty()) {
+            onLoading();
+            // Resume the requests.
+            for(PartiallyLoadedRequest partial : loaded.partiallyLoadedRequests.values()) {
+                ClientRequest req = partial.request;
+                try {
+                    req.onResume(context);
+                    if(partial.status == RequestLoadStatus.RESTORED_FULLY || 
+                            partial.status == RequestLoadStatus.RESTORED_RESTARTED) {
+                        req.start(context);
+                    }
+                } catch (Throwable t) {
+                    System.err.println("Unable to resume request "+req+" after loading it.");
+                    Logger.error(this, "Unable to resume request "+req+" after loading it.");
+                    try {
+                        req.cancel(context);
+                    } catch (Throwable t1) {
+                        Logger.error(this, "Unable to terminate "+req+" after failure");
+                    }
+                }
+            }
+            System.out.println("Resumed from saved requests ...");
+            onStarted();
+            return;
+        } else {
+            // FIXME backups etc!
+            System.err.println("Starting request persistence layer without resuming ...");
+            salt = new byte[32];
+            random.nextBytes(salt);
+            requestStarters.setGlobalSalt(salt);
+            onStarted();
+        }
+    }
+    
+    private void innerLoad(PartialLoad loaded, File filename, boolean latest, 
+            ClientContext context, RequestStarterGroup requestStarters, Random random) 
+    throws NodeInitException {
         // FIXME check backups.
         if(filename.exists()) {
             long length = filename.length();
             InputStream fis = null;
             ClientRequest[] requests;
             boolean[] recovered;
-            DelayedFreeBucket[] buckets = null;
             try {
                 // Read everything in first.
                 fis = bucket.getInputStream();
@@ -128,6 +207,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                             if(!req.sameIdentifier(requests[i].getRequestIdentifier())) {
                                 Logger.error(this, "Request does not match request identifier, discarding");
                                 requests[i] = null;
+                            } else {
+                                loaded.addPartiallyLoadedRequest(req, requests[i], RequestLoadStatus.LOADED);
                             }
                         }
                     } catch (ChecksumFailedException e) {
@@ -145,6 +226,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                             if(requests[i] == null) {
                                 requests[i] = restored;
                                 recovered[i] = true;
+                                boolean loadedFully = restored.fullyResumed();
+                                loaded.addPartiallyLoadedRequest(req, requests[i], 
+                                        loadedFully ? RequestLoadStatus.RESTORED_FULLY : RequestLoadStatus.RESTORED_RESTARTED);
                             }
                         } catch (ChecksumFailedException e) {
                             if(requests[i] == null) {
@@ -166,60 +250,18 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                         skipChecksummedObject(ois, length);
                     }
                 }
-                PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
-                this.bandwidthStatsPutter.addFrom(storedStatsPutter);
-                int count = ois.readInt();
-                buckets = new DelayedFreeBucket[count];
-                for(int i=0;i<count;i++) {
+                if(latest) {
                     try {
-                        buckets[i] = (DelayedFreeBucket) readChecksummedObject(ois, length);
-                    } catch (ChecksumFailedException e) {
-                        Logger.error(this, "Failed to load a bucket to free");
+                        // Don't bother with the buckets to free or the stats unless reading from the latest version (client.dat not client.dat.bak).
+                        readStatsAndBuckets(ois, length, context);
+                    } catch (Throwable t) {
+                        Logger.error(this, "Failed to restore stats and delete old temp files: "+t, t);
                     }
                 }
                 ois.close();
                 fis = null;
-                onLoading();
-                // Resume the requests.
-                for(int i=0; i<requests.length;i++) {
-                    ClientRequest req = requests[i];
-                    try {
-                        if(req != null) {
-                            req.onResume(context);
-                            if(recovered[i])
-                                req.start(context);
-                        }
-                    } catch (Throwable t) {
-                        System.err.println("Unable to resume request "+req+" after loading it.");
-                        Logger.error(this, "Unable to resume request "+req+" after loading it.");
-                        try {
-                            req.cancel(context);
-                        } catch (Throwable t1) {
-                            Logger.error(this, "Unable to terminate "+req+" after failure");
-                        }
-                    }
-                }
-                // Delete the unnecessary buckets.
-                if(buckets != null) {
-                    for(DelayedFreeBucket bucket : buckets) {
-                        if(bucket == null) continue;
-                        try {
-                            bucket.onResume(context);
-                            if(bucket.toFree())
-                                bucket.realFree();
-                        } catch (Throwable t) {
-                            Logger.error(this, "Unable to free old bucket "+bucket, t);
-                        }
-                    }
-                }
-                System.out.println("Resumed from saved requests ...");
-                onStarted();
-                return;
             } catch (IOException e) {
                 // FIXME tell user more obviously.
-                System.err.println("Failed to load persistent requests: "+e);
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
                 System.err.println("Failed to load persistent requests: "+e);
                 e.printStackTrace();
             } finally {
@@ -231,12 +273,33 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 }
             }
         }
-        // FIXME backups etc!
-        System.err.println("Starting request persistence layer without resuming ...");
-        salt = new byte[32];
-        random.nextBytes(salt);
-        requestStarters.setGlobalSalt(salt);
-        onStarted();
+    }
+
+    private void readStatsAndBuckets(ObjectInputStream ois, long length, ClientContext context) throws IOException, ClassNotFoundException {
+        PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
+        this.bandwidthStatsPutter.addFrom(storedStatsPutter);
+        int count = ois.readInt();
+        DelayedFreeBucket[] buckets = new DelayedFreeBucket[count];
+        for(int i=0;i<count;i++) {
+            try {
+                buckets[i] = (DelayedFreeBucket) readChecksummedObject(ois, length);
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Failed to load a bucket to free");
+            }
+        }
+        // Delete the unnecessary buckets.
+        if(buckets != null) {
+            for(DelayedFreeBucket bucket : buckets) {
+                if(bucket == null) continue;
+                try {
+                    bucket.onResume(context);
+                    if(bucket.toFree())
+                        bucket.realFree();
+                } catch (Throwable t) {
+                    Logger.error(this, "Unable to free old bucket "+bucket, t);
+                }
+            }
+        }
     }
 
     @Override
