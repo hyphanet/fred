@@ -6,9 +6,11 @@ import org.bouncycastle.util.Arrays;
 
 import com.db4o.io.IoAdapter;
 
+import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.HMAC;
 import freenet.crypt.RandomSource;
+import freenet.support.api.Bucket;
 
 public class DatabaseKey {
     
@@ -22,6 +24,10 @@ public class DatabaseKey {
     
     public EncryptingIoAdapter createEncryptingDb4oAdapter(IoAdapter baseAdapter) {
         return new EncryptingIoAdapter(baseAdapter, databaseKey, random);
+    }
+    
+    public Bucket createEncryptedBucketForClientLayer(Bucket underlying) {
+        return new AEADCryptBucket(underlying, getKeyForClientLayer());
     }
 
     public static DatabaseKey createRandom(RandomSource random) {
@@ -51,11 +57,26 @@ public class DatabaseKey {
         }
     }
     
+    /** Key Derivation Function for client.dat: Use the database key as an HMAC key to an HMAC 
+     * of the key plus some constant plus the storeIdentifier.
+     * @return An encryption key, as byte[].
+     */
+    public byte[] getKeyForClientLayer() {
+        byte[] full = new byte[databaseKey.length+CLIENT_LAYER.length];
+        int x = 0;
+        System.arraycopy(databaseKey, 0, full, 0, databaseKey.length);
+        x += databaseKey.length;
+        System.arraycopy(CLIENT_LAYER, 0, full, x, CLIENT_LAYER.length);
+        return HMAC.macWithSHA256(databaseKey, full, 32);
+    }
+    
     private static final byte[] PLUGIN;
+    private static final byte[] CLIENT_LAYER;
     
     static {
         try {
             PLUGIN = "PLUGIN".getBytes("UTF-8");
+            CLIENT_LAYER = "CLIENT".getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new Error(e);
         }
