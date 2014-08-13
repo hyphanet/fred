@@ -25,12 +25,14 @@ import freenet.clients.fcp.RequestIdentifier;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
+import freenet.node.DatabaseKey;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Ticker;
+import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
@@ -73,7 +75,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     static final long INTERVAL = MINUTES.toMillis(10);
     private final File filename;
     private final File backupFilename;
-    private final FileBucket bucket;
+    private final Bucket bucket;
+    private final Bucket backupBucket;
     private final Node node; // Needed for bandwidth stats putter
     private final PersistentTempBucketFactory persistentTempFactory;
     /** Needed for temporary storage when writing objects. Some of them might be big, e.g. site 
@@ -98,11 +101,18 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
      * everything else. */
     public ClientLayerPersister(Executor executor, Ticker ticker, File filename, Node node,
             PersistentTempBucketFactory persistentTempFactory, TempBucketFactory tempBucketFactory,
-            PersistentStatsPutter stats) {
+            PersistentStatsPutter stats, DatabaseKey encryptionKey) {
         super(executor, ticker, INTERVAL);
         this.filename = filename;
+        Bucket b = new FileBucket(filename, false, false, false, false, false);
+        if(encryptionKey != null)
+            b = encryptionKey.createEncryptedBucketForClientLayer(b);
+        this.bucket = b;
         this.backupFilename = new File(filename.getParentFile(), filename.getName()+".bak");
-        this.bucket = new FileBucket(filename, false, false, false, false, false);
+        b = new FileBucket(backupFilename, true, false, false, false, false);
+        if(encryptionKey != null)
+            b = encryptionKey.createEncryptedBucketForClientLayer(b);
+        this.backupBucket = b;
         this.node = node;
         this.persistentTempFactory = persistentTempFactory;
         this.tempBucketFactory = tempBucketFactory;
@@ -181,13 +191,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public void load(ClientContext context, RequestStarterGroup requestStarters, Random random) throws NodeInitException {
         PartialLoad loaded = new PartialLoad();
         if(filename.exists()) {
-            innerLoad(loaded, filename, true, context, requestStarters, random);
+            innerLoad(loaded, bucket, true, context, requestStarters, random);
             if(loaded.somethingFailed()) {
                 if(backupFilename.exists()) {
                     Logger.error(this, "Downloads/uploads queue: errors loading from "+filename.toString()+" so trying to fill in gaps by loading from backup "+backupFilename.toString());
                     System.err.println("Errors restoring downloads/uploads queue from "+filename+" so trying "+backupFilename);
                     System.err.println("Some downloads/uploads may be lost or restarted");
-                    innerLoad(loaded, backupFilename, false, context, requestStarters, random);
+                    innerLoad(loaded, backupBucket, false, context, requestStarters, random);
                 } else {
                     Logger.error(this, "Some errors loading from "+filename+" and no backup file available.");
                     System.err.println("Some errors restoring the downloads/uploads queue from "+filename+" but no backup file available.");
@@ -196,7 +206,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
         } else {
             Logger.warning(this, filename.toString()+" does not exist so loading from backup "+backupFilename.toString());
-            innerLoad(loaded, backupFilename, true, context, requestStarters, random);
+            innerLoad(loaded, backupBucket, true, context, requestStarters, random);
         }
         
         if(loaded.getSalt() == null) {
@@ -269,10 +279,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
 
-    private void innerLoad(PartialLoad loaded, File filename, boolean latest, 
+    private void innerLoad(PartialLoad loaded, Bucket bucket, boolean latest, 
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws NodeInitException {
-        long length = filename.length();
+        long length = bucket.size();
         InputStream fis = null;
         try {
             fis = bucket.getInputStream();
