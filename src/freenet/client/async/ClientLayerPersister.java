@@ -294,7 +294,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 if(request == null || logMINOR) {
                     try {
                         ClientRequest restored = readRequestFromRecoveryData(ois, length, reqID);
-                        if(request == null) {
+                        if(request == null && restored != null) {
                             request = restored;
                             boolean loadedFully = restored.fullyResumed();
                             loaded.addPartiallyLoadedRequest(reqID, request, 
