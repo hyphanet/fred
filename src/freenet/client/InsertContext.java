@@ -149,5 +149,74 @@ public class InsertContext implements Cloneable, Serializable {
 			throw new Error(e);
 		}
 	}
+	
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (canWriteClientCache ? 1231 : 1237);
+        result = prime * result + (int) (compatibilityMode ^ (compatibilityMode >>> 32));
+        result = prime * result
+                + ((compressorDescriptor == null) ? 0 : compressorDescriptor.hashCode());
+        result = prime * result + consecutiveRNFsCountAsSuccess;
+        result = prime * result + (dontCompress ? 1231 : 1237);
+        // eventProducer is ignored.
+        result = prime * result + extraInsertsSingleBlock;
+        result = prime * result + extraInsertsSplitfileHeaderBlock;
+        result = prime * result + (forkOnCacheable ? 1231 : 1237);
+        result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
+        result = prime * result + (localRequestOnly ? 1231 : 1237);
+        result = prime * result + maxInsertRetries;
+        result = prime * result + splitfileAlgorithm;
+        result = prime * result + splitfileSegmentCheckBlocks;
+        result = prime * result + splitfileSegmentDataBlocks;
+        return result;
+    }
+
+    /** Are two InsertContext's equal? Ignores the EventProducer, compares only the actual config
+     * values. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        InsertContext other = (InsertContext) obj;
+        if (canWriteClientCache != other.canWriteClientCache)
+            return false;
+        if (compatibilityMode != other.compatibilityMode)
+            return false;
+        if (compressorDescriptor == null) {
+            if (other.compressorDescriptor != null)
+                return false;
+        } else if (!compressorDescriptor.equals(other.compressorDescriptor))
+            return false;
+        if (consecutiveRNFsCountAsSuccess != other.consecutiveRNFsCountAsSuccess)
+            return false;
+        if (dontCompress != other.dontCompress)
+            return false;
+        // eventProducer is ignored, and assumed to be unique.
+        if (extraInsertsSingleBlock != other.extraInsertsSingleBlock)
+            return false;
+        if (extraInsertsSplitfileHeaderBlock != other.extraInsertsSplitfileHeaderBlock)
+            return false;
+        if (forkOnCacheable != other.forkOnCacheable)
+            return false;
+        if (ignoreUSKDatehints != other.ignoreUSKDatehints)
+            return false;
+        if (localRequestOnly != other.localRequestOnly)
+            return false;
+        if (maxInsertRetries != other.maxInsertRetries)
+            return false;
+        if (splitfileAlgorithm != other.splitfileAlgorithm)
+            return false;
+        if (splitfileSegmentCheckBlocks != other.splitfileSegmentCheckBlocks)
+            return false;
+        if (splitfileSegmentDataBlocks != other.splitfileSegmentDataBlocks)
+            return false;
+        return true;
+    }
 
 }

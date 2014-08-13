@@ -410,5 +410,138 @@ public class FetchContext implements Cloneable, Serializable {
         blocks = null;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        // eventProducer is not included, assumed to be unique.
+        result = prime * result + (allowSplitfiles ? 1231 : 1237);
+        result = prime * result + ((allowedMIMETypes == null) ? 0 : allowedMIMETypes.hashCode());
+        // Don't include blocks. It doesn't implement content-based hashCode() and equals(). FIXME
+        result = prime * result + (canWriteClientCache ? 1231 : 1237);
+        result = prime * result + ((charset == null) ? 0 : charset.hashCode());
+        result = prime * result + cooldownRetries;
+        result = prime * result + (int) (cooldownTime ^ (cooldownTime >>> 32));
+        result = prime * result + (dontEnterImplicitArchives ? 1231 : 1237);
+        result = prime * result + (filterData ? 1231 : 1237);
+        result = prime * result + (followRedirects ? 1231 : 1237);
+        result = prime * result + (hasOwnEventProducer ? 1231 : 1237);
+        result = prime * result + (ignoreStore ? 1231 : 1237);
+        result = prime * result + (ignoreTooManyPathComponents ? 1231 : 1237);
+        result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
+        result = prime * result + (localRequestOnly ? 1231 : 1237);
+        result = prime * result + maxArchiveLevels;
+        result = prime * result + maxArchiveRestarts;
+        result = prime * result + maxCheckBlocksPerSegment;
+        result = prime * result + maxDataBlocksPerSegment;
+        result = prime * result + maxMetadataSize;
+        result = prime * result + maxNonSplitfileRetries;
+        result = prime * result + (int) (maxOutputLength ^ (maxOutputLength >>> 32));
+        result = prime * result + maxRecursionLevel;
+        result = prime * result + maxSplitfileBlockRetries;
+        result = prime * result + (int) (maxTempLength ^ (maxTempLength >>> 32));
+        result = prime * result + maxUSKRetries;
+        result = prime * result + ((overrideMIME == null) ? 0 : overrideMIME.hashCode());
+        result = prime * result + ((prefetchHook == null) ? 0 : prefetchHook.hashCode());
+        result = prime * result + (returnZIPManifests ? 1231 : 1237);
+        result = prime * result + ((tagReplacer == null) ? 0 : tagReplacer.hashCode());
+        return result;
+    }
+
+    /** Are two InsertContext's equal? Ignores the EventProducer, compares only the actual config
+     * values. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        FetchContext other = (FetchContext) obj;
+        // eventProducer is ignored.
+        if (allowSplitfiles != other.allowSplitfiles)
+            return false;
+        if (allowedMIMETypes == null) {
+            if (other.allowedMIMETypes != null)
+                return false;
+        } else if (!allowedMIMETypes.equals(other.allowedMIMETypes))
+            return false;
+        // We *DO* compare on blocks, which means that two FetchContext's can be non-equal even 
+        // though the are really the same, until blocks has a proper equals(). FIXME
+        if (blocks == null) {
+            if (other.blocks != null)
+                return false;
+        } else if (!blocks.equals(other.blocks))
+            return false;
+        if (canWriteClientCache != other.canWriteClientCache)
+            return false;
+        if (charset == null) {
+            if (other.charset != null)
+                return false;
+        } else if (!charset.equals(other.charset))
+            return false;
+        if (cooldownRetries != other.cooldownRetries)
+            return false;
+        if (cooldownTime != other.cooldownTime)
+            return false;
+        if (dontEnterImplicitArchives != other.dontEnterImplicitArchives)
+            return false;
+        if (filterData != other.filterData)
+            return false;
+        if (followRedirects != other.followRedirects)
+            return false;
+        if (hasOwnEventProducer != other.hasOwnEventProducer)
+            return false;
+        if (ignoreStore != other.ignoreStore)
+            return false;
+        if (ignoreTooManyPathComponents != other.ignoreTooManyPathComponents)
+            return false;
+        if (ignoreUSKDatehints != other.ignoreUSKDatehints)
+            return false;
+        if (localRequestOnly != other.localRequestOnly)
+            return false;
+        if (maxArchiveLevels != other.maxArchiveLevels)
+            return false;
+        if (maxArchiveRestarts != other.maxArchiveRestarts)
+            return false;
+        if (maxCheckBlocksPerSegment != other.maxCheckBlocksPerSegment)
+            return false;
+        if (maxDataBlocksPerSegment != other.maxDataBlocksPerSegment)
+            return false;
+        if (maxMetadataSize != other.maxMetadataSize)
+            return false;
+        if (maxNonSplitfileRetries != other.maxNonSplitfileRetries)
+            return false;
+        if (maxOutputLength != other.maxOutputLength)
+            return false;
+        if (maxRecursionLevel != other.maxRecursionLevel)
+            return false;
+        if (maxSplitfileBlockRetries != other.maxSplitfileBlockRetries)
+            return false;
+        if (maxTempLength != other.maxTempLength)
+            return false;
+        if (maxUSKRetries != other.maxUSKRetries)
+            return false;
+        if (overrideMIME == null) {
+            if (other.overrideMIME != null)
+                return false;
+        } else if (!overrideMIME.equals(other.overrideMIME))
+            return false;
+        if (prefetchHook == null) {
+            if (other.prefetchHook != null)
+                return false;
+        } else if (!prefetchHook.equals(other.prefetchHook))
+            return false;
+        if (returnZIPManifests != other.returnZIPManifests)
+            return false;
+        if (tagReplacer == null) {
+            if (other.tagReplacer != null)
+                return false;
+        } else if (!tagReplacer.equals(other.tagReplacer))
+            return false;
+        return true;
+    }
+
 
 }
