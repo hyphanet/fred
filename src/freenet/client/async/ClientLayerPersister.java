@@ -217,7 +217,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             byte[] salt = new byte[32];
             try {
                 checker.readAndChecksum(ois, salt, 0, salt.length);
-                if(loaded.salt != null)
+                if(loaded.salt == null)
                     loaded.salt = salt;
             } catch (ChecksumFailedException e1) {
                 Logger.error(this, "Unable to read global salt from "+filename+" (checksum failed)");
