@@ -146,6 +146,8 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		else {
 			try {
 				maxSize = Long.parseLong(maxSizeString, 10);
+				if(maxSize < 0)
+				    throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Maximum size must be positive", identifier, global);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
@@ -157,6 +159,8 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		else {
 			try {
 				maxTempSize = Long.parseLong(maxTempSizeString, 10);
+                if(maxTempSize < 0)
+                    throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Maximum temp size must be positive", identifier, global);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
@@ -168,6 +172,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		else {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
+				if(maxRetries < -1) throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Max retries must be -1 or larger", identifier, global);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
@@ -208,6 +213,8 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 		initialMetadataLength = fs.getLong("InitialMetadata.DataLength", 0);
+		if(initialMetadataLength < 0)
+		    throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid data length for initial metadata", identifier, global);
 		ignoreUSKDatehints = fs.getBoolean("IgnoreUSKDatehints", false);
 	}
 
