@@ -341,8 +341,6 @@ public class NodeClientCore implements Persistable {
 
         });
         
-		initPTBF(nodeConfig);
-
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 
 		healingQueue = new SimpleHealingQueue(
@@ -378,6 +376,7 @@ public class NodeClientCore implements Persistable {
         
         try {
             initStorage(databaseKey);
+            initPTBF(nodeConfig);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
             node.setDatabaseAwaitingPassword();
@@ -604,7 +603,7 @@ public class NodeClientCore implements Persistable {
     }
 
 	private void initPTBF(SubConfig nodeConfig) throws NodeInitException {
-	    // FIXME after onResume()'s done, call PTBF to cleanup.
+	    this.persistentTempBucketFactory.completedInit();
 	}
 
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container, DatabaseKey databaseKey) throws NodeInitException {
@@ -695,8 +694,6 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-				if(persistentTempBucketFactory != null)
-					persistentTempBucketFactory.completedInit();
 				node.pluginManager.start(node.config);
 				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
