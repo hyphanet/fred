@@ -1,11 +1,13 @@
 package freenet.client;
 
+import java.io.Serializable;
+
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 /** Called when we have extracted an archive, and a specified file either is
  * or isn't in it. */
-public interface ArchiveExtractCallback {
+public interface ArchiveExtractCallback extends Serializable {
 
 	/** Got the data.
 	 * Note that the bucket will be persistent if the caller asked for an off-thread extraction. */

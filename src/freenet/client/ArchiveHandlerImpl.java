@@ -1,5 +1,7 @@
 package freenet.client;
 
+import java.io.Serializable;
+
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
@@ -7,9 +9,10 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
-class ArchiveHandlerImpl implements ArchiveHandler {
+class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerClass(ArchiveHandlerImpl.class);

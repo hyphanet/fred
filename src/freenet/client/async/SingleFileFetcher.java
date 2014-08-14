@@ -469,7 +469,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else {
 					final boolean persistent = this.persistent;
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
-						@Override
+                        private static final long serialVersionUID = 1L;
+                        @Override
 						public void gotBucket(Bucket data, ClientContext context) {
 							if(logMINOR) Logger.minor(this, "gotBucket on "+SingleFileFetcher.this+" persistent="+persistent);
 							try {
@@ -534,7 +535,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Therefore, the archive needs to be fetched.
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
-						@Override
+                        private static final long serialVersionUID = 1L;
+                        @Override
 						public void gotBucket(Bucket data, ClientContext context) {
 							if(logMINOR) Logger.minor(this, "Returning data");
 							final Metadata newMetadata;
@@ -611,7 +613,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Therefore, the archive needs to be fetched.
 					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
-						@Override
+                        private static final long serialVersionUID = 1L;
+                        @Override
 						public void gotBucket(Bucket data, ClientContext context) {
 							if(logMINOR) Logger.minor(this, "Returning data");
 							// Because this will be processed immediately, and because the callback uses a StreamGenerator, 
