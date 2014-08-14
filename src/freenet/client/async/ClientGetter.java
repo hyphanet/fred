@@ -353,6 +353,11 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 				clientMetadata = worker.getClientMetadata();
 				result = new FetchResult(clientMetadata, finalResult);
 			}
+			// These must be updated for ClientGet.
+			synchronized(this) {
+			    this.expectedMIME = result.getMimeType();
+			    this.expectedSize = result.size();
+			}
 		} catch(UnsafeContentTypeException e) {
 			Logger.normal(this, "Error filtering content: will not validate", e);
 			ex = e.createFetchException(ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME, expectedSize);
