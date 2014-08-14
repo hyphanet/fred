@@ -197,6 +197,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         if(!(mustCheckpoint || 
                                 System.currentTimeMillis() - lastCheckpointed > checkpointInterval))
                             return;
+                        if(killed) return;
                         if(runningJobs != 0) return;
                         writing = true;
                     }
@@ -218,6 +219,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
             @Override
             public void run() {
+                synchronized(sync) {
+                    if(killed) return;
+                }
                 checkpoint(false);
             }
 
