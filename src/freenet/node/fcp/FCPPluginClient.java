@@ -118,8 +118,8 @@ public final class FCPPluginClient {
     
     /**
      * For being used by networked FCP connections:<br/>
-     * The server is running within the node, and its message handler can be queried from the {@link PluginManager} via the pluginName.<br/> 
-     * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
+     * The server is running within the node, and its message handler will be queried from the {@link PluginManager} via the given String pluginName.<br/>
+     * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} connection.<br/>
      */
     public static FCPPluginClient constructForNetworkedFCP(FCPConnectionHandler connection, String pluginName) throws PluginNotFoundException {
         assert(connection != null);
