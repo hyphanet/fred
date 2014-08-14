@@ -12,6 +12,7 @@ import freenet.client.async.ClientContext;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 /** Encrypted and authenticated Bucket implementation using AES cipher and OCB mode. Warning: 
@@ -88,7 +89,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
     }
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
     

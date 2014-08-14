@@ -130,7 +130,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         if(persistent()) {
             generator = context.persistentFG;
             if(file == null) {
@@ -156,13 +156,13 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         super.onResume(context);
     }
     
-    private void checkExists(File file) {
+    private void checkExists(File file) throws ResumeFailedException {
         // File must exist!
         try {
             if(!(file.createNewFile() || file.exists()))
-                throw new IllegalStateException("Tempfile "+file+" does not exist and cannot be created");
+                throw new ResumeFailedException("Tempfile "+file+" does not exist and cannot be created");
         } catch (IOException e) {
-            throw new IllegalStateException("Tempfile cannot be created");
+            throw new ResumeFailedException("Tempfile cannot be created");
         }
     }
 

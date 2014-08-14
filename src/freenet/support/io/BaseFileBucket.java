@@ -500,7 +500,7 @@ public abstract class BaseFileBucket implements Bucket {
 	public abstract File getFile();
 
 	@Override
-	public void onResume(ClientContext context) {
+	public void onResume(ClientContext context) throws ResumeFailedException {
 	    length = getFile().length();
 	}
 	

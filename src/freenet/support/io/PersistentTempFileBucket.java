@@ -51,7 +51,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	}
 	
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         super.onResume(context);
         tracker = context.persistentFileTracker;
         tracker.register(getFile());

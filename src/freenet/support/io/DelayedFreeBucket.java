@@ -115,7 +115,7 @@ public class DelayedFreeBucket implements Bucket, Serializable {
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         this.factory = context.persistentBucketFactory;
         bucket.onResume(context);
     }

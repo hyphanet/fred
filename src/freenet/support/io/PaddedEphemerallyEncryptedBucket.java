@@ -372,7 +372,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         randomSeed = new byte[32];
         context.fastWeakRandom.nextBytes(randomSeed);
         bucket.onResume(context);

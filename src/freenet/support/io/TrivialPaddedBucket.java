@@ -239,7 +239,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     }
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         underlying.onResume(context);
     }
     

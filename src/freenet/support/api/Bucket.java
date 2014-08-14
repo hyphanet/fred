@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.client.async.ClientContext;
+import freenet.support.io.ResumeFailedException;
 /**
  * A bucket is any arbitrary object can temporarily store data. In other 
  * words, it is the equivalent of a temporary file, but it could be in RAM,
@@ -77,8 +78,9 @@ public interface Bucket {
 	/** Called after restarting. The Bucket should do any necessary housekeeping after resuming,
 	 * e.g. registering itself with the appropriate persistent bucket tracker to avoid being 
 	 * garbage-collected. 
-	 * @param context All the necessary runtime support will be on this object. */
-	public void onResume(ClientContext context);
+	 * @param context All the necessary runtime support will be on this object. 
+	 * @throws ResumeFailedException */
+	public void onResume(ClientContext context) throws ResumeFailedException;
 
 	/** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
 	 * for recovering in emergencies, should be versioned if necessary. 

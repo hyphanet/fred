@@ -182,7 +182,7 @@ public class MultiReaderBucket implements Serializable {
 		}
 
         @Override
-        public void onResume(ClientContext context) {
+        public void onResume(ClientContext context) throws ResumeFailedException {
             synchronized(MultiReaderBucket.this) {
                 if(hasResumed) return;
                 hasResumed = true;

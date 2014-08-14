@@ -65,7 +65,7 @@ public class NoFreeBucket implements Bucket, Serializable {
 	}
 
     @Override
-    public void onResume(ClientContext context) {
+    public void onResume(ClientContext context) throws ResumeFailedException {
         proxy.onResume(context);
     }
     
