@@ -315,19 +315,16 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this, context);
 			result.asBucket().free();
 		} else {
-			if(persistent()) {
-				rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, context);
-			} else {
-				// Break locks, don't run filtering on FEC thread etc etc.
-				context.mainExecutor.execute(new Runnable() {
-					
-					@Override
-					public void run() {
-						rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, SingleFileFetcher.this, context);
-					}
-				
-				});
-			}
+            // Break locks, don't run filtering on FEC thread etc etc.
+		    context.getJobRunner(persistent()).queueInternal(new PersistentJob() {
+		        
+		        @Override
+		        public boolean run(ClientContext context) {
+		            rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, SingleFileFetcher.this, context);
+		            return true;
+		        }
+		        
+		    });
 		}
 	}
 
@@ -650,19 +647,16 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
 				parent.onTransition(this, f);
 				
-				if(persistent) {
-					f.innerWrapHandleMetadata(true, context);
-				} else {
-					// Break locks. Must not call onFailure(), etc, from within SFF lock.
-					context.mainExecutor.execute(new Runnable() {
-
-						@Override
-						public void run() {
-							f.innerWrapHandleMetadata(true, context);
-						}
-						
-					});
-				}
+				// Break locks. Must not call onFailure(), etc, from within SFF lock.
+				context.getJobRunner(persistent).queueInternal(new PersistentJob() {
+				    
+				    @Override
+				    public boolean run(ClientContext context) {
+				        f.innerWrapHandleMetadata(true, context);
+				        return true;
+				    }
+				    
+				});
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
@@ -875,19 +869,16 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// We need to transition here, so that everything gets deleted if we are cancelled during the archive fetch phase.
 		parent.onTransition(this, f);
 		
-		if(!persistent) {
-			// Break locks. Must not call onFailure(), etc, from within SFF lock.
-			context.mainExecutor.execute(new Runnable() {
-
-				@Override
-				public void run() {
-					f.innerWrapHandleMetadata(true, context);
-				}
-				
-			});
-		} else {
-			f.innerWrapHandleMetadata(true, context);
-		}
+        // Break locks. Must not call onFailure(), etc, from within SFF lock.
+		context.getJobRunner(persistent).queueInternal(new PersistentJob() {
+		    
+            @Override
+            public boolean run(ClientContext context) {
+                f.innerWrapHandleMetadata(true, context);
+                return true;
+            }
+		    
+		});
 	}
 
 	// LOCKING: If transient, DO NOT call this method from within handleMetadata.
