@@ -294,5 +294,9 @@ public class ClientContext {
     public InsertContext getDefaultPersistentInsertContext() {
         return new InsertContext(defaultPersistentInsertContext, new SimpleEventProducer());
     }
+    
+    public PersistentJobRunner getJobRunner(boolean persistent) {
+        return persistent ? jobRunner : dummyJobRunner;
+    }
 	
 }
