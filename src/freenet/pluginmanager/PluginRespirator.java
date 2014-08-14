@@ -127,7 +127,7 @@ public class PluginRespirator {
 	 *         Then you have to create a fresh connection with this function.
 	 */
     public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException {
-        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node, pluginName, messageHandler);
+        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, pluginName, messageHandler);
         // TODO FIXME: Certain plugins, notably WOT, might want to initiate communication with the client when certain events happen.
         // They need something to store in their database to reference the client, and that would be the ID. So we need to register clients by ID and allow
         // getting them by ID.
