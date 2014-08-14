@@ -6,8 +6,6 @@ package freenet.node;
 import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;

@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 

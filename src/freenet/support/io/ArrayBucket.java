@@ -9,8 +9,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 

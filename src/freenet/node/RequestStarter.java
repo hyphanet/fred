@@ -6,8 +6,6 @@ package freenet.node;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;

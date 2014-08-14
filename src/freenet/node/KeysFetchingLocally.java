@@ -1,7 +1,5 @@
 package freenet.node;
 
-import com.db4o.ObjectContainer;
-
 import freenet.keys.Key;
 
 public interface KeysFetchingLocally {
