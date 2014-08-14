@@ -37,7 +37,6 @@ import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.StorageFormatException;
@@ -348,18 +347,10 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             return somethingFailed || !doneSomething;
         }
 
-        public boolean isEmpty() {
-            return partiallyLoadedRequests.isEmpty();
-        }
-
         public void setSomethingFailed() {
             somethingFailed = true;
         }
         
-        public boolean somethingFailed() {
-            return somethingFailed;
-        }
-
         public void setSalt(byte[] loadedSalt) {
             if(salt == null)
                 salt = loadedSalt;
