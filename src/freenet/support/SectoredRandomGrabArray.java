@@ -24,11 +24,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
-	protected final boolean persistent;
 	private RemoveRandomParent parent;
 	
-	public SectoredRandomGrabArray(boolean persistent, RemoveRandomParent parent) {
-		this.persistent = persistent;
+	public SectoredRandomGrabArray(RemoveRandomParent parent) {
 		grabClients = new Object[0];
 		grabArrays = new RemoveRandomWithObject[0];
 		this.parent = parent;
@@ -41,7 +39,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(clientIndex == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, persistent, this);
+			rga = new RandomGrabArrayWithClient(client, this);
 			addElement(client, rga);
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
@@ -326,7 +324,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
 		if(rga == null) {
-			Logger.error(this, "Only one entry and that is null; persistent="+persistent);
+			Logger.error(this, "Only one entry and that is null");
 			// We are sure
 			grabArrays = new RemoveRandomWithObject[0];
 			grabClients = new Object[0];
@@ -381,11 +379,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		return grabArrays.length == 0;
 	}
 	
-	@Override
-	public boolean persistent() {
-		return persistent;
-	}
-
 	public synchronized int size() {
 		return grabArrays.length;
 	}

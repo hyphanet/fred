@@ -590,7 +590,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
             if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(false, null);
+                clientGrabber = new SectoredRandomGrabArray(null);
                 newPriorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
@@ -600,7 +600,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 // Request
                 SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
                 if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, false, clientGrabber);
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                     clientGrabber.addGrabber(client, requestGrabber, context);

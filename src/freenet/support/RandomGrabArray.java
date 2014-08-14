@@ -38,14 +38,12 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private int index;
 	private final static int MIN_SIZE = 32;
 	private final static int BLOCK_SIZE = 1024;
-	protected final boolean persistent;
 	private final int hashCode;
 	private RemoveRandomParent parent;
 
-	public RandomGrabArray(boolean persistent, RemoveRandomParent parent) {
+	public RandomGrabArray(RemoveRandomParent parent) {
 		this.blocks = new Block[] { new Block() };
 		blocks[0].reqs = new RandomGrabArrayItem[MIN_SIZE];
-		this.persistent = persistent;
 		index = 0;
 		this.hashCode = super.hashCode();
 		this.parent = parent;
@@ -146,14 +144,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
 		int excluded = 0;
-		int lastActiveBlock = -1;
 		while(true) {
 			int i = context.fastWeakRandom.nextInt(index);
 			int blockNo = i / BLOCK_SIZE;
 			RandomGrabArrayItem ret, oret;
-			if(persistent && blockNo != lastActiveBlock) {
-				lastActiveBlock = blockNo;
-			}
 			ret = blocks[blockNo].reqs[i % BLOCK_SIZE];
 			if(ret == null) {
 				Logger.error(this, "reqs["+i+"] = null");
@@ -298,10 +292,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					}
 					valid++;
 				}
-				if(persistent && activated && item != chosenItem && item != validItem) {
-					if(logMINOR)
-						Logger.minor(this, "Deactivating "+item);
-				}
 			}
 			if(index != target) {
 				index = target;
@@ -417,11 +407,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		return index == 0;
 	}
 	
-	@Override
-	public boolean persistent() {
-		return persistent;
-	}
-
 	public boolean contains(RandomGrabArrayItem item) {
 		synchronized(this) {
 			if(blocks.length == 1) {

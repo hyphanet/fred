@@ -4,8 +4,8 @@ public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray impl
 
 	private final int number;
 
-	public SectoredRandomGrabArrayWithInt(int number, boolean persistent, RemoveRandomParent parent) {
-		super(persistent, parent);
+	public SectoredRandomGrabArrayWithInt(int number, RemoveRandomParent parent) {
+		super(parent);
 		this.number = number;
 	}
 
