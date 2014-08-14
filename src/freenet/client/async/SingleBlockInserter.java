@@ -70,7 +70,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	Bucket sourceData;
 	final short compressionCodec;
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
-	FreenetURI resultingURI;
+	private ClientKey resultingKey;
 	final PutCompletionCallback cb;
 	final BaseClientPutter parent;
 	final InsertContext ctx;
@@ -197,8 +197,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	protected void onEncode(final ClientKey key, final ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
-			if(resultingURI != null) return;
-			resultingURI = key.getURI();
+			if(resultingKey != null) return;
+			resultingKey = key;
 		}
 		if(!persistent) {
 			context.mainExecutor.execute(new Runnable() {
@@ -232,11 +232,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return null;
 			}
 			block = innerEncode(context.random);
-			shouldSend = (resultingURI == null);
-			resultingURI = block.getClientKey().getURI();
+			shouldSend = (resultingKey == null);
+			resultingKey = block.getClientKey();
 		}
 		if(logMINOR)
-			Logger.minor(this, "Encoded "+resultingURI+" for "+this+" shouldSend="+shouldSend+" dontSendEncoded="+dontSendEncoded);
+			Logger.minor(this, "Encoded "+resultingKey.getURI()+" for "+this+" shouldSend="+shouldSend+" dontSendEncoded="+dontSendEncoded);
 		if(shouldSend && !dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this, context);
 		return block;
@@ -359,19 +359,19 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public FreenetURI getURI(ClientContext context) {
 		synchronized(this) {
-			if(resultingURI != null) {
-				return persistent ? resultingURI.clone() : resultingURI;
+			if(resultingKey != null) {
+				return resultingKey.getURI();
 			}
 		}
 		getBlock(context, true);
 		synchronized(this) {
-			// FIXME not really necessary? resultingURI is never dropped, only set.
-			return persistent ? resultingURI.clone() : resultingURI;
+			// FIXME not really necessary? resultingKey is never dropped, only set.
+		    return resultingKey.getURI();
 		}
 	}
 
 	public synchronized FreenetURI getURINoEncode() {
-		return resultingURI;
+		return resultingKey == null ? null : resultingKey.getURI();
 	}
 
 	@Override
@@ -575,7 +575,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	@Override
 	public void tryEncode(ClientContext context) {
 		synchronized(this) {
-			if(resultingURI != null) return;
+			if(resultingKey != null) return;
 			if(finished) return;
 		}
 		try {

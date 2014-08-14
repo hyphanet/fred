@@ -319,7 +319,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
-			try {
+			try { 
+			    // This is definitely NOT an internal job. 
+			    // It can wait until after the next checkpoint if necessary. So use queue().
 				jobRunner.queue(new PersistentJob() {
 
 					@Override
