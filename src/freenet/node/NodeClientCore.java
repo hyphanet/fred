@@ -637,7 +637,7 @@ public class NodeClientCore implements Persistable {
 	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
-	            node.wantEncryptedDatabase(), databaseKey, clientContext, requestStarters, random);
+	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
     }
 
     private static String l10n(String key) {

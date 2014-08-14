@@ -114,14 +114,24 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         this.bandwidthStatsPutter = stats;
     }
     
-    /** Set the files to write to and set up encryption 
+    /** Set the files to write to and set up encryption
+     * @param noWrite If true, don't write the data to disk at all, and delete existing 
+     * client.dat*.
      * @throws MasterKeysWrongPasswordException If we need the encryption key but it has not been 
      * supplied. */
-    public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, DatabaseKey encryptionKey,
-            ClientContext context, RequestStarterGroup requestStarters, Random random) 
-    throws MasterKeysWrongPasswordException {
+    public void setFilesAndLoad(File dir, String baseName, boolean writeEncrypted, boolean noWrite, 
+            DatabaseKey encryptionKey, ClientContext context, RequestStarterGroup requestStarters, 
+            Random random) throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
-            if(!hasStarted()) {
+            if(noWrite) {
+                writeToBucket = null;
+                writeToFilename = null;
+                writeToBackupFilename = null;
+                deleteFile(dir, baseName, false, false);
+                deleteFile(dir, baseName, false, true);
+                deleteFile(dir, baseName, true, false);
+                deleteFile(dir, baseName, true, true);
+            } else if(!hasStarted()) {
                 // Some serialization failures cause us to fail only at the point of scheduling the request.
                 // So if that happens we need to retry with serialization turned off.
                 // The requests that loaded fine already will not be affected as we check for duplicates.
@@ -139,6 +149,20 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
+    private void deleteFile(File dir, String baseName, boolean backup, boolean encrypted) {
+        File f = makeFilename(dir, baseName, backup, encrypted);
+        try {
+            FileUtil.secureDelete(f);
+        } catch (IOException e) {
+            f.delete();
+            if(f.exists()) {
+                System.err.println("Failed to delete "+f+" when setting maximum security level.");
+                System.err.println("There may be traces on disk of your previous download queue.");
+                // FIXME useralert???
+            }
+        }
+    }
+
     private void innerSetFilesOnly(File dir, String baseName, boolean writeEncrypted,
             DatabaseKey encryptionKey) throws MasterKeysWrongPasswordException {
         if(writeEncrypted && encryptionKey == null)
@@ -147,7 +171,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
         writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
         writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
-        if(oldWriteToFilename.equals(writeToFilename)) return;
+        if(writeToFilename.equals(oldWriteToFilename)) return;
         System.out.println("Will save downloads to "+writeToFilename);
         deleteAfterSuccessfulWrite = makeFilename(dir, baseName, false, !writeEncrypted);
         otherDeleteAfterSuccessfulWrite = makeFilename(dir, baseName, true, !writeEncrypted);
@@ -523,6 +547,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     protected void save() {
+        if(writeToFilename == null) return;
         if(writeToFilename.exists()) {
             FileUtil.renameTo(writeToFilename, writeToBackupFilename);
         }

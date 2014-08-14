@@ -5212,6 +5212,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean wantEncryptedDatabase() {
 	    return this.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW;
 	}
+	
+	public boolean wantNoPersistentDatabase() {
+	    return this.securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM;
+	}
 
 	public boolean hasDatabase() {
 		return db != null;
