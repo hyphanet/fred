@@ -107,9 +107,9 @@ public final class FCPPluginClient {
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
     private FCPPluginClient(FredPluginFCPServer serverPlugin, String serverPluginName, FCPConnectionHandler clientConnection) {
-        assert(clientConnection != null);
-        assert(serverPluginName != null);
         assert(serverPlugin != null);
+        assert(serverPluginName != null);
+        assert(clientConnection != null);
         
         this.clientConnection = clientConnection;
         this.serverPluginName = serverPluginName;
@@ -123,7 +123,9 @@ public final class FCPPluginClient {
      * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} clientConnection.<br/>
      */
     public static FCPPluginClient constructForNetworkedFCP(String serverPluginName, FCPConnectionHandler clientConnection) throws PluginNotFoundException {
+        assert(serverPluginName != null);
         assert(clientConnection != null);
+        
         return new FCPPluginClient(clientConnection.server.node.getPluginManager().getPluginFCPServer(serverPluginName), serverPluginName, clientConnection);
     }
 
@@ -138,6 +140,8 @@ public final class FCPPluginClient {
      */
     private FCPPluginClient(String serverPluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
         assert(serverPluginName != null);
+        assert(server != null);
+        assert(client != null);
         
         clientConnection = null;
         this.serverPluginName = serverPluginName;
@@ -153,6 +157,10 @@ public final class FCPPluginClient {
      */
     public static FCPPluginClient constructForIntraNodeFCP(PluginManager pluginManager, String serverPluginName, FredPluginFCPClient client)
             throws PluginNotFoundException {
+        assert(pluginManager != null);
+        assert(serverPluginName != null);
+        assert(client != null);
+        
         return new FCPPluginClient(serverPluginName, pluginManager.getPluginFCPServer(serverPluginName), client);
     }
     
