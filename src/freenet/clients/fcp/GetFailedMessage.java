@@ -23,8 +23,6 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     final int code;
-	final String codeDescription;
-	final String shortCodeDescription;
 	final String extraDescription;
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
@@ -50,9 +48,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 			Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
-		this.codeDescription = FetchException.getMessage(code);
 		this.extraDescription = e.extraMessage;
-		this.shortCodeDescription = FetchException.getShortMessage(code);
 		this.isFatal = e.isFatal();
 		this.identifier = identifier;
 		this.global = global;
@@ -75,13 +71,9 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		code = Integer.parseInt(fs.get("Code"));
 		
 		if(useVerboseFields) {
-			codeDescription = fs.get("CodeDescription");
 			isFatal = fs.getBoolean("Fatal", false);
-			shortCodeDescription = fs.get("ShortCodeDescription");
 		} else {
-			codeDescription = FetchException.getMessage(code);
 			isFatal = FetchException.isFatal(code);
-			shortCodeDescription = FetchException.getShortMessage(code);
 		}
 		
 		extraDescription = fs.get("ExtraDescription");
@@ -109,8 +101,6 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	protected GetFailedMessage() {
 	    // For serialization.
 	    code = 0;
-	    codeDescription = null;
-	    shortCodeDescription = null;
 	    extraDescription = null;
 	    tracker = null;
 	    isFatal = false;
@@ -137,7 +127,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.put("Code", code);
 		if(verbose)
-			sfs.putSingle("CodeDescription", codeDescription);
+			sfs.putSingle("CodeDescription", FetchException.getMessage(code));
 		if(extraDescription != null)
 			sfs.putSingle("ExtraDescription", extraDescription);
 		if(verbose)
@@ -146,7 +136,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 			sfs.tput("Errors", tracker.toFieldSet(verbose));
 		}
 		if(verbose)
-			sfs.putSingle("ShortCodeDescription", shortCodeDescription);
+			sfs.putSingle("ShortCodeDescription", getShortFailedMessage());
 		sfs.putSingle("Identifier", identifier);
 		if(expectedDataLength > -1) {
 			sfs.put("ExpectedDataLength", expectedDataLength);
@@ -171,14 +161,14 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	}
 
 	public String getShortFailedMessage() {
-		return shortCodeDescription;
+	    return FetchException.getShortMessage(code);
 	}
 	
 	public String getLongFailedMessage() {
 		if(extraDescription != null)
-			return shortCodeDescription + ": " + extraDescription;
+			return getShortFailedMessage() + ": " + extraDescription;
 		else
-			return shortCodeDescription;
+			return getShortFailedMessage();
 	}
 	
 	static final int VERSION = 1;
@@ -200,8 +190,6 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
         if(!FetchException.isErrorCode(code))
             throw new StorageFormatException("Bad error code");
         this.isFatal = FetchException.isFatal(code);
-        this.codeDescription = FetchException.getMessage(code);
-        this.shortCodeDescription = FetchException.getShortMessage(code);
         this.extraDescription = readPossiblyNull(dis);
         this.finalizedExpected = dis.readBoolean();
         String s = readPossiblyNull(dis);

@@ -781,7 +781,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public String getFailureReason(boolean longDescription) {
 		if(getFailedMessage == null)
 			return null;
-		String s = getFailedMessage.shortCodeDescription;
+		String s = getFailedMessage.getShortFailedMessage();
 		if(longDescription && getFailedMessage.extraDescription != null)
 			s += ": "+getFailedMessage.extraDescription;
 		return s;
