@@ -219,7 +219,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
                 }
 		        
 		    });
-			cb.onEncode(key, this, context);
 		}
 	}
 	
