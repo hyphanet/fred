@@ -576,7 +576,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             oos.close();
             fos = null;
-            System.out.println("Saved "+requests.length+" requests to client.dat");
+            System.out.println("Saved "+requests.length+" requests to "+writeToFilename);
             persistentTempFactory.postCommit(buckets);
             return true;
         } catch (IOException e) {
