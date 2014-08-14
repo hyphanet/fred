@@ -1,6 +1,7 @@
 package freenet.support;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.PersistentJobRunner;
 import freenet.node.PrioRunnable;
@@ -48,6 +49,16 @@ public class DummyJobRunner implements PersistentJobRunner {
     @Override
     public boolean hasStarted() {
         return true;
+    }
+
+    @Override
+    public void queueInternal(PersistentJob job, int threadPriority) {
+        queue(job, threadPriority);
+    }
+
+    @Override
+    public void queueInternal(PersistentJob job) {
+        queueInternal(job, NativeThread.LOW_PRIORITY);
     }
 
 }

@@ -23,6 +23,35 @@ public interface PersistentJobRunner {
 
     /** Queue the job at low thread priority or drop it if persistence is disabled. */
     void queueLowOrDrop(PersistentJob persistentJob);
+    
+    /** Start an "internal" job. We will not checkpoint until all the internal jobs have finished;
+     * we do not queue them at all. Hence a series of internal jobs is atomic. This should be used
+     * for stuff like creating the next stage of a request, where storing the half-way state would
+     * lead to it potentially not restarting properly after shutdown. It MUST NOT be used for 
+     * events from outside the client layer, including finding blocks in the datastore, on the 
+     * network etc.
+     * 
+     * FIXME this doesn't queue at all. Come up with a better name! :)
+     * @param job
+     * @throws PersistenceDisabledException
+     */
+    void queueInternal(PersistentJob job, int threadPriority) throws PersistenceDisabledException;
+    
+    /** Start an "internal" job. We will not checkpoint until all the internal jobs have finished;
+     * we do not queue them at all. Hence a series of internal jobs is atomic. This should be used
+     * for stuff like creating the next stage of a request, where storing the half-way state would
+     * lead to it potentially not restarting properly after shutdown. It MUST NOT be used for 
+     * events from outside the client layer, including finding blocks in the datastore, on the 
+     * network etc.
+     * 
+     * Often when we call this we could have continued the job on the same thread. That's not 
+     * always the best thing to do however, we often move stuff to another job to minimise locking
+     * or increase throughput.
+     * 
+     * FIXME this doesn't queue at all. Come up with a better name! :)
+     * @param job
+     */
+    void queueInternal(PersistentJob job);
 
     /** Commit ASAP. Can also be set via returning true from a PersistentJob, but it's useful to be
      * able to do it "inline". */

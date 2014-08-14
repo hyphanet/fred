@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import freenet.support.Executor;
+import freenet.support.io.NativeThread;
 
 public class SimplePersistentJobRunner implements PersistentJobRunner {
 
@@ -37,6 +38,16 @@ public class SimplePersistentJobRunner implements PersistentJobRunner {
     @Override
     public boolean hasStarted() {
         return true;
+    }
+
+    @Override
+    public void queueInternal(PersistentJob job, int threadPriority) {
+        queue(job, threadPriority);
+    }
+
+    @Override
+    public void queueInternal(PersistentJob job) {
+        queueInternal(job, NativeThread.LOW_PRIORITY);
     }
 
 }

@@ -76,6 +76,36 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
     
     @Override
+    public void queueInternal(PersistentJob job, int threadPriority) throws PersistenceDisabledException {
+        synchronized(sync) {
+            if(!loading) throw new PersistenceDisabledException();
+            if(killed) throw new PersistenceDisabledException();
+            if(context == null) throw new IllegalStateException();
+            if(writing) {
+                Logger.error(this, "Internal job must not be queued during writing! They should have finished before we start writing and cannot be started \"externally\"!", new Exception("error"));
+                queuedJobs.add(new QueuedJob(job, threadPriority));
+            } else {
+                if(mustCheckpoint) {
+                    if(logMINOR) Logger.minor(this, "Delaying checkpoint...");
+                }
+                runningJobs++;
+                if(logDEBUG) Logger.debug(this, "Running job "+job);
+                executor.execute(new JobRunnable(job, threadPriority, context));
+            }
+        }
+    }
+    
+    @Override
+    public void queueInternal(PersistentJob job) {
+        try {
+            queueInternal(job, NativeThread.LOW_PRIORITY);
+        } catch (PersistenceDisabledException e) {
+            // Maybe this could happen ... panic button maybe?
+            Logger.error(this, "Dropping internal job because persistence has been turned off!: "+e, e);
+        }
+    }
+    
+    @Override
     public void queueLowOrDrop(PersistentJob job) {
         try {
             queue(job, NativeThread.LOW_PRIORITY);
