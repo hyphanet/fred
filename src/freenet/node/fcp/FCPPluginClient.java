@@ -10,6 +10,7 @@ import java.util.UUID;
 import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.FredPluginFCPServer.ClientPermissions;
+import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -98,6 +99,10 @@ public final class FCPPluginClient {
 
     
     /**
+     * For being used by networked FCP connections:<br/>
+     * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
+     * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
+     * 
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
     private FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
@@ -113,7 +118,7 @@ public final class FCPPluginClient {
     
     /**
      * For being used by networked FCP connections:<br/>
-     * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
+     * The server is running within the node, and its message handler can be queried from the {@link PluginManager} via the pluginName.<br/> 
      * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
      */
     public static FCPPluginClient constructForNetworkedFCP(FCPConnectionHandler connection, String pluginName) throws PluginNotFoundException {
