@@ -134,6 +134,16 @@ public class PluginRespirator {
         // So please implement the following function. It should put the client into a table which allows querying it by its ID.
         // This should come together with a function FCPServer.getFCPPluginClientByID().
         // Maybe the usage of the FCPPluginClient constructor should also be moved to the register* function.
+        //
+        // UPDATE: I've thought about the TODO again, the best way to implement it will be to move FCPConnectionHandler.getPluginClient(String serverPluginName)
+        // and its backend table to FCPServer. It should then be changed to be getPluginClient(String serverPluginName, String clientID).
+        // The table should be indexed by the concatenation of those two parameters. There will be two users of this function:
+        // 1. FCPConnectionHandler, which owned it previously. It will set clientID to be the ID of the FCPConnectionHandler itself. This will ensure that for
+        // one FCPConnectionHandler, there can only be one client for each serverPluginName as it is required already by the current implementation
+        // of that function.
+        // 2. This function here. It will use a random UUID as client ID. This will ensure that each call to this function is assumed to be a fresh client.
+        //
+        // This will also make the stuff only require one ReferenceQueue for the WeakReferences of everything.
         node.clientCore.getFCPServer().registerFCPPluginClient(client);
         return client;
     }
