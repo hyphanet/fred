@@ -397,8 +397,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			}
 			return;
 		}
-
-			clientCallback.onSuccess(result, ClientGetter.this);
+		context.getJobRunner(persistent()).setCheckpointASAP();
+		clientCallback.onSuccess(result, ClientGetter.this);
 	}
 
 	/**
@@ -424,6 +424,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		if(expectedSize > 0 && (e.expectedSize <= 0 || finalBlocksTotal != 0))
 			e.expectedSize = expectedSize;
 		
+		context.getJobRunner(persistent()).setCheckpointASAP();
+
 		if(e.mode == FetchException.TOO_BIG && ctx.filterData) {
 			// Check for MIME type issues first. Because of the filtering behaviour the user needs to see these first.
 			if(e.finalizedSize()) {
