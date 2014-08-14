@@ -43,7 +43,7 @@ import freenet.support.api.Bucket;
  * </p>
  * 
  * <h2>Object lifecycle</h2>
- * <p>For each {@link #pluginName}, a single {@link FCPConnectionHandler} can only have a single {@link FCPPluginClient} with the plugin of that name as
+ * <p>For each {@link #serverPluginName}, a single {@link FCPConnectionHandler} can only have a single {@link FCPPluginClient} with the plugin of that name as
  * connection partner. This is enforced by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One {@link FCPConnectionHandler} can only 
  * have one connection to a certain plugin.<br/>
  * The reason for this is the following: Certain plugins might need to store the ID of a client in their database so they are able to send data to the
@@ -67,10 +67,10 @@ public final class FCPPluginClient {
     
     /**
      * The connection to which this client belongs.
-     * For each {@link FCPConnectionHandler}, there can only be one {@link FCPPluginClient} for each {@link #pluginName}.
+     * For each {@link FCPConnectionHandler}, there can only be one {@link FCPPluginClient} for each {@link #serverPluginName}.
      * Can be null for intra-node connections to plugins.
      */
-    private final FCPConnectionHandler connection;
+    private final FCPConnectionHandler clientConnection;
 
     /**
      * Unique identifier among all {@link FCPPluginClient}s. 
@@ -80,14 +80,14 @@ public final class FCPPluginClient {
     /**
      * The class name of the plugin to which this {@link FCPPluginClient} is connected.
      */
-    private final String pluginName;
+    private final String serverPluginName;
     
     /**
      * The plugin to which this client is connected.
      * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
      *                 {@link FCPServer} and {@link FCPConnectionHandler} if this reference is nulled.
      */
-    private final WeakReference<FredPluginFCPServer> plugin;
+    private final WeakReference<FredPluginFCPServer> server;
     
     /**
      * For intra-node plugin connections, this is the connecting client.
@@ -111,9 +111,9 @@ public final class FCPPluginClient {
         assert(pluginName != null);
         assert(plugin != null);
         
-        this.connection = connection;
-        this.pluginName = pluginName;
-        this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
+        this.clientConnection = connection;
+        this.serverPluginName = pluginName;
+        this.server = new WeakReference<FredPluginFCPServer>(plugin);
         this.client = null;
     }
     
@@ -139,9 +139,9 @@ public final class FCPPluginClient {
     private FCPPluginClient(String pluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
         assert(pluginName != null);
         
-        connection = null;
-        this.pluginName = pluginName;
-        this.plugin = new WeakReference<FredPluginFCPServer>(server);
+        clientConnection = null;
+        this.serverPluginName = pluginName;
+        this.server = new WeakReference<FredPluginFCPServer>(server);
         this.client = new WeakReference<FredPluginFCPClient>(client);
     }
 
@@ -164,10 +164,10 @@ public final class FCPPluginClient {
     }
     
     /**
-     * @see #pluginName
+     * @see #serverPluginName
      */
     public String getPluginName() {
-        return pluginName;
+        return serverPluginName;
     }
 
     /**
