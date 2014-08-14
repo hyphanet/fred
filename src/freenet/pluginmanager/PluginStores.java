@@ -5,11 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
 
 import freenet.config.SubConfig;
 import freenet.crypt.AEADCryptBucket;
@@ -35,43 +30,6 @@ public class PluginStores {
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
         if(!pluginStoresDir.dir().mkdirs()) {
             System.err.println("Unable to create folder for plugin data: "+pluginStoresDir.dir());
-        }
-    }
-
-    public void migrateAllPluginStores(ObjectContainer container, long nodeDBHandle) {
-        List<PluginStoreContainer> pscs = new ArrayList<PluginStoreContainer>();
-        ObjectSet<PluginStoreContainer> stores = container.query(PluginStoreContainer.class);
-        for(PluginStoreContainer psc : stores) {
-            if(psc.nodeDBHandle != nodeDBHandle) continue;
-            if(psc.pluginStore == null) {
-                System.err.println("No pluginStore on PSC for "+psc.storeIdentifier);
-                continue;
-            }
-            pscs.add(psc);
-        }
-        if(pscs.isEmpty()) {
-            System.out.println("No plugin stores to migrate.");
-            return;
-        }
-        System.out.println("Plugin stores to migrate: "+pscs.size());
-        for(PluginStoreContainer psc : pscs) {
-            container.activate(psc, Integer.MAX_VALUE);
-            migratePluginStores(container, psc);
-        }
-    }
-    
-    /** Migrate a single PluginStore from the database to on disk 
-     * @throws IOException */
-    public void migratePluginStores(ObjectContainer container, PluginStoreContainer psc) {
-        try {
-            if(psc.pluginStore == null) return;
-            writePluginStore(psc.storeIdentifier, psc.pluginStore);
-            psc.pluginStore.removeFrom(container);
-            container.delete(psc);
-            container.commit();
-            System.out.println("Migrated plugin store for "+psc.storeIdentifier+" from database to disk");
-        } catch (IOException e) {
-            System.err.println("Unable to migrate plugin store for "+psc.storeIdentifier+" from database to disk : "+e);
         }
     }
 

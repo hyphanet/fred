@@ -6,12 +6,6 @@ package freenet.pluginmanager;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.config.Configuration;
-import com.db4o.io.MemoryIoAdapter;
-
 import freenet.node.FSParseException;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
@@ -39,37 +33,6 @@ public class PluginStore {
 	
 	public PluginStore() {
 	    // Default constructor. See below for constructor from SFS.
-	}
-	
-	public byte[] exportStore() {
-		Configuration conf = Db4o.newConfiguration();
-		MemoryIoAdapter mia = new MemoryIoAdapter();
-		conf.io(mia);
-		ObjectContainer o = Db4o.openFile(conf, "Export");
-		PluginStoreContainer psc = new PluginStoreContainer();
-		psc.pluginStore = this;
-		o.ext().store(psc, Integer.MAX_VALUE);
-		o.commit();
-		o.close();
-		return mia.get("Export");
-	}
-
-	public static PluginStore importStore(byte[] exportedStore) {
-		Configuration conf = Db4o.newConfiguration();
-		MemoryIoAdapter mia = new MemoryIoAdapter();
-		conf.io(mia);
-		mia.put("Import", exportedStore);
-		ObjectContainer o = Db4o.openFile(conf, "Import");
-		ObjectSet<PluginStoreContainer> query = o.query(PluginStoreContainer.class);
-		if(query.size() > 0) {
-			o.activate(query.get(0), Integer.MAX_VALUE);
-			PluginStore ret = ((PluginStoreContainer) query.get(0)).pluginStore;
-			o.close();
-			return ret;
-		} else {
-			o.close();
-			return null;
-		}
 	}
 	
 	public SimpleFieldSet exportStoreAsSFS() {
@@ -204,26 +167,5 @@ public class PluginStore {
 	private static final String decode(String s) throws IllegalBase64Exception {
 	    return Base64.decodeUTF8(s);
 	}
-
-    public void removeFrom(ObjectContainer container) {
-        for(PluginStore s : subStores.values()) {
-            s.removeFrom(container);
-        }
-        subStores.clear();
-        container.delete(subStores);
-        container.delete(longs);
-        container.delete(longsArrays);
-        container.delete(integers);
-        container.delete(integersArrays);
-        container.delete(shorts);
-        container.delete(shortsArrays);
-        container.delete(booleans);
-        container.delete(booleansArrays);
-        container.delete(bytes);
-        container.delete(bytesArrays);
-        container.delete(strings);
-        container.delete(stringsArrays);
-        container.delete(this);
-    }
 
 }
