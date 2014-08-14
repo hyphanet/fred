@@ -552,10 +552,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             FileUtil.renameTo(writeToFilename, writeToBackupFilename);
         }
         if(innerSave()) {
-            if(deleteAfterSuccessfulWrite != null)
+            if(deleteAfterSuccessfulWrite != null) {
                 deleteAfterSuccessfulWrite.delete();
-            if(otherDeleteAfterSuccessfulWrite != null)
+                deleteAfterSuccessfulWrite = null;
+            }
+            if(otherDeleteAfterSuccessfulWrite != null) {
                 otherDeleteAfterSuccessfulWrite.delete();
+                otherDeleteAfterSuccessfulWrite = null;
+            }
         }
     }
     
