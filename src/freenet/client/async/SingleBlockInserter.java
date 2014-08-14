@@ -742,6 +742,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
     public void innerOnResume(ClientContext context) throws InsertException, ResumeFailedException {
         sourceData.onResume(context);
         if(cb != parent) cb.onResume(context);
+        if(resultingKey != null)
+            cb.onEncode(resultingKey, SingleBlockInserter.this, context);
         this.schedule(context);
     }
 
