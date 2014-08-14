@@ -1514,4 +1514,8 @@ public class SplitFileFetcherStorage {
         return hasCheckedDatastore;
     }
 
+    void onShutdown(ClientContext context) {
+        writeMetadataJob.run(context);
+    }
+
 }

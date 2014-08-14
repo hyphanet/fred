@@ -259,5 +259,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
         if(finished) return;
         start(context.uskManager, context);
     }
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
+    }
 	
 }

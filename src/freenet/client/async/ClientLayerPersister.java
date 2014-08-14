@@ -553,7 +553,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         if(writeToFilename.exists()) {
             FileUtil.renameTo(writeToFilename, writeToBackupFilename);
         }
-        if(innerSave()) {
+        if(innerSave(shutdown)) {
             if(deleteAfterSuccessfulWrite != null) {
                 deleteAfterSuccessfulWrite.delete();
                 deleteAfterSuccessfulWrite = null;
@@ -565,7 +565,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         }
     }
     
-    private boolean innerSave() {
+    private boolean innerSave(boolean shutdown) {
         DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
         OutputStream fos = null;
         try {
@@ -576,6 +576,16 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.writeInt(VERSION);
             checker.writeAndChecksum(oos, salt);
             ClientRequest[] requests = getRequests();
+            if(shutdown) {
+                for(ClientRequest req : requests) {
+                    if(req == null) continue;
+                    try {
+                        req.onShutdown(getClientContext());
+                    } catch (Throwable t) {
+                        Logger.error(this, "Caught while calling shutdown callback on "+req+": "+t, t);
+                    }
+                }
+            }
             oos.writeInt(requests.length);
             for(ClientRequest req : requests) {
                 // Write the request identifier so we can skip reading the request if we already have it.

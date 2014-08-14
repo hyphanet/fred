@@ -26,4 +26,8 @@ public interface ClientGetState {
 	 * itself, as neither the KeyListener's nor the RGA's are persistent now. 
 	 * @throws FetchException */
 	public void onResume(ClientContext context) throws FetchException;
+
+	/** Called just before the final write of client.dat before the node shuts down. Should write
+	 * any dirty data to disk etc. */
+    public void onShutdown(ClientContext context);
 }

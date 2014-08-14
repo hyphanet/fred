@@ -388,4 +388,9 @@ public abstract class ClientRequester implements Serializable {
 
     protected abstract ClientBaseCallback getCallback();
 
+    /** Called just before the final write when shutting down the node. */
+    public void onShutdown(ClientContext context) {
+        // Do nothing.
+    }
+
 }

@@ -2118,4 +2118,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
         // Do nothing. Not persistent.
     }
 
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Do nothing. Not persistent.
+    }
+
 }

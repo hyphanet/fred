@@ -876,5 +876,14 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
     public boolean resumedFetcher() {
         return resumedFetcher;
     }
-    
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        ClientGetState state;
+        synchronized(this) {
+            state = currentState;
+        }
+        if(state != null)
+            state.onShutdown(context);
+    }
 }

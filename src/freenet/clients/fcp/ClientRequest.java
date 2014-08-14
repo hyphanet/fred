@@ -550,4 +550,12 @@ public abstract class ClientRequest implements Serializable {
     public boolean canResume() {
         return true;
     }
+    
+    /** Called just before the final write when the node is shutting down. Should write any dirty
+     * data to disk etc. */
+    public void onShutdown(ClientContext context) {
+        ClientRequester request = getClientRequest();
+        if(request != null)
+            request.onShutdown(context);
+    }
 }

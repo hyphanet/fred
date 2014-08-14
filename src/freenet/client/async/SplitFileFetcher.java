@@ -413,4 +413,9 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         Logger.normal(this, "Resumed splitfile download for "+this);
     }
 
+    @Override
+    public void onShutdown(ClientContext context) {
+        storage.onShutdown(context);
+    }
+
 }
