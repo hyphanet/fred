@@ -5431,4 +5431,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
+    DatabaseKey getDatabaseKey() {
+        return databaseKey;
+    }
+
+
 }

@@ -376,6 +376,7 @@ public class NodeClientCore implements Persistable {
         
         try {
             initStorage(databaseKey);
+            InsertCompressor.load(clientContext);
             initPTBF(nodeConfig);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
@@ -405,6 +406,13 @@ public class NodeClientCore implements Persistable {
 					    }
 					}
 				}
+                if(clientLayerPersister.hasStarted()) {
+                    try {
+                        initStorage(NodeClientCore.this.node.getDatabaseKey());
+                    } catch (MasterKeysWrongPasswordException e) {
+                        NodeClientCore.this.node.setDatabaseAwaitingPassword();
+                    }
+                }
 			}
 
 		});
@@ -614,6 +622,7 @@ public class NodeClientCore implements Persistable {
 		    Logger.error(this, "Impossible: can't load even though have key? "+(databaseKey != null));
 		    return true;
 		}
+        InsertCompressor.load(clientContext);
 		// Don't actually start the database thread yet, messy concurrency issues.
 		initPTBF(node.config.get("node"));
 		fcpServer.load(this.fcpPersistentRoot);
@@ -621,11 +630,14 @@ public class NodeClientCore implements Persistable {
 		return true;
 	}
 
+	/** Give ClientLayerPersister a filename and possibly an encryption key. May cause it to load,
+	 * but can also be called afterwards to change where to write to.
+	 * @param databaseKey The encryption key.
+	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
+	 */
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
-	    File f = node.nodeDir.file("client.dat" + databaseKey == null ? "" : ".crypt");
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
 	            node.wantEncryptedDatabase(), databaseKey, clientContext, requestStarters, random);
-        InsertCompressor.load(clientContext);
     }
 
     private static String l10n(String key) {

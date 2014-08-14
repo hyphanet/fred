@@ -37,6 +37,7 @@ import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PrependLengthOutputStream;
 import freenet.support.io.StorageFormatException;
@@ -121,20 +122,47 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientContext context, RequestStarterGroup requestStarters, Random random) 
     throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
-            // Some serialization failures cause us to fail only at the point of scheduling the request.
-            // So if that happens we need to retry with serialization turned off.
-            // The requests that loaded fine already will not be affected as we check for duplicates.
-            if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context, 
-                    requestStarters, random)) {
-                Logger.error(this, "Some requests failed to restart after serializing. Trying to recover/restart ...");
-                System.err.println("Some requests failed to restart after serializing. Trying to recover/restart ...");
-                innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context, 
-                        requestStarters, random);
+            if(!hasStarted()) {
+                // Some serialization failures cause us to fail only at the point of scheduling the request.
+                // So if that happens we need to retry with serialization turned off.
+                // The requests that loaded fine already will not be affected as we check for duplicates.
+                if(innerSetFilesAndLoad(false, dir, baseName, writeEncrypted, encryptionKey, context, 
+                        requestStarters, random)) {
+                    Logger.error(this, "Some requests failed to restart after serializing. Trying to recover/restart ...");
+                    System.err.println("Some requests failed to restart after serializing. Trying to recover/restart ...");
+                    innerSetFilesAndLoad(true, dir, baseName, writeEncrypted, encryptionKey, context, 
+                            requestStarters, random);
+                }
+                onStarted();
+            } else {
+                innerSetFilesOnly(dir, baseName, writeEncrypted, encryptionKey);
             }
-            onStarted();
         }
     }
     
+    private void innerSetFilesOnly(File dir, String baseName, boolean writeEncrypted,
+            DatabaseKey encryptionKey) throws MasterKeysWrongPasswordException {
+        if(writeEncrypted && encryptionKey == null)
+            throw new MasterKeysWrongPasswordException();
+        File oldWriteToFilename = writeToFilename;
+        writeToBucket = makeBucket(dir, baseName, false, writeEncrypted ? encryptionKey : null);
+        writeToFilename = makeFilename(dir, baseName, false, writeEncrypted);
+        writeToBackupFilename = makeFilename(dir, baseName, true, writeEncrypted);
+        if(oldWriteToFilename.equals(writeToFilename)) return;
+        System.out.println("Will save downloads to "+writeToFilename);
+        deleteAfterSuccessfulWrite = makeFilename(dir, baseName, false, !writeEncrypted);
+        otherDeleteAfterSuccessfulWrite = makeFilename(dir, baseName, true, !writeEncrypted);
+        queueLowOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                return true; // Force a checkpoint ASAP.
+                // This also avoids any possible locking issues.
+            }
+            
+        });
+    }
+
     private boolean innerSetFilesAndLoad(boolean noSerialize, File dir, String baseName, 
             boolean writeEncrypted, DatabaseKey encryptionKey, ClientContext context, 
             RequestStarterGroup requestStarters, Random random) throws MasterKeysWrongPasswordException {
