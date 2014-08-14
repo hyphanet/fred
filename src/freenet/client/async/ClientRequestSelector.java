@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -60,11 +59,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			keysFetching = new HashSet<Key>();
 			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
-			this.recentSuccesses = new ArrayDeque<RandomGrabArray>();
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
-			this.recentSuccesses = null;
 		}
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
@@ -119,8 +116,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	}
 	
 	private transient final HashSet<RunningTransientInsert> runningTransientInserts;
-	
-	private transient final Deque<RandomGrabArray> recentSuccesses;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
@@ -363,15 +358,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				// Check recentSuccesses
 				/** Choose a recently succeeded request.
 				 * 50% chance of using a recently succeeded request, if there is one.
-				 * For transient requests, we keep a list of recently succeeded BaseSendableGet's,
-				 * because transient requests are chosen individually.
-				 * But for persistent requests, we keep a list of RandomGrabArray's, because
-				 * persistent requests are chosen a whole SendableRequest at a time.
-				 * 
-				 * FIXME: Only replaces persistent requests with persistent requests (of similar priority and retry count), or transient with transient.
-				 * Probably this is acceptable.
-				 */
-				if(!req.persistent() && !isInsertScheduler) {
+				 * We keep a list of recently succeeded BaseSendableGet's, because transient 
+				 * requests are chosen individually. */
+				if(!isInsertScheduler) {
 					Deque<BaseSendableGet> recent = schedTransient.recentSuccesses;
 					BaseSendableGet altReq = null;
 					synchronized(recent) {
@@ -406,49 +395,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
 							synchronized(recent) {
 								recent.add(altReq);
-							}
-						}
-					}
-				} else if(!isInsertScheduler) {
-					RandomGrabArray altRGA = null;
-					synchronized(recentSuccesses) {
-						if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
-							altRGA = recentSuccesses.removeLast();
-						}
-					}
-					if(altRGA != null) {
-						SendableRequest altReq = null;
-						if(!altRGA.isEmpty()) {
-							if(logMINOR)
-								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
-							val = altRGA.removeRandom(starter, context, now);
-							if(val != null) {
-								if(val.item == null) {
-									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+")" : ""));
-								} else {
-									altReq = (SendableRequest) val.item;
-								}
-							}
-							if(altReq != null && altReq != req) {
-								int prio = altReq.getPriorityClass();
-								boolean useRecent = false;
-								if(prio <= choosenPriorityClass) {
-									if(altReq.getCooldownTime(context, now) != 0)
-										useRecent = true;
-								}
-								if(useRecent) {
-									// Use the recent one instead
-									if(logMINOR)
-										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass()+") is better than "+req+" (prio="+req.getPriorityClass()+"), using that");
-									// Don't need to reregister, because removeRandom doesn't actually remove!
-									req = altReq;
-								} else {
-									if(logMINOR)
-										Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
-									synchronized(recentSuccesses) {
-										recentSuccesses.add(altRGA);
-									}
-								}
 							}
 						}
 					}
@@ -609,18 +555,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);
 		synchronized(runningTransientInserts) {
 			runningTransientInserts.remove(tmp);
-		}
-	}
-
-	public void succeeded(BaseSendableGet succeeded) {
-		RandomGrabArray array = succeeded.getParentGrabArray();
-		if(array == null) return; // Unregistered already?
-		synchronized(recentSuccesses) {
-			if(recentSuccesses.contains(array)) return;
-			// ArrayDeque loves pow-of-2 sizes, trim before add
-			while(recentSuccesses.size() >= 8)
-				recentSuccesses.pollFirst();
-			recentSuccesses.add(array);
 		}
 	}
 
