@@ -391,18 +391,18 @@ public class NodeClientCore implements Persistable {
 						tempBucketFactory.setEncryption(false);
 					}
 					if(persistentTempBucketFactory != null) {
-					if(persistentTempBucketFactory.isEncrypting()) {
-						persistentTempBucketFactory.setEncryption(false);
-					}
+					    if(persistentTempBucketFactory.isEncrypting()) {
+					        persistentTempBucketFactory.setEncryption(false);
+					    }
 					}
 				} else { // newLevel >= PHYSICAL_THREAT_LEVEL.NORMAL
 					if(!tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(true);
 					}
 					if(persistentTempBucketFactory != null) {
-					if(!persistentTempBucketFactory.isEncrypting()) {
-						persistentTempBucketFactory.setEncryption(true);
-					}
+					    if(!persistentTempBucketFactory.isEncrypting()) {
+					        persistentTempBucketFactory.setEncryption(true);
+					    }
 					}
 				}
 			}
