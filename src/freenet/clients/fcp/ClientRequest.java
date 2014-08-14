@@ -513,7 +513,8 @@ public abstract class ClientRequest implements Serializable {
         client = context.persistentRoot.makeClient(global, clientName);
         lowLevelClient = client.lowLevelClient(realTime);
         innerResume(context);
-        this.getClientRequest().onResume(context);
+        ClientRequester req = getClientRequest();
+        if(req != null) req.onResume(context); // Can legally be null.
         context.persistentRoot.resume(this, global, clientName);
     }
     
