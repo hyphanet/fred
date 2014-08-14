@@ -127,7 +127,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.put("Code", code);
 		if(verbose)
-			sfs.putSingle("CodeDescription", FetchException.getMessage(code));
+			sfs.putSingle("CodeDescription", getFailedMessage());
 		if(extraDescription != null)
 			sfs.putSingle("ExtraDescription", extraDescription);
 		if(verbose)
@@ -159,6 +159,10 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "GetFailed goes from server to client not the other way around", identifier, global);
 	}
+	
+	public String getFailedMessage() {
+	    return FetchException.getMessage(code);
+	}
 
 	public String getShortFailedMessage() {
 	    return FetchException.getShortMessage(code);
@@ -166,9 +170,9 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	
 	public String getLongFailedMessage() {
 		if(extraDescription != null)
-			return getShortFailedMessage() + ": " + extraDescription;
+			return getFailedMessage() + ": " + extraDescription;
 		else
-			return getShortFailedMessage();
+			return getFailedMessage();
 	}
 	
 	static final int VERSION = 1;
