@@ -80,7 +80,7 @@ public class FCPConnectionHandler implements Closeable {
 	/**
 	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
 	 */
-	final ConcurrentHashMap<String, FCPPluginClient> pluginClientsByPluginName;
+	final ConcurrentHashMap<String, FCPPluginClient> pluginClientsByServerPluginName;
 
 	/**
 	 * 16 random bytes hex-encoded as String. Unique for each instance of this class. 
@@ -162,7 +162,7 @@ public class FCPConnectionHandler implements Closeable {
 		// TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
 		this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
 		
-		this.pluginClientsByPluginName = new ConcurrentHashMap<String, FCPPluginClient>(
+		this.pluginClientsByServerPluginName = new ConcurrentHashMap<String, FCPPluginClient>(
 		        16 /* default map size */, 0.75f /* default load factor */,
 		        1 /* Use a concurrency level of 1 expected average writer thread as clients are only added and never removed or replaced */);
 	}
@@ -630,12 +630,12 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
 	/**
-	 * @return The {@link FCPPluginClient} for the given pluginName (see {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it
+	 * @return The {@link FCPPluginClient} for the given serverPluginName (see {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it
 	 *         if there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a
-	 *         given pluginName.
+	 *         given serverPluginName.
 	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server. 
 	 */
-	public FCPPluginClient getPluginClient(String pluginName) throws PluginNotFoundException {
+	public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
 		// The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
 		// only happen at the start of a connection and then it will be re-used a lot.
 		// Therefore, it would cost a lot of performance to use synchronized() with a regular HashMap just so the minority of writes is safe.
@@ -645,13 +645,13 @@ public class FCPConnectionHandler implements Closeable {
 		// will for ever be the right one as it is never replaced. If it returns null, we create one - which can possible happen in multiple threads,
 		// and use the return value of the thread-safe function ConcurrentHashMap.putAbsent() to ensure that concurrent creation of multiple clients returns
 		// the one which actually got into the map.
-		FCPPluginClient peekOldClient = pluginClientsByPluginName.get(pluginName);
+		FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
 		if(peekOldClient != null)
 			return peekOldClient;
 
-		FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(pluginName, this);
+		FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(serverPluginName, this);
 		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
-		FCPPluginClient oldClient = pluginClientsByPluginName.putIfAbsent(pluginName, newClient);
+		FCPPluginClient oldClient = pluginClientsByServerPluginName.putIfAbsent(serverPluginName, newClient);
 
 		return oldClient != null ? oldClient : newClient;
 	}
