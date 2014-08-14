@@ -143,7 +143,10 @@ public class PluginRespirator {
         // of that function.
         // 2. This function here. It will use a random UUID as client ID. This will ensure that each call to this function is assumed to be a fresh client.
         //
-        // This will also make the stuff only require one ReferenceQueue for the WeakReferences of everything.
+        // The only issue with the above is that for FCPPluginClients created by FCPConnectionHandler, they will should be stored as a hard reference connected
+        // to the FCPConnectionHandler thread to prevent them from getting GCed while the connection is up.
+        // For FCPPluginClients created by this function, they should be stored as a WeakReference because we want them to be GCed when the client plugin
+        // does not use them anymore. So the above ideas at UPDATE likely won't work :|
         node.clientCore.getFCPServer().registerFCPPluginClient(client);
         return client;
     }
