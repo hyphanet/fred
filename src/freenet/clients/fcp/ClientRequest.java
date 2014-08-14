@@ -545,12 +545,6 @@ public abstract class ClientRequest implements Serializable {
      * when we resume). */
     public abstract boolean fullyResumed();
 
-    /** Do any easy checks on whether a (serialized) request is broken. Return false if it is, in
-     * which case we'll restart the request from the recovery data. */
-    public boolean canResume() {
-        return true;
-    }
-    
     /** Called just before the final write when the node is shutting down. Should write any dirty
      * data to disk etc. */
     public void onShutdown(ClientContext context) {

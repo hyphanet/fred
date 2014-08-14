@@ -1207,10 +1207,4 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         return getter != null && getter.resumedFetcher();
     }
     
-    public boolean canResume() {
-        if(getter != null)
-            return !getter.isCancelled(); // Can't be cancelled, as it would have been removed. So something's gone wrong.
-        return true;
-    }
-
 }
