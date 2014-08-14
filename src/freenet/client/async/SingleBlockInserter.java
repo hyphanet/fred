@@ -67,7 +67,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		});
 	}
 	
-	Bucket sourceData;
+	private Bucket sourceData;
 	final short compressionCodec;
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
 	private ClientKey resultingKey;
