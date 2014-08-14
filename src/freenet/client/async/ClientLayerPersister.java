@@ -448,14 +448,16 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             try {
                 if(!noSerialize) {
                     request = (ClientRequest) readChecksummedObject(ois, length);
-                    if(!request.canResume()) {
-                        request = null;
-                    } else if(reqID != null) {
-                        if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
-                            Logger.error(this, "Request does not match request identifier, discarding");
+                    if(request != null) {
+                        if(!request.canResume()) {
                             request = null;
-                        } else {
-                            loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
+                        } else if(reqID != null) {
+                            if(!reqID.sameIdentifier(request.getRequestIdentifier())) {
+                                Logger.error(this, "Request does not match request identifier, discarding");
+                                request = null;
+                            } else {
+                                loaded.addPartiallyLoadedRequest(reqID, request, RequestLoadStatus.LOADED);
+                            }
                         }
                     }
                 } else
