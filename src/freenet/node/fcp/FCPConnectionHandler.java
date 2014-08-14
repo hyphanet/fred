@@ -78,7 +78,7 @@ public class FCPConnectionHandler implements Closeable {
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
 	/**
-	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getPluginName()}.
+	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
 	 */
 	final ConcurrentHashMap<String, FCPPluginClient> pluginClientsByPluginName;
 

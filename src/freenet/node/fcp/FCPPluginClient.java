@@ -106,14 +106,14 @@ public final class FCPPluginClient {
      * 
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
-    private FCPPluginClient(FredPluginFCPServer plugin, String pluginName, FCPConnectionHandler connection) {
-        assert(connection != null);
-        assert(pluginName != null);
-        assert(plugin != null);
+    private FCPPluginClient(FredPluginFCPServer serverPlugin, String serverPluginName, FCPConnectionHandler clientConnection) {
+        assert(clientConnection != null);
+        assert(serverPluginName != null);
+        assert(serverPlugin != null);
         
-        this.clientConnection = connection;
-        this.serverPluginName = pluginName;
-        this.server = new WeakReference<FredPluginFCPServer>(plugin);
+        this.clientConnection = clientConnection;
+        this.serverPluginName = serverPluginName;
+        this.server = new WeakReference<FredPluginFCPServer>(serverPlugin);
         this.client = null;
     }
     
@@ -136,11 +136,11 @@ public final class FCPPluginClient {
      * 
      * @see #constructForIntraNodeFCP(Node, String, FredPluginFCPClient) The public interface to this constructor.
      */
-    private FCPPluginClient(String pluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
-        assert(pluginName != null);
+    private FCPPluginClient(String serverPluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
+        assert(serverPluginName != null);
         
         clientConnection = null;
-        this.serverPluginName = pluginName;
+        this.serverPluginName = serverPluginName;
         this.server = new WeakReference<FredPluginFCPServer>(server);
         this.client = new WeakReference<FredPluginFCPClient>(client);
     }
@@ -166,7 +166,7 @@ public final class FCPPluginClient {
     /**
      * @see #serverPluginName
      */
-    public String getPluginName() {
+    public String getServerPluginName() {
         return serverPluginName;
     }
 
