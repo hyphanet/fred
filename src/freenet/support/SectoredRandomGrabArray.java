@@ -7,7 +7,13 @@ import freenet.client.async.HasCooldownCacheItem;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
- * returned.
+ * returned. Again, not persistent; this is reconstructed on restart.
+ * 
+ *  FIXME
+ * A lot of this is over-complicated and over-expensive because of db4o. A lot of it is O(n).
+ * This is all kept in RAM now so we can change it at will, plus there is only one object 
+ * queued per splitfile now, so memory pressure is much less of an issue. 
+ * FIXME Simplify and improve performance!
  */
 public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent, HasCooldownCacheItem {
 	private static volatile boolean logMINOR;
@@ -15,27 +21,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	static {
 		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
-	
 
-	/*
-	 * Yes, this is O(n). No, I don't care.
-	 * 
-	 * Using a Db4oMap results in stuff getting reactivated during the commit
-	 * phase, and not deactivated. This makes keeping stuff that shouldn't be
-	 * activated deactivated impossible, resulting in more memory usage. more
-	 * Full GC's, more object churn, and hence more CPU usage. Also Db4oMap is
-	 * deprecated.
-	 * 
-	 * Using a HashMap populated in objectOnActivate() doesn't work either,
-	 * because it ends up comparing deactivated clients with activated ones.
-	 * This will result in NPEs, and unnecessary code complexity to fix them.
-	 * 
-	 * IMHO it's not worth bothering with a hashtable if it's less than 1000
-	 * or so items anyway. If size does become a problem we will need to 
-	 * implement our own activation aware hashtable class, which stores the 
-	 * full hashCode, and matches on == object identity, so that we don't need
-	 * to activate on comparison.
-	 */
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
 	protected final boolean persistent;
