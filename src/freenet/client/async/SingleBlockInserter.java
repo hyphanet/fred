@@ -209,8 +209,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				}
 			}, "Got URI");
 		} else {
-		    context.jobRunner.queueNormalOrDrop(new PersistentJob() {
-
+		    context.jobRunner.queueNormalOrDrop(new PersistentJob() { 
+		        // Will be reported on restart in innerOnResume() if necessary.
+		        
                 @Override
                 public boolean run(ClientContext context) {
                     cb.onEncode(key, SingleBlockInserter.this, context);
