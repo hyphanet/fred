@@ -59,5 +59,19 @@ public interface PersistentJobRunner {
 
     /** Has the queue started yet? */
     boolean hasStarted();
+    
+    interface CheckpointLock {
+        /** The job is finished, unlock, allow a checkpoint if necessary.
+         * @param forceWrite True to force a checkpoint ASAP.
+         * @param threadPriority The priority of the calling thread.
+         */
+        void unlock(boolean forceWrite, int threadPriority);
+    }
+
+    /** Obtain a lock which will prevent checkpointing until it is unlocked. This counts as a 
+     * thread, and can be used for e.g. MemoryLimitedJob's that can change persistent data. Like 
+     * any lock, you MUST use a try/finally block. lock() may block if a checkpoint is in progress
+     * or is scheduled. */
+    public CheckpointLock lock();
 
 }

@@ -136,47 +136,51 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 Logger.error(this, "Caught "+t+" running job "+job, t);
             } finally {
                 if(logDEBUG) Logger.debug(this, "Completed "+job+" with mustCheckpoint="+mustCheckpoint+" started="+started+" runningJobs="+runningJobs);
-                synchronized(sync) {
-                    if(ret) {
-                        mustCheckpoint = true;
-                        if(logMINOR) Logger.minor(this, "Writing because "+job+" asked us to");
-                    }
-                    runningJobs--;
-                    if(!started) {
-                        if(logMINOR) Logger.minor(this, "Not started yet");
-                        return;
-                    }
-                    if(!mustCheckpoint) {
-                        if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
-                            mustCheckpoint = true;
-                            if(logMINOR) Logger.minor(this, "Writing at interval");
-                        }
-                    }
-                    if(!mustCheckpoint) {
-                        delayedCheckpoint();
-                        return;
-                    }
-                    if(runningJobs != 0) {
-                        if(logDEBUG) Logger.debug(this, "Not writing yet");
-                        return;
-                    }
-                    if(killed) {
-                        sync.notifyAll();
-                        return;
-                    } else {
-                        writing = true;
-                        if(threadPriority < WRITE_AT_PRIORITY) {
-                            checkpointOffThread();
-                            return;
-                        }
-                    }
-                }
-                checkpoint(false);
+                handleCompletion(ret, threadPriority);
             }
         }
         
     }
     
+    public void handleCompletion(boolean ret, int threadPriority) {
+        synchronized(sync) {
+            if(ret) {
+                mustCheckpoint = true;
+                if(logMINOR) Logger.minor(this, "Writing because asked to");
+            }
+            runningJobs--;
+            if(!started) {
+                if(logMINOR) Logger.minor(this, "Not started yet");
+                return;
+            }
+            if(!mustCheckpoint) {
+                if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
+                    mustCheckpoint = true;
+                    if(logMINOR) Logger.minor(this, "Writing at interval");
+                }
+            }
+            if(!mustCheckpoint) {
+                delayedCheckpoint();
+                return;
+            }
+            if(runningJobs != 0) {
+                if(logDEBUG) Logger.debug(this, "Not writing yet");
+                return;
+            }
+            if(killed) {
+                sync.notifyAll();
+                return;
+            } else {
+                writing = true;
+                if(threadPriority < WRITE_AT_PRIORITY) {
+                    checkpointOffThread();
+                    return;
+                }
+            }
+        }
+        checkpoint(false);
+    }
+
     private class QueuedJob {
         public QueuedJob(PersistentJob job, int threadPriority) {
             this.job = job;
@@ -327,5 +331,27 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     protected ClientContext getClientContext() {
         return context;
     }
+    
+    public CheckpointLock lock() {
+        synchronized(sync) {
+            while(writing || mustCheckpoint) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+            runningJobs++;
+        }
+        return new CheckpointLock() {
+
+            @Override
+            public void unlock(boolean forceWrite, int threadPriority) {
+                handleCompletion(forceWrite, threadPriority);
+            }
+            
+        };
+    }
+
 
 }

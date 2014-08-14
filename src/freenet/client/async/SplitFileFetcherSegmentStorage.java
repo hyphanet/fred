@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Random;
 
 import freenet.client.FetchException;
+import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
@@ -256,21 +257,25 @@ public class SplitFileFetcherSegmentStorage {
         long limit = totalBlocks() * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlocks + crossSegmentCheckBlocks, checkBlocks),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlocks + crossSegmentCheckBlocks, checkBlocks));
+        final int prio = NativeThread.LOW_PRIORITY;
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
             @Override
             public int getPriority() {
-                return NativeThread.LOW_PRIORITY;
+                return prio;
             }
             
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
+                CheckpointLock lock = null;
                 try {
+                    lock = parent.jobRunner.lock();
                     innerDecode(chunk);
                 } catch (IOException e) {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
                 } finally {
+                    if(lock != null) lock.unlock(false, prio);
                     chunk.release();
                     synchronized(this) {
                         tryDecode = false;
