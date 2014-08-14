@@ -37,7 +37,7 @@ public class DummyJobRunner implements PersistentJobRunner {
     }
 
     @Override
-    public void queueLowOrDrop(PersistentJob job) {
+    public void queueNormalOrDrop(PersistentJob job) {
         queue(job, NativeThread.NORM_PRIORITY);
     }
 

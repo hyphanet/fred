@@ -175,7 +175,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         System.out.println("Will save downloads to "+writeToFilename);
         deleteAfterSuccessfulWrite = makeFilename(dir, baseName, false, !writeEncrypted);
         otherDeleteAfterSuccessfulWrite = makeFilename(dir, baseName, true, !writeEncrypted);
-        queueLowOrDrop(new PersistentJob() {
+        queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {

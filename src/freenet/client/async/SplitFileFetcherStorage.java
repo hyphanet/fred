@@ -962,7 +962,7 @@ public class SplitFileFetcherStorage {
     public void finishedSuccess(SplitFileFetcherSegmentStorage segment) {
         if(allSucceeded()) {
             if(logMINOR) Logger.minor(this, "finishedSuccess on "+this+" from "+segment+" for "+fetcher, new Exception("debug"));
-            jobRunner.queueLowOrDrop(new PersistentJob() {
+            jobRunner.queueNormalOrDrop(new PersistentJob() {
 
                 @Override
                 public boolean run(ClientContext context) {
@@ -1046,13 +1046,13 @@ public class SplitFileFetcherStorage {
 
                 @Override
                 public void run() {
-                    jobRunner.queueLowOrDrop(writeMetadataJob);
+                    jobRunner.queueNormalOrDrop(writeMetadataJob);
                 }
                 
             }, "Write metadata for splitfile", 
                     LAZY_WRITE_METADATA_DELAY, false, true);
         } else { // Must still be off-thread, multiple segments, possible locking issues...
-            jobRunner.queueLowOrDrop(writeMetadataJob);
+            jobRunner.queueNormalOrDrop(writeMetadataJob);
         }
     }
 
@@ -1065,7 +1065,7 @@ public class SplitFileFetcherStorage {
             finishedFetcher = true;
             if(!finishedEncoding) return;
         }
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
             
             @Override
             public boolean run(ClientContext context) {
@@ -1085,7 +1085,7 @@ public class SplitFileFetcherStorage {
             finishedEncoding = true;
             if(!finishedFetcher) return;
         }
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
             
             @Override
             public boolean run(ClientContext context) {
@@ -1130,7 +1130,7 @@ public class SplitFileFetcherStorage {
      * @param e
      */
     public void fail(final FetchException e) {
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
             
             @Override
             public boolean run(ClientContext context) {
@@ -1151,7 +1151,7 @@ public class SplitFileFetcherStorage {
 
     public void failOnDiskError(final IOException e) {
         Logger.error(this, "Failing on disk error: "+e, e);
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1164,7 +1164,7 @@ public class SplitFileFetcherStorage {
 
     public void failOnDiskError(final ChecksumFailedException e) {
         Logger.error(this, "Failing on unrecoverable corrupt data: "+e, e);
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1309,7 +1309,7 @@ public class SplitFileFetcherStorage {
         if(hasFinished()) return; // Don't need to do anything.
         // Some segments still need data.
         // They're not going to get it.
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1347,7 +1347,7 @@ public class SplitFileFetcherStorage {
     }
 
     public void failedBlock() {
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1364,7 +1364,7 @@ public class SplitFileFetcherStorage {
     }
 
     public void restartedAfterDataCorruption(boolean wasCorrupt) {
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1384,7 +1384,7 @@ public class SplitFileFetcherStorage {
     void increaseCooldown(SplitFileFetcherSegmentStorage splitFileFetcherSegmentStorage,
             final long cooldownTime) {
         // Risky locking-wise, so run as a separate job.
-        jobRunner.queueLowOrDrop(new PersistentJob() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
@@ -1494,7 +1494,7 @@ public class SplitFileFetcherStorage {
     public synchronized void setHasCheckedStore() {
         hasCheckedDatastore = true;
         if(!persistent) return;
-        this.jobRunner.queueLowOrDrop(new PersistentJob() {
+        this.jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {

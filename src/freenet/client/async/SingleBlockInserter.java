@@ -209,7 +209,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				}
 			}, "Got URI");
 		} else {
-		    context.jobRunner.queueLowOrDrop(new PersistentJob() {
+		    context.jobRunner.queueNormalOrDrop(new PersistentJob() {
 
                 @Override
                 public boolean run(ClientContext context) {

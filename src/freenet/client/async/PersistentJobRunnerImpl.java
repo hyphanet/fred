@@ -106,7 +106,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     }
     
     @Override
-    public void queueLowOrDrop(PersistentJob job) {
+    public void queueNormalOrDrop(PersistentJob job) {
         try {
             queue(job, NativeThread.LOW_PRIORITY);
         } catch (PersistenceDisabledException e) {

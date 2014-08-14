@@ -22,7 +22,7 @@ public interface PersistentJobRunner {
     void queue(PersistentJob persistentJob, int threadPriority) throws PersistenceDisabledException;
 
     /** Queue the job at low thread priority or drop it if persistence is disabled. */
-    void queueLowOrDrop(PersistentJob persistentJob);
+    void queueNormalOrDrop(PersistentJob persistentJob);
     
     /** Start an "internal" job. We will not checkpoint until all the internal jobs have finished;
      * we do not queue them at all. Hence a series of internal jobs is atomic. This should be used

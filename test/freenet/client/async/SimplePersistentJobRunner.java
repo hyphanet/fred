@@ -26,7 +26,7 @@ public class SimplePersistentJobRunner implements PersistentJobRunner {
     }
 
     @Override
-    public void queueLowOrDrop(PersistentJob job) {
+    public void queueNormalOrDrop(PersistentJob job) {
         queue(job, 0);
     }
 
