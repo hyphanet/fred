@@ -2115,12 +2115,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
     @Override
     public void onResume(ClientContext context) {
-        // Do nothing. Not persistent.
+        throw new UnsupportedOperationException("Not persistent");
     }
 
     @Override
     public void onShutdown(ClientContext context) {
-        // Do nothing. Not persistent.
+        throw new UnsupportedOperationException("Not persistent");
     }
 
 }
