@@ -630,8 +630,9 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
 	/**
-	 * @return The {@link FCPPluginClient} for the given {@link FCPPluginClient#pluginName}. Atomically creates and stores it if there does not exist one yet.
-	 *         This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a given pluginName.
+	 * @return The {@link FCPPluginClient} for the given pluginName (see {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it
+	 *         if there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a
+	 *         given pluginName.
 	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server. 
 	 */
 	public FCPPluginClient getPluginClient(String pluginName) throws PluginNotFoundException {
