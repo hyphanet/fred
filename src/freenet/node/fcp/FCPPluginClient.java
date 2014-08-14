@@ -105,7 +105,7 @@ public final class FCPPluginClient {
      * 
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
-    private FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
+    private FCPPluginClient(FredPluginFCPServer plugin, String pluginName, FCPConnectionHandler connection) {
         assert(connection != null);
         assert(pluginName != null);
         assert(plugin != null);
@@ -121,9 +121,9 @@ public final class FCPPluginClient {
      * The server is running within the node, and its message handler will be queried from the {@link PluginManager} via the given String pluginName.<br/>
      * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} connection.<br/>
      */
-    public static FCPPluginClient constructForNetworkedFCP(FCPConnectionHandler connection, String pluginName) throws PluginNotFoundException {
+    public static FCPPluginClient constructForNetworkedFCP(String pluginName, FCPConnectionHandler connection) throws PluginNotFoundException {
         assert(connection != null);
-        return new FCPPluginClient(connection, pluginName, connection.server.node.getPluginManager().getPluginFCPServer(pluginName));
+        return new FCPPluginClient(connection.server.node.getPluginManager().getPluginFCPServer(pluginName), pluginName, connection);
     }
     
     /**
