@@ -544,11 +544,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
 
     @Override
-    protected void innerCheckpoint() {
-        save();
+    protected void innerCheckpoint(boolean shutdown) {
+        save(shutdown);
     }
     
-    protected void save() {
+    protected void save(boolean shutdown) {
         if(writeToFilename == null) return;
         if(writeToFilename.exists()) {
             FileUtil.renameTo(writeToFilename, writeToBackupFilename);

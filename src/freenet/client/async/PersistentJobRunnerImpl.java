@@ -141,7 +141,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         }
                     }
                 }
-                checkpoint();
+                checkpoint(false);
             }
         }
         
@@ -156,14 +156,14 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         final int threadPriority;
     }
 
-    private void checkpoint() {
+    private void checkpoint(boolean shutdown) {
         if(logMINOR) Logger.minor(this, "Writing checkpoint...");
         synchronized(sync) {
             if(!started) return;
         }
         synchronized(serializeCheckpoints) {
             try {
-                innerCheckpoint();
+                innerCheckpoint(shutdown);
             } catch (Throwable t) {
                 Logger.error(this, "Unable to save: "+t, t);
             }
@@ -200,7 +200,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                         if(runningJobs != 0) return;
                         writing = true;
                     }
-                    checkpoint();
+                    checkpoint(false);
                 }
                 
                 @Override
@@ -218,7 +218,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
 
             @Override
             public void run() {
-                checkpoint();
+                checkpoint(false);
             }
 
             @Override
@@ -239,7 +239,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         lastCheckpointed = System.currentTimeMillis();
     }
 
-    protected abstract void innerCheckpoint();
+    protected abstract void innerCheckpoint(boolean shutdown);
     
     protected void onLoading() {
         synchronized(sync) {
@@ -275,7 +275,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 }
             }
         }
-        checkpoint();
+        checkpoint(true);
     }
     
     public boolean isKilledOrNotLoaded() {
