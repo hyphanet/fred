@@ -119,12 +119,12 @@ public final class FCPPluginClient {
     
     /**
      * For being used by networked FCP connections:<br/>
-     * The server is running within the node, and its message handler will be queried from the {@link PluginManager} via the given String pluginName.<br/>
-     * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} connection.<br/>
+     * The server is running within the node, and its message handler will be queried from the {@link PluginManager} via the given String serverPluginName.<br/>
+     * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} clientConnection.<br/>
      */
-    public static FCPPluginClient constructForNetworkedFCP(String pluginName, FCPConnectionHandler connection) throws PluginNotFoundException {
-        assert(connection != null);
-        return new FCPPluginClient(connection.server.node.getPluginManager().getPluginFCPServer(pluginName), pluginName, connection);
+    public static FCPPluginClient constructForNetworkedFCP(String serverPluginName, FCPConnectionHandler clientConnection) throws PluginNotFoundException {
+        assert(clientConnection != null);
+        return new FCPPluginClient(clientConnection.server.node.getPluginManager().getPluginFCPServer(serverPluginName), serverPluginName, clientConnection);
     }
 
 
@@ -148,12 +148,12 @@ public final class FCPPluginClient {
     /**
      * For being used by intra-node connections to a plugin:<br/>
      * Both the server and the client are running within the same node, so their FCP interfaces are available:<br/>
-     * The server plugin will be queried from given {@link PluginManager} via the given pluginName.
-     * The client message handler is available as the passed {@link FredPluginFCPClient}.
+     * The server plugin will be queried from given {@link PluginManager} via the given String serverPluginName.
+     * The client message handler is available as the passed {@link FredPluginFCPClient} client.
      */
-    public static FCPPluginClient constructForIntraNodeFCP(PluginManager pluginManager, String pluginName, FredPluginFCPClient client)
+    public static FCPPluginClient constructForIntraNodeFCP(PluginManager pluginManager, String serverPluginName, FredPluginFCPClient client)
             throws PluginNotFoundException {
-        return new FCPPluginClient(pluginName, pluginManager.getPluginFCPServer(pluginName), client);
+        return new FCPPluginClient(serverPluginName, pluginManager.getPluginFCPServer(serverPluginName), client);
     }
     
     /**
