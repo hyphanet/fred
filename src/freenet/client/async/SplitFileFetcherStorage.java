@@ -1069,6 +1069,9 @@ public class SplitFileFetcherStorage {
             
             @Override
             public boolean run(ClientContext context) {
+                // ATOMICITY/DURABILITY: This will run after the checkpoint after completion.
+                // So after restart, even if the checkpoint failed, we will be in a valid state.
+                // This is why this is queue() not queueInternal().
                 close();
                 return true;
             }
@@ -1089,6 +1092,9 @@ public class SplitFileFetcherStorage {
             
             @Override
             public boolean run(ClientContext context) {
+                // ATOMICITY/DURABILITY: This will run after the checkpoint after completion.
+                // So after restart, even if the checkpoint failed, we will be in a valid state.
+                // This is why this is queue() not queueInternal().
                 close();
                 return true;
             }

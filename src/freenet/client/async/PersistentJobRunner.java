@@ -5,7 +5,8 @@ package freenet.client.async;
  * it is safe to call functions that do not modify the persistent state from any thread. E.g. 
  * choosing a key to fetch via SendableRequest.chooseKey(). 
  * 
- * The key point here is that we don't allow any jobs to run while we are doing a checkpoint.
+ * The key point here is that we don't allow any jobs to run while we are doing a checkpoint. There
+ * are some further complications related to atomicity, e.g. queueInternal().
  */
 public interface PersistentJobRunner {
 
