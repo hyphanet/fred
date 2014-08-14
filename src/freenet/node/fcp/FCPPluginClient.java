@@ -7,6 +7,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
+import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.FredPluginFCPServer.ClientPermissions;
@@ -125,20 +126,34 @@ public final class FCPPluginClient {
         assert(connection != null);
         return new FCPPluginClient(connection.server.node.getPluginManager().getPluginFCPServer(pluginName), pluginName, connection);
     }
-    
+
+
     /**
      * For being used by intra-node connections to a plugin:<br/>
      * Both the server and the client are running within the same node, so objects of their FCP message handling interfaces are available:<br/>
-     * The server's message is accessible as an implementor of {@link FredPluginFCPServer}.
-     * The client's message is accessible as an implementor of {@link FredPluginFCPClient}.
+     * The server's message handler is accessible as an implementor of {@link FredPluginFCPServer}.
+     * The client's message handler is accessible as an implementor of {@link FredPluginFCPClient}.
+     * 
+     * @see #constructForIntraNodeFCP(Node, String, FredPluginFCPClient) The public interface to this constructor.
      */
-    public FCPPluginClient(String pluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
+    private FCPPluginClient(String pluginName, FredPluginFCPServer server, FredPluginFCPClient client) {
         assert(pluginName != null);
         
         connection = null;
         this.pluginName = pluginName;
         this.plugin = new WeakReference<FredPluginFCPServer>(server);
         this.client = new WeakReference<FredPluginFCPClient>(client);
+    }
+
+    /**
+     * For being used by intra-node connections to a plugin:<br/>
+     * Both the server and the client are running within the same node, so their FCP interfaces are available:<br/>
+     * The server plugin will be queried from given {@link PluginManager} via the given pluginName.
+     * The client message handler is available as the passed {@link FredPluginFCPClient}.
+     */
+    public static FCPPluginClient constructForIntraNodeFCP(PluginManager pluginManager, String pluginName, FredPluginFCPClient client)
+            throws PluginNotFoundException {
+        return new FCPPluginClient(pluginName, pluginManager.getPluginFCPServer(pluginName), client);
     }
     
     /**
