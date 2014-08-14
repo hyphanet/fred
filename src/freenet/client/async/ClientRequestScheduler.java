@@ -292,27 +292,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	@Override
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
-		if(persistent) {
-			try {
-				jobRunner.queue(new PersistentJob() {
-
-					@Override
-					public boolean run(ClientContext context) {
-						schedCore.succeeded(succeeded);
-						return false;
-					}
-                                        @Override
-					public String toString() {
-						return "BaseSendableGet succeeded";
-					}
-					
-				}, TRIP_PENDING_PRIORITY);
-			} catch (PersistenceDisabledException e) {
-				Logger.error(this, "succeeded() on a persistent request but database disabled", new Exception("error"));
-			}
-			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
-		} else
-			schedTransient.succeeded(succeeded);
+	    selector.succeeded(succeeded);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {

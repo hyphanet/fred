@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -49,7 +50,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
      * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
      */
     protected SectoredRandomGrabArray[] newPriorities;
-	
+    
+    protected final Deque<BaseSendableGet>recentSuccesses;
+    
 	ClientRequestSelector(boolean isInsertScheduler, boolean isSSKScheduler, boolean isRTScheduler, ClientRequestScheduler sched) {
 		this.sched = sched;
 		this.isInsertScheduler = isInsertScheduler;
@@ -59,9 +62,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			keysFetching = new HashSet<Key>();
 			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
+			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
+			recentSuccesses = null;
 		}
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
@@ -361,12 +366,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				 * We keep a list of recently succeeded BaseSendableGet's, because transient 
 				 * requests are chosen individually. */
 				if(!isInsertScheduler) {
-					Deque<BaseSendableGet> recent = schedTransient.recentSuccesses;
 					BaseSendableGet altReq = null;
-					synchronized(recent) {
-						if(!recent.isEmpty()) {
+					synchronized(recentSuccesses) {
+						if(!recentSuccesses.isEmpty()) {
 							if(random.nextBoolean()) {
-								altReq = recent.poll();
+								altReq = recentSuccesses.poll();
 							}
 						}
 					}
@@ -393,8 +397,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							// Don't use the recent one
 							if(logMINOR)
 								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-							synchronized(recent) {
-								recent.add(altReq);
+							synchronized(recentSuccesses) {
+								recentSuccesses.add(altReq);
 							}
 						}
 					}
@@ -711,6 +715,21 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         if(request != null)
             return request.getSendableRequests();
         else return null;
+    }
+    
+    public void succeeded(BaseSendableGet succeeded) {
+        // Do nothing.
+        // FIXME: Keep a list of recently succeeded ClientRequester's.
+        if(isInsertScheduler) return;
+        if(succeeded.isCancelled()) return;
+        // Don't bother with getCooldownTime at this point.
+            if(logMINOR)
+                Logger.minor(this, "Recording successful fetch from "+succeeded);
+        synchronized(recentSuccesses) {
+            while(recentSuccesses.size() >= 8)
+                recentSuccesses.pollFirst();
+            recentSuccesses.add(succeeded);
+        }
     }
 
 }

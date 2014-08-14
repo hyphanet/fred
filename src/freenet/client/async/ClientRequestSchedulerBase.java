@@ -95,10 +95,6 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 			cr.removeFromRequests(req, dontComplain);
 	}
 	
-	public void succeeded(BaseSendableGet succeeded) {
-		// Do nothing.
-	}
-
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {
