@@ -28,7 +28,8 @@ public class PluginStores {
         this.node = node;
         pluginStoresDir = node.setupProgramDir(installConfig, "pluginStoresDir", "plugin-data", 
                 "NodeClientCore.pluginStoresDir", "NodeClientCore.pluginStoresDir", null, null);
-        if(!pluginStoresDir.dir().mkdirs()) {
+        File dir = pluginStoresDir.dir();
+        if(!(dir.mkdirs() || (dir.exists() && dir.isDirectory() && dir.canRead() && dir.canWrite()))) {
             System.err.println("Unable to create folder for plugin data: "+pluginStoresDir.dir());
         }
     }
