@@ -10,6 +10,7 @@ import java.util.UUID;
 import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.FredPluginFCPServer.ClientPermissions;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -97,11 +98,9 @@ public final class FCPPluginClient {
 
     
     /**
-     * For being used by networked FCP connections:<br/>
-     * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
-     * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
+     * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
-    public FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
+    private FCPPluginClient(FCPConnectionHandler connection, String pluginName, FredPluginFCPServer plugin) {
         assert(connection != null);
         assert(pluginName != null);
         assert(plugin != null);
@@ -110,6 +109,16 @@ public final class FCPPluginClient {
         this.pluginName = pluginName;
         this.plugin = new WeakReference<FredPluginFCPServer>(plugin);
         this.client = null;
+    }
+    
+    /**
+     * For being used by networked FCP connections:<br/>
+     * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
+     * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
+     */
+    public static FCPPluginClient constructForNetworkedFCP(FCPConnectionHandler connection, String pluginName) throws PluginNotFoundException {
+        assert(connection != null);
+        return new FCPPluginClient(connection, pluginName, connection.server.node.getPluginManager().getPluginFCPServer(pluginName));
     }
     
     /**

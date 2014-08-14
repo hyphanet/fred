@@ -648,7 +648,7 @@ public class FCPConnectionHandler implements Closeable {
 		if(peekOldClient != null)
 			return peekOldClient;
 
-		FCPPluginClient newClient = new FCPPluginClient(this, pluginName, server.node.getPluginManager().getPluginFCPServer(pluginName));
+		FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(this, pluginName);
 		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
 		FCPPluginClient oldClient = pluginClientsByPluginName.putIfAbsent(pluginName, newClient);
 
