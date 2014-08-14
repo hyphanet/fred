@@ -16,7 +16,9 @@ import freenet.support.math.MersenneTwister;
 
 /** Random access files with a limited number of open files, using a pool. 
  * LOCKING OPTIMISATION: Contention on closables likely here. It's not clear how to avoid that, FIXME.
- * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... */
+ * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... 
+ * 
+ * FIXME does this need a shutdown hook? I don't see why it would matter ... ??? */
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
     
     private static final long serialVersionUID = 1L;
