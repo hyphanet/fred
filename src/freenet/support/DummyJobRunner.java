@@ -58,7 +58,7 @@ public class DummyJobRunner implements PersistentJobRunner {
 
     @Override
     public void queueInternal(PersistentJob job) {
-        queueInternal(job, NativeThread.LOW_PRIORITY);
+        queueInternal(job, NativeThread.NORM_PRIORITY);
     }
 
 }
