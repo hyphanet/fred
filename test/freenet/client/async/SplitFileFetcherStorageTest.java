@@ -38,6 +38,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
+import freenet.support.DummyJobRunner;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
@@ -72,7 +73,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     static BucketFactory bf = new ArrayBucketFactory();
     static LockableRandomAccessThingFactory rafFactory = new ByteArrayRandomAccessThingFactory();
     static final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
-    static final PersistentJobRunner jobRunner = new SimplePersistentJobRunner(exec, null);
+    static final PersistentJobRunner jobRunner = new DummyJobRunner(exec, null);
     static final Ticker ticker = new CheatingTicker(exec);
     static MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, exec);
     static final int BLOCK_SIZE = CHKBlock.DATA_LENGTH;
