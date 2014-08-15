@@ -24,7 +24,13 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
         long id = fg.makeRandomFilename();
         File file = fg.getFilename(id);
-        return new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, id);
+        LockableRandomAccessThing ret = null;
+        try {
+            ret = new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, id);
+            return ret;
+        } finally {
+            if(ret == null) file.delete();
+        }
     }
 
     @Override
@@ -32,7 +38,13 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
             throws IOException {
         long id = fg.makeRandomFilename();
         File file = fg.getFilename(id);
-        return new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id);
+        LockableRandomAccessThing ret = null;
+        try {
+            ret = new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id);
+            return ret;
+        } finally {
+            if(ret == null) file.delete();
+        }
     }
 
 }
