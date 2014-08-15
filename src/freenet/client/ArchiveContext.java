@@ -50,4 +50,8 @@ public class ArchiveContext implements Serializable {
 			throw new ArchiveFailureException(ArchiveFailureException.ARCHIVE_LOOP_DETECTED);
 		}
 	}
+
+    public synchronized void clear() {
+        soFar = null;
+    }
 }

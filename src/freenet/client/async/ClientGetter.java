@@ -210,6 +210,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 					finished = false;
 				}
 				if(!resumedFetcher) {
+				    actx.clear();
 	                expectedMIME = null;
 	                expectedSize = 0;
 	                oldHashes = hashes;
