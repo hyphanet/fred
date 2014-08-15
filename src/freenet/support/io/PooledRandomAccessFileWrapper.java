@@ -59,7 +59,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         RAFLock lock = lockOpen();
         try {
             long currentLength = raf.length();
-            if(forceLength >= 0) {
+            if(forceLength >= 0 && forceLength != currentLength) {
                 // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
                 raf.seek(0);
                 MersenneTwister mt = null;
