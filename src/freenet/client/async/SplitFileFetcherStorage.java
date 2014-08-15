@@ -682,6 +682,8 @@ public class SplitFileFetcherStorage {
         offsetBasicSettings = dis.readLong();
         if(offsetBasicSettings != basicSettingsOffset)
             throw new StorageFormatException("Invalid basic settings offset (not the same as computed)");
+        if(completeViaTruncation != dis.readBoolean())
+            throw new StorageFormatException("Complete via truncation flag is wrong");
         int compatMode = dis.readInt();
         if(compatMode < 0 || compatMode > CompatibilityMode.values().length)
             throw new StorageFormatException("Invalid compatibility mode "+compatMode);
@@ -911,6 +913,7 @@ public class SplitFileFetcherStorage {
             dos.writeLong(offsetOriginalMetadata);
             dos.writeLong(offsetOriginalDetails);
             dos.writeLong(offsetBasicSettings);
+            dos.writeBoolean(completeViaTruncation);
             dos.writeInt(finalMinCompatMode.ordinal());
             dos.writeInt(segments.length);
             dos.writeInt(totalDataBlocks);
