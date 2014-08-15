@@ -158,6 +158,9 @@ public class SplitFileFetcherCrossSegmentStorage {
             return;
         }
         
+        boolean decoded = false;
+        boolean encoded = false;
+        
         if(realTotalDataBlocks < dataBlockCount) {
             // Decode.
             codec.decode(dataBlocks, checkBlocks, dataBlocksFound, checkBlocksFound, 
@@ -184,6 +187,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             finished = true;
         }
         
+        Logger.error(this, "Completed a cross-segment: decoded="+decoded+" encoded="+encoded);
         parent.finishedEncoding(this);
     }
 
@@ -222,7 +226,11 @@ public class SplitFileFetcherCrossSegmentStorage {
             public boolean run(ClientContext context) {
                 try {
                     // FIXME CPU USAGE Add another API to the segment to avoid re-decoding.
-                    segments[blockNo].onGotKey(key.getNodeCHK(), block.getBlock());
+                    boolean success = segments[blockNo].onGotKey(key.getNodeCHK(), block.getBlock());
+                    if(success)
+                        Logger.error(this, "Successfully decoded cross-segment block");
+                    else
+                        Logger.error(this, "Decoded cross-segment block but not wanted by segment");
                 } catch (IOException e) {
                     parent.failOnDiskError(e);
                     return true;
