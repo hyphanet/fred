@@ -41,6 +41,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PooledRandomAccessFileWrapper;
@@ -223,7 +224,8 @@ public class SplitFileFetcherStorage {
      * not store it. 
      * @param storageFile If non-null, we will use this file to store the data in. It must already
      * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
-     * so it only contains the final data before calling onSuccess().
+     * so it only contains the final data before calling onSuccess(). Also, in this case, 
+     * rafFactory must be a DiskSpaceCheckingRandomAccessThingFactory.
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
      * @throws MetadataParseException 
      * @throws IOException If we were unable to create the file to store the metadata and 
@@ -471,7 +473,8 @@ public class SplitFileFetcherStorage {
                 throw new IOException("Must have already created storage file");
             if(storageFile.length() > 0)
                 throw new IOException("Storage file must be empty");
-            raf = new PooledRandomAccessFileWrapper(storageFile, false, totalLength, random, -1);
+            // FIXME dirty layer violation.
+            raf = ((DiskSpaceCheckingRandomAccessThingFactory)rafFactory).createNewRAF(storageFile, totalLength, random);
             Logger.error(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
         } else {
             completeViaTruncation = false;
