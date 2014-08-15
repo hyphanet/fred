@@ -13,7 +13,7 @@ import freenet.crypt.HashResult;
 
 /**
  * Callback called when part of a get request completes - either with a 
- * Bucket full of data, or with an error.
+ * StreamGenerator full of data, or with an error.
  */
 public interface GetCompletionCallback {
 
