@@ -130,7 +130,7 @@ public class SplitFileFetcherSegmentStorage {
         retries = new int[total];
         blocksFound = new boolean[total];
         cooldownTimes = new long[total];
-        int minFetched = dataBlocks + crossSegmentCheckBlocks;
+        int minFetched = blocksForDecode();
         if(crossCheckBlocks != 0)
             crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
         else
@@ -140,7 +140,8 @@ public class SplitFileFetcherSegmentStorage {
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossCheckBlocks, writeRetries, parent.checksumLength, parent.persistent);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null, parent.checksumLength);
+            storedKeysLength(blocksForDecode(), checkBlocks, 
+                    parent.splitfileSingleCryptoKey != null, parent.checksumLength);
         this.segmentBlockDataOffset = segmentDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
@@ -171,8 +172,6 @@ public class SplitFileFetcherSegmentStorage {
         // REDFLAG one day we will support more than 256 blocks per segment?
         if(crossSegmentCheckBlocks < 0 || crossSegmentCheckBlocks > 256)
             throw new StorageFormatException("Bad cross-segment check block count");
-        if(crossSegmentCheckBlocks > 0) 
-            throw new StorageFormatException("Cross-segment not supported yet"); // FIXME
         this.checkBlocks = dis.readInt();
         if(checkBlocks < 0 || checkBlocks > 256)
             throw new StorageFormatException("Bad check block count");
@@ -183,7 +182,7 @@ public class SplitFileFetcherSegmentStorage {
         retries = new int[total];
         blocksFound = new boolean[total];
         cooldownTimes = new long[total];
-        int minFetched = dataBlocks + crossSegmentCheckBlocks;
+        int minFetched = blocksForDecode();
         if(crossSegmentCheckBlocks != 0)
             crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
         else
@@ -193,7 +192,8 @@ public class SplitFileFetcherSegmentStorage {
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossSegmentCheckBlocks, writeRetries, parent.checksumLength, true);
         segmentKeyListLength = 
-            storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null, parent.checksumLength);
+            storedKeysLength(blocksForDecode(), checkBlocks, 
+                    parent.splitfileSingleCryptoKey != null, parent.checksumLength);
         keysCache = null; // Will be read later
         this.writeRetries = writeRetries;
         this.segmentBlockDataOffset = segmentDataOffset;
@@ -222,8 +222,8 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     SplitFileSegmentKeys readSegmentKeys() throws IOException, ChecksumFailedException {
-        SplitFileSegmentKeys keys = new SplitFileSegmentKeys(dataBlocks + crossSegmentCheckBlocks, checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
-        byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(dataBlocks, checkBlocks, parent.splitfileSingleCryptoKey != null)];
+        SplitFileSegmentKeys keys = new SplitFileSegmentKeys(blocksForDecode(), checkBlocks, parent.splitfileSingleCryptoKey, parent.splitfileSingleCryptoAlgorithm);
+        byte[] buf = new byte[SplitFileSegmentKeys.storedKeysLength(blocksForDecode(), checkBlocks, parent.splitfileSingleCryptoKey != null)];
         parent.preadChecksummed(segmentKeyListOffset, buf, 0, buf.length);
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         keys.readKeys(dis, false);
@@ -255,8 +255,8 @@ public class SplitFileFetcherSegmentStorage {
             tryDecode = true;
         }
         long limit = totalBlocks() * CHKBlock.DATA_LENGTH + 
-            Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlocks + crossSegmentCheckBlocks, checkBlocks),
-                    parent.fecCodec.maxMemoryOverheadEncode(dataBlocks + crossSegmentCheckBlocks, checkBlocks));
+            Math.max(parent.fecCodec.maxMemoryOverheadDecode(blocksForDecode(), checkBlocks),
+                    parent.fecCodec.maxMemoryOverheadEncode(blocksForDecode(), checkBlocks));
         final int prio = NativeThread.LOW_PRIORITY;
         parent.memoryLimitedJobRunner.queueJob(new MemoryLimitedJob(limit) {
             
@@ -370,7 +370,7 @@ public class SplitFileFetcherSegmentStorage {
         // Check the blocks and put them into the correct positions.
         int validBlocks = 0;
         int validDataBlocks = 0;
-        byte[][] dataBlocks = new byte[this.dataBlocks + this.crossSegmentCheckBlocks][];
+        byte[][] dataBlocks = new byte[blocksForDecode()][];
         byte[][] checkBlocks = new byte[this.checkBlocks][];
         
         for(MyBlock test : maybeBlocks) {
@@ -518,7 +518,7 @@ public class SplitFileFetcherSegmentStorage {
             SplitFileSegmentKeys keys, boolean capturingBinaryBlob) {
         for(int i=0;i<checkBlocks.length;i++) {
             if(checkBlocksPresent[i]) continue;
-            ClientCHK decodeKey = keys.getKey(i+dataBlocks, null, false);
+            ClientCHK decodeKey = keys.getKey(i+blocksForDecode(), null, false);
             // Encode it to check whether the key is the same.
             ClientCHKBlock block;
             try {
@@ -599,7 +599,8 @@ public class SplitFileFetcherSegmentStorage {
         RAFLock lock = parent.lockRAFOpen();
         try {
             synchronized(this) {
-                for(int i=0;i<blocksForDecode();i++) {
+                assert(dataBlocks.length == blocksForDecode());
+                for(int i=0;i<dataBlocks.length;i++) {
                     writeDownloadedBlock(i, dataBlocks[i]);
                     blocksFound[i] = true;
                     blocksFetched[i] = (short)i;
@@ -851,7 +852,7 @@ public class SplitFileFetcherSegmentStorage {
      * @throws IOException */
     void writeToInner(OutputStream os) throws IOException {
         // FIXME if we use readAllBlocks() we'll need to run on the memory limited queue???
-        for(int i=0;i<dataBlocks;i++) {
+        for(int i=0;i<dataBlocks;i++) { // Don't include cross-check blocks.
             byte[] buf = readBlock(i);
             if(i == dataBlocks-1 && this.segNo == parent.segments.length-1) {
                 int length = (int) (parent.finalLength % CHKBlock.DATA_LENGTH);
