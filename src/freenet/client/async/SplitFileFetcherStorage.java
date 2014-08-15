@@ -1228,8 +1228,10 @@ public class SplitFileFetcherStorage {
         for(SplitFileFetcherSegmentStorage segment : segments) {
             if(!segment.isFinished()) return false;
         }
-        for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
-            if(!segment.isFinished()) return false;
+        if(crossSegments != null) {
+            for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+                if(!segment.isFinished()) return false;
+            }
         }
         return true;
     }
