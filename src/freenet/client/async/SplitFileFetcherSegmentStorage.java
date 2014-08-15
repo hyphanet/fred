@@ -1003,7 +1003,7 @@ public class SplitFileFetcherSegmentStorage {
      */
     public int allocateCrossCheckBlock(SplitFileFetcherCrossSegmentStorage seg, Random random) {
         if(crossCheckBlocksAllocated == crossSegmentCheckBlocks) return -1;
-        int x = dataBlocks + crossSegmentCheckBlocks - random.nextInt(crossSegmentCheckBlocks);
+        int x = dataBlocks + crossSegmentCheckBlocks - (1 + random.nextInt(crossSegmentCheckBlocks));
         for(int i=0;i<crossSegmentCheckBlocks;i++) {
             x++;
             if(x == dataBlocks + crossSegmentCheckBlocks) x = dataBlocks;
