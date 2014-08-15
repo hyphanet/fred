@@ -2,7 +2,9 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -12,6 +14,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
@@ -83,6 +86,8 @@ public class KeyGenUtilsTest {
     private static PrivateKey[] privateKeys = new PrivateKey[truePublicKeys.length];
 
     private static final byte[] trueIV = new byte[16];
+    
+    private static final String kdfInput = "testKey";
 
     static{
         Security.addProvider(new BouncyCastleProvider());
@@ -260,6 +265,7 @@ public class KeyGenUtilsTest {
     public void testGenSecretKeyKeySize() {
         for(KeyType type: keyTypes){
             byte[] key = KeyGenUtils.genSecretKey(type).getEncoded();
+            System.out.println(key.length);
             int keySizeBytes = type.keySize >> 3;
             assertEquals("KeyType: "+type.name(), keySizeBytes, key.length);
         }
@@ -330,5 +336,39 @@ public class KeyGenUtilsTest {
     public void testGetIvParameterSpecLengthOutOfBounds() {
         KeyGenUtils.getIvParameterSpec(trueIV, 0, trueIV.length+20);
     }
+    
+    @Test
+    public void testDeriveIvParameterSpec() throws InvalidKeyException{
+        SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
+        IvParameterSpec buf1 = 
+                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, 512);
+        IvParameterSpec buf2 = 
+                KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, 512);
+        assertNotNull(buf1);
+        assertTrue(buf1.equals(buf2));
+    }
+    
+    @Test (expected = InvalidKeyException.class)
+    public void testDeriveIvParameterSpecNullInput1() throws InvalidKeyException {
+        SecretKey kdfKey = null;
+        KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, 8);
+    }
 
+    @Test (expected = NullPointerException.class)
+    public void testDeriveIvParameterSpecNullInput2() throws InvalidKeyException{
+        SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
+        KeyGenUtils.deriveIvParameterSpec(kdfKey, null, kdfInput, 8);
+    }
+
+    @Test (expected = NullPointerException.class)
+    public void testDeriveIvParameterSpecNullInput3() throws InvalidKeyException{
+        SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
+        KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, null, 8);
+    }
+    
+    @Test (expected = IndexOutOfBoundsException.class)
+    public void testDeriveIvParameterSpecLenOutOfBounds() throws InvalidKeyException{
+        SecretKey kdfKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, trueLengthSecretKeys[6]);
+        KeyGenUtils.deriveIvParameterSpec(kdfKey, KeyGenUtils.class, kdfInput, -1);
+    }
 }

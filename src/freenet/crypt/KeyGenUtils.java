@@ -3,8 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -217,7 +219,7 @@ public final class KeyGenUtils {
 
     /**
      * Generates a random iv of a specified length
-     * @param length How long the iv should be
+     * @param length How long the iv should be in bytes
      * @return The randomly generated iv
      */
     public static IvParameterSpec genIV(int length){
@@ -242,5 +244,35 @@ public final class KeyGenUtils {
      */
     public static IvParameterSpec getIvParameterSpec(ByteBuffer iv){
         return new IvParameterSpec(iv.array());
+    }
+    
+    private static ByteBuffer deriveBytes(SecretKey kdfKey, Class<?> c, String kdfString) throws InvalidKeyException{
+        if(kdfString == null){
+            throw new NullPointerException();
+        }
+        MessageAuthCode kdf = new MessageAuthCode(MACType.HMACSHA512, kdfKey);
+        try {
+            return kdf.genMac((c.getName()+kdfString).getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+        }
+        return null;
+    }
+    
+    private static ByteBuffer deriveBytesTruncated(SecretKey kdfKey, Class<?> c, String kdfString, 
+            int len) throws InvalidKeyException{
+        byte[] key = new byte[len];
+        deriveBytes(kdfKey, c, kdfString).get(key);
+        return ByteBuffer.wrap(key);
+    }
+    
+    public static SecretKey deriveSecretKey(SecretKey kdfKey, Class<?> c, String kdfString, 
+            KeyType type) throws InvalidKeyException{
+        return getSecretKey(type, deriveBytesTruncated(kdfKey, c, kdfString, type.keySize));
+    }
+    
+    public static IvParameterSpec deriveIvParameterSpec(SecretKey kdfKey, Class<?> c, String kdfString, 
+            int ivLen) throws InvalidKeyException{
+        return getIvParameterSpec(deriveBytesTruncated(kdfKey, c, kdfString, ivLen));
     }
 }
