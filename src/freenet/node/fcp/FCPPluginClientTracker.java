@@ -3,7 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import freenet.pluginmanager.FredPluginFCPServer;
 
@@ -27,8 +31,35 @@ import freenet.pluginmanager.FredPluginFCPServer;
  * @author xor (xor@freenetproject.org)
  */
 public class FCPPluginClientTracker {
+    
+    /**
+     * Backend table of {@link WeakReference}s to known clients. Monitored by a {@link ReferenceQueue} to automatically remove entries for clients which have
+     * been GCed.
+     * 
+     * Not a {@link ConcurrentHashMap} because the creation of clients is exposed to the FCP network interface and thus DoS would be possible: Java HashMaps
+     * never shrink once they have reached a certain size.
+     */
+    private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID = new TreeMap<UUID, FCPPluginClientWeakReference>();
+    
+    
+    /**
+     * We extend class {@link WeakReference} so we can store the ID of the client:<br/>
+     * When using a {@link ReferenceQueue} to get notified about nulled {@link WeakReference}s in {@link FCPPluginClientTracker#clientsByID}, we need
+     * to remove those {@link WeakReference}s from the {@link TreeMap}. For fast removal, we need their key in the map, which is the client ID, so we should
+     * store it in the {@link WeakReference}.
+     */
+    private static final class FCPPluginClientWeakReference extends WeakReference<FCPPluginClient> {     
+        public final UUID clientID;
 
+        public FCPPluginClientWeakReference(FCPPluginClient referent) {
+            super(referent);
+            clientID = referent.getID();
+        }
+   
+    }
+    
     public FCPPluginClientTracker() {
+
     }
 
 }
