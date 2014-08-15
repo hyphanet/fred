@@ -737,7 +737,7 @@ public class SplitFileFetcherSegmentStorage {
 
     /** Caller must have already lock()'ed parent.raf and synchronized(this). 
      * @throws IOException */
-    private void writeDownloadedBlock(int slotNumber, byte[] data) throws IOException {
+    private synchronized void writeDownloadedBlock(int slotNumber, byte[] data) throws IOException {
         // FIXME Do we need to pad here for really old splitfiles, or does the FEC code do it?
         if(data.length != CHKBlock.DATA_LENGTH) throw new IllegalArgumentException();
         if(slotNumber >= blocksForDecode()) throw new IllegalArgumentException();
