@@ -3,16 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginReplySender;
+import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
- * <p>Keeps a list of all {@link FCPPluginClient}s which are connected to server plugins running in the node.</p>
+ * <p>Keeps a list of all {@link FCPPluginClient}s which are connected to server plugins running in the node.
+ * Allows the server plugins to query a client by its ID.</p>
  * 
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server plugin immediately sends a reply via the
@@ -41,6 +48,11 @@ public class FCPPluginClientTracker {
      */
     private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID = new TreeMap<UUID, FCPPluginClientWeakReference>();
     
+    /**
+     * Queue which monitors removed items of {@link #clientsByID}. Monitored in {@link #realRun()}.
+     */
+    private final ReferenceQueue<FCPPluginClient> disconnectedClientsQueue = new ReferenceQueue<FCPPluginClient>();
+
     
     /**
      * We extend class {@link WeakReference} so we can store the ID of the client:<br/>
@@ -51,11 +63,47 @@ public class FCPPluginClientTracker {
     private static final class FCPPluginClientWeakReference extends WeakReference<FCPPluginClient> {     
         public final UUID clientID;
 
-        public FCPPluginClientWeakReference(FCPPluginClient referent) {
-            super(referent);
+        public FCPPluginClientWeakReference(FCPPluginClient referent, ReferenceQueue<FCPPluginClient> referenceQueue) {
+            super(referent, referenceQueue);
             clientID = referent.getID();
         }
    
+    }
+    
+    /**
+     * Must be called for any newly created {@link FCPPluginClient} before passing it to
+     * {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
+     * 
+     * FIXME: Document the existence and usage of this class at that function.
+     */
+    synchronized void registerClient(FCPPluginClient client) {
+        // No duplicate checks needed: FCPPluginClient.getID() is a random UUID.
+        clientsByID.put(client.getID(), new FCPPluginClientWeakReference(client, disconnectedClientsQueue));
+    }
+    
+    /**
+     * For being used by implementors of {@link FredPluginFCPServer}.<br/>
+     * NOT for being used by clients: If you are a client using a {@link FCPPluginClient} to connect to a server plugin, you have to keep a reference to
+     * the {@link FCPPluginClient} in memory.<br/>
+     * This is necessary because this class only keeps {@link WeakReference}s to the {@link FCPPluginClient} objects. Once they are not referenced by a strong
+     * reference anymore, they will be garbage collected and thus considered as disconnected.<br/>
+     * The job of keeping the strong references is at the client.
+     * 
+     * @param clientID The ID of{@link FCPPluginClient#getID()} of a client which has already sent a message to your plugin via
+     *                 {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}
+     * @return The client with the given ID, for as long as it is still connected to the node. 
+     * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.
+     *                                 Notice: The client does not necessarily have to be a plugin. The type of the Exception is similar to
+     *                                 PluginNotFoundException so it matches what the send() functions of {@link FCPPluginClient} throw.
+     */
+    public synchronized FCPPluginClient getClient(UUID clientID) throws PluginNotFoundException {
+        FCPPluginClientWeakReference ref = clientsByID.get(clientID);
+        FCPPluginClient client = ref != null ? ref.get() : null;
+        
+        if(client == null)
+            throw new PluginNotFoundException();
+        
+        return client;
     }
     
     public FCPPluginClientTracker() {
