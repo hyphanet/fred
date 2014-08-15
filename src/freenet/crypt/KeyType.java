@@ -17,12 +17,13 @@ public enum KeyType {
     HMACSHA256("HMACSHA256", 256),
     HMACSHA384("HMACSHA384", 384),
     HMACSHA512("HMACSHA512", 512),
-    POLY1305AES("POLY1305-AES", 256),
-    ChaCha128("CHACHA", 128),
-    ChaCha256("CHACHA", 256);
+    POLY1305AES("POLY1305-AES", 256, 128),
+    ChaCha128("CHACHA", 128, 64),
+    ChaCha256("CHACHA", 256, 64);
 
     public final String alg;
-    public final int keySize;
+    public final int keySize;//bits
+    public final int ivSize;//bits
 
     /**
      * Creates an enum value for the specified algorithm and keysize
@@ -32,5 +33,12 @@ public enum KeyType {
     private KeyType(String alg, int keySize){
         this.alg = alg;
         this.keySize = keySize;
+        this.ivSize = keySize;
+    }
+    
+    private KeyType(String alg, int keySize, int ivSize){
+        this.alg = alg;
+        this.keySize = keySize;
+        this.ivSize = ivSize;
     }
 }
