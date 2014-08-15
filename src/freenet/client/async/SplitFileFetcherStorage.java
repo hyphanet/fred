@@ -472,6 +472,7 @@ public class SplitFileFetcherStorage {
             if(storageFile.length() > 0)
                 throw new IOException("Storage file must be empty");
             raf = new PooledRandomAccessFileWrapper(storageFile, false, totalLength, random, -1);
+            Logger.error(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
         } else {
             completeViaTruncation = false;
             raf = rafFactory.makeRAF(totalLength);
