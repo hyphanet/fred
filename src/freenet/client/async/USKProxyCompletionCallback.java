@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.Serializable;
 import java.util.List;
 
 import freenet.client.ClientMetadata;
@@ -19,9 +20,10 @@ import freenet.support.compress.Compressor;
  * @author toad
  *
  */
-public class USKProxyCompletionCallback implements GetCompletionCallback {
+public class USKProxyCompletionCallback implements GetCompletionCallback, Serializable {
 
-	final USK usk;
+    private static final long serialVersionUID = 1L;
+    final USK usk;
 	final GetCompletionCallback cb;
 	final boolean persistent;
 	
