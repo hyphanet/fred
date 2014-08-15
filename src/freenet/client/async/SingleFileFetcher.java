@@ -803,8 +803,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				ClientGetState sf;
 				// Use the new splitfile code only in certain circumstances.
 				// FIXME relax these conditions once know it works.
-				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
-				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
+				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting()) { // Only if temp buckets are not encrypted
 				    boolean reallyFinal = isFinal;
 				    if(isFinal && !parent.isCurrentState(this)) {
 				        Logger.error(this, "isFinal but not the current state for "+this, 
