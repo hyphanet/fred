@@ -893,4 +893,13 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         if(state != null)
             state.onShutdown(context);
     }
+
+    @Override
+    public boolean isCurrentState(ClientGetState state) {
+        synchronized(this) {
+            return currentState == state;
+        }
+    }
+
+
 }

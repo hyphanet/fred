@@ -393,4 +393,8 @@ public abstract class ClientRequester implements Serializable {
         // Do nothing.
     }
 
+    public boolean isCurrentState(ClientGetState state) {
+        return false;
+    }
+
 }

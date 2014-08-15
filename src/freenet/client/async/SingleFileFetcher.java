@@ -805,9 +805,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// FIXME relax these conditions once know it works.
 				if(!((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
 				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
+				    boolean reallyFinal = isFinal;
+				    if(isFinal && !parent.isCurrentState(this)) {
+				        Logger.error(this, "isFinal but not the current state for "+this, 
+				                new Exception("error"));
+				        reallyFinal = false;
+				    }
 				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, realTimeFlag,
 				            decompressors, clientMetadata, token, topDontCompress, 
-				            topCompatibilityMode, persistent, thisKey, isFinal, context);
+				            topCompatibilityMode, persistent, thisKey, reallyFinal, context);
 				} else {
 				    Logger.error(this, "Splitfile not supported yet");
 				    onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Not supported yet"), false, context);
