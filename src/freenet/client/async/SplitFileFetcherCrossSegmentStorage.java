@@ -347,4 +347,17 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
     }
 
+    /** Check for blocks and try to decode. */
+    public void restart() {
+        synchronized(this) {
+            if(finished) return;
+        }
+        readBlocks(false);
+        readBlocks(true);
+        synchronized(this) {
+            if(totalBlocks < dataBlockCount) return;
+            tryDecodeOrEncode();
+        }
+    }
+
 }
