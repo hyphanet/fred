@@ -44,10 +44,10 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NativeThread;
-import freenet.support.io.PooledRandomAccessFileWrapper;
 import freenet.support.io.StorageFormatException;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
+import freenet.support.math.MersenneTwister;
 
 /** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 
  * single random access file), but with most of the metadata in memory. The data, and the larger
@@ -398,30 +398,28 @@ public class SplitFileFetcherStorage {
         keyListener.finishedSetup();
         
         if(crossCheckBlocks != 0) {
-            // FIXME
-            throw new UnsupportedOperationException();
-//            Random random = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
-//            // Cross segment redundancy: Allocate the blocks.
-//            crossSegments = new SplitFileFetcherCrossSegmentStorage[segments.length];
-//            int segLen = blocksPerSegment;
-//            for(int i=0;i<crossSegments.length;i++) {
-//                Logger.normal(this, "Allocating blocks (on fetch) for cross segment "+i);
-//                if(segments.length - i == deductBlocksFromSegments) {
-//                    segLen--;
-//                }
-//                SplitFileFetcherCrossSegmentStorage seg = 
-//                    new SplitFileFetcherCrossSegmentStorage(i, segLen, crossCheckBlocks, parent, 
-//                            this, splitfileType);
-//                crossSegments[i] = seg;
-//                for(int j=0;j<segLen;j++) {
-//                    // Allocate random data blocks
-//                    allocateCrossDataBlock(seg, random);
-//                }
-//                for(int j=0;j<crossCheckBlocks;j++) {
-//                    // Allocate check blocks
-//                    allocateCrossCheckBlock(seg, random);
-//                }
-//            }
+            Random crossSegmentRandom = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
+            // Cross segment redundancy: Allocate the blocks.
+            crossSegments = new SplitFileFetcherCrossSegmentStorage[segments.length];
+            int segLen = blocksPerSegment;
+            int deductBlocksFromSegments = metadata.getDeductBlocksFromSegments();
+            for(int i=0;i<crossSegments.length;i++) {
+                Logger.normal(this, "Allocating blocks (on fetch) for cross segment "+i);
+                if(segments.length - i == deductBlocksFromSegments) {
+                    segLen--;
+                }
+                SplitFileFetcherCrossSegmentStorage seg = 
+                    new SplitFileFetcherCrossSegmentStorage(i, segLen, crossCheckBlocks, this, fecCodec);
+                crossSegments[i] = seg;
+                for(int j=0;j<segLen;j++) {
+                    // Allocate random data blocks
+                    allocateCrossDataBlock(seg, crossSegmentRandom);
+                }
+                for(int j=0;j<crossCheckBlocks;j++) {
+                    // Allocate check blocks
+                    allocateCrossCheckBlock(seg, crossSegmentRandom);
+                }
+            }
         } else {
             crossSegments = null;
         }
@@ -705,9 +703,14 @@ public class SplitFileFetcherStorage {
                         crossCheckBlocks, maxRetries != -1, checksumLength, true);
         }
         int crossSegments = dis.readInt();
-        if(crossSegments != 0)
-            throw new StorageFormatException("Cross-segment not supported yet");
-        this.crossSegments = null; // FIXME cross-segment splitfile support
+        if(crossSegments == 0)
+            this.crossSegments = null;
+        else
+            this.crossSegments = new SplitFileFetcherCrossSegmentStorage[crossSegments];
+        for(int i=0;i<crossSegments;i++) {
+            this.crossSegments[i] = new SplitFileFetcherCrossSegmentStorage(this, i, dis);
+        }
+         // FIXME cross-segment splitfile support
         this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, realTime, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
@@ -897,11 +900,10 @@ public class SplitFileFetcherStorage {
             if(this.crossSegments == null)
                 dos.writeInt(0);
             else {
-                // FIXME
-//                dos.writeInt(crossSegments.length);
-//                for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
-//                    segment.writeFixedMetadata(dos);
-//                }
+                dos.writeInt(crossSegments.length);
+                for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+                    segment.writeFixedMetadata(dos);
+                }
             }
             keyListener.writeStaticSettings(dos);
         } catch (IOException e) {
@@ -1156,8 +1158,17 @@ public class SplitFileFetcherStorage {
         finishedEncoding();
     }
     
+    void finishedEncoding(SplitFileFetcherCrossSegmentStorage segment) {
+        if(logMINOR) Logger.minor(this, "Successfully decoded "+segment+" for "+this+" for "+fetcher);
+        if(!allFinished()) return;
+        finishedEncoding();
+    }
+    
     private boolean allFinished() {
         for(SplitFileFetcherSegmentStorage segment : segments) {
+            if(!segment.isFinished()) return false;
+        }
+        for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
             if(!segment.isFinished()) return false;
         }
         return true;

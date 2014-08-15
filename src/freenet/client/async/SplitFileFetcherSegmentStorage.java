@@ -566,7 +566,7 @@ public class SplitFileFetcherSegmentStorage {
         parent.fetcher.queueHeal(data, cryptoKey, cryptoAlgorithm);
     }
 
-    private byte[][] readAllBlocks() throws IOException {
+    private synchronized byte[][] readAllBlocks() throws IOException {
         RAFLock lock = parent.lockRAFOpen();
         try {
             // FIXME consider using a single big byte[].
@@ -587,9 +587,10 @@ public class SplitFileFetcherSegmentStorage {
             for(int i=0;i<crossSegmentsByBlock.length;i++)
                 crossSegmentsByBlock[i] = null;
         }
-        for(SplitFileFetcherCrossSegmentStorage s : crossSegmentsByBlockCopy) {
+        for(int i=0;i<crossSegmentsByBlockCopy.length;i++) {
+            SplitFileFetcherCrossSegmentStorage s = crossSegmentsByBlockCopy[i];
             if(s != null)
-                s.onFetchedRelevantBlock(this);
+                s.onFetchedRelevantBlock(this, i);
         }
     }
 
@@ -707,7 +708,7 @@ public class SplitFileFetcherSegmentStorage {
                 nextBlockNumber = (short)keys.getBlockNumber(key, blocksFound);
             }
             if(callback != null)
-                callback.onFetchedRelevantBlock(this);
+                callback.onFetchedRelevantBlock(this, blockNumber);
             // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
             writeMetadata();
             if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
@@ -864,7 +865,7 @@ public class SplitFileFetcherSegmentStorage {
 
     /** Read a single block from a specific slot, which could be any block number. 
      * @throws IOException If an error occurred reading the data from disk. */
-    private byte[] readBlock(int slotNumber) throws IOException {
+    private synchronized byte[] readBlock(int slotNumber) throws IOException {
         if(slotNumber >= blocksForDecode()) throw new IllegalArgumentException();
         return parent.readBlock(this, slotNumber);
     }
@@ -1190,6 +1191,30 @@ public class SplitFileFetcherSegmentStorage {
 
     public synchronized int failedBlocks() {
         return failedBlocks;
+    }
+
+    public synchronized ClientCHK getKey(int blockNum) {
+        SplitFileSegmentKeys keys;
+        try {
+            keys = getSegmentKeys();
+        } catch (IOException e) {
+            return null;
+        }
+        if(keys == null) return null;
+        return keys.getKey(blockNum, null, false);
+    }
+
+    public synchronized byte[] checkAndGetBlockData(int blockNum) throws IOException {
+        if(!blocksFound[blockNum]) return null;
+        ClientCHK key = getKey(blockNum);
+        if(key == null) return null;
+        for(int i=0;i<blocksFetched.length;i++) {
+            if(blocksFetched[i] == blockNum) {
+                return readBlock(i);
+            }
+        }
+        Logger.error(this, "Block "+blockNum+" in blocksFound but not in blocksFetched on "+this);
+        return null;
     }
 
 }
