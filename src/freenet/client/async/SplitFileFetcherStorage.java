@@ -448,7 +448,7 @@ public class SplitFileFetcherStorage {
             
             encodedBasicSettings = 
                 encodeBasicSettings(splitfileDataBlocks - crossCheckBlocks * segments.length, 
-                        splitfileCheckBlocks);
+                        splitfileCheckBlocks, crossCheckBlocks * segments.length);
             totalLength = 
                 offsetBasicSettings + // rest of file
                 encodedBasicSettings.length + // basic settings
@@ -697,11 +697,15 @@ public class SplitFileFetcherStorage {
         int totalCheckBlocks = dis.readInt();
         if(totalCheckBlocks < 0) 
             throw new StorageFormatException("Invalid total check blocks "+totalDataBlocks);
+        int totalCrossCheckBlocks = dis.readInt();
+        if(totalCrossCheckBlocks < 0)
+            throw new StorageFormatException("Invalid total cross-check blocks "+totalDataBlocks);
         long dataOffset = 0;
         long segmentKeysOffset = offsetKeyList;
         long segmentStatusOffset = offsetSegmentStatus;
         int countDataBlocks = 0;
         int countCheckBlocks = 0;
+        int countCrossCheckBlocks = 0;
         for(int i=0;i<segments.length;i++) {
             segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, dataOffset, segmentKeysOffset, segmentStatusOffset);
             int dataBlocks = segments[i].dataBlocks;
@@ -709,6 +713,7 @@ public class SplitFileFetcherStorage {
             int checkBlocks = segments[i].checkBlocks;
             countCheckBlocks += checkBlocks;
             int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
+            countCrossCheckBlocks += crossCheckBlocks;
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
@@ -720,6 +725,8 @@ public class SplitFileFetcherStorage {
             throw new StorageFormatException("Total data blocks "+countDataBlocks+" but expected "+totalDataBlocks);
         if(countCheckBlocks != totalCheckBlocks) 
             throw new StorageFormatException("Total check blocks "+countCheckBlocks+" but expected "+totalCheckBlocks);
+        if(countCrossCheckBlocks != totalCrossCheckBlocks) 
+            throw new StorageFormatException("Total cross-check blocks "+countCrossCheckBlocks+" but expected "+totalCrossCheckBlocks);
         int crossSegments = dis.readInt();
         if(crossSegments == 0)
             this.crossSegments = null;
@@ -883,12 +890,13 @@ public class SplitFileFetcherStorage {
         return checksumChecker.checksumWriter(os);
     }
 
-    private byte[] encodeBasicSettings(int totalDataBlocks, int totalCheckBlocks) {
-        return appendChecksum(innerEncodeBasicSettings(totalDataBlocks, totalCheckBlocks));
+    private byte[] encodeBasicSettings(int totalDataBlocks, int totalCheckBlocks, int totalCrossCheckBlocks) {
+        return appendChecksum(innerEncodeBasicSettings(totalDataBlocks, totalCheckBlocks, totalCrossCheckBlocks));
     }
     
     /** Encode the basic settings (number of blocks etc) to a byte array */
-    private byte[] innerEncodeBasicSettings(int totalDataBlocks, int totalCheckBlocks) {
+    private byte[] innerEncodeBasicSettings(int totalDataBlocks, int totalCheckBlocks, 
+            int totalCrossCheckBlocks) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         try {
@@ -918,6 +926,7 @@ public class SplitFileFetcherStorage {
             dos.writeInt(segments.length);
             dos.writeInt(totalDataBlocks);
             dos.writeInt(totalCheckBlocks);
+            dos.writeInt(totalCrossCheckBlocks);
             for(SplitFileFetcherSegmentStorage segment : segments) {
                 segment.writeFixedMetadata(dos);
             }
