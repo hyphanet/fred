@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,6 +43,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NativeThread;
+import freenet.support.io.PooledRandomAccessFileWrapper;
 import freenet.support.io.StorageFormatException;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
@@ -119,6 +121,10 @@ public class SplitFileFetcherStorage {
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
     private final LockableRandomAccessThing raf;
+    /** If true we will complete the download by truncating the file. The file was passed in at
+     * construction and we are not responsible for freeing it. Once all segments have decoded and
+     * encoded we call onSuccess(), and we don't free the data. */
+    final boolean completeViaTruncation;
     /** The segments */
     final SplitFileFetcherSegmentStorage[] segments;
     /** The cross-segments. Null if no cross-segments. */
@@ -210,10 +216,14 @@ public class SplitFileFetcherStorage {
      * writes the initial data to it. There is another constructor for resuming a download. 
      * @param persistent 
      * @param topCompatibilityMode 
+     * @param storageFile 
      * @param clientMetadata2 
      * @param decompressors2
      * @param cb This is only provided so we can create appropriate events when constructing, we do
      * not store it. 
+     * @param storageFile If non-null, we will use this file to store the data in. It must already
+     * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
+     * so it only contains the final data before calling onSuccess().
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
      * @throws MetadataParseException 
      * @throws IOException If we were unable to create the file to store the metadata and 
@@ -225,7 +235,7 @@ public class SplitFileFetcherStorage {
             boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
-            ChecksumChecker checker, boolean persistent) 
+            ChecksumChecker checker, boolean persistent, File storageFile) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.jobRunner = exec;
@@ -455,7 +465,17 @@ public class SplitFileFetcherStorage {
         
         // Create the actual LockableRandomAccessThing
         
-        this.raf = rafFactory.makeRAF(totalLength);
+        if(storageFile != null) {
+            completeViaTruncation = true;
+            if(!storageFile.exists())
+                throw new IOException("Must have already created storage file");
+            if(storageFile.length() > 0)
+                throw new IOException("Storage file must be empty");
+            raf = new PooledRandomAccessFileWrapper(storageFile, false, totalLength, random, -1);
+        } else {
+            completeViaTruncation = false;
+            raf = rafFactory.makeRAF(totalLength);
+        }
         RAFLock lock = raf.lockOpen();
         try {
             for(int i=0;i<segments.length;i++) {
@@ -528,7 +548,8 @@ public class SplitFileFetcherStorage {
             SplitFileFetcherCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
-            boolean newSalt, KeySalter salt, boolean resumed) throws IOException, StorageFormatException, FetchException {
+            boolean newSalt, KeySalter salt, boolean resumed, boolean completeViaTruncation) 
+    throws IOException, StorageFormatException, FetchException {
         this.persistent = true;
         this.raf = raf;
         this.fetcher = callback;
@@ -542,6 +563,7 @@ public class SplitFileFetcherStorage {
         this.cooldownTries = origContext.getCooldownRetries();
         this.cooldownLength = origContext.getCooldownTime();
         this.errors = new FailureCodeTracker(false); // FIXME persist???
+        this.completeViaTruncation = completeViaTruncation;
         // FIXME this is hideous! Rewrite the writing/parsing code here in a less ugly way. However, it works...
         long rafLength = raf.size();
         if(raf.size() < 8 /* FIXME more! */)
@@ -960,21 +982,27 @@ public class SplitFileFetcherStorage {
     /** A segment successfully completed. 
      * @throws PersistenceDisabledException */
     public void finishedSuccess(SplitFileFetcherSegmentStorage segment) {
+        if(logMINOR) Logger.minor(this, "finishedSuccess on "+this+" from "+segment+" for "+fetcher, new Exception("debug"));
+        if(!completeViaTruncation)
+            maybeComplete();
+    }
+    
+    private void maybeComplete() {
         if(allSucceeded()) {
-            if(logMINOR) Logger.minor(this, "finishedSuccess on "+this+" from "+segment+" for "+fetcher, new Exception("debug"));
-            jobRunner.queueNormalOrDrop(new PersistentJob() {
-
-                @Override
-                public boolean run(ClientContext context) {
-                    fetcher.onSuccess();
-                    return true;
-                }
-                
-            });
+            callSuccessOffThread();
         }
-        // FIXME truncation optimisation: if the file isn't compressed and doesn't need filtering, 
-        // we can just truncate it to get rid of the metadata etc.
-        // If it is compressed or needs filtering, we may need to keep the metadata for now...
+    }
+    
+    private void callSuccessOffThread() {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+            
+            @Override
+            public boolean run(ClientContext context) {
+                fetcher.onSuccess();
+                return true;
+            }
+            
+        });
     }
 
     private boolean allSucceeded() {
@@ -1058,6 +1086,7 @@ public class SplitFileFetcherStorage {
 
     public void finishedFetcher() {
         synchronized(this) {
+            if(completeViaTruncation) return; // Ignore.
             if(finishedFetcher) {
                 if(logMINOR) Logger.minor(this, "Already finishedFetcher");
                 return;
@@ -1065,6 +1094,11 @@ public class SplitFileFetcherStorage {
             finishedFetcher = true;
             if(!finishedEncoding) return;
         }
+        closeOffThread();
+    }
+    
+    /** Called on a normal non-truncation completion. Frees the storage file off-thread. */
+    private void closeOffThread() {
         jobRunner.queueNormalOrDrop(new PersistentJob() {
             
             @Override
@@ -1078,7 +1112,7 @@ public class SplitFileFetcherStorage {
             
         });
     }
-    
+
     private void finishedEncoding() {
         synchronized(this) {
             if(finishedEncoding) {
@@ -1086,20 +1120,21 @@ public class SplitFileFetcherStorage {
                 return;
             }
             finishedEncoding = true;
-            if(!finishedFetcher) return;
-        }
-        jobRunner.queueNormalOrDrop(new PersistentJob() {
-            
-            @Override
-            public boolean run(ClientContext context) {
-                // ATOMICITY/DURABILITY: This will run after the checkpoint after completion.
-                // So after restart, even if the checkpoint failed, we will be in a valid state.
-                // This is why this is queue() not queueInternal().
-                close();
-                return true;
+            if(!completeViaTruncation) {
+                // For the non-truncation case, we wait until both the encoding and the callback
+                // have finished with the data, and then free the RAF.
+                if(!finishedFetcher) return;
             }
-            
-        });
+        }
+        if(completeViaTruncation) {
+            // For the truncation case, we wait until the encoding has finished, and then call
+            // the callback, which will truncate the file and pass it on.
+            raf.close(); // DO NOT free!
+            callSuccessOffThread();
+            return;
+        } else {            
+            closeOffThread();
+        }
     }
     
     /** Shutdown and free resources. CONCURRENCY: Caller is responsible for making sure this is 

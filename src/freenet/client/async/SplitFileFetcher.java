@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -23,6 +24,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.PooledRandomAccessFileWrapper;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
@@ -76,6 +78,12 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     private LockableRandomAccessThing raf;
     final ClientRequester parent;
     final GetCompletionCallback cb;
+    /** If non-null, we will complete via truncation. */
+    final FileGetCompletionCallback callbackCompleteViaTruncation;
+    /** If non-null, this is the temporary file we have allocated for completion via truncation.
+     * The download will be stored in this file until it is complete, at which point the storage
+     * will truncate it and we will feed it to the callback. */
+    final File fileCompleteViaTruncation;
     final boolean realTimeFlag;
     final FetchContext blockFetchContext;
     final long token;
@@ -109,6 +117,25 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             throw new FetchException(FetchException.CANCELLED);
         
         try {
+            // Completion via truncation.
+            if(isFinalFetch && cb instanceof FileGetCompletionCallback && 
+                    (decompressors == null || decompressors.size() == 0) &&
+                    !fetchContext.filterData) {
+                FileGetCompletionCallback fileCallback = ((FileGetCompletionCallback)cb);
+                File targetFile = fileCallback.getCompletionFile();
+                if(targetFile != null) {
+                    callbackCompleteViaTruncation = fileCallback;
+                    fileCompleteViaTruncation = File.createTempFile(targetFile.getName(), ".freenet-tmp", targetFile.getParentFile());
+                    // Storage must actually create the RAF since it knows the length.
+                } else {
+                    callbackCompleteViaTruncation = null;
+                    fileCompleteViaTruncation = null;
+                }
+            } else {
+                callbackCompleteViaTruncation = null;
+                fileCompleteViaTruncation = null;
+            }
+            // Construct the storage.
             ChecksumChecker checker = new CRCChecksumChecker();
             storage = new SplitFileFetcherStorage(metadata, this, decompressors, clientMetadata, 
                     topDontCompress, topCompatibilityMode, fetchContext, realTimeFlag, getSalter(),
@@ -116,7 +143,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
                     context.random, context.tempBucketFactory, 
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     persistent ? context.jobRunner : context.dummyJobRunner, 
-                    context.ticker, context.memoryLimitedJobRunner, checker, persistent);
+                    context.ticker, context.memoryLimitedJobRunner, checker, persistent,
+                    fileCompleteViaTruncation);
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {
@@ -145,6 +173,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         token = 0;
         wantBinaryBlob = false;
         persistent = true;
+        callbackCompleteViaTruncation = null;
+        fileCompleteViaTruncation = null;
     }
 
     @Override
@@ -216,9 +246,16 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         }
         context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
-        cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
-                this, context);
-        storage.finishedFetcher();
+        if(this.callbackCompleteViaTruncation != null) {
+            long finalLength = storage.finalLength;
+            this.callbackCompleteViaTruncation.onSuccess(fileCompleteViaTruncation, 
+                    finalLength, storage.clientMetadata, this, context);
+            // Don't need to call storage.finishedFetcher().
+        } else {
+            cb.onSuccess(storage.streamGenerator(), storage.clientMetadata, storage.decompressors, 
+                    this, context);
+            storage.finishedFetcher();
+        }
     }
     
     @Override
@@ -349,7 +386,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
                     context.random, context.jobRunner, context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
-                    context.jobRunner.newSalt(), salter, resumed);
+                    context.jobRunner.newSalt(), salter, resumed, 
+                    callbackCompleteViaTruncation != null);
         } catch (ResumeFailedException e) {
             raf.free();
             Logger.error(this, "Failed to resume storage file: "+e+" for "+raf, e);
@@ -392,7 +430,14 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
             return false;
         }
         dos.writeBoolean(true);
-        raf.storeTo(dos);
+        if(callbackCompleteViaTruncation == null) {
+            dos.writeBoolean(false);
+            raf.storeTo(dos);
+        } else {
+            dos.writeBoolean(true);
+            dos.writeUTF(fileCompleteViaTruncation.toString());
+            dos.writeLong(raf.size());
+        }
         dos.writeLong(token);
         Logger.normal(this, "Written splitfile progress (for emergency recovery) for "+this);
         return true;
@@ -401,7 +446,22 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     public SplitFileFetcher(ClientGetter getter, DataInputStream dis, ClientContext context) 
     throws StorageFormatException, ResumeFailedException, IOException {
         Logger.normal(this, "Resuming splitfile download for "+this);
-        this.raf = BucketTools.restoreRAFFrom(dis, context);
+        boolean completeViaTruncation = dis.readBoolean();
+        if(completeViaTruncation) {
+            fileCompleteViaTruncation = new File(dis.readUTF());
+            if(!fileCompleteViaTruncation.exists())
+                throw new ResumeFailedException("Storage file does not exist: "+fileCompleteViaTruncation);
+            callbackCompleteViaTruncation = (FileGetCompletionCallback) getter;
+            long rafSize = dis.readLong();
+            if(fileCompleteViaTruncation.length() != rafSize)
+                throw new ResumeFailedException("Storage file is not of the correct length");
+            // FIXME check against finalLength too, maybe we can finish straight away.
+            this.raf = new PooledRandomAccessFileWrapper(fileCompleteViaTruncation, false, rafSize, null, -1);
+        } else {
+            this.raf = BucketTools.restoreRAFFrom(dis, context);
+            fileCompleteViaTruncation = null;
+            callbackCompleteViaTruncation = null;
+        }
         this.parent = getter;
         this.cb = getter;
         this.persistent = true;

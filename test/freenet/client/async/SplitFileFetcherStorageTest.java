@@ -284,7 +284,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, ctx, false, salt, URI, URI, true, new byte[0], random, bf,
-                    f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent);
+                    f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null);
         }
 
         /** Restore a splitfile fetcher from a file. 
@@ -294,7 +294,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessThing raf) throws IOException, StorageFormatException, FetchException {
             assertTrue(persistent);
-            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false);
+            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false, false);
         }
 
         public FetchContext makeFetchContext() {
