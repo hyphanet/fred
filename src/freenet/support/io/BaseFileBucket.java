@@ -522,5 +522,13 @@ public abstract class BaseFileBucket implements Bucket {
         if(version != VERSION) throw new StorageFormatException("Bad version");
         freed = dis.readBoolean();
     }
+    
+    /** Call when doing something on disk independantly of the Bucket. 
+     * FIXME remove when we remove BaseFileBucket.length. */
+    public void recheckLength() {
+        synchronized(this) {
+            length = getFile().length();
+        }
+    }
 
 }
