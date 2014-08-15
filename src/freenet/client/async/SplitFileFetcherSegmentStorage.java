@@ -46,6 +46,9 @@ public class SplitFileFetcherSegmentStorage {
     final int segNo;
     /** Offset to the segment's block data. Initially we fill this up. */
     final long segmentBlockDataOffset;
+    /** Offset to the segment's cross-check block data. This may be kept separately if we are going
+     * to complete the fetch via truncation, otherwise it's at the end of the segment data. */
+    final long segmentCrossCheckBlockDataOffset;
     /** Offset to the segment's status metadata storage. */
     final long segmentStatusOffset;
     /** Length of the segment status for purposes of locating it on disk, may be larger than
@@ -116,9 +119,26 @@ public class SplitFileFetcherSegmentStorage {
         Logger.registerClass(SplitFileFetcherSegmentStorage.class);
     }
     
+    /**
+     * Construct a segment.
+     * @param parent
+     * @param segNumber
+     * @param splitfileType
+     * @param dataBlocks
+     * @param checkBlocks
+     * @param crossCheckBlocks
+     * @param segmentDataOffset
+     * @param segmentCrossCheckDataOffset -1 to mean store the cross-check blocks just after the 
+     * data and check blocks for this segment. Otherwise the offset.
+     * @param segmentKeysOffset
+     * @param segmentStatusOffset
+     * @param writeRetries
+     * @param keys
+     */
     public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, int segNumber, 
             short splitfileType, int dataBlocks, int checkBlocks, int crossCheckBlocks,
-            long segmentDataOffset, long segmentKeysOffset, long segmentStatusOffset, 
+            long segmentDataOffset, long segmentCrossCheckDataOffset,
+            long segmentKeysOffset, long segmentStatusOffset, 
             boolean writeRetries, SplitFileSegmentKeys keys) {
         this.parent = parent;
         this.segNo = segNumber;
@@ -143,6 +163,11 @@ public class SplitFileFetcherSegmentStorage {
             storedKeysLength(blocksForDecode(), checkBlocks, 
                     parent.splitfileSingleCryptoKey != null, parent.checksumLength);
         this.segmentBlockDataOffset = segmentDataOffset;
+        if(segmentCrossCheckDataOffset == -1) {
+            segmentCrossCheckDataOffset = 
+                segmentBlockDataOffset + (dataBlocks + checkBlocks) * CHKBlock.DATA_LENGTH;
+        }
+        this.segmentCrossCheckBlockDataOffset = segmentCrossCheckDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
         // This must be passed in here or we will read the uninitialised keys!
@@ -157,12 +182,14 @@ public class SplitFileFetcherSegmentStorage {
      * @param dis DataInputStream to which the static settings have been saved. Anything else we 
      * will need to read separately from the RandomAccessThing.
      * @param segNo The segment number.
+     * @param segmentCrossCheckDataOffset -1 to mean store the cross-check blocks just after the 
+     * data and check blocks for this segment. Otherwise the offset.
      * @throws IOException 
      * @throws StorageFormatException 
      */
     public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, DataInputStream dis, 
-            int segNo, boolean writeRetries, long segmentDataOffset, long segmentKeysOffset, 
-            long segmentStatusOffset) throws IOException, StorageFormatException {
+            int segNo, boolean writeRetries, long segmentDataOffset, long segmentCrossCheckDataOffset,
+            long segmentKeysOffset, long segmentStatusOffset) throws IOException, StorageFormatException {
         this.segNo = segNo;
         this.parent = parent;
         this.dataBlocks = dis.readInt();
@@ -197,6 +224,11 @@ public class SplitFileFetcherSegmentStorage {
         keysCache = null; // Will be read later
         this.writeRetries = writeRetries;
         this.segmentBlockDataOffset = segmentDataOffset;
+        if(segmentCrossCheckDataOffset == -1) {
+            segmentCrossCheckDataOffset = 
+                segmentBlockDataOffset + (dataBlocks + checkBlocks) * CHKBlock.DATA_LENGTH;
+        }
+        this.segmentCrossCheckBlockDataOffset = segmentCrossCheckDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
         this.segmentStatusOffset = segmentStatusOffset;
     }
@@ -746,7 +778,12 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     long blockOffset(int slotNumber) {
-        return segmentBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
+        if(slotNumber < dataBlocks || slotNumber >= (dataBlocks + crossSegmentCheckBlocks))
+            return segmentBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
+        else {
+            slotNumber -= dataBlocks;
+            return segmentCrossCheckBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
+        }
     }
 
     /** Write the metadata (status). Caller should already have taken parent.raf.lock() and 

@@ -124,7 +124,8 @@ public class SplitFileFetcherStorage {
     private final LockableRandomAccessThing raf;
     /** If true we will complete the download by truncating the file. The file was passed in at
      * construction and we are not responsible for freeing it. Once all segments have decoded and
-     * encoded we call onSuccess(), and we don't free the data. */
+     * encoded we call onSuccess(), and we don't free the data. Also, if this is true, cross-check 
+     * blocks will be kept on disk *AFTER* all the main data and check blocks for the whole file. */
     final boolean completeViaTruncation;
     /** The segments */
     final SplitFileFetcherSegmentStorage[] segments;
@@ -253,6 +254,7 @@ public class SplitFileFetcherStorage {
         this.checksumChecker = checker;
         this.checksumLength = checker.checksumLength();
         this.persistent = persistent;
+        this.completeViaTruncation = (storageFile != null);
         if(decompressors.size() > 1) {
             Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
         }
@@ -279,9 +281,12 @@ public class SplitFileFetcherStorage {
         long storedBlocksLength = 0;
         long storedKeysLength = 0;
         long storedSegmentStatusLength = 0;
+        /** Only non-zero if the cross-check blocks are stored separately i.e. if completeViaTruncation */
+        long storedCrossCheckBlocksLength = 0;
 
         for(SplitFileSegmentKeys keys : segmentKeys) {
             int dataBlocks = keys.getDataBlocks();
+            // Here data blocks include cross-segment blocks.
             int checkBlocks = keys.getCheckBlocks();
             splitfileDataBlocks += dataBlocks;
             splitfileCheckBlocks += checkBlocks;
@@ -292,6 +297,11 @@ public class SplitFileFetcherStorage {
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
         }
         
+        if(completeViaTruncation) {
+            int totalCrossCheckBlocks = segmentKeys.length * crossCheckBlocks;
+            splitfileDataBlocks -= totalCrossCheckBlocks;
+            storedCrossCheckBlocksLength = totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
+        }
         storedBlocksLength = (splitfileDataBlocks + splitfileCheckBlocks) * CHKBlock.DATA_LENGTH;
         
         int segmentCount = metadata.getSegmentCount();
@@ -345,7 +355,7 @@ public class SplitFileFetcherStorage {
 
         finalMinCompatMode = minCompatMode;
         
-        this.offsetKeyList = storedBlocksLength;
+        this.offsetKeyList = storedBlocksLength + storedCrossCheckBlocksLength;
         this.offsetSegmentStatus = offsetKeyList + storedKeysLength;
         
         byte[] generalProgress = appendChecksum(encodeGeneralProgress());
@@ -363,6 +373,7 @@ public class SplitFileFetcherStorage {
             
         
         long dataOffset = 0;
+        long crossCheckBlocksOffset = storedBlocksLength; // Only used if completeViaTruncation
         long segmentKeysOffset = offsetKeyList;
         long segmentStatusOffset = offsetSegmentStatus;
         
@@ -377,9 +388,16 @@ public class SplitFileFetcherStorage {
                 throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
             segments[i] = new SplitFileFetcherSegmentStorage(this, i, splitfileType, 
                     dataBlocks-crossCheckBlocks, // Cross check blocks are included in data blocks for SplitFileSegmentKeys' purposes.
-                    checkBlocks, crossCheckBlocks, dataOffset, segmentKeysOffset, segmentStatusOffset,
+                    checkBlocks, crossCheckBlocks, dataOffset, 
+                    completeViaTruncation ? crossCheckBlocksOffset : -1, // Put at end if truncating.
+                    segmentKeysOffset, segmentStatusOffset,
                     maxRetries != -1, keys);
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
+            if(completeViaTruncation) {
+                long checkBlocksLength = crossCheckBlocks * CHKBlock.DATA_LENGTH;
+                dataOffset -= checkBlocksLength;
+                crossCheckBlocksOffset += checkBlocksLength;
+            }
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
@@ -390,6 +408,8 @@ public class SplitFileFetcherStorage {
             }
         }
         assert(dataOffset == storedBlocksLength);
+        if(completeViaTruncation)
+            assert(crossCheckBlocksOffset == storedCrossCheckBlocksLength + storedBlocksLength);
         assert(segmentKeysOffset == storedBlocksLength + storedKeysLength);
         assert(segmentStatusOffset == storedBlocksLength + storedKeysLength + storedSegmentStatusLength);
         int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
@@ -468,7 +488,6 @@ public class SplitFileFetcherStorage {
         // Create the actual LockableRandomAccessThing
         
         if(storageFile != null) {
-            completeViaTruncation = true;
             if(!storageFile.exists())
                 throw new IOException("Must have already created storage file");
             if(storageFile.length() > 0)
@@ -477,7 +496,6 @@ public class SplitFileFetcherStorage {
             raf = ((DiskSpaceCheckingRandomAccessThingFactory)rafFactory).createNewRAF(storageFile, totalLength, random);
             Logger.error(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
         } else {
-            completeViaTruncation = false;
             raf = rafFactory.makeRAF(totalLength);
         }
         RAFLock lock = raf.lockOpen();
@@ -701,13 +719,21 @@ public class SplitFileFetcherStorage {
         if(totalCrossCheckBlocks < 0)
             throw new StorageFormatException("Invalid total cross-check blocks "+totalDataBlocks);
         long dataOffset = 0;
+        long crossCheckBlocksOffset;
+        if(completeViaTruncation) {
+            crossCheckBlocksOffset = (totalDataBlocks + totalCheckBlocks) * CHKBlock.DATA_LENGTH;
+        } else {
+            crossCheckBlocksOffset = 0;
+        }
         long segmentKeysOffset = offsetKeyList;
         long segmentStatusOffset = offsetSegmentStatus;
         int countDataBlocks = 0;
         int countCheckBlocks = 0;
         int countCrossCheckBlocks = 0;
         for(int i=0;i<segments.length;i++) {
-            segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, dataOffset, segmentKeysOffset, segmentStatusOffset);
+            segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, 
+                    dataOffset, completeViaTruncation ? crossCheckBlocksOffset : -1,
+                    segmentKeysOffset, segmentStatusOffset);
             int dataBlocks = segments[i].dataBlocks;
             countDataBlocks += dataBlocks;
             int checkBlocks = segments[i].checkBlocks;
@@ -715,6 +741,7 @@ public class SplitFileFetcherStorage {
             int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
             countCrossCheckBlocks += crossCheckBlocks;
             dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
+            crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
