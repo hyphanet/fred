@@ -399,7 +399,7 @@ public class SplitFileFetcherStorage {
                 crossCheckBlocksOffset += checkBlocksLength;
             }
             segmentKeysOffset += 
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
@@ -410,8 +410,8 @@ public class SplitFileFetcherStorage {
         assert(dataOffset == storedBlocksLength);
         if(completeViaTruncation)
             assert(crossCheckBlocksOffset == storedCrossCheckBlocksLength + storedBlocksLength);
-        assert(segmentKeysOffset == storedBlocksLength + storedKeysLength);
-        assert(segmentStatusOffset == storedBlocksLength + storedKeysLength + storedSegmentStatusLength);
+        assert(segmentKeysOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength);
+        assert(segmentStatusOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength + storedSegmentStatusLength);
         int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
         fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
         
