@@ -5,10 +5,14 @@ package freenet.client.async;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -42,7 +46,10 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
+import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.InsufficientDiskSpaceException;
+import freenet.support.io.NullOutputStream;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
@@ -52,7 +59,8 @@ import freenet.support.io.StorageFormatException;
  * of the request is stored in currentState. The ClientGetState's do most of the work. SingleFileFetcher for
  * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
-public class ClientGetter extends BaseClientGetter implements WantsCooldownCallback, Serializable {
+public class ClientGetter extends BaseClientGetter 
+implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
@@ -400,6 +408,92 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 		context.getJobRunner(persistent()).setCheckpointASAP();
 		clientCallback.onSuccess(result, ClientGetter.this);
 	}
+	
+    @Override
+    public void onSuccess(File tempFile, long length, ClientMetadata metadata,
+            ClientGetState state, ClientContext context) {
+        context.uskManager.checkUSK(uri, persistent(), false);
+        try {
+            if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
+        } catch (IOException ioe) {
+            onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, context);
+            return;
+        } catch (BinaryBlobAlreadyClosedException e) {
+            onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, context);
+            return;
+        }
+        File completionFile = getCompletionFile();
+        assert(completionFile != null);
+        assert(!ctx.filterData);
+        Logger.error(this, "Succeeding via truncation from "+tempFile+" to "+completionFile);
+        FetchException ex = null;
+        RandomAccessFile raf = null;
+        FetchResult result = null;
+        try {
+            raf = new RandomAccessFile(tempFile, "rw");
+            if(raf.length() < length)
+                throw new IOException("File is shorter than target length "+length);
+            raf.setLength(length);
+            InputStream is = new FileInputStream(raf.getFD());
+            // Check hashes...
+            
+            DecompressorThreadManager decompressorManager = null;
+            ClientGetWorkerThread worker = null;
+
+            worker = new ClientGetWorkerThread(is, new NullOutputStream(), uri, null, hashes, false, null, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+            worker.start();
+            
+            if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
+            worker.waitFinished();
+            
+            is.close();
+            is = null;
+            raf = null; // FD is closed.
+            
+            // We are still here so it worked.
+            
+            if(!FileUtil.renameTo(tempFile, completionFile))
+                throw new FetchException(FetchException.BUCKET_ERROR, "Failed to rename from temp file "+tempFile);
+            
+            // Success!
+            
+            synchronized(this) {
+                finished = true;
+                currentState = null;
+                expectedMIME = metadata.getMIMEType();
+                expectedSize = length;
+            }
+            
+            result = new FetchResult(metadata, returnBucket);
+            
+        } catch (IOException e) {
+            Logger.error(this, "Failed while completing via truncation: "+e, e);
+            ex = new FetchException(FetchException.BUCKET_ERROR, e);
+        } catch (URISyntaxException e) {
+            Logger.error(this, "Impossible failure while completing via truncation: "+e, e);
+            ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+        } catch(FetchException e) {
+            // Hashes failed.
+            Logger.error(this, "Caught "+e, e);
+            ex = e;
+        } catch (Throwable e) {
+            Logger.error(this, "Failed while completing via truncation: "+e, e);
+            ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+        }
+        if(ex != null) {
+            onFailure(ex, state, context, true);
+            if(raf != null)
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                    // Ignore.
+                }
+            tempFile.delete();
+        } else {
+            context.getJobRunner(persistent()).setCheckpointASAP();
+            clientCallback.onSuccess(result, ClientGetter.this);
+        }
+    }
 
 	/**
 	 * Called when the request fails. Retrying will have already been attempted by the calling state, if
@@ -901,5 +995,12 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
         }
     }
 
+    @Override
+    public File getCompletionFile() {
+        if(returnBucket == null) return null;
+        if(!(returnBucket instanceof FileBucket)) return null;
+        // Just a plain FileBucket. Not a temporary, not delayed free, etc.
+        return ((FileBucket)returnBucket).getFile();
+    }
 
 }

@@ -9,7 +9,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -78,7 +77,7 @@ public class ClientGetWorkerThread extends Thread {
 	 * @param linkFilterExceptionProvider Provider for link filter exceptions
 	 * @throws URISyntaxException 
 	 */
-	public ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
+	public ClientGetWorkerThread(InputStream input, OutputStream output, FreenetURI uri,
 			String mimeType, HashResult[] hashes, boolean filterData, String charset,
 			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer, LinkFilterExceptionProvider linkFilterExceptionProvider) throws URISyntaxException {
 		super("ClientGetWorkerThread-"+counter());
