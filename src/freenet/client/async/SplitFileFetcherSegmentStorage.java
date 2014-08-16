@@ -419,7 +419,7 @@ public class SplitFileFetcherSegmentStorage {
                     // Is it a different block?
                     blockNumber = (short)keys.getBlockNumber(actualKey, null);
                     if(blockNumber == -1) {
-                        Logger.error(this, "Block which should be block #"+blockNumber+" for segment "+this+" is not valid for key "+decodeKey);
+                        Logger.error(this, "Block which should be block #"+test.blockNumber+" in slot "+test.slot+" for segment "+this+" is not valid for key "+decodeKey);
                         failed = true;
                     } else {
                         synchronized(this) {
@@ -512,6 +512,7 @@ public class SplitFileFetcherSegmentStorage {
             finished = true;
         }
         parent.finishedEncoding(this);
+        if(logMINOR) Logger.minor(this, "Finished decoding "+this+" for "+parent);
     }
 
     private void checkDecodedDataBlocks(byte[][] dataBlocks, boolean[] dataBlocksPresent, 
@@ -708,6 +709,7 @@ public class SplitFileFetcherSegmentStorage {
         // Clearer to do duplicate handling here, plus we only need to decode once.
         do {
             short nextBlockNumber;
+            int slotNumber;
             // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
             synchronized(this) {
                 if(succeeded || failed || finished) return true; // We decoded it, it's definitely OK.
@@ -717,7 +719,7 @@ public class SplitFileFetcherSegmentStorage {
                 }
                 if(blocksFetchedCount >= blocksForDecode())
                     return true;
-                int slotNumber = findFreeSlot();
+                slotNumber = findFreeSlot();
                 assert(slotNumber != -1);
                 blocksFetched[slotNumber] = blockNumber;
                 blocksFound[blockNumber] = true;
@@ -744,7 +746,7 @@ public class SplitFileFetcherSegmentStorage {
                 callback.onFetchedRelevantBlock(this, blockNumber);
             // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
             writeMetadata();
-            if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent);
+            if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent+" written to "+slotNumber);
             parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
                 
                 @Override
