@@ -299,12 +299,15 @@ public class SplitFileFetcherStorage {
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
         }
         
+        int totalCrossCheckBlocks = segmentKeys.length * crossCheckBlocks;
+        splitfileDataBlocks -= totalCrossCheckBlocks;
         if(completeViaTruncation) {
-            int totalCrossCheckBlocks = segmentKeys.length * crossCheckBlocks;
-            splitfileDataBlocks -= totalCrossCheckBlocks;
             storedCrossCheckBlocksLength = totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
+            storedBlocksLength = splitfileDataBlocks * CHKBlock.DATA_LENGTH;
+        } else {
+            storedCrossCheckBlocksLength = 0;
+            storedBlocksLength = (splitfileDataBlocks + totalCrossCheckBlocks) * CHKBlock.DATA_LENGTH;
         }
-        storedBlocksLength = splitfileDataBlocks * CHKBlock.DATA_LENGTH;
         
         int segmentCount = metadata.getSegmentCount();
         
@@ -352,7 +355,7 @@ public class SplitFileFetcherStorage {
         random.nextBytes(localSalt);
         
         keyListener = new SplitFileFetcherKeyListener(fetcher, this, realTime, false, 
-                localSalt, splitfileDataBlocks + splitfileCheckBlocks, blocksPerSegment + 
+                localSalt, splitfileDataBlocks + totalCrossCheckBlocks + splitfileCheckBlocks, blocksPerSegment + 
                 checkBlocksPerSegment, segmentCount);
 
         finalMinCompatMode = minCompatMode;
@@ -417,8 +420,7 @@ public class SplitFileFetcherStorage {
             assert(crossCheckBlocksOffset == storedCrossCheckBlocksLength + storedBlocksLength);
         assert(segmentKeysOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength);
         assert(segmentStatusOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength + storedSegmentStatusLength);
-        int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
-        fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
+        fetcher.setSplitfileBlocks(splitfileDataBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
         
         keyListener.finishedSetup();
         
@@ -472,7 +474,7 @@ public class SplitFileFetcherStorage {
             this.offsetBasicSettings = offsetOriginalDetails + encodedURI.length;
             
             encodedBasicSettings = 
-                encodeBasicSettings(splitfileDataBlocks - crossCheckBlocks * segments.length, 
+                encodeBasicSettings(splitfileDataBlocks, 
                         splitfileCheckBlocks, crossCheckBlocks * segments.length);
             totalLength = 
                 offsetBasicSettings + // rest of file
