@@ -297,11 +297,8 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        if(persistentTempID != -1) {
-            if(!file.exists()) throw new ResumeFailedException("File does not exist");
-            if(length > file.length()) throw new ResumeFailedException("Bad length");
-        } else
-            throw new UnsupportedOperationException(); // Not persistent.
+        if(!file.exists()) throw new ResumeFailedException("File does not exist");
+        if(length > file.length()) throw new ResumeFailedException("Bad length");
     }
     
     public String toString() {
