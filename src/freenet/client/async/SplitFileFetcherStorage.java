@@ -632,7 +632,7 @@ public class SplitFileFetcherStorage {
         dis = new DataInputStream(new ByteArrayInputStream(buf));
         int basicSettingsLength = dis.readInt();
         if(basicSettingsLength < 0 || basicSettingsLength + 12 + 4 + checksumLength > raf.size() || 
-                basicSettingsLength > 4096)
+                basicSettingsLength > 1024*1024)
             throw new StorageFormatException("Bad basic settings length");
         byte[] basicSettingsBuffer = new byte[basicSettingsLength];
         long basicSettingsOffset = rafLength-(18+4+checksumLength*2+basicSettingsLength);
