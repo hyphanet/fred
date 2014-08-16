@@ -754,6 +754,12 @@ public class SplitFileFetcherStorage {
             segmentStatusOffset +=
                 SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength, true);
+            if(dataOffset > rafLength)
+                throw new StorageFormatException("Data offset past end of file "+dataOffset+" of "+rafLength);
+            if(segments[i].segmentCrossCheckBlockDataOffset > rafLength)
+                throw new StorageFormatException("Cross-check blocks offset past end of file "+segments[i].segmentCrossCheckBlockDataOffset+" of "+rafLength);
+            if(logDEBUG) Logger.debug(this, "Segment "+i+": data blocks offset "+
+                    segments[i].segmentBlockDataOffset+" cross-check blocks offset "+segments[i].segmentCrossCheckBlockDataOffset+" for segment "+i+" of "+this);
         }
         if(countDataBlocks != totalDataBlocks) 
             throw new StorageFormatException("Total data blocks "+countDataBlocks+" but expected "+totalDataBlocks);
