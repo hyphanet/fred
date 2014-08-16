@@ -732,6 +732,12 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 */
 	protected void addKeyToBinaryBlob(ClientKeyBlock block, ClientContext context) {
 		if(binaryBlobWriter == null) return;
+		synchronized(this) {
+		    if(finished) {
+		        if(logMINOR) Logger.minor(this, "Add key to binary blob for "+this+" but already finished");
+		        return;
+		    }
+		}
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		try {
