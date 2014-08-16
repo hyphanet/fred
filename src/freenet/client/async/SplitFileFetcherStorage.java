@@ -403,7 +403,7 @@ public class SplitFileFetcherStorage {
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
-                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
+                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks-crossCheckBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
             for(int j=0;j<(dataBlocks+checkBlocks);j++) {
                 keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
