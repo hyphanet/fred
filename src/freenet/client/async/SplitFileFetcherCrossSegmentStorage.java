@@ -352,13 +352,13 @@ public class SplitFileFetcherCrossSegmentStorage {
         segments = new SplitFileFetcherSegmentStorage[totalBlocks];
         blockNumbers = new int[totalBlocks];
         for(int i=0;i<totalBlocks;i++) {
-            int x = dis.readInt();
-            if(x < 0 || x >= parent.segments.length)
-                throw new StorageFormatException("Invalid segment number "+x);
-            segments[i] = parent.segments[x];
-            x = dis.readInt();
-            if(x < 0 || x >= parent.segments[x].totalBlocks())
-                throw new StorageFormatException("Invalid block number "+x+" for segment "+segments[i].segNo);
+            int readSeg = dis.readInt();
+            if(readSeg < 0 || readSeg >= parent.segments.length)
+                throw new StorageFormatException("Invalid segment number "+readSeg);
+            SplitFileFetcherSegmentStorage segment = parent.segments[readSeg];
+            int blockNo = dis.readInt();
+            if(blockNo < 0 || blockNo >= segment.totalBlocks())
+                throw new StorageFormatException("Invalid block number "+blockNo+" for segment "+segment.segNo);
         }
     }
 
