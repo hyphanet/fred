@@ -114,6 +114,7 @@ import freenet.support.math.MersenneTwister;
 public class SplitFileFetcherStorage {
 
     private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
     static {
         Logger.registerClass(SplitFileFetcherStorage.class);
     }
@@ -407,6 +408,8 @@ public class SplitFileFetcherStorage {
             for(int j=0;j<(dataBlocks+checkBlocks);j++) {
                 keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
             }
+            if(logDEBUG) Logger.debug(this, "Segment "+i+": data blocks offset "+
+                    segments[i].segmentBlockDataOffset+" cross-check blocks offset "+segments[i].segmentCrossCheckBlockDataOffset+" for segment "+i+" of "+this);
         }
         assert(dataOffset == storedBlocksLength);
         if(completeViaTruncation)
@@ -1600,6 +1603,7 @@ public class SplitFileFetcherStorage {
     byte[] readBlock(SplitFileFetcherSegmentStorage segment, int slotNumber) 
     throws IOException {
         long offset = segment.blockOffset(slotNumber);
+        if(logDEBUG) Logger.minor(this, "Reading block "+slotNumber+" for "+segment.segNo+"/"+segments.length+" from "+offset+" RAF length is "+raf.size());
         byte[] buf = new byte[CHKBlock.DATA_LENGTH];
         raf.pread(offset, buf, 0, buf.length);
         return buf;
