@@ -399,7 +399,7 @@ public class SplitFileFetcherStorage {
                 long checkBlocksLength = crossCheckBlocks * CHKBlock.DATA_LENGTH;
                 dataOffset -= checkBlocksLength;
                 crossCheckBlocksOffset += checkBlocksLength;
-            }
+            } // Else cross-check blocks already included in dataBlocks
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
@@ -725,7 +725,7 @@ public class SplitFileFetcherStorage {
         long dataOffset = 0;
         long crossCheckBlocksOffset;
         if(completeViaTruncation) {
-            crossCheckBlocksOffset = (totalDataBlocks + totalCheckBlocks) * CHKBlock.DATA_LENGTH;
+            crossCheckBlocksOffset = totalDataBlocks * CHKBlock.DATA_LENGTH;
         } else {
             crossCheckBlocksOffset = 0;
         }
@@ -744,8 +744,11 @@ public class SplitFileFetcherStorage {
             countCheckBlocks += checkBlocks;
             int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
             countCrossCheckBlocks += crossCheckBlocks;
-            dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
-            crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+            dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
+            if(completeViaTruncation)
+                crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+            else
+                dataOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
             segmentKeysOffset += 
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=

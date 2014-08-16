@@ -165,7 +165,7 @@ public class SplitFileFetcherSegmentStorage {
         this.segmentBlockDataOffset = segmentDataOffset;
         if(segmentCrossCheckDataOffset == -1) {
             segmentCrossCheckDataOffset = 
-                segmentBlockDataOffset + (dataBlocks + checkBlocks) * CHKBlock.DATA_LENGTH;
+                segmentBlockDataOffset + dataBlocks * CHKBlock.DATA_LENGTH;
         }
         this.segmentCrossCheckBlockDataOffset = segmentCrossCheckDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
@@ -226,7 +226,7 @@ public class SplitFileFetcherSegmentStorage {
         this.segmentBlockDataOffset = segmentDataOffset;
         if(segmentCrossCheckDataOffset == -1) {
             segmentCrossCheckDataOffset = 
-                segmentBlockDataOffset + (dataBlocks + checkBlocks) * CHKBlock.DATA_LENGTH;
+                segmentBlockDataOffset + dataBlocks * CHKBlock.DATA_LENGTH;
         }
         this.segmentCrossCheckBlockDataOffset = segmentCrossCheckDataOffset;
         this.segmentKeyListOffset = segmentKeysOffset;
