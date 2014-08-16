@@ -176,7 +176,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         
         byte[] encryptedKey = null;
         try {
-            CryptBitSet crypt = new CryptBitSet(type.encryptType, headerEncKey, 
+            CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded()).array();
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
@@ -218,7 +218,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         System.arraycopy(footer, offset, encryptedKey, 0, keySize);
         offset += keySize;
         try {
-            CryptBitSet crypt = new CryptBitSet(type.encryptType, headerEncKey, 
+            CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             unencryptedBaseKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, 
                     crypt.decrypt(unencryptedBaseKey.getEncoded()));

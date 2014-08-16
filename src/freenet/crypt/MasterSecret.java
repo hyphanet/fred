@@ -14,7 +14,6 @@ public final class MasterSecret implements Serializable{
     
     public MasterSecret(){
         masterKey = KeyGenUtils.genSecretKey(KeyType.HMACSHA512);
-        MessageAuthCode temp = null;
     }
     
     public SecretKey deriveKey(KeyType type){

@@ -18,15 +18,15 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Logger;
 
 /**
- * CryptBitSet will encrypt and decrypt both byte[]s and BitSets with a specified
+ * CryptByteBuffer will encrypt and decrypt both byte[]s and BitSets with a specified
  * algorithm, key, and also an iv if the algorithm requires one. 
  * @author unixninja92
  */
 @SuppressWarnings("deprecation")
-public final class CryptBitSet implements Serializable{
+public final class CryptByteBuffer implements Serializable{
     private static final long serialVersionUID = 6143338995971755362L;
-    public static final CryptBitSetType preferredCryptBitAlg = CryptBitSetType.ChaCha128;
-    private final CryptBitSetType type;
+    public static final CryptByteBufferType preferredCryptBitAlg = CryptByteBufferType.ChaCha128;
+    private final CryptByteBufferType type;
     private final SecretKey key;
     private IvParameterSpec iv;
 
@@ -40,7 +40,7 @@ public final class CryptBitSet implements Serializable{
     private PCFBMode decryptPCFB;
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key. If the 
      * algorithm requires an iv, it will either use the one passed in, or if that is
      * null, it will generate a random one.
@@ -50,7 +50,7 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, SecretKey key, IvParameterSpec iv) 
+    public CryptByteBuffer(CryptByteBufferType type, SecretKey key, IvParameterSpec iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         if(iv != null && type.ivSize == -1){
             throw new UnsupportedTypeException(type, "This type does not take an IV.");
@@ -68,7 +68,7 @@ public final class CryptBitSet implements Serializable{
             if(type.cipherName == "RIJNDAEL"){
                 blockCipher = new Rijndael(type.keyType.keySize, type.blockSize);
                 blockCipher.initialize(key.getEncoded());
-                if(type == CryptBitSetType.RijndaelPCFB){
+                if(type == CryptByteBufferType.RijndaelPCFB){
                     encryptPCFB = PCFBMode.create(blockCipher, this.iv.getIV());
                     decryptPCFB = PCFBMode.create(blockCipher, this.iv.getIV());
                 }
@@ -81,15 +81,15 @@ public final class CryptBitSet implements Serializable{
             }
         }catch (UnsupportedCipherException e) {
             e.printStackTrace();
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } 
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key. If the 
      * algorithm requires an iv, it will generate a random one.
      * @param type The symmetric algorithm, mode, and key and block size to use
@@ -97,12 +97,12 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, SecretKey key) throws GeneralSecurityException{
+    public CryptByteBuffer(CryptByteBufferType type, SecretKey key) throws GeneralSecurityException{
         this(type, key, (IvParameterSpec)null);
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key. If the 
      * algorithm requires an iv, it will generate a random one.
      * @param type The symmetric algorithm, mode, and key and block size to use
@@ -110,12 +110,12 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, byte[] key) throws GeneralSecurityException{
+    public CryptByteBuffer(CryptByteBufferType type, byte[] key) throws GeneralSecurityException{
         this(type, KeyGenUtils.getSecretKey(type.keyType, key));
     }
     
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key. If the 
      * algorithm requires an iv, it will generate a random one.
      * @param type The symmetric algorithm, mode, and key and block size to use
@@ -123,12 +123,12 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, ByteBuffer key) throws GeneralSecurityException{
+    public CryptByteBuffer(CryptByteBufferType type, ByteBuffer key) throws GeneralSecurityException{
         this(type, key.array());
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv. 
      * The iv will be extracted from the passed in byte[] starting at the offset
      * using the length provided by type.ivSize
@@ -139,13 +139,13 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidKeyException
      * @throws InvalidAlgorithmParameterException
      */
-    public CryptBitSet(CryptBitSetType type, SecretKey key, byte[] iv, int offset) 
+    public CryptByteBuffer(CryptByteBufferType type, SecretKey key, byte[] iv, int offset) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key, new IvParameterSpec(iv, offset, type.ivSize));
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv.
      * @param type The symmetric algorithm, mode, and key and block size to use
      * @param key The key that will be used for encryption
@@ -153,13 +153,13 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, SecretKey key, byte[] iv) 
+    public CryptByteBuffer(CryptByteBufferType type, SecretKey key, byte[] iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key, iv, 0);
     }
     
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv.
      * @param type The symmetric algorithm, mode, and key and block size to use
      * @param key The key that will be used for encryption
@@ -167,13 +167,13 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, SecretKey key, ByteBuffer iv) 
+    public CryptByteBuffer(CryptByteBufferType type, SecretKey key, ByteBuffer iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key, iv.array(), 0);
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv. 
      * The iv will be extracted from the passed in byte[] starting at the offset
      * using the length provided by type.ivSize
@@ -184,13 +184,13 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidKeyException
      * @throws InvalidAlgorithmParameterException
      */
-    public CryptBitSet(CryptBitSetType type, byte[] key, byte[] iv, int offset) 
+    public CryptByteBuffer(CryptByteBufferType type, byte[] key, byte[] iv, int offset) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, KeyGenUtils.getSecretKey(type.keyType, key), iv, offset);
     }
 
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv.
      * @param type The symmetric algorithm, mode, and key and block size to use
      * @param key The key that will be used for encryption
@@ -198,13 +198,13 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, byte[] key, byte[] iv) 
+    public CryptByteBuffer(CryptByteBufferType type, byte[] key, byte[] iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key, iv, 0);
     }
     
     /**
-     * Creates an instance of CryptBitSet that will be able to encrypt and decrypt 
+     * Creates an instance of CryptByteBuffer that will be able to encrypt and decrypt 
      * sets of bytes using the specified algorithm type with the given key and iv.
      * @param type The symmetric algorithm, mode, and key and block size to use
      * @param key The key that will be used for encryption
@@ -212,7 +212,7 @@ public final class CryptBitSet implements Serializable{
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeyException 
      */
-    public CryptBitSet(CryptBitSetType type, ByteBuffer key, ByteBuffer iv) 
+    public CryptByteBuffer(CryptByteBufferType type, ByteBuffer key, ByteBuffer iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
         this(type, key.array(), iv.array(), 0);
     }
@@ -227,7 +227,7 @@ public final class CryptBitSet implements Serializable{
      */
     public ByteBuffer encrypt(byte[] input, int offset, int len){
         try{
-            if(type == CryptBitSetType.RijndaelPCFB){
+            if(type == CryptByteBufferType.RijndaelPCFB){
                 return ByteBuffer.wrap(encryptPCFB.blockEncipher(input, offset, len));
             } 
             else if(type.cipherName == "RIJNDAEL"){
@@ -240,7 +240,7 @@ public final class CryptBitSet implements Serializable{
             }
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         }
         return null;
     }
@@ -285,7 +285,7 @@ public final class CryptBitSet implements Serializable{
      */
     public ByteBuffer decrypt(byte[] input, int offset, int len){
         try{
-            if(type == CryptBitSetType.RijndaelPCFB){
+            if(type == CryptByteBufferType.RijndaelPCFB){
                 return ByteBuffer.wrap(decryptPCFB.blockDecipher(input, offset, len));
             } 
             else if(type.cipherName == "RIJNDAEL"){
@@ -298,7 +298,7 @@ public final class CryptBitSet implements Serializable{
             }
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } 
         return null;
     }
@@ -348,7 +348,7 @@ public final class CryptBitSet implements Serializable{
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
             decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
         } catch (InvalidKeyException e) {
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } 
     }
 
@@ -366,7 +366,7 @@ public final class CryptBitSet implements Serializable{
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
             decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
         } catch (GeneralSecurityException e) {
-            Logger.error(CryptBitSet.class, "Internal error; please report:", e);
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } 
         return iv;
     }

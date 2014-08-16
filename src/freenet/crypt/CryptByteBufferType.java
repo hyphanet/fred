@@ -12,7 +12,7 @@ import java.io.Serializable;
  * @author unixninja92
  *
  */
-public enum CryptBitSetType implements Serializable{
+public enum CryptByteBufferType implements Serializable{
     @Deprecated
     RijndaelECB(1, KeyType.Rijndael256),
     @Deprecated
@@ -36,7 +36,7 @@ public enum CryptBitSetType implements Serializable{
      * @param bitmask
      * @param keyType The type of key the alg requires
      */
-    private CryptBitSetType(int bitmask, KeyType keyType){
+    private CryptByteBufferType(int bitmask, KeyType keyType){
         this.bitmask = bitmask;
         this.keyType = keyType;
         this.cipherName = keyType.alg;
@@ -52,7 +52,7 @@ public enum CryptBitSetType implements Serializable{
      * @param keyType The type of key the alg requires
      * @param blockSize The blocksize the alg uses
      */
-    private CryptBitSetType(int bitmask, KeyType keyType, int blockSize){
+    private CryptByteBufferType(int bitmask, KeyType keyType, int blockSize){
         this.bitmask = bitmask;
         this.ivSize = -1;
         this.keyType = keyType;
@@ -67,7 +67,7 @@ public enum CryptBitSetType implements Serializable{
      * @param ivSize Size of the iv
      * @param keyType The type of key the alg requires
      */
-    private CryptBitSetType(int bitmask, int ivSize, KeyType keyType){
+    private CryptByteBufferType(int bitmask, int ivSize, KeyType keyType){
         this.bitmask = bitmask;
         this.keyType = keyType;
         this.cipherName = keyType.alg;
@@ -84,7 +84,7 @@ public enum CryptBitSetType implements Serializable{
      * @param algName The name the java provider uses for the alg
      * @param keyType The type of key the alg requires
      */
-    private CryptBitSetType(int bitmask, int ivSize, String algName, KeyType keyType){
+    private CryptByteBufferType(int bitmask, int ivSize, String algName, KeyType keyType){
         this.bitmask = bitmask;
         this.ivSize = ivSize;
         this.cipherName = keyType.alg;

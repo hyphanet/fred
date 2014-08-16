@@ -15,8 +15,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
-public class CryptBitSetTest {
-    private static final CryptBitSetType[] cipherTypes = CryptBitSetType.values();
+public class CryptByteBufferTest {
+    private static final CryptByteBufferType[] cipherTypes = CryptByteBufferType.values();
 
     private static final String ivPlainText = "6bc1bee22e409f96e93d7e117393172a"
             + "ae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef"
@@ -49,18 +49,18 @@ public class CryptBitSetTest {
     @Test
     public void testSuccessfulRoundTripByteArray() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
 
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             ByteBuffer ciphertext = crypt.encrypt(Hex.decode(plainText[i]));
 
             byte[] decipheredtext = crypt.decrypt(ciphertext).array();
-            assertArrayEquals("CryptBitSetType: "+type.name(), 
+            assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
     }
@@ -68,13 +68,13 @@ public class CryptBitSetTest {
     @Test
     public void testSuccessfulRoundTripByteArrayReset() throws GeneralSecurityException  {
             for(int i = 0; i < cipherTypes.length; i++){
-                CryptBitSetType type = cipherTypes[i];
-                CryptBitSet crypt;
+                CryptByteBufferType type = cipherTypes[i];
+                CryptByteBuffer crypt;
                 ByteBuffer plain = ByteBuffer.wrap(Hex.decode(plainText[i]));
                 if(ivs[i] == null){
-                    crypt = new CryptBitSet(type, keys[i]);
+                    crypt = new CryptByteBuffer(type, keys[i]);
                 } else {
-                    crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                    crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
                 }
                 ByteBuffer ciphertext1 = crypt.encrypt(plain);
                 ByteBuffer ciphertext2 = crypt.encrypt(plain);
@@ -83,70 +83,70 @@ public class CryptBitSetTest {
                 ByteBuffer decipheredtext2 = crypt.decrypt(ciphertext2);
                 ByteBuffer decipheredtext1 = crypt.decrypt(ciphertext1);
                 ByteBuffer decipheredtext3 = crypt.decrypt(ciphertext3);
-                assertTrue("CryptBitSetType: "+type.name(), plain.equals(decipheredtext1));
-                assertTrue("CryptBitSetType: "+type.name(), plain.equals(decipheredtext2));
-                assertTrue("CryptBitSetType: "+type.name(), plain.equals(decipheredtext3));
+                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext1));
+                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext2));
+                assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext3));
             }
     }
 
     @Test
     public void testSuccessfulRoundTripByteArrayNewInstance() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             byte[] plain = Hex.decode(plainText[i]);
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             crypt.encrypt(plain);
             ByteBuffer ciphertext = crypt.encrypt(plain);
             crypt.encrypt(plain);
 
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             byte[] decipheredtext = crypt.decrypt(ciphertext).array();
-            assertArrayEquals("CryptBitSetType: "+type.name(), plain, decipheredtext);
+            assertArrayEquals("CryptByteBufferType: "+type.name(), plain, decipheredtext);
         }
     }
 
     @Test
     public void testSuccessfulRoundTripBitSet() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             byte[] plain = Hex.decode(plainText[i]);
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             BitSet plaintext = BitSet.valueOf(plain);
             BitSet ciphertext = crypt.encrypt(plaintext);
             BitSet decipheredtext = crypt.decrypt(ciphertext);
-            assertTrue("CryptBitSetType: "+type.name(), plaintext.equals(decipheredtext));
+            assertTrue("CryptByteBufferType: "+type.name(), plaintext.equals(decipheredtext));
         }
     }
 
     @Test
     public void testEncryptByteArrayNullInput() throws GeneralSecurityException{
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             byte[] nullArray = null;
             try{
                 crypt.encrypt(nullArray);
-                fail("CryptBitSetType: "+type.name()+": Expected NullPointerException");
+                fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
     }
@@ -154,18 +154,18 @@ public class CryptBitSetTest {
     @Test
     public void testEncryptBitSetNullInput() throws GeneralSecurityException{
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             BitSet nullSet = null;
             try{
                 crypt.encrypt(nullSet);
-                fail("CryptBitSetType: "+type.name()+": Expected NullPointerException");
+                fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
     }
@@ -173,18 +173,18 @@ public class CryptBitSetTest {
     @Test
     public void testEncryptByteArrayIntIntNullInput() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             byte[] nullArray = null;
             try{
                 crypt.encrypt(nullArray, 0, plainText[i].length());
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "NullPointerException");
             }catch(IllegalArgumentException | NullPointerException e){}
         } 
@@ -193,17 +193,17 @@ public class CryptBitSetTest {
     @Test
     public void testEncryptByteArrayIntIntOffsetOutOfBounds() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             try{
                 crypt.encrypt(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException | IndexOutOfBoundsException e){}
         } 
@@ -212,17 +212,17 @@ public class CryptBitSetTest {
     @Test
     public void testEncryptByteArrayIntIntLengthOutOfBounds() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             try{
                 crypt.encrypt(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException | IndexOutOfBoundsException e){}
         } 
@@ -231,18 +231,18 @@ public class CryptBitSetTest {
     @Test
     public void testDecryptByteArrayNullInput() throws GeneralSecurityException{
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             byte[] nullArray = null;
             try{
                 crypt.decrypt(nullArray);
-                fail("CryptBitSetType: "+type.name()+": Expected NullPointerException");
+                fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
     }
@@ -250,18 +250,18 @@ public class CryptBitSetTest {
     @Test
     public void testDecryptBitSetNullInput() throws GeneralSecurityException{
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             BitSet nullSet = null;
             try{
                 crypt.decrypt(nullSet);
-                fail("CryptBitSetType: "+type.name()+": Expected NullPointerException");
+                fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
     }
@@ -269,18 +269,18 @@ public class CryptBitSetTest {
     @Test
     public void testDecryptByteArrayIntIntNullInput() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             byte[] nullArray = null;
             try{
                 crypt.decrypt(nullArray, 0, plainText[i].length());
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "NullPointerException");
             }catch(NullPointerException | IllegalArgumentException e){}
         } 
@@ -289,17 +289,17 @@ public class CryptBitSetTest {
     @Test
     public void testDecryptByteArrayIntIntOffsetOutOfBounds() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             try{
                 crypt.decrypt(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException | IndexOutOfBoundsException e){}
         } 
@@ -308,17 +308,17 @@ public class CryptBitSetTest {
     @Test
     public void testDecryptByteArrayIntIntLengthOutOfBounds() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
-            CryptBitSetType type = cipherTypes[i];
-            CryptBitSet crypt;
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
             if(ivs[i] == null){
-                crypt = new CryptBitSet(type, keys[i]);
+                crypt = new CryptByteBuffer(type, keys[i]);
             } else {
-                crypt = new CryptBitSet(type, keys[i], ivs[i]);
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
 
             try{
                 crypt.decrypt(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
-                fail("CryptBitSetType: "+type.name()+": Expected IllegalArgumentException or "
+                fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException | IndexOutOfBoundsException e){}
         } 
@@ -327,7 +327,7 @@ public class CryptBitSetTest {
     @Test
     public void testGetIV() throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i], ivs[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
         assertArrayEquals(crypt.getIV().getIV(), ivs[i]);
     }
 
@@ -335,7 +335,7 @@ public class CryptBitSetTest {
     public void testSetIVIvParameterSpec() 
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i], ivs[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
         crypt.genIV();
         crypt.setIV(new IvParameterSpec(ivs[i]));
         assertArrayEquals(ivs[i], crypt.getIV().getIV());
@@ -346,7 +346,7 @@ public class CryptBitSetTest {
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         IvParameterSpec nullInput = null;
         int i = 4;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i], ivs[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
         try{
             crypt.setIV(nullInput);
             fail("Expected InvalidAlgorithmParameterException");
@@ -356,7 +356,7 @@ public class CryptBitSetTest {
     @Test (expected = UnsupportedTypeException.class)
     public void testSetIVIvParameterSpecUnsupportedTypeException() throws GeneralSecurityException {
         int i = 0;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i]);
         crypt.setIV(new IvParameterSpec(ivs[4]));
         fail("Expected UnsupportedTypeException");
     }
@@ -364,21 +364,21 @@ public class CryptBitSetTest {
     @Test
     public void testGenIV() throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i], ivs[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
         assertNotNull(crypt.genIV());
     }
 
     @Test
     public void testGenIVLength() throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i], ivs[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
         assertEquals(crypt.genIV().getIV().length, cipherTypes[i].ivSize);
     }
 
     @Test (expected = UnsupportedTypeException.class)
     public void testGenIVUnsupportedTypeException() throws GeneralSecurityException {
         int i = 1;
-        CryptBitSet crypt = new CryptBitSet(cipherTypes[i], keys[i]);
+        CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i]);
         crypt.genIV();
         fail("Expected UnsupportedTypeException");
     }
