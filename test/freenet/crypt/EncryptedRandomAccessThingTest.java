@@ -28,16 +28,16 @@ public class EncryptedRandomAccessThingTest {
             ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
             EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret);
             erat.pwrite(0, message, 0, message.length);
-//            erat.close();
-//            ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
-//            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat2, secret);
+            erat.close();
+            ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
+            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat, secret);
             byte[] result = new byte[message.length];
-            erat.pread(0, result, 0, result.length);
+            erat2.pread(0, result, 0, result.length);
 //            String r = new String(result);
 //            byte[] rm = new byte[message.length];
 //            barat.pread(0, rm, 0, rm.length);
 //            System.out.println(new String(rm)+"\t"+r);
-            erat.close();
+            erat2.close();
             assertArrayEquals(message, result);
         }
     }

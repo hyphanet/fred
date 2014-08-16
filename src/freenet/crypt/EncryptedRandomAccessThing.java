@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.encoders.Hex;
 
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
@@ -47,7 +48,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     //writes
     public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
-            RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, GeneralSecurityException{
+            RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, 
+            GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
         this.cipherRead = this.type.get();
@@ -56,7 +58,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         this.masterSecret = masterKey;
         
         this.headerEncKey = this.masterSecret.deriveKey(type.encryptKey);
-        this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
         
         this.headerMacKey = this.masterSecret.deriveKey(type.macKey);
 //        this.headerMacIV = this.masterSecret.deriveIv(type.macKey);
@@ -71,19 +72,23 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         int len = 12;
         byte[] footer = new byte[len];
         int offset = 0;
-        underlyingThing.pread(size()-len, footer, offset, len);
+        underlyingThing.pread(underlyingThing.size()-len, footer, offset, len);
         
         int readVersion = ByteBuffer.wrap(footer, offset, 4).getInt();
         offset += 4;
         long magic = ByteBuffer.wrap(footer, offset, 8).getLong();
 
+        System.out.println("version: "+readVersion);
+        System.out.println("magic: "+magic);
         if(END_MAGIC != magic && magic != 0){
         	throw new IOException("This is not an EncryptedRandomAccessThing!");
         }
 
         version = type.bitmask;
         if(magic == 0){
+            this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
         	writeFooter();
+        	System.out.println("dat footer");
         }
         else{
         	if(readVersion != version){
@@ -91,7 +96,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         				+ "incompatible with this ERATType");
         	}
 
-        	if(readFooter()){
+        	if(!readFooter()){
         		throw new GeneralSecurityException("Macs is incorrect");
         	}
         }
@@ -195,7 +200,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded()).array();
+            System.out.println(Hex.toHexString(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+            //TODO throw something
             Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
         }
         System.arraycopy(encryptedKey, 0, footer, offset, encryptedKey.length);
@@ -208,6 +216,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {
+            e.printStackTrace();
+            //TODO throw something
             Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
         }
         
@@ -220,7 +230,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         underlyingThing.pwrite(size(), footer, 0, footer.length);
     }
     
-    private boolean readFooter() throws IOException {
+    private boolean readFooter() throws IOException, InvalidKeyException {
         byte[] footer = new byte[type.footerLen-12];
         int offset = 0;
         underlyingThing.pread(size(), footer, offset, type.footerLen-12);
@@ -237,21 +247,18 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             unencryptedBaseKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, 
-                    crypt.decrypt(unencryptedBaseKey.getEncoded()));
+                    crypt.decrypt(encryptedKey));
+            System.out.println(Hex.toHexString(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new IOException();
+            throw new IOException("Error reading encryption keys from header.");
         }
         
         byte[] mac = new byte[type.macLen];
         System.arraycopy(footer, offset, mac, 0, type.macLen);
         
         byte[] ver = ByteBuffer.allocate(4).putInt(version).array();
-        try{
-            MessageAuthCode authcode = new MessageAuthCode(type.macType, headerMacKey);
-            return authcode.verifyData(mac, headerEncIV, unencryptedBaseKey.getEncoded(), ver);
-        } catch (InvalidKeyException e) {
-            throw new IOException();
-        }
+        MessageAuthCode authcode = new MessageAuthCode(type.macType, headerMacKey);
+        return authcode.verifyData(mac, headerEncIV, unencryptedBaseKey.getEncoded(), ver);
     }
     
     private enum kdfInput {
