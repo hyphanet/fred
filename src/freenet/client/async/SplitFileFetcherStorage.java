@@ -383,29 +383,30 @@ public class SplitFileFetcherStorage {
             // splitfile* will be overwritten, this is bad
             // so copy them
             SplitFileSegmentKeys keys = segmentKeys[i];
-            final int dataBlocks = keys.getDataBlocks();
+            // Segment keys getDataBlocks() includes cross-check blocks
+            final int dataBlocks = keys.getDataBlocks() - crossCheckBlocks; 
             final int checkBlocks = keys.getCheckBlocks();
             if((dataBlocks > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocks > origFetchContext.maxCheckBlocksPerSegment))
                 throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
             segments[i] = new SplitFileFetcherSegmentStorage(this, i, splitfileType, 
-                    dataBlocks-crossCheckBlocks, // Cross check blocks are included in data blocks for SplitFileSegmentKeys' purposes.
+                    dataBlocks,
                     checkBlocks, crossCheckBlocks, dataOffset, 
                     completeViaTruncation ? crossCheckBlocksOffset : -1, // Put at end if truncating.
                     segmentKeysOffset, segmentStatusOffset,
                     maxRetries != -1, keys);
             dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
-            if(completeViaTruncation) {
-                long checkBlocksLength = crossCheckBlocks * CHKBlock.DATA_LENGTH;
-                dataOffset -= checkBlocksLength;
-                crossCheckBlocksOffset += checkBlocksLength;
-            } // Else cross-check blocks already included in dataBlocks
+            if(!completeViaTruncation) {
+                dataOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+            } else {
+                crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+            }
             segmentKeysOffset += 
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
+                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             segmentStatusOffset +=
-                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks-crossCheckBlocks, checkBlocks, 
+                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
-            for(int j=0;j<(dataBlocks+checkBlocks);j++) {
+            for(int j=0;j<(dataBlocks+crossCheckBlocks+checkBlocks);j++) {
                 keyListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, salt);
             }
             if(logDEBUG) Logger.debug(this, "Segment "+i+": data blocks offset "+
