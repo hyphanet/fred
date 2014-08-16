@@ -203,7 +203,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
         ClientCHKBlock block = encodeBlock(key, data);
         String decoded = i >= dataBlockCount ? "Encoded" : "Decoded";
-        if(block == null || !key.equals(block.getKey())) {
+        if(block == null || !key.getNodeCHK().equals(block.getKey())) {
             Logger.error(this, decoded+" cross-segment block "+i+" failed!");
             failOffThread(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, decoded+" cross-segment block does not match expected key"));
             return;
