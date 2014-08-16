@@ -43,8 +43,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private byte[] headerEncIV;
     private int version; 
     
-    private long footerPos;
-    
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     
     //writes
@@ -111,8 +109,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
 
     	cipherRead.init(false, cipherParams);
     	cipherWrite.init(true, cipherParams);
-    	
-    	footerPos = size();
     }
 
     @Override
@@ -127,9 +123,13 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             throw new IOException("This RandomAccessThing has already been closed. It can no longer"
                     + " be read from.");
         }
-        if(fileOffset+length > footerPos){
-            throw new IOException("Can't overwrite the footer of the ERAT");
+
+        if(fileOffset < 0) throw new IOException("Cannot read before zero");
+        if(fileOffset+length > size()){
+            throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+
+                    (fileOffset+length)+" on block length "+size());
         }
+        
         byte[] cipherText = new byte[length];
         underlyingThing.pread(fileOffset, cipherText, 0, length);
 
@@ -150,9 +150,13 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             throw new IOException("This RandomAccessThing has already been closed. It can no longer"
                     + " be written to.");
         }
-        if(fileOffset+length > footerPos){
-            throw new IOException("Can't overwrite the footer of the ERAT");
+        
+        if(fileOffset < 0) throw new IOException("Cannot read before zero");
+        if(fileOffset+length > size()){
+            throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+
+                    (fileOffset+length)+" on block length "+size());
         }
+
         byte[] cipherText = new byte[length];
 
         writeLock.lock();
