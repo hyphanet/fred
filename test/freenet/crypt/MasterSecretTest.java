@@ -2,11 +2,6 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
-import java.security.InvalidKeyException;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-
 import org.junit.Test;
 
 public class MasterSecretTest {

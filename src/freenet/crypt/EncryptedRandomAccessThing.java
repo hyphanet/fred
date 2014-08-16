@@ -32,7 +32,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private ParametersWithIV cipherParams;//includes key
     
     private SecretKey headerMacKey;
-    private IvParameterSpec headerMacIV;
+//    private IvParameterSpec headerMacIV;
     
     private boolean isClosed = false;
     
@@ -42,6 +42,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private SecretKey headerEncKey;
     private byte[] headerEncIV;
     private int version; 
+    
+    private long footerPos;
     
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     
@@ -59,9 +61,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
         
         this.headerMacKey = this.masterSecret.deriveKey(type.macKey);
-        this.headerMacIV = this.masterSecret.deriveIv(type.macKey);
+//        this.headerMacIV = this.masterSecret.deriveIv(type.macKey);
         
-        this.unencryptedBaseKey = KeyGenUtils.genSecretKey(KeyType.HMACSHA512);
+        this.unencryptedBaseKey = KeyGenUtils.genSecretKey(KeyType.ChaCha128);
         
         if(underlyingThing.size() < type.footerLen){
             throw new IOException("Underlying RandomAccessThing is not long enough to include the "
@@ -71,7 +73,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         int len = 12;
         byte[] footer = new byte[len];
         int offset = 0;
-        pread(size()-len, footer, offset, len);
+        underlyingThing.pread(size()-len, footer, offset, len);
         
         int readVersion = ByteBuffer.wrap(footer, offset, 4).getInt();
         offset += 4;
@@ -109,11 +111,13 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
 
     	cipherRead.init(false, cipherParams);
     	cipherWrite.init(true, cipherParams);
+    	
+    	footerPos = underlyingThing.size()-type.footerLen;
     }
 
     @Override
     public long size() throws IOException {
-        return underlyingThing.size() + type.footerLen;
+        return underlyingThing.size()-type.footerLen;
     }
 
     @Override
@@ -122,6 +126,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         if(isClosed){
             throw new IOException("This RandomAccessThing has already been closed. It can no longer"
                     + " be read from.");
+        }
+        if(fileOffset+length > footerPos){
+            throw new IOException("Can't overwrite the footer of the ERAT");
         }
         byte[] cipherText = new byte[length];
         underlyingThing.pread(fileOffset, cipherText, 0, length);
@@ -141,6 +148,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         if(isClosed){
             throw new IOException("This RandomAccessThing has already been closed. It can no longer"
                     + " be written to.");
+        }
+        if(fileOffset+length > footerPos){
+            throw new IOException("Can't overwrite the footer of the ERAT");
         }
         byte[] cipherText = new byte[length];
 
@@ -173,7 +183,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         int ivLen = headerEncIV.length;
         System.arraycopy(headerEncIV, 0, footer, offset, ivLen);
         offset += ivLen;
-        
+
         byte[] encryptedKey = null;
         try {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
@@ -187,11 +197,11 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
 
         byte[] ver = ByteBuffer.allocate(4).putInt(version).array();
         try {
-            MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey, headerMacIV);
+            MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey);
             byte[] macResult = mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver).array();
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+        } catch (InvalidKeyException e) {
             Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
         }
         
@@ -201,13 +211,13 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         byte[] magic = ByteBuffer.allocate(8).putLong(END_MAGIC).array();
         System.arraycopy(magic, 0, footer, offset, magic.length);
         
-        pwrite(size()-type.footerLen, footer, 0, type.footerLen);
+        underlyingThing.pwrite(size(), footer, 0, type.footerLen);
     }
     
     private boolean readFooter() throws IOException {
         byte[] footer = new byte[type.footerLen-12];
         int offset = 0;
-        pread(size()-type.footerLen, footer, offset, type.footerLen-12);
+        pread(size(), footer, offset, type.footerLen-12);
         
         headerEncIV = new byte[type.encryptType.ivSize];
         System.arraycopy(footer, offset, headerEncIV, 0, headerEncIV.length);
@@ -231,9 +241,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         
         byte[] ver = ByteBuffer.allocate(4).putInt(version).array();
         try{
-            MessageAuthCode authcode = new MessageAuthCode(type.macType, headerMacKey, headerMacIV);
+            MessageAuthCode authcode = new MessageAuthCode(type.macType, headerMacKey);
             return authcode.verifyData(mac, headerEncIV, unencryptedBaseKey.getEncoded(), ver);
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+        } catch (InvalidKeyException e) {
             throw new IOException();
         }
     }
