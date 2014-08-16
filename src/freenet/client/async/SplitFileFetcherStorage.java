@@ -295,7 +295,7 @@ public class SplitFileFetcherStorage {
             storedKeysLength +=
                 SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
             storedSegmentStatusLength +=
-                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
+                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks - crossCheckBlocks, checkBlocks, 
                         crossCheckBlocks, maxRetries != -1, checksumLength, persistent);
         }
         
