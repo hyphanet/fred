@@ -24,11 +24,13 @@ import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
+import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PersistentTempBucketFactory;
+import freenet.support.io.TempBucketFactory;
 
 /**
  * Object passed in to client-layer operations, containing references to essential but mostly transient 
@@ -57,7 +59,7 @@ public class ClientContext {
 	public transient final ArchiveManager archiveManager;
 	public transient final PersistentTempBucketFactory persistentBucketFactory;
 	public transient PersistentFileTracker persistentFileTracker;
-	public transient final BucketFactory tempBucketFactory;
+	public transient final TempBucketFactory tempBucketFactory;
 	public transient final LockableRandomAccessThingFactory tempRAFFactory;
 	public transient final LockableRandomAccessThingFactory persistentRAFFactory;
 	public transient final HealingQueue healingQueue;
@@ -89,7 +91,7 @@ public class ClientContext {
 
 	public ClientContext(long bootID, long nodeDBHandle, ClientLayerPersister jobRunner, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
-			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker,
+			PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
 			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
@@ -297,6 +299,12 @@ public class ClientContext {
     
     public PersistentJobRunner getJobRunner(boolean persistent) {
         return persistent ? jobRunner : dummyJobRunner;
+    }
+
+    public DiskSpaceCheckingRandomAccessThingFactory getDiskSpaceCheckingRandomAccessThingFactory(
+            boolean persistent) {
+        return persistent ? (DiskSpaceCheckingRandomAccessThingFactory)persistentRAFFactory : 
+            tempBucketFactory.getUnderlyingRAFFactory();
     }
 	
 }

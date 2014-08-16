@@ -852,4 +852,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             return diskRAFFactory.makeRAF(initialContents, offset, size);
         }
     }
+
+    public DiskSpaceCheckingRandomAccessThingFactory getUnderlyingRAFFactory() {
+        return diskRAFFactory;
+    }
 }

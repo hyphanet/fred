@@ -22,6 +22,7 @@ import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.PooledRandomAccessFileWrapper;
@@ -144,7 +145,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     persistent ? context.jobRunner : context.dummyJobRunner, 
                     context.ticker, context.memoryLimitedJobRunner, checker, persistent,
-                    fileCompleteViaTruncation);
+                    fileCompleteViaTruncation, context.getDiskSpaceCheckingRandomAccessThingFactory(persistent));
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {

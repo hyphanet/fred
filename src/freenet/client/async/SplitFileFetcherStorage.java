@@ -238,7 +238,8 @@ public class SplitFileFetcherStorage {
             boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
-            ChecksumChecker checker, boolean persistent, File storageFile) 
+            ChecksumChecker checker, boolean persistent, 
+            File storageFile, DiskSpaceCheckingRandomAccessThingFactory diskSpaceCheckingRAFFactory) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.jobRunner = exec;
@@ -302,6 +303,7 @@ public class SplitFileFetcherStorage {
             splitfileDataBlocks -= totalCrossCheckBlocks;
             storedCrossCheckBlocksLength = totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
         }
+        
         storedBlocksLength = (splitfileDataBlocks + splitfileCheckBlocks) * CHKBlock.DATA_LENGTH;
         
         int segmentCount = metadata.getSegmentCount();
@@ -493,7 +495,7 @@ public class SplitFileFetcherStorage {
             if(storageFile.length() > 0)
                 throw new IOException("Storage file must be empty");
             // FIXME dirty layer violation.
-            raf = ((DiskSpaceCheckingRandomAccessThingFactory)rafFactory).createNewRAF(storageFile, totalLength, random);
+            raf = diskSpaceCheckingRAFFactory.createNewRAF(storageFile, totalLength, random);
             Logger.error(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
         } else {
             raf = rafFactory.makeRAF(totalLength);
