@@ -1260,4 +1260,8 @@ public class SplitFileFetcherSegmentStorage {
         return null;
     }
 
+    synchronized void resumeCallback(int blockNo, SplitFileFetcherCrossSegmentStorage crossSegment) {
+        this.crossSegmentsByBlock[blockNo] = crossSegment;
+    }
+
 }
