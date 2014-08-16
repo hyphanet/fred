@@ -3,17 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.PluginNotFoundException;
-import freenet.pluginmanager.PluginReplySender;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -37,7 +34,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class FCPPluginClientTracker {
+public class FCPPluginClientTracker extends NativeThread {
     
     /**
      * Backend table of {@link WeakReference}s to known clients. Monitored by a {@link ReferenceQueue} to automatically remove entries for clients which have
@@ -105,9 +102,51 @@ public class FCPPluginClientTracker {
         
         return client;
     }
-    
-    public FCPPluginClientTracker() {
 
+
+    /**
+     * Constructs the garbage-collection thread ("FCPPluginClientTracker Garbage-collector") with minimal thread priority.
+     * You must call {@link #start()} afterwards!
+     */
+    public FCPPluginClientTracker() {
+        super("FCPPluginClientTracker Garbage-collector", NativeThread.PriorityLevel.MIN_PRIORITY.value, true);
+        setDaemon(true);
     }
 
+    /**
+     * Garbage-collection thread: Pools {@link #disconnectedClientsQueue} for clients whose {@link WeakReference} has been nulled and removes them from the
+     * {@link #clientsByID} {@link TreeMap}.
+     */
+    public void realRun() {
+        try {
+            FCPPluginClientWeakReference disconnectedClient = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
+            synchronized(this) {
+                FCPPluginClientWeakReference removedFromTree = clientsByID.remove(disconnectedClient.clientID);
+                
+                assert(disconnectedClient == removedFromTree);
+                if(logMINOR) {
+                    Logger.minor(this, "Garbage-collecting disconnected client: remaining clients = " + clientsByID.size()
+                                           + "; client ID = " + disconnectedClient.clientID);
+                }
+            }
+        } catch(InterruptedException e) {
+            // We did setDaemon(true), which causes the JVM to exit even if the thread is still running: Daemon threads are force terminated during shutdown.
+            // Thus, this thread does not need an exit mechanism, it can be an infinite loop. So nothing should try to terminate it by InterruptedException. 
+            // If it does happen nevertheless, we honor it by exiting the thread, because interrupt requests should never be ignored, but log it as an error.
+            Logger.error(this, "Thread interruption requested even though this is a daemon thread!", e);
+            throw new RuntimeException(e);
+        } catch(Throwable t) {
+            Logger.error(this, "Error in thread " + getName(), t);
+        }
+    }
+
+
+    /** For {@link Logger#registerClass(Class)} */
+    private static transient volatile boolean logDEBUG = false;
+    /** For {@link Logger#registerClass(Class)} */
+    private static transient volatile boolean logMINOR = false;
+    
+    static {
+        Logger.registerClass(FCPPluginClientTracker.class);
+    }
 }
