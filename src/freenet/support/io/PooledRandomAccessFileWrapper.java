@@ -349,7 +349,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         }
         file = fg.maybeMove(f, persistentTempID);
         if(!f.exists())
-            throw new ResumeFailedException("Persistent tempfile lost");
+            throw new ResumeFailedException("Persistent tempfile lost "+f);
     }
 
 }
