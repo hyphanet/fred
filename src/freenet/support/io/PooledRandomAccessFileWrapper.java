@@ -336,20 +336,26 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         persistentTempID = dis.readLong();
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
-        FilenameGenerator fg = context.persistentFG;
-        // File must exist!
-        if(!f.exists()) {
-            // Maybe moved after the last checkpoint?
-            f = fg.getFilename(persistentTempID);
-            if(f.exists()) {
-                context.persistentFileTracker.register(f);
-                file = f;
-                return;
+        if(persistentTempID != -1) {
+            FilenameGenerator fg = context.persistentFG;
+            // File must exist!
+            if(!f.exists()) {
+                // Maybe moved after the last checkpoint?
+                f = fg.getFilename(persistentTempID);
+                if(f.exists()) {
+                    context.persistentFileTracker.register(f);
+                    file = f;
+                    return;
+                }
             }
+            file = fg.maybeMove(f, persistentTempID);
+            if(!f.exists())
+                throw new ResumeFailedException("Persistent tempfile lost "+f);
+        } else {
+            file = f;
+            if(!f.exists())
+                throw new ResumeFailedException("Lost file "+f);
         }
-        file = fg.maybeMove(f, persistentTempID);
-        if(!f.exists())
-            throw new ResumeFailedException("Persistent tempfile lost "+f);
     }
 
 }
