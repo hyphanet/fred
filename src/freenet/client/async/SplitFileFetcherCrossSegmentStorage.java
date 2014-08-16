@@ -148,8 +148,8 @@ public class SplitFileFetcherCrossSegmentStorage {
         if(dataBlocks == null || checkBlocks == null) return; // Failed with disk error.
         
         // Original status.
-        boolean[] dataBlocksFound = nonNull(dataBlocks);
-        boolean[] checkBlocksFound = nonNull(checkBlocks);
+        boolean[] dataBlocksFound = wasNonNullFill(dataBlocks);
+        boolean[] checkBlocksFound = wasNonNullFill(checkBlocks);
 
         int realTotalDataBlocks = count(dataBlocksFound);
         int realTotalCrossCheckBlocks = count(checkBlocksFound);
@@ -270,10 +270,15 @@ public class SplitFileFetcherCrossSegmentStorage {
         return segments[i].getKey(blockNumbers[i]);
     }
 
-    private static boolean[] nonNull(byte[][] blocks) {
+    private static boolean[] wasNonNullFill(byte[][] blocks) {
         boolean[] nonNulls = new boolean[blocks.length];
-        for(int i=0;i<blocks.length;i++)
-            nonNulls[i] = (blocks[i] != null);
+        for(int i=0;i<blocks.length;i++) {
+            if(blocks[i] == null) {
+                blocks[i] = new byte[CHKBlock.DATA_LENGTH];
+            } else {
+                nonNulls[i] = true;
+            }
+        }
         return nonNulls;
     }
 
