@@ -99,6 +99,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     
     private synchronized void tryDecodeOrEncode() {
         if(finished) return;
+        if(tryDecode) return;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
@@ -130,6 +131,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             }
             
         });
+        tryDecode = true;
     }
     
     /** Attempt FEC decoding. Check blocks before decoding in case there is disk corruption. Check
