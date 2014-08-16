@@ -778,9 +778,12 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     long blockOffset(int slotNumber) {
-        if(slotNumber < dataBlocks || slotNumber >= (dataBlocks + crossSegmentCheckBlocks))
+        if(slotNumber < dataBlocks) {
             return segmentBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
-        else {
+        } else if(slotNumber >= (dataBlocks + crossSegmentCheckBlocks)) {
+            slotNumber -= crossSegmentCheckBlocks;
+            return segmentBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
+        } else {
             slotNumber -= dataBlocks;
             return segmentCrossCheckBlockDataOffset + slotNumber * CHKBlock.DATA_LENGTH;
         }
