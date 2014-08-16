@@ -3,6 +3,7 @@ package freenet.crypt;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -21,7 +22,7 @@ public class EncryptedRandomAccessThingTest {
     }
     
     @Test
-    public void testSuccesfulRoundTrip() throws IOException{
+    public void testSuccesfulRoundTrip() throws IOException, GeneralSecurityException{
         for(EncryptedRandomAccessThingType type: types){
             byte[] bytes = new byte[100];
             ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
@@ -32,6 +33,11 @@ public class EncryptedRandomAccessThingTest {
 //            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat2, secret);
             byte[] result = new byte[message.length];
             erat.pread(0, result, 0, result.length);
+//            String r = new String(result);
+//            byte[] rm = new byte[message.length];
+//            barat.pread(0, rm, 0, rm.length);
+//            System.out.println(new String(rm)+"\t"+r);
+            erat.close();
             assertArrayEquals(message, result);
         }
     }

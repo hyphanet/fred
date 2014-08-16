@@ -2,12 +2,12 @@ package freenet.crypt;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -49,7 +49,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     //writes
     public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
-            RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException{
+            RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
         this.cipherRead = this.type.get();
@@ -94,7 +94,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         	}
 
         	if(readFooter()){
-        		throw new IOException("Macs is incorrect");
+        		throw new GeneralSecurityException("Macs is incorrect");
         	}
         }
 
@@ -112,7 +112,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     	cipherRead.init(false, cipherParams);
     	cipherWrite.init(true, cipherParams);
     	
-    	footerPos = underlyingThing.size()-type.footerLen;
+    	footerPos = size();
     }
 
     @Override
@@ -136,6 +136,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         readLock.lock();
         try{
             cipherRead.seekTo(fileOffset);
+            System.out.println(cipherRead.getPosition());
             cipherRead.processBytes(buf, 0, length, buf, bufOffset);
         }finally{
             readLock.unlock();
@@ -157,6 +158,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         writeLock.lock();
         try{
             cipherWrite.seekTo(fileOffset);
+            System.out.println(cipherWrite.getPosition());
             cipherWrite.processBytes(buf, bufOffset, length, cipherText, 0);
         }finally{
             writeLock.unlock();
@@ -211,13 +213,13 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         byte[] magic = ByteBuffer.allocate(8).putLong(END_MAGIC).array();
         System.arraycopy(magic, 0, footer, offset, magic.length);
         
-        underlyingThing.pwrite(size(), footer, 0, type.footerLen);
+        underlyingThing.pwrite(size(), footer, 0, footer.length);
     }
     
     private boolean readFooter() throws IOException {
         byte[] footer = new byte[type.footerLen-12];
         int offset = 0;
-        pread(size(), footer, offset, type.footerLen-12);
+        underlyingThing.pread(size(), footer, offset, type.footerLen-12);
         
         headerEncIV = new byte[type.encryptType.ivSize];
         System.arraycopy(footer, offset, headerEncIV, 0, headerEncIV.length);
