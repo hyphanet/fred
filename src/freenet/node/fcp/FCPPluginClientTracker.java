@@ -29,6 +29,9 @@ import freenet.support.io.NativeThread;
  * <p>It is implemented by keeping {@link WeakReference}s to plugin clients, so they only stay in the memory of the tracker as long as they are still
  * connected.</p>
  * 
+ * <p>After constructing an object of this class, you must call {@link #start()} to start its garbage collection thread.<br/>
+ * For shutdown, no action is required: The thread will be a daemon thread and thus the JVM will deal with shutdown.</p> 
+ * 
  * FIXME: Implement similar to class plugins.WebOfTrust.ui.fcp.FCPInterface.ClientTrackerDaemon. Keep an object of FCPPluginClientTracker at FCPServer and
  * add public interface functions registerFCPPluginClient(), getFCPPluginClient().
  * 
