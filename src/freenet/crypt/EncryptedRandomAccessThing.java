@@ -62,7 +62,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         this.headerMacKey = this.masterSecret.deriveKey(type.macKey);
 //        this.headerMacIV = this.masterSecret.deriveIv(type.macKey);
         
-        this.unencryptedBaseKey = KeyGenUtils.genSecretKey(KeyType.ChaCha128);
         
         if(underlyingThing.size() < type.footerLen){
             throw new IOException("Underlying RandomAccessThing is not long enough to include the "
@@ -78,8 +77,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         offset += 4;
         long magic = ByteBuffer.wrap(footer, offset, 8).getLong();
 
-        System.out.println("version: "+readVersion);
-        System.out.println("magic: "+magic);
         if(END_MAGIC != magic && magic != 0){
         	throw new IOException("This is not an EncryptedRandomAccessThing!");
         }
@@ -87,8 +84,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         version = type.bitmask;
         if(magic == 0){
             this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
+            this.unencryptedBaseKey = KeyGenUtils.genSecretKey(type.encryptKey);
         	writeFooter();
-        	System.out.println("dat footer");
         }
         else{
         	if(readVersion != version){
@@ -137,15 +134,16 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         
         byte[] cipherText = new byte[length];
         underlyingThing.pread(fileOffset, cipherText, 0, length);
+        System.out.println(Hex.toHexString(cipherText));
 
         readLock.lock();
         try{
             cipherRead.seekTo(fileOffset);
-            System.out.println(cipherRead.getPosition());
-            cipherRead.processBytes(buf, 0, length, buf, bufOffset);
+            cipherRead.processBytes(cipherText, 0, length, buf, bufOffset);
         }finally{
             readLock.unlock();
         }
+        System.out.println(Hex.toHexString(buf));
     }
 
     @Override
@@ -155,7 +153,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             throw new IOException("This RandomAccessThing has already been closed. It can no longer"
                     + " be written to.");
         }
-        
+
         if(fileOffset < 0) throw new IOException("Cannot read before zero");
         if(fileOffset+length > size()){
             throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+
@@ -167,12 +165,12 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         writeLock.lock();
         try{
             cipherWrite.seekTo(fileOffset);
-            System.out.println(cipherWrite.getPosition());
             cipherWrite.processBytes(buf, bufOffset, length, cipherText, 0);
         }finally{
             writeLock.unlock();
         }
-
+        System.out.println(Hex.toHexString(cipherText));
+        System.out.println(Hex.toHexString(buf));
         underlyingThing.pwrite(fileOffset, cipherText, 0, length);
     }
 
@@ -213,6 +211,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey);
             byte[] macResult = mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver).array();
+            System.out.println(offset);
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {
@@ -246,7 +245,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
-            unencryptedBaseKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, 
+            unencryptedBaseKey = KeyGenUtils.getSecretKey(type.encryptKey, 
                     crypt.decrypt(encryptedKey));
             System.out.println(Hex.toHexString(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
@@ -269,7 +268,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         public final String input;
         
         private kdfInput(){
-            this.input = this.getClass().getName()+name();
+            this.input = name();
         }
         
     }

@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
 import freenet.support.io.ByteArrayRandomAccessThing;
@@ -23,14 +24,16 @@ public class EncryptedRandomAccessThingTest {
     
     @Test
     public void testSuccesfulRoundTrip() throws IOException, GeneralSecurityException{
+        System.out.println(Hex.toHexString(message));
         for(EncryptedRandomAccessThingType type: types){
+            System.out.println(type.name());
             byte[] bytes = new byte[100];
             ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
             EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret);
             erat.pwrite(0, message, 0, message.length);
             erat.close();
             ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
-            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat, secret);
+            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat2, secret);
             byte[] result = new byte[message.length];
             erat2.pread(0, result, 0, result.length);
 //            String r = new String(result);
