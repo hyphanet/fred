@@ -291,9 +291,9 @@ public class SplitFileFetcherCrossSegmentStorage {
         for(int i=start;i<end;i++) {
             try {
                 byte[] block = segments[i].checkAndGetBlockData(blockNumbers[i]);
-                blocks[i] = block;
+                blocks[i-start] = block;
                 synchronized(this) {
-                    if(blocks[i] != null) {
+                    if(block != null) {
                         if(!blocksFound[i]) totalFound++;
                         blocksFound[i] = true;
                     } else {
