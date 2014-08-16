@@ -105,7 +105,6 @@ public class FCPPluginClientTracker extends NativeThread {
 
 
     /**
-     * Constructs the garbage-collection thread ("FCPPluginClientTracker Garbage-collector") with minimal thread priority.
      * You must call {@link #start()} afterwards!
      */
     public FCPPluginClientTracker() {
