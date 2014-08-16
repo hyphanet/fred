@@ -303,8 +303,7 @@ public class SplitFileFetcherStorage {
             splitfileDataBlocks -= totalCrossCheckBlocks;
             storedCrossCheckBlocksLength = totalCrossCheckBlocks * CHKBlock.DATA_LENGTH;
         }
-        
-        storedBlocksLength = (splitfileDataBlocks + splitfileCheckBlocks) * CHKBlock.DATA_LENGTH;
+        storedBlocksLength = splitfileDataBlocks * CHKBlock.DATA_LENGTH;
         
         int segmentCount = metadata.getSegmentCount();
         
@@ -394,7 +393,7 @@ public class SplitFileFetcherStorage {
                     completeViaTruncation ? crossCheckBlocksOffset : -1, // Put at end if truncating.
                     segmentKeysOffset, segmentStatusOffset,
                     maxRetries != -1, keys);
-            dataOffset += (dataBlocks+checkBlocks) * CHKBlock.DATA_LENGTH;
+            dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
             if(completeViaTruncation) {
                 long checkBlocksLength = crossCheckBlocks * CHKBlock.DATA_LENGTH;
                 dataOffset -= checkBlocksLength;
