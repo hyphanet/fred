@@ -134,7 +134,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         
         byte[] cipherText = new byte[length];
         underlyingThing.pread(fileOffset, cipherText, 0, length);
-        System.out.println(Hex.toHexString(cipherText));
 
         readLock.lock();
         try{
@@ -143,7 +142,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }finally{
             readLock.unlock();
         }
-        System.out.println(Hex.toHexString(buf));
     }
 
     @Override
@@ -169,8 +167,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }finally{
             writeLock.unlock();
         }
-        System.out.println(Hex.toHexString(cipherText));
-        System.out.println(Hex.toHexString(buf));
         underlyingThing.pwrite(fileOffset, cipherText, 0, length);
     }
 
@@ -198,7 +194,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded()).array();
-            System.out.println(Hex.toHexString(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             e.printStackTrace();
             //TODO throw something
@@ -211,7 +206,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey);
             byte[] macResult = mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver).array();
-            System.out.println(offset);
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {
@@ -247,7 +241,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
                     headerEncIV);
             unencryptedBaseKey = KeyGenUtils.getSecretKey(type.encryptKey, 
                     crypt.decrypt(encryptedKey));
-            System.out.println(Hex.toHexString(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new IOException("Error reading encryption keys from header.");
         }

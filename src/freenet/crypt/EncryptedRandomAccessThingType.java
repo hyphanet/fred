@@ -24,7 +24,6 @@ public enum EncryptedRandomAccessThingType {
         this.macKey = macType.keyType;
         this.macLen = macLen;
         this.footerLen = footLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
-        System.out.println(this.footerLen);
     }
 
     public final SkippingStreamCipher get(){
