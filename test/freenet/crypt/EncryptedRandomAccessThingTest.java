@@ -202,8 +202,38 @@ public class EncryptedRandomAccessThingTest {
     }
 
     @Test
-    public void testClose() {
-        fail("Not yet implemented");
+    public void testClose() throws IOException, GeneralSecurityException {
+        byte[] bytes = new byte[100];
+        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        erat.close();
+        erat.close();
+    }
+
+    @Test
+    public void testClosePread() throws IOException, GeneralSecurityException {
+        byte[] bytes = new byte[100];
+        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        erat.close();
+        byte[] result = new byte[20];
+        thrown.expect(IOException.class);
+        thrown.expectMessage("This RandomAccessThing has already been closed. It can no longer"
+                    + " be read from.");
+        erat.pread(0, result, 0, 20);
+    }
+
+    @Test
+    public void testClosePwrite() throws IOException, GeneralSecurityException {
+        byte[] bytes = new byte[100];
+        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        erat.close();
+        byte[] result = new byte[20];
+        thrown.expect(IOException.class);
+        thrown.expectMessage("This RandomAccessThing has already been closed. It can no longer"
+                    + " be written to.");
+        erat.pwrite(0, result, 0, 20);
     }
 
 }
