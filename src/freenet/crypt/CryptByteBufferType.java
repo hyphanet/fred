@@ -32,7 +32,7 @@ public enum CryptByteBufferType implements Serializable{
     public final KeyType keyType;
 
     /**
-     * Creates the RijndaelECB enum value. iv is -1. 
+     * Creates the RijndaelECB enum value. iv is null. 
      * @param bitmask
      * @param keyType The type of key the alg requires
      */
@@ -46,7 +46,7 @@ public enum CryptByteBufferType implements Serializable{
     }
 
     /**
-     * Creates the RijndaelECB128 enum value. iv is -1. 
+     * Creates the RijndaelECB128 enum value. iv is null. 
      * and sets the non-standard blocksize. 
      * @param bitmask
      * @param keyType The type of key the alg requires
