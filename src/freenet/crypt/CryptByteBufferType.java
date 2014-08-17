@@ -54,7 +54,7 @@ public enum CryptByteBufferType implements Serializable{
      */
     private CryptByteBufferType(int bitmask, KeyType keyType, int blockSize){
         this.bitmask = bitmask;
-        this.ivSize = -1;
+        this.ivSize = null;
         this.keyType = keyType;
         this.cipherName = keyType.alg;
         this.blockSize = blockSize;
@@ -97,9 +97,6 @@ public enum CryptByteBufferType implements Serializable{
      * Returns true if the algorithm supports/requires an IV, otherwise returns false.
      */
     public boolean hasIV(){
-        if(ivSize != null){
-            return true;
-        }
-        return false;
+        return ivSize != null;
     }
 }
