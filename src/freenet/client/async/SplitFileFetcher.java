@@ -236,14 +236,23 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
      * for the benefit. */
     @Override
     public void onSuccess() {
+        boolean fail = false;
         synchronized(this) {
-            if(succeeded) {
-                Logger.error(this, "Called onSuccess() twice on "+this, new Exception("debug"));
-                return;
+            if(failed) {
+                fail = true;
             } else {
-                if(logMINOR) Logger.minor(this, "onSuccess() on "+this, new Exception("debug"));
+                if(succeeded) {
+                    Logger.error(this, "Called onSuccess() twice on "+this, new Exception("debug"));
+                    return;
+                } else {
+                    if(logMINOR) Logger.minor(this, "onSuccess() on "+this, new Exception("debug"));
+                }
+                succeeded = true;
             }
-            succeeded = true;
+        }
+        if(fail) {
+            storage.finishedFetcher();
+            return;
         }
         context.getChkFetchScheduler(realTimeFlag).removePendingKeys(storage.keyListener, true);
         getter.cancel(context);
