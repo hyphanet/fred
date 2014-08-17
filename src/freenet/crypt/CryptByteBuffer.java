@@ -52,13 +52,13 @@ public final class CryptByteBuffer implements Serializable{
      */
     public CryptByteBuffer(CryptByteBufferType type, SecretKey key, IvParameterSpec iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
-        if(iv != null && type.ivSize == -1){
+        if(iv != null && !type.hasIV()){
             throw new UnsupportedTypeException(type, "This type does not take an IV.");
         }
         else if(iv != null){
             this.iv = iv;
         }
-        else if(type.ivSize != -1){
+        else if(type.hasIV()){
             genIV();
         }
 
@@ -340,7 +340,7 @@ public final class CryptByteBuffer implements Serializable{
      * @throws InvalidAlgorithmParameterException
      */
     public void setIV(IvParameterSpec iv) throws InvalidAlgorithmParameterException{
-        if(type.ivSize == -1){
+        if(!type.hasIV()){
             throw new UnsupportedTypeException(type);
         }
         this.iv = iv;
@@ -358,7 +358,7 @@ public final class CryptByteBuffer implements Serializable{
      * @return The generated IV
      */
     public IvParameterSpec genIV(){
-        if(type.ivSize == -1){
+        if(!type.hasIV()){
             throw new UnsupportedTypeException(type);
         }
         this.iv = KeyGenUtils.genIV(type.ivSize);
