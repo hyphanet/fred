@@ -375,7 +375,7 @@ public class CryptByteBufferTest {
     public void testGenIVLength() throws InvalidKeyException, InvalidAlgorithmParameterException {
         int i = 4;
         CryptByteBuffer crypt = new CryptByteBuffer(cipherTypes[i], keys[i], ivs[i]);
-        assertEquals(crypt.genIV().getIV().length, cipherTypes[i].ivSize);
+        assertEquals(crypt.genIV().getIV().length, cipherTypes[i].ivSize.intValue());
     }
 
     @Test (expected = UnsupportedTypeException.class)
