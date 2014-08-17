@@ -1206,19 +1206,21 @@ public class SplitFileFetcherStorage {
     }
 
     private void finishedEncoding() {
+        boolean failed;
         synchronized(this) {
             if(finishedEncoding) {
                 if(logMINOR) Logger.minor(this, "Already finishedEncoding");
                 return;
             }
             finishedEncoding = true;
-            if(!completeViaTruncation) {
+            if(!cancelled && !completeViaTruncation) {
                 // For the non-truncation case, we wait until both the encoding and the callback
                 // have finished with the data, and then free the RAF.
                 if(!finishedFetcher) return;
             }
+            failed = cancelled;
         }
-        if(completeViaTruncation) {
+        if(completeViaTruncation && !failed) {
             // For the truncation case, we wait until the encoding has finished, and then call
             // the callback, which will truncate the file and pass it on.
             raf.close(); // DO NOT free!
@@ -1233,8 +1235,7 @@ public class SplitFileFetcherStorage {
      * not called on a MemoryLimitedJob thread. */
     void close() {
         if(logMINOR) Logger.minor(this, "Finishing "+this+" for "+fetcher, new Exception("debug"));
-        if(!completeViaTruncation)
-            raf.close();
+        raf.close();
         raf.free();
         fetcher.onClosed();
     }
@@ -1433,7 +1434,6 @@ public class SplitFileFetcherStorage {
     void cancel() {
         synchronized(this) {
             cancelled = true;
-            finishedFetcher = true;
         }
         for(SplitFileFetcherSegmentStorage segment : segments)
             segment.cancel();
