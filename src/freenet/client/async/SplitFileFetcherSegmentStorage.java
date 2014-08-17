@@ -724,7 +724,6 @@ public class SplitFileFetcherSegmentStorage {
                 RAFLock lock = parent.lockRAFOpen();
                 try {
                     writeDownloadedBlock(slotNumber, decodedData);
-                    innerWriteMetadata(true);
                 } catch (IOException e) {
                     blocksFetched[slotNumber] = -1;
                     blocksFound[blockNumber] = false;
