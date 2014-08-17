@@ -208,7 +208,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             failOffThread(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, decoded+" cross-segment block does not match expected key"));
             return;
         } else {
-            reportBlockToSegmentOffThread(i, key, block);
+            reportBlockToSegmentOffThread(i, key, block, data);
         }
     }
 
@@ -221,14 +221,17 @@ public class SplitFileFetcherCrossSegmentStorage {
     }
 
     private void reportBlockToSegmentOffThread(final int blockNo, final ClientCHK key, 
-            final ClientCHKBlock block) {
+            final ClientCHKBlock block, final byte[] data) {
         parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
                 try {
                     // FIXME CPU USAGE Add another API to the segment to avoid re-decoding.
-                    boolean success = segments[blockNo].onGotKey(key.getNodeCHK(), block.getBlock());
+                    SplitFileSegmentKeys keys = segments[blockNo].getSegmentKeys();
+                    if(keys == null) return false;
+                    boolean success = segments[blockNo].innerOnGotKey(key.getNodeCHK(), block, keys, 
+                            blockNumbers[blockNo], data);
                     if(success)
                         Logger.error(this, "Successfully decoded cross-segment block");
                     else

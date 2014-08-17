@@ -689,6 +689,22 @@ public class SplitFileFetcherSegmentStorage {
             Logger.error(this, "Decode failed on block for "+decodeKey);
             return false;
         }
+        return innerOnGotKey(key, decodedBlock, keys, blockNumber, decodedData);
+    }
+
+    /**
+     * Store a block that was fetched or decoded.
+     * @param key The key for the block.
+     * @param block The block.
+     * @param blockNumber A block number for the data. (But there may be several block numbers with
+     * identical keys).
+     * @param decodedData The block's payload data.
+     * @return True if we decoded the block, or 
+     * @throws IOException
+     */
+    boolean innerOnGotKey(NodeCHK key, ClientCHKBlock block, SplitFileSegmentKeys keys,
+            int blockNumber, byte[] decodedData) 
+    throws IOException {
         if(decodedData.length != CHKBlock.DATA_LENGTH) {
             if(blockNumber == dataBlocks-1 && this.segNo == parent.segments.length-1 && 
                     parent.lastBlockMightNotBePadded()) {
@@ -756,7 +772,7 @@ public class SplitFileFetcherSegmentStorage {
                 
             });
             tryStartDecode();
-            parent.fetcher.maybeAddToBinaryBlob(decodedBlock);
+            parent.fetcher.maybeAddToBinaryBlob(block);
             blockNumber = nextBlockNumber;
         } while(blockNumber != -1);
         return true;
