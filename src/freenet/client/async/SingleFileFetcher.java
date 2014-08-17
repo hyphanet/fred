@@ -1088,7 +1088,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					streamGenerator.writeTo(pipeOut, context);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else streamGenerator.writeTo(output, context);
+					// ClientGetWorkerThread will close output.
+				} else {
+				    streamGenerator.writeTo(output, context);
+				    output.close();
+				}
 
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
