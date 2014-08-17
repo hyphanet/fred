@@ -1264,4 +1264,8 @@ public class SplitFileFetcherSegmentStorage {
         this.crossSegmentsByBlock[blockNo] = crossSegment;
     }
 
+    public synchronized boolean hasBlock(int blockNo) {
+        return blocksFound[blockNo];
+    }
+
 }

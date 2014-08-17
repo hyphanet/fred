@@ -809,6 +809,11 @@ public class SplitFileFetcherStorage {
                 throw new StorageFormatException("Keys corrupted");
             }
         }
+        if(this.crossSegments != null) {
+            for(SplitFileFetcherCrossSegmentStorage crossSegment : this.crossSegments)
+                // Must be after reading the metadata for the plain segments.
+                crossSegment.checkBlocks();
+        }
         readGeneralProgress();
     }
     

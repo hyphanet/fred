@@ -364,14 +364,24 @@ public class SplitFileFetcherCrossSegmentStorage {
             segment.resumeCallback(blockNo, this);
         }
     }
+    
+    /** Should be called before scheduling, unlike restart(). Doesn't lock, i.e. part of 
+     * construction. But we must have read metadata on the regular segments first, which won't be 
+     * true in the constructor. */
+    public void checkBlocks() {
+        for(int i=0;i<totalBlocks;i++) {
+            if(segments[i].hasBlock(blockNumbers[i])) {
+                blocksFound[i] = true;
+                totalFound++;
+            }
+        }
+    }
 
     /** Check for blocks and try to decode. */
     public void restart() {
         synchronized(this) {
             if(finished) return;
         }
-        readBlocks(false);
-        readBlocks(true);
         synchronized(this) {
             if(totalBlocks < dataBlockCount) return;
             tryDecodeOrEncode();
