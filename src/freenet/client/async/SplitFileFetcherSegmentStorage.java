@@ -389,6 +389,8 @@ public class SplitFileFetcherSegmentStorage {
             }
         }
         if(fetchedCount < blocksForDecode()) {
+            // We *DO* want to write the metadata immediately here, because we've just gone over
+            // the blocks on disk and determined that the metadata is inaccurate.
             writeMetadata();
             boolean wasCorrupt;
             synchronized(this) {
@@ -453,6 +455,7 @@ public class SplitFileFetcherSegmentStorage {
         maybeBlocks.clear();
         maybeBlocks = null;
         if(validBlocks < blocksForDecode()) {
+            // Metadata didn't match blocks on disk; write metadata immediately.
             writeMetadata();
             boolean wasCorrupt;
             synchronized(this) {
@@ -505,6 +508,7 @@ public class SplitFileFetcherSegmentStorage {
         queueHeal(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent);
         dataBlocks = null;
         checkBlocks = null;
+        // Finished a segment, definitely want to write metadata right now.
         writeMetadata();
         // Now we've REALLY finished.
         synchronized(this) {
@@ -757,10 +761,7 @@ public class SplitFileFetcherSegmentStorage {
             }
             if(callback != null)
                 callback.onFetchedRelevantBlock(this, blockNumber);
-            if(parent.hasCheckedStore()) {
-                // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
-                writeMetadata();
-            } // Else written when finish checking the store, or on shutdown.
+            lazyWriteMetadata();
             if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent+" written to "+slotNumber);
             parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
                 
