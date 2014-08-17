@@ -737,11 +737,14 @@ public class SplitFileFetcherSegmentStorage {
                     callback = crossSegmentsByBlock[blockNumber];
                 }
                 nextBlockNumber = (short)keys.getBlockNumber(key, blocksFound);
+                metadataDirty = true;
             }
             if(callback != null)
                 callback.onFetchedRelevantBlock(this, blockNumber);
-            // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
-            writeMetadata();
+            if(parent.hasCheckedStore()) {
+                // Write metadata immediately. Finding a block is a big deal. The OS may cache it anyway.
+                writeMetadata();
+            } // Else written when finish checking the store, or on shutdown.
             if(logMINOR) Logger.minor(this, "Got block "+blockNumber+" ("+key+") for "+this+" for "+parent+" written to "+slotNumber);
             parent.jobRunner.queueNormalOrDrop(new PersistentJob() {
                 

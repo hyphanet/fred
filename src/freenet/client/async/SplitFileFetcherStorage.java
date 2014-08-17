@@ -1647,6 +1647,7 @@ public class SplitFileFetcherStorage {
                 } catch (IOException e) {
                     failOnDiskError(e);
                 }
+                writeMetadataJob.run(context);
                 return false;
             }
             
