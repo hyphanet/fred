@@ -18,12 +18,12 @@ public enum EncryptedRandomAccessThingType {
     /**
      * 
      * @param bitmask
-     * @param footLen
+     * @param magAndVerLen Length of magic value and version
      * @param type
      * @param macType
      * @param macLen
      */
-    private EncryptedRandomAccessThingType(int bitmask, int footLen, CryptByteBufferType type, 
+    private EncryptedRandomAccessThingType(int bitmask, int magAndVerLen, CryptByteBufferType type, 
             MACType macType, int macLen){
         this.bitmask = bitmask;
         this.encryptType = type;
@@ -31,7 +31,7 @@ public enum EncryptedRandomAccessThingType {
         this.macType = macType;
         this.macKey = macType.keyType;
         this.macLen = macLen;
-        this.footerLen = footLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
+        this.footerLen = magAndVerLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
     }
 
     /**

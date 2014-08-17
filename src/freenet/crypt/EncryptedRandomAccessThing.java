@@ -16,7 +16,8 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
 /**
- * REQUIRES BC 151 OR NEWER!!!!!! 
+ * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
+ * SkippingStreamCipher. 
  * @author unixninja92
  *
  */
@@ -32,7 +33,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private ParametersWithIV cipherParams;//includes key
     
     private SecretKey headerMacKey;
-//    private IvParameterSpec headerMacIV;
     
     private boolean isClosed = false;
     
@@ -46,10 +46,14 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     
     /**
-     * 
-     * @param type
-     * @param underlyingThing
-     * @param masterKey
+     * Creates an instance of EncryptedRandomAccessThing wrapping underlyingThing. Keys for key 
+     * encryption and MAC generation are derived from the MasterSecret. If this is a new ERAT then
+     * keys are generated and the footer is written to the end of the underlying RAT. Otherwise the
+     * footer is read from the underlying RAT. 
+     * @param type The algorithms to be used for the ERAT
+     * @param underlyingThing The underlying RAT that will be storing the data. Must be larger than
+     * the footer size specified in type. 
+     * @param masterKey The MasterSecret that will be used to derive various keys. 
      * @throws IOException
      * @throws GeneralSecurityException
      */
@@ -66,7 +70,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         this.headerEncKey = this.masterSecret.deriveKey(type.encryptKey);
         
         this.headerMacKey = this.masterSecret.deriveKey(type.macKey);
-//        this.headerMacIV = this.masterSecret.deriveIv(type.macKey);
         
         
         if(underlyingThing.size() < type.footerLen){
@@ -125,7 +128,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     }
 
     /**
-     * 
+     * Reads the specified section of the underlying RAT and decrypts it. Decryption is thread-safe. 
      */
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
@@ -154,7 +157,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     }
 
     /**
-     * 
+     * Encrypts the given data and writes it to the underlying RAT. Encryption is thread-safe. 
      */
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
@@ -194,7 +197,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     }
     
     /**
-     * 
+     * Writes the footer to the end of the underlying RAT
      * @throws IOException
      * @throws GeneralSecurityException
      */
@@ -239,8 +242,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     }
     
     /**
-     * 
-     * @return
+     * Reads the iv, the encrypted key and the MAC from the footer. Then decrypts they key and 
+     * verifies the MAC. 
+     * @return Returns true if the MAC is verified. Otherwise false. 
      * @throws IOException
      * @throws InvalidKeyException
      */
@@ -280,9 +284,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
      *
      */
     private enum kdfInput {
-        baseIV(),
-        underlyingKey(),
-        underlyingIV();
+        underlyingKey(),/** For deriving the key that will be used to encrypt the underlying RAT*/
+        underlyingIV();/** For deriving the iv that will be used to encrypt the underlying RAT*/
         
         public final String input;
         
