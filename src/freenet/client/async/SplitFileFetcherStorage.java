@@ -1178,12 +1178,12 @@ public class SplitFileFetcherStorage {
 
     public void finishedFetcher() {
         synchronized(this) {
-            if(completeViaTruncation) return; // Ignore.
             if(finishedFetcher) {
                 if(logMINOR) Logger.minor(this, "Already finishedFetcher");
                 return;
             }
             finishedFetcher = true;
+            if(completeViaTruncation) return; // Ignore.
             if(!finishedEncoding) return;
         }
         closeOffThread();
