@@ -255,26 +255,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Parse metadata
 		try {
 			metadata = Metadata.construct(data);
+            data.free();
+            data = null;
 			innerWrapHandleMetadata(false, context);
-			data.free();
 		} catch (MetadataParseException e) {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, context);
-			data.free();
-			return;
 		} catch (EOFException e) {
 			// This is a metadata error too.
 			onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, context);
-			data.free();
-			return;
 		} catch (InsufficientDiskSpaceException e) {
 		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, context);
-            data.free();
-		    return;
 		} catch (IOException e) {
 			// Bucket error?
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, context);
-			data.free();
-			return;
+		} finally {
+		    if(data != null) data.free();
 		}
 	}
 	
