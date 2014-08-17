@@ -376,6 +376,9 @@ public final class CryptByteBuffer implements Serializable{
      * @return Returns the iv as a IvParameterSpec
      */
     public IvParameterSpec getIV(){
+        if(!type.hasIV()){
+            throw new UnsupportedTypeException(type);
+        }
         return iv;
     }
 
