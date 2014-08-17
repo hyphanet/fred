@@ -7,7 +7,8 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 
 /**
- * 
+ * Stores information about the algorithms used, the version number, and the footer length for a
+ * EncryptedRandomAccessThing
  * @author unixninja92
  *
  */
@@ -24,12 +25,12 @@ public enum EncryptedRandomAccessThingType {
     public final int macLen;//bytes
 
     /**
-     * 
-     * @param bitmask
+     * Creates the ChaCha enum values. 
+     * @param bitmask The version number
      * @param magAndVerLen Length of magic value and version
-     * @param type
-     * @param macType
-     * @param macLen
+     * @param type Alg to use for encrypting the data
+     * @param macType Alg to use for MAC generation
+     * @param macLen The length of the MAC output in bytes
      */
     private EncryptedRandomAccessThingType(int bitmask, int magAndVerLen, CryptByteBufferType type, 
             MACType macType, int macLen){
@@ -43,8 +44,7 @@ public enum EncryptedRandomAccessThingType {
     }
 
     /**
-     * 
-     * @return
+     * Returns an instance of the SkippingStreamCipher the goes with the current enum value.
      */
     public final SkippingStreamCipher get(){
         return new ChaChaEngine();
