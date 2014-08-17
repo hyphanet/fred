@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
 import java.io.IOException;
@@ -279,9 +282,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     }
     
     /**
-     * 
-     * @author unixninja92
-     *
+     *  The Strings used to derive keys and ivs from the unencryptedBaseKey. 
      */
     private enum kdfInput {
         underlyingKey(),/** For deriving the key that will be used to encrypt the underlying RAT*/

@@ -3,6 +3,11 @@ package freenet.crypt;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 
+/**
+ * 
+ * @author unixninja92
+ *
+ */
 public enum EncryptedRandomAccessThingType {
     ChaCha128(1, 12, CryptByteBufferType.ChaCha128, MACType.HMACSHA256, 32),
     ChaCha256(2, 12, CryptByteBufferType.ChaCha256, MACType.HMACSHA256, 32);
