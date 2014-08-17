@@ -868,10 +868,11 @@ public class SplitFileFetcherStorage {
             }
             fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
             fetcher.onResume(succeededBlocks, failedBlocks, clientMetadata, decompressedLength);
+        }
+        if(crossSegments != null) {
             for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
                 segment.restart();
             }
-            
         }
         if(segmentsToTryDecode != null) {
             List<SplitFileFetcherSegmentStorage> brokenSegments;
