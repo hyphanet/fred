@@ -851,6 +851,8 @@ public class SplitFileFetcherStorage {
     }
 
     /** Start the storage layer.
+     * @param resume True only if we are restarting without having serialized, i.e. from the file 
+     * only. In this case we will need to tell the parent how many blocks have been fetched.
      * @return True if it should be scheduled immediately. If false, the storage layer will 
      * callback into the fetcher later.
      */
