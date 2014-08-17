@@ -1155,18 +1155,21 @@ public class SplitFileFetcherStorage {
         }
         
     };
+    
+    private final Runnable wrapLazyWriteMetadata = new Runnable() {
+
+        @Override
+        public void run() {
+            jobRunner.queueNormalOrDrop(writeMetadataJob);
+        }
+        
+    };
 
     public void lazyWriteMetadata() {
         if(!persistent) return;
         if(LAZY_WRITE_METADATA_DELAY != 0) {
-            ticker.queueTimedJob(new Runnable() {
-
-                @Override
-                public void run() {
-                    jobRunner.queueNormalOrDrop(writeMetadataJob);
-                }
-                
-            }, "Write metadata for splitfile", 
+            // The Runnable must be the same object for de-duplication.
+            ticker.queueTimedJob(wrapLazyWriteMetadata, "Write metadata for splitfile", 
                     LAZY_WRITE_METADATA_DELAY, false, true);
         } else { // Must still be off-thread, multiple segments, possible locking issues...
             jobRunner.queueNormalOrDrop(writeMetadataJob);
