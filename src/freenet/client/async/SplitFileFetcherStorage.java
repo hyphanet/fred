@@ -778,7 +778,6 @@ public class SplitFileFetcherStorage {
         for(int i=0;i<crossSegments;i++) {
             this.crossSegments[i] = new SplitFileFetcherCrossSegmentStorage(this, i, dis);
         }
-         // FIXME cross-segment splitfile support
         this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, realTime, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
