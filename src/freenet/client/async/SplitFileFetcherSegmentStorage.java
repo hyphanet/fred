@@ -88,7 +88,7 @@ public class SplitFileFetcherSegmentStorage {
     /** What is the order of the blocks on disk? Should be kept consistent with blocksFound! Is 
      * read from disk on startup and may be inaccurate, checked on FEC decode. Elements: -1 = not
      * fetched yet. */
-    private final short[] blocksFetched;
+    private final int[] blocksFetched;
     private int blocksFetchedCount;
     /** True if we have downloaded and decoded all the data blocks and cross-segment check blocks,
      * and written them to their final location in the parent storage file. */
@@ -155,7 +155,7 @@ public class SplitFileFetcherSegmentStorage {
             crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
         else
             crossSegmentsByBlock = null;
-        blocksFetched = new short[minFetched];
+        blocksFetched = new int[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossCheckBlocks, writeRetries, parent.checksumLength, parent.persistent);
@@ -214,7 +214,7 @@ public class SplitFileFetcherSegmentStorage {
             crossSegmentsByBlock = new SplitFileFetcherCrossSegmentStorage[minFetched];
         else
             crossSegmentsByBlock = null;
-        blocksFetched = new short[minFetched];
+        blocksFetched = new int[minFetched];
         for(int i=0;i<blocksFetched.length;i++) blocksFetched[i] = -1;
         segmentStatusPaddedLength = paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
                 crossSegmentCheckBlocks, writeRetries, parent.checksumLength, true);
@@ -344,9 +344,9 @@ public class SplitFileFetcherSegmentStorage {
         }
         class MyBlock {
             final byte[] buf;
-            final short blockNumber;
-            final short slot;
-            MyBlock(byte[] buf, short blockNumber, short slot) {
+            final int blockNumber;
+            final int slot;
+            MyBlock(byte[] buf, int blockNumber, int slot) {
                 this.buf = buf;
                 this.blockNumber = blockNumber;
                 this.slot = slot;
@@ -407,7 +407,7 @@ public class SplitFileFetcherSegmentStorage {
         
         for(MyBlock test : maybeBlocks) {
             boolean failed = false;
-            short blockNumber = test.blockNumber;
+            int blockNumber = test.blockNumber;
             byte[] buf = test.buf;
             ClientCHK decodeKey = blockNumber == -1 ? null : keys.getKey(blockNumber, null, false);
             // Encode it to check whether the key is the same.
@@ -662,11 +662,11 @@ public class SplitFileFetcherSegmentStorage {
     public boolean onGotKey(NodeCHK key, CHKBlock block) throws IOException {
         SplitFileSegmentKeys keys = getSegmentKeys();
         if(keys == null) return false;
-        short blockNumber;
+        int blockNumber;
         ClientCHK decodeKey;
         synchronized(this) {
             if(succeeded || failed || finished) return false;
-            blockNumber = (short)keys.getBlockNumber(key, blocksFound);
+            blockNumber = keys.getBlockNumber(key, blocksFound);
             if(blockNumber == -1) {
                 if(logMINOR) Logger.minor(this, "Block not found "+key);
                 return false;
@@ -801,8 +801,8 @@ public class SplitFileFetcherSegmentStorage {
             OutputStream cos = parent.writeChecksummedTo(segmentStatusOffset, segmentStatusPaddedLength);
             try {
                 DataOutputStream dos = new DataOutputStream(cos);
-                for(short s : blocksFetched)
-                    dos.writeShort(s);
+                for(int s : blocksFetched)
+                    dos.writeInt(s);
                 if(writeRetries) {
                     for(int r : retries)
                         dos.writeInt(r);
@@ -829,7 +829,7 @@ public class SplitFileFetcherSegmentStorage {
         }
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         for(int i=0;i<blocksFetched.length;i++) {
-            short s = dis.readShort();
+            int s = dis.readInt();
             if(s < -1 || s >= retries.length)
                 throw new StorageFormatException("Bogus block number in blocksFetched["+i+"]: "+s);
             blocksFetched[i] = s;
@@ -863,7 +863,7 @@ public class SplitFileFetcherSegmentStorage {
             boolean trackRetries) {
         int fetchedBlocks = dataBlocks + crossCheckBlocks;
         int totalBlocks = dataBlocks + checkBlocks + crossCheckBlocks;
-        return fetchedBlocks * 2 + (trackRetries ? (totalBlocks * 4) : 0);
+        return fetchedBlocks * 4 + (trackRetries ? (totalBlocks * 4) : 0);
     }
     
     public static int paddedStoredSegmentStatusLength(int dataBlocks, int checkBlocks, int crossCheckBlocks, 
