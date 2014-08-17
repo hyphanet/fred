@@ -1436,6 +1436,10 @@ public class SplitFileFetcherStorage {
         }
         for(SplitFileFetcherSegmentStorage segment : segments)
             segment.cancel();
+        if(crossSegments != null) {
+            for(SplitFileFetcherCrossSegmentStorage segment : crossSegments)
+                segment.cancel();
+        }
     }
 
     /** Local only is true and we've finished checking the datastore. If all segments are not 

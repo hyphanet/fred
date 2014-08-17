@@ -49,7 +49,10 @@ public class SplitFileFetcherCrossSegmentStorage {
     private int totalFound;
     /** If true, we are currrently decoding */
     private boolean tryDecode;
-    /** If true, the segment has completed */
+    /** True if the request has been terminated for some reason. */
+    private boolean cancelled;
+    /** If true, the segment has completed. Once a segment decode starts, finished must not be set
+     * until it exits. */
     private boolean finished;
     private final FECCodec codec;
     /** Used in assigning blocks */
@@ -84,7 +87,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                     totalFound++;
                 }
             }
-            if(tryDecode || finished) return;
+            if(tryDecode || finished || cancelled) return;
             if(!found) {
                 Logger.error(this, "Block "+blockNo+" on "+segment+" not wanted by "+this);
                 return;
@@ -100,6 +103,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     private synchronized void tryDecodeOrEncode() {
         if(finished) return;
         if(tryDecode) return;
+        if(cancelled) return;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
             Math.max(parent.fecCodec.maxMemoryOverheadDecode(dataBlockCount, crossCheckBlockCount),
                     parent.fecCodec.maxMemoryOverheadEncode(dataBlockCount, crossCheckBlockCount));
@@ -138,8 +142,17 @@ public class SplitFileFetcherCrossSegmentStorage {
      * the new decoded blocks afterwards to ensure reproducible behaviour. */
     private void innerDecode(MemoryLimitedChunk chunk) throws IOException {
         if(logMINOR) Logger.minor(this, "Trying to decode "+this+" for "+parent);
+        boolean killed = false;
         synchronized(this) {
             if(finished) return;
+            if(cancelled) {
+                finished = true;
+                killed = true;
+            }
+        }
+        if(killed) {
+            parent.finishedEncoding(this);
+            return;
         }
         
         // readAllBlocks does most of the housekeeping for us, see below...
@@ -386,9 +399,19 @@ public class SplitFileFetcherCrossSegmentStorage {
             if(finished) return;
         }
         synchronized(this) {
+            System.out.println("Cross-segment "+crossSegmentNumber+" : "+totalFound+"/"+dataBlockCount);
             if(totalBlocks < dataBlockCount) return;
             tryDecodeOrEncode();
         }
+    }
+    
+    public void cancel() {
+        synchronized(this) {
+            cancelled = true;
+            if(tryDecode) return;
+            finished = true;
+        }
+        parent.finishedEncoding(this);
     }
 
 }
