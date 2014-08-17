@@ -4,8 +4,8 @@
 package freenet.crypt;
 
 /**
- * Keeps track of keysizes and names of keygen algorithm names for all of the one-way and symmetric 
- * encryption schemes available to Freenet. 
+ * Keeps track of keysizes, ivsizes, and names of keygen algorithm names for all of the one-way and 
+ * symmetric encryption schemes available to Freenet. 
  * @author unixninja92
  *
  */
@@ -26,7 +26,7 @@ public enum KeyType {
     public final int ivSize;//bits
 
     /**
-     * Creates an enum value for the specified algorithm and keysize
+     * Creates an enum value for the specified algorithm and keysize. ivSize is set to keySize
      * @param alg The name of the algorithm KeyGenerator should use to create a key
      * @param keySize The size of the key that KeyGenerator should generate
      */
@@ -36,6 +36,12 @@ public enum KeyType {
         this.ivSize = keySize;
     }
 
+    /**
+     * Creates an enum value for the specified algorithm, keySize, and ivSize
+     * @param alg The name of the algorithm KeyGenerator should use to create a key
+     * @param keySize The size of the key that KeyGenerator should generate
+     * @param ivSize The size of the iv that should be generated
+     */
     private KeyType(String alg, int keySize, int ivSize){
         this.alg = alg;
         this.keySize = keySize;
