@@ -96,7 +96,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
     private final boolean wantBinaryBlob;
     private final boolean persistent;
     
-    SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
+    public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent,
             FetchContext fetchContext, boolean realTimeFlag, List<COMPRESSOR_TYPE> decompressors, 
             ClientMetadata clientMetadata, long token, boolean topDontCompress, 
             short topCompatibilityMode, boolean persistent, FreenetURI thisKey, boolean isFinalFetch,
