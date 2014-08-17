@@ -617,8 +617,6 @@ public class SplitFileFetcherSegmentStorage {
         synchronized(this) {
             if(crossSegmentsByBlock == null) return;
             crossSegmentsByBlockCopy = Arrays.copyOf(this.crossSegmentsByBlock, this.crossSegmentsByBlock.length);
-            for(int i=0;i<crossSegmentsByBlock.length;i++)
-                crossSegmentsByBlock[i] = null;
         }
         for(int i=0;i<crossSegmentsByBlockCopy.length;i++) {
             SplitFileFetcherCrossSegmentStorage s = crossSegmentsByBlockCopy[i];
@@ -738,7 +736,6 @@ public class SplitFileFetcherSegmentStorage {
                 blocksFetchedCount++;
                 if(crossSegmentsByBlock != null && blockNumber < crossSegmentsByBlock.length) {
                     callback = crossSegmentsByBlock[blockNumber];
-                    crossSegmentsByBlock[blockNumber] = null;
                 }
                 nextBlockNumber = (short)keys.getBlockNumber(key, blocksFound);
             }
