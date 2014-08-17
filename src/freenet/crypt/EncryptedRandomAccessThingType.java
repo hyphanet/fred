@@ -15,6 +15,14 @@ public enum EncryptedRandomAccessThingType {
     public final KeyType macKey;
     public final int macLen;//bytes
 
+    /**
+     * 
+     * @param bitmask
+     * @param footLen
+     * @param type
+     * @param macType
+     * @param macLen
+     */
     private EncryptedRandomAccessThingType(int bitmask, int footLen, CryptByteBufferType type, 
             MACType macType, int macLen){
         this.bitmask = bitmask;
@@ -26,6 +34,10 @@ public enum EncryptedRandomAccessThingType {
         this.footerLen = footLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
     }
 
+    /**
+     * 
+     * @return
+     */
     public final SkippingStreamCipher get(){
         return new ChaChaEngine();
     }

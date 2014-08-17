@@ -12,7 +12,6 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.encoders.Hex;
 
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
@@ -46,7 +45,14 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     
-    //writes
+    /**
+     * 
+     * @param type
+     * @param underlyingThing
+     * @param masterKey
+     * @throws IOException
+     * @throws GeneralSecurityException
+     */
     public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
             RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, 
             GeneralSecurityException{
@@ -94,7 +100,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         	}
 
         	if(!readFooter()){
-        		throw new GeneralSecurityException("Macs is incorrect");
+        		throw new GeneralSecurityException("Mac is incorrect");
         	}
         }
 
@@ -118,6 +124,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         return underlyingThing.size()-type.footerLen;
     }
 
+    /**
+     * 
+     */
     @Override
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
@@ -144,6 +153,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }
     }
 
+    /**
+     * 
+     */
     @Override
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
@@ -154,7 +166,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
 
         if(fileOffset < 0) throw new IOException("Cannot read before zero");
         if(fileOffset+length > size()){
-            throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+
+            throw new IOException("Cannot write after end: trying to write from "+fileOffset+" to "+
                     (fileOffset+length)+" on block length "+size());
         }
 
@@ -181,7 +193,12 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }
     }
     
-    private void writeFooter() throws IOException{
+    /**
+     * 
+     * @throws IOException
+     * @throws GeneralSecurityException
+     */
+    private void writeFooter() throws IOException, GeneralSecurityException{
         byte[] footer = new byte[type.footerLen];
         int offset = 0;
         
@@ -195,9 +212,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
                     headerEncIV);
             encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded()).array();
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-            //TODO throw something
-            Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
+            throw new GeneralSecurityException("Something went wrong with key generation. please "
+                    + "report", e.fillInStackTrace());
         }
         System.arraycopy(encryptedKey, 0, footer, offset, encryptedKey.length);
         offset += encryptedKey.length;
@@ -209,9 +225,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            //TODO throw something
-            Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
+            throw new GeneralSecurityException("Something went wrong with key generation. please "
+                    + "report", e.fillInStackTrace());
         }
         
         System.arraycopy(ver, 0, footer, offset, ver.length);
@@ -223,6 +238,12 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         underlyingThing.pwrite(size(), footer, 0, footer.length);
     }
     
+    /**
+     * 
+     * @return
+     * @throws IOException
+     * @throws InvalidKeyException
+     */
     private boolean readFooter() throws IOException, InvalidKeyException {
         byte[] footer = new byte[type.footerLen-12];
         int offset = 0;
@@ -253,6 +274,11 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         return authcode.verifyData(mac, headerEncIV, unencryptedBaseKey.getEncoded(), ver);
     }
     
+    /**
+     * 
+     * @author unixninja92
+     *
+     */
     private enum kdfInput {
         baseIV(),
         underlyingKey(),
