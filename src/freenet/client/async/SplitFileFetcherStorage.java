@@ -1183,7 +1183,7 @@ public class SplitFileFetcherStorage {
                 return;
             }
             finishedFetcher = true;
-            if(completeViaTruncation) return; // Ignore.
+            if(completeViaTruncation && !cancelled) return; // Ignore.
             if(!finishedEncoding) return;
         }
         closeOffThread();
@@ -1233,7 +1233,8 @@ public class SplitFileFetcherStorage {
      * not called on a MemoryLimitedJob thread. */
     void close() {
         if(logMINOR) Logger.minor(this, "Finishing "+this+" for "+fetcher, new Exception("debug"));
-        raf.close();
+        if(!completeViaTruncation)
+            raf.close();
         raf.free();
         fetcher.onClosed();
     }
