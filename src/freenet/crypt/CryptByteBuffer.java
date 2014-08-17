@@ -22,7 +22,7 @@ import freenet.support.Logger;
  * algorithm, key, and also an iv if the algorithm requires one. 
  * @author unixninja92
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings("deprecation") // Suppresses warnings about RijndaelPCFB being deprecated
 public final class CryptByteBuffer implements Serializable{
     private static final long serialVersionUID = 6143338995971755362L;
     public static final CryptByteBufferType preferredCryptBitAlg = CryptByteBufferType.ChaCha128;
