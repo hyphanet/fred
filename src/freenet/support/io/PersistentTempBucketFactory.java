@@ -213,10 +213,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Delete the buckets.
 	 */
 	public void postCommit(DelayedFreeBucket[] buckets) {
-		DelayedFreeBucket[] toFree = grabBucketsToFree();
-		if(toFree == null || toFree.length == 0) return;
+		if(buckets == null || buckets.length == 0) return;
 		int x = 0;
-		for(DelayedFreeBucket bucket : toFree) {
+		for(DelayedFreeBucket bucket : buckets) {
 			try {
 				if(bucket.toFree())
 					bucket.realFree();
