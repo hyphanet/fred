@@ -59,9 +59,6 @@ public interface SplitFileFetcherCallback {
      * any dangerous locks and not be too slow. */
     void queueHeal(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm);
 
-    /** Called when a datastore-only fetch didn't find enough data. */
-    void failCheckedDatastoreOnly();
-
     /** Called when the storage layer has finished, the higher level code has finished, and the 
      * storage has been freed, i.e. the request is now completely finished. */
     void onClosed();

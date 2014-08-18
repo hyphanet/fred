@@ -487,14 +487,6 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         @Override
-        public void failCheckedDatastoreOnly() {
-            assertFalse(true);
-            synchronized(this) {
-                failed = true;
-            }
-        }
-
-        @Override
         public void onFetchedBlock() {
             // Ignore.
         }

@@ -1287,9 +1287,14 @@ public class SplitFileFetcherStorage {
         return true;
     }
     
-    private boolean anyCrossSegmentsDecoding() {
-        for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+    private boolean anySegmentsDecoding() {
+        for(SplitFileFetcherSegmentStorage segment : segments) {
             if(segment.isDecoding()) return true;
+        }
+        if(crossSegments != null) {
+            for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+                if(segment.isDecoding()) return true;
+            }
         }
         return false;
     }
@@ -1470,40 +1475,13 @@ public class SplitFileFetcherStorage {
      * already finished/decoding, we need to fail with DNF. If the segments fail to decode due to
      * data corruption, we will retry as usual. */
     public void finishedCheckingDatastoreOnLocalRequest(ClientContext context) {
-        if(hasFinished()) {
-            setHasCheckedStore(context);
-            return; // Don't need to do anything.
-        }
+        // At this point, all the blocks will have been processed.
+        if(hasFinished()) return; // Don't need to do anything.
         this.errors.inc(FetchException.ALL_DATA_NOT_FOUND);
-        if(allDecodingOrFinished()) {
-            // All segments are decoding.
-            // If they succeed, we complete.
-            // If they fail to decode, they will cause the getter to retry, and re-scan the 
-            // datastore for the corrupted keys.
-            setHasCheckedStore(context);
-            return;
+        for(SplitFileFetcherSegmentStorage segment : segments) {
+            segment.onFinishedCheckingDatastoreNoFetch(context);
         }
-        if(anyCrossSegmentsDecoding()) {
-            // When it finishes, it will call finishedEncode, which will fail if there is no 
-            // further progress to be made.
-            setHasCheckedStore(context);
-            return;
-        }
-        if(hasFinished()) {
-            setHasCheckedStore(context);
-            return; // Don't need to do anything.
-        }
-        // Some segments still need data.
-        // They're not going to get it.
-        jobRunner.queueNormalOrDrop(new PersistentJob() {
-
-            @Override
-            public boolean run(ClientContext context) {
-                fetcher.failCheckedDatastoreOnly();
-                return true;
-            }
-            
-        });
+        maybeComplete();
     }
 
     synchronized boolean hasFinished() {

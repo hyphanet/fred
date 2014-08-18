@@ -1285,4 +1285,21 @@ public class SplitFileFetcherSegmentStorage {
         return blocksFound[blockNo];
     }
 
+    public synchronized boolean isDecoding() {
+        return tryDecode;
+    }
+
+    /** Called after checking datastore for a datastore-only request. */
+    public void onFinishedCheckingDatastoreNoFetch(ClientContext context) {
+        synchronized(this) {
+            if(tryDecode) return;
+            if(succeeded) return;
+            if(finished) return;
+            if(failed) return;
+            failed = true;
+            finished = true;
+        }
+        parent.finishedEncoding(this);
+    }
+
 }

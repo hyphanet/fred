@@ -203,10 +203,6 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallbac
         fail(new FetchException(FetchException.BUCKET_ERROR));
     }
     
-    public void failCheckedDatastoreOnly() {
-        fail(new FetchException(FetchException.DATA_NOT_FOUND));
-    }
-
     public void fail(FetchException e) {
         synchronized(this) {
             if(succeeded || failed) return;
