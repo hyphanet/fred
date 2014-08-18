@@ -1462,9 +1462,9 @@ public class SplitFileFetcherStorage {
     /** Local only is true and we've finished checking the datastore. If all segments are not 
      * already finished/decoding, we need to fail with DNF. If the segments fail to decode due to
      * data corruption, we will retry as usual. */
-    public void finishedCheckingDatastoreOnLocalRequest() {
+    public void finishedCheckingDatastoreOnLocalRequest(ClientContext context) {
         if(hasFinished()) {
-            setHasCheckedStore();
+            setHasCheckedStore(context);
             return; // Don't need to do anything.
         }
         if(allDecodingOrFinished()) {
@@ -1472,11 +1472,11 @@ public class SplitFileFetcherStorage {
             // If they succeed, we complete.
             // If they fail to decode, they will cause the getter to retry, and re-scan the 
             // datastore for the corrupted keys.
-            setHasCheckedStore();
+            setHasCheckedStore(context);
             return;
         }
         if(hasFinished()) {
-            setHasCheckedStore();
+            setHasCheckedStore(context);
             return; // Don't need to do anything.
         }
         // Some segments still need data.
@@ -1668,24 +1668,16 @@ public class SplitFileFetcherStorage {
         return raf;
     }
 
-    public synchronized void setHasCheckedStore() {
+    public synchronized void setHasCheckedStore(ClientContext context) {
         hasCheckedDatastore = true;
         if(!persistent) return;
-        this.jobRunner.queueNormalOrDrop(new PersistentJob() {
-
-            @Override
-            public boolean run(ClientContext context) {
-                byte[] generalProgress = appendChecksum(encodeGeneralProgress());
-                try {
-                    raf.pwrite(offsetGeneralProgress, generalProgress, 0, generalProgress.length);
-                } catch (IOException e) {
-                    failOnDiskError(e);
-                }
-                writeMetadataJob.run(context);
-                return false;
-            }
-            
-        });
+        byte[] generalProgress = appendChecksum(encodeGeneralProgress());
+        try {
+            raf.pwrite(offsetGeneralProgress, generalProgress, 0, generalProgress.length);
+        } catch (IOException e) {
+            failOnDiskError(e);
+        }
+        writeMetadataJob.run(context);
     }
 
     public synchronized boolean hasCheckedStore() {
