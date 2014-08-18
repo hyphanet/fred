@@ -1467,6 +1467,7 @@ public class SplitFileFetcherStorage {
             setHasCheckedStore(context);
             return; // Don't need to do anything.
         }
+        this.errors.inc(FetchException.ALL_DATA_NOT_FOUND);
         if(allDecodingOrFinished()) {
             // All segments are decoding.
             // If they succeed, we complete.
