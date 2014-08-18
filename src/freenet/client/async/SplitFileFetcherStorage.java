@@ -1286,6 +1286,13 @@ public class SplitFileFetcherStorage {
         }
         return true;
     }
+    
+    private boolean anyCrossSegmentsDecoding() {
+        for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
+            if(segment.isDecoding()) return true;
+        }
+        return false;
+    }
 
     /** Fail the request, off-thread. The callback will call cancel etc, so it won't immediately
      * shut down the storage.
@@ -1473,6 +1480,12 @@ public class SplitFileFetcherStorage {
             // If they succeed, we complete.
             // If they fail to decode, they will cause the getter to retry, and re-scan the 
             // datastore for the corrupted keys.
+            setHasCheckedStore(context);
+            return;
+        }
+        if(anyCrossSegmentsDecoding()) {
+            // When it finishes, it will call finishedEncode, which will fail if there is no 
+            // further progress to be made.
             setHasCheckedStore(context);
             return;
         }
