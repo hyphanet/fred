@@ -8,6 +8,7 @@ import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -45,6 +46,8 @@ public class FCPPluginClientTracker extends NativeThread {
      * 
      * Not a {@link ConcurrentHashMap} because the creation of clients is exposed to the FCP network interface and thus DoS would be possible: Java HashMaps
      * never shrink once they have reached a certain size.
+     * 
+     * FIXME: Use a {@link ReadWriteLock} for guarding this instead of bare synchronized() statements.
      */
     private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID = new TreeMap<UUID, FCPPluginClientWeakReference>();
     
