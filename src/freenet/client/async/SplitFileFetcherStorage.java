@@ -1214,7 +1214,9 @@ public class SplitFileFetcherStorage {
     }
 
     private void finishedEncoding() {
+        // This is rather convoluted in the failure case ...
         boolean failed;
+        boolean waitingForFetcher = false;
         synchronized(this) {
             if(finishedEncoding) {
                 if(logMINOR) Logger.minor(this, "Already finishedEncoding");
@@ -1223,11 +1225,16 @@ public class SplitFileFetcherStorage {
             if(logMINOR) Logger.minor(this, "Finished encoding");
             finishedEncoding = true;
             if(!cancelled && !completeViaTruncation) {
-                // For the non-truncation case, we wait until both the encoding and the callback
-                // have finished with the data, and then free the RAF.
-                if(!finishedFetcher) return;
+                waitingForFetcher = !finishedFetcher;
             }
             failed = cancelled;
+        }
+        if(allFinished() && !allSucceeded()) {
+            // No more blocks will be found, so fail *now*.
+            fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+            failed = true;
+        } else {
+            if(waitingForFetcher) return; // Waiting for the fetcher to finish so we can free the RAF.
         }
         if(completeViaTruncation && !failed) {
             // For the truncation case, we wait until the encoding has finished, and then call
