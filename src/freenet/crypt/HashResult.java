@@ -3,6 +3,7 @@ package freenet.crypt;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -71,7 +72,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 			h.writeTo(dos);
 	}
 
-	private void writeTo(DataOutputStream dos) throws IOException {
+	public void writeTo(OutputStream dos) throws IOException {
 		// Any given hash type has a fixed hash length, so just push the bytes.
 		dos.write(result);
 	}

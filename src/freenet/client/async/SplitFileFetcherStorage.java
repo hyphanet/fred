@@ -26,6 +26,8 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.FECCodec;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
+import freenet.crypt.HashType;
+import freenet.crypt.MultiHashOutputStream;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
@@ -462,7 +464,10 @@ public class SplitFileFetcherStorage {
             OutputStream cos = checksumOutputStream(os);
             BufferedOutputStream bos = new BufferedOutputStream(cos);
             try {
-                metadata.writeTo(new DataOutputStream(bos));
+                // Need something bigger than a CRC for this...
+                MultiHashOutputStream mos = new MultiHashOutputStream(bos, HashType.SHA256.bitmask);
+                metadata.writeTo(new DataOutputStream(mos));
+                mos.getResults()[0].writeTo(bos);
             } catch (MetadataUnresolvedException e) {
                 throw new FetchException(FetchException.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
             }
