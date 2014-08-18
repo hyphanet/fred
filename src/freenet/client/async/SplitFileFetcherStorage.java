@@ -1258,12 +1258,15 @@ public class SplitFileFetcherStorage {
     }
     
     private boolean allFinished() {
+        // First, are any of the segments still working, that is, are they able to send requests,
+        // or are they decoding/encoding?
         for(SplitFileFetcherSegmentStorage segment : segments) {
             if(!segment.isFinished()) return false;
         }
+        // We cannot proceed unless none of the cross-segments is decoding.
         if(crossSegments != null) {
             for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
-                if(!segment.isFinished()) return false;
+                if(segment.isDecoding()) return false;
             }
         }
         return true;

@@ -53,7 +53,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     private boolean cancelled;
     /** If true, the segment has completed. Once a segment decode starts, finished must not be set
      * until it exits. */
-    private boolean finished;
+    private boolean succeeded;
     private final FECCodec codec;
     /** Used in assigning blocks */
     private int counter;
@@ -87,7 +87,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                     totalFound++;
                 }
             }
-            if(tryDecode || finished || cancelled) return;
+            if(tryDecode || succeeded || cancelled) return;
             if(!found) {
                 Logger.error(this, "Block "+blockNo+" on "+segment+" not wanted by "+this);
                 return;
@@ -101,7 +101,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     }
     
     private synchronized void tryDecodeOrEncode() {
-        if(finished) return;
+        if(succeeded) return;
         if(tryDecode) return;
         if(cancelled) return;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
@@ -130,6 +130,7 @@ public class SplitFileFetcherCrossSegmentStorage {
                     synchronized(this) {
                         tryDecode = false;
                     }
+                    parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
                 }
                 return true;
             }
@@ -144,14 +145,12 @@ public class SplitFileFetcherCrossSegmentStorage {
         if(logMINOR) Logger.minor(this, "Trying to decode "+this+" for "+parent);
         boolean killed = false;
         synchronized(this) {
-            if(finished) return;
+            if(succeeded) return;
             if(cancelled) {
-                finished = true;
                 killed = true;
             }
         }
         if(killed) {
-            parent.finishedEncoding(this);
             return;
         }
         
@@ -199,11 +198,10 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
         
         synchronized(this) {
-            finished = true;
+            succeeded = true;
         }
         
         Logger.error(this, "Completed a cross-segment: decoded="+decoded+" encoded="+encoded);
-        parent.finishedEncoding(this);
     }
 
 
@@ -342,9 +340,9 @@ public class SplitFileFetcherCrossSegmentStorage {
         blockNumbers[counter] = blockNum;
         counter++;
     }
-
-    public synchronized boolean isFinished() {
-        return finished;
+    
+    public synchronized boolean isDecoding() {
+        return tryDecode;
     }
 
     public void writeFixedMetadata(DataOutputStream dos) throws IOException {
@@ -396,7 +394,7 @@ public class SplitFileFetcherCrossSegmentStorage {
     /** Check for blocks and try to decode. */
     public void restart() {
         synchronized(this) {
-            if(finished) return;
+            if(succeeded) return;
         }
         synchronized(this) {
             System.out.println("Cross-segment "+crossSegmentNumber+" : "+totalFound+"/"+dataBlockCount);
@@ -409,7 +407,7 @@ public class SplitFileFetcherCrossSegmentStorage {
         synchronized(this) {
             cancelled = true;
             if(tryDecode) return;
-            finished = true;
+            succeeded = true;
         }
         parent.finishedEncoding(this);
     }
