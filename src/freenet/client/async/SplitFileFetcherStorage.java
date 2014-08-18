@@ -1463,15 +1463,22 @@ public class SplitFileFetcherStorage {
      * already finished/decoding, we need to fail with DNF. If the segments fail to decode due to
      * data corruption, we will retry as usual. */
     public void finishedCheckingDatastoreOnLocalRequest() {
-        if(hasFinished()) return; // Don't need to do anything.
+        if(hasFinished()) {
+            setHasCheckedStore();
+            return; // Don't need to do anything.
+        }
         if(allDecodingOrFinished()) {
             // All segments are decoding.
             // If they succeed, we complete.
             // If they fail to decode, they will cause the getter to retry, and re-scan the 
             // datastore for the corrupted keys.
+            setHasCheckedStore();
             return;
         }
-        if(hasFinished()) return; // Don't need to do anything.
+        if(hasFinished()) {
+            setHasCheckedStore();
+            return; // Don't need to do anything.
+        }
         // Some segments still need data.
         // They're not going to get it.
         jobRunner.queueNormalOrDrop(new PersistentJob() {

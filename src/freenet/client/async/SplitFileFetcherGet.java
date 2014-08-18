@@ -81,14 +81,15 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     @Override
     public boolean preRegister(ClientContext context, boolean toNetwork) {
         if(!toNetwork) return false;
-        storage.setHasCheckedStore();
         // Notify clients of all the work we've done checking the datastore.
-        parent.parent.notifyClients(context);
         if(parent.localRequestOnly()) {
             storage.finishedCheckingDatastoreOnLocalRequest();
             return true;
+        } else {
+            storage.setHasCheckedStore();
         }
         parent.toNetwork();
+        parent.parent.notifyClients(context);
         return false;
     }
 
