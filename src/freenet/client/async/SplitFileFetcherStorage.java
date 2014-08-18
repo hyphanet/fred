@@ -1136,7 +1136,7 @@ public class SplitFileFetcherStorage {
         @Override
         public boolean run(ClientContext context) {
             try {
-                if(hasFinished()) return false;
+                if(isFinishing()) return false;
                 RAFLock lock = raf.lockOpen();
                 try {
                     for(SplitFileFetcherSegmentStorage segment : segments) {
@@ -1148,7 +1148,7 @@ public class SplitFileFetcherStorage {
                 }
                 return false;
             } catch (IOException e) {
-                if(hasFinished()) return false;
+                if(isFinishing()) return false;
                 Logger.error(this, "Failed writing metadata for "+SplitFileFetcherStorage.this+": "+e, e);
                 return false;
             }
@@ -1471,6 +1471,10 @@ public class SplitFileFetcherStorage {
 
     synchronized boolean hasFinished() {
         return cancelled || finishedFetcher;
+    }
+    
+    synchronized boolean isFinishing() {
+        return cancelled || finishedFetcher || finishedEncoding;
     }
 
     public void onFailure(MyKey key, FetchException fe) {
