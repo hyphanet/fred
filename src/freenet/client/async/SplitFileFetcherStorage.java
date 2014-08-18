@@ -1217,6 +1217,7 @@ public class SplitFileFetcherStorage {
                 if(logMINOR) Logger.minor(this, "Already finishedEncoding");
                 return;
             }
+            if(logMINOR) Logger.minor(this, "Finished encoding");
             finishedEncoding = true;
             if(!cancelled && !completeViaTruncation) {
                 // For the non-truncation case, we wait until both the encoding and the callback
