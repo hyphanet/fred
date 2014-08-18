@@ -1249,12 +1249,16 @@ public class SplitFileFetcherStorage {
         fetcher.onClosed();
     }
     
+    /** Called when a segment has finished. That is, either it was cancelled, or it failed, or it
+     * succeeded. */
     void finishedEncoding(SplitFileFetcherSegmentStorage segment) {
         if(logMINOR) Logger.minor(this, "Successfully decoded "+segment+" for "+this+" for "+fetcher);
         if(!allFinished()) return;
         finishedEncoding();
     }
     
+    /** Called when a cross-segment has finished decoding. It doesn't necessarily have a "finished"
+     * state, except if it was cancelled. */
     void finishedEncoding(SplitFileFetcherCrossSegmentStorage segment) {
         if(logMINOR) Logger.minor(this, "Successfully decoded "+segment+" for "+this+" for "+fetcher);
         if(!allFinished()) return;
