@@ -1084,6 +1084,9 @@ public class SplitFileFetcherStorage {
     private void maybeComplete() {
         if(allSucceeded()) {
             callSuccessOffThread();
+        } else if(allFinished() && !allSucceeded()) {
+            // Some failed.
+            fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
         }
     }
     
@@ -1230,7 +1233,7 @@ public class SplitFileFetcherStorage {
             // For the truncation case, we wait until the encoding has finished, and then call
             // the callback, which will truncate the file and pass it on.
             raf.close(); // DO NOT free!
-            callSuccessOffThread();
+            maybeComplete();
             return;
         } else {            
             closeOffThread();
