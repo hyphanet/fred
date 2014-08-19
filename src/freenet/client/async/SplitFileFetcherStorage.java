@@ -42,6 +42,7 @@ import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.LockableRandomAccessThing;
@@ -166,7 +167,7 @@ public class SplitFileFetcherStorage {
     private boolean cancelled;
     
     /** Errors. For now, this is not persisted (FIXME). */
-    private final FailureCodeTracker errors;
+    private FailureCodeTracker errors;
     final int maxRetries;
     /** Every cooldownTries attempts, a key will enter cooldown, and won't be re-tried for a period. */
     final int cooldownTries;
@@ -207,6 +208,7 @@ public class SplitFileFetcherStorage {
     /** Checksum implementation */
     final ChecksumChecker checksumChecker;
     private boolean hasCheckedDatastore;
+    private boolean dirtyGeneralProgress;
     static final long HAS_CHECKED_DATASTORE_FLAG = 1;
     /** Fixed value posted at the end of the file (if plaintext!) */
     static final long END_MAGIC = 0x28b32d99416eb6efL;
@@ -365,7 +367,7 @@ public class SplitFileFetcherStorage {
         this.offsetKeyList = storedBlocksLength + storedCrossCheckBlocksLength;
         this.offsetSegmentStatus = offsetKeyList + storedKeysLength;
         
-        byte[] generalProgress = appendChecksum(encodeGeneralProgress());
+        byte[] generalProgress = encodeGeneralProgress();
         
         if(persistent) {
             offsetGeneralProgress = offsetSegmentStatus + storedSegmentStatusLength;
@@ -818,39 +820,47 @@ public class SplitFileFetcherStorage {
                 // Must be after reading the metadata for the plain segments.
                 crossSegment.checkBlocks();
         }
-        readGeneralProgress();
+        readGeneralProgress(rafLength);
     }
     
-    static final int GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM = 8;
-    
-    private void readGeneralProgress() throws IOException {
+    private void readGeneralProgress(long rafLength) throws IOException {
         try {
-            byte[] buf = new byte[GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM];
-            this.preadChecksummed(offsetGeneralProgress, buf, 0, buf.length);
+            byte[] buf = preadChecksummedWithLength(offsetGeneralProgress, rafLength);
             ByteArrayInputStream bais = new ByteArrayInputStream(buf);
             DataInputStream dis = new DataInputStream(bais);
             long flags = dis.readLong();
             if((flags & HAS_CHECKED_DATASTORE_FLAG) != 0)
                 hasCheckedDatastore = true;
+            errors = new FailureCodeTracker(false, dis);
+            dis.close();
         } catch (ChecksumFailedException e) {
+            Logger.error(this, "Failed to read general progress: "+e);
             // Reset general progress
             this.hasCheckedDatastore = false;
+            this.errors = new FailureCodeTracker(false);
+        } catch (StorageFormatException e) {
+            Logger.error(this, "Failed to read general progress: "+e);
+            // Reset general progress
+            this.hasCheckedDatastore = false;
+            this.errors = new FailureCodeTracker(false);
         }
     }
 
     private byte[] encodeGeneralProgress() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        long flags = 0;
-        if(hasCheckedDatastore)
-            flags |= HAS_CHECKED_DATASTORE_FLAG;
         try {
+            OutputStream ccos = checksumChecker.checksumWriterWithLength(baos, new ArrayBucketFactory());
+            DataOutputStream dos = new DataOutputStream(ccos);
+            long flags = 0;
+            if(hasCheckedDatastore)
+                flags |= HAS_CHECKED_DATASTORE_FLAG;
             dos.writeLong(flags);
+            errors.writeFixedLengthTo(dos);
+            dos.close();
         } catch (IOException e) {
             throw new Error(e);
         }
         byte[] ret = baos.toByteArray();
-        assert(ret.length == GENERAL_PROGRESS_LENGTH_BEFORE_CHECKSUM);
         return ret;
     }
 
@@ -1154,6 +1164,7 @@ public class SplitFileFetcherStorage {
                 } finally {
                     lock.unlock();
                 }
+                writeGeneralProgress(false);
                 return false;
             } catch (IOException e) {
                 if(isFinishing()) return false;
@@ -1602,6 +1613,31 @@ public class SplitFileFetcherStorage {
         }
     }
 
+    byte[] preadChecksummedWithLength(long fileOffset, long fileLength) throws IOException, ChecksumFailedException, StorageFormatException {
+        byte[] checksumBuf = new byte[checksumLength];
+        RAFLock lock = raf.lockOpen();
+        byte[] lengthBuf = new byte[8];
+        byte[] buf;
+        int length;
+        try {
+            raf.pread(fileOffset, lengthBuf, 0, lengthBuf.length);
+            long len = new DataInputStream(new ByteArrayInputStream(lengthBuf)).readLong();
+            if(len > fileOffset + fileLength || len > Integer.MAX_VALUE || len < 0) 
+                throw new StorageFormatException("Bogus length "+len);
+            length = (int)len;
+            buf = new byte[length];
+            raf.pread(fileOffset+lengthBuf.length, buf, 0, length);
+            raf.pread(fileOffset+length+lengthBuf.length, checksumBuf, 0, checksumLength);
+        } finally {
+            lock.unlock();
+        }
+        if(!checksumChecker.checkChecksum(buf, 0, length, checksumBuf)) {
+            Arrays.fill(buf, 0, length, (byte)0);
+            throw new ChecksumFailedException();
+        }
+        return buf;
+    }
+
     /** Create an OutputStream that we can write formatted data to of a specific length. On 
      * close(), it checks that the length is as expected, computes the checksum, and writes the
      * data to the specified position in the file.
@@ -1650,14 +1686,20 @@ public class SplitFileFetcherStorage {
 
     public synchronized void setHasCheckedStore(ClientContext context) {
         hasCheckedDatastore = true;
+        dirtyGeneralProgress = true;
         if(!persistent) return;
-        byte[] generalProgress = appendChecksum(encodeGeneralProgress());
+        writeMetadataJob.run(context);
+    }
+
+    private synchronized void writeGeneralProgress(boolean force) {
+        if(!dirtyGeneralProgress && !force) return;
+        dirtyGeneralProgress = false;
+        byte[] generalProgress = encodeGeneralProgress();
         try {
             raf.pwrite(offsetGeneralProgress, generalProgress, 0, generalProgress.length);
         } catch (IOException e) {
             failOnDiskError(e);
         }
-        writeMetadataJob.run(context);
     }
 
     public synchronized boolean hasCheckedStore() {
