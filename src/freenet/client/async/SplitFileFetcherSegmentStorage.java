@@ -96,9 +96,12 @@ public class SplitFileFetcherSegmentStorage {
     /** True if we have not only downloaded and decoded, but also finished with encoding and 
      * queueing healing blocks. */
     private boolean finished;
-    /** True if the segment has been cancelled, has failed, ran out of retries or otherwise is no
-     * longer running but hasn't succeeded. */
+    /** True if the segment has been cancelled, has failed due to an internal error, etc. In which 
+     * case it is not interested in further blocks. Not true if it has run out of retries, in which
+     * case (for cross-segment) we may still be interested in blocks. */
     private boolean failed;
+    /** True if we've run out of retries. */
+    private boolean failedRetries;
     /** True if the metadata needs writing but isn't going to be written immediately. */
     private boolean metadataDirty;
     /** True if the metadata was corrupt and we need to innerDecode(). */
@@ -872,7 +875,7 @@ public class SplitFileFetcherSegmentStorage {
             }
         }
         if(failedBlocks >= checkBlocks) {
-            failed = true;
+            failedRetries = true;
         }
         dis.close();
     }
@@ -896,7 +899,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     public synchronized boolean isFinished() {
-        return finished || failed;
+        return finished || failed || failedRetries;
     }
     
     public synchronized boolean isDecodingOrFinished() {
@@ -938,6 +941,7 @@ public class SplitFileFetcherSegmentStorage {
         boolean kill = false;
         boolean wake = false;
         synchronized(this) {
+            if(tryDecode) return; // Don't count it in wierd race condition case.
             if(finished || failed || succeeded) return;
             if(blocksFound[blockNumber]) return;
             if(retries[blockNumber]++ == maxRetries) {
@@ -947,8 +951,13 @@ public class SplitFileFetcherSegmentStorage {
                 if(!parent.lastBlockMightNotBePadded()) target++;
                 if(failedBlocks >= target) {
                     kill = true;
-                    finished = true;
-                    failed = true;
+                    failedRetries = true;
+                    if(crossSegmentsByBlock == null) {
+                        // If not cross-segment, fail completely.
+                        // If cross-segment, we may still pick up blocks from elsewhere.
+                        finished = true;
+                        failed = true;
+                    }
                 }
             } else {
                 if(cooldownTries == 0 || retries[blockNumber] % cooldownTries == 0) {
@@ -974,8 +983,17 @@ public class SplitFileFetcherSegmentStorage {
             lazyWriteMetadata();
         if(givenUp)
             parent.failedBlock();
-        if(kill)
-            parent.failOnSegment(this);
+        if(kill) {
+            if(crossSegmentsByBlock == null) {
+                // Fail the whole splitfile immediately.
+                parent.failOnSegment(this);
+            } else {
+                // Could still succeed. But we're not gonna find any more blocks.
+                // Similar to DSOnly... finishedEncoding will fail eventually when all segments
+                // are finished and all cross-segments are not encoding.
+                parent.finishedEncoding(this);
+            }
+        }
         if(wake)
             parent.maybeClearCooldown();
     }
@@ -1092,7 +1110,7 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     synchronized boolean hasFailed() {
-        return failed;
+        return failed || failedRetries;
     }
 
     synchronized boolean[] copyDownloadedBlocks() {
@@ -1140,6 +1158,7 @@ public class SplitFileFetcherSegmentStorage {
         long cooldownTime = Long.MAX_VALUE; // Indicates all blocks have running requests.
         synchronized(this) {
             if(finished) return -1;
+            if(failedRetries) return -1;
             if(tryDecode) {
                 if(logMINOR) Logger.minor(this, "Segment decoding so not choosing a key on "+this);
                 return -1;
@@ -1223,14 +1242,14 @@ public class SplitFileFetcherSegmentStorage {
     }
 
     public synchronized long getOverallCooldownTime() {
-        if(finished || succeeded || failed) return 0;
+        if(finished || succeeded || failed || failedRetries) return 0;
         // Do not recalculate. Calculated in chooseRandomKey(). It's okay if this is smaller than 
         // the true value.
         return overallCooldownTime;
     }
 
     synchronized long getCooldownTime(int blockNumber) {
-        if(finished || succeeded || failed) return 0;
+        if(finished || succeeded || failed || failedRetries) return 0;
         if(blocksFound[blockNumber]) return 0;
         return cooldownTimes[blockNumber];
     }
