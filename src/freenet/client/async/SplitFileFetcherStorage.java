@@ -1494,10 +1494,12 @@ public class SplitFileFetcherStorage {
     public void onFailure(MyKey key, FetchException fe) {
         synchronized(this) {
             if(cancelled || finishedFetcher) return;
+            dirtyGeneralProgress = true;
         }
         errors.inc(fe.getMode());
         SplitFileFetcherSegmentStorage segment = segments[key.segmentNumber];
         segment.onNonFatalFailure(key.blockNumber);
+        lazyWriteMetadata();
     }
 
     public ClientKey getKey(MyKey key) {
