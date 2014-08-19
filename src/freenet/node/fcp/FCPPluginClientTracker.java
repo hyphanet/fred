@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.pluginmanager.FredPluginFCPServer;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -46,11 +47,16 @@ public final class FCPPluginClientTracker extends NativeThread {
      * 
      * Not a {@link ConcurrentHashMap} because the creation of clients is exposed to the FCP network interface and thus DoS would be possible: Java HashMaps
      * never shrink once they have reached a certain size.
-     * 
-     * FIXME: Use a {@link ReadWriteLock} for guarding this instead of bare synchronized() statements.
      */
     private final TreeMap<UUID, FCPPluginClientWeakReference> clientsByID = new TreeMap<UUID, FCPPluginClientWeakReference>();
-    
+
+    /**
+     * Lock to guard {@link #clientsByID} against concurrent modification.
+     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes - {@link ReadWriteLock} can do that faster than a regular Lock.
+     * (A {@link ReentrantReadWriteLock} because thats the only implementation of {@link ReadWriteLock}.)
+     */
+    private final ReentrantReadWriteLock clientsByIDLock = new ReentrantReadWriteLock();
+
     /**
      * Queue which monitors removed items of {@link #clientsByID}. Monitored in {@link #realRun()}.
      */
@@ -79,9 +85,14 @@ public final class FCPPluginClientTracker extends NativeThread {
      * 
      * FIXME: Document the existence and usage of this class at that function.
      */
-    synchronized void registerClient(FCPPluginClient client) {
-        // No duplicate checks needed: FCPPluginClient.getID() is a random UUID.
-        clientsByID.put(client.getID(), new FCPPluginClientWeakReference(client, disconnectedClientsQueue));
+   void registerClient(FCPPluginClient client) {
+        clientsByIDLock.writeLock().lock();
+        try {
+            // No duplicate checks needed: FCPPluginClient.getID() is a random UUID.
+            clientsByID.put(client.getID(), new FCPPluginClientWeakReference(client, disconnectedClientsQueue));
+        } finally {
+            clientsByIDLock.writeLock().unlock();
+        }
     }
     
     /**
@@ -99,8 +110,16 @@ public final class FCPPluginClientTracker extends NativeThread {
      *                                 Notice: The client does not necessarily have to be a plugin. The type of the Exception is similar to
      *                                 PluginNotFoundException so it matches what the send() functions of {@link FCPPluginClient} throw.
      */
-    public synchronized FCPPluginClient getClient(UUID clientID) throws PluginNotFoundException {
-        FCPPluginClientWeakReference ref = clientsByID.get(clientID);
+    public FCPPluginClient getClient(UUID clientID) throws PluginNotFoundException {
+        FCPPluginClientWeakReference ref = null;
+        
+        clientsByIDLock.readLock().lock();
+        try {
+            ref = clientsByID.get(clientID);
+        } finally {
+            clientsByIDLock.readLock().unlock();    
+        }
+        
         FCPPluginClient client = ref != null ? ref.get() : null;
         
         if(client == null)
@@ -125,7 +144,8 @@ public final class FCPPluginClientTracker extends NativeThread {
     public void realRun() {
         try {
             FCPPluginClientWeakReference disconnectedClient = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
-            synchronized(this) {
+            clientsByIDLock.writeLock().lock();
+            try {
                 FCPPluginClientWeakReference removedFromTree = clientsByID.remove(disconnectedClient.clientID);
                 
                 assert(disconnectedClient == removedFromTree);
@@ -133,6 +153,8 @@ public final class FCPPluginClientTracker extends NativeThread {
                     Logger.minor(this, "Garbage-collecting disconnected client: remaining clients = " + clientsByID.size()
                                            + "; client ID = " + disconnectedClient.clientID);
                 }
+            } finally {
+                clientsByIDLock.writeLock().unlock();    
             }
         } catch(InterruptedException e) {
             // We did setDaemon(true), which causes the JVM to exit even if the thread is still running: Daemon threads are force terminated during shutdown.
