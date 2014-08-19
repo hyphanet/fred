@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +13,7 @@ import java.util.Map;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.StorageFormatException;
 
 /**
  * Essentially a map of integer to incrementible integer.
@@ -230,4 +234,44 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		}
 		return false;
 	}
+	
+	private int MAGIC = 0xb605aa08;
+	private int VERSION = 1;
+	
+	public synchronized void writeFixedLengthTo(DataOutputStream dos) throws IOException {
+	    int upperLimit = 
+	        insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
+	    dos.writeInt(MAGIC);
+	    dos.writeInt(VERSION);
+	    dos.writeInt(upperLimit);
+	    for(int i=0;i<upperLimit;i++)
+	        dos.writeInt(getErrorCount(i));
+	}
+
+	/** Get number of errors of count mode */
+    public synchronized int getErrorCount(int mode) {
+        if(map == null) return 0;
+        Item item = map.get(mode);
+        return item == null ? 0 : item.x;
+    }
+    
+    public FailureCodeTracker(boolean insert, DataInputStream dis) throws IOException, StorageFormatException {
+        this.insert = insert;
+        if(dis.readInt() != MAGIC) 
+            throw new StorageFormatException("Bad magic for FailureCodeTracker");
+        if(dis.readInt() != VERSION)
+            throw new StorageFormatException("Bad version for FailureCodeTracker");
+        int upperLimit = 
+            insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
+        if(dis.readInt() != upperLimit)
+            throw new StorageFormatException("Bad upper limit for FailureCodeTracker");
+        for(int i=0;i<upperLimit;i++) {
+            int x = dis.readInt();
+            if(x < 0) throw new StorageFormatException("Negative error counts");
+            if(x == 0) continue;
+            if(map == null) map = new HashMap<Integer, Item>();
+            total += x;
+            map.put(i, new Item(x));
+        }
+    }
 }
