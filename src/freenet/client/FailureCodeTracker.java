@@ -186,6 +186,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	}
 
 	public synchronized boolean isOneCodeOnly() {
+	    if(map == null) return true;
 		return map.size() == 1;
 	}
 
