@@ -51,6 +51,7 @@ public class ClientPut extends ClientPutBase {
 	/** If true, we are inserting a binary blob: No metadata, no URI is generated. */
 	private final boolean binaryBlob;
 	private transient boolean compressing;
+	private transient boolean compressed;
 
         private static volatile boolean logMINOR;
 	static {
@@ -464,7 +465,7 @@ public class ClientPut extends ClientPutBase {
 	public COMPRESS_STATE isCompressing() {
 		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
 		synchronized(this) {
-			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
+			if(!compressed) return COMPRESS_STATE.WAITING; // An insert starts at compressing
 			// The progress message persists... so we need to know whether we have
 			// started compressing *SINCE RESTART*.
 			if(compressing) return COMPRESS_STATE.COMPRESSING;
@@ -475,6 +476,7 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	protected void onStartCompressing() {
 		synchronized(this) {
+		    if(compressed) return;
 			compressing = true;
 		}
 		if(client != null) {
@@ -488,7 +490,9 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	protected void onStopCompressing() {
 		synchronized(this) {
+		    if(compressed) return; // Race condition possible
 			compressing = false;
+			compressed = true;
 		}
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
