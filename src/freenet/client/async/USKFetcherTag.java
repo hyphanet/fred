@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import java.io.Serializable;
+
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
@@ -14,9 +16,10 @@ import freenet.support.io.NativeThread;
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-class USKFetcherTag implements ClientGetState, USKFetcherCallback {
+class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable {
 
-	/** For persistence */
+    private static final long serialVersionUID = 1L;
+    /** For persistence */
 	public final long nodeDBHandle;
 	/** The callback */
 	public final USKFetcherCallback callback;
