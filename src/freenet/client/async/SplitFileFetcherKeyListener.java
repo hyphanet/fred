@@ -139,6 +139,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         try {
             storage.preadChecksummed(storage.offsetSegmentBloomFilters, segmentsFilterBuffer, 0, segmentsFilterBuffer.length);
         } catch (ChecksumFailedException e) {
+            Logger.error(this, "Checksummed read for segment filters at "+storage.offsetSegmentBloomFilters+" failed for "+this+": "+e);
             mustRegenerateSegmentFilters = true;
         }
         ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
@@ -159,6 +160,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
             try {
                 storage.preadChecksummed(storage.offsetMainBloomFilter, filterBuffer, 0, mainBloomFilterSizeBytes);
             } catch (ChecksumFailedException e) {
+                Logger.error(this, "Checksummed read for main filters at "+storage.offsetMainBloomFilter+" failed for "+this+": "+e);
                 mustRegenerateMainFilter = true;
             }
         } else {
