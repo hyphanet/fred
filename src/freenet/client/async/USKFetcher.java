@@ -386,51 +386,69 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		@Override
 		public void onDNF(ClientContext context) {
-			checker = null;
-			dnf = true;
+		    synchronized(this) {
+		        checker = null;
+		        dnf = true;
+		    }
 			USKFetcher.this.onDNF(this, context);
 		}
 		@Override
 		public void onSuccess(ClientSSKBlock block, ClientContext context) {
-			checker = null;
-			succeeded = true;
+		    synchronized(this) {
+		        checker = null;
+		        succeeded = true;
+		    }
 			USKFetcher.this.onSuccess(this, false, block, context);
 		}
 		
 		@Override
 		public void onFatalAuthorError(ClientContext context) {
-			checker = null;
+		    synchronized(this) {
+		        checker = null;
+		    }
 			// Counts as success except it doesn't update
 			USKFetcher.this.onSuccess(this, true, null, context);
 		}
 		
 		@Override
 		public void onNetworkError(ClientContext context) {
-			checker = null;
+		    synchronized(this) {
+		        checker = null;
+		    }
 			// Not a DNF
 			USKFetcher.this.onFail(this, context);
 		}
 		
 		@Override
 		public void onCancelled(ClientContext context) {
-			checker = null;
+		    synchronized(this) {
+		        checker = null;
+		    }
 			USKFetcher.this.onCancelled(this, context);
 		}
 		
 		public void cancel(ClientContext context) {
 			cancelled = true;
+            USKChecker c;
+            synchronized(this) {
+                c = checker;
+            }
 			if(checker != null)
 				checker.cancel(context);
 			onCancelled(context);
 		}
 		
 		public void schedule(ClientContext context) {
-			if(checker == null) {
+		    USKChecker c;
+		    synchronized(this) {
+		        c = checker;
+		    }
+			if(c == null) {
 				if(logMINOR)
 					Logger.minor(this, "Checker == null in schedule() for "+this, new Exception("debug"));
 			} else {
-				assert(!checker.persistent());
-				checker.schedule(context);
+				assert(!c.persistent());
+				c.schedule(context);
 			}
 		}
 		
@@ -472,7 +490,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			return everInCooldown;
 		}
 		public void reloadPollParameters(ClientContext context) {
-			USKChecker c = checker;
+			USKChecker c;
+			synchronized(this) {
+			    c = checker;
+			}
 			if(c == null) return;
 			c.onChangedFetchContext(context);
 		}
