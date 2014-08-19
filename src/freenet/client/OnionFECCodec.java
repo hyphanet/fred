@@ -5,6 +5,7 @@ import java.lang.ref.SoftReference;
 import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.support.LRUMap;
 
 public class OnionFECCodec extends FECCodec {
@@ -152,6 +153,34 @@ public class OnionFECCodec extends FECCodec {
         int k = dataBlocks;
         int matrixSize = n*k*2; // char[] of n*k
         return matrixSize*3; // Very approximately, the last one absorbing some columns and fixed overhead.
+    }
+    
+    @Override
+    public int getCheckBlocks(int dataBlocks, CompatibilityMode compatibilityMode) {
+        /**
+         * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
+         * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
+         * we have to have some redundancy at the duplicating blocks level because we do use
+         * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
+         * but generally the key will fall out of the caches within days. So long term, it's 3.
+         * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
+         * all FEC.
+         */
+        int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_SCALING_BLOCKS_PER_SEGMENT;
+        if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
+            checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
+        // An extra block for anything below the limit.
+        checkBlocks++;
+        // Keep it within 256 blocks.
+        if(dataBlocks < 256 && dataBlocks + checkBlocks > 256)
+            checkBlocks = 256 - dataBlocks;
+        if(compatibilityMode == InsertContext.CompatibilityMode.COMPAT_1250 || compatibilityMode == InsertContext.CompatibilityMode.COMPAT_1250_EXACT) {
+            // Pre-1250, redundancy was always 100% or less.
+            // Builds of that period using the native FEC (ext #26) will segfault sometimes on >100% redundancy.
+            // So limit check blocks to data blocks.
+            if(checkBlocks > dataBlocks) checkBlocks = dataBlocks;
+        }
+        return checkBlocks;
     }
 
 }

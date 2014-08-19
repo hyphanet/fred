@@ -1,5 +1,7 @@
 package freenet.client;
 
+import freenet.client.InsertContext.CompatibilityMode;
+
 /** Simple in-memory-only API for FEC encoding/decoding. Does not queue or throttle; see 
  * MemoryLimitedJobRunner for how to deal with that. Caches and creates individual codec engines
  * as needed. */
@@ -50,5 +52,13 @@ public abstract class FECCodec {
             throw new IllegalArgumentException();
         }
     }
+
+    /** Get the recommended number of check blocks per segment for a given number of data blocks 
+     * for a given compatibility mode.
+     * @param dataBlocks The number of data blocks per segment.
+     * @param cmode The compatibility mode (so we can exactly mimic the behaviour of older builds
+     * when reinserting files).
+     */
+    public abstract int getCheckBlocks(int dataBlocks, CompatibilityMode cmode);
 
 }
