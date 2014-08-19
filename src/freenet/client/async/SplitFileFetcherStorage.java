@@ -1303,6 +1303,7 @@ public class SplitFileFetcherStorage {
      * @param e
      */
     public void fail(final FetchException e) {
+        if(logMINOR) Logger.minor(this, "Failing "+this+" with error "+e+" and codes "+errors);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
             
             @Override
