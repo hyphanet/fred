@@ -184,8 +184,14 @@ public class InsertException extends Exception implements Cloneable {
 	/** Too many files in a directory in a site insert */
 	public static final int TOO_MANY_FILES = 13;
 	
+	/** There will never be more error codes than this constant. Must not change, used for some
+	 * data structures. */
+	public static final int UPPER_LIMIT_ERROR_CODE = 1024;
+	
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
+	    if(mode >= UPPER_LIMIT_ERROR_CODE)
+	        throw new IllegalArgumentException("Bogus error code "+mode);
 		String ret = NodeL10n.getBase().getString("InsertException.longError."+mode);
 		if(ret == null)
 			return "Unknown error "+mode;

@@ -488,6 +488,10 @@ public class FetchException extends Exception implements Cloneable {
 	public static final int NOT_ENOUGH_DISK_SPACE = 37;
 	
 	private static final int MAX_ERROR_CODE = 37;
+	
+	/** There will never be more error codes than this constant. Must not change, used for some
+	 * data structures. */
+	public static final int UPPER_LIMIT_ERROR_CODE = 1024;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -687,7 +691,7 @@ public class FetchException extends Exception implements Cloneable {
 	}
 
     public static boolean isErrorCode(int code) {
-        return code >= 0 && code <= MAX_ERROR_CODE;
+        return code >= 0 && code <= MAX_ERROR_CODE && code < UPPER_LIMIT_ERROR_CODE;
     }
 
 }
