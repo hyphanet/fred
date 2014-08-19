@@ -231,6 +231,9 @@ public class FetchException extends Exception implements Cloneable {
 
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
+		if(errorCodes.isEmpty()) {
+		    Logger.error(this, "Failing with no error codes?!", new Exception("error"));
+		}
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
