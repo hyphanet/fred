@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
@@ -38,9 +39,10 @@ import freenet.support.io.ResumeFailedException;
  * Then hand it off to SimpleFileInserter.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-class SingleFileInserter implements ClientPutState {
+class SingleFileInserter implements ClientPutState, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	
 	static {

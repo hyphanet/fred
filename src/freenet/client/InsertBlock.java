@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.Serializable;
+
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -10,9 +12,10 @@ import freenet.support.api.Bucket;
  * Class to contain everything needed for an insert.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class InsertBlock {
+public class InsertBlock implements Serializable {
 
-	private Bucket data;
+    private static final long serialVersionUID = 1L;
+    private Bucket data;
 	private boolean isFreed;
 	public FreenetURI desiredURI;
 	public ClientMetadata clientMetadata;
