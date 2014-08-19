@@ -135,8 +135,8 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	}
 
     @Override
-    public void onResume(ClientContext context) {
-        // Do nothing.
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        super.onResume(context);
     }
 
     @Override
