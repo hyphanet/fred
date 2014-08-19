@@ -183,11 +183,14 @@ public class InsertException extends Exception implements Cloneable {
 	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
 	/** Too many files in a directory in a site insert */
 	public static final int TOO_MANY_FILES = 13;
+	/** File being uploaded is bigger than maximum supported size */
+    public static final int TOO_BIG = 14;
+    
 	
 	/** There will never be more error codes than this constant. Must not change, used for some
 	 * data structures. */
 	public static final int UPPER_LIMIT_ERROR_CODE = 1024;
-	
+
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
 	    if(mode >= UPPER_LIMIT_ERROR_CODE)
@@ -221,6 +224,7 @@ public class InsertException extends Exception implements Cloneable {
 		case CANCELLED:
 		case META_STRINGS_NOT_SUPPORTED:
 		case BINARY_BLOB_FORMAT_ERROR:
+		case TOO_BIG:
 			return true;
 		case BUCKET_ERROR: // maybe
 		case INTERNAL_ERROR: // maybe
