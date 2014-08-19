@@ -902,10 +902,6 @@ public class SplitFileFetcherSegmentStorage {
         return finished || failed || failedRetries;
     }
     
-    public synchronized boolean isDecodingOrFinished() {
-        return finished || failed || succeeded || tryDecode;
-    }
-    
     public synchronized boolean hasSucceeded() {
         return succeeded;
     }

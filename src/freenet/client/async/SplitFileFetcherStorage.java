@@ -1287,25 +1287,6 @@ public class SplitFileFetcherStorage {
         return true;
     }
     
-    private boolean allDecodingOrFinished() {
-        for(SplitFileFetcherSegmentStorage segment : segments) {
-            if(!segment.isDecodingOrFinished()) return false;
-        }
-        return true;
-    }
-    
-    private boolean anySegmentsDecoding() {
-        for(SplitFileFetcherSegmentStorage segment : segments) {
-            if(segment.isDecoding()) return true;
-        }
-        if(crossSegments != null) {
-            for(SplitFileFetcherCrossSegmentStorage segment : crossSegments) {
-                if(segment.isDecoding()) return true;
-            }
-        }
-        return false;
-    }
-
     /** Fail the request, off-thread. The callback will call cancel etc, so it won't immediately
      * shut down the storage.
      * @param e
