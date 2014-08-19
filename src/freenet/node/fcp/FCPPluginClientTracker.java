@@ -147,8 +147,6 @@ public final class FCPPluginClientTracker extends NativeThread {
 
 
     /** For {@link Logger#registerClass(Class)} */
-    private static transient volatile boolean logDEBUG = false;
-    /** For {@link Logger#registerClass(Class)} */
     private static transient volatile boolean logMINOR = false;
     
     static {
