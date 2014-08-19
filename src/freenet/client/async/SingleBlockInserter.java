@@ -478,7 +478,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				key = encodedBlock.getClientKey();
 				k = key;
 				if(block.persistent) {
-					req.setGeneratedKey(key);
+				    context.jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+                        @Override
+                        public boolean run(ClientContext context) {
+                            orig.onEncode(key, context);
+                            return true;
+                        }
+				        
+				    });
 				} else {
 					orig.onEncode(key, context);
 				}
