@@ -34,9 +34,6 @@ import freenet.support.io.NativeThread;
  * <p>After constructing an object of this class, you must call {@link #start()} to start its garbage collection thread.<br/>
  * For shutdown, no action is required: The thread will be a daemon thread and thus the JVM will deal with shutdown.</p> 
  * 
- * FIXME: Implement similar to class plugins.WebOfTrust.ui.fcp.FCPInterface.ClientTrackerDaemon. Keep an object of FCPPluginClientTracker at FCPServer and
- * add public interface functions registerFCPPluginClient(), getFCPPluginClient().
- * 
  * @author xor (xor@freenetproject.org)
  */
 public final class FCPPluginClientTracker extends NativeThread {
