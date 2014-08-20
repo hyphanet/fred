@@ -122,9 +122,10 @@ public class PluginRespirator {
 	 *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
 	 * @param messageHandler An object of your plugin which implements the {@link FredPluginFCPClient} interface. Its purpose is to handle FCP messages which
 	 *                       the remote plugin sends back to your plugin.
-	 * @return A {@link FCPPluginClient} representing the connection. You are encouraged to keep it in memory and use it for as long as you need it. Notice 
-	 *         especially that keeping it in memory won't block unloading of the remote plugin. If the remote plugin is unloaded, the send-functions will fail.
-	 *         Then you have to create a fresh connection with this function.
+	 * @return A {@link FCPPluginClient} representing the connection. <b>You are encouraged to keep it in memory and use it for as long as you need it.</b> 
+	 *         Notice especially that keeping it in memory won't block unloading of the server plugin. If the server plugin is unloaded, the send-functions will
+	 *         fail. To get reconnected once the server plugin is loaded again, you must obtain a fresh client from this function: Existing clients will stay
+	 *         disconnected.
 	 */
     public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException {
         FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, pluginName, messageHandler);
