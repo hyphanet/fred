@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,10 +41,10 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.MutableBoolean;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
@@ -69,7 +70,9 @@ public class FCPServer implements Runnable, DownloadCache {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-	final WeakHashMap<String, FCPClient> rebootClientsByName;
+	/** Stores {@link FCPPluginClient} objects by ID and automatically garbage collects them so we don't have to bloat this class with that. */
+	final FCPPluginClientTracker pluginClientTracker;
+	final WeakHashMap<String,FCPClient> rebootClientsByName;
 	final FCPClient globalRebootClient;
 	FCPClient globalForeverClient;
 	final FetchContext defaultFetchContext;
@@ -94,6 +97,9 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.neverDropAMessage = neverDropAMessage;
 		this.maxMessageQueueLength = maxMessageQueueLength;
 		rebootClientsByName = new WeakHashMap<String, FCPClient>();
+		
+		pluginClientTracker = new FCPPluginClientTracker();
+		// pluginClientTracker.start() is called in maybeStart()
 
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
@@ -149,6 +155,10 @@ public class FCPServer implements Runnable, DownloadCache {
 			System.out.println("Not starting FCP server as it's disabled");
 			this.networkInterface = null;
 		}
+		
+		// We need to start the FCPPluginClientTracker no matter whether this.enabled == true:
+		// If networked FCP is disabled, plugins might still communicate via non-networked intra-node FCP.
+		pluginClientTracker.start();
 	}
 
 	@Override
@@ -463,6 +473,26 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("FcpServer."+key, pattern, value);
+	}
+	
+	/**
+	 * <p><b>The documentation of {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} applies to this function.</b></p>
+	 * 
+	 * <p>Notice: Unregistration is not necessary.</p>
+	 * 
+	 * @see FCPPluginClientTracker The JavaDoc of FCPPluginClientTracker explains the general purpose of this mechanism.
+	 */
+	public void registerPluginClient(FCPPluginClient client) {
+	   pluginClientTracker.registerClient(client);
+	}
+	
+	/**
+	 * <p><b>The documentation of {@link FCPPluginClientTracker#getClient(UUID)} applies to this function.</b></p>
+	 * 
+	 * @see FCPPluginClientTracker The JavaDoc of FCPPluginClientTracker explains the general purpose of this mechanism.
+	 */
+	public FCPPluginClient getPluginClient(UUID clientID) throws PluginNotFoundException {
+	    return pluginClientTracker.getClient(clientID);
 	}
 
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
