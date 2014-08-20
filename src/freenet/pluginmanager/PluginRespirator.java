@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.DatabaseDisabledException;
@@ -128,28 +129,30 @@ public class PluginRespirator {
 	 *         disconnected.
 	 */
     public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException {
-        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, pluginName, messageHandler);
-        // TODO FIXME: Certain plugins, notably WOT, might want to initiate communication with the client when certain events happen.
-        // They need something to store in their database to reference the client, and that would be the ID. So we need to register clients by ID and allow
-        // getting them by ID.
-        // So please implement the following function. It should put the client into a table which allows querying it by its ID.
-        // This should come together with a function FCPServer.getFCPPluginClientByID().
-        // Maybe the usage of the FCPPluginClient constructor should also be moved to the register* function.
-        //
-        // UPDATE: I've thought about the TODO again, the best way to implement it will be to move FCPConnectionHandler.getPluginClient(String serverPluginName)
-        // and its backend table to FCPServer. It should then be changed to be getPluginClient(String serverPluginName, String clientID).
-        // The table should be indexed by the concatenation of those two parameters. There will be two users of this function:
-        // 1. FCPConnectionHandler, which owned it previously. It will set clientID to be the ID of the FCPConnectionHandler itself. This will ensure that for
-        // one FCPConnectionHandler, there can only be one client for each serverPluginName as it is required already by the current implementation
-        // of that function.
-        // 2. This function here. It will use a random UUID as client ID. This will ensure that each call to this function is assumed to be a fresh client.
-        //
-        // The only issue with the above is that for FCPPluginClients created by FCPConnectionHandler, they will should be stored as a hard reference connected
-        // to the FCPConnectionHandler thread to prevent them from getting GCed while the connection is up.
-        // For FCPPluginClients created by this function, they should be stored as a WeakReference because we want them to be GCed when the client plugin
-        // does not use them anymore. So the above ideas at UPDATE likely won't work :|
-        node.clientCore.getFCPServer().registerFCPPluginClient(client);
+        // TODO FIXME: Move this to a new function FCPServer.createIntraNodeFCPPluginClient()
+        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, pluginName, messageHandler); 
+        node.clientCore.getFCPServer().registerPluginClient(client);
         return client;
+    }
+    
+    /**
+     * Allows FCP server plugins, that is plugins which implement {@link FredPluginFCPServer}, to obtain an existing client connection by its ID - if the 
+     * client is still connected.<br/>
+     * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the {@link FCPPluginClient} in memory after they have received
+     * it from {@link #connecToOtherPlugin(String, FredPluginFCPClient)}. If they did not keep a hard reference and only stored the ID, the
+     * {@link FCPPluginClient} would be garbage collected and thus considered as disconnected.
+     * 
+     * @see FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)
+     *      The message handler at FredPluginFCPServer provides an explanation of when to use this.
+     * @param clientID The ID as obtained by {@link FCPPluginClient#getID()}
+     * @return The client if it is still connected.
+     * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.
+     *                                 Notice: The client does not necessarily have to be a plugin, it can also be connected via networked FCP.
+     *                                 The type of the Exception is PluginNotFoundException so it matches what the send() functions of {@link FCPPluginClient}
+     *                                 throw and you only need a single catch-block.
+     */
+    public FCPPluginClient getPluginClientByID(UUID clientID) throws PluginNotFoundException {
+        return node.clientCore.getFCPServer().getPluginClient(clientID);
     }
 
 	/** Get the ToadletContainer, which manages HTTP. You can then register
