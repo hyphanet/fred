@@ -7,12 +7,14 @@ package freenet.io.comm;
  * Thrown when the node is disconnected in the middle of (or
  * at the beginning of) a waitFor(). Not the same as 
  * NotConnectedException.
+ * 
+ * Notice: For performance reasons, this does not provide a stack trace.
  */
 public class DisconnectedException extends Exception {
 	private static final long serialVersionUID = -1;
 
     @Override
-    public final synchronized Throwable fillInStackTrace() {
+    public final Throwable fillInStackTrace() {
         return null;
     }
 }
