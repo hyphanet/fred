@@ -52,7 +52,7 @@ public final class FCPPluginClientTracker extends NativeThread {
      * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes - {@link ReadWriteLock} can do that faster than a regular Lock.
      * (A {@link ReentrantReadWriteLock} because thats the only implementation of {@link ReadWriteLock}.)
      */
-    private final ReentrantReadWriteLock clientsByIDLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock clientsByIDLock = new ReentrantReadWriteLock();
 
     /**
      * Queue which monitors removed items of {@link #clientsByID}. Monitored in {@link #realRun()}.
