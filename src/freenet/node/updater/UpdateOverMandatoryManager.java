@@ -1162,9 +1162,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, ctx,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, null, true, updateManager.node.clientCore.clientContext, null, -1);
 		try {
-			updateManager.node.clientCore.clientContext.start(putter, false);
+			updateManager.node.clientCore.clientContext.start(putter);
 		} catch(InsertException e1) {
 			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
 		} catch (PersistenceDisabledException e) {

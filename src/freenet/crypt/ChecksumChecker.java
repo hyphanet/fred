@@ -87,5 +87,9 @@ public abstract class ChecksumChecker {
     public void writeAndChecksum(ObjectOutputStream oos, byte[] buf) throws IOException {
         writeAndChecksum(oos, buf, 0, buf.length);
     }
+
+    public int lengthAndChecksumOverhead() {
+        return 8 + checksumLength();
+    }
     
 }

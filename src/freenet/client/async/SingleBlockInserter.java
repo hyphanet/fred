@@ -81,7 +81,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int token; // for e.g. splitfiles
 	private final Object tokenObject;
 	final boolean isMetadata;
-	final boolean getCHKOnly;
 	final int sourceLength;
 	private int consecutiveRNFs;
 	private boolean isSSK;
@@ -102,7 +101,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		sourceLength = 0;
 		parent = null;
 		isMetadata = false;
-		getCHKOnly = false;
 		extraInserts = 0;
 		errors = null;
 		dontSendEncoded = false;
@@ -133,7 +131,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
 		super(persistent, realTimeFlag);
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
@@ -152,7 +150,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(sourceData == null) throw new NullPointerException();
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
-		this.getCHKOnly = getCHKOnly;
 		isSSK = uri.getKeyType().toUpperCase().equals("SSK");
 		if(addToParent) {
 			parent.addMustSucceedBlocks(1);
@@ -344,7 +341,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return;
 			}
 		}
-		if(getCHKOnly) {
+		if(ctx.getCHKOnly) {
 			tryEncode(context);
 			onSuccess(null, context);
 		} else {
@@ -382,7 +379,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return;
 		}
 		synchronized(this) {
-			if(extraInserts > 0 && !getCHKOnly) {
+			if(extraInserts > 0 && !ctx.getCHKOnly) {
 				if(++completedInserts <= extraInserts) {
 					if(logMINOR) Logger.minor(this, "Completed inserts "+completedInserts+" of extra inserts "+extraInserts+" on "+this);
 					return; // Let it repeat until we've done enough inserts. It hasn't been unregistered yet.

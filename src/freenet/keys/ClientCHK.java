@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Random;
 
 import freenet.support.Base64;
 import freenet.support.ByteArrayWrapper;
@@ -43,6 +44,17 @@ public class ClientCHK extends ClientKey implements Serializable {
     public static final short EXTRA_LENGTH = 5;
     /** The length of the decryption key */
     public static final short CRYPTO_KEY_LENGTH = 32;
+    
+    /** Useful for e.g. length checks */
+    public static final ClientCHK TEST_KEY;
+    
+    static {
+        try {
+            TEST_KEY = new ClientCHK(FreenetURI.generateRandomCHK(new Random()));
+        } catch (MalformedURLException e) {
+            throw new Error(e);
+        }
+    }
     
     private ClientCHK(ClientCHK key) {
     	this.routingKey = key.routingKey.clone();

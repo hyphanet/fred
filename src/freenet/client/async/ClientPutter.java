@@ -44,8 +44,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private ClientPutState currentState;
 	/** Whether the insert has finished. */
 	private boolean finished;
-	/** If true, don't actually insert the data, just figure out what the final key would be. */
-	private final boolean getCHKOnly;
 	/** Are we inserting metadata? */
 	private final boolean isMetadata;
 	private boolean startedStarting;
@@ -81,7 +79,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		targetFilename = null;
 		overrideSplitfileCrypto = null;
 		isMetadata = false;
-		getCHKOnly = false;
 		data = null;
 		ctx = null;
 		cm = null;
@@ -106,13 +103,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
-			short priorityClass, boolean getCHKOnly,
+			short priorityClass,
 			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {
 		super(priorityClass, client);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
-		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
 		this.targetURI = targetURI.clone();
@@ -133,20 +129,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public void start(boolean earlyEncode, ClientContext context) throws InsertException {
-		start(earlyEncode, false, context);
+	public void start(ClientContext context) throws InsertException {
+		start(false, context);
 	}
 
 	/** Start the insert.
-	 * @param earlyEncode If true, try to find the final URI as quickly as possible, and insert the upper
-	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
-	 * because an attacker can usually only identify the datastream once he has the top block, or once you
-	 * have announced the key.
 	 * @param restart If true, restart the insert even though it has completed before.
 	 * @param context Contains some useful transient fields such as the schedulers.
 	 * @throws InsertException If the insert cannot be started for some reason.
 	 */
-	public boolean start(boolean earlyEncode, boolean restart, ClientContext context) throws InsertException {
+	public boolean start(boolean restart, ClientContext context) throws InsertException {
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		byte cryptoAlgorithm;
@@ -201,7 +193,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
+									false, false, null, null, false, targetFilename, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context);
@@ -516,12 +508,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	/** Restart the insert.
-	 * @param earlyEncode See the description on @link start().
 	 * @return True if the insert restarted successfully.
 	 * @throws InsertException If the insert could not be restarted for some reason.
 	 * */
-	public boolean restart(boolean earlyEncode, ClientContext context) throws InsertException {
-		return start(earlyEncode, true, context);
+	public boolean restart(ClientContext context) throws InsertException {
+		return start(true, context);
 	}
 
 	@Override

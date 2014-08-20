@@ -51,7 +51,7 @@ public class ClientPut extends ClientPutBase {
 	/** If true, we are inserting a binary blob: No metadata, no URI is generated. */
 	private final boolean binaryBlob;
 	private transient boolean compressing;
-	private transient boolean compressed;
+	private boolean compressed;
 
         private static volatile boolean logMINOR;
 	static {
@@ -147,7 +147,7 @@ public class ClientPut extends ClientPutBase {
 
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
-				getCHKOnly, isMetadata, 
+				isMetadata, 
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey, -1);
 	}
 	
@@ -257,7 +257,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
-				getCHKOnly, isMetadata,
+				isMetadata,
 				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey, message.metadataThreshold);
 	}
 	
@@ -290,7 +290,7 @@ public class ClientPut extends ClientPutBase {
 			if(finished) return;
 		}
 		try {
-			putter.start(earlyEncode, false, context);
+			putter.start(false, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
@@ -414,7 +414,7 @@ public class ClientPut extends ClientPutBase {
 					cache.updateStarted(identifier, false);
 				}
 			}
-			if(putter.restart(earlyEncode, context)) {
+			if(putter.restart(context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;

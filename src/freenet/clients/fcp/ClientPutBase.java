@@ -11,7 +11,6 @@ import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.ExpectedHashesEvent;
-import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
@@ -30,7 +29,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
     private static final long serialVersionUID = 1L;
     /** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
 	final InsertContext ctx;
-	final boolean getCHKOnly;
 
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -54,9 +52,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	// ClientPutter level).
 	protected transient FCPMessage progressMessage;
 	
-	/** Whether to force an early generation of the CHK */
-	protected final boolean earlyEncode;
-
 	protected final FreenetURI publicURI;
 	
 	/** Metadata returned instead of URI */
@@ -79,8 +74,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global);
-		this.getCHKOnly = getCHKOnly;
 		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
+        ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -91,7 +86,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		ctx.setCompatibilityMode(compatibilityMode);
 		ctx.localRequestOnly = localRequestOnly;
-		this.earlyEncode = earlyEncode;
+		ctx.earlyEncode = earlyEncode;
 		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
@@ -99,8 +94,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	protected ClientPutBase() {
 	    // For serialization.
 	    ctx = null;
-	    getCHKOnly = false;
-	    earlyEncode = false;
 	    publicURI = null;
 	}
 
@@ -119,8 +112,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global);
-		this.getCHKOnly = getCHKOnly;
 		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
+        ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -132,7 +125,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.localRequestOnly = localRequestOnly;
 		ctx.setCompatibilityMode(compatMode);
 		ctx.ignoreUSKDatehints = ignoreUSKDatehints;
-		this.earlyEncode = earlyEncode;
+		ctx.earlyEncode = earlyEncode;
 		publicURI = this.uri.deriveRequestURIFromInsertURI();
 	}
 
@@ -271,6 +264,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	@Override
 	public void receive(final ClientEvent ce, ClientContext context) {
 		if(finished) return;
+		if(logMINOR) Logger.minor(this, "Receiving event "+ce+" on "+this);
 		if(ce instanceof SplitfileProgressEvent) {
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 

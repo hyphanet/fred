@@ -235,25 +235,26 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority) throws InsertException {
 		InsertContext context = getInsertContext(true);
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, context);
+		context.getCHKOnly = getCHKOnly;
+		return insert(insert, filenameHint, isMetadata, priority, context);
 	}
 	
 	@Override
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority, InsertContext ctx) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, false, priority, ctx);
+	public FreenetURI insert(InsertBlock insert, String filenameHint, short priority, InsertContext ctx) throws InsertException {
+		return insert(insert, filenameHint, false, priority, ctx);
 	}
 	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, priority, ctx, null);
+	public FreenetURI insert(InsertBlock insert, String filenameHint, boolean isMetadata, short priority, InsertContext ctx) throws InsertException {
+		return insert(insert, filenameHint, isMetadata, priority, ctx, null);
 	}
 	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
+	public FreenetURI insert(InsertBlock insert, String filenameHint, boolean isMetadata, short priority, InsertContext ctx, byte[] forceCryptoKey) throws InsertException {
 		PutWaiter pw = new PutWaiter(this);
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				getCHKOnly, isMetadata, filenameHint, false, core.clientContext, forceCryptoKey, -1);
+				isMetadata, filenameHint, false, core.clientContext, forceCryptoKey, -1);
 		try {
-			core.clientContext.start(put, false);
+			core.clientContext.start(put);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -261,17 +262,17 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	@Override
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, cb, priorityClass);
+	public ClientPutter insert(InsertBlock insert, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
+		return insert(insert, filenameHint, isMetadata, ctx, cb, priorityClass);
 	}
 	
 	@Override
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
+	public ClientPutter insert(InsertBlock insert, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priority,
-				getCHKOnly, isMetadata, filenameHint, false, core.clientContext, null, -1);
+				isMetadata, filenameHint, false, core.clientContext, null, -1);
 		try {
-			core.clientContext.start(put, false);
+			core.clientContext.start(put);
 		} catch (PersistenceDisabledException e) {
 			// Impossible
 		}
@@ -311,7 +312,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter(this);
 		DefaultManifestPutter putter;
         try {
-            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, false, false, forceCryptoKey, core.clientContext);
+            putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, forceCryptoKey, core.clientContext);
         } catch (TooManyFilesInsertException e1) {
             throw new InsertException(InsertException.TOO_MANY_FILES);
         }

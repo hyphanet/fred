@@ -169,14 +169,14 @@ public class ClientContext {
 	 * @throws DatabaseDisabledException If the insert is persistent and the database is disabled (e.g. 
 	 * because it is encrypted and the user hasn't entered the password yet).
 	 */
-	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException, PersistenceDisabledException {
+	public void start(final ClientPutter inserter) throws InsertException, PersistenceDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new PersistentJob() {
 				
 				@Override
 				public boolean run(ClientContext context) {
 					try {
-						inserter.start(earlyEncode, false, context);
+						inserter.start(false, context);
 					} catch (InsertException e) {
 						inserter.client.onFailure(e, inserter);
 					}
@@ -185,7 +185,7 @@ public class ClientContext {
 				
 			}, NativeThread.NORM_PRIORITY);
 		} else {
-			inserter.start(earlyEncode, false, this);
+			inserter.start(false, this);
 		}
 	}
 

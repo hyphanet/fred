@@ -99,9 +99,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ArchivePutHandler extends PutHandler {
 
-		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
+		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI) {
 			super(bmp, parent, name, null, containerPutHandlers);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -150,9 +150,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ContainerPutHandler extends PutHandler {
 
-		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
+		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -196,10 +196,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private final class ExternPutHandler extends PutHandler {
 
-		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
+		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
+			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		}
 
 		@Override
@@ -290,21 +290,21 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// Metadata is not put with a cryptokey. It is derived from other stuff that is already encrypted with random keys.
 		
 		// final metadata
-		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly) {
+		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock) {
 			super(smp, parent, null, null, null);
 			// Treat as splitfile for purposes of determining number of reinserts.
-			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
+			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, realTimeFlag, false, false, null, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 
 		// resolver
-		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, boolean getCHKOnly, BucketFactory bf) throws MetadataUnresolvedException, IOException {
+		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, BucketFactory bf) throws MetadataUnresolvedException, IOException {
 			super(smp, parent, null, null, runningPutHandlers);
 			Bucket b = toResolve.toBucket(bf);
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
+			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, false, toResolve, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
 
@@ -754,20 +754,18 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	private boolean finished;
 	private final InsertContext ctx;
 	final ClientPutCallback cb;
-	private final boolean getCHKOnly;
 
 	private int numberOfFiles;
 	private long totalSize;
 	private Metadata baseMetadata;
 	private boolean hasResolvedBase; // if this is true, the final block is ready for insert
 	private boolean fetchable;
-	private final boolean earlyEncode;
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, boolean earlyEncode, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
+			InsertContext ctx, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
 		super(prioClass, cb);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -775,8 +773,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			this.targetURI = target;
 		this.cb = cb;
 		this.ctx = ctx;
-		this.getCHKOnly = getCHKOnly2;
-		this.earlyEncode = earlyEncode;
 		if(randomiseCryptoKeys && forceCryptoKey == null) {
 			forceCryptoKey = new byte[32];
 			context.random.nextBytes(forceCryptoKey);
@@ -1011,7 +1007,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		InsertBlock block;
 		block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
 		try {
-			rootMetaPutHandler = new MetaPutHandler(this, null, block, getCHKOnly);
+			rootMetaPutHandler = new MetaPutHandler(this, null, block);
 
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+rootMetaPutHandler+" for "+baseMetadata);
 			rootMetaPutHandler.start(context);
@@ -1041,7 +1037,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				continue;
 			}
 			try {
-				MetaPutHandler ph = new MetaPutHandler(this, null, m, getCHKOnly, context.getBucketFactory(persistent()));
+				MetaPutHandler ph = new MetaPutHandler(this, null, m, context.getBucketFactory(persistent()));
 				ph.start(context);
 			} catch (MetadataUnresolvedException e1) {
 				resolve(e1, context);
@@ -1451,7 +1447,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		@Override
 		public void addExternal(String name, Bucket data, ClientMetadata cm, boolean isDefaultDoc) {
 			PutHandler ph;
-			ph = new ExternPutHandler(BaseManifestPutter.this, null, name, data, cm, getCHKOnly);
+			ph = new ExternPutHandler(BaseManifestPutter.this, null, name, data, cm);
 //			putHandlersWaitingForMetadata.add(ph);
 //			putHandlersWaitingForFetchable.add(ph);
 			if(logMINOR) Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent());
@@ -1496,12 +1492,12 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				selfHandle = new ArchivePutHandler(BaseManifestPutter.this,
 						parent, name, _rootDir,
 						(isRoot ? BaseManifestPutter.this.targetURI
-								: FreenetURI.EMPTY_CHK_URI), getCHKOnly);
+								: FreenetURI.EMPTY_CHK_URI));
 			else
 				selfHandle = new ContainerPutHandler(BaseManifestPutter.this,
 						parent, name, _rootDir,
 						(isRoot ? BaseManifestPutter.this.targetURI
-								: FreenetURI.EMPTY_CHK_URI), null, getCHKOnly, (isRoot ? null : containerPutHandlers));
+								: FreenetURI.EMPTY_CHK_URI), null, (isRoot ? null : containerPutHandlers));
 			currentDir = _rootDir;
 			if (isRoot) {
 				rootContainerPutHandler = (ContainerPutHandler)selfHandle;
@@ -1555,7 +1551,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void addExternal(String name, Bucket data, ClientMetadata cm, boolean isDefaultDoc) {
-			PutHandler ph = new ExternPutHandler(BaseManifestPutter.this, selfHandle, name, data, cm, getCHKOnly);
+			PutHandler ph = new ExternPutHandler(BaseManifestPutter.this, selfHandle, name, data, cm);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);
 			putHandlersTransformMap.put(ph, currentDir);
 			if (isDefaultDoc) {

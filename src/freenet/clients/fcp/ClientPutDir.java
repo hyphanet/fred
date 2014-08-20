@@ -181,8 +181,8 @@ public class ClientPutDir extends ClientPutBase {
 	
 	private void makePutter(ClientContext context) throws TooManyFilesInsertException {
 	    putter = new DefaultManifestPutter(this,
-	            manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-	            earlyEncode, persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, context);
+	            manifestElements, priorityClass, uri, defaultName, ctx,
+	            persistenceType == PERSIST_FOREVER, overrideSplitfileCryptoKey, context);
 	}
 
 	@Override

@@ -71,8 +71,6 @@ public class ContainerInserter implements ClientPutState {
 	private final ARCHIVE_TYPE archiveType;
 	private final FreenetURI targetURI;
 	private final Object token;
-	private final boolean getCHKOnly;
-	private final boolean earlyEncode;
 	private final InsertContext ctx;
 	private final boolean reportMetadataOnly;
 	private final boolean dontCompress;
@@ -100,12 +98,10 @@ public class ContainerInserter implements ClientPutState {
 			FreenetURI targetURI2,
 			InsertContext ctx2,
 			boolean dontCompress2,
-			boolean getCHKOnly2,
 			boolean reportMetadataOnly2,
 			Object token2,
 			ARCHIVE_TYPE archiveType2,
 			boolean freeData,
-			boolean earlyEncode2,
 			byte[] forceCryptoKey,
 			byte cryptoAlgorithm,
 			boolean realTimeFlag) {
@@ -117,8 +113,6 @@ public class ContainerInserter implements ClientPutState {
 		archiveType = archiveType2;
 		targetURI = targetURI2;
 		token = token2;
-		getCHKOnly = getCHKOnly2;
-		earlyEncode = earlyEncode2;
 		ctx = ctx2;
 		dontCompress = dontCompress2;
 		reportMetadataOnly = reportMetadataOnly2;
@@ -196,7 +190,7 @@ public class ContainerInserter implements ClientPutState {
 		}
 		
 		// Treat it as a splitfile for purposes of determining reinsert count.
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
+		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi);

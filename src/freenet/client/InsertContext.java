@@ -85,6 +85,13 @@ public class InsertContext implements Cloneable, Serializable {
 	/** Backward compatibility support for network level metadata. 
 	 * Not an enum because of back compatibility and because db4o tends to do bad things to enums i.e. copy the values. */
 	private long compatibilityMode;
+	/** If true, don't insert, just generate the CHK */
+    public boolean getCHKOnly;
+    /** If true, try to find the final URI as quickly as possible, and insert the upper layers as 
+     * soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
+     * because an attacker can usually only identify the datastream once he has the top block, or 
+     * once you have announced the key. */
+    public boolean earlyEncode;
 	
 	public CompatibilityMode getCompatibilityMode() {
 		return CompatibilityMode.values[(int)compatibilityMode];
