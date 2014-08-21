@@ -181,6 +181,7 @@ public class ClientCHK extends ClientKey implements Serializable {
 		byte[] last = lastExtra;
 		// No synchronization required IMHO
 		if(Arrays.equals(last, extra)) return last;
+		assert(extra.length == EXTRA_LENGTH);
 		lastExtra = extra;
 		return extra;
 	}
