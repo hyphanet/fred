@@ -10,8 +10,10 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.db4o.ObjectContainer;
 
@@ -80,7 +82,15 @@ public class FCPConnectionHandler implements Closeable {
 	/**
 	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
 	 */
-	final ConcurrentHashMap<String, FCPPluginClient> pluginClientsByServerPluginName;
+	private final TreeMap<String, FCPPluginClient> pluginClientsByServerPluginName = new TreeMap<String, FCPPluginClient>();
+	
+    /**
+     * Lock for {@link #pluginClientsByServerPluginName}.
+     * 
+     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes - {@link ReadWriteLock} can do that faster than a regular Lock.
+     * (A {@link ReentrantReadWriteLock} because thats the only implementation of {@link ReadWriteLock}.)
+     */
+    private final ReadWriteLock pluginClientsByServerPluginNameLock = new ReentrantReadWriteLock();
 
 	/**
 	 * 16 random bytes hex-encoded as String. Unique for each instance of this class. 
@@ -161,10 +171,6 @@ public class FCPConnectionHandler implements Closeable {
 		// The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also 16 byetes, so we can re-use the bytes.
 		// TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
 		this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
-		
-		this.pluginClientsByServerPluginName = new ConcurrentHashMap<String, FCPPluginClient>(
-		        16 /* default map size */, 0.75f /* default load factor */,
-		        1 /* Use a concurrency level of 1 expected average writer thread as clients are only added and never removed or replaced */);
 	}
 	
 	void start() {
@@ -636,24 +642,53 @@ public class FCPConnectionHandler implements Closeable {
 	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server. 
 	 */
 	public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
-		// The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
-		// only happen at the start of a connection and then it will be re-used a lot.
-		// Therefore, it would cost a lot of performance to use synchronized() with a regular HashMap just so the minority of writes is safe.
-		// In conclusion, we use double-checked locking (notice that this programming pattern can be unsafe if done wrong, google it):
-		// pluginClientsByName is a ConcurrentHashMap, so get() does an unlocked but safe query, it will return the state as of the last completed modification.
-		// We never replace a client once it is in the map, so this is exactly what we need: If it returns non-null, we return the existing client, which
-		// will for ever be the right one as it is never replaced. If it returns null, we create one - which can possible happen in multiple threads,
-		// and use the return value of the thread-safe function ConcurrentHashMap.putAbsent() to ensure that concurrent creation of multiple clients returns
-		// the one which actually got into the map.
-		FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
-		if(peekOldClient != null)
-			return peekOldClient;
+        // The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
+        // only happen at the start of a connection and then it will be re-used a lot.
+        // Therefore, it would cost a lot of performance to use synchronized() and we instead use a ReadWriteLock which is optimal for such patterns.
+        //
+        // The double-checked locking pattern which this induces is necessary due to the fact that a read-lock cannot be upgraded to a write lock.
+        // The JavaDoc of ReentrantReadWriteLock specifically recommends this pattern, so it ought to be a safe version of double-checked locking.
+        
+        pluginClientsByServerPluginNameLock.readLock().lock();
+        try {
+            FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            
+            // FIXME: Check whether its WeakReference to the server is still fine. If its pointer is null, remove the oldClient from the TreeMap and try to
+            // create a fresh one because that will check whether the plugin has been reloaded meanwhile (and fail if not).
+            // This is necessary because the ReferenceQueue thread which will remove the clients from the TreeMap once their WeakReference is null might take
+            // a few minutes to execute under low memory pressure (I have observed that while debugging).  Also, when implementing that thread (it is not
+            // implemented yet), make sure to not treat it as an error if the WeakReference has been removed from the TreeMap already, because that is what
+            // we will do here once this FIXME is resolved.
+            if(peekOldClient != null)
+                return peekOldClient;
+        } finally {
+            // A read-lock cannot be upgraded to a write-lock so we must always unlock
+            pluginClientsByServerPluginNameLock.readLock().unlock();
+        }
 
-		FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(serverPluginName, this);
-		// putIfAbsent is an atomic operation which returns the old client if there was one, and null if not.
-		FCPPluginClient oldClient = pluginClientsByServerPluginName.putIfAbsent(serverPluginName, newClient);
+        pluginClientsByServerPluginNameLock.writeLock().lock();
+        try {
+            // Re-check whether there is an existing client since we had to re-acquire the lock meanwhile.
+            FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
+            
+            if(oldClient != null) 
+                return oldClient;
 
-		return oldClient != null ? oldClient : newClient;
+            FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(serverPluginName, this);
+
+            pluginClientsByServerPluginName.put(serverPluginName, newClient);
+
+            // It must be ensured that any thread running this function getPluginClient() does not return the newClient before registerPluginClient() is
+            // finished: Otherwise, those threads might cause getPluginClient() queries at the server, which would fail, because it is not registered yet.
+            // To ensure that, we are still holding the write lock here so only the current thread which created the newClient can execute.
+            // In other words: We must not downgrade it to a read lock as the JavasDoc of ReentrantReadWriteLock suggests, because that would allow other
+            // threads to query the newClient from the TreeMap pluginClientsByServerPluginName before registerPluginClient() is finished here.
+            server.registerPluginClient(newClient);
+            
+            return newClient;
+        } finally {
+            pluginClientsByServerPluginNameLock.writeLock().unlock();    
+        }
 	}
 
 	public FCPClient getForeverClient(ObjectContainer container) {
