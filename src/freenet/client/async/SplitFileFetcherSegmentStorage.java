@@ -309,6 +309,9 @@ public class SplitFileFetcherSegmentStorage {
                 } catch (IOException e) {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
+                } catch (Throwable e) {
+                    Logger.error(this, "Failed to decode "+this+" because of internal error: "+e, e);
+                    parent.fail(new FetchException(FetchException.INTERNAL_ERROR, e));
                 } finally {
                     if(lock != null) lock.unlock(false, prio);
                     chunk.release();
