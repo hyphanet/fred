@@ -115,15 +115,15 @@ public final class FCPPluginClient {
      * 
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
      */
-    private FCPPluginClient(FredPluginFCPServer serverPlugin, String serverPluginName, FCPConnectionHandler clientConnection) {
+    private FCPPluginClient(String serverPluginName, FredPluginFCPServer serverPlugin, FCPConnectionHandler clientConnection) {
         assert(serverPlugin != null);
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
-        this.clientConnection = clientConnection;
         this.serverPluginName = serverPluginName;
         this.server = new WeakReference<FredPluginFCPServer>(serverPlugin);
         this.client = null;
+        this.clientConnection = clientConnection;
     }
     
     /**
@@ -135,7 +135,7 @@ public final class FCPPluginClient {
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
-        return new FCPPluginClient(clientConnection.server.node.getPluginManager().getPluginFCPServer(serverPluginName), serverPluginName, clientConnection);
+        return new FCPPluginClient(serverPluginName, clientConnection.server.node.getPluginManager().getPluginFCPServer(serverPluginName), clientConnection);
     }
 
 
@@ -152,10 +152,10 @@ public final class FCPPluginClient {
         assert(server != null);
         assert(client != null);
         
-        clientConnection = null;
         this.serverPluginName = serverPluginName;
         this.server = new WeakReference<FredPluginFCPServer>(server);
         this.client = new WeakReference<FredPluginFCPClient>(client);
+        this.clientConnection = null;
     }
 
     /**
