@@ -490,6 +490,19 @@ public class BucketTools {
         }
     }
 
+    /** @deprecated Only for unit tests */
+    public static void fill(RandomAccessThing raf, Random random, long offset, long length) 
+    throws IOException {
+        long moved = 0;
+        byte[] buf = new byte[BUFFER_SIZE];
+        while(moved < length) {
+            int toRead = (int)Math.min(BUFFER_SIZE, length - moved);
+            random.nextBytes(buf);
+            raf.pwrite(offset + moved, buf, 0, toRead);
+            moved += toRead;
+        }
+    }
+
     /** Fill a bucket with hard to identify random data */
     public static void fill(Bucket bucket, long length) throws IOException {
         OutputStream os = null;
