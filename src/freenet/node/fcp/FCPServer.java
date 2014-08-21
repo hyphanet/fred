@@ -493,7 +493,7 @@ public class FCPServer implements Runnable, DownloadCache {
      * @see FCPPluginClient The class JavaDoc of FCPPluginClient explains the code path for both networked and non-networked FCP.
      */
     public FCPPluginClient createClientForNetworkedFCP(String serverPluginName, FCPConnectionHandler messageHandler) throws PluginNotFoundException {
-        FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(serverPluginName, messageHandler);
+        FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(node.pluginManager, serverPluginName, messageHandler);
         pluginClientTracker.registerClient(client);
         return client;
     }
