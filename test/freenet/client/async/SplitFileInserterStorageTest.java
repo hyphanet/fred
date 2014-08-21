@@ -39,6 +39,7 @@ import freenet.support.DummyJobRunner;
 import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
+import freenet.support.TestProperty;
 import freenet.support.Ticker;
 import freenet.support.WaitableExecutor;
 import freenet.support.api.Bucket;
@@ -243,6 +244,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     }
     
     public void testRoundTripCrossSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+        if(!TestProperty.EXTENSIVE) return;
         // Test cross-segment:
         testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
