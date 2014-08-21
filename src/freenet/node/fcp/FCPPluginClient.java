@@ -86,8 +86,8 @@ public final class FCPPluginClient {
 
     /**
      * The plugin to which this client is connected.
-     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
-     *                 {@link FCPPluginClientTracker} and {@link FCPConnectionHandler} if this reference is nulled.
+     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the table at
+     *                 at {@link FCPConnectionHandler} if this reference is nulled.
      */
     private final WeakReference<FredPluginFCPServer> server;
 
