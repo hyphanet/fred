@@ -1292,7 +1292,24 @@ public class SplitFileFetcherSegmentStorage {
         if(key == null) return null;
         for(int i=0;i<blocksFetched.length;i++) {
             if(blocksFetched[i] == blockNum) {
-                return readBlock(i);
+                byte[] buf = readBlock(i);
+                try {
+                    ClientCHKBlock block =
+                        ClientCHKBlock.encodeSplitfileBlock(buf, key.getCryptoKey(), key.getCryptoAlgorithm());
+                    if(!(block.getClientKey().equals(key))) {
+                        Logger.error(this, "Block "+blockNum+" in blocksFound["+i+"] is not valid!");
+                        if(blocksFound[blockNum]) {
+                            blocksFound[blockNum] = false;
+                            this.blocksFetchedCount--;
+                        }
+                    } else {
+                        return buf;
+                    }
+                } catch (CHKEncodeException e) {
+                    // Should not be possible.
+                    Logger.error(this, "Impossible: "+e);
+                    return null;
+                }
             }
         }
         Logger.error(this, "Block "+blockNum+" in blocksFound but not in blocksFetched on "+this);
