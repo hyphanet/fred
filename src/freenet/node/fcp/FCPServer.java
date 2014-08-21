@@ -41,7 +41,9 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.FredPluginFCPClient;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -474,18 +476,49 @@ public class FCPServer implements Runnable, DownloadCache {
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("FcpServer."+key, pattern, value);
 	}
-	
-	/**
-	 * <p><b>The documentation of {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} applies to this function.</b></p>
-	 * 
-	 * <p>Notice: Unregistration is not necessary.</p>
-	 * 
-	 * @see FCPPluginClientTracker The JavaDoc of FCPPluginClientTracker explains the general purpose of this mechanism.
-	 */
-	public void registerPluginClient(FCPPluginClient client) {
-	   pluginClientTracker.registerClient(client);
-	}
-	
+   
+    /**
+     * <p>Creates and registers {@link FCPPluginClient} object for FCP connections which are attached over the network.<br/>
+     * In other words, the actual client application is NOT a plugin running within the node, it only connected to the node via network.</p>
+     * 
+     * <p>The object is registered at the backend {@link FCPPluginClientTracker} and thus can be queried from this server by ID via the frontend
+     * {@link #getPluginClient(UUID)} as long as something else keeps a strong reference to it.<br/>
+     * Once it becomes weakly reachable, it will be garbage-collected from the backend {@link FCPPluginClientTracker} and {@link #getPluginClient(UUID)}
+     * will not work anymore.<br/>
+     * In other words, you don't have to take care of registering or unregistering clients. You only have to take care of keeping a strong reference to
+     * them while they are in use.</p>
+     * 
+     * <p>You should probably instead use the frontend function for this: {@link FCPConnectionHandler#getPluginClient(String)}.</p>
+     * 
+     * @see FCPPluginClient The class JavaDoc of FCPPluginClient explains the code path for both networked and non-networked FCP.
+     */
+    public FCPPluginClient createClientForNetworkedFCP(String serverPluginName, FCPConnectionHandler messageHandler) throws PluginNotFoundException {
+        FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(serverPluginName, messageHandler);
+        pluginClientTracker.registerClient(client);
+        return client;
+    }
+
+    /**
+     * <p>Creates and registers a {@link FCPPluginClient} object for FCP connections between plugins running within the same node.<br/>
+     * In other words, the actual client application is NOT connected to the node by network, it is a plugin running within the node just like the server.</p>
+     * 
+     * <p>The object is registered at the backend {@link FCPPluginClientTracker} and thus can be queried from this server by ID via the frontend
+     * {@link #getPluginClient(UUID)} as long as something else keeps a strong reference to it.<br/>
+     * Once it becomes weakly reachable, it will be garbage-collected from the backend {@link FCPPluginClientTracker} and {@link #getPluginClient(UUID)}
+     * will not work anymore.<br/>
+     * In other words, you don't have to take care of registering or unregistering clients. You only have to take care of keeping a strong reference to
+     * them while they are in use.</p>
+     * 
+     * <p>You should probably instead use the frontend function for this:  {@link PluginRespirator#connecToOtherPlugin(String, FredPluginFCPClient)}.</p>
+     * 
+     * @see FCPPluginClient The class JavaDoc of FCPPluginClient explains the code path for both networked and non-networked FCP.
+     */
+    public FCPPluginClient createPluginClientForIntraNodeFCP(String serverPluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException {
+        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, serverPluginName, messageHandler); 
+        pluginClientTracker.registerClient(client);
+        return client;
+    }
+
 	/**
 	 * <p><b>The documentation of {@link FCPPluginClientTracker#getClient(UUID)} applies to this function.</b></p>
 	 * 

@@ -674,16 +674,8 @@ public class FCPConnectionHandler implements Closeable {
             if(oldClient != null) 
                 return oldClient;
 
-            FCPPluginClient newClient = FCPPluginClient.constructForNetworkedFCP(serverPluginName, this);
-
+            FCPPluginClient newClient = server.createClientForNetworkedFCP(serverPluginName, this);
             pluginClientsByServerPluginName.put(serverPluginName, newClient);
-
-            // It must be ensured that any thread running this function getPluginClient() does not return the newClient before registerPluginClient() is
-            // finished: Otherwise, those threads might cause getPluginClient() queries at the server, which would fail, because it is not registered yet.
-            // To ensure that, we are still holding the write lock here so only the current thread which created the newClient can execute.
-            // In other words: We must not downgrade it to a read lock as the JavasDoc of ReentrantReadWriteLock suggests, because that would allow other
-            // threads to query the newClient from the TreeMap pluginClientsByServerPluginName before registerPluginClient() is finished here.
-            server.registerPluginClient(newClient);
             
             return newClient;
         } finally {

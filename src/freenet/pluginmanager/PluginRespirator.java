@@ -128,11 +128,8 @@ public class PluginRespirator {
 	 *         fail. To get reconnected once the server plugin is loaded again, you must obtain a fresh client from this function: Existing clients will stay
 	 *         disconnected.
 	 */
-    public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException {
-        // TODO FIXME: Move this to a new function FCPServer.createIntraNodeFCPPluginClient()
-        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager, pluginName, messageHandler); 
-        node.clientCore.getFCPServer().registerPluginClient(client);
-        return client;
+    public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException { 
+        return node.clientCore.getFCPServer().createPluginClientForIntraNodeFCP(pluginName, messageHandler);
     }
     
     /**
