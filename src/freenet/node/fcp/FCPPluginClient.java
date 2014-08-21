@@ -94,11 +94,8 @@ public final class FCPPluginClient {
     /**
      * For intra-node plugin connections, this is the connecting client.
      * For networked plugin connections, this is null.
-     * 
-     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
-     *                 {@link FCPPluginClientTracker} if this reference is nulled.
      */
-    private final WeakReference<FredPluginFCPClient> client;
+    private final FredPluginFCPClient client;
 
     /**
      * For networked plugin connections, this is the connection to which this client belongs.
@@ -154,7 +151,7 @@ public final class FCPPluginClient {
         
         this.serverPluginName = serverPluginName;
         this.server = new WeakReference<FredPluginFCPServer>(server);
-        this.client = new WeakReference<FredPluginFCPClient>(client);
+        this.client = client;
         this.clientConnection = null;
     }
 
