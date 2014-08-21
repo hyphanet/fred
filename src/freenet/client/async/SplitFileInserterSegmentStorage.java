@@ -220,6 +220,17 @@ public class SplitFileInserterSegmentStorage {
         }
     }
     
+    void setKey(int blockNumber, ClientCHK key) throws IOException {
+        try {
+            ClientCHK oldKey = readKey(blockNumber);
+            if(!oldKey.equals(key))
+                throw new IOException("Key for block has changed! Data corruption or bugs in SplitFileInserter code");
+        } catch (MissingKeyException e) {
+            // Ok.
+            writeKey(blockNumber, key);
+        }
+    }
+    
     /** Write a key for a block.
      * @param blockNo The block number. Can be a data block, cross segment check block or check
      * block, in that numerical order.
@@ -328,7 +339,7 @@ public class SplitFileInserterSegmentStorage {
      * @throws IOException */
     private void generateKeys(byte[][] dataBlocks, int offset) throws IOException {
         for(int i=0;i<dataBlocks.length;i++) {
-            writeKey(i + offset, encodeBlock(dataBlocks[i]).getClientKey());
+            setKey(i + offset, encodeBlock(dataBlocks[i]).getClientKey());
         }
     }
 
