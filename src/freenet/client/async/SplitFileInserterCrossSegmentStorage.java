@@ -150,7 +150,7 @@ public class SplitFileInserterCrossSegmentStorage {
             int blockNoWithinSegment) throws IOException {
         assert(blockNumbers[dataBlockCount + slotNumberWithinCrossSegment] == blockNoWithinSegment);
         assert(segments[dataBlockCount + slotNumberWithinCrossSegment].segNo == segmentNumber);
-        return parent.readCheckBlock(segNo, slotNumberWithinCrossSegment);
+        return parent.readCheckBlock(segNo, slotNumberWithinCrossSegment - dataBlockCount);
     }
 
     private byte[][] readDataBlocks() throws IOException {
