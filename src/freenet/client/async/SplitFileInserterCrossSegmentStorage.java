@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientCHK;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
@@ -33,6 +34,11 @@ public class SplitFileInserterCrossSegmentStorage {
     private transient int counter;
     
     private final int statusLength;
+    
+    // Set to true to encode block keys during *cross-segment* encoding, and thus detect e.g. storage bugs.
+    // This will cause more disk I/O as we have to write the keys (more or less randomly).
+    // FIXME turn off before merging into master.
+    static final boolean DEBUG_ENCODE = true;
     
     public SplitFileInserterCrossSegmentStorage(SplitFileInserterStorage parent, int segNo, 
             boolean persistent, int segLen, int crossCheckBlocks) {
@@ -142,6 +148,11 @@ public class SplitFileInserterCrossSegmentStorage {
 
     private void writeCheckBlock(int checkBlockNo, byte[] buf) throws IOException {
         parent.writeCheckBlock(segNo, checkBlockNo, buf);
+        if(DEBUG_ENCODE) {
+            SplitFileInserterSegmentStorage segment = segments[checkBlockNo + dataBlockCount];
+            ClientCHK key = segment.encodeBlock(buf).getClientKey();
+            segment.setKey(blockNumbers[checkBlockNo + dataBlockCount], key);
+        }
     }
 
     /** Read a cross-check block and check consistency 
@@ -159,6 +170,10 @@ public class SplitFileInserterCrossSegmentStorage {
             byte[][] data = new byte[dataBlockCount][];
             for(int i=0;i<dataBlockCount;i++) {
                 data[i] = segments[i].readDataBlock(blockNumbers[i]);
+                if(DEBUG_ENCODE) {
+                    ClientCHK key = segments[i].encodeBlock(data[i]).getClientKey();
+                    segments[i].setKey(blockNumbers[i], key);
+                }
             }
             return data;
         } finally {
