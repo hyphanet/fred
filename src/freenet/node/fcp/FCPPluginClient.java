@@ -101,9 +101,9 @@ public final class FCPPluginClient {
     private final WeakReference<FredPluginFCPClient> client;
 
     /**
-     * The connection to which this client belongs.
+     * For networked plugin connections, this is the connection to which this client belongs.
+     * For intra-node connections to plugins, this is null.
      * For each {@link FCPConnectionHandler}, there can only be one {@link FCPPluginClient} for each {@link #serverPluginName}.
-     * Can be null for intra-node connections to plugins.
      */
     private final FCPConnectionHandler clientConnection;
 
