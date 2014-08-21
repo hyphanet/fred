@@ -604,7 +604,7 @@ public class SplitFileInserterStorage {
             int blockNum = seg.allocateCrossCheckBlock(segment, random,
                     segment.getAllocatedCrossCheckBlocks());
             if (blockNum >= 0) {
-                segment.addDataBlock(seg, blockNum);
+                segment.addCheckBlock(seg, blockNum);
                 return;
             }
         }
@@ -616,7 +616,7 @@ public class SplitFileInserterStorage {
             int blockNum = seg.allocateCrossCheckBlock(segment, random,
                     segment.getAllocatedCrossCheckBlocks());
             if (blockNum >= 0) {
-                segment.addDataBlock(seg, blockNum);
+                segment.addCheckBlock(seg, blockNum);
                 return;
             }
         }
