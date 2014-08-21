@@ -73,31 +73,24 @@ import freenet.support.api.Bucket;
  * @author xor (xor@freenetproject.org)
  */
 public final class FCPPluginClient {
-    
-    /**
-     * The connection to which this client belongs.
-     * For each {@link FCPConnectionHandler}, there can only be one {@link FCPPluginClient} for each {@link #serverPluginName}.
-     * Can be null for intra-node connections to plugins.
-     */
-    private final FCPConnectionHandler clientConnection;
 
     /**
      * Unique identifier among all {@link FCPPluginClient}s. 
      */
     private final UUID id = UUID.randomUUID();
-    
+
     /**
      * The class name of the plugin to which this {@link FCPPluginClient} is connected.
      */
     private final String serverPluginName;
-    
+
     /**
      * The plugin to which this client is connected.
      * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the tables at
      *                 {@link FCPPluginClientTracker} and {@link FCPConnectionHandler} if this reference is nulled.
      */
     private final WeakReference<FredPluginFCPServer> server;
-    
+
     /**
      * For intra-node plugin connections, this is the connecting client.
      * For networked plugin connections, this is null.
@@ -107,7 +100,14 @@ public final class FCPPluginClient {
      */
     private final WeakReference<FredPluginFCPClient> client;
 
-    
+    /**
+     * The connection to which this client belongs.
+     * For each {@link FCPConnectionHandler}, there can only be one {@link FCPPluginClient} for each {@link #serverPluginName}.
+     * Can be null for intra-node connections to plugins.
+     */
+    private final FCPConnectionHandler clientConnection;
+
+
     /**
      * For being used by networked FCP connections:<br/>
      * The server is running within the node, and its message handler is accessible as an implementor of {@link FredPluginFCPServer}.<br/> 
