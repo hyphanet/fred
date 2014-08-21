@@ -919,4 +919,8 @@ public class SplitFileInserterStorage {
         return buf;
     }
 
+    public int totalCrossCheckBlocks() {
+        return segments.length * crossCheckBlocks;
+    }
+
 }

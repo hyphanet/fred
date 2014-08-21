@@ -200,5 +200,16 @@ public class SplitFileInserterCrossSegmentStorage {
         dos.writeInt(segNo); // To make checksum different.
         dos.writeBoolean(encoded);
     }
+    
+    int[] getSegmentNumbers() {
+        int[] ret = new int[totalBlocks];
+        for(int i=0;i<totalBlocks;i++)
+            ret[i] = segments[i].segNo;
+        return ret;
+    }
+    
+    int[] getBlockNumbers() {
+        return blockNumbers.clone();
+    }
 
 }

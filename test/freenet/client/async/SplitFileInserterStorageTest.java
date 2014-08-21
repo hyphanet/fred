@@ -40,6 +40,7 @@ import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
 import freenet.support.Ticker;
+import freenet.support.WaitableExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -65,7 +66,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     final BucketFactory bigBucketFactory;
     final File dir;
     final InsertContext baseContext;
-    final Executor executor;
+    final WaitableExecutor executor;
     final Ticker ticker;
     final byte cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
     final byte[] cryptoKey;
@@ -85,7 +86,7 @@ public class SplitFileInserterStorageTest extends TestCase {
     public SplitFileInserterStorageTest() throws IOException {
         dir = new File("split-file-inserter-storage-test");
         dir.mkdir();
-        executor = new PooledExecutor();
+        executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
         FilenameGenerator fg = new FilenameGenerator(r, true, dir, "freenet-test");
@@ -232,15 +233,18 @@ public class SplitFileInserterStorageTest extends TestCase {
         return new ReadOnlyRandomAccessThing(thing);
     }
     
-    public void testRoundTrip() throws FetchException, MetadataParseException, Exception {
+    public void testRoundTripSimple() throws FetchException, MetadataParseException, Exception {
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2-1);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128+1);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192);
         testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192+1);
+    }
+    
+    public void testRoundTripCrossSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         // Test cross-segment:
-        //testRoundTrip(CHKBlock.DATA_LENGTH*128*21);
+        testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
 
     private void testRoundTripSimpleRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
@@ -311,6 +315,108 @@ public class SplitFileInserterStorageTest extends TestCase {
         fcb.waitForFree();
     }
     
+    private void testRoundTripCrossSegmentRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+        RandomSource r = new DummyRandomSource(12123);
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        Bucket dataBucket = new RAFBucket(data);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.earlyEncode = true;
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinished();
+        // Encoded. Now try to decode it ...
+        cb.waitForHasKeys();
+        Metadata metadata = storage.encodeMetadata();
+
+        // Ugly hack because Metadata behaves oddly.
+        // FIXME make Metadata behave consistently and get rid.
+        Bucket metaBucket = metadata.toBucket(smallBucketFactory);
+        Metadata m1 = Metadata.construct(metaBucket);
+        Bucket copyBucket = m1.toBucket(smallBucketFactory);
+        assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
+        
+        MyFetchCallback fcb = new MyFetchCallback();
+        
+        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
+        
+        short cmode = (short) context.getCompatibilityMode().ordinal();
+        
+        SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
+                new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
+                r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
+                checker, false, null, null);
+        
+        fetcherStorage.start(false);
+        
+        int segments = storage.segments.length;
+        for(int i=0;i<segments;i++) {
+            assertEquals(storage.crossSegments[i].dataBlockCount, fetcherStorage.crossSegments[i].dataBlockCount);
+            assertTrue(Arrays.equals(storage.crossSegments[i].getSegmentNumbers(), fetcherStorage.crossSegments[i].getSegmentNumbers()));
+            assertTrue(Arrays.equals(storage.crossSegments[i].getBlockNumbers(), fetcherStorage.crossSegments[i].getBlockNumbers()));
+        }
+        
+        // Cross-segment decode.
+        // We want to ensure it completes in exactly the number of blocks expected, but we need to
+        // ensure at each step that the block hasn't already been decoded.
+        
+        int requiredBlocks = fcb.getRequiredBlocks();
+        
+        assertEquals((size + CHKBlock.DATA_LENGTH-1)/CHKBlock.DATA_LENGTH, requiredBlocks);
+        
+        int i=0;
+        while(true) {
+            executor.waitForIdle(); // Wait for no encodes/decodes running.
+            if(!addRandomBlock(storage, fetcherStorage, r)) break;
+            fcb.checkFailed();
+            i++;
+        }
+
+        // Cross-check doesn't necessarily complete in exactly the number of required blocks.
+        assertTrue(i >= requiredBlocks);
+        assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks());
+        assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks() - 1); // Implies at least one cross-segment block decoded.
+        executor.waitForIdle(); // Wait for no encodes/decodes running.
+        fcb.waitForFinished();
+        verifyOutput(fetcherStorage, dataBucket);
+        fetcherStorage.finishedFetcher();
+        fcb.waitForFree();
+    }
+    
+    /** Add a random block that has not been added already or decoded already. 
+     * @throws IOException */
+    private boolean addRandomBlock(SplitFileInserterStorage storage,
+            SplitFileFetcherStorage fetcherStorage, Random random) throws IOException {
+        int segCount = storage.segments.length;
+        boolean[] exhaustedSegments = new boolean[segCount];
+        for(int i=0;i<segCount;i++) {
+            while(true) {
+                int segNo = random.nextInt(segCount);
+                if(exhaustedSegments[segNo]) continue;
+                SplitFileFetcherSegmentStorage segment = fetcherStorage.segments[segNo];
+                if(segment.isDecodingOrFinished()) {
+                    exhaustedSegments[segNo] = true;
+                    break;
+                }
+                while(true) {
+                    int blockNo = random.nextInt(segment.totalBlocks());
+                    if(segment.hasBlock(blockNo)) {
+                        continue;
+                    }
+                    ClientCHKBlock block = storage.segments[segNo].encodeBlock(blockNo);
+                    boolean success = segment.onGotKey(block.getClientKey().getNodeCHK(), block.getBlock());
+                    assertTrue(success);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void verifyOutput(SplitFileFetcherStorage storage, Bucket originalData) throws IOException {
         StreamGenerator g = storage.streamGenerator();
         Bucket out = smallBucketFactory.makeBucket(-1);
@@ -350,6 +456,10 @@ public class SplitFileInserterStorageTest extends TestCase {
         public synchronized void onSuccess() {
             succeeded = true;
             notifyAll();
+        }
+
+        public synchronized int getRequiredBlocks() {
+            return requiredBlocks;
         }
 
         public synchronized void waitForFree() throws Exception {

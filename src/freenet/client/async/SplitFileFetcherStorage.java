@@ -134,7 +134,7 @@ public class SplitFileFetcherStorage {
     /** The segments */
     final SplitFileFetcherSegmentStorage[] segments;
     /** The cross-segments. Null if no cross-segments. */
-    private final SplitFileFetcherCrossSegmentStorage[] crossSegments;
+    final SplitFileFetcherCrossSegmentStorage[] crossSegments;
     /** If the splitfile has a common encryption algorithm, this is it. */
     final byte splitfileSingleCryptoAlgorithm;
     /** If the splitfile has a common encryption key, this is it. */

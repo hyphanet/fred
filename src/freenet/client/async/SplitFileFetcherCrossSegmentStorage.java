@@ -411,5 +411,16 @@ public class SplitFileFetcherCrossSegmentStorage {
         }
         parent.finishedEncoding(this);
     }
+    
+    int[] getSegmentNumbers() {
+        int[] ret = new int[totalBlocks];
+        for(int i=0;i<totalBlocks;i++)
+            ret[i] = segments[i].segNo;
+        return ret;
+    }
+    
+    int[] getBlockNumbers() {
+        return blockNumbers.clone();
+    }
 
 }
