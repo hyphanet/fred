@@ -29,7 +29,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
     
     final SplitFileFetcherStorage storage;
-    final SplitFileFetcherCallback fetcher;
+    final SplitFileFetcherStorageCallback fetcher;
     /** Salt used in the secondary Bloom filters if the primary matches.
      * The primary Bloom filters use the already-salted saltedKey. */
     private final byte[] localSalt;
@@ -66,7 +66,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     
     /** Create a set of bloom filters for a new download.
      * @throws FetchException */
-    public SplitFileFetcherKeyListener(SplitFileFetcherCallback fetcher, SplitFileFetcherStorage storage, 
+    public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
             boolean realTime, boolean persistent, byte[] localSalt, int origSize, int segBlocks, 
             int segments) throws FetchException {
         this.fetcher = fetcher;
@@ -112,7 +112,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
     
     public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage, 
-            SplitFileFetcherCallback callback, DataInputStream dis, boolean realTime, boolean persistent, boolean newSalt) 
+            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean realTime, boolean persistent, boolean newSalt) 
     throws IOException, StorageFormatException {
         this.storage = storage;
         this.fetcher = callback;

@@ -129,7 +129,7 @@ public class ClientCHK extends ClientKey implements Serializable {
      * in as few bytes as possible.
      * @throws IOException 
      */
-	private ClientCHK(DataInputStream dis) throws IOException {
+	public ClientCHK(DataInputStream dis) throws IOException {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		dis.readFully(extra);
 		// byte 0 is reserved, for now

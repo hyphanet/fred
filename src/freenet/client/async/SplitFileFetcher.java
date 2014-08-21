@@ -66,7 +66,7 @@ import freenet.support.io.StorageFormatException;
  * 
  * @author toad
  */
-public class SplitFileFetcher implements ClientGetState, SplitFileFetcherCallback, Serializable {
+public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorageCallback, Serializable {
     
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;

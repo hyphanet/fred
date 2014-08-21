@@ -350,7 +350,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         return total;
     }
 
-    static class StorageCallback implements SplitFileFetcherCallback {
+    static class StorageCallback implements SplitFileFetcherStorageCallback {
         
         final TestSplitfile splitfile;
         final boolean[] encodedBlocks;

@@ -16,7 +16,7 @@ import freenet.support.api.Bucket;
  * Maven). OTOH maybe it has some other use ... FIXME reconsider.
  * @author toad
  */
-public interface SplitFileFetcherCallback {
+public interface SplitFileFetcherStorageCallback {
 
     /** Called when the splitfile has been successfully downloaded and decoded. E.g. 
      * streamGenerator() should work now. However the splitfile storage layer may still need the

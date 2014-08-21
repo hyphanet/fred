@@ -122,7 +122,7 @@ public class SplitFileFetcherStorage {
         Logger.registerClass(SplitFileFetcherStorage.class);
     }
     
-    final SplitFileFetcherCallback fetcher;
+    final SplitFileFetcherStorageCallback fetcher;
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
     private final LockableRandomAccessThing raf;
@@ -236,7 +236,7 @@ public class SplitFileFetcherStorage {
      * @throws MetadataParseException 
      * @throws IOException If we were unable to create the file to store the metadata and 
      * downloaded blocks in. */
-    public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherCallback fetcher, 
+    public SplitFileFetcherStorage(Metadata metadata, SplitFileFetcherStorageCallback fetcher, 
             List<COMPRESSOR_TYPE> decompressors, ClientMetadata clientMetadata, 
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, FreenetURI origKey, 
@@ -581,7 +581,7 @@ public class SplitFileFetcherStorage {
      * @throws FetchException If the request has already failed (but it wasn't processed before 
      * restarting). */
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
-            SplitFileFetcherCallback callback, FetchContext origContext,
+            SplitFileFetcherStorageCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
             boolean newSalt, KeySalter salt, boolean resumed, boolean completeViaTruncation) 
