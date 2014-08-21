@@ -43,7 +43,8 @@ public abstract class ChecksumChecker {
         if(!checkChecksum(data, offset, length, checksum)) throw new ChecksumFailedException();
     }
     
-    /** Verify a checksum or report */
+    /** Verify a checksum or report.
+     * @return True if the checksum is correct, false otherwise. */
     public abstract boolean checkChecksum(byte[] data, int offset, int length, byte[] checksum);
 
     public abstract byte[] generateChecksum(byte[] bufToChecksum, int offset, int length);
