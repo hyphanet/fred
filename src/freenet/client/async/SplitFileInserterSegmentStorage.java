@@ -51,7 +51,7 @@ public class SplitFileInserterSegmentStorage {
     private int blocksWithKeysCounter;
     
     // These are only used in construction.
-    private transient boolean[] crossDataBlocksAllocated;
+    private transient final boolean[] crossDataBlocksAllocated;
     private transient int crossDataBlocksAllocatedCount;
     private transient int crossCheckBlocksAllocatedCount;
 
@@ -86,6 +86,7 @@ public class SplitFileInserterSegmentStorage {
         blocksHaveKeys = new boolean[totalBlockCount];
         this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
         this.splitfileCryptoKey = splitfileCryptoKey;
+        crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
     }
 
     // These two are only used in construction...
