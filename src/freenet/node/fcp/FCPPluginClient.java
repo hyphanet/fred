@@ -5,7 +5,6 @@ package freenet.node.fcp;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.Map;
 import java.util.UUID;
 
 import freenet.node.Node;
@@ -106,8 +105,22 @@ public final class FCPPluginClient {
 
     /**
      * The plugin to which this client is connected.
-     * TODO FIXME XXX: Should be implemented before merging this: Use a {@link ReferenceQueue} to remove objects of this class from the table at
-     *                 at {@link FCPConnectionHandler} if this reference is nulled.
+     * 
+     * <p>TODO: Optimization / Memory leak fix: Monitor this with a {@link ReferenceQueue} and if it becomes nulled, remove this FCPPluginClient from the map
+     * {@link FCPConnectionHandler#pluginClientsByServerPluginName}.<br/>
+     * Currently, it seems not necessary:<br/>
+     * - It can only become null if the server plugin is unloaded / reloaded. Plugin unloading / reloading requires user interaction or auto update and
+     *   shouldn't happen frequently.<br/>
+     * - It would only leak one WeakReference per plugin per client network connection. That won't be much until we have very many network connections.
+     *   The memory usage of having one thread per {@link FCPConnectionHandler} to monitor the ReferenceQueue would probably outweight the savings.<br/>
+     * - We can still opportunistically clean the table at FCPConnectionHandler: If the client application which is behind the {@link FCPConnectionHandler}
+     *   tries to send a message using a FCPPluginClient whose server WeakReference is null, it is purged from the said table at FCPConnectionHandler.
+     *   So memory will not leak as long as the clients keep trying to send messages to the nulled server plugin - which they probably will do because they
+     *   did already in the past.<br/>
+     * NOTICE: If you do implement this, make sure to not rewrite the ReferenceQueue polling thread but instead base it upon {@link FCPPluginClientTracker}. 
+     *         You should probably extract a generic class WeakValueMap from that one and use to to power both the existing class and the one which deals
+     *         with this variable here.
+     * </p>
      */
     private final WeakReference<FredPluginFCPServer> server;
 
