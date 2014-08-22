@@ -220,8 +220,13 @@ public final class FCPPluginClient {
     }
     
     /** 
-     * @return True if the server plugin has been unloaded. Once this returns true, this FCPPluginClient <b>cannot</b> be repaired, even if the server plugin
-     *         is loaded again. Then you should discard this client and create a fresh one.
+     * @return <p>True if the server plugin has been unloaded. Once this returns true, this FCPPluginClient <b>cannot</b> be repaired, even if the server plugin
+     *         is loaded again. Then you should discard this client and create a fresh one.</p>
+     *         
+     *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginClient} might allow the server plugin to reside in a different node, and only be
+     *         attached by network. To prepare for that, you <b>must not</b> assume that the connection to the server is still fine just because this returns
+     *         false = server is alive. Consider false / server is alive merely an indication, true / server is dead as the definite truth.
+     *         If you need to validate a connection to be alive, send periodic pings. </p>
      */
     public boolean isDead() {
         return server.get() == null;
