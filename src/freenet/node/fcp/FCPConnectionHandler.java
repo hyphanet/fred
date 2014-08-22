@@ -653,13 +653,7 @@ public class FCPConnectionHandler implements Closeable {
         try {
             FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
-            // FIXME: Check whether its WeakReference to the server is still fine. If its pointer is null, remove the oldClient from the TreeMap and try to
-            // create a fresh one because that will check whether the plugin has been reloaded meanwhile (and fail if not).
-            // This is necessary because the ReferenceQueue thread which will remove the clients from the TreeMap once their WeakReference is null might take
-            // a few minutes to execute under low memory pressure (I have observed that while debugging).  Also, when implementing that thread (it is not
-            // implemented yet), make sure to not treat it as an error if the WeakReference has been removed from the TreeMap already, because that is what
-            // we will do here once this FIXME is resolved.
-            if(peekOldClient != null)
+            if(peekOldClient != null && !peekOldClient.isDead())
                 return peekOldClient;
         } finally {
             // A read-lock cannot be upgraded to a write-lock so we must always unlock
@@ -671,8 +665,21 @@ public class FCPConnectionHandler implements Closeable {
             // Re-check whether there is an existing client since we had to re-acquire the lock meanwhile.
             FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
-            if(oldClient != null) 
-                return oldClient;
+            if(oldClient != null) {
+                if(!oldClient.isDead())
+                    return oldClient;
+                else {
+                    // oldClient.isDead() returned true because the WeakReference to the server has been nulled because the plugin was unloaded or reloaded.
+                    // The client should be discarded then. We have no ReferenceQueue to discard affected clients from the pluginClientsByServerPluginName
+                    // table, so we opportunistically clean nulled clients from it here. The reason why this is sufficient memory management is explained at
+                    // FCPPluginClient.server
+                    // NOTICE: Even if there was automatic disposal of nulled references, we still would have to manually remove dead ones here: I have
+                    // observed that it can take minutes until the JVM flushes a ReferenceQueue. So if we relied upon that only, during those minutes a 
+                    // client would be unable to send messages to a re-loaded server plugin because the continued existence of the dead old client would prevent
+                    // a new one from being created.
+                    pluginClientsByServerPluginName.remove(serverPluginName);
+                }
+            }
 
             FCPPluginClient newClient = server.createClientForNetworkedFCP(serverPluginName, this);
             pluginClientsByServerPluginName.put(serverPluginName, newClient);

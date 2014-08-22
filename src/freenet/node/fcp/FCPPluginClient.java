@@ -113,7 +113,7 @@ public final class FCPPluginClient {
      *   shouldn't happen frequently.<br/>
      * - It would only leak one WeakReference per plugin per client network connection. That won't be much until we have very many network connections.
      *   The memory usage of having one thread per {@link FCPConnectionHandler} to monitor the ReferenceQueue would probably outweight the savings.<br/>
-     * - We can still opportunistically clean the table at FCPConnectionHandler: If the client application which is behind the {@link FCPConnectionHandler}
+     * - We already opportunistically clean the table at FCPConnectionHandler: If the client application which is behind the {@link FCPConnectionHandler}
      *   tries to send a message using a FCPPluginClient whose server WeakReference is null, it is purged from the said table at FCPConnectionHandler.
      *   So memory will not leak as long as the clients keep trying to send messages to the nulled server plugin - which they probably will do because they
      *   did already in the past.<br/>
@@ -217,6 +217,14 @@ public final class FCPPluginClient {
      */
     public String getServerPluginName() {
         return serverPluginName;
+    }
+    
+    /** 
+     * @return True if the server plugin has been unloaded. Once this returns true, this FCPPluginClient <b>cannot</b> be repaired, even if the server plugin
+     *         is loaded again. Then you should discard this client and create a fresh one.
+     */
+    public boolean isDead() {
+        return server.get() == null;
     }
 
     /**
