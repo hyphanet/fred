@@ -160,6 +160,9 @@ public final class FCPPluginClient {
      * For being used by networked FCP connections:<br/>
      * The server is running within the node, and its message handler will be queried from the {@link PluginManager} via the given String serverPluginName.<br/>
      * The client is not running within the node, it is attached by network with the given {@link FCPConnectionHandler} clientConnection.<br/>
+     * 
+     * <p>You <b>must</b> register any newly created clients at {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to client
+     * application code.</p>
      */
     public static FCPPluginClient constructForNetworkedFCP(PluginManager serverPluginManager, String serverPluginName, FCPConnectionHandler clientConnection)
             throws PluginNotFoundException {
@@ -195,6 +198,9 @@ public final class FCPPluginClient {
      * Both the server and the client are running within the same node, so their FCP interfaces are available:<br/>
      * The server plugin will be queried from given {@link PluginManager} via the given String serverPluginName.
      * The client message handler is available as the passed {@link FredPluginFCPClient} client.
+     * 
+     * <p>You <b>must</b> register any newly created clients at {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to client
+     * application code.</p>
      */
     public static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager, String serverPluginName, FredPluginFCPClient client)
             throws PluginNotFoundException {

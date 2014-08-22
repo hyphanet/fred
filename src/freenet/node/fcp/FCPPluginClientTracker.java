@@ -82,7 +82,7 @@ public final class FCPPluginClientTracker extends NativeThread {
      * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
      * {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
      * 
-     * FIXME: Document the existence and usage of this class at that function.
+     * Unregistration is not supported and not necessary. 
      */
    void registerClient(FCPPluginClient client) {
         clientsByIDLock.writeLock().lock();
