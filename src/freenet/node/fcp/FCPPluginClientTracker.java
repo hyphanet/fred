@@ -77,7 +77,9 @@ public final class FCPPluginClientTracker extends NativeThread {
     }
     
     /**
-     * Must be called for any newly created {@link FCPPluginClient} before passing it to
+     * Stores the {@link FCPPluginClient} so in the future it can be obtained by its ID with {@link FCPPluginClientTracker#getClient(UUID)}.
+     * 
+     * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
      * {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
      * 
      * FIXME: Document the existence and usage of this class at that function.
