@@ -1853,7 +1853,7 @@ class CSSTokenizerFilter {
 			{
 				stateBeforeComment=currentState;
 				currentState=STATECOMMENT;
-				if(buffer.charAt(buffer.length()-1)=='/')
+				if(buffer.length() > 0 && buffer.charAt(buffer.length()-1)=='/')
 				{
 					buffer.deleteCharAt(buffer.length()-1);
 				}
