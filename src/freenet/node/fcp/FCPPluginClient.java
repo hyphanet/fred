@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
@@ -258,7 +259,7 @@ public final class FCPPluginClient {
     /**
      * Same as {@link #send(SendDirection, SimpleFieldSet, Bucket, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
      */
-    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
+    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) throws IOException {
         send(direction, parameters, data, UUID.randomUUID().toString());
     }
 
@@ -267,20 +268,29 @@ public final class FCPPluginClient {
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet, Bucket)}
      *                          and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     * @throws IOException If the connection has been closed meanwhile.<br/>
+     *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
+     *                     
+     *                     <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the connection is alive. Messages are sent asynchronously, so it
+     *                     can happen that a closed connection is not detected before this function returns.<br/>
+     *                     If you need to know whether the send succeeded, use {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}
+     *                     or {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long)}.
+     *                     </p>
      * @see #send(SendDirection, SimpleFieldSet, Bucket) Uses a random messageIdentifier. Should be prefered when possible.
      */
-    void send(SendDirection direction, SimpleFieldSet parameters, Bucket data, String messageIdentifier) {
+    void send(SendDirection direction, SimpleFieldSet parameters, Bucket data, String messageIdentifier) throws IOException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
 
     @SuppressWarnings("serial")
-    public static final class FCPCallFailedException extends Exception { };
+    public static final class FCPCallFailedException extends IOException { };
 
     /**
      * Same as {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
      */
-    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds)
+            throws FCPCallFailedException, IOException {
         sendSynchronous(direction, parameters, data, timeoutMilliseconds, UUID.randomUUID().toString());
     }
 
@@ -289,10 +299,18 @@ public final class FCPPluginClient {
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet, Bucket)}
      *                          and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     * @throws FCPCallFailedException If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
+     *                                
+     *                                <p>This can be used to decide to retry certain operations. A practical example would be a user trying to create an account 
+     *                                at an FCP server application: Your UI would use this function to try to create the account by FCP. The user might type
+     *                                an invalid character in the username. The server could then indicate failure of creating the account, and your UI could
+     *                                detect it by this exception type. The UI then could prompt the user to chose a valid username.</p>
+     * @throws IOException If the connection has been closed meanwhile.<br/>
+     *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
      * @see #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String) Uses a random messageIdentifier. Should be prefered when possible.
      */
     void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds, String messageIdentifier)
-            throws FCPCallFailedException {
+            throws FCPCallFailedException, IOException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
