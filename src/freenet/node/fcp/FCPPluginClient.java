@@ -164,7 +164,7 @@ public final class FCPPluginClient {
      * <p>You <b>must</b> register any newly created clients at {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to client
      * application code.</p>
      */
-    public static FCPPluginClient constructForNetworkedFCP(PluginManager serverPluginManager, String serverPluginName, FCPConnectionHandler clientConnection)
+    static FCPPluginClient constructForNetworkedFCP(PluginManager serverPluginManager, String serverPluginName, FCPConnectionHandler clientConnection)
             throws PluginNotFoundException {
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
@@ -202,7 +202,7 @@ public final class FCPPluginClient {
      * <p>You <b>must</b> register any newly created clients at {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to client
      * application code.</p>
      */
-    public static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager, String serverPluginName, FredPluginFCPClient client)
+    static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager, String serverPluginName, FredPluginFCPClient client)
             throws PluginNotFoundException {
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
