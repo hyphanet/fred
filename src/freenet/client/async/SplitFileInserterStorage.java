@@ -923,4 +923,11 @@ public class SplitFileInserterStorage {
         return segments.length * crossCheckBlocks;
     }
 
+    public void segmentSucceeded(SplitFileInserterSegmentStorage completedSegment) {
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(!segment.hasSucceeded()) break;
+        }
+        callback.onSucceeded();
+    }
+
 }

@@ -18,4 +18,7 @@ public interface SplitFileInserterStorageCallback {
      * insert level, or whether to wait for all the blocks to insert. */
     void onHasKeys();
 
+    /** Called when the whole insert has succeeded, i.e. when all blocks have been inserted. */
+    void onSucceeded();
+
 }

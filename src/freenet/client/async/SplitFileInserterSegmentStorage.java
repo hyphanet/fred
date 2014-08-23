@@ -50,6 +50,12 @@ public class SplitFileInserterSegmentStorage {
     private final boolean[] blocksHaveKeys;
     private int blocksWithKeysCounter;
     
+    // Choosing keys
+    /** Which blocks have been inserted? */
+    private final boolean[] blocksInserted;
+    /** How many blocks have been inserted? */
+    private int blocksInsertedCount;
+    
     // These are only used in construction.
     private transient final boolean[] crossDataBlocksAllocated;
     private transient int crossDataBlocksAllocatedCount;
@@ -87,6 +93,7 @@ public class SplitFileInserterSegmentStorage {
         this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
         this.splitfileCryptoKey = splitfileCryptoKey;
         crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
+        blocksInserted = new boolean[totalBlockCount];
     }
 
     // These two are only used in construction...
@@ -167,6 +174,8 @@ public class SplitFileInserterSegmentStorage {
     private void innerStoreStatus(DataOutputStream dos) throws IOException {
         dos.writeInt(segNo); // To make checksum different.
         dos.writeBoolean(encoded);
+        for(boolean b : blocksInserted)
+            dos.writeBoolean(b);
     }
 
     public long storedStatusLength() {
@@ -427,6 +436,20 @@ public class SplitFileInserterSegmentStorage {
 
     public class MissingKeyException extends Exception {
         
+    }
+    
+    public void onInsertedBlock(int blockNum) {
+        synchronized(this) {
+            if(blocksInserted[blockNum]) return;
+            blocksInserted[blockNum] = true;
+            blocksInsertedCount++;
+            if(blocksInsertedCount < totalBlockCount) return;
+        }
+        parent.segmentSucceeded(this);
+    }
+
+    public synchronized boolean hasSucceeded() {
+        return blocksInsertedCount == totalBlockCount;
     }
     
 }

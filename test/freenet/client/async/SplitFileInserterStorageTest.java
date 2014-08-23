@@ -105,12 +105,13 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     class MyCallback implements SplitFileInserterStorageCallback {
         
-        private boolean finished;
+        private boolean finishedEncode;
         private boolean hasKeys;
+        private boolean succeededInsert;
 
         @Override
         public synchronized void onFinishedEncode() {
-            finished = true;
+            finishedEncode = true;
             notifyAll();
         }
 
@@ -125,8 +126,8 @@ public class SplitFileInserterStorageTest extends TestCase {
             // Ignore.
         }
         
-        public synchronized void waitForFinished() {
-            while(!finished) {
+        public synchronized void waitForFinishedEncode() {
+            while(!finishedEncode) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -137,6 +138,22 @@ public class SplitFileInserterStorageTest extends TestCase {
 
         public synchronized void waitForHasKeys() {
             while(!hasKeys) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+
+        @Override
+        public synchronized void onSucceeded() {
+            succeededInsert = true;
+            notifyAll();
+        }
+        
+        public synchronized void waitForSucceededInsert() {
+            while(!succeededInsert) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -158,7 +175,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
                 memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
-        cb.waitForFinished();
+        cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
         assertEquals(storage.segments[0].dataBlockCount, 2);
         assertEquals(storage.segments[0].checkBlockCount, 3);
@@ -178,7 +195,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
                 memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
-        cb.waitForFinished();
+        cb.waitForFinishedEncode();
         // Now check the data blocks...
         assertEquals(storage.segments.length, 1);
         assertEquals(storage.segments[0].dataBlockCount, 2);
@@ -208,7 +225,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
                 memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
-        cb.waitForFinished();
+        cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
         assertEquals(storage.segments[0].dataBlockCount, 2);
         assertEquals(storage.segments[0].checkBlockCount, 3);
@@ -262,7 +279,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
                 memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
-        cb.waitForFinished();
+        cb.waitForFinishedEncode();
         // Encoded. Now try to decode it ...
         cb.waitForHasKeys();
         Metadata metadata = storage.encodeMetadata();
@@ -330,7 +347,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
                 memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
-        cb.waitForFinished();
+        cb.waitForFinishedEncode();
         // Encoded. Now try to decode it ...
         cb.waitForHasKeys();
         Metadata metadata = storage.encodeMetadata();
