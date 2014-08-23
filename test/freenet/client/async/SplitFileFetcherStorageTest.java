@@ -96,6 +96,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         private final int[] segmentDataBlockCount;
         private final int[] segmentCheckBlockCount;
         private final boolean persistent;
+        final MyKeysFetchingLocally fetchingKeys;
         
         private TestSplitfile(Bucket data, Metadata m, byte[][] originalDataBlocks,
                 byte[][] originalCheckBlocks, ClientCHK[] dataKeys, ClientCHK[] checkKeys,
@@ -112,6 +113,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             this.segmentDataBlockCount = segmentDataBlockCount;
             this.segmentCheckBlockCount = segmentCheckBlockCount;
             this.persistent = persistent;
+            this.fetchingKeys = new MyKeysFetchingLocally();
         }
         
         void free() {
@@ -284,7 +286,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
                     COMPATIBILITY_MODE, ctx, false, salt, URI, URI, true, new byte[0], random, bf,
-                    f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null, null);
+                    f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null, null, fetchingKeys);
         }
 
         /** Restore a splitfile fetcher from a file. 
@@ -294,7 +296,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
                 LockableRandomAccessThing raf) throws IOException, StorageFormatException, FetchException {
             assertTrue(persistent);
-            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false, false);
+            return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, fetchingKeys, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false, false);
         }
 
         public FetchContext makeFetchContext() {
@@ -847,7 +849,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
     }
     
-    class MyKeysFetchingLocally implements KeysFetchingLocally {
+    static class MyKeysFetchingLocally implements KeysFetchingLocally {
         private final HashSet<Key> keys = new HashSet<Key>();
 
         @Override
@@ -884,14 +886,15 @@ public class SplitFileFetcherStorageTest extends TestCase {
         SplitFileFetcherStorage storage = test.createStorage(cb, ctx);
         boolean[] tried = new boolean[dataBlocks+checkBlocks];
         innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
-        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
     
     private void innerChooseKeyTest(int dataBlocks, int checkBlocks, SplitFileFetcherSegmentStorage storage, boolean[] tried, TestSplitfile test, boolean cooldown) {
-        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        final MyKeysFetchingLocally keys = test.fetchingKeys;
+        keys.clear();
         for(int i=0;i<dataBlocks+checkBlocks;i++) {
-            int chosen = storage.chooseRandomKey(keys);
+            int chosen = storage.chooseRandomKey();
             assertTrue(chosen != -1);
             assertFalse(tried[chosen]);
             tried[chosen] = true;
@@ -903,7 +906,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             assertTrue(b);
         }
         if(cooldown) {
-            assertEquals(storage.chooseRandomKey(keys), -1);
+            assertEquals(storage.chooseRandomKey(), -1);
             // In infinite cooldown, waiting for all requests to complete.
             assertEquals(storage.getOverallCooldownTime(), Long.MAX_VALUE);
         }
@@ -934,7 +937,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             boolean[] tried = new boolean[dataBlocks+checkBlocks];
             innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
         }
-        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
     
@@ -957,7 +960,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
         assertTrue(storage.segments[0].getOverallCooldownTime() > now);
         assertFalse(storage.segments[0].getOverallCooldownTime() == Long.MAX_VALUE);
         // Now in cooldown.
-        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        test.fetchingKeys.clear();
+        assertEquals(storage.chooseRandomKey(), null);
         Thread.sleep((long)(COOLDOWN_TIME+COOLDOWN_TIME/2+1));
         cb.checkFailed();
         // Should be out of cooldown now.
@@ -1055,7 +1059,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
             boolean[] tried = new boolean[dataBlocks+checkBlocks];
             innerChooseKeyTest(dataBlocks, checkBlocks, storage.segments[0], tried, test, false);
         }
-        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        test.fetchingKeys.clear();
+        assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
     
@@ -1085,7 +1090,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 return;
             }
         }
-        assertEquals(storage.chooseRandomKey(new MyKeysFetchingLocally()), null);
+        test.fetchingKeys.clear();
+        assertEquals(storage.chooseRandomKey(), null);
         cb.waitForFailed();
     }
     

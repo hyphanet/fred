@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -34,6 +35,9 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
+import freenet.node.KeysFetchingLocally;
+import freenet.node.SendableInsert;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;
 import freenet.support.Executor;
@@ -265,7 +269,35 @@ public class SplitFileInserterStorageTest extends TestCase {
         // Test cross-segment:
         testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
+    
+    static class MyKeysFetchingLocally implements KeysFetchingLocally {
+        private final HashSet<Key> keys = new HashSet<Key>();
 
+        @Override
+        public long checkRecentlyFailed(Key key, boolean realTime) {
+            return 0;
+        }
+
+        @Override
+        public boolean hasKey(Key key, BaseSendableGet getterWaiting) {
+            return keys.contains(key);
+        }
+
+        @Override
+        public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
+            return false;
+        }
+
+        public void add(Key k) {
+            keys.add(k);
+        }
+
+        public void clear() {
+            keys.clear();
+        }
+        
+    }
+    
     private void testRoundTripSimpleRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
         LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
@@ -297,10 +329,12 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         short cmode = (short) context.getCompatibilityMode().ordinal();
         
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
                 new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
-                checker, false, null, null);
+                checker, false, null, null, keys);
         
         fetcherStorage.start(false);
         
@@ -368,7 +402,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
                 new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
-                checker, false, null, null);
+                checker, false, null, null, new MyKeysFetchingLocally());
         
         fetcherStorage.start(false);
         

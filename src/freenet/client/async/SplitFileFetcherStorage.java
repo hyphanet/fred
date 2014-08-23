@@ -232,6 +232,8 @@ public class SplitFileFetcherStorage {
      * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
      * so it only contains the final data before calling onSuccess(). Also, in this case, 
      * rafFactory must be a DiskSpaceCheckingRandomAccessThingFactory.
+     * @param keysFetching Must be passed in at this point as we will need it later. However, none
+     * of this is persisted directly, so this is not a problem.
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
      * @throws MetadataParseException 
      * @throws IOException If we were unable to create the file to store the metadata and 
@@ -244,7 +246,8 @@ public class SplitFileFetcherStorage {
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
             ChecksumChecker checker, boolean persistent, 
-            File storageFile, DiskSpaceCheckingRandomAccessThingFactory diskSpaceCheckingRAFFactory) 
+            File storageFile, DiskSpaceCheckingRandomAccessThingFactory diskSpaceCheckingRAFFactory,
+            KeysFetchingLocally keysFetching) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
         this.jobRunner = exec;
@@ -401,7 +404,7 @@ public class SplitFileFetcherStorage {
                     checkBlocks, crossCheckBlocks, dataOffset, 
                     completeViaTruncation ? crossCheckBlocksOffset : -1, // Put at end if truncating.
                     segmentKeysOffset, segmentStatusOffset,
-                    maxRetries != -1, keys);
+                    maxRetries != -1, keys, keysFetching);
             dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
             if(!completeViaTruncation) {
                 dataOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
@@ -582,7 +585,7 @@ public class SplitFileFetcherStorage {
      * restarting). */
     public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
             SplitFileFetcherStorageCallback callback, FetchContext origContext,
-            RandomSource random, PersistentJobRunner exec,
+            RandomSource random, PersistentJobRunner exec, KeysFetchingLocally keysFetching,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
             boolean newSalt, KeySalter salt, boolean resumed, boolean completeViaTruncation) 
     throws IOException, StorageFormatException, FetchException {
@@ -747,7 +750,7 @@ public class SplitFileFetcherStorage {
         for(int i=0;i<segments.length;i++) {
             segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, 
                     dataOffset, completeViaTruncation ? crossCheckBlocksOffset : -1,
-                    segmentKeysOffset, segmentStatusOffset);
+                    segmentKeysOffset, segmentStatusOffset, keysFetching);
             int dataBlocks = segments[i].dataBlocks;
             countDataBlocks += dataBlocks;
             int checkBlocks = segments[i].checkBlocks;
@@ -1429,7 +1432,7 @@ public class SplitFileFetcherStorage {
      * should do it off-thread.
      * @return The block number to be fetched, as an integer.
      */
-    public MyKey chooseRandomKey(KeysFetchingLocally keys) {
+    public MyKey chooseRandomKey() {
         synchronized(this) {
             if(finishedFetcher) return null;
         }
@@ -1437,7 +1440,7 @@ public class SplitFileFetcherStorage {
         // then a random key from it.
         int segNo = random.nextInt(segments.length);
         SplitFileFetcherSegmentStorage segment = segments[segNo];
-        int ret = segment.chooseRandomKey(keys);
+        int ret = segment.chooseRandomKey();
         if(ret != -1) return new MyKey(ret, segNo, this);
         // Looks like we are close to completion ...
         // FIXME OPT SCALABILITY This is O(n) memory and time with the number of segments. For a 
@@ -1452,7 +1455,7 @@ public class SplitFileFetcherStorage {
             while(tried[segNo = random.nextInt(segments.length)]);
             tried[segNo] = true;
             segment = segments[segNo];
-            ret = segment.chooseRandomKey(keys);
+            ret = segment.chooseRandomKey();
             if(ret != -1) return new MyKey(ret, segNo, this);
         }
         return null;

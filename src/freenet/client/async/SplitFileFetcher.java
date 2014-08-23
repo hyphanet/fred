@@ -22,7 +22,6 @@ import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.PooledRandomAccessFileWrapper;
@@ -145,7 +144,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     persistent ? context.jobRunner : context.dummyJobRunner, 
                     context.ticker, context.memoryLimitedJobRunner, checker, persistent,
-                    fileCompleteViaTruncation, context.getDiskSpaceCheckingRandomAccessThingFactory(persistent));
+                    fileCompleteViaTruncation, context.getDiskSpaceCheckingRandomAccessThingFactory(persistent), 
+                    context.getChkFetchScheduler(realTimeFlag).fetchingKeys());
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {
@@ -390,7 +390,8 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             KeySalter salter = getSalter();
             raf.onResume(context);
             this.storage = new SplitFileFetcherStorage(raf, realTimeFlag, this, blockFetchContext, 
-                    context.random, context.jobRunner, context.ticker, 
+                    context.random, context.jobRunner, 
+                    context.getChkFetchScheduler(realTimeFlag).fetchingKeys(), context.ticker, 
                     context.memoryLimitedJobRunner, new CRCChecksumChecker(), 
                     context.jobRunner.newSalt(), salter, resumed, 
                     callbackCompleteViaTruncation != null);
