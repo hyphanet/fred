@@ -254,7 +254,14 @@ public final class FCPPluginClient {
         ToServer,
         ToClient
     }
-    
+
+    /**
+     * Same as {@link #send(SendDirection, SimpleFieldSet, Bucket, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
+     */
+    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
+        send(direction, parameters, data, UUID.randomUUID().toString());
+    }
+
     /**
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
@@ -265,16 +272,17 @@ public final class FCPPluginClient {
     void send(SendDirection direction, SimpleFieldSet parameters, Bucket data, String messageIdentifier) {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
-    
-    /**
-     * Same as {@link #send(SendDirection, SimpleFieldSet, Bucket, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
-     */
-    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) {
-        send(direction, parameters, data, UUID.randomUUID().toString());
-    }
-    
+
+
     @SuppressWarnings("serial")
     public static final class FCPCallFailedException extends Exception { };
+
+    /**
+     * Same as {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
+     */
+    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
+        sendSynchronous(direction, parameters, data, timeoutMilliseconds, UUID.randomUUID().toString());
+    }
 
     /**
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
@@ -286,13 +294,6 @@ public final class FCPPluginClient {
     void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds, String messageIdentifier)
             throws FCPCallFailedException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
-    }
-    
-    /**
-     * Same as {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
-     */
-    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds) throws FCPCallFailedException {
-        sendSynchronous(direction, parameters, data, timeoutMilliseconds, UUID.randomUUID().toString());
     }
 
 }
