@@ -296,4 +296,8 @@ public final class FCPPluginClient {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
+    @Override
+    public String toString() {
+        return "FCPPluginClient (ID: " + id + "; server plugin: " + serverPluginName + "; client: " + client + "; clientConnection: " + clientConnection +  ")";
+    }
 }
