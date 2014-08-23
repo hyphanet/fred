@@ -80,6 +80,11 @@ public class SplitFileInserterSegmentStorage {
         this.keyLength = keyLength;
         crossSegmentBlockSegments = new SplitFileInserterCrossSegmentStorage[crossCheckBlocks];
         crossSegmentBlockNumbers = new int[crossCheckBlocks];
+        blocksHaveKeys = new boolean[totalBlockCount];
+        this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
+        this.splitfileCryptoKey = splitfileCryptoKey;
+        crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
+        blocksInserted = new boolean[totalBlockCount];
         try {
             CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
             DataOutputStream dos = new DataOutputStream(cos);
@@ -89,11 +94,6 @@ public class SplitFileInserterSegmentStorage {
         } catch (IOException e) {
             throw new Error(e); // Impossible
         }
-        blocksHaveKeys = new boolean[totalBlockCount];
-        this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
-        this.splitfileCryptoKey = splitfileCryptoKey;
-        crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
-        blocksInserted = new boolean[totalBlockCount];
     }
 
     // These two are only used in construction...
