@@ -36,7 +36,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class FCPPluginClientTracker extends NativeThread {
+final class FCPPluginClientTracker extends NativeThread {
     
     /**
      * Backend table of {@link WeakReference}s to known clients. Monitored by a {@link ReferenceQueue} to automatically remove entries for clients which have
