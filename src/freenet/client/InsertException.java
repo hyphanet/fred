@@ -225,9 +225,9 @@ public class InsertException extends Exception implements Cloneable {
 		case META_STRINGS_NOT_SUPPORTED:
 		case BINARY_BLOB_FORMAT_ERROR:
 		case TOO_BIG:
+        case BUCKET_ERROR: // maybe. No point retrying.
+        case INTERNAL_ERROR: // maybe. No point retrying.
 			return true;
-		case BUCKET_ERROR: // maybe
-		case INTERNAL_ERROR: // maybe
 		case REJECTED_OVERLOAD:
 		case TOO_MANY_RETRIES_IN_BLOCKS:
 		case ROUTE_NOT_FOUND:
