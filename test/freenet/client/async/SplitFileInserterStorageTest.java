@@ -261,6 +261,32 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertTrue(storage.getStatus() == Status.ENCODED);
     }
 
+    public void testSmallSplitfileCompletion() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            segment.onInsertedBlock(i, segment.encodeBlock(i).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(storage.getStatus(), Status.SUCCEEDED);
+    }
+
     private HashResult[] getHashes(LockableRandomAccessThing data) throws IOException {
         InputStream is = new RAFInputStream(data, 0, data.size());
         MultiHashInputStream hashStream = new MultiHashInputStream(is, HashType.SHA256.bitmask);
