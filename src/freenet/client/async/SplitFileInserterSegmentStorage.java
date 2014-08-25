@@ -16,6 +16,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.SendableRequestItemKey;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
@@ -27,7 +28,7 @@ import freenet.support.io.LockableRandomAccessThing.RAFLock;
 /** A single segment within a splitfile to be inserted. */
 public class SplitFileInserterSegmentStorage {
     
-    private final SplitFileInserterStorage parent;
+    final SplitFileInserterStorage parent;
 
     final int segNo;
     final int dataBlockCount;
@@ -507,6 +508,52 @@ public class SplitFileInserterSegmentStorage {
         cancelled = true;
         if(hasCompletedOrFailed()) return true;
         return false;
+    }
+    
+    public synchronized BlockInsert chooseBlock() {
+        int chosenBlock = innerChooseBlock();
+        if(chosenBlock == -1) return null;
+        return new BlockInsert(this, chosenBlock);
+    }
+    
+    synchronized int innerChooseBlock() {
+        if(cancelled) return -1;
+        return blockChooser.chooseKey();
+    }
+
+    static final class BlockInsert implements SendableRequestItemKey {
+        
+        final SplitFileInserterSegmentStorage segment;
+        final int blockNumber;
+        
+        BlockInsert(SplitFileInserterSegmentStorage segment, int blockNumber) {
+            this.segment = segment;
+            this.blockNumber = blockNumber;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + blockNumber;
+            result = prime * result + ((segment == null) ? 0 : segment.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (!(obj instanceof BlockInsert))
+                return false;
+            BlockInsert other = (BlockInsert) obj;
+            if (blockNumber != other.blockNumber)
+                return false;
+            return segment == other.segment;
+        }
+        
     }
     
 }

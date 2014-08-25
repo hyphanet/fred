@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.util.Random;
 
+import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.node.KeysFetchingLocally;
 
 /** Tracks retry count and completion status for blocks in an insert segment. */
@@ -28,6 +29,12 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
     
     protected void onCompletedAll() {
         segment.onInsertedAllBlocks();
+    }
+    
+    protected boolean checkValid(int chosen) {
+        if(!super.checkValid(chosen)) return false;
+        return !keysFetching.hasInsert(segment.parent.getSendableInsert(), 
+                new BlockInsert(segment, chosen));
     }
 
 }

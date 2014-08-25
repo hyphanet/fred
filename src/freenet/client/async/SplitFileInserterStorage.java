@@ -21,6 +21,7 @@ import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.SendableInsert;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
@@ -1106,6 +1107,11 @@ public class SplitFileInserterStorage {
 
     public synchronized Status getStatus() {
         return status;
+    }
+
+    /** Used by KeysFetchingLocally */
+    SendableInsert getSendableInsert() {
+        return callback.getSendableInsert();
     }
 
 }

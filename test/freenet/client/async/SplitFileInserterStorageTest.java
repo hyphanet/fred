@@ -20,6 +20,7 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.client.async.SplitFileInserterStorage.Status;
 import freenet.client.events.SimpleEventProducer;
@@ -184,6 +185,11 @@ public class SplitFileInserterStorageTest extends TestCase {
             notifyAll();
         }
 
+        @Override
+        public SendableInsert getSendableInsert() {
+            return null;
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
@@ -286,6 +292,52 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.ENCODED);
         for(int i=0;i<segment.totalBlockCount;i++) {
             segment.onInsertedBlock(i, segment.encodeBlock(i).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(storage.getStatus(), Status.SUCCEEDED);
+    }
+
+    public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.maxInsertRetries = 2;
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        boolean[] chosenBlocks = new boolean[segment.totalBlockCount];
+        // Choose and fail all blocks.
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            assertTrue(chosen != null);
+            keys.addInsert(chosen);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        keys.clear();
+        // Choose and succeed all blocks.
+        chosenBlocks = new boolean[segment.totalBlockCount];
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            keys.addInsert(chosen);
+            assertTrue(chosen != null);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onInsertedBlock(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
         }
         cb.waitForSucceededInsert();
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
@@ -394,10 +446,15 @@ public class SplitFileInserterStorageTest extends TestCase {
     
     static class MyKeysFetchingLocally implements KeysFetchingLocally {
         private final HashSet<Key> keys = new HashSet<Key>();
+        private final HashSet<SendableRequestItemKey> inserts = new HashSet<SendableRequestItemKey>();
 
         @Override
         public long checkRecentlyFailed(Key key, boolean realTime) {
             return 0;
+        }
+
+        public void addInsert(SendableRequestItemKey chosen) {
+            inserts.add(chosen);
         }
 
         @Override
@@ -407,7 +464,8 @@ public class SplitFileInserterStorageTest extends TestCase {
 
         @Override
         public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
-            return false;
+            assertTrue(insert == null);
+            return inserts.contains(token);
         }
 
         public void add(Key k) {
@@ -416,6 +474,7 @@ public class SplitFileInserterStorageTest extends TestCase {
 
         public void clear() {
             keys.clear();
+            inserts.clear();
         }
         
     }
