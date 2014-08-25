@@ -456,8 +456,13 @@ public class SplitFileInserterSegmentStorage {
     }
     
     /** Called when a block insert succeeds */
-    public void onInsertedBlock(int blockNo) {
-        blockChooser.onSuccess(blockNo);
+    public void onInsertedBlock(int blockNo, ClientCHK key) {
+        try {
+            this.setKey(blockNo, key);
+            blockChooser.onSuccess(blockNo);
+        } catch (IOException e) {
+            parent.failOnDiskError(e);
+        }
     }
 
     /** Called by BlockChooser when all blocks have been inserted. */
