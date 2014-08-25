@@ -18,7 +18,7 @@ public class InsertException extends Exception implements Cloneable {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	/** Failure mode, see the constants below. */
-	private final int mode;
+	public final int mode;
 	/** Collect errors when there are multiple failures. The error mode will be FATAL_ERRORS_IN_BLOCKS or
 	 * TOO_MANY_RETRIES_IN_BLOCKS i.e. a splitfile failed. */
 	public FailureCodeTracker errorCodes;
