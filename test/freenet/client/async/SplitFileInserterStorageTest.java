@@ -192,10 +192,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -213,10 +214,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         LockableRandomAccessThing data = smallRAFFactory.makeRAF(originalData, 0, originalData.length);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         // Now check the data blocks...
@@ -244,10 +246,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.earlyEncode = true;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -268,10 +271,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -295,10 +299,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.maxInsertRetries = 2;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -330,10 +335,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.maxInsertRetries = 2;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -422,10 +428,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.earlyEncode = true;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertTrue(storage.getStatus() == Status.ENCODED);
@@ -445,8 +452,6 @@ public class SplitFileInserterStorageTest extends TestCase {
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
         short cmode = (short) context.getCompatibilityMode().ordinal();
-        
-        KeysFetchingLocally keys = new MyKeysFetchingLocally();
         
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
                 new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
@@ -493,10 +498,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.earlyEncode = true;
+        KeysFetchingLocally keysFetching = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, keysFetching, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         // Encoded. Now try to decode it ...
@@ -520,7 +526,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
                 new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
-                checker, false, null, null, new MyKeysFetchingLocally());
+                checker, false, null, null, keysFetching);
         
         fetcherStorage.start(false);
         

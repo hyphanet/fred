@@ -20,6 +20,7 @@ import freenet.crypt.ChecksumChecker;
 import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
+import freenet.node.KeysFetchingLocally;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
@@ -211,6 +212,7 @@ public class SplitFileInserterStorage {
             byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes, 
             BucketFactory bf, ChecksumChecker checker, Random random,
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner,
+            KeysFetchingLocally keysFetching, 
             boolean topDontCompress, int topRequiredBlocks, int topTotalBlocks, 
             long origDataSize, long origCompressedDataSize) throws IOException, InsertException {
         this.originalData = originalData;
@@ -335,7 +337,7 @@ public class SplitFileInserterStorage {
         keyLength = SplitFileInserterSegmentStorage.getKeyLength(this);
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent, splitfileCryptoAlgorithm, splitfileCryptoKey,
-                cmode, random);
+                cmode, random, keysFetching);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -629,13 +631,15 @@ public class SplitFileInserterStorage {
 
     private SplitFileInserterSegmentStorage[] makeSegments(int segmentSize, int segCount,
             int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments, boolean persistent,
-            byte cryptoAlgorithm, byte[] cryptoKey, CompatibilityMode cmode, Random random) {
+            byte cryptoAlgorithm, byte[] cryptoKey, CompatibilityMode cmode, Random random, 
+            KeysFetchingLocally keysFetching) {
         SplitFileInserterSegmentStorage[] segments = new SplitFileInserterSegmentStorage[segCount];
         if (segCount == 1) {
             // Single segment
             int checkBlocks = codec.getCheckBlocks(dataBlocks + crossCheckBlocks, cmode);
             segments[0] = new SplitFileInserterSegmentStorage(this, 0, persistent, dataBlocks,
-                    checkBlocks, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, random, maxRetries);
+                    checkBlocks, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, random, 
+                    maxRetries, keysFetching);
         } else {
             int j = 0;
             int segNo = 0;
@@ -653,7 +657,8 @@ public class SplitFileInserterStorage {
                 }
                 j = i;
                 segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo, persistent,
-                        data, check, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, random, maxRetries);
+                        data, check, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, 
+                        random, maxRetries, keysFetching);
 
                 if (deductBlocksFromSegments != 0)
                     if (logMINOR)

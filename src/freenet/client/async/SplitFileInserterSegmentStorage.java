@@ -15,6 +15,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
@@ -71,7 +72,8 @@ public class SplitFileInserterSegmentStorage {
     
     public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, int segNo, 
             boolean persistent, int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
-            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, Random random, int maxRetries) {
+            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, Random random, int maxRetries,
+            KeysFetchingLocally keysFetching) {
         this.parent = parent;
         this.segNo = segNo;
         this.dataBlockCount = dataBlocks;
@@ -85,7 +87,8 @@ public class SplitFileInserterSegmentStorage {
         this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
         this.splitfileCryptoKey = splitfileCryptoKey;
         crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
-        blockChooser = new SplitFileInserterSegmentBlockChooser(this, totalBlockCount, random, maxRetries);
+        blockChooser = new SplitFileInserterSegmentBlockChooser(this, totalBlockCount, random, 
+                maxRetries, keysFetching);
         try {
             CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
             DataOutputStream dos = new DataOutputStream(cos);
