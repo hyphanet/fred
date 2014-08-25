@@ -253,7 +253,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				}
 				ignoreStore = false;
 			}
-			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
+			ret = new ChosenBlockImpl(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
 			if(logMINOR) Logger.minor(this, "Created "+ret+" for "+req);
 			return ret;
 		}

@@ -9,7 +9,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
-import freenet.client.async.TransientChosenBlock;
+import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
@@ -227,8 +227,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				req.onDumped();
 				return false;
 			}
-		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
-			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey())) {
+		} else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert) {
+			if(!sched.addTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey())) {
 				req.onDumped();
 				return false;
 			}
@@ -278,8 +278,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			} finally {
 				if(req.sendIsBlocking()) {
 					if(key != null) sched.removeFetchingKey(key);
-					else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
-						sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token.getKey());
+					else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert)
+						sched.removeTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey());
 					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 					// so wake the starter thread.
 					wakeUp();

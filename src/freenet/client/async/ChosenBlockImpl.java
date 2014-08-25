@@ -12,16 +12,15 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 
 /**
- * A ChosenBlock which isn't persistent.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  *
  */
-public class TransientChosenBlock extends ChosenBlock {
+public class ChosenBlockImpl extends ChosenBlock {
 
 	public final SendableRequest request;
 	public final RequestScheduler sched;
 
-	public TransientChosenBlock(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
+	public ChosenBlockImpl(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
 			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched) {
 		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
 		this.request = req;
