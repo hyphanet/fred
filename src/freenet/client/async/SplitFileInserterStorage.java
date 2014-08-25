@@ -16,7 +16,6 @@ import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
-import freenet.client.async.SplitFileInserterStorage.Status;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
@@ -1028,8 +1027,10 @@ public class SplitFileInserterStorage {
         for(SplitFileInserterSegmentStorage segment : segments) {
             if(!segment.hasCompletedOrFailed()) return false;
         }
-        for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
-            if(!segment.hasCompletedOrFailed()) return false;
+        if(crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                if(!segment.hasCompletedOrFailed()) return false;
+            }
         }
         return true;
     }
@@ -1064,8 +1065,10 @@ public class SplitFileInserterStorage {
                 for(SplitFileInserterSegmentStorage segment : segments) {
                     if(!segment.cancel()) allDone = false;
                 }
-                for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
-                    if(!segment.cancel()) allDone = false;
+                if(crossSegments != null) {
+                    for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                        if(!segment.cancel()) allDone = false;
+                    }
                 }
                 if(allDone) {
                     synchronized(this) {
