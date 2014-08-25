@@ -1050,7 +1050,15 @@ public class SplitFileInserterStorage {
         fail(new InsertException(InsertException.BUCKET_ERROR));
     }
     
-    public void fail(final InsertException e) {
+    public void failFatalErrorInBlock() {
+        fail(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null));
+    }
+    
+    public void failTooManyRetriesInBlock() {
+        fail(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null));
+    }
+    
+    private void fail(final InsertException e) {
         synchronized(this) {
             // Only fail once.
             if(failing != null) return;

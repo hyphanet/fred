@@ -476,14 +476,14 @@ public class SplitFileInserterSegmentStorage {
     public void onFailure(int blockNo, InsertException e) {
         parent.addFailure(e);
         if(e.isFatal()) {
-            parent.fail(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS));
+            parent.failFatalErrorInBlock();
         } else {
             boolean fail;
             synchronized(this) {
                 fail = blockChooser.onNonFatalFailure(blockNo);
             }
             if(fail)
-                parent.fail(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS));
+                parent.failTooManyRetriesInBlock();
         }
     }
 
