@@ -281,7 +281,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			// Use >= so that extra inserts see this as a success.
 			if(consecutiveRNFs >= ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-				onSuccess(keyNum, context);
+				onSuccess(keyNum, getKeyNoEncode(), context);
 				return;
 			}
 		} else
@@ -343,7 +343,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(ctx.getCHKOnly) {
 			tryEncode(context);
-			onSuccess(null, context);
+			onSuccess(null, getKeyNoEncode(), context);
 		} else {
 			getScheduler(context).registerInsert(this, persistent);
 		}
@@ -370,9 +370,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public synchronized FreenetURI getURINoEncode() {
 		return resultingKey == null ? null : resultingKey.getURI();
 	}
+	
+	public synchronized ClientKey getKeyNoEncode() {
+	    return resultingKey;
+	}
 
 	@Override
-	public void onSuccess(Object keyNum, ClientContext context) {
+	public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
+	    onEncode(key, context);
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED), context);
@@ -474,19 +479,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				}
 				key = encodedBlock.getClientKey();
 				k = key;
-				if(block.persistent) {
-				    context.jobRunner.queueNormalOrDrop(new PersistentJob() {
-
-                        @Override
-                        public boolean run(ClientContext context) {
-                            orig.onEncode(key, context);
-                            return true;
-                        }
-				        
-				    });
-				} else {
-					orig.onEncode(key, context);
-				}
+				context.getJobRunner(block.persistent).queueNormalOrDrop(new PersistentJob() {
+				    
+				    @Override
+				    public boolean run(ClientContext context) {
+				        orig.onEncode(key, context);
+				        return true;
+				    }
+				    
+				});
 				if(req.localRequestOnly)
 					try {
 						core.node.store(b, false, req.canWriteClientCache, true, false);
@@ -519,9 +520,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
 							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data");
-							if(!block.persistent)
-								orig.onEncode(k, context);
-							req.onInsertSuccess(context);
+							req.onInsertSuccess(k, context);
 							return true;
 						} else {
 							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
@@ -543,7 +542,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block.copyBucket.free();
 			}
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded");
-			req.onInsertSuccess(context);
+			req.onInsertSuccess(k, context);
 			return true;
 		}
 

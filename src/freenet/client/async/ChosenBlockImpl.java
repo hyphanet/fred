@@ -53,12 +53,12 @@ public class ChosenBlockImpl extends ChosenBlock {
 	}
 
 	@Override
-	public void onInsertSuccess(ClientContext context) {
+	public void onInsertSuccess(final ClientKey key, ClientContext context) {
         context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
-                ((SendableInsert) request).onSuccess(token, context);
+                ((SendableInsert) request).onSuccess(token, key, context);
                 return false;
             }
             

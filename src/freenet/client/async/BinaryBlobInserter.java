@@ -8,6 +8,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
@@ -114,7 +115,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 
 		@Override
-		public void onSuccess(Object keyNum, ClientContext context) {
+		public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -162,7 +163,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
 					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess(keyNum, context);
+					onSuccess(keyNum, null, context);
 					return;
 				}
 			} else

@@ -46,7 +46,7 @@ public abstract class ChosenBlock {
 
 	public abstract void onFailure(LowLevelPutException e, ClientContext context);
 
-	public abstract void onInsertSuccess(ClientContext context);
+	public abstract void onInsertSuccess(ClientKey key, ClientContext context);
 
 	public abstract void onFailure(LowLevelGetException e, ClientContext context);
 

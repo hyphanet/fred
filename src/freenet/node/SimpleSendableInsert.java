@@ -64,7 +64,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	@Override
-	public void onSuccess(Object keyNum, ClientContext context) {
+	public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
 		// Yay!
 		if(logMINOR)
 			Logger.minor(this, "Finished insert of "+block);
@@ -100,7 +100,7 @@ public class SimpleSendableInsert extends SendableInsert {
 					finished = true;
 				}
 				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-				onSuccess(req.token, context);
+				onSuccess(req.token, null, context);
 				return true;
 			}
 
