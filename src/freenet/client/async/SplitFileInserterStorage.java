@@ -720,10 +720,9 @@ public class SplitFileInserterStorage {
             @Override
             public boolean run(ClientContext context) {
                 callback.encodingProgress();
+                if(maybeFail()) return true;
                 if(allFinishedCrossEncoding()) {
                     onCompletedCrossSegmentEncode();
-                } else {
-                    maybeFail();
                 }
                 return false;
             }
@@ -750,10 +749,9 @@ public class SplitFileInserterStorage {
             public boolean run(ClientContext context) {
                 completed.storeStatus();
                 callback.encodingProgress();
+                if(maybeFail()) return true;
                 if(allFinishedEncoding()) {
                     onCompletedSegmentEncode();
-                } else {
-                    maybeFail();
                 }
                 return false;
             }
@@ -979,6 +977,7 @@ public class SplitFileInserterStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                if(maybeFail()) return true;
                 if(allSegmentsSucceeded()) {
                     synchronized(this) {
                         assert(failing == null);
@@ -1008,8 +1007,6 @@ public class SplitFileInserterStorage {
                         }
                         callback.onFailed(e1);
                     }
-                } else {
-                    maybeFail();
                 }
                 return true;
             }
@@ -1017,18 +1014,21 @@ public class SplitFileInserterStorage {
         });
     }
 
-    private void maybeFail() {
+    private boolean maybeFail() {
         // Might have failed.
         // Have to check segments before checking for failure because of race conditions.
         if(allSegmentsCompletedOrFailed()) {
             InsertException e = null;
             synchronized(this) {
-                if(failing == null) return;
+                if(failing == null) return false;
                 e = failing;
-                if(hasFinished()) return;
+                if(hasFinished()) return true;
                 status = Status.FAILED;
             }
             callback.onFailed(e);
+            return true;
+        } else {
+            return false;
         }
     }
 
