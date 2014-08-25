@@ -57,7 +57,7 @@ public class SendableGetRequestSender implements SendableRequestSender {
 							req.onFetchSuccess(context);
 						} finally {
 							if(key != null) sched.removeFetchingKey(k);
-							else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert)
+							else if(((ChosenBlockImpl)req).request instanceof SendableInsert)
 								sched.removeTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey());
 							// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 							// so wake the starter thread.
@@ -71,7 +71,7 @@ public class SendableGetRequestSender implements SendableRequestSender {
 							req.onFailure(e, context);
 						} finally {
 							if(key != null) sched.removeFetchingKey(k);
-							else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert)
+							else if(((ChosenBlockImpl)req).request instanceof SendableInsert)
 								sched.removeTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey());
 							// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 							// so wake the starter thread.

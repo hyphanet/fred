@@ -227,7 +227,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				req.onDumped();
 				return false;
 			}
-		} else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert) {
+		} else if(((ChosenBlockImpl)req).request instanceof SendableInsert) {
 			if(!sched.addTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey())) {
 				req.onDumped();
 				return false;
@@ -278,7 +278,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			} finally {
 				if(req.sendIsBlocking()) {
 					if(key != null) sched.removeFetchingKey(key);
-					else if((!req.isPersistent()) && ((ChosenBlockImpl)req).request instanceof SendableInsert)
+					else if(((ChosenBlockImpl)req).request instanceof SendableInsert)
 						sched.removeTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey());
 					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 					// so wake the starter thread.

@@ -61,11 +61,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet<Key>();
 			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
-			runningTransientInserts = null;
+			runningInserts = null;
 			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		} else {
 			keysFetching = null;
-			runningTransientInserts = new HashSet<RunningTransientInsert>();
+			runningInserts = new HashSet<RunningTransientInsert>();
 			recentSuccesses = null;
 		}
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
@@ -120,7 +120,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		
 	}
 	
-	private transient final HashSet<RunningTransientInsert> runningTransientInserts;
+	private transient final HashSet<RunningTransientInsert> runningInserts;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
@@ -534,15 +534,15 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	@Override
 	public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
-		synchronized(runningTransientInserts) {
-			return runningTransientInserts.contains(tmp);
+		synchronized(runningInserts) {
+			return runningInserts.contains(tmp);
 		}
 	}
 
 	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
-		synchronized(runningTransientInserts) {
-			boolean retval = runningTransientInserts.add(tmp);
+		synchronized(runningInserts) {
+			boolean retval = runningInserts.add(tmp);
 			if(!retval) {
 				Logger.normal(this, "Already in runningTransientInserts: "+insert+" : "+token);
 			} else {
@@ -557,8 +557,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		if(logMINOR)
 			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);
-		synchronized(runningTransientInserts) {
-			runningTransientInserts.remove(tmp);
+		synchronized(runningInserts) {
+			runningInserts.remove(tmp);
 		}
 	}
 
