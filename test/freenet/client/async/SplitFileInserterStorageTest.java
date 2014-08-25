@@ -112,6 +112,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         private boolean finishedEncode;
         private boolean hasKeys;
         private boolean succeededInsert;
+        private InsertException failed;
 
         @Override
         public synchronized void onFinishedEncode() {
@@ -130,8 +131,14 @@ public class SplitFileInserterStorageTest extends TestCase {
             // Ignore.
         }
         
-        public synchronized void waitForFinishedEncode() {
+        private void checkFailed() throws InsertException {
+            if(failed != null)
+                throw failed;
+        }
+
+        public synchronized void waitForFinishedEncode() throws InsertException {
             while(!finishedEncode) {
+                checkFailed();
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -140,8 +147,9 @@ public class SplitFileInserterStorageTest extends TestCase {
             }
         }
 
-        public synchronized void waitForHasKeys() {
+        public synchronized void waitForHasKeys() throws InsertException {
             while(!hasKeys) {
+                checkFailed();
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -156,14 +164,21 @@ public class SplitFileInserterStorageTest extends TestCase {
             notifyAll();
         }
         
-        public synchronized void waitForSucceededInsert() {
+        public synchronized void waitForSucceededInsert() throws InsertException {
             while(!succeededInsert) {
+                checkFailed();
                 try {
                     wait();
                 } catch (InterruptedException e) {
                     // Ignore.
                 }
             }
+        }
+
+        @Override
+        public synchronized void onFailed(InsertException e) {
+            failed = e;
+            notifyAll();
         }
 
     }

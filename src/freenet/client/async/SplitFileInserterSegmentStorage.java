@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
+import freenet.client.InsertException;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumChecker;
 import freenet.keys.CHKBlock;
@@ -64,6 +65,9 @@ public class SplitFileInserterSegmentStorage {
     
     /** LOCKING: Locked with (this) as needs to access encoded in chooseBlock */
     private final SplitFileInserterSegmentBlockChooser blockChooser;
+    
+    /** Set if the insert is cancelled. */
+    private boolean cancelled;
     
     public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, int segNo, 
             boolean persistent, int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
@@ -438,6 +442,7 @@ public class SplitFileInserterSegmentStorage {
      * Should not change once we reach this state, but might be possible in case of disk errors 
      * causing losing keys etc. */
     public synchronized boolean hasSucceeded() {
+        if(cancelled) return false;
         return blockChooser.hasSucceededAll();
     }
 
@@ -459,6 +464,37 @@ public class SplitFileInserterSegmentStorage {
         parent.segmentSucceeded(this);
     }
     
-    
+    public void onFailure(int blockNo, InsertException e) {
+        parent.addFailure(e);
+        if(e.isFatal()) {
+            parent.fail(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS));
+        } else {
+            boolean fail;
+            synchronized(this) {
+                fail = blockChooser.onNonFatalFailure(blockNo);
+            }
+            if(fail)
+                parent.fail(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS));
+        }
+    }
+
+    public synchronized boolean hasCompletedOrFailed() {
+        if(encoded) return true; // No more encoding jobs will run.
+        if(encoding) return false; // Waiting for job to finish.
+        if(cancelled) return true;
+        if(blockChooser.hasSucceededAll()) return true;
+        return false;
+    }
+
+    /** Caller must check hasCompletedOrFailed() explicitly after calling cancel() on all 
+     * segments. 
+     * @return True if the segment has completed cancellation. False if it is waiting for an 
+     * encode, in which case a callback to parent will be made when the encode finishes. */
+    public synchronized boolean cancel() {
+        if(cancelled) return false;
+        cancelled = true;
+        if(hasCompletedOrFailed()) return true;
+        return false;
+    }
     
 }

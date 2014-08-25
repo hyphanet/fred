@@ -24,6 +24,7 @@ public class SplitFileInserterCrossSegmentStorage {
     
     private boolean encoded;
     private boolean encoding;
+    private boolean cancelled;
     
     /** Segment for each block */
     private final SplitFileInserterSegmentStorage[] segments;
@@ -34,6 +35,7 @@ public class SplitFileInserterCrossSegmentStorage {
     private transient int counter;
     
     private final int statusLength;
+    
     
     // Set to true to encode block keys during *cross-segment* encoding, and thus detect e.g. storage bugs.
     // This will cause more disk I/O as we have to write the keys (more or less randomly).
@@ -225,6 +227,21 @@ public class SplitFileInserterCrossSegmentStorage {
     
     int[] getBlockNumbers() {
         return blockNumbers.clone();
+    }
+
+    /** Cancel the encode.
+     * @return True if we can complete cancelling now, false if we are encoding, in which case 
+     * parent will get the usual callback when it is done.
+     */
+    public synchronized boolean cancel() {
+        cancelled = true;
+        if(encoding) return false;
+        return true;
+    }
+
+    public synchronized boolean hasCompletedOrFailed() {
+        if(encoding) return false;
+        return encoded || cancelled;
     }
 
 }

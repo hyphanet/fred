@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import freenet.client.InsertException;
+
 /** Callback interface for a SplitFileInserterStorage. Usually implemented by SplitFileInserter,
  * but can be used for unit tests etc too. Hence SplitFileInserter doesn't need to know much about
  * the rest of the client layer.
@@ -20,5 +22,8 @@ public interface SplitFileInserterStorageCallback {
 
     /** Called when the whole insert has succeeded, i.e. when all blocks have been inserted. */
     void onSucceeded();
+
+    /** Called if the insert fails. All encodes will have finished by the time this is called. */
+    void onFailed(InsertException e);
 
 }

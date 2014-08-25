@@ -196,6 +196,4 @@ public class SimpleBlockChooser {
         return completedCount == blocks;
     }
 
-
-
 }

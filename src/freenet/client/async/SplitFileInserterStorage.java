@@ -10,6 +10,7 @@ import java.util.Random;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
+import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -170,6 +171,12 @@ public class SplitFileInserterStorage {
     }
 
     private Status status;
+    private final FailureCodeTracker errors;
+    
+    // Not persisted, only used briefly during completion
+    private boolean succeeded;
+    private InsertException failing;
+    private boolean failed;
 
     // These are kept here so we can set them in the main constructor after
     // we've constructed the segments.
@@ -232,6 +239,7 @@ public class SplitFileInserterStorage {
         this.origDataSize = origDataSize;
         this.origCompressedDataSize = origCompressedDataSize;
         this.maxRetries = ctx.maxInsertRetries;
+        this.errors = new FailureCodeTracker(true);
 
         // Work out how many blocks in each segment, crypto keys etc.
         // Complicated by back compatibility, i.e. the need to be able to
@@ -697,21 +705,37 @@ public class SplitFileInserterStorage {
 
     public void onFinishedEncoding(SplitFileInserterCrossSegmentStorage completed) {
         callback.encodingProgress();
+        if(allFinishedCrossEncoding()) {
+            onCompletedCrossSegmentEncode();
+        } else {
+            maybeFail();
+        }
+    }
+
+    private boolean allFinishedCrossEncoding() {
         for (SplitFileInserterCrossSegmentStorage segment : crossSegments) {
             if (!segment.isFinishedEncoding())
-                return;
+                return false;
         }
-        onCompletedCrossSegmentEncode();
+        return true;
     }
 
     public void onFinishedEncoding(SplitFileInserterSegmentStorage completed) {
         completed.storeStatus();
         callback.encodingProgress();
+        if(allFinishedEncoding()) {
+            onCompletedSegmentEncode();
+        } else {
+            maybeFail();
+        }
+    }
+
+    private boolean allFinishedEncoding() {
         for (SplitFileInserterSegmentStorage segment : segments) {
             if (!segment.isFinishedEncoding())
-                return;
+                return false;
         }
-        onCompletedSegmentEncode();
+        return true;
     }
 
     /** Called when we have completed encoding all the cross-segments */
@@ -791,11 +815,6 @@ public class SplitFileInserterStorage {
 
     public boolean hasSplitfileKey() {
         return splitfileCryptoKey != null;
-    }
-
-    public void failOnDiskError(IOException e) {
-        // TODO Auto-generated method stub
-
     }
 
     /**
@@ -922,10 +941,82 @@ public class SplitFileInserterStorage {
     }
 
     public void segmentSucceeded(SplitFileInserterSegmentStorage completedSegment) {
-        for(SplitFileInserterSegmentStorage segment : segments) {
-            if(!segment.hasSucceeded()) break;
+        if(allSegmentsSucceeded()) {
+            synchronized(this) {
+                assert(failing == null);
+                if(succeeded) return;
+                succeeded = true;
+            }
+            // They can't still be encoding if they have succeeded.
+            callback.onSucceeded();
+        } else {
+            maybeFail();
         }
-        callback.onSucceeded();
+    }
+
+    private void maybeFail() {
+        // Might have failed.
+        // Have to check segments before checking for failure because of race conditions.
+        if(allSegmentsCompletedOrFailed()) {
+            InsertException e = null;
+            synchronized(this) {
+                if(failing == null) return;
+                e = failing;
+                failed = true;
+            }
+            callback.onFailed(e);
+        }
+    }
+
+    private boolean allSegmentsCompletedOrFailed() {
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(!segment.hasCompletedOrFailed()) return false;
+        }
+        for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+            if(!segment.hasCompletedOrFailed()) return false;
+        }
+        return true;
+    }
+
+    private boolean allSegmentsSucceeded() {
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(!segment.hasSucceeded()) return false;
+        }
+        return true;
+    }
+
+    public void addFailure(InsertException e) {
+        errors.inc(e.getMode());
+    }
+
+    public void failOnDiskError(IOException e) {
+        fail(new InsertException(InsertException.BUCKET_ERROR));
+    }
+    
+    public void fail(InsertException e) {
+        synchronized(this) {
+            // Only fail once.
+            if(failing != null) return;
+            failing = e;
+        }
+        // Tell the segments to cancel.
+        boolean allDone = true;
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(!segment.cancel()) allDone = false;
+        }
+        for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+            if(!segment.cancel()) allDone = false;
+        }
+        if(allDone) {
+            synchronized(this) {
+                // Could have beaten us to it in callback.
+                if(failed) return;
+                failed = true;
+            }
+            callback.onFailed(e);
+        } else {
+            // Wait for them to finish encoding.
+        }
     }
 
 }
