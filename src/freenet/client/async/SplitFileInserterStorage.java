@@ -703,13 +703,25 @@ public class SplitFileInserterStorage {
             segment.startEncode();
     }
 
+    /** Called when a cross-segment finishes encoding blocks. Can be called inside locks as it runs
+     * off-thread.
+     * @param completed
+     */
     public void onFinishedEncoding(SplitFileInserterCrossSegmentStorage completed) {
-        callback.encodingProgress();
-        if(allFinishedCrossEncoding()) {
-            onCompletedCrossSegmentEncode();
-        } else {
-            maybeFail();
-        }
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                callback.encodingProgress();
+                if(allFinishedCrossEncoding()) {
+                    onCompletedCrossSegmentEncode();
+                } else {
+                    maybeFail();
+                }
+                return false;
+            }
+            
+        });
     }
 
     private boolean allFinishedCrossEncoding() {
@@ -720,14 +732,26 @@ public class SplitFileInserterStorage {
         return true;
     }
 
-    public void onFinishedEncoding(SplitFileInserterSegmentStorage completed) {
-        completed.storeStatus();
-        callback.encodingProgress();
-        if(allFinishedEncoding()) {
-            onCompletedSegmentEncode();
-        } else {
-            maybeFail();
-        }
+    /** Called when a segment finishes encoding blocks. Can be called inside locks as it runs
+     * off-thread.
+     * @param completed
+     */
+    public void onFinishedEncoding(final SplitFileInserterSegmentStorage completed) {
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                completed.storeStatus();
+                callback.encodingProgress();
+                if(allFinishedEncoding()) {
+                    onCompletedSegmentEncode();
+                } else {
+                    maybeFail();
+                }
+                return false;
+            }
+            
+        });
     }
 
     private boolean allFinishedEncoding() {
@@ -940,18 +964,27 @@ public class SplitFileInserterStorage {
         return segments.length * crossCheckBlocks;
     }
 
+    /** Called when a segment completes. Can be called inside locks as it runs off-thread. */
     public void segmentSucceeded(SplitFileInserterSegmentStorage completedSegment) {
-        if(allSegmentsSucceeded()) {
-            synchronized(this) {
-                assert(failing == null);
-                if(succeeded) return;
-                succeeded = true;
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                if(allSegmentsSucceeded()) {
+                    synchronized(this) {
+                        assert(failing == null);
+                        if(succeeded) return false;
+                        succeeded = true;
+                    }
+                    // They can't still be encoding if they have succeeded.
+                    callback.onSucceeded();
+                } else {
+                    maybeFail();
+                }
+                return true;
             }
-            // They can't still be encoding if they have succeeded.
-            callback.onSucceeded();
-        } else {
-            maybeFail();
-        }
+            
+        });
     }
 
     private void maybeFail() {
@@ -993,30 +1026,39 @@ public class SplitFileInserterStorage {
         fail(new InsertException(InsertException.BUCKET_ERROR));
     }
     
-    public void fail(InsertException e) {
+    public void fail(final InsertException e) {
         synchronized(this) {
             // Only fail once.
             if(failing != null) return;
             failing = e;
         }
-        // Tell the segments to cancel.
-        boolean allDone = true;
-        for(SplitFileInserterSegmentStorage segment : segments) {
-            if(!segment.cancel()) allDone = false;
-        }
-        for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
-            if(!segment.cancel()) allDone = false;
-        }
-        if(allDone) {
-            synchronized(this) {
-                // Could have beaten us to it in callback.
-                if(failed) return;
-                failed = true;
+        jobRunner.queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                // Tell the segments to cancel.
+                boolean allDone = true;
+                for(SplitFileInserterSegmentStorage segment : segments) {
+                    if(!segment.cancel()) allDone = false;
+                }
+                for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                    if(!segment.cancel()) allDone = false;
+                }
+                if(allDone) {
+                    synchronized(this) {
+                        // Could have beaten us to it in callback.
+                        if(failed) return false;
+                        failed = true;
+                    }
+                    callback.onFailed(e);
+                    return true;
+                } else {
+                    // Wait for them to finish encoding.
+                    return false;
+                }
             }
-            callback.onFailed(e);
-        } else {
-            // Wait for them to finish encoding.
-        }
+            
+        });
     }
 
 }
