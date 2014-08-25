@@ -56,4 +56,13 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
         onSuccess(blockNo);
     }
 
+    /** Count the previous RNFs towards the retry limit, when the following error wasn't an RNF. */
+    public synchronized boolean pushRNFs(int blockNo) {
+        int ret = consecutiveRNFs[blockNo];
+        consecutiveRNFs[blockNo] = 0;
+        for(int i=0;i<ret;i++)
+            if(onNonFatalFailure(blockNo)) return true;
+        return false;
+    }
+
 }

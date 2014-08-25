@@ -392,6 +392,50 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    public void testSmallSplitfileConsecutiveRNFsHackFailure() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        // Do 2 RNFs and then a RejectedOverload. Should fail at that point.
+        context.maxInsertRetries = 2;
+        context.consecutiveRNFsCountAsSuccess = 3;
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        segment.setKey(0, segment.encodeBlock(0).getClientKey());
+        segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        segment.onFailure(0, new InsertException(InsertException.REJECTED_OVERLOAD));
+        // Should count as success at this point.
+        try {
+            cb.waitForSucceededInsert();
+            assertTrue(false);
+        } catch (InsertException e) {
+            // Expected.
+            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertTrue(e.errorCodes != null);
+            assertEquals(e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND), 2);
+            assertEquals(e.errorCodes.getErrorCount(InsertException.REJECTED_OVERLOAD), 1);
+            assertEquals(e.errorCodes.totalCount(), 3);
+            assertEquals(storage.getStatus(), Status.FAILED);
+        }
+    }
+
     public void testSmallSplitfileFailureMaxRetries() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block

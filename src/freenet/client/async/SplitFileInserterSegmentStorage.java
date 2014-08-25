@@ -494,6 +494,11 @@ public class SplitFileInserterSegmentStorage {
                     parent.failOnDiskError(e1);
                     return;
                 }
+            } else if(blockChooser.consecutiveRNFsCountAsSuccess > 0) {
+                if(blockChooser.pushRNFs(blockNo)) {
+                    parent.failTooManyRetriesInBlock();
+                    return;
+                }
             }
             if(blockChooser.onNonFatalFailure(blockNo))
                 parent.failTooManyRetriesInBlock();
