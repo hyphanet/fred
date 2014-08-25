@@ -383,6 +383,12 @@ public class SplitFileInserterSegmentStorage {
         return encoded;
     }
 
+    /** For unit tests. Generally for concurrency purposes we want something that won't change 
+     * back, hence e.g. isFinishedEncoding(). */
+    synchronized boolean isEncoding() {
+        return encoding;
+    }
+
     public ClientCHKBlock encodeBlock(int blockNo) throws IOException {
         byte[] buf = readBlock(blockNo);
         return encodeBlock(buf);
@@ -569,5 +575,5 @@ public class SplitFileInserterSegmentStorage {
         }
         
     }
-    
+
 }

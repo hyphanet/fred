@@ -79,4 +79,8 @@ public class WaitableExecutor implements Executor {
             }
     }
 
+    public synchronized boolean isIdle() {
+        return count == 0;
+    }
+
 }

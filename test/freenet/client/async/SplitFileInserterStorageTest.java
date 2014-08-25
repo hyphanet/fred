@@ -51,6 +51,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.BarrierRandomAccessThing;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThingFactory;
 import freenet.support.io.FileUtil;
@@ -921,6 +922,36 @@ public class SplitFileInserterStorageTest extends TestCase {
             return salt;
         }
         
+    }
+
+    public void testCancel() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12124);
+        long size = 32768*6;
+        BarrierRandomAccessThing data = new BarrierRandomAccessThing(generateData(r, size, smallRAFFactory));
+        HashResult[] hashes = getHashes(data);
+        data.pause();
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.earlyEncode = true;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+        storage.start();
+        assertEquals(storage.getStatus(), Status.STARTED);
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        segment.onFailure(0, new InsertException(InsertException.INTERNAL_ERROR));
+        data.proceed(); // Now it will complete encoding, and then report in, and then fail.
+        try {
+            cb.waitForFinishedEncode();
+            assertFalse(true); // Should have failed.
+        } catch (InsertException e) {
+            assertTrue(executor.isIdle());
+            assertFalse(segment.isEncoding());
+            assertEquals(storage.getStatus(), Status.FAILED);
+        }
     }
 
 }
