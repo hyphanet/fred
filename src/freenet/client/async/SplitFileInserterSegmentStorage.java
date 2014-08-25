@@ -156,6 +156,10 @@ public class SplitFileInserterSegmentStorage {
 
     public void storeStatus() {
         if(!parent.persistent) return;
+        if(parent.hasFinished()) return;
+        synchronized(this) {
+            if(cancelled) return;
+        }
         DataOutputStream dos;
         try {
             dos = new DataOutputStream(parent.writeChecksummedTo(parent.segmentStatusOffset(segNo), statusLength));
