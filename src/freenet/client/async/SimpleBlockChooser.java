@@ -156,6 +156,18 @@ public class SimpleBlockChooser {
             retries[i] = dis.readInt();
     }
     
+    static final int VERSION = 1;
+
+    /** Write everything 
+     * @throws IOException */
+    public void write(DataOutputStream dos) throws IOException {
+        dos.writeInt(VERSION);
+        for(boolean b : completed)
+            dos.writeBoolean(b);
+        dos.writeInt(maxRetries);
+        writeRetries(dos);
+    }
+    
     public synchronized int countFailedBlocks() {
         if(maxRetries == -1) return 0;
         int total = 0;
@@ -179,5 +191,11 @@ public class SimpleBlockChooser {
         }
         return x;
     }
+    
+    public boolean hasSucceededAll() {
+        return completedCount == blocks;
+    }
+
+
 
 }

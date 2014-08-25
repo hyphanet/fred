@@ -50,12 +50,6 @@ public class SplitFileInserterSegmentStorage {
     private final boolean[] blocksHaveKeys;
     private int blocksWithKeysCounter;
     
-    // Choosing keys
-    /** Which blocks have been inserted? */
-    private final boolean[] blocksInserted;
-    /** How many blocks have been inserted? */
-    private int blocksInsertedCount;
-    
     // These are only used in construction.
     private transient final boolean[] crossDataBlocksAllocated;
     private transient int crossDataBlocksAllocatedCount;
@@ -68,9 +62,12 @@ public class SplitFileInserterSegmentStorage {
     /** Crypto algorithm is the same for every block. */
     private final byte splitfileCryptoAlgorithm;
     
+    /** LOCKING: Locked with (this) as needs to access encoded in chooseBlock */
+    private final SplitFileInserterSegmentBlockChooser blockChooser;
+    
     public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, int segNo, 
             boolean persistent, int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
-            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey) {
+            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, Random random, int maxRetries) {
         this.parent = parent;
         this.segNo = segNo;
         this.dataBlockCount = dataBlocks;
@@ -84,7 +81,7 @@ public class SplitFileInserterSegmentStorage {
         this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
         this.splitfileCryptoKey = splitfileCryptoKey;
         crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
-        blocksInserted = new boolean[totalBlockCount];
+        blockChooser = new SplitFileInserterSegmentBlockChooser(this, totalBlockCount, random, maxRetries);
         try {
             CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
             DataOutputStream dos = new DataOutputStream(cos);
@@ -174,8 +171,7 @@ public class SplitFileInserterSegmentStorage {
     private void innerStoreStatus(DataOutputStream dos) throws IOException {
         dos.writeInt(segNo); // To make checksum different.
         dos.writeBoolean(encoded);
-        for(boolean b : blocksInserted)
-            dos.writeBoolean(b);
+        blockChooser.write(dos);
     }
 
     public long storedStatusLength() {
@@ -437,19 +433,32 @@ public class SplitFileInserterSegmentStorage {
     public class MissingKeyException extends Exception {
         
     }
+
+    /** Has the segment completed all inserts?
+     * Should not change once we reach this state, but might be possible in case of disk errors 
+     * causing losing keys etc. */
+    public synchronized boolean hasSucceeded() {
+        return blockChooser.hasSucceededAll();
+    }
+
+    /** Has the segment encoded all check blocks and cross-check blocks? */
+    public synchronized boolean hasEncoded() {
+        return encoded;
+    }
     
-    public void onInsertedBlock(int blockNum) {
+    /** Called when a block insert succeeds */
+    public void onInsertedBlock(int blockNo) {
+        blockChooser.onSuccess(blockNo);
+    }
+
+    /** Called by BlockChooser when all blocks have been inserted. */
+    void onInsertedAllBlocks() {
         synchronized(this) {
-            if(blocksInserted[blockNum]) return;
-            blocksInserted[blockNum] = true;
-            blocksInsertedCount++;
-            if(blocksInsertedCount < totalBlockCount) return;
+            if(!encoded) return;
         }
         parent.segmentSucceeded(this);
     }
-
-    public synchronized boolean hasSucceeded() {
-        return blocksInsertedCount == totalBlockCount;
-    }
+    
+    
     
 }
