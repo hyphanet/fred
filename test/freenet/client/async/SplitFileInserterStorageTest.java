@@ -287,6 +287,75 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    public void testSmallSplitfileFailureMaxRetries() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.maxInsertRetries = 2;
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        for(int i=0;i<3;i++) {
+            segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        try {
+            cb.waitForSucceededInsert();
+            assertTrue(false);
+        } catch (InsertException e) {
+            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertTrue(e.errorCodes != null);
+            assertEquals(e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND), 3);
+            assertEquals(e.errorCodes.totalCount(), 3);
+            assertEquals(storage.getStatus(), Status.FAILED);
+        }
+    }
+
+    public void testSmallSplitfileFailureFatalError() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.maxInsertRetries = 2;
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        assertTrue(InsertException.isFatal(InsertException.INTERNAL_ERROR));
+        segment.onFailure(0, new InsertException(InsertException.INTERNAL_ERROR));
+        try {
+            cb.waitForSucceededInsert();
+            assertTrue(false);
+        } catch (InsertException e) {
+            assertEquals(e.mode, InsertException.FATAL_ERRORS_IN_BLOCKS);
+            assertTrue(e.errorCodes != null);
+            assertEquals(e.errorCodes.getErrorCount(InsertException.INTERNAL_ERROR), 1);
+            assertEquals(e.errorCodes.totalCount(), 1);
+            assertEquals(storage.getStatus(), Status.FAILED);
+        }
+    }
+
     private HashResult[] getHashes(LockableRandomAccessThing data) throws IOException {
         InputStream is = new RAFInputStream(data, 0, data.size());
         MultiHashInputStream hashStream = new MultiHashInputStream(is, HashType.SHA256.bitmask);
