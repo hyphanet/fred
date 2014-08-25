@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Random;
 
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
@@ -63,6 +65,14 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
         for(int i=0;i<ret;i++)
             if(onNonFatalFailure(blockNo)) return true;
         return false;
+    }
+    
+    public void write(DataOutputStream dos) throws IOException {
+        super.write(dos);
+        if(consecutiveRNFsCountAsSuccess > 0) {
+            for(int i : consecutiveRNFs)
+                dos.writeInt(i);
+        }
     }
 
 }

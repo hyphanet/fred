@@ -155,6 +155,7 @@ public class SplitFileInserterStorage {
     /** Length of a key as stored on disk */
     private final int keyLength;
     private final int maxRetries;
+    private final int consecutiveRNFsCountAsSuccess;
 
     // System utilities.
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
@@ -336,9 +337,10 @@ public class SplitFileInserterStorage {
         int checkTotalDataBlocks = 0;
         underlyingOffsetDataSegments = new long[segs];
         keyLength = SplitFileInserterSegmentStorage.getKeyLength(this);
+        this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent, splitfileCryptoAlgorithm, splitfileCryptoKey,
-                cmode, random, keysFetching, ctx.consecutiveRNFsCountAsSuccess);
+                cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -570,6 +572,7 @@ public class SplitFileInserterStorage {
             dos.writeInt(deductBlocksFromSegments);
             dos.writeBoolean(generateKeysOnEncode);
             dos.writeInt(maxRetries);
+            dos.writeInt(consecutiveRNFsCountAsSuccess);
             // FIXME do we want to include offsets???
             dos.close();
             return baos.toByteArray();
