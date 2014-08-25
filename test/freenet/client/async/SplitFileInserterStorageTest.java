@@ -343,6 +343,55 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.SUCCEEDED);
     }
 
+    public void testSmallSplitfileConsecutiveRNFsHack() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.maxInsertRetries = 0;
+        context.consecutiveRNFsCountAsSuccess = 2;
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        boolean[] chosenBlocks = new boolean[segment.totalBlockCount];
+        // First RNF.
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            assertTrue(chosen != null);
+            keys.addInsert(chosen);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.setKey(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        chosenBlocks = new boolean[segment.totalBlockCount];
+        // Second RNF.
+        keys.clear();
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            assertTrue(chosen != null);
+            keys.addInsert(chosen);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        // Should count as success at this point.
+        cb.waitForSucceededInsert();
+        assertEquals(storage.getStatus(), Status.SUCCEEDED);
+    }
+
     public void testSmallSplitfileFailureMaxRetries() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block

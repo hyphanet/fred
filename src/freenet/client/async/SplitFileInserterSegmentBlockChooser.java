@@ -10,12 +10,21 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
     
     final SplitFileInserterSegmentStorage segment;
     final KeysFetchingLocally keysFetching;
+    final int[] consecutiveRNFs;
+    /** If positive, this many RNFs count as success. */
+    final int consecutiveRNFsCountAsSuccess;
 
     public SplitFileInserterSegmentBlockChooser(SplitFileInserterSegmentStorage segment, 
-            int blocks, Random random, int maxRetries, KeysFetchingLocally keysFetching) {
+            int blocks, Random random, int maxRetries, KeysFetchingLocally keysFetching,
+            int consecutiveRNFsCountAsSuccess) {
         super(blocks, random, maxRetries);
         this.segment = segment;
         this.keysFetching = keysFetching;
+        this.consecutiveRNFsCountAsSuccess = consecutiveRNFsCountAsSuccess;
+        if(consecutiveRNFsCountAsSuccess > 0)
+            consecutiveRNFs = new int[blocks];
+        else
+            consecutiveRNFs = null;
     }
     
     protected int getMaxBlockNumber() {
@@ -35,6 +44,16 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
         if(!super.checkValid(chosen)) return false;
         return !keysFetching.hasInsert(segment.parent.getSendableInsert(), 
                 new BlockInsert(segment, chosen));
+    }
+
+    /** Handle an RNF if the n-consecutive-RNFs-count-as-success hack is enabled.
+     * Must only be called if consecutiveRNFsCountAsSuccess > 0 */
+    public void onRNF(int blockNo) {
+        synchronized(this) {
+            assert(consecutiveRNFsCountAsSuccess > 0);
+            if(++consecutiveRNFs[blockNo] < consecutiveRNFsCountAsSuccess) return;
+        }
+        onSuccess(blockNo);
     }
 
 }

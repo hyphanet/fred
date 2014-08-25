@@ -338,7 +338,7 @@ public class SplitFileInserterStorage {
         keyLength = SplitFileInserterSegmentStorage.getKeyLength(this);
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
                 deductBlocksFromSegments, persistent, splitfileCryptoAlgorithm, splitfileCryptoKey,
-                cmode, random, keysFetching);
+                cmode, random, keysFetching, ctx.consecutiveRNFsCountAsSuccess);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
             checkTotalDataBlocks += segment.dataBlockCount;
@@ -633,14 +633,14 @@ public class SplitFileInserterStorage {
     private SplitFileInserterSegmentStorage[] makeSegments(int segmentSize, int segCount,
             int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments, boolean persistent,
             byte cryptoAlgorithm, byte[] cryptoKey, CompatibilityMode cmode, Random random, 
-            KeysFetchingLocally keysFetching) {
+            KeysFetchingLocally keysFetching, int consecutiveRNFsCountAsSuccess) {
         SplitFileInserterSegmentStorage[] segments = new SplitFileInserterSegmentStorage[segCount];
         if (segCount == 1) {
             // Single segment
             int checkBlocks = codec.getCheckBlocks(dataBlocks + crossCheckBlocks, cmode);
             segments[0] = new SplitFileInserterSegmentStorage(this, 0, persistent, dataBlocks,
                     checkBlocks, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, random, 
-                    maxRetries, keysFetching);
+                    maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
         } else {
             int j = 0;
             int segNo = 0;
@@ -659,7 +659,7 @@ public class SplitFileInserterStorage {
                 j = i;
                 segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo, persistent,
                         data, check, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, 
-                        random, maxRetries, keysFetching);
+                        random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
 
                 if (deductBlocksFromSegments != 0)
                     if (logMINOR)

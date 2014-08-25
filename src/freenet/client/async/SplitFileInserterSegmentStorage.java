@@ -74,7 +74,7 @@ public class SplitFileInserterSegmentStorage {
     public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, int segNo, 
             boolean persistent, int dataBlocks, int checkBlocks, int crossCheckBlocks, int keyLength,
             byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, Random random, int maxRetries,
-            KeysFetchingLocally keysFetching) {
+            int consecutiveRNFsCountAsSuccess, KeysFetchingLocally keysFetching) {
         this.parent = parent;
         this.segNo = segNo;
         this.dataBlockCount = dataBlocks;
@@ -89,7 +89,7 @@ public class SplitFileInserterSegmentStorage {
         this.splitfileCryptoKey = splitfileCryptoKey;
         crossDataBlocksAllocated = new boolean[dataBlocks + crossCheckBlocks];
         blockChooser = new SplitFileInserterSegmentBlockChooser(this, totalBlockCount, random, 
-                maxRetries, keysFetching);
+                maxRetries, keysFetching, consecutiveRNFsCountAsSuccess);
         try {
             CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
             DataOutputStream dos = new DataOutputStream(cos);
@@ -482,11 +482,20 @@ public class SplitFileInserterSegmentStorage {
         if(e.isFatal()) {
             parent.failFatalErrorInBlock();
         } else {
-            boolean fail;
-            synchronized(this) {
-                fail = blockChooser.onNonFatalFailure(blockNo);
+            if(e.mode == InsertException.ROUTE_NOT_FOUND && 
+                    blockChooser.consecutiveRNFsCountAsSuccess > 0) {
+                try {
+                    readKey(blockNo);
+                    blockChooser.onRNF(blockNo);
+                    return;
+                } catch (MissingKeyException e1) {
+                    Logger.error(this, "RNF but no key on block "+blockNo+" on "+this);
+                } catch (IOException e1) {
+                    parent.failOnDiskError(e1);
+                    return;
+                }
             }
-            if(fail)
+            if(blockChooser.onNonFatalFailure(blockNo))
                 parent.failTooManyRetriesInBlock();
         }
     }

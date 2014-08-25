@@ -24,7 +24,7 @@ public class InsertContext implements Cloneable, Serializable {
 	public int maxInsertRetries;
 	/** On a very small network, any insert will RNF. Therefore we allow 
 	 * some number of RNFs to equal success. */
-	public final int consecutiveRNFsCountAsSuccess;
+	public int consecutiveRNFsCountAsSuccess;
 	/** Maximum number of data blocks per segment for splitfiles */
 	public final int splitfileSegmentDataBlocks;
 	/** Maximum number of check blocks per segment for splitfiles. Will be reduced proportionally if there
