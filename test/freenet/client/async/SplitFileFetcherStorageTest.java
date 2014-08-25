@@ -863,7 +863,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         @Override
-        public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
+        public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
             return false;
         }
 

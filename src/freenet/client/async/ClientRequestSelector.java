@@ -532,14 +532,14 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 
 	@Override
-	public boolean hasTransientInsert(SendableInsert insert, SendableRequestItemKey token) {
+	public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		synchronized(runningInserts) {
 			return runningInserts.contains(tmp);
 		}
 	}
 
-	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
+	public boolean addInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		synchronized(runningInserts) {
 			boolean retval = runningInserts.add(tmp);
@@ -553,7 +553,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 	
-	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
+	public void removeInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		if(logMINOR)
 			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);

@@ -382,7 +382,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	@Override
 	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		selector.removeTransientInsertFetching(insert, token);
+		selector.removeInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
 		insert.clearCooldown(clientContext, false);
 	}
@@ -452,7 +452,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	@Override
 	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		return selector.addTransientInsertFetching(insert, token);
+		return selector.addInsertFetching(insert, token);
 	}
 	
 	@Override

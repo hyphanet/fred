@@ -613,7 +613,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			synchronized(this) {
 				if(finished) return null;
 				key = new BlockItemKey(this, hashCode());
-				if(ignored.hasTransientInsert(this, key))
+				if(ignored.hasInsert(this, key))
 				    return null;
 				return getBlockItem(key, context);
 			}
