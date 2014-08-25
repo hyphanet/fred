@@ -40,7 +40,6 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.CheatingTicker;
 import freenet.support.DummyJobRunner;
-import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.PooledExecutor;
 import freenet.support.TestProperty;
@@ -113,6 +112,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         private boolean hasKeys;
         private boolean succeededInsert;
         private InsertException failed;
+        private Metadata metadata;
 
         @Override
         public synchronized void onFinishedEncode() {
@@ -159,12 +159,13 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
 
         @Override
-        public synchronized void onSucceeded() {
+        public synchronized void onSucceeded(Metadata metadata) {
             succeededInsert = true;
+            this.metadata = metadata;
             notifyAll();
         }
         
-        public synchronized void waitForSucceededInsert() throws InsertException {
+        public synchronized Metadata waitForSucceededInsert() throws InsertException {
             while(!succeededInsert) {
                 checkFailed();
                 try {
@@ -173,6 +174,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                     // Ignore.
                 }
             }
+            return metadata;
         }
 
         @Override

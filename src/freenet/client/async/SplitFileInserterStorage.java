@@ -167,16 +167,14 @@ public class SplitFileInserterStorage {
 
     // Status. Generally depends on the status of the individual segments...
     enum Status {
-        NOT_STARTED, STARTED, ENCODED_CROSS_SEGMENTS, ENCODED
+        NOT_STARTED, STARTED, ENCODED_CROSS_SEGMENTS, ENCODED, GENERATING_METADATA, SUCCEEDED, FAILED
     }
 
     private Status status;
     private final FailureCodeTracker errors;
     
     // Not persisted, only used briefly during completion
-    private boolean succeeded;
     private InsertException failing;
-    private boolean failed;
 
     // These are kept here so we can set them in the main constructor after
     // we've constructed the segments.
@@ -973,11 +971,32 @@ public class SplitFileInserterStorage {
                 if(allSegmentsSucceeded()) {
                     synchronized(this) {
                         assert(failing == null);
-                        if(succeeded) return false;
-                        succeeded = true;
+                        if(hasFinished()) return false;
+                        status = Status.GENERATING_METADATA;
                     }
-                    // They can't still be encoding if they have succeeded.
-                    callback.onSucceeded();
+                    try {
+                        Metadata metadata = encodeMetadata();
+                        callback.onSucceeded(metadata);
+                        synchronized(this) {
+                            status = Status.SUCCEEDED;
+                        }
+                    } catch (IOException e) {
+                        InsertException e1 = new InsertException(InsertException.BUCKET_ERROR);
+                        synchronized(this) {
+                            failing = e1;
+                            status = Status.FAILED;
+                        }
+                        callback.onFailed(e1);
+                    } catch (MissingKeyException e) {
+                        // Fail here too. If we're getting disk corruption on keys, we're probably 
+                        // getting it on the original data too.
+                        InsertException e1 = new InsertException(InsertException.BUCKET_ERROR, "Missing keys", null);
+                        synchronized(this) {
+                            failing = e1;
+                            status = Status.FAILED;
+                        }
+                        callback.onFailed(e1);
+                    }
                 } else {
                     maybeFail();
                 }
@@ -995,7 +1014,8 @@ public class SplitFileInserterStorage {
             synchronized(this) {
                 if(failing == null) return;
                 e = failing;
-                failed = true;
+                if(hasFinished()) return;
+                status = Status.FAILED;
             }
             callback.onFailed(e);
         }
@@ -1047,8 +1067,8 @@ public class SplitFileInserterStorage {
                 if(allDone) {
                     synchronized(this) {
                         // Could have beaten us to it in callback.
-                        if(failed) return false;
-                        failed = true;
+                        if(hasFinished()) return false;
+                        status = Status.FAILED;
                     }
                     callback.onFailed(e);
                     return true;
@@ -1059,6 +1079,10 @@ public class SplitFileInserterStorage {
             }
             
         });
+    }
+
+    public synchronized boolean hasFinished() {
+        return status == Status.SUCCEEDED || status == Status.FAILED;
     }
 
 }
