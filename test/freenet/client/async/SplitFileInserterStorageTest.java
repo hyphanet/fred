@@ -21,6 +21,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
+import freenet.client.async.SplitFileInserterStorage.Status;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumChecker;
@@ -201,6 +202,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.segments[0].dataBlockCount, 2);
         assertEquals(storage.segments[0].checkBlockCount, 3);
         assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
     }
 
     public void testSmallSplitfileWithLastBlock() throws IOException, InsertException {
@@ -231,6 +233,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         byte[] originalLastBlock = Arrays.copyOfRange(originalData, (int)offsetLastBlock, originalData.length);
         assertEquals(originalLastBlock.length, truncated.length);
         assertTrue(Arrays.equals(originalLastBlock, truncated));
+        assertTrue(storage.getStatus() == Status.ENCODED);
     }
     
     public void testSmallSplitfileHasKeys() throws IOException, InsertException, MissingKeyException {
@@ -255,6 +258,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         for(int i=0;i<storage.segments[0].dataBlockCount+storage.segments[0].checkBlockCount+storage.segments[0].crossCheckBlockCount;i++)
             storage.segments[0].readKey(i);
         storage.encodeMetadata();
+        assertTrue(storage.getStatus() == Status.ENCODED);
     }
 
     private HashResult[] getHashes(LockableRandomAccessThing data) throws IOException {
@@ -329,6 +333,7 @@ public class SplitFileInserterStorageTest extends TestCase {
                 r, memoryLimitedJobRunner, jobRunner, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
+        assertTrue(storage.getStatus() == Status.ENCODED);
         // Encoded. Now try to decode it ...
         cb.waitForHasKeys();
         Metadata metadata = storage.encodeMetadata();
@@ -402,6 +407,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         // Encoded. Now try to decode it ...
         cb.waitForHasKeys();
         Metadata metadata = storage.encodeMetadata();
+        assertTrue(storage.getStatus() == Status.ENCODED);
 
         // Ugly hack because Metadata behaves oddly.
         // FIXME make Metadata behave consistently and get rid.

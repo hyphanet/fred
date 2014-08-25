@@ -16,6 +16,7 @@ import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
+import freenet.client.async.SplitFileInserterStorage.Status;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
@@ -920,8 +921,10 @@ public class SplitFileInserterStorage {
      * @throws MissingKeyException This indicates disk corruption or a bug (e.g. not all segments
      * had encoded keys). Since we don't checksum the blocks, there isn't much point in trying to
      * recover from losing a key; but at least we can detect that there was a problem.
+     * 
+     * (Package-visible for unit tests)
      */
-    public Metadata encodeMetadata() throws IOException, MissingKeyException {
+    Metadata encodeMetadata() throws IOException, MissingKeyException {
         ClientCHK[] dataKeys = new ClientCHK[totalDataBlocks + crossCheckBlocks * segments.length];
         ClientCHK[] checkKeys = new ClientCHK[totalCheckBlocks];
         int dataPtr = 0;
@@ -1083,6 +1086,10 @@ public class SplitFileInserterStorage {
 
     public synchronized boolean hasFinished() {
         return status == Status.SUCCEEDED || status == Status.FAILED;
+    }
+
+    public synchronized Status getStatus() {
+        return status;
     }
 
 }
