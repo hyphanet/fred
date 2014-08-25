@@ -19,12 +19,14 @@ public class ChosenBlockImpl extends ChosenBlock {
 
 	public final SendableRequest request;
 	public final RequestScheduler sched;
+	public final boolean persistent;
 
 	public ChosenBlockImpl(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
-			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched) {
+			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched, boolean persistent) {
 		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
 		this.request = req;
 		this.sched = sched;
+		this.persistent = persistent;
 	}
 
 	@Override
@@ -34,27 +36,59 @@ public class ChosenBlockImpl extends ChosenBlock {
 
 	@Override
 	public boolean isPersistent() {
-		return false;
+		return persistent;
 	}
 
 	@Override
-	public void onFailure(LowLevelPutException e, ClientContext context) {
-		((SendableInsert) request).onFailure(e, token, context);
+	public void onFailure(final LowLevelPutException e, ClientContext context) {
+	    context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ((SendableInsert) request).onFailure(e, token, context);
+                return false;
+            }
+	        
+	    });
 	}
 
 	@Override
 	public void onInsertSuccess(ClientContext context) {
-		((SendableInsert) request).onSuccess(token, context);
+        context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ((SendableInsert) request).onSuccess(token, context);
+                return false;
+            }
+            
+        });
 	}
 
 	@Override
-	public void onFailure(LowLevelGetException e, ClientContext context) {
-		((SendableGet) request).onFailure(e, token, context);
+	public void onFailure(final LowLevelGetException e, ClientContext context) {
+        context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ((SendableGet) request).onFailure(e, token, context);
+                return false;
+            }
+
+        });
 	}
 
 	@Override
 	public void onFetchSuccess(ClientContext context) {
-		sched.succeeded((SendableGet)request, false);
+	    context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                sched.succeeded((SendableGet)request, false);
+                return false;
+            }
+	        
+	    });
 	}
 	
 	@Override
