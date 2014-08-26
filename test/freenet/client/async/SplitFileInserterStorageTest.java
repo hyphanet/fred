@@ -1030,5 +1030,157 @@ public class SplitFileInserterStorageTest extends TestCase {
         cb.waitForSucceededInsert();
         assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
+    
+    public void testPersistentSmallSplitfileWithLastBlockCompletionAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        Random r = new Random(12121);
+        long size = 65535; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        assertEquals(storage.segments[0].dataBlockCount, 2);
+        assertEquals(storage.segments[0].checkBlockCount, 3);
+        assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        SplitFileInserterStorage resumed = null;
+        for(int i=0;i<storage.segments[0].totalBlockCount;i++) {
+            executor.waitForIdle();
+            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(resumed.segments.length, 1);
+            SplitFileInserterSegmentStorage segment = resumed.segments[0];
+            assertEquals(segment.dataBlockCount, 2);
+            assertEquals(segment.checkBlockCount, 3);
+            assertEquals(segment.crossCheckBlockCount, 0);
+            assertTrue(resumed.getStatus() == Status.ENCODED);
+            segment.onInsertedBlock(i, segment.encodeBlock(i).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(Status.SUCCEEDED, resumed.getStatus());
+    }
+    
+    public void testPersistentSmallSplitfileNoLastBlockFailAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        InsertContext context = baseContext.clone();
+        context.consecutiveRNFsCountAsSuccess = 0;
+        context.maxInsertRetries = 2;
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        assertEquals(storage.segments[0].dataBlockCount, 2);
+        assertEquals(storage.segments[0].checkBlockCount, 3);
+        assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        SplitFileInserterStorage resumed = null;
+        
+        for(int i=0;i<3;i++) {
+            executor.waitForIdle();
+            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(resumed.segments.length, 1);
+            SplitFileInserterSegmentStorage segment = resumed.segments[0];
+            assertEquals(segment.dataBlockCount, 2);
+            assertEquals(segment.checkBlockCount, 3);
+            assertEquals(segment.crossCheckBlockCount, 0);
+            assertTrue(resumed.getStatus() == Status.ENCODED);
+            segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        try {
+            cb.waitForSucceededInsert();
+            assertTrue(false);
+        } catch (InsertException e) {
+            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertTrue(e.errorCodes != null);
+            assertEquals(3, e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND));
+            assertEquals(e.errorCodes.totalCount(), 3);
+            assertEquals(Status.FAILED, resumed.getStatus());
+        }
+        assertEquals(Status.FAILED, resumed.getStatus());
+    }
+
+    public void testPersistentSmallSplitfileNoLastBlockChooseAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        InsertContext context = baseContext.clone();
+        context.consecutiveRNFsCountAsSuccess = 0;
+        context.maxInsertRetries = 1;
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        assertEquals(storage.segments[0].dataBlockCount, 2);
+        assertEquals(storage.segments[0].checkBlockCount, 3);
+        assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        SplitFileInserterStorage resumed = null;
+        int totalBlockCount = storage.segments[0].totalBlockCount;
+        
+        boolean[] chosenBlocks = new boolean[totalBlockCount];
+        // Choose and fail all blocks.
+        for(int i=0;i<totalBlockCount;i++) {
+            executor.waitForIdle();
+            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(resumed.segments.length, 1);
+            SplitFileInserterSegmentStorage segment = resumed.segments[0];
+            assertEquals(segment.dataBlockCount, 2);
+            assertEquals(segment.checkBlockCount, 3);
+            assertEquals(segment.crossCheckBlockCount, 0);
+            assertTrue(resumed.getStatus() == Status.ENCODED);
+
+            BlockInsert chosen = segment.chooseBlock();
+            assertTrue(chosen != null);
+            keys.addInsert(chosen);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        }
+        keys.clear();
+        // Choose and succeed all blocks.
+        chosenBlocks = new boolean[totalBlockCount];
+        for(int i=0;i<totalBlockCount;i++) {
+            executor.waitForIdle();
+            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(resumed.segments.length, 1);
+            SplitFileInserterSegmentStorage segment = resumed.segments[0];
+            assertEquals(segment.dataBlockCount, 2);
+            assertEquals(segment.checkBlockCount, 3);
+            assertEquals(segment.crossCheckBlockCount, 0);
+            assertTrue(resumed.getStatus() == Status.ENCODED);
+
+            BlockInsert chosen = segment.chooseBlock();
+            keys.addInsert(chosen);
+            assertTrue(chosen != null);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onInsertedBlock(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(resumed.getStatus(), Status.SUCCEEDED);
+    }
 
 }
