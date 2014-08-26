@@ -189,13 +189,12 @@ public class SplitFileInserterSegmentStorage {
         dos.writeBoolean(encoded);
         blockChooser.write(dos);
     }
-
+    
     public long storedStatusLength() {
         return statusLength;
     }
 
     public void writeFixedSettings(DataOutputStream dos) throws IOException {
-        dos.writeInt(segNo);
         dos.writeInt(dataBlockCount);
         dos.writeInt(crossCheckBlockCount);
         dos.writeInt(checkBlockCount);
