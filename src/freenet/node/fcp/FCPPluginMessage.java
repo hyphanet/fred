@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
@@ -121,7 +123,11 @@ public class FCPPluginMessage extends DataCarryingMessage {
 			// mix that up with the one whose reason is that the plugin does not support the new interface: In the case of send() throwing, it would indicate
 			// that the plugin DOES support the new interface but was unloaded meanwhile. So we can exit the function then, we don't have to try the old 
 			// interface.
-			client.send(SendDirection.ToServer, plugparams, this.bucket, identifier);
+			try {
+				client.send(SendDirection.ToServer, plugparams, this.bucket, identifier);
+			} catch (IOException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_PLUGIN, pluginname + " not found or is not a FCPPlugin", identifier, false);
+			}
 			return;
 		}
 		
