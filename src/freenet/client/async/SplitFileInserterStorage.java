@@ -1212,5 +1212,9 @@ public class SplitFileInserterStorage {
         return this.failing != null || status == Status.FAILED || status == Status.SUCCEEDED || 
             status == Status.GENERATING_METADATA;
     }
+    
+    void onShutdown(ClientContext context) {
+        writeMetadataJob.run(context);
+    }
 
 }
