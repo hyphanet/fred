@@ -323,7 +323,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
      * @throws StorageFormatException 
      * @throws IOException 
      * @throws ResumeFailedException */
-    PooledRandomAccessFileWrapper(DataInputStream dis, ClientContext context) 
+    PooledRandomAccessFileWrapper(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) 
     throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
@@ -334,13 +334,12 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         secureDelete = dis.readBoolean();
         if(length < 0) throw new StorageFormatException("Bad length");
         if(persistentTempID != -1) {
-            FilenameGenerator fg = context.persistentFG;
             // File must exist!
             if(!f.exists()) {
                 // Maybe moved after the last checkpoint?
                 f = fg.getFilename(persistentTempID);
                 if(f.exists()) {
-                    context.persistentFileTracker.register(f);
+                    persistentFileTracker.register(f);
                     file = f;
                     return;
                 }

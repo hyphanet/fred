@@ -582,12 +582,13 @@ public class BucketTools {
         }
     }
     
-    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, ClientContext context) 
+    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, 
+            FilenameGenerator fg, PersistentFileTracker persistentFileTracker)
     throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
         case PooledRandomAccessFileWrapper.MAGIC:
-            return new PooledRandomAccessFileWrapper(dis, context);
+            return new PooledRandomAccessFileWrapper(dis, fg, persistentFileTracker);
         case RandomAccessFileWrapper.MAGIC:
             return new RandomAccessFileWrapper(dis);
         default:
