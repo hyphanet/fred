@@ -338,8 +338,7 @@ public class SplitFileInserterSegmentStorage {
             lock = parent.lockRAF();
             // FIXME encode blocks if earlyEncode
             byte[][] dataBlocks = readDataAndCrossCheckBlocks();
-            if(parent.generateKeysOnEncode)
-                generateKeys(dataBlocks, 0);
+            generateKeys(dataBlocks, 0);
             byte[][] checkBlocks = new byte[checkBlockCount][];
             for(int i=0;i<checkBlocks.length;i++)
                 checkBlocks[i] = new byte[CHKBlock.DATA_LENGTH];
@@ -347,8 +346,7 @@ public class SplitFileInserterSegmentStorage {
             parent.codec.encode(dataBlocks, checkBlocks, new boolean[checkBlocks.length], CHKBlock.DATA_LENGTH);
             for(int i=0;i<checkBlocks.length;i++)
                 writeCheckBlock(i, checkBlocks[i]);
-            if(parent.generateKeysOnEncode)
-                generateKeys(checkBlocks, dataBlockCount + crossCheckBlockCount);
+            generateKeys(checkBlocks, dataBlockCount + crossCheckBlockCount);
             synchronized(this) {
                 encoded = true;
             }

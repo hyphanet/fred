@@ -146,11 +146,6 @@ public class SplitFileInserterStorage {
     private final boolean specifySplitfileKeyInMetadata;
 
     // Misc settings
-    /**
-     * If true, encode the keys when we encode the blocks. This is used for both
-     * earlyEncode and getCHKOnly.
-     */
-    final boolean generateKeysOnEncode;
     final ChecksumChecker checker;
     /** Length of a key as stored on disk */
     private final int keyLength;
@@ -226,7 +221,6 @@ public class SplitFileInserterStorage {
         this.originalData = originalData;
         this.callback = callback;
         this.persistent = persistent;
-        this.generateKeysOnEncode = ctx.earlyEncode || ctx.getCHKOnly;
         dataLength = originalData.size();
         if (dataLength > ((long) Integer.MAX_VALUE) * CHKBlock.DATA_LENGTH)
             throw new InsertException(InsertException.TOO_BIG);
@@ -605,7 +599,6 @@ public class SplitFileInserterStorage {
             dos.writeInt(cmode.ordinal());
             // hasPaddedLastBlock will be recomputed.
             dos.writeInt(deductBlocksFromSegments);
-            dos.writeBoolean(generateKeysOnEncode);
             dos.writeInt(maxRetries);
             dos.writeInt(consecutiveRNFsCountAsSuccess);
             // FIXME do we want to include offsets???
