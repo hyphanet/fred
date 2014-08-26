@@ -176,6 +176,7 @@ public class SplitFileInserterStorage {
 
     private Status status;
     private final FailureCodeTracker errors;
+    private boolean overallStatusDirty;
     
     // Not persisted, only used briefly during completion
     private InsertException failing;
@@ -489,7 +490,7 @@ public class SplitFileInserterStorage {
                     Long.MAX_VALUE);
             segmentSettings.free();
             crossSegmentSettings.free();
-            writeOverallStatus();
+            writeOverallStatus(true);
         }
         if (hasPaddedLastBlock)
             raf.pwrite(offsetPaddedLastBlock, paddedLastBlock, 0, paddedLastBlock.length);
@@ -511,10 +512,14 @@ public class SplitFileInserterStorage {
         status = Status.NOT_STARTED;
     }
 
-    private void writeOverallStatus() throws IOException {
-        if(!persistent) return;
-        byte[] buf = encodeOverallStatus();
-        assert(buf.length == overallStatusLength);
+    private void writeOverallStatus(boolean force) throws IOException {
+        byte[] buf;
+        synchronized(this) {
+            if(!persistent) return;
+            if(!force && !overallStatusDirty) return;
+            buf = encodeOverallStatus();
+            assert(buf.length == overallStatusLength);
+        }
         raf.pwrite(offsetOverallStatus, buf, 0, buf.length);
     }
 
@@ -524,7 +529,10 @@ public class SplitFileInserterStorage {
             OutputStream os = bucket.getOutputStream();
             OutputStream cos = checker.checksumWriterWithLength(os, new ArrayBucketFactory());
             DataOutputStream dos = new DataOutputStream(cos);
-            errors.writeFixedLengthTo(dos);
+            synchronized(this) {
+                errors.writeFixedLengthTo(dos);
+                overallStatusDirty = false;
+            }
             dos.close();
             os.close();
             return bucket.toByteArray();
@@ -1085,6 +1093,10 @@ public class SplitFileInserterStorage {
 
     public void addFailure(InsertException e) {
         errors.inc(e.getMode());
+        synchronized(this) {
+            overallStatusDirty = true;
+            lazyWriteMetadata();
+        }
     }
 
     public void failOnDiskError(IOException e) {
@@ -1165,7 +1177,7 @@ public class SplitFileInserterStorage {
                 } finally {
                     lock.unlock();
                 }
-                writeOverallStatus();
+                writeOverallStatus(false);
                 return false;
             } catch (IOException e) {
                 if(isFinishing()) return false;
@@ -1185,7 +1197,7 @@ public class SplitFileInserterStorage {
         
     };
 
-    public void lazyWriteMetadata() {
+    public synchronized void lazyWriteMetadata() {
         if(!persistent) return;
         if(LAZY_WRITE_METADATA_DELAY != 0) {
             // The Runnable must be the same object for de-duplication.
