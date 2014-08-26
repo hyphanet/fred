@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -11,6 +12,13 @@ public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
 
     public ReadOnlyRandomAccessThing(LockableRandomAccessThing underlying) {
         this.underlying = underlying;
+    }
+
+    public ReadOnlyRandomAccessThing(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) 
+    throws IOException, StorageFormatException, ResumeFailedException {
+        // Caller has already read magic
+        this.underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
     }
 
     @Override
@@ -45,12 +53,15 @@ public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        throw new UnsupportedOperationException();
+        underlying.onResume(context);
     }
+    
+    final static int MAGIC = 0x648d24da;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        throw new UnsupportedOperationException();
+        dos.writeInt(MAGIC);
+        underlying.storeTo(dos);
     }
 
 }
