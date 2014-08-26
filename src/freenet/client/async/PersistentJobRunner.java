@@ -72,7 +72,9 @@ public interface PersistentJobRunner {
     /** Obtain a lock which will prevent checkpointing until it is unlocked. This counts as a 
      * thread, and can be used for e.g. MemoryLimitedJob's that can change persistent data. Like 
      * any lock, you MUST use a try/finally block. lock() may block if a checkpoint is in progress
-     * or is scheduled. */
-    public CheckpointLock lock();
+     * or is scheduled. 
+     * @throws PersistenceDisabledException If we are unable to lock because the system is shutting 
+     * down. */
+    public CheckpointLock lock() throws PersistenceDisabledException;
 
 }

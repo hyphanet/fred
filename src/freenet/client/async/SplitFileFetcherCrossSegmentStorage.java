@@ -117,6 +117,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
+                boolean shutdown = false;
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
@@ -124,12 +125,18 @@ public class SplitFileFetcherCrossSegmentStorage {
                 } catch (IOException e) {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
+                } catch (PersistenceDisabledException e) {
+                    shutdown = true;
                 } finally {
                     chunk.release();
-                    synchronized(this) {
-                        tryDecode = false;
+                    if(!shutdown) {
+                        // We do want to call the callback even if we threw something, because we 
+                        // may be waiting to cancel. However we DON'T call it if we are shutting down.
+                        synchronized(this) {
+                            tryDecode = false;
+                        }
+                        parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
                     }
-                    parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
                     // Callback is part of the persistent job, unlock *after* calling it.
                     if(lock != null) lock.unlock(false, prio);
                 }

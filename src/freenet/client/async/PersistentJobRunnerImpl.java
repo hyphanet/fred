@@ -332,14 +332,16 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         return context;
     }
     
-    public CheckpointLock lock() {
+    public CheckpointLock lock() throws PersistenceDisabledException {
         synchronized(sync) {
+            if(killed) throw new PersistenceDisabledException();
             while(writing || mustCheckpoint) {
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {
                     // Ignore.
                 }
+                if(killed) throw new PersistenceDisabledException();
             }
             runningJobs++;
         }

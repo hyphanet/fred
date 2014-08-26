@@ -297,6 +297,9 @@ public class SplitFileFetcherSegmentStorage {
                 } catch (IOException e) {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
+                } catch (PersistenceDisabledException e) {
+                    // Shutting down.
+                    // We don't call the callback here, so we don't care.
                 } catch (Throwable e) {
                     Logger.error(this, "Failed to decode "+this+" because of internal error: "+e, e);
                     parent.fail(new FetchException(FetchException.INTERNAL_ERROR, e));

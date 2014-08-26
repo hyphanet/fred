@@ -101,16 +101,24 @@ public class SplitFileInserterCrossSegmentStorage {
             
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
+                boolean shutdown = false;
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
                     innerDecode(chunk);
+                } catch (PersistenceDisabledException e) {
+                    // Will be retried on restarting.
+                    shutdown = true;
                 } finally {
                     chunk.release();
-                    synchronized(this) {
-                        encoding = false;
+                    if(!shutdown) {
+                        // We do want to call the callback even if we threw something, because we 
+                        // may be waiting to cancel. However we DON'T call it if we are shutting down.
+                        synchronized(this) {
+                            encoding = false;
+                        }
+                        parent.onFinishedEncoding(SplitFileInserterCrossSegmentStorage.this);
                     }
-                    parent.onFinishedEncoding(SplitFileInserterCrossSegmentStorage.this);
                     // Callback is part of the persistent job, unlock *after* calling it.
                     if(lock != null) lock.unlock(false, prio);
                 }
