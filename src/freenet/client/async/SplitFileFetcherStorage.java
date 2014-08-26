@@ -1630,7 +1630,7 @@ public class SplitFileFetcherStorage {
         try {
             raf.pread(fileOffset, lengthBuf, 0, lengthBuf.length);
             long len = new DataInputStream(new ByteArrayInputStream(lengthBuf)).readLong();
-            if(len > fileOffset + fileLength || len > Integer.MAX_VALUE || len < 0) 
+            if(len + fileOffset > fileLength || len > Integer.MAX_VALUE || len < 0) 
                 throw new StorageFormatException("Bogus length "+len);
             length = (int)len;
             buf = new byte[length];
