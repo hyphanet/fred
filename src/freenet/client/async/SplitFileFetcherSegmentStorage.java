@@ -314,7 +314,7 @@ public class SplitFileFetcherSegmentStorage {
                     // Need to tell the parent, so it can do something about it.
                     // In particular, if we failed, we may need to complete cancellation, and we 
                     // can't do that until both tryDecode=false and parent gets the callback. 
-                    if(shutdown)
+                    if(!shutdown)
                         parent.finishedEncoding(SplitFileFetcherSegmentStorage.this);
                     if(lock != null) lock.unlock(false, prio);
                 }
