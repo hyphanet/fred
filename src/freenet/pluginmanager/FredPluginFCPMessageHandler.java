@@ -19,7 +19,8 @@ import freenet.node.fcp.FCPPluginClient;
  * 
  * @author xor (xor@freenetproject.org)
  * @see PluginRespirator#connecToOtherPlugin(String, FredPluginFCPClient) PluginRespirator provides the function to obtain FCP connections to a server plugin.
- * @see FCPPluginClient FCPPluginClient provides an overview of the internal code paths through which plugin FCP messages flow.
+ * @see FCPPluginClient A client will be represented as class FCPPluginClient to the client and server plugin. It's Java provides an overview of the internal
+ *                      code paths through which plugin FCP messages flow.
  */
 public interface FredPluginFCPMessageHandler { 
    

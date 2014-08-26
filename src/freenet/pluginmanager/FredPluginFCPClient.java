@@ -12,8 +12,6 @@ import freenet.support.api.Bucket;
  * The connection is initiated by using a {@link FCPPluginClient}. The purpose of this interface is to provide a message handling function for processing
  * messages received from the server in reply to messages sent using the {@link FCPPluginClient}.
  * 
- * @see FCPPluginClient A client will be represented as this class to the client and server plugin. Its JavaDoc also contains a nice overview of the code path 
- *                      which FCP plugin messages flow through.
  * @see FredPluginFCPServer The interface of the server plugin which handles the messages received from the client.
  * @author xor (xor@freenetproject.org)
  */
