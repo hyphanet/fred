@@ -290,6 +290,7 @@ public class SplitFileFetcherSegmentStorage {
             
             @Override
             public boolean start(MemoryLimitedChunk chunk) {
+                boolean shutdown = false;
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
@@ -300,15 +301,22 @@ public class SplitFileFetcherSegmentStorage {
                 } catch (PersistenceDisabledException e) {
                     // Shutting down.
                     // We don't call the callback here, so we don't care.
+                    shutdown = true;
                 } catch (Throwable e) {
                     Logger.error(this, "Failed to decode "+this+" because of internal error: "+e, e);
                     parent.fail(new FetchException(FetchException.INTERNAL_ERROR, e));
                 } finally {
-                    if(lock != null) lock.unlock(false, prio);
                     chunk.release();
                     synchronized(this) {
                         tryDecode = false;
                     }
+                    // We may not have completed, but we HAVE finished.
+                    // Need to tell the parent, so it can do something about it.
+                    // In particular, if we failed, we may need to complete cancellation, and we 
+                    // can't do that until both tryDecode=false and parent gets the callback. 
+                    if(shutdown)
+                        parent.finishedEncoding(SplitFileFetcherSegmentStorage.this);
+                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }
@@ -329,7 +337,6 @@ public class SplitFileFetcherSegmentStorage {
             if(fail) finished = true;
         }
         if(fail) {
-            parent.finishedEncoding(this);
             return;
         }
         
@@ -508,7 +515,6 @@ public class SplitFileFetcherSegmentStorage {
             corruptMetadata = false;
             finished = true;
         }
-        parent.finishedEncoding(this);
         if(logMINOR) Logger.minor(this, "Finished decoding "+this+" for "+parent);
     }
 

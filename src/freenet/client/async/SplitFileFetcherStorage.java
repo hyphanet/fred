@@ -1270,8 +1270,10 @@ public class SplitFileFetcherStorage {
         fetcher.onClosed();
     }
     
-    /** Called when a segment has finished. That is, either it was cancelled, or it failed, or it
-     * succeeded. */
+    /** Called when a segment has finished encoding. It is possible that it has simply restarted; 
+     * it is not guaranteed to have encoded all blocks etc. But we still need the callback in case
+     * e.g. we are in the process of failing, and can't proceed until all the encode jobs have 
+     * finished. */
     void finishedEncoding(SplitFileFetcherSegmentStorage segment) {
         if(logMINOR) Logger.minor(this, "Successfully decoded "+segment+" for "+this+" for "+fetcher);
         if(!allFinished()) return;
