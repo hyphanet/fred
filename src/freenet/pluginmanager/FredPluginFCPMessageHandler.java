@@ -4,6 +4,8 @@
 package freenet.pluginmanager;
 
 import freenet.node.fcp.FCPPluginClient;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a {@link FCPPluginClient} must implement this interface to provide a function
@@ -45,7 +47,15 @@ public interface FredPluginFCPMessageHandler {
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
-        
+    /**
+     * @param client The client which you used to send the original message.
+     * @param messageIdentifier The identifier of the message which the server is replying to. The JavaDoc of the server-side message handler instructs it to
+     *                          specify the messageIdentifier of replies to be the same as the messageIdentifier you specified in the message which caused the
+     *                          reply to be sent. However the server is free to send messages to you on its own without any original message from your side,
+     *                          for example for event propagation. In that case, the messageIdentifier might not match any previous message from your side. 
+     * @param parameters Part 1 of server reply: Human-readable parameters. Shall be small amount of data.
+     * @param data Part 2 of server reply: Non-human readable, large size bulk data. Can be null.
+     */
+    void handleFCPPluginServerMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
     }
-
 }
