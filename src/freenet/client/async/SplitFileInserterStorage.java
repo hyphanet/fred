@@ -168,7 +168,10 @@ public class SplitFileInserterStorage {
      */
     private final boolean hasPaddedLastBlock;
 
-    // Status. Generally depends on the status of the individual segments...
+    /** Status. Generally depends on the status of the individual segments...
+     * Not persisted: Can be deduced from the state of the segments, except for the last 3 states, 
+     * which are only used during completion (we don't keep the storage around once we're 
+     * finished). */
     enum Status {
         NOT_STARTED, STARTED, ENCODED_CROSS_SEGMENTS, ENCODED, GENERATING_METADATA, SUCCEEDED, FAILED
     }
