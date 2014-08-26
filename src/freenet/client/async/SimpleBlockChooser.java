@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import freenet.keys.NodeCHK;
+import freenet.support.io.StorageFormatException;
 
 /** Tracks which blocks have been completed, how many attempts have been made for which blocks,
  * allows choosing a random block, failing a block etc.
@@ -168,6 +169,16 @@ public class SimpleBlockChooser {
         writeRetries(dos);
     }
     
+    public void read(DataInputStream dis) throws StorageFormatException, IOException {
+        if(dis.readInt() != VERSION) throw new StorageFormatException("Bad version in block chooser");
+        for(int i=0;i<completed.length;i++) {
+            completed[i] = dis.readBoolean();
+            if(completed[i]) completedCount++;
+        }
+        if(dis.readInt() != maxRetries) throw new StorageFormatException("Max retries has changed");
+        readRetries(dis);
+    }
+
     public synchronized int countFailedBlocks() {
         if(maxRetries == -1) return 0;
         int total = 0;
