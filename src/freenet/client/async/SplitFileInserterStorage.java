@@ -1,10 +1,14 @@
 package freenet.client.async;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -16,8 +20,10 @@ import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.MetadataParseException;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.ChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -33,10 +39,15 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NullBucket;
+import freenet.support.io.RAFInputStream;
+import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 import freenet.support.math.MersenneTwister;
 
 /**
@@ -1283,6 +1294,46 @@ public class SplitFileInserterStorage {
     
     void onShutdown(ClientContext context) {
         writeMetadataJob.run(context);
+    }
+    
+    void preadChecksummed(long fileOffset, byte[] buf, int offset, int length) throws IOException, ChecksumFailedException {
+        byte[] checksumBuf = new byte[checker.checksumLength()];
+        RAFLock lock = raf.lockOpen();
+        try {
+            raf.pread(fileOffset, buf, offset, length);
+            raf.pread(fileOffset+length, checksumBuf, 0, checker.checksumLength());
+        } finally {
+            lock.unlock();
+        }
+        if(!checker.checkChecksum(buf, offset, length, checksumBuf)) {
+            Arrays.fill(buf, offset, offset+length, (byte)0);
+            throw new ChecksumFailedException();
+        }
+    }
+
+    byte[] preadChecksummedWithLength(long fileOffset) throws IOException, ChecksumFailedException, StorageFormatException {
+        byte[] checksumBuf = new byte[checker.checksumLength()];
+        RAFLock lock = raf.lockOpen();
+        byte[] lengthBuf = new byte[8];
+        byte[] buf;
+        int length;
+        try {
+            raf.pread(fileOffset, lengthBuf, 0, lengthBuf.length);
+            long len = new DataInputStream(new ByteArrayInputStream(lengthBuf)).readLong();
+            if(len + fileOffset > rafLength || len > Integer.MAX_VALUE || len < 0) 
+                throw new StorageFormatException("Bogus length "+len);
+            length = (int)len;
+            buf = new byte[length];
+            raf.pread(fileOffset+lengthBuf.length, buf, 0, length);
+            raf.pread(fileOffset+length+lengthBuf.length, checksumBuf, 0, checker.checksumLength());
+        } finally {
+            lock.unlock();
+        }
+        if(!checker.checkChecksum(buf, 0, length, checksumBuf)) {
+            Arrays.fill(buf, 0, length, (byte)0);
+            throw new ChecksumFailedException();
+        }
+        return buf;
     }
 
 }
