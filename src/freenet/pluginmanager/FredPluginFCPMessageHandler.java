@@ -30,8 +30,6 @@ public interface FredPluginFCPMessageHandler {
      * Plugins which provide FCP services to clients must implement this interface.<br/>
      * The purpose of this interface is to provide a message handling function for processing messages received from the clients.
      * 
-     * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
-     * 
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ClientSideFCPMessageHandler The interface of the client plugin which handles the messages sent by the server.
      */
@@ -76,7 +74,7 @@ public interface FredPluginFCPMessageHandler {
      * Client plugins which connect to a FCP server plugin must implement this interface.<br/>
      * The purpose of this interface is to provide a message handling function for processing messages received from the server.
      * 
-     * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
+     * FIXME: Migrate JavaDoc of {@link FredPluginFCPClient} to this, then delete that interface.
      * 
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ServerSideFCPMessageHandler The interface of the server plugin which handles the messages sent by the client.

@@ -133,14 +133,14 @@ public class PluginRespirator {
     }
     
     /**
-     * Allows FCP server plugins, that is plugins which implement {@link FredPluginFCPServer}, to obtain an existing client connection by its ID - if the 
+     * Allows FCP server plugins, that is plugins which implement {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client connection by its ID - if the 
      * client is still connected.<br/>
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the {@link FCPPluginClient} in memory after they have received
      * it from {@link #connecToOtherPlugin(String, FredPluginFCPClient)}. If they did not keep a hard reference and only stored the ID, the
      * {@link FCPPluginClient} would be garbage collected and thus considered as disconnected.
      * 
-     * @see FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)
-     *      The message handler at FredPluginFCPServer provides an explanation of when to use this.
+     * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.ServerSideFCPMessageHandler.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)
+     *      The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler provides an explanation of when to use this.
      * @param clientID The ID as obtained by {@link FCPPluginClient#getID()}
      * @return The client if it is still connected.
      * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.

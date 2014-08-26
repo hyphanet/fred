@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.pluginmanager.FredPluginFCPServer;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -23,7 +23,7 @@ import freenet.support.io.NativeThread;
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server plugin immediately sends a reply via the
  * {@link FCPPluginClient} which was passed to its message handling function
- * {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
+ * {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.ServerSideFCPMessageHandler.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
  * <br/>This might not be sufficient for certain usecases: The reply to a message might take quite some time to compute, possibly hours. Then a reference
  * to the original client needs to be stored in the plugin's database, not memory. <br/>
  * Thus, this class exists to serve the purpose of allowing plugin servers to query clients by their ID (see {@link FCPPluginClient#getID()}).</p>
@@ -80,7 +80,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * Stores the {@link FCPPluginClient} so in the future it can be obtained by its ID with {@link FCPPluginClientTracker#getClient(UUID)}.
      * 
      * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
-     * {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
+     * {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.ServerSideFCPMessageHandler.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
      * 
      * Unregistration is not supported and not necessary. 
      */
@@ -95,7 +95,7 @@ final class FCPPluginClientTracker extends NativeThread {
     }
     
     /**
-     * For being used by implementors of {@link FredPluginFCPServer}.<br/>
+     * For being used by implementors of {@link ServerSideFCPMessageHandler}.<br/>
      * NOT for being used by clients: If you are a client using a {@link FCPPluginClient} to connect to a server plugin, you have to keep a reference to
      * the {@link FCPPluginClient} in memory.<br/>
      * This is necessary because this class only keeps {@link WeakReference}s to the {@link FCPPluginClient} objects. Once they are not referenced by a strong
@@ -103,7 +103,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * The job of keeping the strong references is at the client.
      * 
      * @param clientID The ID of{@link FCPPluginClient#getID()} of a client which has already sent a message to your plugin via
-     *                 {@link FredPluginFCPServer#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.FredPluginFCPServer.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}
+     *                 {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, freenet.pluginmanager.ServerSideFCPMessageHandler.ClientPermissions, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}
      * @return The client with the given ID, for as long as it is still connected to the node. 
      * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.
      *                                 Notice: The client does not necessarily have to be a plugin. The type of the Exception is similar to

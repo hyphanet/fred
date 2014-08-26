@@ -1,15 +1,15 @@
 package freenet.pluginmanager;
 
-import java.util.Date;
-import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashSet;
 
-import freenet.l10n.NodeL10n;
 import freenet.clients.http.ConfigToadlet;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.SubConfig;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
@@ -64,7 +64,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		isFCPPlugin = (plug instanceof FredPluginFCP);
-		isFCPServerPlugin = (plug instanceof FredPluginFCPServer);
+		isFCPServerPlugin = (plug instanceof FredPluginFCPMessageHandler.ServerSideFCPMessageHandler);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);

@@ -36,8 +36,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.ObjectContainer;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -45,8 +45,8 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.l10n.NodeL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -59,9 +59,9 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SerialExecutor;
 import freenet.support.Ticker;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
@@ -925,15 +925,15 @@ public class PluginManager {
 	}
 
 	/**
-	 * Get the {@link FredPluginFCPServer} of the plugin with the given class name.
+	 * Get the {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} of the plugin with the given class name.
 	 * 
 	 * @param pluginClassName See {@link #getPluginInfoByClassName(String)}.
 	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server.
 	 */
-	public FredPluginFCPServer getPluginFCPServer(String pluginClassName) throws PluginNotFoundException{
+	public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler getPluginFCPServer(String pluginClassName) throws PluginNotFoundException{
 		PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
 		if(piw != null & piw.isFCPServerPlugin())
-			return (FredPluginFCPServer)piw.plug;
+			return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)piw.plug;
 		else
 			throw new PluginNotFoundException(pluginClassName);
 	}
