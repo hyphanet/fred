@@ -444,6 +444,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
+        context.consecutiveRNFsCountAsSuccess = 0;
         context.maxInsertRetries = 2;
         KeysFetchingLocally keys = new MyKeysFetchingLocally();
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
