@@ -385,6 +385,27 @@ public class SplitFileInserterStorage {
         }
 
         // Now set up the RAF.
+        
+        // Setup offset arrays early so we can compute the length of encodeOffsets().
+        if(crossSegments != null) {
+            offsetCrossSegmentBlocks = new long[crossSegments.length];
+            if(persistent)
+                offsetCrossSegmentStatus = new long[crossSegments.length];
+            else
+                offsetCrossSegmentStatus = null;
+        } else {
+            offsetCrossSegmentBlocks = null;
+            offsetCrossSegmentStatus = null;
+        }
+        
+        offsetSegmentCheckBlocks = new long[segments.length];
+        
+        offsetSegmentKeys = new long[segments.length];
+        if(persistent) {
+            offsetSegmentStatus = new long[segments.length];
+        } else {
+            offsetSegmentStatus = null;
+        }
 
         // First we have all the fixed stuff ...
 
@@ -398,11 +419,13 @@ public class SplitFileInserterStorage {
         } else {
             this.hasPaddedLastBlock = false;
         }
-
+        
         byte[] header = null;
         Bucket segmentSettings = null, crossSegmentSettings = null;
+        int offsetsLength = 0;
         if (persistent) {
             header = encodeHeader();
+            offsetsLength = encodeOffsets().length;
 
             segmentSettings = encodeSegmentSettings(); // Checksummed with length
             try {
@@ -416,7 +439,7 @@ public class SplitFileInserterStorage {
 
         long ptr = 0;
         if (persistent) {
-            ptr = header.length + segmentSettings.size() + crossSegmentSettings.size();
+            ptr = header.length + offsetsLength + segmentSettings.size() + crossSegmentSettings.size();
             offsetOverallStatus = ptr;
             overallStatusLength = encodeOverallStatus().length;
             ptr += overallStatusLength;
@@ -439,44 +462,31 @@ public class SplitFileInserterStorage {
             ptr += CHKBlock.DATA_LENGTH;
 
         if (crossSegments != null) {
-            offsetCrossSegmentBlocks = new long[crossSegments.length];
             for (int i = 0; i < crossSegments.length; i++) {
                 offsetCrossSegmentBlocks[i] = ptr;
                 ptr += crossSegments[i].crossCheckBlockCount * CHKBlock.DATA_LENGTH;
             }
-        } else {
-            offsetCrossSegmentBlocks = null;
         }
 
-        offsetSegmentCheckBlocks = new long[segments.length];
         for (int i = 0; i < segments.length; i++) {
             offsetSegmentCheckBlocks[i] = ptr;
             ptr += segments[i].checkBlockCount * CHKBlock.DATA_LENGTH;
         }
 
         if (persistent) {
-            offsetSegmentStatus = new long[segments.length];
             for (int i = 0; i < segments.length; i++) {
                 offsetSegmentStatus[i] = ptr;
                 ptr += segments[i].storedStatusLength();
             }
 
             if (crossSegments != null) {
-                offsetCrossSegmentStatus = new long[crossSegments.length];
                 for (int i = 0; i < crossSegments.length; i++) {
                     offsetCrossSegmentStatus[i] = ptr;
                     ptr += crossSegments[i].storedStatusLength();
                 }
-            } else {
-                offsetCrossSegmentStatus = null;
             }
-
-        } else {
-            offsetSegmentStatus = null;
-            offsetCrossSegmentStatus = null;
         }
         
-        offsetSegmentKeys = new long[segments.length];
         for (int i = 0; i < segments.length; i++) {
             offsetSegmentKeys[i] = ptr;
             ptr += segments[i].storedKeysLength();
@@ -484,10 +494,17 @@ public class SplitFileInserterStorage {
 
         this.raf = rafFactory.makeRAF(ptr);
         if (persistent) {
-            raf.pwrite(0, header, 0, header.length);
-            BucketTools.copyTo(segmentSettings, raf, header.length, Long.MAX_VALUE);
-            BucketTools.copyTo(crossSegmentSettings, raf, header.length + segmentSettings.size(),
-                    Long.MAX_VALUE);
+            ptr = 0;
+            raf.pwrite(ptr, header, 0, header.length);
+            ptr += header.length;
+            byte[] encodedOffsets = encodeOffsets();
+            assert(encodedOffsets.length == offsetsLength);
+            raf.pwrite(ptr, encodedOffsets, 0, encodedOffsets.length);
+            ptr += encodedOffsets.length;
+            BucketTools.copyTo(segmentSettings, raf, ptr, Long.MAX_VALUE);
+            ptr += segmentSettings.size();
+            BucketTools.copyTo(crossSegmentSettings, raf, ptr, Long.MAX_VALUE);
+            ptr += crossSegmentSettings.size();
             segmentSettings.free();
             crossSegmentSettings.free();
             writeOverallStatus(true);
@@ -511,7 +528,7 @@ public class SplitFileInserterStorage {
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
     }
-
+    
     private void writeOverallStatus(boolean force) throws IOException {
         byte[] buf;
         synchronized(this) {
@@ -583,6 +600,7 @@ public class SplitFileInserterStorage {
         DataOutputStream dos = new DataOutputStream(baos);
         try {
             dos.writeLong(MAGIC);
+            dos.writeInt(checker.getChecksumTypeID());
             OutputStream os = checker.checksumWriterWithLength(baos, new ArrayBucketFactory());
             dos = new DataOutputStream(os);
             dos.writeInt(VERSION);
@@ -613,13 +631,42 @@ public class SplitFileInserterStorage {
             dos.writeInt(deductBlocksFromSegments);
             dos.writeInt(maxRetries);
             dos.writeInt(consecutiveRNFsCountAsSuccess);
-            // FIXME do we want to include offsets???
             dos.close();
             return baos.toByteArray();
         } catch (IOException e) {
             throw new Error(e); // Impossible
         }
     }
+    
+    /** Encode the offsets. */
+    private byte[] encodeOffsets() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        try {
+            if(this.hasPaddedLastBlock)
+                dos.writeLong(offsetPaddedLastBlock);
+            dos.writeLong(offsetOverallStatus);
+            dos.writeInt(overallStatusLength);
+            if(crossSegments != null) {
+                for(long l : offsetCrossSegmentBlocks)
+                    dos.writeLong(l);
+            }
+            for(long l : offsetSegmentCheckBlocks)
+                dos.writeLong(l);
+            for(long l : offsetSegmentStatus)
+                dos.writeLong(l);
+            if(crossSegments != null) {
+                for(long l : offsetCrossSegmentStatus)
+                    dos.writeLong(l);
+            }
+            for(long l : offsetSegmentKeys)
+                dos.writeLong(l);
+            dos.close();
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new Error(e); // Impossible
+        }
+    }            
 
     private void allocateCrossDataBlock(SplitFileInserterCrossSegmentStorage segment, Random xsRandom) {
         int x = 0;
