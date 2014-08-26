@@ -126,6 +126,7 @@ public class SplitFileFetcherStorage {
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
     private final LockableRandomAccessThing raf;
+    private final long rafLength;
     /** If true we will complete the download by truncating the file. The file was passed in at
      * construction and we are not responsible for freeing it. Once all segments have decoded and
      * encoded we call onSuccess(), and we don't free the data. Also, if this is true, cross-check 
@@ -504,6 +505,7 @@ public class SplitFileFetcherStorage {
         
         // Create the actual LockableRandomAccessThing
         
+        rafLength = totalLength;
         if(storageFile != null) {
             if(!storageFile.exists())
                 throw new IOException("Must have already created storage file");
@@ -604,7 +606,7 @@ public class SplitFileFetcherStorage {
         this.errors = new FailureCodeTracker(false); // FIXME persist???
         this.completeViaTruncation = completeViaTruncation;
         // FIXME this is hideous! Rewrite the writing/parsing code here in a less ugly way. However, it works...
-        long rafLength = raf.size();
+        rafLength = raf.size();
         if(raf.size() < 8 /* FIXME more! */)
             throw new StorageFormatException("Too short");
         // Last 8 bytes: Magic value.
@@ -823,12 +825,12 @@ public class SplitFileFetcherStorage {
                 // Must be after reading the metadata for the plain segments.
                 crossSegment.checkBlocks();
         }
-        readGeneralProgress(rafLength);
+        readGeneralProgress();
     }
     
-    private void readGeneralProgress(long rafLength) throws IOException {
+    private void readGeneralProgress() throws IOException {
         try {
-            byte[] buf = preadChecksummedWithLength(offsetGeneralProgress, rafLength);
+            byte[] buf = preadChecksummedWithLength(offsetGeneralProgress);
             ByteArrayInputStream bais = new ByteArrayInputStream(buf);
             DataInputStream dis = new DataInputStream(bais);
             long flags = dis.readLong();
@@ -1621,7 +1623,7 @@ public class SplitFileFetcherStorage {
         }
     }
 
-    byte[] preadChecksummedWithLength(long fileOffset, long fileLength) throws IOException, ChecksumFailedException, StorageFormatException {
+    byte[] preadChecksummedWithLength(long fileOffset) throws IOException, ChecksumFailedException, StorageFormatException {
         byte[] checksumBuf = new byte[checksumLength];
         RAFLock lock = raf.lockOpen();
         byte[] lengthBuf = new byte[8];
@@ -1630,7 +1632,7 @@ public class SplitFileFetcherStorage {
         try {
             raf.pread(fileOffset, lengthBuf, 0, lengthBuf.length);
             long len = new DataInputStream(new ByteArrayInputStream(lengthBuf)).readLong();
-            if(len + fileOffset > fileLength || len > Integer.MAX_VALUE || len < 0) 
+            if(len + fileOffset > rafLength || len > Integer.MAX_VALUE || len < 0) 
                 throw new StorageFormatException("Bogus length "+len);
             length = (int)len;
             buf = new byte[length];
