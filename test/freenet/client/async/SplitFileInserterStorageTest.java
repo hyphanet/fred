@@ -203,7 +203,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -225,7 +225,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, baseContext.clone(), 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         // Now check the data blocks...
@@ -257,7 +257,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -282,7 +282,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -310,7 +310,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -357,7 +357,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -407,7 +407,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -450,7 +450,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -486,7 +486,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertEquals(storage.segments.length, 1);
@@ -586,7 +586,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         assertTrue(storage.getStatus() == Status.ENCODED);
@@ -656,7 +656,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keysFetching, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keysFetching, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
         // Encoded. Now try to decode it ...
@@ -938,7 +938,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
                 cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
-                r, memoryLimitedJobRunner, jobRunner, keys, false, 0, 0, 0, 0);
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         assertEquals(storage.getStatus(), Status.STARTED);
         assertEquals(storage.segments.length, 1);

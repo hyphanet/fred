@@ -67,6 +67,7 @@ public class SplitFileInserterSegmentStorage {
     
     /** LOCKING: Locked with (this) as needs to access encoded in chooseBlock */
     private final SplitFileInserterSegmentBlockChooser blockChooser;
+    private boolean metadataDirty;
     
     /** Set if the insert is cancelled. */
     private boolean cancelled;
@@ -158,21 +159,24 @@ public class SplitFileInserterSegmentStorage {
         throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
     }
 
-    public void storeStatus() {
+    public void storeStatus(boolean force) {
         if(!parent.persistent) return;
         if(parent.hasFinished()) return;
-        synchronized(this) {
-            if(cancelled) return;
-        }
-        DataOutputStream dos;
         try {
-            dos = new DataOutputStream(parent.writeChecksummedTo(parent.segmentStatusOffset(segNo), statusLength));
-            innerStoreStatus(dos);
-        } catch (IOException e) {
-            Logger.error(this, "Impossible: "+e, e);
-            return;
-        }
-        try {
+            DataOutputStream dos;
+            synchronized(this) {
+                if(!force && !metadataDirty) return;
+                if(cancelled) return;
+                try {
+                    dos = new DataOutputStream(parent.writeChecksummedTo(parent.segmentStatusOffset(segNo), statusLength));
+                    innerStoreStatus(dos);
+                } catch (IOException e) {
+                    Logger.error(this, "Impossible: "+e, e);
+                    return;
+                }
+                metadataDirty = false;
+            }
+            // Outside the lock is safe since if we fail we will fail the whole splitfile.
             dos.close();
         } catch (IOException e) {
             Logger.error(this, "I/O error writing segment status?: "+e, e);
@@ -477,6 +481,7 @@ public class SplitFileInserterSegmentStorage {
         try {
             this.setKey(blockNo, key);
             blockChooser.onSuccess(blockNo);
+            lazyWriteMetadata();
         } catch (IOException e) {
             parent.failOnDiskError(e);
         }
@@ -513,9 +518,19 @@ public class SplitFileInserterSegmentStorage {
                     return;
                 }
             }
-            if(blockChooser.onNonFatalFailure(blockNo))
+            if(blockChooser.onNonFatalFailure(blockNo)) {
                 parent.failTooManyRetriesInBlock();
+            } else {
+                if(blockChooser.maxRetries >= 0) lazyWriteMetadata();
+            }
         }
+    }
+
+    private void lazyWriteMetadata() {
+        synchronized(this) {
+            metadataDirty = true;
+        }
+        parent.lazyWriteMetadata();
     }
 
     public synchronized boolean hasCompletedOrFailed() {

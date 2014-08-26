@@ -6,6 +6,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.ClientMetadata;
@@ -25,6 +26,7 @@ import freenet.node.SendableInsert;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedJobRunner;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -155,6 +157,7 @@ public class SplitFileInserterStorage {
     // System utilities.
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final PersistentJobRunner jobRunner;
+    final Ticker ticker;
 
     /**
      * True if the size of the file is not exactly divisible by one block. If
@@ -215,7 +218,7 @@ public class SplitFileInserterStorage {
             byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes, 
             BucketFactory bf, ChecksumChecker checker, Random random,
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner,
-            KeysFetchingLocally keysFetching, 
+            Ticker ticker, KeysFetchingLocally keysFetching, 
             boolean topDontCompress, int topRequiredBlocks, int topTotalBlocks, 
             long origDataSize, long origCompressedDataSize) throws IOException, InsertException {
         this.originalData = originalData;
@@ -242,6 +245,7 @@ public class SplitFileInserterStorage {
         this.origCompressedDataSize = origCompressedDataSize;
         this.maxRetries = ctx.maxInsertRetries;
         this.errors = new FailureCodeTracker(true);
+        this.ticker = ticker;
 
         // Work out how many blocks in each segment, crypto keys etc.
         // Complicated by back compatibility, i.e. the need to be able to
@@ -492,7 +496,7 @@ public class SplitFileInserterStorage {
         if (persistent) {
             // Padding is initialized to random already.
             for (SplitFileInserterSegmentStorage segment : segments) {
-                segment.storeStatus();
+                segment.storeStatus(true);
             }
             if (crossSegments != null) {
                 for (SplitFileInserterCrossSegmentStorage segment : crossSegments) {
@@ -775,7 +779,7 @@ public class SplitFileInserterStorage {
 
             @Override
             public boolean run(ClientContext context) {
-                completed.storeStatus();
+                completed.storeStatus(true);
                 callback.encodingProgress();
                 if(maybeFail()) return true;
                 if(allFinishedEncoding()) {
@@ -1143,6 +1147,58 @@ public class SplitFileInserterStorage {
     /** Used by KeysFetchingLocally */
     SendableInsert getSendableInsert() {
         return callback.getSendableInsert();
+    }
+    
+    static final long LAZY_WRITE_METADATA_DELAY = TimeUnit.MINUTES.toMillis(5);
+    
+    private final PersistentJob writeMetadataJob = new PersistentJob() {
+
+        @Override
+        public boolean run(ClientContext context) {
+            try {
+                if(isFinishing()) return false;
+                RAFLock lock = raf.lockOpen();
+                try {
+                    for(SplitFileInserterSegmentStorage segment : segments) {
+                        segment.storeStatus(false);
+                    }
+                } finally {
+                    lock.unlock();
+                }
+                writeOverallStatus();
+                return false;
+            } catch (IOException e) {
+                if(isFinishing()) return false;
+                Logger.error(this, "Failed writing metadata for "+SplitFileInserterStorage.this+": "+e, e);
+                return false;
+            }
+        }
+        
+    };
+    
+    private final Runnable wrapLazyWriteMetadata = new Runnable() {
+
+        @Override
+        public void run() {
+            jobRunner.queueNormalOrDrop(writeMetadataJob);
+        }
+        
+    };
+
+    public void lazyWriteMetadata() {
+        if(!persistent) return;
+        if(LAZY_WRITE_METADATA_DELAY != 0) {
+            // The Runnable must be the same object for de-duplication.
+            ticker.queueTimedJob(wrapLazyWriteMetadata, "Write metadata for splitfile", 
+                    LAZY_WRITE_METADATA_DELAY, false, true);
+        } else { // Must still be off-thread, multiple segments, possible locking issues...
+            jobRunner.queueNormalOrDrop(writeMetadataJob);
+        }
+    }
+
+    protected synchronized boolean isFinishing() {
+        return this.failing != null || status == Status.FAILED || status == Status.SUCCEEDED || 
+            status == Status.GENERATING_METADATA;
     }
 
 }
