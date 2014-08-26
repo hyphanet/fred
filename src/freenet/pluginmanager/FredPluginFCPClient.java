@@ -8,9 +8,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
- * Interface for client plugins which connect to a server plugin.
- * The connection is initiated by using a {@link FCPPluginClient}. The purpose of this interface is to provide a message handling function for processing
- * messages received from the server in reply to messages sent using the {@link FCPPluginClient}.
  * 
  * @see FredPluginFCPServer The interface of the server plugin which handles the messages received from the client.
  * @author xor (xor@freenetproject.org)

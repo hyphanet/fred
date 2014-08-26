@@ -25,14 +25,24 @@ import freenet.node.fcp.FCPPluginClient;
 public interface FredPluginFCPMessageHandler { 
    
     /**
+     * Plugins which provide FCP services to clients must implement this interface.<br/>
+     * The purpose of this interface is to provide a message handling function for processing messages received from the clients.
+     * 
      * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
+     * 
+     * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      */
     public interface ServerSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         
     }
        
     /**
+     * Client plugins which connect to a FCP server plugin must implement this interface.<br/>
+     * The purpose of this interface is to provide a message handling function for processing messages received from the server.
+     * 
      * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
+     * 
+     * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         

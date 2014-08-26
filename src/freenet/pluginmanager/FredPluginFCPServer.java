@@ -8,7 +8,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
- * Plugins which provide FCP services to clients must implement this interface.
  * 
  * @see FredPluginFCPClient The interface of the client plugin which handles the messages which the server sends back in reply.
  * @author xor (xor@freenetproject.org)
