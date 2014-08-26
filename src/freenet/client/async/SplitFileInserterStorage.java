@@ -188,12 +188,15 @@ public class SplitFileInserterStorage {
     /** Offset in originalData to the start of each data segment */
     private final long[] underlyingOffsetDataSegments;
     private final long offsetPaddedLastBlock;
+    private final long offsetOverallStatus;
     private final long[] offsetCrossSegmentBlocks;
     private final long[] offsetSegmentCheckBlocks;
     private final long[] offsetSegmentStatus;
     private final long[] offsetCrossSegmentStatus;
     private final long[] offsetSegmentKeys;
 
+    private final int overallStatusLength;
+    
     /**
      * Create a SplitFileInserterStorage.
      * 
@@ -415,6 +418,9 @@ public class SplitFileInserterStorage {
         long ptr = 0;
         if (persistent) {
             ptr = header.length + segmentSettings.size() + crossSegmentSettings.size();
+            offsetOverallStatus = ptr;
+            overallStatusLength = encodeOverallStatus().length;
+            ptr += overallStatusLength;
 
             // Pad to a 4KB block boundary.
             int padding = 0;
@@ -423,6 +429,9 @@ public class SplitFileInserterStorage {
                 padding = 4096 - padding;
 
             ptr += padding;
+        } else {
+            overallStatusLength = 0;
+            offsetOverallStatus = 0;
         }
 
         this.offsetPaddedLastBlock = ptr;
@@ -482,6 +491,7 @@ public class SplitFileInserterStorage {
                     Long.MAX_VALUE);
             segmentSettings.free();
             crossSegmentSettings.free();
+            writeOverallStatus();
         }
         if (hasPaddedLastBlock)
             raf.pwrite(offsetPaddedLastBlock, paddedLastBlock, 0, paddedLastBlock.length);
@@ -501,6 +511,28 @@ public class SplitFileInserterStorage {
         }
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
+    }
+
+    private void writeOverallStatus() throws IOException {
+        if(!persistent) return;
+        byte[] buf = encodeOverallStatus();
+        assert(buf.length == overallStatusLength);
+        raf.pwrite(offsetOverallStatus, buf, 0, buf.length);
+    }
+
+    private byte[] encodeOverallStatus() {
+        ArrayBucket bucket = new ArrayBucket(); // Will be small.
+        try {
+            OutputStream os = bucket.getOutputStream();
+            OutputStream cos = checker.checksumWriterWithLength(os, new ArrayBucketFactory());
+            DataOutputStream dos = new DataOutputStream(cos);
+            errors.writeFixedLengthTo(dos);
+            dos.close();
+            os.close();
+            return bucket.toByteArray();
+        } catch (IOException e) {
+            throw new Error(e); // Impossible
+        }
     }
 
     private Bucket encodeSegmentSettings() {
