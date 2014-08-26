@@ -78,6 +78,7 @@ public class SplitFileInserterStorage {
     private final LockableRandomAccessThing originalData;
     /** The RAF containing check blocks, status etc. */
     private final LockableRandomAccessThing raf;
+    private final long rafLength;
     /** Is the request persistent? */
     final boolean persistent;
     private final SplitFileInserterStorageCallback callback;
@@ -492,6 +493,7 @@ public class SplitFileInserterStorage {
             ptr += segments[i].storedKeysLength();
         }
 
+        rafLength = ptr;
         this.raf = rafFactory.makeRAF(ptr);
         if (persistent) {
             ptr = 0;
