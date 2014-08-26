@@ -310,12 +310,13 @@ public class SplitFileInserterSegmentStorage {
                     lock = parent.jobRunner.lock();
                     innerEncode(chunk);
                 } finally {
-                    if(lock != null) lock.unlock(false, prio);
                     chunk.release();
                     synchronized(this) {
                         encoding = false;
                     }
                     parent.onFinishedEncoding(SplitFileInserterSegmentStorage.this);
+                    // Callback is part of the persistent job, unlock *after* calling it.
+                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }

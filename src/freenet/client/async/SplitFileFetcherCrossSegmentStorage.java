@@ -125,12 +125,13 @@ public class SplitFileFetcherCrossSegmentStorage {
                     Logger.error(this, "Failed to decode "+this+" because of disk error: "+e, e);
                     parent.failOnDiskError(e);
                 } finally {
-                    if(lock != null) lock.unlock(false, prio);
                     chunk.release();
                     synchronized(this) {
                         tryDecode = false;
                     }
                     parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
+                    // Callback is part of the persistent job, unlock *after* calling it.
+                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }
