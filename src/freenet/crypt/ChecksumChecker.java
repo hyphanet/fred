@@ -93,4 +93,16 @@ public abstract class ChecksumChecker {
         return 8 + checksumLength();
     }
     
+    /** Create a ChecksumChecker of the specified type.
+     * @param checksumID The checksum type.
+     * @return A ChecksumChecker of the given type.
+     * @throws IllegalArgumentException If there is no ChecksumChecker for that ID.
+     */
+    public static ChecksumChecker create(int checksumID) {
+        if(checksumID == CHECKSUM_CRC)
+            return new CRCChecksumChecker();
+        else
+            throw new IllegalArgumentException("Bad checksum ID");
+    }
+    
 }
