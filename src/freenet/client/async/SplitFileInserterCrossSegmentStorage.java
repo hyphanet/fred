@@ -1,8 +1,10 @@
 package freenet.client.async;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import freenet.client.FECCodec;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -13,6 +15,7 @@ import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
+import freenet.support.io.StorageFormatException;
 
 public class SplitFileInserterCrossSegmentStorage {
     
@@ -81,6 +84,50 @@ public class SplitFileInserterCrossSegmentStorage {
         for(int i=0;i<totalBlocks;i++) {
             dos.writeInt(segments[i].segNo);
             dos.writeInt(blockNumbers[i]);
+        }
+        dos.writeInt(statusLength);
+    }
+    
+    SplitFileInserterCrossSegmentStorage(SplitFileInserterStorage parent, DataInputStream dis, 
+            int segNo) throws StorageFormatException, IOException {
+        this.segNo = segNo;
+        this.parent = parent;
+        this.dataBlockCount = dis.readInt();
+        if(dataBlockCount <= 0) throw new StorageFormatException("Negative cross-segment data block count");
+        this.crossCheckBlockCount = dis.readInt();
+        if(crossCheckBlockCount <= 0) throw new StorageFormatException("Negative cross-check block count");
+        this.totalBlocks = dataBlockCount + crossCheckBlockCount;
+        if(totalBlocks > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new StorageFormatException("Bogus total block count");
+        segments = new SplitFileInserterSegmentStorage[totalBlocks];
+        blockNumbers = new int[totalBlocks];
+        for(int i=0;i<totalBlocks;i++) {
+            int readSegmentNumber = dis.readInt();
+            if(readSegmentNumber < 0 || readSegmentNumber >= parent.segments.length)
+                throw new StorageFormatException("Bogus segment number "+readSegmentNumber);
+            int readBlockNumber = dis.readInt();
+            SplitFileInserterSegmentStorage segment = parent.segments[i]; 
+            if(readBlockNumber < 0 || 
+                    (readBlockNumber >= segment.dataBlockCount + segment.crossCheckBlockCount)
+                    || (i < dataBlockCount && readBlockNumber >= segment.dataBlockCount)
+                    || (i >= dataBlockCount && readBlockNumber < segment.dataBlockCount))
+                throw new StorageFormatException("Bogus block number "+readBlockNumber+" for slot "+i);
+            segments[i] = segment;
+            blockNumbers[i] = readBlockNumber;
+            segments[i].setCrossCheckBlock(this, readBlockNumber);
+        }
+        statusLength = dis.readInt();
+        if(statusLength < 0) throw new StorageFormatException("Bogus status length");
+        try {
+            CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
+            DataOutputStream dos = new DataOutputStream(cos);
+            innerStoreStatus(dos);
+            dos.close();
+            int computedStatusLength = (int) cos.written() + parent.checker.checksumLength();
+            if(computedStatusLength > statusLength)
+                throw new StorageFormatException("Stored status length smaller than required");
+        } catch (IOException e) {
+            throw new Error(e); // Impossible
         }
     }
 

@@ -542,6 +542,234 @@ public class SplitFileInserterStorage {
         status = Status.NOT_STARTED;
     }
     
+    /** Create a splitfile insert from stored data.
+     * @param raf The file the insert was stored to.
+     * @param callback The parent callback (e.g. SplitFileInserter).
+     * @param checker The checksum checker to be used.
+     * @param random
+     * @param memoryLimitedJobRunner
+     * @param jobRunner
+     * @param ticker
+     * @param keysFetching
+     * @throws IOException 
+     * @throws StorageFormatException 
+     * @throws ChecksumFailedException 
+     * @throws ResumeFailedException 
+     */
+    public SplitFileInserterStorage(LockableRandomAccessThing raf, 
+            SplitFileInserterStorageCallback callback, Random random, 
+            MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner, 
+            Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG, 
+            PersistentFileTracker persistentFileTracker) 
+    throws IOException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        this.persistent = true;
+        this.callback = callback;
+        this.ticker = ticker;
+        this.memoryLimitedJobRunner = memoryLimitedJobRunner;
+        this.jobRunner = jobRunner;
+        this.raf = raf;
+        rafLength = raf.size();
+        InputStream ois = new RAFInputStream(raf, 0, rafLength);
+        DataInputStream dis = new DataInputStream(ois);
+        long magic = dis.readLong();
+        if(magic != MAGIC)
+            throw new StorageFormatException("Bad magic");
+        int checksumType = dis.readInt();
+        try {
+            this.checker = ChecksumChecker.create(checksumType);
+        } catch (IllegalArgumentException e) {
+            throw new StorageFormatException("Bad checksum type");
+        }
+        InputStream is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+        dis = new DataInputStream(is);
+        int version = dis.readInt();
+        if(version != VERSION)
+            throw new StorageFormatException("Bad version");
+        this.originalData = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker);
+        this.totalDataBlocks = dis.readInt();
+        if(totalDataBlocks <= 0) throw new StorageFormatException("Bad total data blocks "+totalDataBlocks);
+        this.totalCheckBlocks = dis.readInt();
+        if(totalCheckBlocks <= 0) throw new StorageFormatException("Bad total data blocks "+totalCheckBlocks);
+        this.splitfileType = dis.readShort();
+        try {
+            this.codec = FECCodec.getInstance(splitfileType);
+        } catch (IllegalArgumentException e) {
+            throw new StorageFormatException("Bad splitfile codec type");
+        }
+        this.dataLength = dis.readLong();
+        if(dataLength <= 0) throw new StorageFormatException("Bad data length");
+        if(dataLength != originalData.size())
+            throw new ResumeFailedException("Original data size is "+originalData.size()+" should be "+dataLength);
+        if(((dataLength + CHKBlock.DATA_LENGTH - 1) / CHKBlock.DATA_LENGTH) != totalDataBlocks)
+            throw new StorageFormatException("Data blocks "+totalDataBlocks+" not compatible with size "+dataLength);
+        decompressedLength = dis.readLong();
+        if(decompressedLength <= 0)
+            throw new StorageFormatException("Bogus decompressed length");
+        isMetadata = dis.readBoolean();
+        short atype = dis.readShort();
+        if(atype == -1) {
+            archiveType = null;
+        } else {
+            archiveType = ARCHIVE_TYPE.getArchiveType(atype);
+            if(archiveType == null) throw new StorageFormatException("Unknown archive type "+atype);
+        }
+        try {
+            clientMetadata = ClientMetadata.construct(dis);
+        } catch (MetadataParseException e) {
+            throw new StorageFormatException("Failed to read MIME type: "+e);
+        }
+        short codec = dis.readShort();
+        if(codec == (short)-1)
+            compressionCodec = null;
+        else {
+            compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(codec);
+            if(compressionCodec == null)
+                throw new StorageFormatException("Unknown compression codec ID "+codec);
+        }
+        int segmentCount = dis.readInt();
+        if(segmentCount <= 0) throw new StorageFormatException("Bad segment count");
+        this.segmentSize = dis.readInt();
+        if(segmentSize <= 0) throw new StorageFormatException("Bad segment size");
+        this.checkSegmentSize = dis.readInt();
+        if(checkSegmentSize <= 0) throw new StorageFormatException("Bad check segment size");
+        this.crossCheckBlocks = dis.readInt();
+        if(crossCheckBlocks < 0) throw new StorageFormatException("Bad cross-check block count");
+        if(segmentSize + checkSegmentSize + crossCheckBlocks > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new StorageFormatException("Must be no more than "+FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT+" blocks per segment");
+        this.splitfileCryptoAlgorithm = dis.readByte();
+        if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileCryptoAlgorithm))
+            throw new StorageFormatException("Invalid splitfile crypto algorithm "+splitfileCryptoAlgorithm);
+        if(dis.readBoolean()) {
+            splitfileCryptoKey = new byte[32];
+            dis.readFully(splitfileCryptoKey);
+        } else {
+            splitfileCryptoKey = null;
+        }
+        this.keyLength = dis.readInt(); // FIXME validate
+        if(keyLength < SplitFileInserterSegmentStorage.getKeyLength(this))
+            throw new StorageFormatException("Invalid key length "+keyLength+" should be at least "+
+                    SplitFileInserterSegmentStorage.getKeyLength(this));
+        int compatMode = dis.readInt();
+        if(compatMode < 0 || compatMode > CompatibilityMode.values().length)
+            throw new StorageFormatException("Invalid compatibility mode "+compatMode);
+        this.cmode = CompatibilityMode.values()[compatMode];
+        this.deductBlocksFromSegments = dis.readInt();
+        if(deductBlocksFromSegments < 0 || deductBlocksFromSegments > segmentCount)
+            throw new StorageFormatException("Bad deductBlocksFromSegments");
+        this.maxRetries = dis.readInt();
+        if(maxRetries < -1) throw new StorageFormatException("Bad maxRetries");
+        this.consecutiveRNFsCountAsSuccess = dis.readInt();
+        if(consecutiveRNFsCountAsSuccess < 0)
+            throw new StorageFormatException("Bad consecutiveRNFsCountAsSuccess");
+        specifySplitfileKeyInMetadata = dis.readBoolean();
+        if(dis.readBoolean()) {
+            hashThisLayerOnly = new byte[32];
+            dis.readFully(hashThisLayerOnly);
+        } else {
+            hashThisLayerOnly = null;
+        }
+        topDontCompress = dis.readBoolean();
+        topRequiredBlocks = dis.readInt();
+        topTotalBlocks = dis.readInt();
+        origDataSize = dis.readLong();
+        origCompressedDataSize = dis.readLong();
+        hashes = HashResult.readHashes(dis);
+        dis.close();
+        this.hasPaddedLastBlock = (dataLength % CHKBlock.DATA_LENGTH != 0);
+        this.segments = new SplitFileInserterSegmentStorage[segmentCount];
+        if(crossCheckBlocks != 0)
+            this.crossSegments = new SplitFileInserterCrossSegmentStorage[segmentCount];
+        else
+            crossSegments = null;
+        // Read offsets.
+        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+        dis = new DataInputStream(is);
+        if(hasPaddedLastBlock) {
+            offsetPaddedLastBlock = readOffset(dis, rafLength, "offsetPaddedLastBlock");
+        } else {
+            offsetPaddedLastBlock = 0;
+        }
+        offsetOverallStatus = readOffset(dis, rafLength, "offsetOverallStatus");
+        overallStatusLength = dis.readInt();
+        if(overallStatusLength < 0) throw new StorageFormatException("Negative overall status length");
+        if(overallStatusLength < FailureCodeTracker.getFixedLength(true))
+            throw new StorageFormatException("Bad overall status length");
+        // Will be read after offsets
+        if(crossSegments != null) {
+            offsetCrossSegmentBlocks = new long[crossSegments.length];
+            for(int i=0;i<crossSegments.length;i++)
+                offsetCrossSegmentBlocks[i] = readOffset(dis, rafLength, "cross-segment block offset");
+        } else {
+            offsetCrossSegmentBlocks = null;
+        }
+        offsetSegmentCheckBlocks = new long[segmentCount];
+        for(int i=0;i<segmentCount;i++)
+            offsetSegmentCheckBlocks[i] = readOffset(dis, rafLength, "segment check block offset");
+        offsetSegmentStatus = new long[segmentCount];
+        for(int i=0;i<segmentCount;i++)
+            offsetSegmentStatus[i] = readOffset(dis, rafLength, "segment status offset");
+        if(crossSegments != null) {
+            offsetCrossSegmentStatus = new long[crossSegments.length];
+            for(int i=0;i<crossSegments.length;i++)
+                offsetCrossSegmentStatus[i] = readOffset(dis, rafLength, "cross-segment status offset");
+        } else {
+            offsetCrossSegmentStatus = null;
+        }
+        offsetSegmentKeys = new long[segmentCount];
+        for(int i=0;i<segmentCount;i++)
+            offsetSegmentKeys[i] = readOffset(dis, rafLength, "segment keys offset");
+        dis.close();
+        // Set up segments...
+        underlyingOffsetDataSegments = new long[segmentCount];
+        is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+        dis = new DataInputStream(is);
+        int blocks = 0;
+        for(int i=0;i<segmentCount;i++) {
+            segments[i] = new SplitFileInserterSegmentStorage(this, dis, i, keyLength, 
+                    splitfileCryptoAlgorithm, splitfileCryptoKey, random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
+            underlyingOffsetDataSegments[i] = blocks * CHKBlock.DATA_LENGTH;
+            blocks += segments[i].dataBlockCount;
+        }
+        if(blocks != totalDataBlocks)
+            throw new StorageFormatException("Total data blocks should be "+totalDataBlocks+" but is "+blocks);
+        ois.close();
+        ois = new RAFInputStream(raf, offsetOverallStatus, rafLength - offsetOverallStatus);
+        dis = new DataInputStream(checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024));
+        errors = new FailureCodeTracker(true, dis);
+        dis.close();
+        if(crossSegments != null) {
+            for(int i=0;i<crossSegments.length;i++) {
+                crossSegments[i] = new SplitFileInserterCrossSegmentStorage(this, dis, i);
+            }
+        }
+        for(int i=0;i<segments.length;i++) {
+            segments[i].readStatus();
+        }
+        computeStatus();
+    }
+    
+    private void computeStatus() {
+        status = Status.STARTED;
+        if(crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                if(!segment.isFinishedEncoding()) return;
+            }
+            status = Status.ENCODED_CROSS_SEGMENTS;
+        }
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(!segment.isFinishedEncoding()) return;
+        }
+        status = Status.ENCODED;
+        // Last 3 statuses are only used during completion.
+    }
+
+    private long readOffset(DataInputStream dis, long rafLength, String error) throws IOException, StorageFormatException {
+        long l = dis.readLong();
+        if(l < 0) throw new StorageFormatException("Negative "+error);
+        if(l > rafLength) throw new StorageFormatException("Too big "+error);
+        return l;
+    }
+    
     private void writeOverallStatus(boolean force) throws IOException {
         byte[] buf;
         synchronized(this) {
@@ -1334,6 +1562,14 @@ public class SplitFileInserterStorage {
             throw new ChecksumFailedException();
         }
         return buf;
+    }
+
+    public long getOffsetSegmentStatus(int segNo) {
+        return offsetSegmentStatus[segNo];
+    }
+
+    LockableRandomAccessThing getRAF() {
+        return raf;
     }
 
 }

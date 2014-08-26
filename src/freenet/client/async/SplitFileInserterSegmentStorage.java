@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
+import freenet.client.FECCodec;
 import freenet.client.InsertException;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumChecker;
+import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
@@ -24,6 +26,7 @@ import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.LockableRandomAccessThing.RAFLock;
+import freenet.support.io.StorageFormatException;
 
 /** A single segment within a splitfile to be inserted. */
 public class SplitFileInserterSegmentStorage {
@@ -102,6 +105,54 @@ public class SplitFileInserterSegmentStorage {
         }
     }
 
+    /** Create a segment from the fixed settings stored in the RAF by writeFixedSettings(). 
+     * @throws IOException 
+     * @throws StorageFormatException */
+    public SplitFileInserterSegmentStorage(SplitFileInserterStorage parent, DataInputStream dis, 
+            int segNo, int keyLength, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, 
+            Random random, int maxRetries, int consecutiveRNFsCountAsSuccess, 
+            KeysFetchingLocally keysFetching) throws IOException, StorageFormatException {
+        this.parent = parent;
+        this.segNo = segNo;
+        this.keyLength = keyLength;
+        dataBlockCount = dis.readInt();
+        if(dataBlockCount < 0)
+            throw new StorageFormatException("Bogus data block count");
+        crossCheckBlockCount = dis.readInt();
+        if(crossCheckBlockCount < 0)
+            throw new StorageFormatException("Bogus cross-check block count");
+        if((crossCheckBlockCount == 0) != (parent.crossSegments == null))
+            throw new StorageFormatException("Cross-check block count inconsistent with parent");
+        checkBlockCount = dis.readInt();
+        if(checkBlockCount < 0)
+            throw new StorageFormatException("Bogus check block count");
+        totalBlockCount = dataBlockCount + crossCheckBlockCount + checkBlockCount;
+        if(totalBlockCount > FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT)
+            throw new StorageFormatException("Bogus total block count");
+        this.statusLength = dis.readInt();
+        if(statusLength < 0)
+            throw new StorageFormatException("Bogus status length");
+        crossSegmentBlockSegments = new SplitFileInserterCrossSegmentStorage[crossCheckBlockCount];
+        crossSegmentBlockNumbers = new int[crossCheckBlockCount];
+        blocksHaveKeys = new boolean[totalBlockCount];
+        this.splitfileCryptoAlgorithm = splitfileCryptoAlgorithm;
+        this.splitfileCryptoKey = splitfileCryptoKey;
+        crossDataBlocksAllocated = new boolean[dataBlockCount + crossCheckBlockCount];
+        blockChooser = new SplitFileInserterSegmentBlockChooser(this, totalBlockCount, random, 
+                maxRetries, keysFetching, consecutiveRNFsCountAsSuccess);
+        try {
+            CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
+            DataOutputStream dos = new DataOutputStream(cos);
+            innerStoreStatus(dos);
+            dos.close();
+            int minStatusLength = (int) cos.written() + parent.checker.checksumLength();
+            if(minStatusLength > statusLength)
+                throw new StorageFormatException("Bad status length (too short)");
+        } catch (IOException e) {
+            throw new Error(e); // Impossible
+        }
+    }
+    
     // These two are only used in construction...
     
     /** Allocate a cross-segment data block. Note that this algorithm must be reproduced exactly 
@@ -190,6 +241,15 @@ public class SplitFileInserterSegmentStorage {
         blockChooser.write(dos);
     }
     
+    public void readStatus() throws IOException, ChecksumFailedException, StorageFormatException {
+        byte[] data = new byte[statusLength-parent.checker.checksumLength()];
+        parent.preadChecksummed(parent.getOffsetSegmentStatus(segNo), data, 0, data.length);
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+        if(dis.readInt() != segNo) throw new StorageFormatException("Bad segment number");
+        encoded = dis.readBoolean();
+        blockChooser.read(dis);
+    }
+
     public long storedStatusLength() {
         return statusLength;
     }
@@ -595,6 +655,11 @@ public class SplitFileInserterSegmentStorage {
             return segment == other.segment;
         }
         
+    }
+
+    public void setCrossCheckBlock(SplitFileInserterCrossSegmentStorage crossSegment,
+            int blockNumber) {
+        crossSegmentBlockSegments[blockNumber] = crossSegment;
     }
 
 }

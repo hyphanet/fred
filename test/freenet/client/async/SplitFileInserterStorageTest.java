@@ -59,15 +59,21 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NullOutputStream;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PooledFileRandomAccessThingFactory;
 import freenet.support.io.RAFBucket;
 import freenet.support.io.RAFInputStream;
 import freenet.support.io.ReadOnlyRandomAccessThing;
+import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.io.TrivialPersistentFileTracker;
 
 public class SplitFileInserterStorageTest extends TestCase {
     
     final LockableRandomAccessThingFactory smallRAFFactory = new ByteArrayRandomAccessThingFactory();
+    final FilenameGenerator fg;
+    final PersistentFileTracker persistentFileTracker;
     final LockableRandomAccessThingFactory bigRAFFactory;
     final BucketFactory smallBucketFactory;
     final BucketFactory bigBucketFactory;
@@ -96,7 +102,8 @@ public class SplitFileInserterStorageTest extends TestCase {
         executor = new WaitableExecutor(new PooledExecutor());
         ticker = new CheatingTicker(executor);
         RandomSource r = new DummyRandomSource(12345);
-        FilenameGenerator fg = new FilenameGenerator(r, true, dir, "freenet-test");
+        fg = new FilenameGenerator(r, true, dir, "freenet-test");
+        persistentFileTracker = new TrivialPersistentFileTracker(dir, fg);
         bigRAFFactory = new PooledFileRandomAccessThingFactory(fg, r);
         smallBucketFactory = new ArrayBucketFactory();
         bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, r, false, 0);
@@ -953,6 +960,75 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertFalse(segment.isEncoding());
             assertEquals(storage.getStatus(), Status.FAILED);
         }
+    }
+    
+    public void testPersistentSmallSplitfileNoLastBlockCompletion() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        assertEquals(storage.segments[0].dataBlockCount, 2);
+        assertEquals(storage.segments[0].checkBlockCount, 3);
+        assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        executor.waitForIdle();
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+        assertEquals(resumed.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = resumed.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertTrue(resumed.getStatus() == Status.ENCODED);
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            segment.onInsertedBlock(i, segment.encodeBlock(i).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(Status.SUCCEEDED, resumed.getStatus());
+    }
+
+    public void testPersistentSmallSplitfileNoLastBlockCompletionAfterResume() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        assertEquals(storage.segments[0].dataBlockCount, 2);
+        assertEquals(storage.segments[0].checkBlockCount, 3);
+        assertEquals(storage.segments[0].crossCheckBlockCount, 0);
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        SplitFileInserterStorage resumed = null;
+        for(int i=0;i<storage.segments[0].totalBlockCount;i++) {
+            executor.waitForIdle();
+            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(resumed.segments.length, 1);
+            SplitFileInserterSegmentStorage segment = resumed.segments[0];
+            assertEquals(segment.dataBlockCount, 2);
+            assertEquals(segment.checkBlockCount, 3);
+            assertEquals(segment.crossCheckBlockCount, 0);
+            assertTrue(resumed.getStatus() == Status.ENCODED);
+            segment.onInsertedBlock(i, segment.encodeBlock(i).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
 
 }
