@@ -661,8 +661,9 @@ public class SplitFileInserterStorage {
     /** Encode the offsets. */
     private byte[] encodeOffsets() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
         try {
+            OutputStream os = checker.checksumWriterWithLength(baos, new ArrayBucketFactory());
+            DataOutputStream dos = new DataOutputStream(os);
             if(this.hasPaddedLastBlock)
                 dos.writeLong(offsetPaddedLastBlock);
             dos.writeLong(offsetOverallStatus);
