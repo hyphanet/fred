@@ -1105,10 +1105,10 @@ public class SplitFileInserterStorage {
                     }
                     try {
                         Metadata metadata = encodeMetadata();
-                        callback.onSucceeded(metadata);
                         synchronized(this) {
                             status = Status.SUCCEEDED;
                         }
+                        callback.onSucceeded(metadata);
                     } catch (IOException e) {
                         InsertException e1 = new InsertException(InsertException.BUCKET_ERROR);
                         synchronized(this) {
