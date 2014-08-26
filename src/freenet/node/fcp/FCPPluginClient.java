@@ -10,8 +10,8 @@ import java.util.UUID;
 
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPClient;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPServer;
-import freenet.pluginmanager.FredPluginFCPServer.ClientPermissions;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
