@@ -610,6 +610,11 @@ public class SplitFileInserterStorage {
             dos.writeShort(splitfileType); // And hence the FECCodec
             dos.writeLong(dataLength);
             dos.writeLong(decompressedLength);
+            dos.writeBoolean(isMetadata);
+            if(archiveType == null)
+                dos.writeShort((short) -1);
+            else
+                dos.writeShort(archiveType.metadataID);
             clientMetadata.writeTo(dos);
             if (compressionCodec == null)
                 dos.writeShort((short) -1);
@@ -631,6 +636,19 @@ public class SplitFileInserterStorage {
             dos.writeInt(deductBlocksFromSegments);
             dos.writeInt(maxRetries);
             dos.writeInt(consecutiveRNFsCountAsSuccess);
+            dos.writeBoolean(specifySplitfileKeyInMetadata);
+            dos.writeBoolean(hashThisLayerOnly != null);
+            if(hashThisLayerOnly != null) {
+                assert(hashThisLayerOnly.length == 32);
+                dos.write(hashThisLayerOnly);
+            }
+            // Top level stuff
+            dos.writeBoolean(topDontCompress);
+            dos.writeInt(topRequiredBlocks);
+            dos.writeInt(topTotalBlocks);
+            dos.writeLong(origDataSize);
+            dos.writeLong(origCompressedDataSize);
+            HashResult.write(hashes, dos);
             dos.close();
             return baos.toByteArray();
         } catch (IOException e) {
