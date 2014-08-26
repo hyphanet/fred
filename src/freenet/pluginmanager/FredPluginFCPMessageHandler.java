@@ -33,6 +33,7 @@ public interface FredPluginFCPMessageHandler {
      * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
      * 
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
+     * @see ClientSideFCPMessageHandler The interface of the client plugin which handles the messages sent by the server.
      */
     public interface ServerSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         public static enum ClientPermissions {
@@ -78,6 +79,7 @@ public interface FredPluginFCPMessageHandler {
      * FIXME: Migrate JavaDoc of {@link FredPluginFCPServer} to this, then delete that interface.
      * 
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
+     * @see ServerSideFCPMessageHandler The interface of the server plugin which handles the messages sent by the client.
      */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**

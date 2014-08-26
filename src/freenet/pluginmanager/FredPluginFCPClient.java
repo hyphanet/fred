@@ -9,7 +9,7 @@ import freenet.support.api.Bucket;
 
 /**
  * 
- * @see FredPluginFCPServer The interface of the server plugin which handles the messages received from the client.
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public interface FredPluginFCPClient {
