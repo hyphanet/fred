@@ -1577,6 +1577,16 @@ public class SplitFileInserterStorage {
         return raf;
     }
 
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        originalData.onResume(context);
+        raf.onResume(context);
+        if(crossSegments != null && status != Status.ENCODED_CROSS_SEGMENTS) {
+            this.startCrossSegmentEncode();
+        } else {
+            this.startSegmentEncode();
+        }
+    }
+    
     /** Choose a block to insert */
     public BlockInsert chooseBlock() {
         // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
