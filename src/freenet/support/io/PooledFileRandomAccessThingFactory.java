@@ -26,7 +26,7 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
         File file = fg.getFilename(id);
         LockableRandomAccessThing ret = null;
         try {
-            ret = new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, id);
+            ret = new PooledRandomAccessFileWrapper(file, false, size, enableCrypto ? seedRandom : null, id, true);
             return ret;
         } finally {
             if(ret == null) file.delete();
@@ -40,7 +40,7 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
         File file = fg.getFilename(id);
         LockableRandomAccessThing ret = null;
         try {
-            ret = new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id);
+            ret = new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id, true);
             return ret;
         } finally {
             if(ret == null) file.delete();

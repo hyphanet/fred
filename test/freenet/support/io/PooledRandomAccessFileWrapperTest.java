@@ -30,7 +30,7 @@ public class PooledRandomAccessFileWrapperTest extends RandomAccessThingTestBase
     @Override
     protected PooledRandomAccessFileWrapper construct(long size) throws IOException {
         File f = File.createTempFile("test", ".tmp", base);
-        return new PooledRandomAccessFileWrapper(f, false, size, r.nextBoolean() ? r : null, -1);
+        return new PooledRandomAccessFileWrapper(f, false, size, r.nextBoolean() ? r : null, -1, true);
     }
 
     /** Simplest test for pooling. TODO Add more. */

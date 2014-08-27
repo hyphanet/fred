@@ -40,6 +40,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
      * prefix changes. */
     private final long persistentTempID;
     private boolean secureDelete;
+    private final boolean deleteOnFree;
     
     /** Create a RAF backed by a file.
      * @param file 
@@ -49,10 +50,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
      * @param persistentTempID The tempfile ID, or -1.
      * @throws IOException
      */
-    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID) throws IOException {
+    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID, boolean deleteOnFree) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
         this.persistentTempID = persistentTempID;
+        this.deleteOnFree = deleteOnFree;
         lockLevel = 0;
         // Check the parameters and get the length.
         // Also, unlock() adds to the closeables queue, which is essential.
@@ -89,11 +91,12 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     }
 
     public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
-            int offset, int size, long persistentTempID) throws IOException {
+            int offset, int size, long persistentTempID, boolean deleteOnFree) throws IOException {
         this.file = file;
         this.readOnly = false;
         this.length = size;
         this.persistentTempID = persistentTempID;
+        this.deleteOnFree = deleteOnFree;
         lockLevel = 0;
         RAFLock lock = lockOpen();
         try {
@@ -114,6 +117,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         readOnly = false;
         length = 0;
         persistentTempID = -1;
+        deleteOnFree = false;
     }
 
     @Override
@@ -252,6 +256,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     @Override
     public void free() {
         close();
+        if(!deleteOnFree) return;
         if(secureDelete) {
             try {
                 FileUtil.secureDelete(file);
@@ -316,7 +321,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         dos.writeBoolean(readOnly);
         dos.writeLong(length);
         dos.writeLong(persistentTempID);
-        dos.writeBoolean(secureDelete);
+        dos.writeBoolean(deleteOnFree);
+        if(deleteOnFree)
+            dos.writeBoolean(secureDelete);
     }
 
     /** Caller has already checked magic 
@@ -331,7 +338,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         readOnly = dis.readBoolean();
         length = dis.readLong();
         persistentTempID = dis.readLong();
-        secureDelete = dis.readBoolean();
+        deleteOnFree = dis.readBoolean();
+        if(deleteOnFree)
+            secureDelete = dis.readBoolean();
+        else
+            secureDelete = false;
         if(length < 0) throw new StorageFormatException("Bad length");
         if(persistentTempID != -1) {
             // File must exist!

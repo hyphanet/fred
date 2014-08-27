@@ -72,7 +72,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             if(file.length() != 0) throw new IOException("File is wrong length");
             // FIXME ideally we would have separate locks for each filesystem ...
             if(dir.getUsableSpace() > size + minDiskSpace) {
-                ret = new PooledRandomAccessFileWrapper(file, false, size, random, -1);
+                ret = new PooledRandomAccessFileWrapper(file, false, size, random, -1, true);
                 return ret;
             } else {
                 throw new InsufficientDiskSpaceException();
