@@ -128,7 +128,8 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
     @Override
     public LockableRandomAccessThing toRandomAccessThing() {
         freed = true;
+        LockableRandomAccessThing raf = new ByteArrayRandomAccessThing(data);
         data = null;
-        return new ByteArrayRandomAccessThing(data);
+        return raf;
     }
 }
