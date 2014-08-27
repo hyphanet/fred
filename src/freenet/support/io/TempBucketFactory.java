@@ -205,6 +205,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		public synchronized OutputStream getOutputStream() throws IOException {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket on "+this+" !");
+			if(hasBeenFreed) throw new IOException("Already freed");
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
 			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
@@ -260,6 +261,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public final void write(int b) throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					long futureSize = currentSize + 1;
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b);
@@ -272,6 +274,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public final void write(byte b[], int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
+				    if(hasBeenFreed) throw new IOException("Already freed");
 					long futureSize = currentSize + len;
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
@@ -284,6 +287,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public final void flush() throws IOException {
 				synchronized(TempBucket.this) {
+				    if(hasBeenFreed) return;
 					_maybeMigrateRamBucket(currentSize);
 					if(!closed)
 						os.flush();
@@ -307,6 +311,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		public synchronized InputStream getInputStream() throws IOException {
 			if(!hasWritten)
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
+			if(hasBeenFreed) throw new IOException("Already freed");
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
 			if(logMINOR)
@@ -343,6 +348,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public final int read() throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					int toReturn = currentIS.read();
 					if(toReturn != -1)
 						index++;
@@ -353,6 +359,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public int read(byte b[]) throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					return read(b, 0, b.length);
 				}
 			}
@@ -360,6 +367,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public int read(byte b[], int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					int toReturn = currentIS.read(b, off, len);
 					if(toReturn > 0)
 						index += toReturn;
@@ -370,6 +378,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public long skip(long n) throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					long skipped = currentIS.skip(n);
 					index += skipped;
 					return skipped;
@@ -379,6 +388,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			@Override
 			public int available() throws IOException {
 				synchronized(TempBucket.this) {
+                    if(hasBeenFreed) throw new IOException("Already freed");
 					return currentIS.available();
 				}
 			}
@@ -473,6 +483,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         @Override
         public LockableRandomAccessThing toRandomAccessThing() throws IOException {
             synchronized(this) {
+                if(hasBeenFreed) throw new IOException("Already freed");
+                if(os != null) throw new IOException("Can't migrate with open OutputStream's");
+                if(!tbis.isEmpty()) throw new IOException("Can't migrate with open InputStream's");
                 TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
