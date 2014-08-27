@@ -12,6 +12,7 @@ public interface RandomAccessBucket extends Bucket {
     
     /** Convert the Bucket to a LockableRandomAccessThing. Must be efficient, i.e. will not copy 
      * the data. Freeing the Bucket is unnecessary if you free the LockableRandomAccessThing. 
+     * The parent Bucket cannot be used after calling this method.
      * @throws IOException */
     public LockableRandomAccessThing toRandomAccessThing() throws IOException;
 
