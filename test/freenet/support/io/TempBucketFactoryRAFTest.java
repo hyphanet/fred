@@ -2,6 +2,7 @@ package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
@@ -88,6 +89,12 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         assertTrue(bucket.isRAMBucket());
         assertEquals(len, bucket.size());
         TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        try {
+            bucket.getInputStream();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
         assertEquals(len, raf.size());
         assertFalse(raf.hasMigrated());
         checkArrayInner(buf, raf, len, r);
@@ -131,6 +138,46 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         raf.close();
         raf.free();
         assertFalse(f.exists());
+    }
+    
+    public void testBucketToRAFFailure() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        assertTrue(bucket.isRAMBucket());
+        try {
+            bucket.toRandomAccessThing();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        os.close();
+        InputStream is = bucket.getInputStream();
+        try {
+            bucket.toRandomAccessThing();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        is.close();
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        try {
+            bucket.getInputStream();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        try {
+            bucket.getOutputStream();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        raf.free();
     }
 
     private void checkArrayInner(byte[] buf, RandomAccessThing raf, int len, Random r) throws IOException {
