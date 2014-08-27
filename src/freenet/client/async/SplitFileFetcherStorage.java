@@ -1437,6 +1437,7 @@ public class SplitFileFetcherStorage {
      * @return The block number to be fetched, as an integer.
      */
     public MyKey chooseRandomKey() {
+        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
         synchronized(this) {
             if(finishedFetcher) return null;
         }

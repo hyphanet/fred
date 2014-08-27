@@ -21,6 +21,8 @@ import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.MetadataParseException;
+import freenet.client.async.SplitFileFetcherStorage.MyKey;
+import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -170,6 +172,7 @@ public class SplitFileInserterStorage {
     final MemoryLimitedJobRunner memoryLimitedJobRunner;
     final PersistentJobRunner jobRunner;
     final Ticker ticker;
+    final Random random;
 
     /**
      * True if the size of the file is not exactly divisible by one block. If
@@ -259,6 +262,7 @@ public class SplitFileInserterStorage {
         this.maxRetries = ctx.maxInsertRetries;
         this.errors = new FailureCodeTracker(true);
         this.ticker = ticker;
+        this.random = random;
 
         // Work out how many blocks in each segment, crypto keys etc.
         // Complicated by back compatibility, i.e. the need to be able to
@@ -567,6 +571,7 @@ public class SplitFileInserterStorage {
         this.ticker = ticker;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.jobRunner = jobRunner;
+        this.random = random;
         this.raf = raf;
         rafLength = raf.size();
         InputStream ois = new RAFInputStream(raf, 0, rafLength);
@@ -1570,6 +1575,34 @@ public class SplitFileInserterStorage {
 
     LockableRandomAccessThing getRAF() {
         return raf;
+    }
+
+    /** Choose a block to insert */
+    public BlockInsert chooseBlock() {
+        // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
+        // Less important for inserts than for requests though...
+        synchronized(this) {
+            if(status == Status.FAILED || status == Status.SUCCEEDED || 
+                    status == Status.GENERATING_METADATA || failing != null) return null;
+        }
+        // Generally segments are fairly well balanced, so we can usually pick a random segment 
+        // then a random key from it.
+        int segNo = random.nextInt(segments.length);
+        SplitFileInserterSegmentStorage segment = segments[segNo];
+        BlockInsert ret = segment.chooseBlock();
+        if(ret != null) return ret;
+        // Looks like we are close to completion ...
+        boolean[] tried = new boolean[segments.length];
+        tried[segNo] = true;
+        for(int count=1; count<segments.length; count++) {
+            while(tried[segNo = random.nextInt(segments.length)]);
+            tried[segNo] = true;
+            segment = segments[segNo];
+            ret = segment.chooseBlock();
+            if(ret != null) return ret;
+        }
+        return null;
+
     }
 
 }
