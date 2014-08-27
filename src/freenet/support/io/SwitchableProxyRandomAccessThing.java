@@ -166,4 +166,9 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
      * @throws IOException If the migrate failed. */
     protected abstract LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException;
     
+    /** For unit tests only */
+    synchronized LockableRandomAccessThing getUnderlying() {
+        return underlying;
+    }
+    
 }

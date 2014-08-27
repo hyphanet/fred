@@ -2,12 +2,14 @@ package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Random;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
+import freenet.support.io.TempBucketFactory.TempBucket;
 import freenet.support.io.TempBucketFactory.TempLockableRandomAccessThing;
 
 public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
@@ -72,6 +74,63 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         checkArrayInner(buf, raf, len, r);
         raf.close();
         raf.free();
+    }
+    
+    public void testBucketToRAFWhileArray() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertEquals(len, raf.size());
+        assertFalse(raf.hasMigrated());
+        checkArrayInner(buf, raf, len, r);
+        // Now migrate to disk.
+        raf.migrateToDisk();
+        File f = ((PooledRandomAccessFileWrapper) raf.getUnderlying()).file;
+        assertTrue(f.exists());
+        assertEquals(len, f.length());
+        assertTrue(raf.hasMigrated());
+        assertEquals(factory.getRamUsed(), 0);
+        checkArrayInner(buf, raf, len, r);
+        raf.close();
+        raf.free();
+        assertFalse(f.exists());
+    }
+
+    public void testBucketToRAFWhileFile() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        // Migrate to disk
+        bucket.migrateToDisk();
+        assertFalse(bucket.isRAMBucket());
+        File f = ((TempFileBucket) bucket.getUnderlying()).getFile();
+        assertTrue(f.exists());
+        assertEquals(len, f.length());
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(f.exists());
+        assertEquals(len, f.length());
+        assertEquals(len, raf.size());
+        checkArrayInner(buf, raf, len, r);
+        assertEquals(factory.getRamUsed(), 0);
+        checkArrayInner(buf, raf, len, r);
+        raf.close();
+        raf.free();
+        assertFalse(f.exists());
     }
 
     private void checkArrayInner(byte[] buf, RandomAccessThing raf, int len, Random r) throws IOException {

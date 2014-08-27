@@ -486,6 +486,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
                 return raf;
             }
         }
+
+        /** Only for testing */
+        synchronized Bucket getUnderlying() {
+            return currentBucket;
+        }
 	}
 	
 	// Storage accounting disabled by default.
