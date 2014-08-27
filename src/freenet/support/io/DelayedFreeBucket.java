@@ -23,10 +23,8 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
     private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
 	private transient PersistentFileTracker factory;
-	RandomAccessBucket bucket;
-	boolean freed;
-	boolean removed;
-	boolean reallyRemoved;
+	private final RandomAccessBucket bucket;
+	private boolean freed;
 
         private static volatile boolean logMINOR;
 	static {
@@ -40,10 +38,6 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 	
 	boolean toFree() {
 		return freed;
-	}
-	
-	public boolean toRemove() {
-		return removed;
 	}
 	
 	public DelayedFreeBucket(PersistentTempBucketFactory factory, RandomAccessBucket bucket) {
