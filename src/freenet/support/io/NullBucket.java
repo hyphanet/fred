@@ -11,7 +11,7 @@ import java.io.Serializable;
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
-public class NullBucket implements Bucket, Serializable {
+public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
 
     private static final long serialVersionUID = 1L;
     public static final OutputStream nullOut = new NullOutputStream();
@@ -82,6 +82,11 @@ public class NullBucket implements Bucket, Serializable {
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        return new NullRandomAccessThing(length);
     }
 }
 
