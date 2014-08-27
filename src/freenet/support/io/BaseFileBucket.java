@@ -533,7 +533,9 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
     
     @Override
     public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        if(freed) throw new IOException("Already freed");
         if(length == 0) throw new IOException("Must not be empty");
+        freed = true;
         return new PooledRandomAccessFileWrapper(getFile(), isReadOnly(), length, null, -1, deleteOnFree());
     }
 
