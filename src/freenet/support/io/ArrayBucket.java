@@ -24,6 +24,7 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
     private volatile byte[] data;
 	private String name;
 	private boolean readOnly;
+	private boolean freed;
 
 	public ArrayBucket() {
 		this("ArrayBucket");
@@ -42,11 +43,13 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
 	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
+		if(freed) throw new IOException("Already fred");
 		return new ArrayBucketOutputStream();
 	}
 
 	@Override
-	public InputStream getInputStream() {
+	public InputStream getInputStream() throws IOException {
+        if(freed) throw new IOException("Already fred");
 		return new ByteArrayInputStream(data);
 	}
 
@@ -94,11 +97,13 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
 
 	@Override
 	public void free() {
-		data = new byte[0];
+	    freed = true;
+		data = null;
 		// Not much else we can do.
 	}
 
-	public byte[] toByteArray() {
+	public byte[] toByteArray() throws IOException {
+	    if(freed) throw new IOException("Already freed");
 		long sz = size();
 		int size = (int)sz;
 		return Arrays.copyOf(data, size);

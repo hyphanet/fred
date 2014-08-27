@@ -363,9 +363,14 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null) {
-				ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
-				t.setReadOnly();
-				return t;
+			    try {
+			        ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
+			        t.setReadOnly();
+			        return t;
+			    } catch (IOException e) {
+			        Logger.error(this, "Impossible: "+e, e);
+			        return null;
+			    }
 			}
 		}
 		File f = getBlobFile();
