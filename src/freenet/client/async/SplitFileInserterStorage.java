@@ -88,7 +88,7 @@ public class SplitFileInserterStorage {
     }
 
     /** The original file to upload */
-    private final LockableRandomAccessThing originalData;
+    final LockableRandomAccessThing originalData;
     /** The RAF containing check blocks, status etc. */
     private final LockableRandomAccessThing raf;
     private final long rafLength;
@@ -1423,7 +1423,7 @@ public class SplitFileInserterStorage {
         fail(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null));
     }
     
-    private void fail(final InsertException e) {
+    void fail(final InsertException e) {
         synchronized(this) {
             // Only fail once.
             if(failing != null) return;
@@ -1613,6 +1613,20 @@ public class SplitFileInserterStorage {
         }
         return null;
 
+    }
+
+    public long countAllKeys() {
+        long total = 0;
+        for(SplitFileInserterSegmentStorage segment : segments)
+            total += segment.totalBlockCount;
+        return total;
+    }
+
+    public long countSendableKeys() {
+        long total = 0;
+        for(SplitFileInserterSegmentStorage segment : segments)
+            total += segment.countSendableKeys();
+        return total;
     }
 
 }

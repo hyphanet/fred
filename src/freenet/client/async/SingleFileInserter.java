@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
+import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -18,6 +19,7 @@ import freenet.client.events.StartedCompressionEvent;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
 import freenet.crypt.MultiHashOutputStream;
+import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
@@ -524,582 +526,465 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		
 	}
 	
-//	/**
-//	 * When we get the metadata, start inserting it to our target key.
-//	 * When we have inserted both the metadata and the splitfile,
-//	 * call the master callback.
-//	 * 
-//	 * This class has to be public so that db4o can access objectOnActivation
-//	 * through reflection.
-//	 */
-//	public class SplitHandler implements PutCompletionCallback, ClientPutState {
-//
-//		ClientPutState sfi;
-//		ClientPutState metadataPutter;
-//		boolean finished;
-//		boolean splitInsertSuccess;
-//		boolean metaInsertSuccess;
-//		boolean splitInsertSetBlocks;
-//		boolean metaInsertSetBlocks;
-//		boolean metaInsertStarted;
-//		boolean metaFetchable;
-//		final boolean persistent;
-//		final long origDataLength;
-//		final long origCompressedDataLength;
-//		
-//		// A persistent hashCode is helpful in debugging, and also means we can put
-//		// these objects into sets etc when we need to.
-//		
-//		private final int hashCode;
-//		
-//		@Override
-//		public int hashCode() {
-//			return hashCode;
-//		}
-//
-//		/**
-//		 * zero arg c'tor for db4o on jamvm
-//		 */
-//		@SuppressWarnings("unused")
-//		private SplitHandler() {
-//			persistent = false;
-//			origDataLength = 0;
-//			origCompressedDataLength = 0;
-//			hashCode = 0;
-//		}
-//
-//		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {
-//			// Default constructor
-//			this.persistent = SingleFileInserter.this.persistent;
-//			this.hashCode = super.hashCode();
-//			this.origDataLength = allowSizes ? origDataLength : 0;
-//			this.origCompressedDataLength = allowSizes ? origCompressedDataLength : 0;
-//		}
-//
-//		@Override
-//		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
-//			if(persistent) { // FIXME debug-point
-//				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
-//			}
-//			if(oldState == sfi)
-//				sfi = newState;
-//			if(oldState == metadataPutter)
-//				metadataPutter = newState;
-//			if(persistent)
-//				container.store(this);
-//		}
-//		
-//		@Override
-//		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-//			if(persistent) {
-//				container.activate(block, 2);
-//			}
-//			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
-//			boolean lateStart = false;
-//			ClientPutState toRemove = null;
-//			synchronized(this) {
-//				if(finished){
-//					return;
-//				}
-//				if(state == sfi) {
-//					if(logMINOR) Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
-//					splitInsertSuccess = true;
-//					if(!metaInsertSuccess && !metaInsertStarted) {
-//						lateStart = true;
-//						// Cannot remove yet because not created metadata inserter yet.
-//					} else {
-//						sfi = null;
-//						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
-//					}
-//					toRemove = state;
-//				} else if(state == metadataPutter) {
-//					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
-//					metaInsertSuccess = true;
-//					metadataPutter = null;
-//					toRemove = state;
-//				} else {
-//					Logger.error(this, "Unknown: "+state+" for "+this, new Exception("debug"));
-//				}
-//				if(splitInsertSuccess && metaInsertSuccess) {
-//					if(logMINOR) Logger.minor(this, "Both succeeded for "+this);
-//					finished = true;
-//					if(freeData)
-//						block.free(container);
-//					else {
-//						block.nullData();
-//						if(persistent)
-//							container.store(block);
-//					}
-//				}
-//			}
-//			if(lateStart) {
-//				if(!startMetadata(container, context))
-//					toRemove = null;
-//				else {
-//					synchronized(this) {
-//						sfi = null;
-//					}
-//				}
-//			}
-//			if(toRemove != null && persistent)
-//				toRemove.removeFrom(container, context);
-//			if(persistent)
-//				container.store(this);
-//			if(finished) {
-//				if(persistent)
-//					container.activate(cb, 1);
-//				cb.onSuccess(this, container, context);
-//				if(persistent)
-//					container.deactivate(cb, 1);
-//			}
-//		}
-//
-//		@Override
-//		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
-//			if(persistent) {
-//				container.activate(block, 1);
-//			}
-//			boolean toFail = true;
-//			boolean toRemove = false;
-//			synchronized(this) {
-//				if(logMINOR)
-//					Logger.minor(this, "onFailure(): "+e+" on "+state+" on "+this+" sfi = "+sfi+" metadataPutter = "+metadataPutter);
-//				if(state == sfi) {
-//					toRemove = true;
-//					sfi = null;
-//					if(metadataPutter != null) {
-//						if(persistent) container.store(this);
-//					}
-//				} else if(state == metadataPutter) {
-//					toRemove = true;
-//					metadataPutter = null;
-//					if(sfi != null) {
-//						if(persistent) container.store(this);
-//					}
-//				} else {
-//					Logger.error(this, "onFailure() on unknown state "+state+" on "+this, new Exception("debug"));
-//				}
-//				if(finished){
-//					toFail = false; // Already failed
-//				}
-//			}
-//			if(toRemove && persistent)
-//				state.removeFrom(container, context);
-//			// fail() will cancel the other one, so we don't need to.
-//			// When it does, it will come back here, and we won't call fail(), because fail() has already set finished = true.
-//			if(toFail)
-//			fail(e, container, context);
-//		}
-//
-//		@Override
-//		public void onMetadata(Metadata meta, ClientPutState state, ObjectContainer container, ClientContext context) {
-//			if(persistent) {
-//				container.activate(cb, 1);
-//				container.activate(block, 2);
-//				container.activate(ctx, 1);
-//			}
-//			InsertException e = null;
-//			if(logMINOR) Logger.minor(this, "Got metadata for "+this+" from "+state);
-//			synchronized(this) {
-//				if(finished) return;
-//				if(reportMetadataOnly) {
-//					if(state != sfi) {
-//						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
-//						return;
-//					}
-//					metaInsertSuccess = true;
-//				} else if(state == metadataPutter) {
-//					Logger.error(this, "Got metadata for metadata");
-//					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
-//				} else if(state != sfi) {
-//					Logger.error(this, "Got metadata from unknown state "+state+" sfi="+sfi+" metadataPutter="+metadataPutter+" on "+this+" persistent="+persistent, new Exception("debug"));
-//					e = new InsertException(InsertException.INTERNAL_ERROR, "Got metadata from unknown state", null);
-//				} else {
-//					// Already started metadata putter ? (in which case we've got the metadata twice)
-//					if(metadataPutter != null) return;
-//					if(metaInsertSuccess) return;
-//				}
-//			}
-//			if(reportMetadataOnly) {
-//				if(persistent)
-//					container.store(this);
-//				cb.onMetadata(meta, this, container, context);
-//				return;
-//			}
-//			if(e != null) {
-//				onFailure(e, state, container, context);
-//				return;
-//			}
-//			
-//			byte[] metaBytes;
-//			if(persistent)
-//				// Load keys
-//				container.activate(meta, Integer.MAX_VALUE);
-//			try {
-//				metaBytes = meta.writeToByteArray();
-//			} catch (MetadataUnresolvedException e1) {
-//				Logger.error(this, "Impossible: "+e1, e1);
-//				fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), container, context);
-//				return;
-//			}
-//			
-//			String metaPutterTargetFilename = targetFilename;
-//			
-//			if(targetFilename != null) {
-//				
-//				if(metaBytes.length <= Short.MAX_VALUE) {
-//					HashMap<String, Object> hm = new HashMap<String, Object>();
-//					hm.put(targetFilename, meta);
-//					meta = Metadata.mkRedirectionManifestWithMetadata(hm);
-//					metaPutterTargetFilename = null;
-//					try {
-//						metaBytes = meta.writeToByteArray();
-//					} catch (MetadataUnresolvedException e1) {
-//						Logger.error(this, "Impossible (2): "+e1, e1);
-//						fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), container, context);
-//						return;
-//					}
-//				}
-//			}
-//			
-//			Bucket metadataBucket;
-//			try {
-//				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), metaBytes);
-//			} catch (IOException e1) {
-//				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
-//				fail(ex, container, context);
-//				return;
-//			}
-//			ClientMetadata m = meta.getClientMetadata();
-//			CompatibilityMode cmode = ctx.getCompatibilityMode();
-//			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
-//				m = null;
-//			if(metadataThreshold > 0 && metaBytes.length < metadataThreshold) {
-//				// FIXME what to do about m ???
-//				// I.e. do the other layers of metadata already include the content type?
-//				// It's probably already included in the splitfile, but need to check that, and test it.
-//				synchronized(this) {
-//					metaInsertSuccess = true;
-//				}
-//				cb.onMetadata(metadataBucket, state, container, context);
-//				return;
-//			}
-//			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
-//			if(persistent)
-//				container.activate(SingleFileInserter.this, 1);
-//				synchronized(this) {
-//					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
-//					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey, metadataThreshold);
-//					if(origHashes != null) {
-//						// It gets passed on, and the last one deletes it.
-//						SingleFileInserter.this.origHashes = null;
-//						if(persistent)
-//							container.store(SingleFileInserter.this);
-//					}
-//					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
-//					// Otherwise, wait until the data is fetchable (to improve persistence).
-//					if(logMINOR)
-//						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
-//					if(persistent)
-//						container.store(this);
-//					if(!(earlyEncode || splitInsertSuccess)) return;
-//				}
-//				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
-//			if(!startMetadata(container, context)) {
-//				Logger.error(this, "onMetadata() yet unable to start metadata due to not having all URIs?!?!");
-//				fail(new InsertException(InsertException.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), container, context);
-//				return;
-//			}
-//			ClientPutState toRemove = null;
-//			synchronized(this) {
-//				if(splitInsertSuccess && sfi != null) {
-//					toRemove = sfi;
-//					sfi = null;
-//				}
-//			}
-//			if(toRemove != null && persistent)
-//				toRemove.removeFrom(container, context);
-//				
-//		}
-//
-//		private void fail(InsertException e, ObjectContainer container, ClientContext context) {
-//			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
-//			ClientPutState oldSFI = null;
-//			ClientPutState oldMetadataPutter = null;
-//			synchronized(this) {
-//				if(finished){
-//					return;
-//				}
-//				finished = true;
-//				oldSFI = sfi;
-//				oldMetadataPutter = metadataPutter;
-//			}
-//			if(persistent) {
-//				container.store(this);
-//				if(oldSFI != null)
-//					container.activate(oldSFI, 1);
-//				if(oldMetadataPutter != null)
-//					container.activate(oldMetadataPutter, 1);
-//			}
-//			if(oldSFI != null)
-//				oldSFI.cancel(container, context);
-//			if(oldMetadataPutter != null)
-//				oldMetadataPutter.cancel(container, context);
-//			if(persistent) {
-//				container.activate(block, 2);
-//				container.activate(cb, 1);
-//			}
-//			synchronized(this) {
-//				if(freeData)
-//					block.free(container);
-//				else {
-//					block.nullData();
-//					if(persistent)
-//						container.store(block);
-//				}
-//			}
-//			cb.onFailure(e, this, container, context);
-//		}
-//
-//		@Override
-//		public BaseClientPutter getParent() {
-//			return parent;
-//		}
-//
-//		@Override
-//		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
-//			if(persistent) // FIXME debug-point
-//				if(logMINOR) Logger.minor(this, "onEncode() for "+this+" : "+state+" : "+key);
-//			synchronized(this) {
-//				if(state != metadataPutter) {
-//					if(logMINOR) Logger.minor(this, "ignored onEncode() for "+this+" : "+state);
-//					return;
-//				}
-//			}
-//			if(persistent) container.activate(cb, 1);
-//			cb.onEncode(key, this, container, context);
-//		}
-//
-//		@Override
-//		public void cancel(ObjectContainer container, ClientContext context) {
-//			if(logMINOR) Logger.minor(this, "Cancelling "+this);
-//			ClientPutState oldSFI = null;
-//			ClientPutState oldMetadataPutter = null;
-//			synchronized(this) {
-//				oldSFI = sfi;
-//				oldMetadataPutter = metadataPutter;
-//			}
-//			if(persistent) {
-//				container.store(this);
-//				if(oldSFI != null)
-//					container.activate(oldSFI, 1);
-//				if(oldMetadataPutter != null)
-//					container.activate(oldMetadataPutter, 1);
-//			}
-//			if(oldSFI != null)
-//				oldSFI.cancel(container, context);
-//			if(oldMetadataPutter != null)
-//				oldMetadataPutter.cancel(container, context);
-//			
-//			// FIXME in the other cases, fail() and onSuccess(), we only free when
-//			// we set finished. But we haven't set finished here. Can we rely on 
-//			// the callback and not do anything here? Note that it is in fact safe
-//			// to double-free, it's not safe to not free.
-//			if(freeData) {
-//				if(persistent)
-//					container.activate(block, 2);
-//				block.free(container);
-//			} else {
-//				block.nullData();
-//				if(persistent)
-//					container.store(block);
-//			}
-//		}
-//
-//		@Override
-//		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
-//			synchronized(this) {
-//				if(state == sfi)
-//					splitInsertSetBlocks = true;
-//				else if (state == metadataPutter)
-//					metaInsertSetBlocks = true;
-//				else
-//					if(logMINOR) Logger.minor(this, "Unrecognised: "+state+" in onBlockSetFinished()");
-//				if(persistent)
-//					container.store(this);
-//				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
-//					return;
-//			}
-//			if(persistent)
-//				container.activate(cb, 1);
-//			cb.onBlockSetFinished(this, container, context);
-//		}
-//
-//		@Override
-//		public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-//			if(persistent)
-//				container.activate(sfi, 1);
-//			sfi.schedule(container, context);
-//		}
-//
-//		@Override
-//		public Object getToken() {
-//			return token;
-//		}
-//
-//		@Override
-//		public void onFetchable(ClientPutState state, ObjectContainer container) {
-//
-//			if(persistent) // FIXME debug-point
-//				if(logMINOR) Logger.minor(this, "onFetchable on "+this);
-//			
-//			if(logMINOR) Logger.minor(this, "onFetchable("+state+ ')');
-//			
-//			boolean meta;
-//			
-//			synchronized(this) {
-//				meta = (state == metadataPutter);
-//				if(meta) {
-//					if(!metaInsertStarted) {
-//						Logger.error(this, "Metadata insert not started yet got onFetchable for it: "+state+" on "+this);
-//					}
-//					if(logMINOR) Logger.minor(this, "Metadata fetchable"+(metaFetchable?"":" already"));
-//					if(metaFetchable) return;
-//					metaFetchable = true;
-//					if(persistent)
-//						container.store(this);
-//				} else {
-//					if(state != sfi) {
-//						Logger.error(this, "onFetchable for unknown state "+state);
-//						return;
-//					}
-//					if(persistent)
-//						container.store(this);
-//					if(logMINOR) Logger.minor(this, "Data fetchable");
-//					if(metaInsertStarted) return;
-//				}
-//			}
-//			
-//			if(meta) {
-//				if(persistent)
-//					container.activate(cb, 1);
-//				cb.onFetchable(this, container);
-//			}
-//		}
-//		
-//		/**
-//		 * Start fetching metadata. There is an exceptional case where we don't have all the URIs yet; if so,
-//		 * we force encode, and don't start fetching.
-//		 * @param container
-//		 * @param context
-//		 * @return True unless we don't have all URI's and so can't remove sfi.
-//		 */
-//		private boolean startMetadata(ObjectContainer container, ClientContext context) {
-//			if(persistent) // FIXME debug-point
-//				if(logMINOR) Logger.minor(this, "startMetadata() on "+this);
-//			try {
-//				ClientPutState putter;
-//				ClientPutState splitInserter;
-//				synchronized(this) {
-//					if(metaInsertStarted) return true;
-//					if(persistent && metadataPutter != null)
-//						container.activate(metadataPutter, 1);
-//					putter = metadataPutter;
-//					if(putter == null) {
-//						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
-//					} else
-//						metaInsertStarted = true;
-//					splitInserter = sfi;
-//				}
-//				if(persistent)
-//					container.store(this);
-//				if(putter != null) {
-//					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
-//					putter.schedule(container, context);
-//					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
-//					return true;
-//				} else {
-//					// Get all the URIs ASAP so we can start to insert the metadata.
-//					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
-//					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this, new Exception("error"));
-//					if(persistent)
-//						container.activate(splitInserter, 1);
-//					((SplitFileInserter)splitInserter).forceEncode(container, context);
-//					return false;
-//				}
-//			} catch (InsertException e1) {
-//				Logger.error(this, "Failing "+this+" : "+e1, e1);
-//				fail(e1, container, context);
-//				return true;
-//			}
-//		}
-//		
-//		public void objectOnActivate(ObjectContainer container) {
-//			// Chain to containing class, since we use its members extensively.
-//			container.activate(SingleFileInserter.this, 1);
-//		}
-//
-//		@Override
-//		public void removeFrom(ObjectContainer container, ClientContext context) {
-//			if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
-//			container.delete(this);
-//			// Remove parent as well, since we always transition from parent to SH i.e. it will not get a removeFrom().
-//			SingleFileInserter.this.removeFrom(container, context);
-//		}
-//		
-//		public boolean objectCanUpdate(ObjectContainer container) {
-//			if(logDEBUG)
-//				Logger.debug(this, "objectCanUpdate() on "+this, new Exception("debug"));
-//			return true;
-//		}
-//		
-//		public boolean objectCanNew(ObjectContainer container) {
-//			if(finished)
-//				Logger.error(this, "objectCanNew but finished on "+this, new Exception("error"));
-//			else if(logDEBUG)
-//				Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
-//			return true;
-//		}
-//
-//		@Override
-//		public void onMetadata(Bucket meta, ClientPutState state,
-//				ObjectContainer container, ClientContext context) {
-//			if(logMINOR) Logger.minor(this, "Got metadata bucket for "+this+" from "+state);
-//			boolean freeIt = false;
-//			synchronized(this) {
-//				if(finished) return;
-//				if(state == metadataPutter) {
-//					// Okay, return it.
-//				} else if(state == sfi) {
-//					if(metadataPutter != null) {
-//						Logger.error(this, "Got metadata from "+sfi+" even though already started inserting metadata on the next layer on "+this+" !!");
-//						freeIt = true;
-//					} else {
-//						// Okay, return it.
-//						metaInsertSuccess = true; // Not going to start it now, so effectively it has succeeded.
-//					}
-//				} else if(reportMetadataOnly) {
-//					if(state != sfi) {
-//						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
-//						return;
-//					}
-//					metaInsertSuccess = true;
-//				} else {
-//					Logger.error(this, "Got metadata from unknown object "+state);
-//					freeIt = true;
-//				}
-//			}
-//			if(freeIt) {
-//				meta.free();
-//				meta.removeFrom(container);
-//				return;
-//			}
-//			if(persistent)
-//				container.activate(cb, 1);
-//			cb.onMetadata(meta, this, container, context);
-//		}
-//		
-//	}
+	/**
+	 * When we get the metadata, start inserting it to our target key.
+	 * When we have inserted both the metadata and the splitfile,
+	 * call the master callback.
+	 * 
+	 * This class has to be public so that db4o can access objectOnActivation
+	 * through reflection.
+	 */
+	public class SplitHandler implements PutCompletionCallback, ClientPutState {
+
+		ClientPutState sfi;
+		ClientPutState metadataPutter;
+		boolean finished;
+		boolean splitInsertSuccess;
+		boolean metaInsertSuccess;
+		boolean splitInsertSetBlocks;
+		boolean metaInsertSetBlocks;
+		boolean metaInsertStarted;
+		boolean metaFetchable;
+		final boolean persistent;
+		final long origDataLength;
+		final long origCompressedDataLength;
+		
+		// A persistent hashCode is helpful in debugging, and also means we can put
+		// these objects into sets etc when we need to.
+		
+		private final int hashCode;
+		
+		@Override
+		public int hashCode() {
+			return hashCode;
+		}
+
+		/**
+		 * zero arg c'tor for db4o on jamvm
+		 */
+		@SuppressWarnings("unused")
+		private SplitHandler() {
+			persistent = false;
+			origDataLength = 0;
+			origCompressedDataLength = 0;
+			hashCode = 0;
+		}
+
+		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {
+			// Default constructor
+			this.persistent = SingleFileInserter.this.persistent;
+			this.hashCode = super.hashCode();
+			this.origDataLength = allowSizes ? origDataLength : 0;
+			this.origCompressedDataLength = allowSizes ? origCompressedDataLength : 0;
+		}
+
+		@Override
+		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+			if(persistent) { // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+			}
+			if(oldState == sfi)
+				sfi = newState;
+			if(oldState == metadataPutter)
+				metadataPutter = newState;
+		}
+		
+		@Override
+		public void onSuccess(ClientPutState state, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
+			boolean lateStart = false;
+			ClientPutState toRemove = null;
+			synchronized(this) {
+				if(finished){
+					return;
+				}
+				if(state == sfi) {
+					if(logMINOR) Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
+					splitInsertSuccess = true;
+					if(!metaInsertSuccess && !metaInsertStarted) {
+						lateStart = true;
+						// Cannot remove yet because not created metadata inserter yet.
+					} else {
+						sfi = null;
+						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
+					}
+					toRemove = state;
+				} else if(state == metadataPutter) {
+					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
+					metaInsertSuccess = true;
+					metadataPutter = null;
+					toRemove = state;
+				} else {
+					Logger.error(this, "Unknown: "+state+" for "+this, new Exception("debug"));
+				}
+				if(splitInsertSuccess && metaInsertSuccess) {
+					if(logMINOR) Logger.minor(this, "Both succeeded for "+this);
+					finished = true;
+					if(freeData)
+						block.free();
+					else {
+						block.nullData();
+					}
+				}
+			}
+			if(lateStart) {
+				if(!startMetadata(context))
+					toRemove = null;
+				else {
+					synchronized(this) {
+						sfi = null;
+					}
+				}
+			}
+			if(finished) {
+				cb.onSuccess(this, context);
+			}
+		}
+
+		@Override
+		public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
+			boolean toFail = true;
+			boolean toRemove = false;
+			synchronized(this) {
+				if(logMINOR)
+					Logger.minor(this, "onFailure(): "+e+" on "+state+" on "+this+" sfi = "+sfi+" metadataPutter = "+metadataPutter);
+				if(state == sfi) {
+					toRemove = true;
+					sfi = null;
+				} else if(state == metadataPutter) {
+					toRemove = true;
+					metadataPutter = null;
+				} else {
+					Logger.error(this, "onFailure() on unknown state "+state+" on "+this, new Exception("debug"));
+				}
+				if(finished){
+					toFail = false; // Already failed
+				}
+			}
+			// fail() will cancel the other one, so we don't need to.
+			// When it does, it will come back here, and we won't call fail(), because fail() has already set finished = true.
+			if(toFail)
+			fail(e, context);
+		}
+
+		@Override
+		public void onMetadata(Metadata meta, ClientPutState state, ClientContext context) {
+			InsertException e = null;
+			if(logMINOR) Logger.minor(this, "Got metadata for "+this+" from "+state);
+			synchronized(this) {
+				if(finished) return;
+				if(reportMetadataOnly) {
+					if(state != sfi) {
+						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
+						return;
+					}
+					metaInsertSuccess = true;
+				} else if(state == metadataPutter) {
+					Logger.error(this, "Got metadata for metadata");
+					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
+				} else if(state != sfi) {
+					Logger.error(this, "Got metadata from unknown state "+state+" sfi="+sfi+" metadataPutter="+metadataPutter+" on "+this+" persistent="+persistent, new Exception("debug"));
+					e = new InsertException(InsertException.INTERNAL_ERROR, "Got metadata from unknown state", null);
+				} else {
+					// Already started metadata putter ? (in which case we've got the metadata twice)
+					if(metadataPutter != null) return;
+					if(metaInsertSuccess) return;
+				}
+			}
+			if(reportMetadataOnly) {
+				cb.onMetadata(meta, this, context);
+				return;
+			}
+			if(e != null) {
+				onFailure(e, state, context);
+				return;
+			}
+			
+			byte[] metaBytes;
+			try {
+				metaBytes = meta.writeToByteArray();
+			} catch (MetadataUnresolvedException e1) {
+				Logger.error(this, "Impossible: "+e1, e1);
+				fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), context);
+				return;
+			}
+			
+			String metaPutterTargetFilename = targetFilename;
+			
+			if(targetFilename != null) {
+				
+				if(metaBytes.length <= Short.MAX_VALUE) {
+					HashMap<String, Object> hm = new HashMap<String, Object>();
+					hm.put(targetFilename, meta);
+					meta = Metadata.mkRedirectionManifestWithMetadata(hm);
+					metaPutterTargetFilename = null;
+					try {
+						metaBytes = meta.writeToByteArray();
+					} catch (MetadataUnresolvedException e1) {
+						Logger.error(this, "Impossible (2): "+e1, e1);
+						fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), context);
+						return;
+					}
+				}
+			}
+			
+			Bucket metadataBucket;
+			try {
+				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), metaBytes);
+			} catch (IOException e1) {
+				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
+				fail(ex, context);
+				return;
+			}
+			ClientMetadata m = meta.getClientMetadata();
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
+				m = null;
+			if(metadataThreshold > 0 && metaBytes.length < metadataThreshold) {
+				// FIXME what to do about m ???
+				// I.e. do the other layers of metadata already include the content type?
+				// It's probably already included in the splitfile, but need to check that, and test it.
+				synchronized(this) {
+					metaInsertSuccess = true;
+				}
+				cb.onMetadata(metadataBucket, state, context);
+				return;
+			}
+			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
+			if(persistent)
+				synchronized(this) {
+					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey, metadataThreshold);
+					if(origHashes != null) {
+						// It gets passed on, and the last one deletes it.
+						SingleFileInserter.this.origHashes = null;
+					}
+					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
+					// Otherwise, wait until the data is fetchable (to improve persistence).
+					if(logMINOR)
+						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
+					if(!(earlyEncode || splitInsertSuccess)) return;
+				}
+				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
+			if(!startMetadata(context)) {
+				Logger.error(this, "onMetadata() yet unable to start metadata due to not having all URIs?!?!");
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), context);
+				return;
+			}
+			ClientPutState toRemove = null;
+			synchronized(this) {
+				if(splitInsertSuccess && sfi != null) {
+					toRemove = sfi;
+					sfi = null;
+				}
+			}
+				
+		}
+
+		private void fail(InsertException e, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
+			ClientPutState oldSFI = null;
+			ClientPutState oldMetadataPutter = null;
+			synchronized(this) {
+				if(finished){
+					return;
+				}
+				finished = true;
+				oldSFI = sfi;
+				oldMetadataPutter = metadataPutter;
+			}
+			if(oldSFI != null)
+				oldSFI.cancel(context);
+			if(oldMetadataPutter != null)
+				oldMetadataPutter.cancel(context);
+			synchronized(this) {
+				if(freeData)
+					block.free();
+				else {
+					block.nullData();
+				}
+			}
+			cb.onFailure(e, this, context);
+		}
+
+		@Override
+		public BaseClientPutter getParent() {
+			return parent;
+		}
+
+		@Override
+		public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "onEncode() for "+this+" : "+state+" : "+key);
+			synchronized(this) {
+				if(state != metadataPutter) {
+					if(logMINOR) Logger.minor(this, "ignored onEncode() for "+this+" : "+state);
+					return;
+				}
+			}
+			cb.onEncode(key, this, context);
+		}
+
+		@Override
+		public void cancel(ClientContext context) {
+			if(logMINOR) Logger.minor(this, "Cancelling "+this);
+			ClientPutState oldSFI = null;
+			ClientPutState oldMetadataPutter = null;
+			synchronized(this) {
+				oldSFI = sfi;
+				oldMetadataPutter = metadataPutter;
+			}
+			if(oldSFI != null)
+				oldSFI.cancel(context);
+			if(oldMetadataPutter != null)
+				oldMetadataPutter.cancel(context);
+			
+			// FIXME in the other cases, fail() and onSuccess(), we only free when
+			// we set finished. But we haven't set finished here. Can we rely on 
+			// the callback and not do anything here? Note that it is in fact safe
+			// to double-free, it's not safe to not free.
+			if(freeData) {
+				block.free();
+			} else {
+				block.nullData();
+			}
+		}
+
+		@Override
+		public void onBlockSetFinished(ClientPutState state, ClientContext context) {
+			synchronized(this) {
+				if(state == sfi)
+					splitInsertSetBlocks = true;
+				else if (state == metadataPutter)
+					metaInsertSetBlocks = true;
+				else
+					if(logMINOR) Logger.minor(this, "Unrecognised: "+state+" in onBlockSetFinished()");
+				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
+					return;
+			}
+			cb.onBlockSetFinished(this, context);
+		}
+
+		@Override
+		public void schedule(ClientContext context) throws InsertException {
+			sfi.schedule(context);
+		}
+
+		@Override
+		public Object getToken() {
+			return token;
+		}
+
+		@Override
+		public void onFetchable(ClientPutState state) {
+
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "onFetchable on "+this);
+			
+			if(logMINOR) Logger.minor(this, "onFetchable("+state+ ')');
+			
+			boolean meta;
+			
+			synchronized(this) {
+				meta = (state == metadataPutter);
+				if(meta) {
+					if(!metaInsertStarted) {
+						Logger.error(this, "Metadata insert not started yet got onFetchable for it: "+state+" on "+this);
+					}
+					if(logMINOR) Logger.minor(this, "Metadata fetchable"+(metaFetchable?"":" already"));
+					if(metaFetchable) return;
+					metaFetchable = true;
+				} else {
+					if(state != sfi) {
+						Logger.error(this, "onFetchable for unknown state "+state);
+						return;
+					}
+					if(logMINOR) Logger.minor(this, "Data fetchable");
+					if(metaInsertStarted) return;
+				}
+			}
+			
+			if(meta) {
+				cb.onFetchable(this);
+			}
+		}
+		
+		/**
+		 * Start fetching metadata. There is an exceptional case where we don't have all the URIs yet; if so,
+		 * we force encode, and don't start fetching.
+		 * @param container
+		 * @param context
+		 * @return True unless we don't have all URI's and so can't remove sfi.
+		 */
+		private boolean startMetadata(ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "startMetadata() on "+this);
+			try {
+				ClientPutState putter;
+				ClientPutState splitInserter;
+				synchronized(this) {
+					if(metaInsertStarted) return true;
+					putter = metadataPutter;
+					if(putter == null) {
+						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
+					} else
+						metaInsertStarted = true;
+					splitInserter = sfi;
+				}
+				if(putter != null) {
+					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
+					putter.schedule(context);
+					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
+					return true;
+				} else {
+					// Get all the URIs ASAP so we can start to insert the metadata.
+					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
+					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this, new Exception("error"));
+					((SplitFileInserter)splitInserter).forceEncode(context);
+					return false;
+				}
+			} catch (InsertException e1) {
+				Logger.error(this, "Failing "+this+" : "+e1, e1);
+				fail(e1, context);
+				return true;
+			}
+		}
+		
+		@Override
+		public void onMetadata(Bucket meta, ClientPutState state, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "Got metadata bucket for "+this+" from "+state);
+			boolean freeIt = false;
+			synchronized(this) {
+				if(finished) return;
+				if(state == metadataPutter) {
+					// Okay, return it.
+				} else if(state == sfi) {
+					if(metadataPutter != null) {
+						Logger.error(this, "Got metadata from "+sfi+" even though already started inserting metadata on the next layer on "+this+" !!");
+						freeIt = true;
+					} else {
+						// Okay, return it.
+						metaInsertSuccess = true; // Not going to start it now, so effectively it has succeeded.
+					}
+				} else if(reportMetadataOnly) {
+					if(state != sfi) {
+						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
+						return;
+					}
+					metaInsertSuccess = true;
+				} else {
+					Logger.error(this, "Got metadata from unknown object "+state);
+					freeIt = true;
+				}
+			}
+			if(freeIt) {
+				meta.free();
+				return;
+			}
+			cb.onMetadata(meta, this, context);
+		}
+		
+	}
 
 	@Override
 	public BaseClientPutter getParent() {

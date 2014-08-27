@@ -679,4 +679,8 @@ public class SplitFileInserterSegmentStorage {
         crossSegmentBlockSegments[blockNumber] = crossSegment;
     }
 
+    public int countSendableKeys() {
+        return blockChooser.countFetchable();
+    }
+
 }
