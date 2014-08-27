@@ -48,7 +48,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
         lock.lock();
         try {
             if(dir.getUsableSpace() > size + minDiskSpace)
-                return underlying.makeRAF(size);
+                return underlying.makeRAF(initialContents, offset, size);
             else
                 throw new InsufficientDiskSpaceException();
         } finally {
