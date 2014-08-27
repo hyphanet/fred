@@ -29,6 +29,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -196,7 +197,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private final class ExternPutHandler extends PutHandler {
 
-		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2) {
+		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, RandomAccessBucket data, ClientMetadata cm2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
@@ -300,7 +301,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// resolver
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, BucketFactory bf) throws MetadataUnresolvedException, IOException {
 			super(smp, parent, null, null, runningPutHandlers);
-			Bucket b = toResolve.toBucket(bf);
+			RandomAccessBucket b = toResolve.toBucket(bf);
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
@@ -970,7 +971,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private void resolveAndStartBase(ClientContext context) {
 		//new Error("DEBUG_ME_resolveAndStartBase").printStackTrace();
-		Bucket bucket = null;
+	    RandomAccessBucket bucket = null;
 		synchronized(this) {
 			if(hasResolvedBase) return;
 		}
@@ -1422,7 +1423,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * @param mimeOverride Optional MIME type override.
 		 * @param isDefaultDoc If true, make this the default document.
 		 */
-		public final void addExternal(String name, Bucket data, String mimeOverride, boolean isDefaultDoc) {
+		public final void addExternal(String name, RandomAccessBucket data, String mimeOverride, boolean isDefaultDoc) {
 			assert(data != null);
 			ClientMetadata cm = makeClientMetadata(mimeOverride);
 			addExternal(name, data, cm, isDefaultDoc);
@@ -1433,7 +1434,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			addRedirect(name, targetUri, cm, isDefaultDoc);
 		}
 
-		public abstract void addExternal(String name, Bucket data, ClientMetadata cm, boolean isDefaultDoc);
+		public abstract void addExternal(String name, RandomAccessBucket data, ClientMetadata cm, boolean isDefaultDoc);
 		public abstract void addRedirect(String name, FreenetURI targetUri, ClientMetadata cm, boolean isDefaultDoc);
 	}
 
@@ -1445,7 +1446,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void addExternal(String name, Bucket data, ClientMetadata cm, boolean isDefaultDoc) {
+		public void addExternal(String name, RandomAccessBucket data, ClientMetadata cm, boolean isDefaultDoc) {
 			PutHandler ph;
 			ph = new ExternPutHandler(BaseManifestPutter.this, null, name, data, cm);
 //			putHandlersWaitingForMetadata.add(ph);
@@ -1550,7 +1551,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void addExternal(String name, Bucket data, ClientMetadata cm, boolean isDefaultDoc) {
+		public void addExternal(String name, RandomAccessBucket data, ClientMetadata cm, boolean isDefaultDoc) {
 			PutHandler ph = new ExternPutHandler(BaseManifestPutter.this, selfHandle, name, data, cm);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);
 			putHandlersTransformMap.put(ph, currentDir);
@@ -1589,7 +1590,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
             if(o instanceof ManifestElement) {
                 manifestEntries.put(name, o);
             } else if(o instanceof Bucket) {
-                Bucket data = (Bucket) o;
+                RandomAccessBucket data = (RandomAccessBucket) o;
                 manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
             } else if(o instanceof HashMap) {
                 manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));

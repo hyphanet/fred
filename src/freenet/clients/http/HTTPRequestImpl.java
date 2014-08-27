@@ -39,6 +39,7 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles
@@ -75,7 +76,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/**
 	 * A hashmap of buckets that we use to store all the parts for a multipart/form-data request
 	 */
-	private HashMap<String, Bucket> parts;
+	private HashMap<String, RandomAccessBucket> parts;
 	
 	private boolean freedParts;
 	
@@ -146,7 +147,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.headers = ctx.getHeaders();
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = d;
-		this.parts = new HashMap<String, Bucket>();
+		this.parts = new HashMap<String, RandomAccessBucket>();
 		this.bucketfactory = ctx.getBucketFactory();
 		this.method = method;
 		if(data != null) {
@@ -212,7 +213,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				} catch (UnsupportedEncodingException e) {
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				} // FIXME some other encoding?
-				Bucket b = new SimpleReadOnlyArrayBucket(buf);
+				RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 				parts.put(parameterValues.getKey(), b);
 				if(logMINOR)
 					Logger.minor(this, "Added as part: name="+parameterValues.getKey()+" value="+value);
@@ -532,7 +533,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 			boundary = "\r\n" + boundary;
 
-			Bucket filedata = null;
+			RandomAccessBucket filedata = null;
 			String name = null;
 			String filename = null;
 			String contentType = null;
@@ -644,7 +645,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#getPart(java.lang.String)
 	 */
 	@Override
-	public Bucket getPart(String name) {
+	public RandomAccessBucket getPart(String name) {
 		if(freedParts) throw new IllegalStateException("Already freed");
 		return this.parts.get(name);
 	}

@@ -79,7 +79,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
@@ -87,6 +86,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.io.RandomAccessBucket;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback, LinkEnabledCallback {
 
@@ -573,7 +573,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				else
 					fnam = null;
 				/* copy bucket data */
-				final Bucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
+				final RandomAccessBucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				final CountDownLatch done = new CountDownLatch(1);
 				try {

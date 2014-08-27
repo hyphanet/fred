@@ -27,6 +27,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
 
@@ -348,7 +349,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return blobFile.length();
 	}
 
-	public Bucket getBlobBucket() {
+	public RandomAccessBucket getBlobBucket() {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null)

@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Represents an element in a manifest. Fed to SimpleManifestPutter. An element can be a file or a 
@@ -19,7 +20,7 @@ public class ManifestElement {
 	final String fullName;
 	
 	/** Data to be inserted. Can be null, if the insert has completed. */
-	Bucket data;
+	RandomAccessBucket data;
 	
 	/** MIME type override. null => use default for filename */
 	final String mimeOverride;
@@ -31,7 +32,7 @@ public class ManifestElement {
 	final FreenetURI targetURI;
 	
 	/** Construct a ManifestElement for a file. */
-	public ManifestElement(String name2, String fullName2, Bucket data2, String mimeOverride2, long size) {
+	public ManifestElement(String name2, String fullName2, RandomAccessBucket data2, String mimeOverride2, long size) {
 		this.name = name2;
 		this.fullName = fullName2;
 		this.data = data2;
@@ -41,7 +42,7 @@ public class ManifestElement {
 		this.targetURI = null;
 	}
 	
-	public ManifestElement(String name2, Bucket data2, String mimeOverride2, long size2) {
+	public ManifestElement(String name2, RandomAccessBucket data2, String mimeOverride2, long size2) {
 		this.name = name2;
 		this.fullName = name2;
 		this.data = data2;
@@ -111,7 +112,7 @@ public class ManifestElement {
 		return mimeOverride;
 	}
 
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return data;
 	}
 	

@@ -39,6 +39,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NullOutputStream;
+import freenet.support.io.RandomAccessBucket;
 
 public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
@@ -245,11 +246,13 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	final File getBlobFile(int availableVersion) {
 		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
 	}
-	Bucket getBlobBucket(int availableVersion) {
+	
+	RandomAccessBucket getBlobBucket(int availableVersion) {
 		File f = getBlobFile(availableVersion);
 		if(f == null) return null;
 		return new FileBucket(f, true, false, false, false, false);
 	}
+	
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);

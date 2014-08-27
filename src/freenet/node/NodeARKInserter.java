@@ -22,6 +22,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 
 public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
@@ -159,7 +160,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 		
-		Bucket b = new SimpleReadOnlyArrayBucket(buf);
+		RandomAccessBucket b = new SimpleReadOnlyArrayBucket(buf);
 		
 		long number = crypto.myARKNumber;
 		InsertableClientSSK ark = crypto.myARK;

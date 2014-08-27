@@ -246,16 +246,16 @@ public class BucketTools {
 		}
 	}
 	
-	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data) throws IOException {
+	public static RandomAccessBucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data) throws IOException {
 		return makeImmutableBucket(bucketFactory, data, data.length);
 	}
 	
-	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int length) throws IOException {
+	public static RandomAccessBucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int length) throws IOException {
 		return makeImmutableBucket(bucketFactory, data, 0, length);
 	}
 	
-	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int offset, int length) throws IOException {
-		Bucket bucket = bucketFactory.makeBucket(length);
+	public static RandomAccessBucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int offset, int length) throws IOException {
+		RandomAccessBucket bucket = bucketFactory.makeBucket(length);
 		OutputStream os = bucket.getOutputStream();
 		try {
 		os.write(data, offset, length);

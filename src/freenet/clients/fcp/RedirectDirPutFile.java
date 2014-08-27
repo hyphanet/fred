@@ -9,6 +9,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 
 public class RedirectDirPutFile extends DirPutFile {
 
@@ -51,7 +52,7 @@ public class RedirectDirPutFile extends DirPutFile {
 	}
 
 	@Override
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return null;
 	}
 

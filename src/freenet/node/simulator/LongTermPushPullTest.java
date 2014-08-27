@@ -39,6 +39,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Push / Pull test over long period of time
@@ -138,7 +139,7 @@ public class LongTermPushPullTest extends LongTermTest {
 
 			// PUSH N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				Bucket data = randomData(node);
+			    RandomAccessBucket data = randomData(node);
 				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0, false, false);
 				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
 				System.out.println("PUSHING " + uri);
@@ -390,8 +391,8 @@ public class LongTermPushPullTest extends LongTermTest {
 	}
 	
 
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

@@ -37,6 +37,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.RandomAccessBucket;
 
 /** Metadata parser/writer class. */
 public class Metadata implements Cloneable, Serializable {
@@ -1595,7 +1596,7 @@ public class Metadata implements Cloneable, Serializable {
 		this.resolvedName = name;
 	}
 
-	public Bucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
+	public RandomAccessBucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
 		byte[] buf = writeToByteArray();
 		return BucketTools.makeImmutableBucket(bf, buf);
 	}

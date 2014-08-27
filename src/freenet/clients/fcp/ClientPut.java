@@ -31,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {
@@ -42,7 +43,7 @@ public class ClientPut extends ClientPutBase {
 	private final File origFilename;
 	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target of the redirect */
 	private final FreenetURI targetURI;
-	private Bucket data;
+	private RandomAccessBucket data;
 	private final ClientMetadata clientMetadata;
 	/** We store the size of inserted data before freeing it */
 	private long finishedSize;
@@ -112,7 +113,7 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			String charset, short priorityClass, short persistenceType, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
-			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
+			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
 		super(uri = checkEmptySSK(uri, targetFilename, server.core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
@@ -128,7 +129,7 @@ public class ClientPut extends ClientPutBase {
 		// Now go through the fields one at a time
 		String mimeType = contentType;
 		this.clientToken = clientToken;
-		Bucket tempData = data;
+		RandomAccessBucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
@@ -200,7 +201,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		
 		clientToken = message.clientToken;
-		Bucket tempData = message.bucket;
+		RandomAccessBucket tempData = message.getRandomAccessBucket();
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));

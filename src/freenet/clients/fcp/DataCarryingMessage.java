@@ -12,13 +12,17 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
+import freenet.support.io.RandomAccessBucket;
 
 
 public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 
+    /** If this is a message from the client, then the Bucket was created by createBucket() and 
+     * will be a RandomAccessBucket. However if it is a message we are sending to the client, it 
+     * may not be. FIXME split up into two classes? */
 	protected Bucket bucket;
 	
-	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
+	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
 		return bf.makeBucket(length);
 	}
 	
@@ -39,7 +43,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 			bucket = new NullBucket();
 			return;
 		}
-		Bucket tempBucket;
+		RandomAccessBucket tempBucket;
 		try {
 			tempBucket = createBucket(bf, len, server);
 		} catch (IOException e) {
@@ -61,5 +65,12 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 	String getEndString() {
 		return "Data";
 	}
+	
+	/** Should only be called from code parsing a message sent to us, in which case Bucket will be a
+     * RandomAccessBucket, which it needs to be as it's likely to be inserted. If we are sending a 
+     * message to the client, it might not be. FIXME split up into two classes? */
+    public RandomAccessBucket getRandomAccessBucket() {
+        return (RandomAccessBucket) bucket;
+    }
 	
 }

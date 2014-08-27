@@ -5,17 +5,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Specialized DirPutFile for direct uploads.
  */
 public class DirectDirPutFile extends DirPutFile {
 
-	private final Bucket data;
+	private final RandomAccessBucket data;
 	private final long length;
 	
 	public static DirectDirPutFile create(String name, String contentTypeOverride, SimpleFieldSet subset, 
@@ -24,7 +24,7 @@ public class DirectDirPutFile extends DirPutFile {
 		if(s == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "UploadFrom=direct requires a DataLength for "+name, identifier, global);
 		long length;
-		Bucket data;
+		RandomAccessBucket data;
 		try {
 			length = Long.parseLong(s);
 		} catch (NumberFormatException e) {
@@ -46,7 +46,7 @@ public class DirectDirPutFile extends DirPutFile {
 		return new DirectDirPutFile(name, mimeType, length, data);
 	}
 	
-	private DirectDirPutFile(String name, String mimeType, long length, Bucket data) {
+	private DirectDirPutFile(String name, String mimeType, long length, RandomAccessBucket data) {
 		super(name, mimeType);
 		this.length = length;
 		this.data = data;
@@ -65,7 +65,7 @@ public class DirectDirPutFile extends DirPutFile {
 	}
 
 	@Override
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return data;
 	}
 

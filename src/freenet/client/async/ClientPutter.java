@@ -21,6 +21,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /** A high level insert. */
@@ -30,7 +31,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
     /** Callback for when the insert completes. */
 	final ClientPutCallback client;
 	/** The data to insert. */
-	final Bucket data;
+	final RandomAccessBucket data;
 	/** The URI to insert it to. Can be CHK@. */
 	final FreenetURI targetURI;
 	/** The ClientMetadata i.e. the MIME type and any other client-visible metadata. */
@@ -102,7 +103,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
-	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
+	public ClientPutter(ClientPutCallback client, RandomAccessBucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass,
 			boolean isMetadata, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto,
 			long metadataThreshold) {

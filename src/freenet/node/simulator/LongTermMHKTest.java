@@ -32,6 +32,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessBucket;
 
 /** Simulates MHKs. Creates 4 CHKs, inserts the first one 3 times, and inserts the
  * others 1 time each. Pulls them all after 1, 3, 7, 15, 31 etc days and computes 
@@ -117,8 +118,8 @@ public class LongTermMHKTest extends LongTermTest {
 
 			// Create four CHKs
 			
-			Bucket single = randomData(node);
-			Bucket[] mhks = new Bucket[3];
+			RandomAccessBucket single = randomData(node);
+			RandomAccessBucket[] mhks = new RandomAccessBucket[3];
 			
 			for(int i=0;i<mhks.length;i++) mhks[i] = randomData(node);
 			
@@ -412,8 +413,8 @@ public class LongTermMHKTest extends LongTermTest {
 		}
 	}	
 	
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

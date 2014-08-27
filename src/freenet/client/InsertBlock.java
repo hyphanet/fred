@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Class to contain everything needed for an insert.
@@ -15,12 +16,12 @@ import freenet.support.api.Bucket;
 public class InsertBlock implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private Bucket data;
+    private RandomAccessBucket data;
 	private boolean isFreed;
 	public FreenetURI desiredURI;
 	public ClientMetadata clientMetadata;
 	
-	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
+	public InsertBlock(RandomAccessBucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		if(data == null) throw new NullPointerException();
 		this.data = data;
 		this.isFreed = false;
@@ -31,7 +32,7 @@ public class InsertBlock implements Serializable {
 		this.desiredURI = desiredURI;
 	}
 	
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return (isFreed ? null : data);
 	}
 	

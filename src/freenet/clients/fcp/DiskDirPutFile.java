@@ -7,8 +7,8 @@ import java.io.File;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.RandomAccessBucket;
 
 public class DiskDirPutFile extends DirPutFile {
 
@@ -43,7 +43,7 @@ public class DiskDirPutFile extends DirPutFile {
 	}
 
 	@Override
-	public Bucket getData() {
+	public RandomAccessBucket getData() {
 		return new FileBucket(file, true, false, false, false, false);
 	}
 

@@ -35,6 +35,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PersistentFileTracker;
+import freenet.support.io.RandomAccessBucket;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient, Cloneable {
 
@@ -282,7 +283,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	@Override
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
 		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
-		Bucket b;
+		RandomAccessBucket b;
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
 		} catch (IOException e) {

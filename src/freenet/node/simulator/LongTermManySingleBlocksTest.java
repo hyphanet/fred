@@ -32,9 +32,9 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessBucket;
 
 /** 
  * Insert 32x single blocks. Pull them individually, with 0 retries, after 2^n-1 
@@ -234,7 +234,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 				
 				System.err.println("Inserting block "+i);
 				
-				Bucket single = randomData(node);
+				RandomAccessBucket single = randomData(node);
 				
 				InsertBlock block = new InsertBlock(single, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
 				
@@ -447,8 +447,8 @@ loopOverLines:
 		}
 	}	
 	
-	private static Bucket randomData(Node node) throws IOException {
-		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
+	private static RandomAccessBucket randomData(Node node) throws IOException {
+	    RandomAccessBucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
 		OutputStream os = data.getOutputStream();
 		try {
 		byte[] buf = new byte[4096];

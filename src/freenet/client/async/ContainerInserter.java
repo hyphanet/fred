@@ -29,6 +29,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -160,7 +161,7 @@ public class ContainerInserter implements ClientPutState {
 		InsertBlock block;
 		OutputStream os = null;
 		try {
-			Bucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
+		    RandomAccessBucket outputBucket = context.getBucketFactory(persistent).makeBucket(-1);
 			os = new BufferedOutputStream(outputBucket.getOutputStream());
 			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 				createTarBucket(os) :

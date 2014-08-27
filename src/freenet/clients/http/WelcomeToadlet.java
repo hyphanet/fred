@@ -36,6 +36,7 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
+import freenet.support.io.RandomAccessBucket;
 
 public class WelcomeToadlet extends Toadlet {
 
@@ -181,7 +182,7 @@ public class WelcomeToadlet extends Toadlet {
             }
             ClientMetadata contentType = new ClientMetadata(type);
 
-            Bucket bucket = request.getPart("filename");
+            RandomAccessBucket bucket = request.getPart("filename");
 
             PageNode page = ctx.getPageMaker().getPageNode(l10n("insertedTitle"), ctx);
             HTMLNode pageNode = page.outer;

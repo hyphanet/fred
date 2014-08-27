@@ -10,8 +10,8 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * A request to upload a file to a manifest.
@@ -73,7 +73,7 @@ abstract class DirPutFile {
 		return meta.getMIMEType();
 	}
 
-	public abstract Bucket getData();
+	public abstract RandomAccessBucket getData();
 
 	public ManifestElement getElement() {
 		String n = name;

@@ -20,6 +20,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.FileBucket;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * 
@@ -334,7 +335,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	@Override
-	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
+	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			return server.core.persistentTempBucketFactory.makeBucket(length);
 		} else {
@@ -369,5 +370,5 @@ public class ClientPutMessage extends DataCarryingMessage {
 		}
 		bucket.free();
 	}
-	
+
 }
