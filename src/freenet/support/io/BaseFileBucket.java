@@ -20,7 +20,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public abstract class BaseFileBucket implements Bucket {
+public abstract class BaseFileBucket implements RandomAccessBucket {
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
@@ -529,6 +529,12 @@ public abstract class BaseFileBucket implements Bucket {
         synchronized(this) {
             length = getFile().length();
         }
+    }
+    
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        if(length == 0) throw new IOException("Must not be empty");
+        return new PooledRandomAccessFileWrapper(getFile(), isReadOnly(), length, null, -1, deleteOnFree());
     }
 
 }

@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import java.io.IOException;
+
 import freenet.support.api.Bucket;
 
 /** A Bucket which can be converted to a LockableRandomAccessThing without copying. Mostly we need 
@@ -9,7 +11,8 @@ import freenet.support.api.Bucket;
 public interface RandomAccessBucket extends Bucket {
     
     /** Convert the Bucket to a LockableRandomAccessThing. Must be efficient, i.e. will not copy 
-     * the data. Freeing the Bucket is unnecessary if you free the LockableRandomAccessThing. */
-    public LockableRandomAccessThing toRandomAccessThing();
+     * the data. Freeing the Bucket is unnecessary if you free the LockableRandomAccessThing. 
+     * @throws IOException */
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException;
 
 }
