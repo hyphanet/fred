@@ -71,8 +71,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                     context.getJobRunner(persistent), context.ticker, 
                     context.getChkInsertScheduler(realTime).fetchingKeys(), topDontCompress, 
                     topRequiredBlocks, topTotalBlocks, origDataSize, origCompressedDataSize);
-            parent.addMustSucceedBlocks(storage.topRequiredBlocks - topRequiredBlocks);
-            parent.addBlocks(storage.topTotalBlocks - topTotalBlocks);
+            int mustSucceed = storage.topRequiredBlocks - topRequiredBlocks;
+            parent.addMustSucceedBlocks(mustSucceed);
+            parent.addRedundantBlocksInsert(storage.topTotalBlocks - topTotalBlocks - mustSucceed);
             parent.notifyClients(context);
         } catch (IOException e) {
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
