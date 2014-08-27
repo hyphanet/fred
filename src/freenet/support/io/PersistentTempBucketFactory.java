@@ -230,7 +230,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Delete the buckets.
 	 */
-	public void postCommit(DelayedFreeBucket[] buckets, DelayedFreeRandomAccessThing[] rafs) {
+	public void finishDelayedFree(DelayedFreeBucket[] buckets, DelayedFreeRandomAccessThing[] rafs) {
 		if(buckets == null || buckets.length == 0) return;
 		int x = 0;
 		for(DelayedFreeBucket bucket : buckets) {

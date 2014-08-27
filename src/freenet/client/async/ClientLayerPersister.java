@@ -535,32 +535,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 Logger.error(this, "Failed to load a bucket to free");
             }
         }
-        // Delete the unnecessary buckets.
-        if(buckets != null) {
-            for(DelayedFreeBucket bucket : buckets) {
-                if(bucket == null) continue;
-                try {
-                    bucket.onResume(context);
-                    if(bucket.toFree())
-                        bucket.realFree();
-                } catch (Throwable t) {
-                    Logger.error(this, "Unable to free old bucket "+bucket, t);
-                }
-            }
-        }
-        // Delete the unnecessary RAFs.
-        if(rafs != null) {
-            for(DelayedFreeRandomAccessThing bucket : rafs) {
-                if(bucket == null) continue;
-                try {
-                    bucket.onResume(context);
-                    if(bucket.toFree())
-                        bucket.realFree();
-                } catch (Throwable t) {
-                    Logger.error(this, "Unable to free old bucket "+bucket, t);
-                }
-            }
-        }
+        persistentTempFactory.finishDelayedFree(buckets, rafs);
     }
 
     @Override
@@ -632,7 +607,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             oos.close();
             fos = null;
             System.out.println("Saved "+requests.length+" requests to "+writeToFilename);
-            persistentTempFactory.postCommit(buckets, rafs);
+            persistentTempFactory.finishDelayedFree(buckets, rafs);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);

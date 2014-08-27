@@ -38,7 +38,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 		});
 	}
 	
-	public boolean toFree() {
+	boolean toFree() {
 		return freed;
 	}
 	
@@ -110,7 +110,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 		return bucket.createShadow();
 	}
 
-	public void realFree() {
+	void realFree() {
 		bucket.free();
 	}
 

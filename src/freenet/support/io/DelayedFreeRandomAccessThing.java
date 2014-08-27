@@ -85,7 +85,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         factory = persistentFileTracker;
     }
     
-    public boolean toFree() {
+    boolean toFree() {
         return freed;
     }
     
@@ -94,7 +94,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         return underlying;
     }
 
-    public void realFree() {
+    void realFree() {
         underlying.free();
     }
     
