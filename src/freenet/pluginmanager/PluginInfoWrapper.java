@@ -72,7 +72,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
 		isConfigurablePlugin = (plug instanceof FredPluginConfigurable);
 		if(isConfigurablePlugin) {
-			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"), "config options for plugin: "+getPluginClassName());
+			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"),
+			             "config options for plugin: "+getPluginClassName());
 			subconfig = new SubConfig(getPluginClassName(), config);
 			((FredPluginConfigurable)plug).setupConfig(subconfig);
 			config.finishedInit();
