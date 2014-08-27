@@ -11,7 +11,7 @@ import freenet.support.api.BucketFactory;
 public class ArrayBucketFactory implements BucketFactory {
 
 	@Override
-	public Bucket makeBucket(long size) throws IOException {
+	public RandomAccessBucket makeBucket(long size) throws IOException {
 		return new ArrayBucket();
 	}
 

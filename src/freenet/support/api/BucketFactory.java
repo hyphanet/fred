@@ -5,6 +5,7 @@ package freenet.support.api;
 
 import java.io.IOException;
 
+import freenet.support.io.RandomAccessBucket;
 
 public interface BucketFactory {
 	/**
@@ -14,6 +15,7 @@ public interface BucketFactory {
 	 * @return
 	 * @throws IOException
 	 */
-    public Bucket makeBucket(long size) throws IOException;
+    public RandomAccessBucket makeBucket(long size) throws IOException;
+    
 }
 
