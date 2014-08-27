@@ -31,4 +31,7 @@ public interface SplitFileInserterStorageCallback {
     /** Used by KeysFetchingLocally */
     SendableInsert getSendableInsert();
 
+    /** Called when a block is inserted successfully */
+    void onInsertedBlock();
+
 }

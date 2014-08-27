@@ -73,14 +73,15 @@ public class SimpleBlockChooser {
     }
     
     /** Notify when a block has succeeded. */
-    public void onSuccess(int blockNo) {
+    public boolean onSuccess(int blockNo) {
         synchronized(this) {
-            if(completed[blockNo]) return;
+            if(completed[blockNo]) return false;
             completed[blockNo] = true;
             completedCount++;
-            if(completedCount < blocks) return;
+            if(completedCount < blocks) return true;
         }
         onCompletedAll();
+        return true;
     }
     
     /** Notify that a block has no longer succeeded. E.g. we downloaded it but now the data is no

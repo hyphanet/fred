@@ -198,6 +198,11 @@ public class SplitFileInserterStorageTest extends TestCase {
             return null;
         }
 
+        @Override
+        public void onInsertedBlock() {
+            // Ignore.
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {

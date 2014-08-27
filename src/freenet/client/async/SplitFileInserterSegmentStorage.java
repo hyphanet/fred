@@ -540,7 +540,8 @@ public class SplitFileInserterSegmentStorage {
     public void onInsertedBlock(int blockNo, ClientCHK key) {
         try {
             this.setKey(blockNo, key);
-            blockChooser.onSuccess(blockNo);
+            if(blockChooser.onSuccess(blockNo))
+                parent.callback.onInsertedBlock();
             lazyWriteMetadata();
         } catch (IOException e) {
             parent.failOnDiskError(e);

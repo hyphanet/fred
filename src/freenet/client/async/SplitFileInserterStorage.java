@@ -94,7 +94,7 @@ public class SplitFileInserterStorage {
     private final long rafLength;
     /** Is the request persistent? */
     final boolean persistent;
-    private final SplitFileInserterStorageCallback callback;
+    final SplitFileInserterStorageCallback callback;
 
     final SplitFileInserterSegmentStorage[] segments;
     final SplitFileInserterCrossSegmentStorage[] crossSegments;
