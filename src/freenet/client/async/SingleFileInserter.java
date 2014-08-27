@@ -29,6 +29,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NotPersistentBucket;
 import freenet.support.io.NullOutputStream;
+import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -188,9 +189,9 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
 		}
-		Bucket bestCompressedData = output.data;
+		RandomAccessBucket bestCompressedData = output.data;
 		long bestCompressedDataSize = bestCompressedData.size();
-		Bucket data = bestCompressedData;
+		RandomAccessBucket data = bestCompressedData;
 		COMPRESSOR_TYPE bestCodec = output.bestCodec;
 		
 		boolean shouldFreeData = freeData;
@@ -292,7 +293,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(context), hashes);
-				Bucket metadataBucket;
+				RandomAccessBucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
 				} catch (IOException e) {
@@ -381,12 +382,12 @@ class SingleFileInserter implements ClientPutState, Serializable {
 //		}
 	}
 	
-	private Bucket fixNotPersistent(Bucket data, ClientContext context) throws InsertException {
+	private RandomAccessBucket fixNotPersistent(RandomAccessBucket data, ClientContext context) throws InsertException {
 		boolean skip = false;
 		try {
 			if(!skip) {
 			if(logMINOR) Logger.minor(this, "Copying data from "+data+" length "+data.size());
-			Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
+			RandomAccessBucket newData = context.persistentBucketFactory.makeBucket(data.size());
 			BucketTools.copy(data, newData);
 			data.free();
 			data = newData;
@@ -402,8 +403,8 @@ class SingleFileInserter implements ClientPutState, Serializable {
 
 	private void tryCompress(ClientContext context) throws InsertException {
 		// First, determine how small it needs to be
-		Bucket origData = block.getData();
-		Bucket data = origData;
+	    RandomAccessBucket origData = block.getData();
+	    RandomAccessBucket data = origData;
 		int blockSize;
 		int oneBlockCompressedSize;
 		boolean dontCompress = ctx.dontCompress;

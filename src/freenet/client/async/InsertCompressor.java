@@ -19,6 +19,7 @@ import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Compress a file in order to insert it. This class acts as a tag in the database to ensure that inserts
@@ -33,7 +34,7 @@ public class InsertCompressor implements CompressJob {
 	 * call a method to process it and schedule the data. */
 	public final SingleFileInserter inserter;
 	/** The original data */
-	final Bucket origData;
+	final RandomAccessBucket origData;
 	/** If we can get it into one block, don't compress any further */
 	public final int minSize;
 	/** BucketFactory */
@@ -55,7 +56,7 @@ public class InsertCompressor implements CompressJob {
 		});
 	}
 	
-	public InsertCompressor(SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
+	public InsertCompressor(SingleFileInserter inserter2, RandomAccessBucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
 		this.inserter = inserter2;
 		this.origData = origData2;
 		this.minSize = minSize2;
@@ -84,7 +85,7 @@ public class InsertCompressor implements CompressJob {
 	public void tryCompress(final ClientContext context) throws InsertException {
 		long origSize = origData.size();
 		COMPRESSOR_TYPE bestCodec = null;
-		Bucket bestCompressedData = origData;
+		RandomAccessBucket bestCompressedData = origData;
 		long bestCompressedDataSize = origSize;
 		
 		HashResult[] hashes = null;
@@ -98,7 +99,7 @@ public class InsertCompressor implements CompressJob {
 			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
-				Bucket result = null;
+				RandomAccessBucket result = null;
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Attempt to compress using " + comp);
@@ -274,7 +275,7 @@ public class InsertCompressor implements CompressJob {
 	 * @return
 	 */
 	public static InsertCompressor start(ClientContext ctx, SingleFileInserter inserter, 
-			Bucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
+	        RandomAccessBucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
 	    InsertCompressorTracker tracker = ctx.getInsertCompressors(persistent);
 		InsertCompressor compressor = new InsertCompressor(inserter, origData, minSize, bf, persistent, generateHashes, pre1254);
 		tracker.add(compressor);
