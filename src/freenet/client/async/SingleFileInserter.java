@@ -900,7 +900,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				if(logMINOR) Logger.minor(this, "startMetadata() on "+this);
 			try {
 				ClientPutState putter;
-				ClientPutState splitInserter;
 				synchronized(this) {
 					if(metaInsertStarted) return true;
 					putter = metadataPutter;
@@ -908,7 +907,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
 					} else
 						metaInsertStarted = true;
-					splitInserter = sfi;
 				}
 				if(putter != null) {
 					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
