@@ -6,6 +6,7 @@ package freenet.client;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.LowLevelPutException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -157,7 +158,25 @@ public class InsertException extends Exception implements Cloneable {
 		this(TOO_MANY_FILES, (String)null, null);
 	}
 
-	/** Caller supplied a URI we cannot use */
+	public static InsertException constructFrom(LowLevelPutException e) {
+	    switch(e.code) {
+	    case LowLevelPutException.COLLISION:
+	        return new InsertException(COLLISION);
+	    case LowLevelPutException.INTERNAL_ERROR:
+	        return new InsertException(INTERNAL_ERROR);
+	    case LowLevelPutException.REJECTED_OVERLOAD:
+	        return new InsertException(REJECTED_OVERLOAD);
+	    case LowLevelPutException.ROUTE_NOT_FOUND:
+	        return new InsertException(ROUTE_NOT_FOUND);
+        case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
+            return new InsertException(ROUTE_REALLY_NOT_FOUND);
+	    default:
+	        Logger.error(InsertException.class, "Unknown LowLevelPutException: "+e+" code "+e.code, new Exception("error"));
+	        return new InsertException(INTERNAL_ERROR, "Unknown error "+e.code, null);
+	    }
+    }
+
+    /** Caller supplied a URI we cannot use */
 	public static final int INVALID_URI = 1;
 	/** Failed to read from or write to a bucket; a kind of internal error */
 	public static final int BUCKET_ERROR = 2;
