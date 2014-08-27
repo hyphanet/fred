@@ -360,7 +360,7 @@ public class SplitFileInserterStorage {
         keyLength = SplitFileInserterSegmentStorage.getKeyLength(this);
         this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
         segments = makeSegments(segmentSize, segs, totalDataBlocks, crossCheckBlocks,
-                deductBlocksFromSegments, persistent, splitfileCryptoAlgorithm, splitfileCryptoKey,
+                deductBlocksFromSegments, persistent,
                 cmode, random, keysFetching, consecutiveRNFsCountAsSuccess);
         for (SplitFileInserterSegmentStorage segment : segments) {
             totalCheckBlocks += segment.checkBlockCount;
@@ -990,14 +990,14 @@ public class SplitFileInserterStorage {
 
     private SplitFileInserterSegmentStorage[] makeSegments(int segmentSize, int segCount,
             int dataBlocks, int crossCheckBlocks, int deductBlocksFromSegments, boolean persistent,
-            byte cryptoAlgorithm, byte[] cryptoKey, CompatibilityMode cmode, Random random, 
-            KeysFetchingLocally keysFetching, int consecutiveRNFsCountAsSuccess) {
+            CompatibilityMode cmode, Random random, KeysFetchingLocally keysFetching, 
+            int consecutiveRNFsCountAsSuccess) {
         SplitFileInserterSegmentStorage[] segments = new SplitFileInserterSegmentStorage[segCount];
         if (segCount == 1) {
             // Single segment
             int checkBlocks = codec.getCheckBlocks(dataBlocks + crossCheckBlocks, cmode);
             segments[0] = new SplitFileInserterSegmentStorage(this, 0, persistent, dataBlocks,
-                    checkBlocks, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, random, 
+                    checkBlocks, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, random, 
                     maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
         } else {
             int j = 0;
@@ -1016,7 +1016,7 @@ public class SplitFileInserterStorage {
                 }
                 j = i;
                 segments[segNo] = new SplitFileInserterSegmentStorage(this, segNo, persistent,
-                        data, check, crossCheckBlocks, keyLength, cryptoAlgorithm, cryptoKey, 
+                        data, check, crossCheckBlocks, keyLength, splitfileCryptoAlgorithm, splitfileCryptoKey, 
                         random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
 
                 if (deductBlocksFromSegments != 0)
