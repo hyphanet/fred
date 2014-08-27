@@ -109,7 +109,7 @@ public class SplitFileInserterStorage {
      * Length in bytes of the data being uploaded, i.e. the original file,
      * ignoring padding, check blocks etc.
      */
-    private final long dataLength;
+    final long dataLength;
 
     // These are kept for creating Metadata etc.
     /** MIME type etc. */
@@ -129,8 +129,8 @@ public class SplitFileInserterStorage {
     // Top level stuff
     private final HashResult[] hashes;
     private final boolean topDontCompress;
-    private final int topRequiredBlocks;
-    private final int topTotalBlocks;
+    final int topRequiredBlocks;
+    final int topTotalBlocks;
     private final long origDataSize;
     private final long origCompressedDataSize;
 
@@ -223,6 +223,8 @@ public class SplitFileInserterStorage {
      * @param bf
      *            A temporary Bucket factory used for temporarily storing the
      *            cross-segment settings.
+     * @param topRequiredBlocks The minimum number of blocks needed to fetch the content, so far.
+     * We will add to this for the final metadata.
      * @throws IOException
      * @throws InsertException
      */
@@ -255,8 +257,6 @@ public class SplitFileInserterStorage {
         this.archiveType = archiveType;
         this.hashThisLayerOnly = hashThisLayerOnly;
         this.topDontCompress = topDontCompress;
-        this.topRequiredBlocks = topRequiredBlocks;
-        this.topTotalBlocks = topTotalBlocks;
         this.origDataSize = origDataSize;
         this.origCompressedDataSize = origCompressedDataSize;
         this.maxRetries = ctx.maxInsertRetries;
@@ -544,6 +544,9 @@ public class SplitFileInserterStorage {
         }
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
+        
+        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks;
+        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCheckBlocks + crossCheckBlocks * segments.length;
     }
     
     /** Create a splitfile insert from stored data.

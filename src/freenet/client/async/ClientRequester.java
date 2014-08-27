@@ -139,6 +139,10 @@ public abstract class ClientRequester implements Serializable {
 	/** Has at least one block been scheduled to be sent to the network? 
 	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
+	
+    public int getTotalBlocks() {
+        return totalBlocks;
+    }
 
 	protected synchronized void resetBlocks() {
 		totalBlocks = 0;
