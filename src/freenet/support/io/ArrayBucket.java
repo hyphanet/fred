@@ -19,7 +19,7 @@ import freenet.support.api.Bucket;
  * 
  * @author oskar
  */
-public class ArrayBucket implements Bucket, Serializable {
+public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
     private static final long serialVersionUID = 1L;
     private volatile byte[] data;
 	private String name;
@@ -118,5 +118,10 @@ public class ArrayBucket implements Bucket, Serializable {
     public void storeTo(DataOutputStream dos) {
         // Should not be used for persistent requests.
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() {
+        return new ByteArrayRandomAccessThing(data);
     }
 }
