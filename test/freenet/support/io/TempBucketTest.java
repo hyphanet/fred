@@ -189,25 +189,25 @@ public class TempBucketTest extends TestSuite {
 		}
 	}
 
-	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest_ {
-		public RealTempBucketTest_8_16_T() throws IOException {
-			super(8, 16, true);
-		}
-	}
+//	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest_ {
+//		public RealTempBucketTest_8_16_T() throws IOException {
+//			super(8, 16, true);
+//		}
+//	}
 
-	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest_ {
-		public RealTempBucketTest_64k_128k_T() throws IOException {
-			super(64 * 1024, 128 * 1024, true);
-		}
-	}
+//	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest_ {
+//		public RealTempBucketTest_64k_128k_T() throws IOException {
+//			super(64 * 1024, 128 * 1024, true);
+//		}
+//	}
 
     public TempBucketTest() {
 		super("TempBucketTest");
 		addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
 		addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
 		addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
+//		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
+//		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
 		addTest(new TestSuite(TempBucketMigrationTest.class));
 	}
 
@@ -216,8 +216,8 @@ public class TempBucketTest extends TestSuite {
 		suite.addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
 		suite.addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
 		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
+//		suite.addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
+//		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
 		suite.addTest(new TestSuite(TempBucketMigrationTest.class));
 		return suite;
 	}
