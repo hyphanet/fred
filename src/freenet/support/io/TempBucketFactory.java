@@ -94,9 +94,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	    
 	};
 	
-	public class TempBucket implements Bucket, Migratable {
+	public class TempBucket implements Bucket, Migratable, RandomAccessBucket {
 		/** The underlying bucket itself */
-		private Bucket currentBucket;
+		private RandomAccessBucket currentBucket;
 		/** We have to account the size of the underlying bucket ourself in order to be able to access it fast */
 		private long currentSize;
 		/** Has an OutputStream been opened at some point? */
@@ -113,7 +113,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		
 		private final Throwable tracer;
 		
-		public TempBucket(long now, Bucket cur) {
+		public TempBucket(long now, RandomAccessBucket cur) {
 			if(cur == null)
 				throw new NullPointerException();
 			if (TRACE_BUCKET_LEAKS)
@@ -157,7 +157,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
 				toMigrate = currentBucket;
-				Bucket tempFB = _makeFileBucket();
+				RandomAccessBucket tempFB = _makeFileBucket();
 				size = currentSize;
 				if(os != null) {
 					os.flush();
@@ -469,6 +469,23 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         public void storeTo(DataOutputStream dos) throws IOException {
             throw new UnsupportedOperationException(); // Not persistent.
         }
+
+        @Override
+        public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+            synchronized(this) {
+                TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime);
+                if(isRAMBucket()) {
+                    synchronized(ramBucketQueue) {
+                        // No change in space usage.
+                        ramBucketQueue.remove(getReference());
+                        ramBucketQueue.add(raf.getReference());
+                    }
+                }
+                hasBeenFreed = true;
+                currentBucket = null;
+                return raf;
+            }
+        }
 	}
 	
 	// Storage accounting disabled by default.
@@ -488,11 +505,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 
 	@Override
-	public Bucket makeBucket(long size) throws IOException {
+	public RandomAccessBucket makeBucket(long size) throws IOException {
 		return makeBucket(size, DEFAULT_FACTOR, defaultIncrement);
 	}
 
-	public Bucket makeBucket(long size, float factor) throws IOException {
+	public RandomAccessBucket makeBucket(long size, float factor) throws IOException {
 		return makeBucket(size, factor, defaultIncrement);
 	}
 	
@@ -555,7 +572,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	 *                I/O error
 	 */
 	public TempBucket makeBucket(long size, float factor, long increment) throws IOException {
-		Bucket realBucket = null;
+		RandomAccessBucket realBucket = null;
 		boolean useRAMBucket = false;
 		long now = System.currentTimeMillis();
 		
@@ -707,15 +724,16 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	
 	private final Queue<WeakReference<Migratable>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<Migratable>>();
 	
-	private Bucket _makeFileBucket() throws IOException {
-		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
+	private RandomAccessBucket _makeFileBucket() throws IOException {
+		RandomAccessBucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
-            fileBucket = new TrivialPaddedBucket(fileBucket);
-		    byte[] key = new byte[16];
-		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
-		    srng.nextBytes(key);
-		    fileBucket = new AEADCryptBucket(fileBucket, key);
+		    throw new UnsupportedOperationException();
+//            fileBucket = new TrivialPaddedBucket(fileBucket);
+//		    byte[] key = new byte[16];
+//		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
+//		    srng.nextBytes(key);
+//		    fileBucket = new AEADCryptBucket(fileBucket, key);
 		}
 		return fileBucket;
 	}
@@ -734,6 +752,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time) throws IOException {
             super(new ByteArrayRandomAccessThing(initialContents, offset, size), size);
             creationTime = time;
+        }
+
+        public TempLockableRandomAccessThing(LockableRandomAccessThing underlying, long creationTime) throws IOException {
+            super(underlying, underlying.size());
+            this.creationTime = creationTime;
         }
 
         @Override
