@@ -29,6 +29,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NotPersistentBucket;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.RandomAccessBucket;
@@ -168,7 +169,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	
 	void onCompressedInner(CompressionOutput output, ClientContext context) throws InsertException {
 		HashResult[] hashes = output.hashes;
-		boolean parentWasActive = true;
 		long origSize = block.getData().size();
 		byte[] hashThisLayerOnly = null;
 		if(hashes != null && metadata) {
@@ -329,59 +329,53 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			}
 			return;
 		}
-		throw new InsertException(InsertException.INTERNAL_ERROR, "Splitfile insert not supported", null);
-//		// Otherwise the file is too big to fit into one block
-//		// We therefore must make a splitfile
-//		// Job of SplitHandler: when the splitinserter has the metadata,
-//		// insert it. Then when the splitinserter has finished, and the
-//		// metadata insert has finished too, tell the master callback.
-//		if(reportMetadataOnly) {
-//			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, realTimeFlag, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
-//			if(logMINOR)
-//				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
-//			cb.onTransition(this, sfi, container);
-//			sfi.start(container, context);
-//			if(earlyEncode) sfi.forceEncode(container, context);
-//			if(persistent) {
-//				container.store(sfi);
-//				container.deactivate(sfi, 1);
-//			}
-//			block.nullData();
-//			block.nullMetadata();
-//			synchronized(this) {
-//				// Don't delete them because they are being passed on.
-//				origHashes = null;
-//			}
-//			if(persistent) removeFrom(container, context);
-//		} else {
-//			if(persistent)
-//				container.activate(ctx, 1);
-//			CompatibilityMode cmode = ctx.getCompatibilityMode();
-//			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
-//			if(metadata) allowSizes = false;
-//			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
-//			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, realTimeFlag, container, context, HashResult.copy(hashes), hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
-//			sh.sfi = sfi;
-//			if(logMINOR)
-//				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
-//			if(persistent)
-//				container.store(sh);
-//			cb.onTransition(this, sh, container);
-//			sfi.start(container, context);
-//			if(earlyEncode) sfi.forceEncode(container, context);
-//			if(persistent) {
-//				container.store(sfi);
-//				container.deactivate(sfi, 1);
-//			}
-//			started = true;
-//			if(persistent)
-//				container.store(this);
-//			// SplitHandler will need this.origHashes.
-//		}
-//		if(persistent) {
-//			if(!parentWasActive)
-//				container.deactivate(parent, 1);
-//		}
+		// Otherwise the file is too big to fit into one block
+		// We therefore must make a splitfile
+		// Job of SplitHandler: when the splitinserter has the metadata,
+		// insert it. Then when the splitinserter has finished, and the
+		// metadata insert has finished too, tell the master callback.
+		LockableRandomAccessThing dataRAF;
+        try {
+            dataRAF = data.toRandomAccessThing();
+        } catch (IOException e) {
+            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+        }
+		if(reportMetadataOnly) {
+			SplitFileInserter sfi = new SplitFileInserter(persistent, parent, cb, 
+			        dataRAF, ctx, context, origSize, bestCodec, 
+			        block.clientMetadata, metadata, archiveType, cryptoAlgorithm, forceCryptoKey,
+			        hashThisLayerOnly, hashes, ctx.dontCompress, parent.getMinSuccessFetchBlocks(),
+			        parent.getTotalBlocks(), origDataLength, origCompressedDataLength, 
+			        realTimeFlag, token);
+			if(logMINOR)
+				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
+			cb.onTransition(this, sfi);
+			sfi.schedule(context);
+			block.nullData();
+			block.nullMetadata();
+			synchronized(this) {
+				// Don't delete them because they are being passed on.
+				origHashes = null;
+			}
+		} else {
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
+			if(metadata) allowSizes = false;
+			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
+			SplitFileInserter sfi = new SplitFileInserter(persistent, parent, sh, 
+			        dataRAF, ctx, context, origSize, bestCodec, 
+			        block.clientMetadata, metadata, archiveType, cryptoAlgorithm, forceCryptoKey,
+			        hashThisLayerOnly, hashes, ctx.dontCompress, parent.getMinSuccessFetchBlocks(),
+			        parent.getTotalBlocks(), origDataLength, origCompressedDataLength, 
+			        realTimeFlag, token);
+			sh.sfi = sfi;
+			if(logMINOR)
+				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
+			cb.onTransition(this, sh);
+			sfi.schedule(context);
+			started = true;
+			// SplitHandler will need this.origHashes.
+		}
 	}
 	
 	private RandomAccessBucket fixNotPersistent(RandomAccessBucket data, ClientContext context) throws InsertException {
@@ -530,9 +524,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	 * When we get the metadata, start inserting it to our target key.
 	 * When we have inserted both the metadata and the splitfile,
 	 * call the master callback.
-	 * 
-	 * This class has to be public so that db4o can access objectOnActivation
-	 * through reflection.
 	 */
 	public class SplitHandler implements PutCompletionCallback, ClientPutState {
 
@@ -593,7 +584,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		public void onSuccess(ClientPutState state, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
-			ClientPutState toRemove = null;
 			synchronized(this) {
 				if(finished){
 					return;
@@ -608,12 +598,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 						sfi = null;
 						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
 					}
-					toRemove = state;
 				} else if(state == metadataPutter) {
 					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
 					metaInsertSuccess = true;
 					metadataPutter = null;
-					toRemove = state;
 				} else {
 					Logger.error(this, "Unknown: "+state+" for "+this, new Exception("debug"));
 				}
@@ -628,9 +616,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				}
 			}
 			if(lateStart) {
-				if(!startMetadata(context))
-					toRemove = null;
-				else {
+				if(startMetadata(context)) {
 					synchronized(this) {
 						sfi = null;
 					}
@@ -644,15 +630,12 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		@Override
 		public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 			boolean toFail = true;
-			boolean toRemove = false;
 			synchronized(this) {
 				if(logMINOR)
 					Logger.minor(this, "onFailure(): "+e+" on "+state+" on "+this+" sfi = "+sfi+" metadataPutter = "+metadataPutter);
 				if(state == sfi) {
-					toRemove = true;
 					sfi = null;
 				} else if(state == metadataPutter) {
-					toRemove = true;
 					metadataPutter = null;
 				} else {
 					Logger.error(this, "onFailure() on unknown state "+state+" on "+this, new Exception("debug"));
@@ -728,7 +711,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				}
 			}
 			
-			Bucket metadataBucket;
+			RandomAccessBucket metadataBucket;
 			try {
 				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), metaBytes);
 			} catch (IOException e1) {
@@ -751,30 +734,27 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				return;
 			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
-			if(persistent)
-				synchronized(this) {
-					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey, metadataThreshold);
-					if(origHashes != null) {
-						// It gets passed on, and the last one deletes it.
-						SingleFileInserter.this.origHashes = null;
-					}
-					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
-					// Otherwise, wait until the data is fetchable (to improve persistence).
-					if(logMINOR)
-						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
-					if(!(earlyEncode || splitInsertSuccess)) return;
-				}
-				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
+			synchronized(this) {
+			    // Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
+			    metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, false, token, archiveType, true, metaPutterTargetFilename, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey, metadataThreshold);
+			    if(origHashes != null) {
+			        // It gets passed on, and the last one deletes it.
+			        SingleFileInserter.this.origHashes = null;
+			    }
+			    // If EarlyEncode, then start the metadata insert ASAP, to get the key.
+			    // Otherwise, wait until the data is fetchable (to improve persistence).
+			    if(logMINOR)
+			        Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
+			    if(!(ctx.earlyEncode || splitInsertSuccess)) return;
+			}
+			if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
 			if(!startMetadata(context)) {
 				Logger.error(this, "onMetadata() yet unable to start metadata due to not having all URIs?!?!");
 				fail(new InsertException(InsertException.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), context);
 				return;
 			}
-			ClientPutState toRemove = null;
 			synchronized(this) {
 				if(splitInsertSuccess && sfi != null) {
-					toRemove = sfi;
 					sfi = null;
 				}
 			}
@@ -910,8 +890,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		}
 		
 		/**
-		 * Start fetching metadata. There is an exceptional case where we don't have all the URIs yet; if so,
-		 * we force encode, and don't start fetching.
+		 * Start fetching metadata.
 		 * @param container
 		 * @param context
 		 * @return True unless we don't have all URI's and so can't remove sfi.
@@ -937,10 +916,6 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 					return true;
 				} else {
-					// Get all the URIs ASAP so we can start to insert the metadata.
-					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
-					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this, new Exception("error"));
-					((SplitFileInserter)splitInserter).forceEncode(context);
 					return false;
 				}
 			} catch (InsertException e1) {
@@ -983,6 +958,20 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			}
 			cb.onMetadata(meta, this, context);
 		}
+
+        @Override
+        public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
+            if(sfi != null)
+                sfi.onResume(context);
+            if(metadataPutter != null)
+                metadataPutter.onResume(context);
+            if(sfi != null)
+                sfi.schedule(context);
+            if(metadataPutter != null) {
+                if(ctx.earlyEncode || sfi == null || metaInsertStarted)
+                    metadataPutter.schedule(context);
+            }
+        }
 		
 	}
 
