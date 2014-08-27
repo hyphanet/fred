@@ -593,6 +593,8 @@ public class BucketTools {
             return new RandomAccessFileWrapper(dis);
         case ReadOnlyRandomAccessThing.MAGIC:
             return new ReadOnlyRandomAccessThing(dis, fg, persistentFileTracker);
+        case DelayedFreeRandomAccessThing.MAGIC:
+            return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }

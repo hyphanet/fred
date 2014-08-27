@@ -18,12 +18,12 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class DelayedFreeBucket implements Bucket, Serializable {
+public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBucket {
 
     private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
 	private transient PersistentFileTracker factory;
-	Bucket bucket;
+	RandomAccessBucket bucket;
 	boolean freed;
 	boolean removed;
 	boolean reallyRemoved;
@@ -46,7 +46,7 @@ public class DelayedFreeBucket implements Bucket, Serializable {
 		return removed;
 	}
 	
-	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
+	public DelayedFreeBucket(PersistentTempBucketFactory factory, RandomAccessBucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();
@@ -133,7 +133,16 @@ public class DelayedFreeBucket implements Bucket, Serializable {
     protected DelayedFreeBucket(DataInputStream dis) throws StorageFormatException, IOException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
-        bucket = BucketTools.restoreFrom(dis);
+        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis);
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+            freed = true;
+        }
+        return new DelayedFreeRandomAccessThing(bucket.toRandomAccessThing(), factory);
     }
 
 }

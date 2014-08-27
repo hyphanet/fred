@@ -23,6 +23,11 @@ public class TrivialPersistentFileTracker implements PersistentFileTracker {
     }
 
     @Override
+    public void delayedFreeBucket(DelayedFreeRandomAccessThing raf) {
+        raf.realFree();
+    }
+
+    @Override
     public File getDir() {
         return dir;
     }

@@ -35,6 +35,7 @@ import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFreeBucket;
+import freenet.support.io.DelayedFreeRandomAccessThing;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -526,9 +527,30 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 Logger.error(this, "Failed to load a bucket to free");
             }
         }
+        DelayedFreeRandomAccessThing[] rafs = new DelayedFreeRandomAccessThing[count];
+        for(int i=0;i<count;i++) {
+            try {
+                rafs[i] = (DelayedFreeRandomAccessThing) readChecksummedObject(ois, length);
+            } catch (ChecksumFailedException e) {
+                Logger.error(this, "Failed to load a bucket to free");
+            }
+        }
         // Delete the unnecessary buckets.
         if(buckets != null) {
             for(DelayedFreeBucket bucket : buckets) {
+                if(bucket == null) continue;
+                try {
+                    bucket.onResume(context);
+                    if(bucket.toFree())
+                        bucket.realFree();
+                } catch (Throwable t) {
+                    Logger.error(this, "Unable to free old bucket "+bucket, t);
+                }
+            }
+        }
+        // Delete the unnecessary RAFs.
+        if(rafs != null) {
+            for(DelayedFreeRandomAccessThing bucket : rafs) {
                 if(bucket == null) continue;
                 try {
                     bucket.onResume(context);
@@ -564,7 +586,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     private boolean innerSave(boolean shutdown) {
-        DelayedFreeBucket[] buckets = persistentTempFactory.preCommit();
+        DelayedFreeBucket[] buckets = persistentTempFactory.grabBucketsToFree();
+        DelayedFreeRandomAccessThing[] rafs = persistentTempFactory.grabRAFsToFree();
         OutputStream fos = null;
         try {
             fos = writeToBucket.getOutputStream();
@@ -603,11 +626,13 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 oos.writeInt(buckets.length);
                 for(DelayedFreeBucket bucket : buckets)
                     writeChecksummedObject(oos, bucket, null);
+                for(DelayedFreeRandomAccessThing raf : rafs)
+                    writeChecksummedObject(oos, raf, null);
             }
             oos.close();
             fos = null;
             System.out.println("Saved "+requests.length+" requests to "+writeToFilename);
-            persistentTempFactory.postCommit(buckets);
+            persistentTempFactory.postCommit(buckets, rafs);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);

@@ -48,6 +48,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Buckets to free. When buckets are freed, we write them to this list, and delete the files *after*
 	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFreeBucket> bucketsToFree;
+	private final ArrayList<DelayedFreeRandomAccessThing> rafsToFree;
 	
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
@@ -109,6 +110,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 		
 		bucketsToFree = new ArrayList<DelayedFreeBucket>();
+		rafsToFree = new ArrayList<DelayedFreeRandomAccessThing>();
 	}
 	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
@@ -145,13 +147,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * file. Encrypted if appropriate. Wrapped in a DelayedFreeBucket so that they will not be deleted until
 	 * after the transaction deleting them in the database commits. */
 	@Override
-	public Bucket makeBucket(long size) throws IOException {
-		Bucket rawBucket = null;
+	public RandomAccessBucket makeBucket(long size) throws IOException {
+		RandomAccessBucket rawBucket = null;
 		boolean mustWrap = true;
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg, this);
 		if(encrypt)
-			rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
+			//rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
+		    throw new UnsupportedOperationException();
 		if(mustWrap)
 			rawBucket = new DelayedFreeBucket(this, rawBucket);
 		return rawBucket;
@@ -167,8 +170,19 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	/** Get and clear the list of buckets to free after the transaction commits. */
-	private DelayedFreeBucket[] grabBucketsToFree() {
+    /**
+     * Free an allocated bucket, but only after the change has been written to disk.
+     */
+    @Override
+    public void delayedFreeBucket(DelayedFreeRandomAccessThing b) {
+        synchronized(this) {
+            rafsToFree.add(b);
+        }
+    }
+
+    /** Returns a list of buckets to free. The caller should write the buckets to the checkpoint, 
+     * and free them after the checkpoint has written successfully, by calling postCommit(). */
+	public DelayedFreeBucket[] grabBucketsToFree() {
 		synchronized(this) {
 			if(bucketsToFree.isEmpty()) return null;
 			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
@@ -177,6 +191,17 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 	
+    /** Returns a list of RAFs to free. The caller should write the buckets to the checkpoint, 
+     * and free them after the checkpoint has written successfully, by calling postCommit(). */
+    public DelayedFreeRandomAccessThing[] grabRAFsToFree() {
+        synchronized(this) {
+            if(rafsToFree.isEmpty()) return null;
+            DelayedFreeRandomAccessThing[] buckets = rafsToFree.toArray(new DelayedFreeRandomAccessThing[rafsToFree.size()]);
+            rafsToFree.clear();
+            return buckets;
+        }
+    }
+    
 	/** Get the directory we are creating temporary files in */
 	@Override
 	public File getDir() {
@@ -203,16 +228,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	/**
-	 * Returns a list of buckets to free. The caller should write the buckets to the checkpoint, 
-	 * and free them after the checkpoint has written successfully, by calling postCommit(). */
-	public DelayedFreeBucket[] preCommit() {
-	    return this.grabBucketsToFree();
-	}
-	
-	/**
 	 * Delete the buckets.
 	 */
-	public void postCommit(DelayedFreeBucket[] buckets) {
+	public void postCommit(DelayedFreeBucket[] buckets, DelayedFreeRandomAccessThing[] rafs) {
 		if(buckets == null || buckets.length == 0) return;
 		int x = 0;
 		for(DelayedFreeBucket bucket : buckets) {
@@ -224,6 +242,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			}
 			x++;
 		}
+        for(DelayedFreeRandomAccessThing bucket : rafs) {
+            try {
+                if(bucket.toFree())
+                    bucket.realFree();
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+            }
+            x++;
+        }
 	}
 
 }
