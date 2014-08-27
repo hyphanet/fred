@@ -19,7 +19,7 @@ public class TrivialPersistentFileTracker implements PersistentFileTracker {
 
     @Override
     public void delayedFreeBucket(DelayedFreeBucket bucket) {
-        bucket.free();
+        bucket.realFree();
     }
 
     @Override
