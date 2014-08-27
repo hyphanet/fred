@@ -18,6 +18,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestItemKey;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
@@ -622,23 +623,29 @@ public class SplitFileInserterSegmentStorage {
         return blockChooser.chooseKey();
     }
 
-    static final class BlockInsert implements SendableRequestItemKey {
+    static final class BlockInsert implements SendableRequestItemKey, SendableRequestItem {
         
         final SplitFileInserterSegmentStorage segment;
         final int blockNumber;
+        final int hashCode;
         
         BlockInsert(SplitFileInserterSegmentStorage segment, int blockNumber) {
             this.segment = segment;
             this.blockNumber = blockNumber;
+            hashCode = computeHashCode();
         }
 
-        @Override
-        public int hashCode() {
+        private int computeHashCode() {
             final int prime = 31;
             int result = 1;
             result = prime * result + blockNumber;
             result = prime * result + ((segment == null) ? 0 : segment.hashCode());
             return result;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
         }
 
         @Override
@@ -653,6 +660,16 @@ public class SplitFileInserterSegmentStorage {
             if (blockNumber != other.blockNumber)
                 return false;
             return segment == other.segment;
+        }
+
+        @Override
+        public void dump() {
+            // Do nothing. We don't encode in advance.
+        }
+
+        @Override
+        public SendableRequestItemKey getKey() {
+            return this;
         }
         
     }
