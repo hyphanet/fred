@@ -155,23 +155,26 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
     @Override
     public void onHasKeys() {
-        context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
-
-            @Override
-            public boolean run(ClientContext context) {
-                if(ctx.earlyEncode) {
+        if(ctx.earlyEncode || ctx.getCHKOnly) {
+            context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+                
+                @Override
+                public boolean run(ClientContext context) {
                     try {
-                        reportMetadata(storage.encodeMetadata());
+                        Metadata metadata = storage.encodeMetadata();
+                        reportMetadata(metadata);
+                        if(ctx.getCHKOnly)
+                            onSucceeded(metadata);
                     } catch (IOException e) {
                         storage.fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
                     } catch (MissingKeyException e) {
                         storage.fail(new InsertException(InsertException.BUCKET_ERROR, "Lost one or more keys", e, null));
                     }
+                    return false;
                 }
-                return false;
-            }
-            
-        });
+                
+            });
+        }
     }
 
     @Override
@@ -180,7 +183,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
             @Override
             public boolean run(ClientContext context) {
-                if(!ctx.earlyEncode) {
+                if(!(ctx.earlyEncode || ctx.getCHKOnly)) {
                     reportMetadata(metadata);
                 }
                 cb.onSuccess(SplitFileInserter.this, context);
