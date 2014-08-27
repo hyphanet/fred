@@ -473,7 +473,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         @Override
         public LockableRandomAccessThing toRandomAccessThing() throws IOException {
             synchronized(this) {
-                TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime);
+                TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
                         // No change in space usage.
@@ -747,16 +747,19 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	    TempLockableRandomAccessThing(int size, long time) throws IOException {
 	        super(new ByteArrayRandomAccessThing(size), size);
 	        creationTime = time;
+	        hasMigrated = false;
 	    }
 
         public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time) throws IOException {
             super(new ByteArrayRandomAccessThing(initialContents, offset, size), size);
             creationTime = time;
+            hasMigrated = false;
         }
 
-        public TempLockableRandomAccessThing(LockableRandomAccessThing underlying, long creationTime) throws IOException {
+        public TempLockableRandomAccessThing(LockableRandomAccessThing underlying, long creationTime, boolean migrated) throws IOException {
             super(underlying, underlying.size());
             this.creationTime = creationTime;
+            this.hasMigrated = migrated;
         }
 
         @Override
