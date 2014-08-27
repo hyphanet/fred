@@ -9,6 +9,9 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.RandomAccessBucket;
 
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.
@@ -17,7 +20,7 @@ import freenet.support.api.Bucket;
  * 
  * Not serializable as it doesn't copy. Should only be used for short-lived hacks for that reason.
  */
-public class SimpleReadOnlyArrayBucket implements Bucket {
+public class SimpleReadOnlyArrayBucket implements Bucket, RandomAccessBucket {
 
     private static final long serialVersionUID = 1L;
     final byte[] buf;
@@ -87,6 +90,13 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
     public void storeTo(DataOutputStream dos) {
         // Not persistent.
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf, offset, length);
+        raf.setReadOnly();
+        return raf;
     }
 
 }
