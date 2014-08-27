@@ -245,7 +245,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public void onFailure(LowLevelPutException e, Object keyNum, ClientContext context) {
+	public void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 		}
@@ -376,7 +376,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
+	public void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context) {
 	    onEncode(key, context);
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {

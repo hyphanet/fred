@@ -14,6 +14,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.node.LowLevelPutException;
 import freenet.node.RequestClient;
+import freenet.node.SendableRequestItem;
 import freenet.node.SimpleSendableInsert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -115,7 +116,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 
 		@Override
-		public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
+		public void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -129,7 +130,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		// FIXME duplicated code from SingleBlockInserter
 		// FIXME combine it somehow
 		@Override
-		public void onFailure(LowLevelPutException e, Object keyNum, ClientContext context) {
+		public void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 			}

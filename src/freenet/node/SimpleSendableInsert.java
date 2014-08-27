@@ -64,14 +64,14 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	@Override
-	public void onSuccess(Object keyNum, ClientKey key, ClientContext context) {
+	public void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context) {
 		// Yay!
 		if(logMINOR)
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	@Override
-	public void onFailure(LowLevelPutException e, Object keyNum, ClientContext context) {
+	public void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}

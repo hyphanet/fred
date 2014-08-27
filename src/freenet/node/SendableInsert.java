@@ -32,10 +32,10 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum, ClientKey key, ClientContext context);
+	public abstract void onSuccess(SendableRequestItem keyNum, ClientKey key, ClientContext context);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum, ClientContext context);
+	public abstract void onFailure(LowLevelPutException e, SendableRequestItem keyNum, ClientContext context);
 
 	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent) {
