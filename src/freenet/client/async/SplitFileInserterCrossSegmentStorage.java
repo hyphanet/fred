@@ -77,11 +77,12 @@ public class SplitFileInserterCrossSegmentStorage {
         blockNumbers[counter] = blockNum;
         counter++;
     }
-
+    
     /** Only used during construction */
     void addCheckBlock(SplitFileInserterSegmentStorage seg, int blockNum) {
         assert(counter >= dataBlockCount);
-        addDataBlock(seg, blockNum + dataBlockCount);
+        assert(blockNum >= seg.dataBlockCount && blockNum < seg.dataBlockCount + seg.crossCheckBlockCount);
+        addDataBlock(seg, blockNum);
     }
 
     public void writeFixedSettings(DataOutputStream dos) throws IOException {

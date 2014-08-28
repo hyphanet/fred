@@ -211,7 +211,7 @@ public class SplitFileInserterSegmentStorage {
                 crossSegmentBlockSegments[x] = seg;
                 crossSegmentBlockNumbers[x] = crossSegmentBlockNumber;
                 crossCheckBlocksAllocatedCount++;
-                return x;
+                return x + dataBlockCount;
             }
         }
         throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
