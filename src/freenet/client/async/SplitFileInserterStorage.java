@@ -445,7 +445,7 @@ public class SplitFileInserterStorage {
 
             segmentSettings = encodeSegmentSettings(); // Checksummed with length
             try {
-                crossSegmentSettings = encodeCrossSegmentSettings(bf); // Individually checksummed with length
+                crossSegmentSettings = encodeCrossSegmentSettings(bf); // Checksummed with length
             } catch (IOException e) {
                 throw new InsertException(InsertException.BUCKET_ERROR,
                         "Failed to write to temporary storage while creating splitfile inserter",
