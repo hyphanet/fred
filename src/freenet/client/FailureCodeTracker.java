@@ -239,6 +239,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	private int MAGIC = 0xb605aa08;
 	private int VERSION = 1;
 	
+	/** Get the length of the fixed-size representation produce by writeFixedLengthTo(). */
 	public static int getFixedLength(boolean insert) {
         int upperLimit = 
             insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;

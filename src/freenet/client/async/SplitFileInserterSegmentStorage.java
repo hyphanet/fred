@@ -400,7 +400,6 @@ public class SplitFileInserterSegmentStorage {
         RAFLock lock = null;
         try {
             lock = parent.lockRAF();
-            // FIXME encode blocks if earlyEncode
             byte[][] dataBlocks = readDataAndCrossCheckBlocks();
             generateKeys(dataBlocks, 0);
             byte[][] checkBlocks = new byte[checkBlockCount][];
