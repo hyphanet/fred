@@ -152,7 +152,7 @@ public class SplitFileInserterCrossSegmentStorage {
                 CheckpointLock lock = null;
                 try {
                     lock = parent.jobRunner.lock();
-                    innerDecode(chunk);
+                    innerEncode(chunk);
                 } catch (PersistenceDisabledException e) {
                     // Will be retried on restarting.
                     shutdown = true;
@@ -176,7 +176,7 @@ public class SplitFileInserterCrossSegmentStorage {
     }
 
     /** Encode a segment. Much simpler than fetcher! */
-    private void innerDecode(MemoryLimitedChunk chunk) {
+    private void innerEncode(MemoryLimitedChunk chunk) {
         try {
             // FIXME encode blocks if earlyEncode
             byte[][] dataBlocks = readDataBlocks();
