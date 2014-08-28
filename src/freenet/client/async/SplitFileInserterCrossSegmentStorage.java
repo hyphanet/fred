@@ -120,7 +120,7 @@ public class SplitFileInserterCrossSegmentStorage {
             if(readSegmentNumber < 0 || readSegmentNumber >= parent.segments.length)
                 throw new StorageFormatException("Bogus segment number "+readSegmentNumber);
             int readBlockNumber = dis.readInt();
-            SplitFileInserterSegmentStorage segment = parent.segments[i]; 
+            SplitFileInserterSegmentStorage segment = parent.segments[readSegmentNumber]; 
             if(readBlockNumber < 0 || 
                     (readBlockNumber >= segment.dataBlockCount + segment.crossCheckBlockCount)
                     || (i < dataBlockCount && readBlockNumber >= segment.dataBlockCount)
