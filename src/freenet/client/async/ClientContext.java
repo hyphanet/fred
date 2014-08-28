@@ -303,8 +303,8 @@ public class ClientContext {
 
     public DiskSpaceCheckingRandomAccessThingFactory getDiskSpaceCheckingRandomAccessThingFactory(
             boolean persistent) {
-        return persistent ? (DiskSpaceCheckingRandomAccessThingFactory)persistentRAFFactory : 
-            tempBucketFactory.getUnderlyingRAFFactory();
+        return persistent ? tempBucketFactory.getUnderlyingRAFFactory() :
+                (DiskSpaceCheckingRandomAccessThingFactory)persistentRAFFactory; 
     }
 	
 }
