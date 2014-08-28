@@ -95,5 +95,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
     public void storeTo(DataOutputStream dos) {
         throw new UnsupportedOperationException();
     }
+    
+    // Default hashCode() and equals() are correct for this type.
 
 }

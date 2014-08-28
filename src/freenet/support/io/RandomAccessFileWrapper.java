@@ -148,4 +148,42 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
         this.raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((file == null) ? 0 : file.hashCode());
+        result = prime * result + (int) (length ^ (length >>> 32));
+        result = prime * result + (readOnly ? 1231 : 1237);
+        result = prime * result + (secureDelete ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        RandomAccessFileWrapper other = (RandomAccessFileWrapper) obj;
+        if (!file.equals(other.file)) {
+            return false;
+        }
+        if (length != other.length) {
+            return false;
+        }
+        if (readOnly != other.readOnly) {
+            return false;
+        }
+        if (secureDelete != other.secureDelete) {
+            return false;
+        }
+        return true;
+    }
+
 }

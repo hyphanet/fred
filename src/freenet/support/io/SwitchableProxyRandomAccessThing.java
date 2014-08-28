@@ -171,4 +171,6 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
         return underlying;
     }
     
+    // Default hashCode() and equals() i.e. comparison by identity are correct for this type.
+    
 }

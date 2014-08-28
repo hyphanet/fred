@@ -64,4 +64,24 @@ public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
         underlying.storeTo(dos);
     }
 
+    @Override
+    public int hashCode() {
+        return underlying.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        ReadOnlyRandomAccessThing other = (ReadOnlyRandomAccessThing) obj;
+        return underlying.equals(other.underlying);
+    }
+
 }

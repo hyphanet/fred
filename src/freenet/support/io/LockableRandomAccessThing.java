@@ -46,6 +46,15 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
      * for recovering in emergencies, should be versioned if necessary. 
      * @throws IOException */
     public void storeTo(DataOutputStream dos) throws IOException;
+    
+    /** Must reimplement equals(). Sometimes we will need to compare two RAFs to see if they 
+     * represent the same stored object, notably during resuming a splitfile insert. */
+    @Override
+    public abstract boolean equals(Object o);
+    
+    /** Must reimplement hashCode() if we change equals(). */
+    @Override
+    public abstract int hashCode();
 	
 }
 

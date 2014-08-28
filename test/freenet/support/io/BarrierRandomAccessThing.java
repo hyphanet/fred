@@ -79,4 +79,24 @@ public class BarrierRandomAccessThing implements LockableRandomAccessThing {
         proceed = false;
     }
 
+    @Override
+    public int hashCode() {
+        return underlying.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        BarrierRandomAccessThing other = (BarrierRandomAccessThing) obj;
+        return underlying.equals(other.underlying);
+    }
+    
 }

@@ -98,4 +98,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         underlying.free();
     }
     
+    // Default equals() and hashCode() are correct for this type, as we should not have two 
+    // DelayedFreeRandomAccessThing's for the same underlying bucket.
+    
 }

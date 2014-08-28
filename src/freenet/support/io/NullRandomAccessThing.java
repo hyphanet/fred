@@ -60,5 +60,14 @@ public class NullRandomAccessThing implements LockableRandomAccessThing {
     public void storeTo(DataOutputStream dos) throws IOException {
         throw new UnsupportedOperationException();
     }
+    
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+    
+    public boolean equals(Object o) {
+        return o.getClass() == getClass();
+    }
 
 }

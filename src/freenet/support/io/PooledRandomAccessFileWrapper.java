@@ -365,4 +365,52 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         }
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (deleteOnFree ? 1231 : 1237);
+        result = prime * result + ((file == null) ? 0 : file.hashCode());
+        result = prime * result + (int) (length ^ (length >>> 32));
+        result = prime * result + (int) (persistentTempID ^ (persistentTempID >>> 32));
+        result = prime * result + (readOnly ? 1231 : 1237);
+        result = prime * result + (secureDelete ? 1231 : 1237);
+        return result;
+    }
+
+    /** Must reimplement equals() as two PooledRAFWrapper's could well be the same storage object
+     * i.e. file on disk. This is particularly important during resuming a splitfile insert. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        PooledRandomAccessFileWrapper other = (PooledRandomAccessFileWrapper) obj;
+        if (deleteOnFree != other.deleteOnFree) {
+            return false;
+        }
+        if (!file.equals(other.file)) {
+            return false;
+        }
+        if (length != other.length) {
+            return false;
+        }
+        if (persistentTempID != other.persistentTempID) {
+            return false;
+        }
+        if (readOnly != other.readOnly) {
+            return false;
+        }
+        if (secureDelete != other.secureDelete) {
+            return false;
+        }
+        return true;
+    }
+
 }
