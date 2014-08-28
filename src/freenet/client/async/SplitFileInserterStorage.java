@@ -750,18 +750,22 @@ public class SplitFileInserterStorage {
             underlyingOffsetDataSegments[i] = blocks * CHKBlock.DATA_LENGTH;
             blocks += segments[i].dataBlockCount;
         }
+        dis.close();
         if(blocks != totalDataBlocks)
             throw new StorageFormatException("Total data blocks should be "+totalDataBlocks+" but is "+blocks);
+        if(crossSegments != null) {
+            is = checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024);
+            dis = new DataInputStream(is);
+            for(int i=0;i<crossSegments.length;i++) {
+                crossSegments[i] = new SplitFileInserterCrossSegmentStorage(this, dis, i);
+            }
+            dis.close();
+        }
         ois.close();
         ois = new RAFInputStream(raf, offsetOverallStatus, rafLength - offsetOverallStatus);
         dis = new DataInputStream(checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024));
         errors = new FailureCodeTracker(true, dis);
         dis.close();
-        if(crossSegments != null) {
-            for(int i=0;i<crossSegments.length;i++) {
-                crossSegments[i] = new SplitFileInserterCrossSegmentStorage(this, dis, i);
-            }
-        }
         for(int i=0;i<segments.length;i++) {
             segments[i].readStatus();
         }
@@ -852,7 +856,7 @@ public class SplitFileInserterStorage {
         }
         dos.close();
         os.close();
-        return null;
+        return bucket;
     }
 
     /** Includes magic, version, length, basic settings, checksum. */
