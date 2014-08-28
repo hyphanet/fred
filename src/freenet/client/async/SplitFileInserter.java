@@ -13,6 +13,7 @@ import freenet.crypt.CRCChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.node.SendableInsert;
+import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.ResumeFailedException;
@@ -128,6 +129,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             this.sender = new SplitFileInserterSender(this, storage);
             schedule(context);
         } catch (IOException e) {
+            Logger.error(this, "Resume failed: "+e, e);
             raf.close();
             raf.free();
             originalData.close();
@@ -135,6 +137,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                 originalData.free();
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
         } catch (StorageFormatException e) {
+            Logger.error(this, "Resume failed: "+e, e);
             raf.close();
             raf.free();
             originalData.close();
@@ -142,6 +145,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                 originalData.free();
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
         } catch (ChecksumFailedException e) {
+            Logger.error(this, "Resume failed: "+e, e);
             raf.close();
             raf.free();
             originalData.close();
