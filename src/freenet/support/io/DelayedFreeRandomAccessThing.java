@@ -97,8 +97,27 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     void realFree() {
         underlying.free();
     }
-    
-    // Default equals() and hashCode() are correct for this type, as we should not have two 
-    // DelayedFreeRandomAccessThing's for the same underlying bucket.
+
+    @Override
+    public int hashCode() {
+        return underlying.hashCode();
+    }
+
+    /** Two DelayedFreeBucket's for the same underlying can only happen on resume, in which case
+     * we DO want them to compare as equal. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        DelayedFreeRandomAccessThing other = (DelayedFreeRandomAccessThing) obj;
+        return underlying.equals(other.underlying);
+    }
     
 }
