@@ -1415,7 +1415,8 @@ public class SplitFileInserterStorage {
     }
 
     public void failOnDiskError(IOException e) {
-        fail(new InsertException(InsertException.BUCKET_ERROR));
+        Logger.error(this, "Failing with disk error: "+e, e);
+        fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
     }
     
     public void failFatalErrorInBlock() {
