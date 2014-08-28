@@ -455,7 +455,8 @@ public class SplitFileInserterStorage {
 
         long ptr = 0;
         if (persistent) {
-            ptr = header.length + offsetsLength + segmentSettings.size() + crossSegmentSettings.size();
+            ptr = header.length + offsetsLength + segmentSettings.size() +
+                (crossSegmentSettings == null ? 0 : crossSegmentSettings.size());
             offsetOverallStatus = ptr;
             overallStatusLength = encodeOverallStatus().length;
             ptr += overallStatusLength;
@@ -520,10 +521,12 @@ public class SplitFileInserterStorage {
             ptr += encodedOffsets.length;
             BucketTools.copyTo(segmentSettings, raf, ptr, Long.MAX_VALUE);
             ptr += segmentSettings.size();
-            BucketTools.copyTo(crossSegmentSettings, raf, ptr, Long.MAX_VALUE);
-            ptr += crossSegmentSettings.size();
             segmentSettings.free();
-            crossSegmentSettings.free();
+            if(crossSegmentSettings != null) {
+                BucketTools.copyTo(crossSegmentSettings, raf, ptr, Long.MAX_VALUE);
+                ptr += crossSegmentSettings.size();
+                crossSegmentSettings.free();
+            }
             writeOverallStatus(true);
         }
         if (hasPaddedLastBlock)
