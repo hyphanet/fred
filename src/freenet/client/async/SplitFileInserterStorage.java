@@ -554,6 +554,7 @@ public class SplitFileInserterStorage {
     
     /** Create a splitfile insert from stored data.
      * @param raf The file the insert was stored to.
+     * @param originalData 
      * @param callback The parent callback (e.g. SplitFileInserter).
      * @param checker The checksum checker to be used.
      * @param random
@@ -567,7 +568,7 @@ public class SplitFileInserterStorage {
      * @throws ResumeFailedException 
      */
     public SplitFileInserterStorage(LockableRandomAccessThing raf, 
-            SplitFileInserterStorageCallback callback, Random random, 
+            LockableRandomAccessThing originalData, SplitFileInserterStorageCallback callback, Random random, 
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner, 
             Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG, 
             PersistentFileTracker persistentFileTracker) 
@@ -596,7 +597,15 @@ public class SplitFileInserterStorage {
         int version = dis.readInt();
         if(version != VERSION)
             throw new StorageFormatException("Bad version");
-        this.originalData = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker);
+        LockableRandomAccessThing rafOrig = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker);
+        if(originalData == null) {
+            this.originalData = rafOrig;
+        } else {
+            // Check that it's the same, but use the passed-in one.
+            if(!originalData.equals(rafOrig))
+                throw new StorageFormatException("Original data restored from different filename!");
+            this.originalData = originalData;
+        }
         this.totalDataBlocks = dis.readInt();
         if(totalDataBlocks <= 0) throw new StorageFormatException("Bad total data blocks "+totalDataBlocks);
         this.totalCheckBlocks = dis.readInt();

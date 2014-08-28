@@ -119,13 +119,11 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         try {
             raf.onResume(context);
             originalData.onResume(context);
-            this.storage = new SplitFileInserterStorage(raf, this, context.fastWeakRandom, 
+            this.storage = new SplitFileInserterStorage(raf, originalData, this, context.fastWeakRandom, 
                     context.memoryLimitedJobRunner, context.getJobRunner(true), context.ticker,
                     context.getChkInsertScheduler(realTime).fetchingKeys(), context.persistentFG, 
                     context.persistentFileTracker);
             storage.onResume(context);
-            if(!originalData.equals(storage.originalData)) 
-                throw new StorageFormatException("Original data restored from different filename!");
             this.sender = new SplitFileInserterSender(this, storage);
             schedule(context);
         } catch (IOException e) {

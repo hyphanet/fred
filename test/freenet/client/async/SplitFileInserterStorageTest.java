@@ -986,7 +986,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.segments[0].crossCheckBlockCount, 0);
         assertTrue(storage.getStatus() == Status.ENCODED);
         executor.waitForIdle();
-        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                 memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
         assertEquals(resumed.segments.length, 1);
         SplitFileInserterSegmentStorage segment = resumed.segments[0];
@@ -1022,7 +1022,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage resumed = null;
         for(int i=0;i<storage.segments[0].totalBlockCount;i++) {
             executor.waitForIdle();
-            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
             assertEquals(resumed.segments.length, 1);
             SplitFileInserterSegmentStorage segment = resumed.segments[0];
@@ -1057,7 +1057,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         SplitFileInserterStorage resumed = null;
         for(int i=0;i<storage.segments[0].totalBlockCount;i++) {
             executor.waitForIdle();
-            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
             assertEquals(resumed.segments.length, 1);
             SplitFileInserterSegmentStorage segment = resumed.segments[0];
@@ -1096,7 +1096,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         for(int i=0;i<3;i++) {
             executor.waitForIdle();
-            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
             assertEquals(resumed.segments.length, 1);
             SplitFileInserterSegmentStorage segment = resumed.segments[0];
@@ -1147,7 +1147,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         // Choose and fail all blocks.
         for(int i=0;i<totalBlockCount;i++) {
             executor.waitForIdle();
-            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
             assertEquals(resumed.segments.length, 1);
             SplitFileInserterSegmentStorage segment = resumed.segments[0];
@@ -1168,7 +1168,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         chosenBlocks = new boolean[totalBlockCount];
         for(int i=0;i<totalBlockCount;i++) {
             executor.waitForIdle();
-            resumed = new SplitFileInserterStorage(storage.getRAF(), cb, r, 
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                     memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
             assertEquals(resumed.segments.length, 1);
             SplitFileInserterSegmentStorage segment = resumed.segments[0];
