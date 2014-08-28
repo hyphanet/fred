@@ -101,7 +101,7 @@ public class PluginRespirator {
 	/**
 	 * Get a PluginTalker so you can talk with other plugins.
 	 * 
-	 * @deprecated Use {@link #connecToOtherPlugin(String, FredPluginFCPClient)} instead.
+	 * @deprecated Use {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} instead.
 	 */
 	@Deprecated
 	public PluginTalker getPluginTalker(FredPluginTalker fpt, String pluginname, String identifier) throws PluginNotFoundException {
@@ -121,14 +121,14 @@ public class PluginRespirator {
 	 * 
 	 * @param pluginName The name of the main class of the plugin - that is the class which implements {@link FredPlugin}.
 	 *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
-	 * @param messageHandler An object of your plugin which implements the {@link FredPluginFCPClient} interface. Its purpose is to handle FCP messages which
+	 * @param messageHandler An object of your plugin which implements the {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its purpose is to handle FCP messages which
 	 *                       the remote plugin sends back to your plugin.
 	 * @return A {@link FCPPluginClient} representing the connection. <b>You are encouraged to keep it in memory and use it for as long as you need it.</b> 
 	 *         Notice especially that keeping it in memory won't block unloading of the server plugin. If the server plugin is unloaded, the send-functions will
 	 *         fail. To get reconnected once the server plugin is loaded again, you must obtain a fresh client from this function: Existing clients will stay
 	 *         disconnected.
 	 */
-    public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPClient messageHandler) throws PluginNotFoundException { 
+    public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler) throws PluginNotFoundException { 
         return node.clientCore.getFCPServer().createPluginClientForIntraNodeFCP(pluginName, messageHandler);
     }
     
@@ -136,7 +136,7 @@ public class PluginRespirator {
      * Allows FCP server plugins, that is plugins which implement {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
      * connection by its ID - if the client is still connected.<br/>
      * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the {@link FCPPluginClient} in memory after they have received
-     * it from {@link #connecToOtherPlugin(String, FredPluginFCPClient)}. If they did not keep a hard reference and only stored the ID, the
+     * it from {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard reference and only stored the ID, the
      * {@link FCPPluginClient} would be garbage collected and thus considered as disconnected.
      * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient,

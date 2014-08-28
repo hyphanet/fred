@@ -9,7 +9,7 @@ import java.lang.ref.WeakReference;
 import java.util.UUID;
 
 import freenet.node.Node;
-import freenet.pluginmanager.FredPluginFCPClient;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler.ClientPermissions;
 import freenet.pluginmanager.PluginManager;
@@ -47,8 +47,8 @@ import freenet.support.api.Bucket;
  *   by any client messages.<br/> 
  * </p>
  * <p>2. The server and the client are running in the same node, also called intra-node FCP connections:</br>
- * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String, FredPluginFCPClient)} to try to create a connection.<br/>
- * - The {@link PluginRespirator} uses {@link FCPServer#createPluginClientForIntraNodeFCP(String, FredPluginFCPClient)} to create a FCPPluginClient.<br/>
+ * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler)} to try to create a connection.<br/>
+ * - The {@link PluginRespirator} uses {@link FCPServer#createPluginClientForIntraNodeFCP(String, ClientSideFCPMessageHandler)} to create a FCPPluginClient.<br/>
  * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet, Bucket)}. That is the same
@@ -129,7 +129,7 @@ public final class FCPPluginClient {
      * For intra-node plugin connections, this is the connecting client.
      * For networked plugin connections, this is null.
      */
-    private final FredPluginFCPClient client;
+    private final ClientSideFCPMessageHandler client;
 
     /**
      * For networked plugin connections, this is the connection to which this client belongs.
@@ -179,11 +179,11 @@ public final class FCPPluginClient {
      * For being used by intra-node connections to a plugin:<br/>
      * Both the server and the client are running within the same node, so objects of their FCP message handling interfaces are available:<br/>
      * The server's message handler is accessible as an implementor of {@link ServerSideFCPMessageHandler}.
-     * The client's message handler is accessible as an implementor of {@link FredPluginFCPClient}.
+     * The client's message handler is accessible as an implementor of {@link ClientSideFCPMessageHandler}.
      * 
-     * @see #constructForIntraNodeFCP(Node, String, FredPluginFCPClient) The public interface to this constructor.
+     * @see #constructForIntraNodeFCP(Node, String, ClientSideFCPMessageHandler) The public interface to this constructor.
      */
-    private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler server, FredPluginFCPClient client) {
+    private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler server, ClientSideFCPMessageHandler client) {
         assert(serverPluginName != null);
         assert(server != null);
         assert(client != null);
@@ -198,12 +198,12 @@ public final class FCPPluginClient {
      * For being used by intra-node connections to a plugin:<br/>
      * Both the server and the client are running within the same node, so their FCP interfaces are available:<br/>
      * The server plugin will be queried from given {@link PluginManager} via the given String serverPluginName.
-     * The client message handler is available as the passed {@link FredPluginFCPClient} client.
+     * The client message handler is available as the passed {@link ClientSideFCPMessageHandler} client.
      * 
      * <p>You <b>must</b> register any newly created clients at {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to client
      * application code.</p>
      */
-    static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager, String serverPluginName, FredPluginFCPClient client)
+    static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager, String serverPluginName, ClientSideFCPMessageHandler client)
             throws PluginNotFoundException {
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
@@ -267,7 +267,7 @@ public final class FCPPluginClient {
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet,
-     *                          Bucket)} and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     *                          Bucket)} and {@link ClientSideFCPMessageHandler#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
      * @throws IOException If the connection has been closed meanwhile.<br/>
      *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
      *                     
@@ -298,7 +298,7 @@ public final class FCPPluginClient {
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, ClientPermissions, String, SimpleFieldSet,
-     *                          Bucket)} and {@link FredPluginFCPClient#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     *                          Bucket)} and {@link ClientSideFCPMessageHandler#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
      * @throws FCPCallFailedException If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
      *                                
      *                                <p>This can be used to decide to retry certain operations. A practical example would be a user trying to create an account

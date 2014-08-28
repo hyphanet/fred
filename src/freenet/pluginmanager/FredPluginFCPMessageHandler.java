@@ -15,12 +15,12 @@ import freenet.support.api.Bucket;
  * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are allowed to do.
  * You <b>must</b> follow the restrictions which are explained there.
  * 
- * FIXME: This shall replace the interfaces {@link FredPluginFCPServer} and {@link FredPluginFCPClient}. Instead of having two different message handling
- * function signatures for client and server as it is in the existing interfaces, this should have one message handling function which is the same.
+ * FIXME: Instead of having two different message handling function signatures for client and server in {@link ServerSideFCPMessageHandler} and 
+ * {@link ClientSideFCPMessageHandler}, this should have one message handling function which is the same.
  * This will keep the {@link FCPPluginClient} send() functions simple. So please design a common message handling function and then delete the old interfaces.
  * 
  * @author xor (xor@freenetproject.org)
- * @see PluginRespirator#connecToOtherPlugin(String, FredPluginFCPClient) PluginRespirator provides the function to obtain FCP connections to a server plugin.
+ * @see PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler) PluginRespirator provides the function to obtain FCP connections to a server plugin.
  * @see FCPPluginClient A client will be represented as class FCPPluginClient to the client and server plugin. It's Java provides an overview of the internal
  *                      code paths through which plugin FCP messages flow.
  */
@@ -73,8 +73,6 @@ public interface FredPluginFCPMessageHandler {
     /**
      * Client plugins which connect to a FCP server plugin must implement this interface.<br/>
      * The purpose of this interface is to provide a message handling function for processing messages received from the server.
-     * 
-     * FIXME: Migrate JavaDoc of {@link FredPluginFCPClient} to this, then delete that interface.
      * 
      * @see FredPluginFCPMessageHandler The parent interface FredPluginFCPMessageHandler provides an overview.
      * @see ServerSideFCPMessageHandler The interface of the server plugin which handles the messages sent by the client.
