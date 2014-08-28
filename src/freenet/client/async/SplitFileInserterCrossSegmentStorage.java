@@ -72,17 +72,24 @@ public class SplitFileInserterCrossSegmentStorage {
     }
 
     /** Only used during construction */
-    void addDataBlock(SplitFileInserterSegmentStorage seg, int blockNum) {
+    void addBlock(SplitFileInserterSegmentStorage seg, int blockNum) {
         segments[counter] = seg;
         blockNumbers[counter] = blockNum;
+        if(logMINOR) Logger.minor(this, "Allocated cross-segment block "+counter+" to block "+blockNum+" on "+seg+" for "+this);
         counter++;
     }
     
+    void addDataBlock(SplitFileInserterSegmentStorage seg, int blockNum) {
+        assert(counter < dataBlockCount);
+        assert(blockNum < seg.dataBlockCount);
+        addBlock(seg, blockNum);
+    }
+
     /** Only used during construction */
     void addCheckBlock(SplitFileInserterSegmentStorage seg, int blockNum) {
         assert(counter >= dataBlockCount);
         assert(blockNum >= seg.dataBlockCount && blockNum < seg.dataBlockCount + seg.crossCheckBlockCount);
-        addDataBlock(seg, blockNum);
+        addBlock(seg, blockNum);
     }
 
     public void writeFixedSettings(DataOutputStream dos) throws IOException {
