@@ -682,9 +682,16 @@ public class SplitFileInserterSegmentStorage {
         
     }
 
-    public void setCrossCheckBlock(SplitFileInserterCrossSegmentStorage crossSegment,
-            int blockNumber) {
-        crossSegmentBlockSegments[blockNumber] = crossSegment;
+    /** Set the cross-segment associated with a cross-check block, which tells us how to read that 
+     * block from disk.
+     * @param crossSegment The cross-segment.
+     * @param segmentBlockNumber The block number within this segment
+     * @param crossSegmentBlockNumber The cross-check block number (usually between 0 and 2 inclusive).
+     */
+    void setCrossCheckBlock(SplitFileInserterCrossSegmentStorage crossSegment,
+            int segmentBlockNumber, int crossSegmentBlockNumber) {
+        crossSegmentBlockSegments[segmentBlockNumber-dataBlockCount] = crossSegment;
+        crossSegmentBlockNumbers[segmentBlockNumber-dataBlockCount] = crossSegmentBlockNumber;
     }
 
     public int countSendableKeys() {

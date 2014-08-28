@@ -128,7 +128,9 @@ public class SplitFileInserterCrossSegmentStorage {
                 throw new StorageFormatException("Bogus block number "+readBlockNumber+" for slot "+i);
             segments[i] = segment;
             blockNumbers[i] = readBlockNumber;
-            segments[i].setCrossCheckBlock(this, readBlockNumber);
+        }
+        for(int i=0;i<crossCheckBlockCount;i++) {
+            segments[i+dataBlockCount].setCrossCheckBlock(this, blockNumbers[i+dataBlockCount], i+dataBlockCount);
         }
         statusLength = dis.readInt();
         if(statusLength < 0) throw new StorageFormatException("Bogus status length");
