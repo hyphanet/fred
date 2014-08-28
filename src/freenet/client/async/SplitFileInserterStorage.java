@@ -1649,4 +1649,8 @@ public class SplitFileInserterStorage {
         return total;
     }
 
+    public int getTotalBlockCount() {
+        return totalDataBlocks + totalCheckBlocks + crossCheckBlocks * segments.length;
+    }
+
 }

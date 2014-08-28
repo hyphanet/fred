@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.client.async.SplitFileInserterStorage.Status;
@@ -551,6 +553,11 @@ public class SplitFileInserterStorageTest extends TestCase {
         testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    public void testResumeCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        if(!TestProperty.EXTENSIVE) return;
+        testResumeCrossSegment(CHKBlock.DATA_LENGTH*128*21);
+    }
+    
     static class MyKeysFetchingLocally implements KeysFetchingLocally {
         private final HashSet<Key> keys = new HashSet<Key>();
         private final HashSet<SendableRequestItemKey> inserts = new HashSet<SendableRequestItemKey>();
@@ -654,6 +661,61 @@ public class SplitFileInserterStorageTest extends TestCase {
         verifyOutput(fetcherStorage, dataBucket);
         fetcherStorage.finishedFetcher();
         fcb.waitForFree();
+    }
+    
+    private void testResumeCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        Random r = new Random(12121);
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        cb.waitForHasKeys();
+        executor.waitForIdle();
+        Metadata metadata = storage.encodeMetadata();
+        assertTrue(storage.getStatus() == Status.ENCODED);
+        Bucket mBucket1 = bigBucketFactory.makeBucket(-1);
+        DataOutputStream os = new DataOutputStream(mBucket1.getOutputStream());
+        metadata.writeTo(os);
+        os.close();
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), null, cb, r, 
+                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+        // Doesn't need to start since already encoded.
+        Metadata metadata2 = storage.encodeMetadata();
+        Bucket mBucket2 = bigBucketFactory.makeBucket(-1);
+        os = new DataOutputStream(mBucket2.getOutputStream());
+        metadata2.writeTo(os);
+        os.close();
+        assertTrue(BucketTools.equalBuckets(mBucket1, mBucket2));
+        // Choose and succeed all blocks.
+        boolean[][] chosenBlocks = new boolean[storage.segments.length][];
+        for(int i=0;i<storage.segments.length;i++) {
+            int blocks = storage.segments[i].totalBlockCount;
+            chosenBlocks[i] = new boolean[blocks];
+            assertEquals(storage.segments[i].totalBlockCount, resumed.segments[i].totalBlockCount);
+        }
+        int totalBlocks = storage.getTotalBlockCount();
+        assertEquals(totalBlocks, resumed.getTotalBlockCount());
+        for(int i=0;i<totalBlocks;i++) {
+            BlockInsert chosen = resumed.chooseBlock();
+            if(chosen == null) {
+                assertFalse(true);
+            } else {
+                keys.addInsert(chosen);
+            }
+            assertTrue(chosen != null);
+            assertFalse(chosenBlocks[chosen.segment.segNo][chosen.blockNumber]);
+            chosenBlocks[chosen.segment.segNo][chosen.blockNumber] = true;
+            chosen.segment.onInsertedBlock(chosen.blockNumber, 
+                    chosen.segment.encodeBlock(chosen.blockNumber).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
     
     private void testRoundTripCrossSegmentRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
