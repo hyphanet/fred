@@ -525,9 +525,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 	 * When we have inserted both the metadata and the splitfile,
 	 * call the master callback.
 	 */
-	public class SplitHandler implements PutCompletionCallback, ClientPutState {
+	public class SplitHandler implements PutCompletionCallback, ClientPutState, Serializable {
 
-		ClientPutState sfi;
+        private static final long serialVersionUID = 1L;
+        ClientPutState sfi;
 		ClientPutState metadataPutter;
 		boolean finished;
 		boolean splitInsertSuccess;
