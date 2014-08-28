@@ -116,6 +116,8 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         assert(persistent);
         this.context = context;
         try {
+            raf.onResume(context);
+            originalData.onResume(context);
             this.storage = new SplitFileInserterStorage(raf, this, context.fastWeakRandom, 
                     context.memoryLimitedJobRunner, context.getJobRunner(true), context.ticker,
                     context.getChkInsertScheduler(realTime).fetchingKeys(), context.persistentFG, 
