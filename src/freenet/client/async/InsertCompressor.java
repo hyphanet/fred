@@ -127,7 +127,7 @@ public class InsertCompressor implements CompressJob {
 					MultiHashInputStream hasher = null;
 					try {
 						is = origData.getInputStream();
-						result = context.getBucketFactory(shouldFreeOnFinally).makeBucket(-1);
+						result = bucketFactory.makeBucket(-1);
 						os = result.getOutputStream();
 						long maxOutputSize = bestCompressedDataSize;
 						if(first && generateHashes != 0) {
