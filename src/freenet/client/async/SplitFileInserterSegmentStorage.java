@@ -424,6 +424,7 @@ public class SplitFileInserterSegmentStorage {
             parent.failOnDiskError(e);
         } catch (Throwable t) {
             Logger.error(this, "Failed: "+t, t);
+            parent.fail(new InsertException(InsertException.INTERNAL_ERROR, t, null));
         } finally {
             if(lock != null) lock.unlock();
         }
