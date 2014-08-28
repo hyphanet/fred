@@ -24,8 +24,53 @@ import freenet.support.api.Bucket;
  * @see FCPPluginClient A client will be represented as class FCPPluginClient to the client and server plugin. It's Java provides an overview of the internal
  *                      code paths through which plugin FCP messages flow.
  */
-public interface FredPluginFCPMessageHandler { 
-   
+public interface FredPluginFCPMessageHandler {
+
+    /**
+     * FCP messages are passed as an object of this container class to the message handling function.
+     */
+    public final class FCPPluginMessage {
+        /**
+         * <p>The identifier of the client message as specified by the client.</p>
+         * 
+         * <p>The JavaDoc of the server-side message handler instructs it to specify the identifier of replies to be the same as the identifier which the client
+         * specified in the message which caused the reply to be sent.<br/>
+         * <b>HOWEVER</b> the server is free to send messages to the client on its own without any original message from the client side, for example for event
+         * propagation. In that case, the identifier might not match any previous message from the client.
+         * </p>
+         */
+        public final String identifier; 
+        
+        /**
+         * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
+         */
+        public final SimpleFieldSet parameters;
+        
+        /**
+         * Part 2 of the actual message: Non-human readable, large size bulk data. Can be null if no large amount of data is to be transfered.
+         */
+        public final Bucket data;
+        
+        /**
+         * For a message which is a reply to another message, true or false depending on whether the reply indicates success or failure of the processing of
+         * the original message.
+         * 
+         * For non-reply messages, this is null.
+         */
+        public final Boolean success;
+        
+        /**
+         * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.
+         */
+        public FCPPluginMessage(String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
+            this.identifier = identifier;
+            this.parameters = parameters;
+            this.data = data;
+            this.success = success;
+        }
+    }
+
+
     /**
      * Plugins which provide FCP services to clients must implement this interface.<br/>
      * The purpose of this interface is to provide a message handling function for processing messages received from the clients.
