@@ -203,7 +203,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
 		@Override
 		public synchronized OutputStream getOutputStream() throws IOException {
-			if(osIndex > 0)
+			if(os != null)
 				throw new IOException("Only one OutputStream per bucket on "+this+" !");
 			if(hasBeenFreed) throw new IOException("Already freed");
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
