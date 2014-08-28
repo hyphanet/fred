@@ -20,7 +20,7 @@ import freenet.support.api.Bucket;
  * This will keep the {@link FCPPluginClient} send() functions simple. So please design a common message handling function and then delete the old interfaces.
  * 
  * @author xor (xor@freenetproject.org)
- * @see PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler) PluginRespirator provides the function to obtain FCP connections to a server plugin.
+ * @see PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler) PluginRespirator provides the function to connect to a FCP server plugin.
  * @see FCPPluginClient A client will be represented as class FCPPluginClient to the client and server plugin. It's Java provides an overview of the internal
  *                      code paths through which plugin FCP messages flow.
  */
