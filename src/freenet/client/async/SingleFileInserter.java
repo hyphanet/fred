@@ -342,7 +342,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
         }
 		if(reportMetadataOnly) {
 			SplitFileInserter sfi = new SplitFileInserter(persistent, parent, cb, 
-			        dataRAF, ctx, context, origSize, bestCodec, 
+			        dataRAF, shouldFreeData, ctx, context, origSize, bestCodec, 
 			        block.clientMetadata, metadata, archiveType, cryptoAlgorithm, forceCryptoKey,
 			        hashThisLayerOnly, hashes, ctx.dontCompress, parent.getMinSuccessFetchBlocks(),
 			        parent.getTotalBlocks(), origDataLength, origCompressedDataLength, 
@@ -363,7 +363,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
 			SplitFileInserter sfi = new SplitFileInserter(persistent, parent, sh, 
-			        dataRAF, ctx, context, origSize, bestCodec, 
+			        dataRAF, shouldFreeData, ctx, context, origSize, bestCodec, 
 			        block.clientMetadata, metadata, archiveType, cryptoAlgorithm, forceCryptoKey,
 			        hashThisLayerOnly, hashes, ctx.dontCompress, parent.getMinSuccessFetchBlocks(),
 			        parent.getTotalBlocks(), origDataLength, origCompressedDataLength, 

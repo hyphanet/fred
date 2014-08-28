@@ -33,6 +33,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private final PutCompletionCallback cb;
     /** The file to be inserted */
     private final LockableRandomAccessThing originalData;
+    /** Whether to free the data when the insert completes/fails. E.g. this is true if the data is
+     * the result of compression. */
+    private final boolean freeData;
     /** The RAF that stores check blocks and status info, used and created by storage. */
     private final LockableRandomAccessThing raf;
     /** Stores the state of the insert and does most of the work. */
@@ -49,18 +52,19 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     final InsertContext ctx;
     
     SplitFileInserter(boolean persistent, BaseClientPutter parent, PutCompletionCallback cb,
-            LockableRandomAccessThing originalData, InsertContext ctx, ClientContext context, 
-            long decompressedLength, COMPRESSOR_TYPE compressionCodec, ClientMetadata meta, 
-            boolean isMetadata, ARCHIVE_TYPE archiveType, byte splitfileCryptoAlgorithm, 
-            byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes,
-            boolean topDontCompress, int topRequiredBlocks, int topTotalBlocks, 
-            long origDataSize, long origCompressedDataSize, boolean realTime, Object token) 
-            throws InsertException {
+            LockableRandomAccessThing originalData, boolean freeData, InsertContext ctx, 
+            ClientContext context, long decompressedLength, COMPRESSOR_TYPE compressionCodec, 
+            ClientMetadata meta, boolean isMetadata, ARCHIVE_TYPE archiveType, 
+            byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, 
+            HashResult[] hashes, boolean topDontCompress, int topRequiredBlocks, 
+            int topTotalBlocks, long origDataSize, long origCompressedDataSize, boolean realTime, 
+            Object token) throws InsertException {
         this.persistent = persistent;
         this.parent = parent;
         this.cb = cb;
         this.originalData = originalData;
         this.context = context;
+        this.freeData = freeData;
         try {
             storage = new SplitFileInserterStorage(originalData, decompressedLength, this, 
                     compressionCodec, meta, isMetadata, archiveType, 
@@ -124,17 +128,23 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         } catch (IOException e) {
             raf.close();
             raf.free();
-            // We don't free the original data. That's up to ClientPutter or the FCP level.
+            originalData.close();
+            if(freeData)
+                originalData.free();
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
         } catch (StorageFormatException e) {
             raf.close();
             raf.free();
-            // We don't free the original data. That's up to ClientPutter or the FCP level.
+            originalData.close();
+            if(freeData)
+                originalData.free();
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
         } catch (ChecksumFailedException e) {
             raf.close();
             raf.free();
-            // We don't free the original data. That's up to ClientPutter or the FCP level.
+            originalData.close();
+            if(freeData)
+                originalData.free();
             throw new InsertException(InsertException.BUCKET_ERROR, e, null);
         }
     }
@@ -189,6 +199,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                 cb.onSuccess(SplitFileInserter.this, context);
                 raf.close();
                 raf.free();
+                originalData.close();
+                if(freeData)
+                    originalData.free();
                 return true;
             }
             
@@ -209,6 +222,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             public boolean run(ClientContext context) {
                 raf.close();
                 raf.free();
+                originalData.close();
+                if(freeData)
+                    originalData.free();
                 cb.onFailure(e, SplitFileInserter.this, context);
                 return true;
             }
