@@ -19,6 +19,12 @@ import freenet.support.io.StorageFormatException;
 
 public class SplitFileInserterCrossSegmentStorage {
     
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(SplitFileInserterCrossSegmentStorage.class);
+    }
+
     final SplitFileInserterStorage parent;
     final int segNo;
     final int dataBlockCount;
@@ -178,7 +184,7 @@ public class SplitFileInserterCrossSegmentStorage {
     /** Encode a segment. Much simpler than fetcher! */
     private void innerEncode(MemoryLimitedChunk chunk) {
         try {
-            // FIXME encode blocks if earlyEncode
+            if(logMINOR) Logger.minor(this, "Encoding "+this);
             byte[][] dataBlocks = readDataBlocks();
             byte[][] checkBlocks = new byte[crossCheckBlockCount][];
             for(int i=0;i<checkBlocks.length;i++)
@@ -189,6 +195,7 @@ public class SplitFileInserterCrossSegmentStorage {
             synchronized(this) {
                 encoded = true;
             }
+            if(logMINOR) Logger.minor(this, "Finished encoding "+this);
         } catch (IOException e) {
             parent.failOnDiskError(e);
         }

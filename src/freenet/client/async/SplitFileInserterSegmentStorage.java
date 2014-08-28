@@ -32,6 +32,12 @@ import freenet.support.io.StorageFormatException;
 /** A single segment within a splitfile to be inserted. */
 public class SplitFileInserterSegmentStorage {
     
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(SplitFileInserterSegmentStorage.class);
+    }
+
     final SplitFileInserterStorage parent;
 
     final int segNo;
@@ -302,6 +308,7 @@ public class SplitFileInserterSegmentStorage {
     }
     
     void setKey(int blockNumber, ClientCHK key) throws IOException {
+        if(logMINOR) Logger.minor(this, "Setting key "+key+" for block "+blockNumber+" on "+this, new Exception("debug"));
         try {
             ClientCHK oldKey = readKey(blockNumber);
             if(!oldKey.equals(key))
