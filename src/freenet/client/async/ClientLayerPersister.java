@@ -527,6 +527,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 Logger.error(this, "Failed to load a bucket to free");
             }
         }
+        count = ois.readInt();
         DelayedFreeRandomAccessThing[] rafs = new DelayedFreeRandomAccessThing[count];
         for(int i=0;i<count;i++) {
             try {
@@ -601,6 +602,11 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 oos.writeInt(buckets.length);
                 for(DelayedFreeBucket bucket : buckets)
                     writeChecksummedObject(oos, bucket, null);
+            }
+            if(rafs == null) {
+                oos.writeInt(0);
+            } else {
+                oos.writeInt(rafs.length);
                 for(DelayedFreeRandomAccessThing raf : rafs)
                     writeChecksummedObject(oos, raf, null);
             }

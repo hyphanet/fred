@@ -231,26 +231,26 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Delete the buckets.
 	 */
 	public void finishDelayedFree(DelayedFreeBucket[] buckets, DelayedFreeRandomAccessThing[] rafs) {
-		if(buckets == null || buckets.length == 0) return;
-		int x = 0;
-		for(DelayedFreeBucket bucket : buckets) {
-			try {
-				if(bucket.toFree())
-					bucket.realFree();
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
-			}
-			x++;
-		}
-        for(DelayedFreeRandomAccessThing bucket : rafs) {
-            try {
-                if(bucket.toFree())
-                    bucket.realFree();
-            } catch (Throwable t) {
-                Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
-            }
-            x++;
-        }
+	    if(buckets != null) {
+	        for(DelayedFreeBucket bucket : buckets) {
+	            try {
+	                if(bucket.toFree())
+	                    bucket.realFree();
+	            } catch (Throwable t) {
+	                Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+	            }
+	        }
+	    }
+	    if(rafs != null) {
+	        for(DelayedFreeRandomAccessThing bucket : rafs) {
+	            try {
+	                if(bucket.toFree())
+	                    bucket.realFree();
+	            } catch (Throwable t) {
+	                Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+	            }
+	        }
+	    }
 	}
 
 }
