@@ -102,7 +102,8 @@ public class FCPPluginMessage extends DataCarryingMessage {
 	@Override
 	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
 		// There are 2 code paths for deploying plugin messages:
-		// 1. The new class FCPPluginClient. This is only available if the plugin implements the new interface FredPluginFCPServer.
+		// 1. The new class FCPPluginClient. This is only available if the plugin implements the new interface
+	    //    FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
 		// 2. The old class PluginTalker. This is available if the plugin implements the old interface FredPluginFCP.
 		// We first try code path 1 by doing FCPConnectionHandler.getPluginClient(): That function will only yield a result if the new interface is implemented.
 		// If that fails, we try the old code path of PluginTalker, which will fail if the plugin also does not implement the old interface and thus is no FCP
