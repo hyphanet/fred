@@ -453,7 +453,7 @@ public class SplitFileInserterSegmentStorage {
 
     private byte[] readCrossCheckBlock(int blockNo) throws IOException {
         return crossSegmentBlockSegments[blockNo].
-            readCheckBlock(crossSegmentBlockNumbers[blockNo], segNo, blockNo);
+            readCheckBlock(crossSegmentBlockNumbers[blockNo], segNo, blockNo + dataBlockCount);
     }
 
     public synchronized boolean isFinishedEncoding() {

@@ -232,8 +232,8 @@ public class SplitFileInserterCrossSegmentStorage {
      * @throws IOException */
     byte[] readCheckBlock(int slotNumberWithinCrossSegment, int segmentNumber, 
             int blockNoWithinSegment) throws IOException {
-        assert(blockNumbers[dataBlockCount + slotNumberWithinCrossSegment] == blockNoWithinSegment);
-        assert(segments[dataBlockCount + slotNumberWithinCrossSegment].segNo == segmentNumber);
+        assert(blockNumbers[slotNumberWithinCrossSegment] == blockNoWithinSegment);
+        assert(segments[slotNumberWithinCrossSegment].segNo == segmentNumber);
         return parent.readCheckBlock(segNo, slotNumberWithinCrossSegment - dataBlockCount);
     }
 
