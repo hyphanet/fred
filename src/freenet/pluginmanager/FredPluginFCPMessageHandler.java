@@ -15,10 +15,6 @@ import freenet.support.api.Bucket;
  * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are allowed to do.
  * You <b>must</b> follow the restrictions which are explained there.
  * 
- * FIXME: Instead of having two different message handling function signatures for client and server in {@link ServerSideFCPMessageHandler} and 
- * {@link ClientSideFCPMessageHandler}, this should have one message handling function which is the same.
- * This will keep the {@link FCPPluginClient} send() functions simple. So please design a common message handling function and then delete the old interfaces.
- * 
  * @author xor (xor@freenetproject.org)
  * @see PluginRespirator#connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler) PluginRespirator provides the function to connect
  *      to a FCP server plugin.
@@ -85,6 +81,16 @@ public interface FredPluginFCPMessageHandler {
         }
     }
 
+    /**
+     * Message handling function for messages received from a plugin FCP server or client.
+     * <b>ATTENTION</b>: Please read the different constraints for server and client side message handlers at:<br/>
+     * - {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}<br/>
+     * - {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}<br/>
+     * 
+     * To stress those different constraints, you should also not implement this interface but one of the child interfaces {@link ServerSideFCPMessageHandler}
+     * and {@link ClientSideFCPMessageHandler}.
+     */
+    void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
 
     /**
      * Plugins which provide FCP services to clients must implement this interface.<br/>
@@ -116,6 +122,7 @@ public interface FredPluginFCPMessageHandler {
          * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
          * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
          */
+        @Override
         void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
     }
 
@@ -137,6 +144,7 @@ public interface FredPluginFCPMessageHandler {
          * @param parameters Part 1 of server reply: Human-readable parameters. Shall be small amount of data.
          * @param data Part 2 of server reply: Non-human readable, large size bulk data. Can be null.
          */
+        @Override
         void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
     }
 }
