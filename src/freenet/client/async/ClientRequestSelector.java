@@ -32,7 +32,7 @@ import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.TimeUtil;
 
 /** The global request queue. Both transient and persistent requests are kept on this in-RAM 
- * structure, which supports choosing a request to run. See ClientRequestSchedulerBase for the code
+ * structure, which supports choosing a request to run. See KeyListenerTracker for the code
  * that matches up a fetched block with whoever was waiting for it, which needs to be separate for
  * various reasons. This class is not persistent. */
 class ClientRequestSelector implements KeysFetchingLocally {
@@ -124,7 +124,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerBase schedCore, ClientRequestSchedulerBase schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -171,7 +171,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerBase schedTransient, short maxPrio, boolean realTime, ClientContext context) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, KeyListenerTracker schedTransient, short maxPrio, boolean realTime, ClientContext context) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
@@ -271,7 +271,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerBase schedCore, ClientRequestSchedulerBase schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;

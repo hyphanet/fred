@@ -34,7 +34,7 @@ import freenet.support.Logger.LogLevel;
  * with the ClientRequestSelector.
  * @author toad
  */
-class ClientRequestSchedulerBase implements KeySalter {
+class KeyListenerTracker implements KeySalter {
 	
 	private static volatile boolean logMINOR;
 	
@@ -69,7 +69,7 @@ class ClientRequestSchedulerBase implements KeySalter {
 	    return persistent;
 	}
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched, byte[] globalSalt, boolean persistent) {
+	protected KeyListenerTracker(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched, byte[] globalSalt, boolean persistent) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
