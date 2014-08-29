@@ -75,6 +75,17 @@ public class CooldownTracker {
 		setCachedWakeup(wakeupTime, toCheck, parent, context, false);
 	}
 	
+	/** Must be called when a request goes into cooldown, or is not fetchable because all of its
+	 * requests are running. Recording the parent is essential so that when the request wakes up, 
+	 * its parents in the fetch structure will also be woken up so that it can actually be tried 
+	 * again.
+	 * @param wakeupTime When the request will become fetchable again (Long.MAX_VALUE for "never", 
+	 * usually meaning "when a request finishes").
+	 * @param toCheck The request going into cooldown.
+	 * @param parent The parent of the request going into cooldown.
+	 * @param context
+	 * @param dontLogOnClearingParents
+	 */
 	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
 		synchronized(this) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
