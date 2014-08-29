@@ -30,6 +30,19 @@ public interface FredPluginFCPMessageHandler {
      * FCP messages are passed as an object of this container class to the message handling function.
      */
     public final class FCPPluginMessage {
+        public static enum ClientPermissions {
+            /** The client plugin is running within the same node as the server plugin.
+             * TODO FIXME: Is there any reason not to assume {@link #ACCESS_FCP_FULL}? */
+            ACCESS_DIRECT,
+            ACCESS_FCP_RESTRICTED,
+            ACCESS_FCP_FULL
+        };
+        
+        /**
+         * The permissions of the client which sent the messages. Null for messages sent by the server.
+         */
+        public final ClientPermissions permissions;
+        
         /**
          * <p>The identifier of the client message as specified by the client.</p>
          * 
@@ -62,7 +75,8 @@ public interface FredPluginFCPMessageHandler {
         /**
          * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.
          */
-        public FCPPluginMessage(String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
+        public FCPPluginMessage(ClientPermissions permissions, String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
+            this.permissions = permissions;
             this.identifier = identifier;
             this.parameters = parameters;
             this.data = data;
@@ -79,14 +93,6 @@ public interface FredPluginFCPMessageHandler {
      * @see ClientSideFCPMessageHandler The interface of the client plugin which handles the messages sent by the server.
      */
     public interface ServerSideFCPMessageHandler extends FredPluginFCPMessageHandler {
-        public static enum ClientPermissions {
-            /** The client plugin is running within the same node as the server plugin.
-             * TODO FIXME: Is there any reason not to assume {@link #ACCESS_FCP_FULL}? */
-            ACCESS_DIRECT,
-            ACCESS_FCP_RESTRICTED,
-            ACCESS_FCP_FULL
-        };
-        
         /**
          * <p>Is called to handle messages from your clients.<br/>
          * <b>Must not</b> block for very long and thus must only do small amounts of processing.<br/>
@@ -105,14 +111,11 @@ public interface FredPluginFCPMessageHandler {
          * @param client The client which sent the message. To be used for sending back a reply.<br/>
          *               You <b>must not</b> keep a hard reference to this object outside of the scope of this function: This would prevent client plugins from
          *               being unloaded. See the head of the documentation of this function for an explanation of how to store a pointer to a certain client.
-         * @param permissions Permissions of the client.
-         *                    FIXME: Maybe move this to {@link FCPPluginClient}. If it is moved, still mention it in the JavaDoc here.
          * @param messageIdentifier The identifier of the client message as specified by the client. Must be passed through when sending a reply.
          * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
          * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
          */
-        void handleFCPPluginClientMessage(FCPPluginClient client, ClientPermissions permissions, String messageIdentifier,
-                SimpleFieldSet parameters, Bucket data);
+        void handleFCPPluginClientMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
     }
 
     /**
