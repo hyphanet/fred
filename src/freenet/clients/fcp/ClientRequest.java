@@ -527,6 +527,7 @@ public abstract class ClientRequest implements Serializable {
 
     /** Get the RequestIdentifier. This just includes the queue and the identifier. */
     public RequestIdentifier getRequestIdentifier() {
+        if(persistenceType == PERSIST_CONNECTION) throw new IllegalStateException(); // Not associated with any client.
         return new RequestIdentifier(global, clientName, identifier, getType());
     }
     
