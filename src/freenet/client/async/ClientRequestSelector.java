@@ -35,13 +35,18 @@ import freenet.support.TimeUtil;
  * structure, which supports choosing a request to run. See KeyListenerTracker for the code
  * that matches up a fetched block with whoever was waiting for it, which needs to be separate for
  * various reasons. This class is not persistent. */
-class ClientRequestSelector implements KeysFetchingLocally {
+public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	final boolean isRTScheduler;
 	
 	final ClientRequestScheduler sched;
+	
+	/** Must take (this) when accessing the cooldown tracker *or* the RGA tree. This prevents nasty
+	 * race conditions involving one thread reading the tree and adding a cooldown while another 
+	 * unblocks a request. */
+	private final CooldownTracker cooldownTracker;
 	
 	/**
      * The base of the tree.
@@ -69,6 +74,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			recentSuccesses = null;
 		}
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		cooldownTracker = new CooldownTracker();
+	}
+	
+	public void start(ClientContext context) {
+	    cooldownTracker.startMaintenance(context.ticker);
 	}
 	
 	private static volatile boolean logMINOR;
@@ -138,7 +148,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = newPriorities[priority];
 			if(result != null) {
-			    long cooldownTime = context.cooldownTracker.getCachedWakeup(result, now);
+			    long cooldownTime = cooldownTracker.getCachedWakeup(result, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        if(logMINOR) {
@@ -310,7 +320,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				continue; // Try next priority
 			}
 			while(true) {
-			    long cooldownTime = context.cooldownTracker.getCachedWakeup(chosenTracker, now);
+			    long cooldownTime = cooldownTracker.getCachedWakeup(chosenTracker, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        Logger.normal(this, "Priority "+choosenPriorityClass+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
@@ -319,7 +329,15 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				if(logMINOR)
 					Logger.minor(this, "Got priority tracker "+chosenTracker);
-				RemoveRandomReturn val = chosenTracker.removeRandom(starter, context, now);
+				RemoveRandomReturn val;
+				synchronized(this) {
+				    // We must hold the overall lock, just as in addToGrabArrays.
+				    // This is important for keeping the cooldown tracker consistent amongst other 
+				    // things: We can get a race condition between thread A reading the tree, 
+				    // finding nothing and setCachedWakeup(), and thread B waking up a request, 
+				    // resulting in the request not being accessible.
+				    val = chosenTracker.removeRandom(starter, context, now);
+				}
 				SendableRequest req;
 				if(val == null) {
 					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
@@ -516,13 +534,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				transientWaiting = this.transientRequestsWaitingForKeysFetching.remove(key);
 			}
 			if(transientWaiting != null) {
-				CooldownTracker tracker = sched.clientContext.cooldownTracker;
 				if(transientWaiting != null) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						synchronized(sched) {
-							tracker.clearCachedWakeup(get);
+						synchronized(this) {
+							cooldownTracker.clearCachedWakeup(get);
 						}
 					}
 				}
@@ -589,7 +606,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
             if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(null);
+                clientGrabber = new SectoredRandomGrabArray(null, cooldownTracker);
                 newPriorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
@@ -599,12 +616,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 // Request
                 SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
                 if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber);
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, cooldownTracker);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                     clientGrabber.addGrabber(client, requestGrabber, context);
                     // FIXME unnecessary as it knows its parent and addGrabber() will call it???
-                    context.cooldownTracker.clearCachedWakeup(clientGrabber);
+                    cooldownTracker.clearCachedWakeup(clientGrabber);
                 }
                 requestGrabber.add(cr, req, context);
             }
@@ -729,6 +746,30 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 recentSuccesses.pollFirst();
             recentSuccesses.add(succeeded);
         }
+    }
+    
+    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
+        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
+    }
+
+    public synchronized void removeCooldown(HasCooldownTrackerItem parent) {
+        cooldownTracker.remove(parent);
+    }
+    
+    public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent) {
+        return cooldownTracker.make(parent);
+    }
+    
+    public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck) {
+        return cooldownTracker.clearCachedWakeup(toCheck);
+    }
+
+    public synchronized long getCachedWakeup(HasCooldownCacheItem item, long now) {
+        return cooldownTracker.getCachedWakeup(item, now);
+    }
+
+    public synchronized void removeCachedWakeup(HasCooldownCacheItem toCheck) {
+        cooldownTracker.removeCachedWakeup(toCheck);
     }
 
 }

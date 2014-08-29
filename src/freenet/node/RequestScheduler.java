@@ -7,6 +7,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestSelector;
 import freenet.keys.Key;
 
 public interface RequestScheduler {
@@ -73,5 +74,7 @@ public interface RequestScheduler {
 	 * at a distance this will need to be reconsidered. See the comments on the caller in 
 	 * RequestHandler (onAbort() handler). */
 	public boolean wantKey(Key key);
+
+    public ClientRequestSelector getSelector();
 
 }

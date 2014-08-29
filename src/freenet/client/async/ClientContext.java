@@ -72,7 +72,6 @@ public class ClientContext {
 	public transient final InsertCompressorTracker transientInsertCompressors;
 	public transient final RealCompressor rc;
 	public transient final DatastoreChecker checker;
-	public transient final CooldownTracker cooldownTracker;
 	public transient DownloadCache downloadCache;
 	/** Used for memory intensive jobs such as in-RAM FEC decodes. Some of these jobs may do disk 
 	 * I/O and we don't guarantee to serialise them. The new splitfile code does FEC decodes 
@@ -118,7 +117,6 @@ public class ClientContext {
 		this.rc = rc;
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
-		this.cooldownTracker = new CooldownTracker();
 		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
 		this.tempRAFFactory = rafFactory; 
 		this.persistentRoot = persistentRoot;
@@ -137,7 +135,6 @@ public class ClientContext {
 		this.sskInsertSchedulerRT = starters.sskPutSchedulerRT;
 		this.chkInsertSchedulerRT = starters.chkPutSchedulerRT;
 		this.alerts = alerts;
-		this.cooldownTracker.startMaintenance(ticker);
 	}
 
 	public ClientRequestScheduler getSskFetchScheduler(boolean realTime) {

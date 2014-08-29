@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.ClientRequestSelector;
 import freenet.client.async.ClientRequester;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -177,12 +178,13 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 		// Note also that the performance cost of going over that particular part of the tree again should be very low.
 		RandomGrabArray rga = getParentGrabArray();
 		ClientRequestScheduler sched = getScheduler(context);
-		synchronized(sched) {
-			context.cooldownTracker.clearCachedWakeup(this);
+		ClientRequestSelector selector = sched.getSelector();
+		synchronized(selector) {
+			selector.clearCachedWakeup(this);
 			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 			// We should wake up the parent as well even if this item is not in cooldown.
 			if(rga != null)
-				context.cooldownTracker.clearCachedWakeup(rga);
+				selector.clearCachedWakeup(rga);
 			// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
 		}
 		sched.wakeStarter();

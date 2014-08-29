@@ -3,6 +3,7 @@ package freenet.support;
 import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.CooldownTracker;
 import freenet.client.async.HasCooldownCacheItem;
 
 /**
@@ -25,11 +26,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
 	private RemoveRandomParent parent;
+	private final CooldownTracker cooldownTracker;
 	
-	public SectoredRandomGrabArray(RemoveRandomParent parent) {
+	public SectoredRandomGrabArray(RemoveRandomParent parent, CooldownTracker cooldownTracker) {
 		grabClients = new Object[0];
 		grabArrays = new RemoveRandomWithObject[0];
 		this.parent = parent;
+		this.cooldownTracker = cooldownTracker;
 	}
 
 	/** Add directly to a RandomGrabArrayWithClient under us. */
@@ -39,7 +42,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(clientIndex == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, this);
+			rga = new RandomGrabArrayWithClient(client, this, cooldownTracker);
 			addElement(client, rga);
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
@@ -50,9 +53,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(context != null) {
 			// It's safest to always clear the parent too if we have one.
 			// FIXME strictly speaking it shouldn't be necessary, investigate callers of clearCachedWakeup(), but be really careful to avoid stalling!
-			context.cooldownTracker.clearCachedWakeup(this);
+			cooldownTracker.clearCachedWakeup(this);
 			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent);
+				cooldownTracker.clearCachedWakeup(parent);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -98,9 +101,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(context != null) {
-			context.cooldownTracker.clearCachedWakeup(this);
+			cooldownTracker.clearCachedWakeup(this);
 			if(parent != null)
-				context.cooldownTracker.clearCachedWakeup(parent);
+				cooldownTracker.clearCachedWakeup(parent);
 		}
 	}
 
@@ -162,7 +165,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				removeElement(x);
 			}
 		}
-		context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
+		cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 		return new RemoveRandomReturn(wakeupTime);
 	}
 
@@ -276,7 +279,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				Logger.error(this, "Other RGA is null later on on "+this);
 				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 				grabClients = new Object[] { grabClients[1-x] };
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
+				cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, now);
@@ -307,7 +310,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
+				cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
@@ -352,7 +355,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-			context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
+			cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
 	}
@@ -410,10 +413,10 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			context.cooldownTracker.removeCachedWakeup(r);
+			cooldownTracker.removeCachedWakeup(r);
 		}
 		if(finalSize == 0 && parent != null) {
-			context.cooldownTracker.removeCachedWakeup(this);
+			cooldownTracker.removeCachedWakeup(this);
 			parent.maybeRemove(this, context);
 		}
 	}

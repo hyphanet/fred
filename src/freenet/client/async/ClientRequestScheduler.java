@@ -75,6 +75,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.node = node;
 		this.clientContext = context;
 		selector = new ClientRequestSelector(forInserts, forSSKs, forRT, this);
+		selector.start(context);
 		
 		this.name = name;
 		
@@ -479,6 +480,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 
     public KeySalter getGlobalKeySalter(boolean persistent) {
         return persistent ? schedCore : schedTransient;
+    }
+
+    @Override
+    public ClientRequestSelector getSelector() {
+        return selector;
     }
 
 }

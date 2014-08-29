@@ -145,7 +145,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					tracker.cooldownWakeupTime = now + cachedCooldownTime;
-					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), context, true);
+					getScheduler(context).selector.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 				}
 				onEnterFiniteCooldown(context);
@@ -178,7 +178,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	private MyCooldownTrackerItem makeCooldownTrackerItem(ClientContext context) {
-		return (MyCooldownTrackerItem) context.cooldownTracker.make(this);
+	    return (MyCooldownTrackerItem) getScheduler(context).selector.make(this);
 	}
 
 	@Override
@@ -214,7 +214,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public void unregister(ClientContext context, short oldPrio) {
-		context.cooldownTracker.remove(this);
+	    getScheduler(context).selector.removeCooldown(this);
 		super.unregister(context, oldPrio);
 	}
 
@@ -354,7 +354,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(wakeTime == 0)
 			return 0;
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
-		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, context, true);
+		getScheduler(context).selector.setCachedWakeup(wakeTime, this, parentRGA, context, true);
 		return wakeTime;
 	}
 	

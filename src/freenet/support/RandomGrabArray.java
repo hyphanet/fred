@@ -7,6 +7,7 @@ import java.util.Arrays;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.CooldownTracker;
 import freenet.client.async.HasCooldownCacheItem;
 
 /**
@@ -41,13 +42,15 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private final static int BLOCK_SIZE = 1024;
 	private final int hashCode;
 	private RemoveRandomParent parent;
+	private CooldownTracker cooldownTracker;
 
-	public RandomGrabArray(RemoveRandomParent parent) {
+	public RandomGrabArray(RemoveRandomParent parent, CooldownTracker cooldownTracker) {
 		this.blocks = new Block[] { new Block() };
 		blocks[0].reqs = new RandomGrabArrayItem[MIN_SIZE];
 		index = 0;
 		this.hashCode = super.hashCode();
 		this.parent = parent;
+		this.cooldownTracker = cooldownTracker;
 	}
 	
 	@Override
@@ -63,10 +66,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		req.setParentGrabArray(this); // will store() self
 		synchronized(this) {
 			if(context != null) {
-				context.cooldownTracker.clearCachedWakeup(req);
-				context.cooldownTracker.clearCachedWakeup(this);
+				cooldownTracker.clearCachedWakeup(req);
+				cooldownTracker.clearCachedWakeup(this);
 				if(parent != null)
-					context.cooldownTracker.clearCachedWakeup(parent);
+					cooldownTracker.clearCachedWakeup(parent);
 			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
@@ -309,7 +312,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
+				cooldownTracker.setCachedWakeup(wakeupTime, this, parent, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -344,7 +347,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 
 	public void remove(RandomGrabArrayItem it, ClientContext context) {
-		context.cooldownTracker.removeCachedWakeup(it);
+		cooldownTracker.removeCachedWakeup(it);
 		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
 		
