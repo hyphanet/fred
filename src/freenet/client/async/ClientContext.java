@@ -54,7 +54,6 @@ public class ClientContext {
 	 * it to disk consistently. Also, some jobs may want to request immediate serialization. */
 	public transient final ClientLayerPersister jobRunner;
 	public transient final long nodeDBHandle;
-	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
 	public transient final PersistentTempBucketFactory persistentBucketFactory;
@@ -90,8 +89,7 @@ public class ClientContext {
     public PersistentJobRunner dummyJobRunner;
 
 	public ClientContext(long bootID, long nodeDBHandle, ClientLayerPersister jobRunner, Executor mainExecutor,
-			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
-			PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
+			ArchiveManager archiveManager, PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
 			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
 			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
@@ -103,7 +101,6 @@ public class ClientContext {
 		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
 		this.nodeDBHandle = nodeDBHandle;
-		this.backgroundBlockEncoder = blockEncoder;
 		this.random = strongRandom;
 		this.archiveManager = archiveManager;
 		this.persistentBucketFactory = ptbf;

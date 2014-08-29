@@ -16,7 +16,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.FECCodec;
-import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
 import freenet.client.async.InsertCompressorTracker;
@@ -147,7 +146,6 @@ public class NodeClientCore implements Persistable {
 	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
-	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	protected final Persister persister;
@@ -176,7 +174,6 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.pluginStores = new PluginStores(node, installConfig);
-		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -357,7 +354,7 @@ public class NodeClientCore implements Persistable {
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
-		        backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, 
+		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
 		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit,
@@ -687,8 +684,6 @@ public class NodeClientCore implements Persistable {
 	}
 
 	public void start(Config config) throws NodeInitException {
-		backgroundBlockEncoder.setContext(clientContext);
-		node.executor.execute(backgroundBlockEncoder, "Background block encoder");
 
 		persister.start();
 
