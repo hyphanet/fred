@@ -9,6 +9,7 @@ import java.lang.ref.WeakReference;
 import java.util.UUID;
 
 import freenet.node.Node;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginManager;
@@ -46,8 +47,10 @@ import freenet.support.api.Bucket;
  *   by any client messages.<br/> 
  * </p>
  * <p>2. The server and the client are running in the same node, also called intra-node FCP connections:</br>
- * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler)} to try to create a connection.<br/>
- * - The {@link PluginRespirator} uses {@link FCPServer#createPluginClientForIntraNodeFCP(String, ClientSideFCPMessageHandler)} to get a FCPPluginClient.<br/>
+ * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a
+ *   connection.<br/>
+ * - The {@link PluginRespirator} uses {@link FCPServer#createPluginClientForIntraNodeFCP(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to
+ *   get a FCPPluginClient.<br/>
  * - The client plugin uses the send functions of the FCPPluginClient. Those are the same as with networked FCP connections.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}. That is the same

@@ -41,6 +41,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
@@ -509,7 +510,8 @@ public class FCPServer implements Runnable, DownloadCache {
      * In other words, you don't have to take care of registering or unregistering clients. You only have to take care of keeping a strong reference to
      * them while they are in use.</p>
      * 
-     * <p>You should probably instead use the frontend function: {@link PluginRespirator#connecToOtherPlugin(String, ClientSideFCPMessageHandler)}.</p>
+     * <p>You should probably instead use the frontend function: {@link PluginRespirator#connecToOtherPlugin(String,
+     * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}.</p>
      * 
      * @see FCPPluginClient The class JavaDoc of FCPPluginClient explains the code path for both networked and non-networked FCP.
      */
