@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,7 +74,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ArchivePutHandler extends PutHandler {
 
-		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI) {
+        private static final long serialVersionUID = 1L;
+
+        private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI) {
 			super(bmp, parent, name, null, containerPutHandlers);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
@@ -124,7 +127,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	 */
 	private final class ContainerPutHandler extends PutHandler {
 
-		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, HashSet<PutHandler> runningMap) {
+        private static final long serialVersionUID = 1L;
+
+        private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
 			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
@@ -170,7 +175,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	private final class ExternPutHandler extends PutHandler {
 
-		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, RandomAccessBucket data, ClientMetadata cm2) {
+        private static final long serialVersionUID = 1L;
+
+        private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, RandomAccessBucket data, ClientMetadata cm2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
@@ -258,12 +265,14 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	// meta data inserter / resolver
-	// these MPH are usually created on demand, so they are outside (main)constructor →needs db4o update
+	// these MPH are usually created on demand, so they are outside (main)constructor
 	private final class MetaPutHandler extends PutHandler {
 
 		// Metadata is not put with a cryptokey. It is derived from other stuff that is already encrypted with random keys.
 		
-		// final metadata
+        private static final long serialVersionUID = 1L;
+
+        // final metadata
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock) {
 			super(smp, parent, null, null, null);
 			// Treat as splitfile for purposes of determining number of reinserts.
@@ -315,7 +324,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	/** Placeholder for Matadata, don't run it! */
 	private final class JokerPutHandler extends PutHandler {
 
-		/** a normal ( freeform) redirect */
+        private static final long serialVersionUID = 1L;
+
+        /** a normal ( freeform) redirect */
 		public JokerPutHandler(BaseManifestPutter bmp, 	String name, FreenetURI targetURI2, ClientMetadata cm2) {
 			super(bmp, null, name, null, (Metadata)null, cm2);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI2, cm2);
@@ -817,7 +828,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		try {
-			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
 				running[i].start(context);
 				if (logMINOR)
@@ -1316,9 +1326,10 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		return rootBuilder;
 	}
 
-	protected abstract class ManifestBuilder {
+	protected abstract class ManifestBuilder implements Serializable {
 
-		private final Stack<HashMap<String, Object>> dirStack;
+        private static final long serialVersionUID = 1L;
+        private final Stack<HashMap<String, Object>> dirStack;
 		/** Map from name to either a Metadata (to be included as-is), a ManifestElement (either a redirect
 		 * or a file), or another HashMap. Eventually processed by e.g. ContainerInserter.makeManifest()
 		 * (for a ContainerBuilder). */
@@ -1413,7 +1424,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	protected final class FreeFormBuilder extends ManifestBuilder {
 
-		protected FreeFormBuilder() {
+        private static final long serialVersionUID = 1L;
+
+        protected FreeFormBuilder() {
 			rootDir = new HashMap<String, Object>();
 			currentDir = rootDir;
 		}
@@ -1446,7 +1459,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	protected final class ContainerBuilder extends ManifestBuilder {
 
-		private final HashMap<String, Object> _rootDir;
+        private static final long serialVersionUID = 1L;
+        private final HashMap<String, Object> _rootDir;
 		private final PutHandler selfHandle;
 
 		private ContainerBuilder(boolean isRoot) {

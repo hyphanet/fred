@@ -3,17 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.Serializable;
+
 import freenet.keys.FreenetURI;
-import freenet.support.api.Bucket;
 import freenet.support.io.RandomAccessBucket;
 
 /**
- * Represents an element in a manifest. Fed to SimpleManifestPutter. An element can be a file or a 
+ * Represents an element in a manifest. Fed to *ManifestPutter. An element can be a file or a 
  * redirect.
  */
-public class ManifestElement {
+public class ManifestElement implements Serializable {
 
-	/** Filename */
+    private static final long serialVersionUID = 1L;
+
+    /** Filename */
 	final String name;
 	
 	/** Full name in the container it is inserted as part of. */

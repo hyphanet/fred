@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +43,10 @@ import freenet.support.io.ResumeFailedException;
  * @author saces
  * 
  */
-public class ContainerInserter implements ClientPutState {
+public class ContainerInserter implements ClientPutState, Serializable {
 
-	private static volatile boolean logMINOR;
+    private static final long serialVersionUID = 1L;
+    private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
 	static {
