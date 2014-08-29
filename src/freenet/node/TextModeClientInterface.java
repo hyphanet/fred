@@ -31,6 +31,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
@@ -293,7 +294,7 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append(new String(dataBytes, ENCODING));
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -353,7 +354,7 @@ public class TextModeClientInterface implements Runnable {
 					outsb.append(new String(dataBytes, ENCODING));
 				} catch (FetchException e) {
 	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
-	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+	            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
 	            		outsb.append(e.errorCodes.toVerboseString());
 	            	}
 	            	if(e.newURI != null)
@@ -415,7 +416,7 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Download rate: ").append(rate).append(" bytes / second");
 			} catch (FetchException e) {
                 outsb.append("Error: ").append(e.getMessage());
-            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+            	if((e.getMode() == FetchExceptionMode.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)

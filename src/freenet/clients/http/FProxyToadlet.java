@@ -21,6 +21,7 @@ import java.util.Set;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
@@ -851,7 +852,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				Toadlet.writePermanentRedirect(ctx, msg,
 					getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), maxRetries, overrideSize));
-			} else if(e.mode == FetchException.TOO_BIG) {
+			} else if(e.mode == FetchExceptionMode.TOO_BIG) {
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
@@ -940,7 +941,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode optionList = infoboxContent.addChild("ul");
 
 				PluginInfoWrapper keyUtil;
-				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS)) {
+				if((e.mode == FetchExceptionMode.NOT_IN_ARCHIVE || e.mode == FetchExceptionMode.NOT_ENOUGH_PATH_COMPONENTS)) {
 					// first look for the newest version
 					if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyUtils.KeyUtilsPlugin")) != null) {
 						option = optionList.addChild("li");
@@ -989,7 +990,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 
 				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
-				this.writeHTMLReply(ctx, (e.mode == 10) ? 404 : 500 /* close enough - FIXME probably should depend on status code */,
+				this.writeHTMLReply(ctx, (e.mode == FetchExceptionMode.NOT_IN_ARCHIVE) ? 404 : 500 /* close enough - FIXME probably should depend on status code */,
 						"Internal Error", pageNode.generate());
 			}
 		} catch (SocketException e) {

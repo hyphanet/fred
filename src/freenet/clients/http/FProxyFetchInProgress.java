@@ -15,6 +15,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
@@ -184,7 +185,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			// Impossible
 			Logger.error(this, "Failed to start: "+e);
 			synchronized(this) {
-				this.failed = new FetchException(FetchException.INTERNAL_ERROR, e);
+				this.failed = new FetchException(FetchExceptionMode.INTERNAL_ERROR, e);
 				this.finished = true;
 			}
 		}

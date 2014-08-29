@@ -12,6 +12,7 @@ import java.util.HashSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.async.BinaryBlob;
@@ -297,7 +298,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), null);
 		}
 	}
 
@@ -548,7 +549,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				succeeded = false;
 				finished = true;
-				FetchException cancelled = new FetchException(FetchException.CANCELLED);
+				FetchException cancelled = new FetchException(FetchExceptionMode.CANCELLED);
 				getFailedMessage = new GetFailedMessage(cancelled, identifier, global);
 			}
 			trySendDataFoundOrGetFailed(null);
@@ -792,9 +793,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return getFailedMessage;
 	}
 	
-	public int getFailureReasonCode() {
+	public FetchExceptionMode getFailureReasonCode() {
 		if(getFailedMessage == null)
-			return -1;
+			return null;
 		return getFailedMessage.code;
 		
 	}
@@ -914,7 +915,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			failed = (int) progressPending.getFailedBlocks();
 		}
 		if(finished && succeeded) totalFinalized = true;
-		int failureCode = -1;
+		FetchExceptionMode failureCode = null;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
 		if(getFailedMessage != null) {

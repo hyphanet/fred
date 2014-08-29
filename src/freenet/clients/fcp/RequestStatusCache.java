@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
@@ -61,7 +62,7 @@ public class RequestStatusCache {
 	}
 	
 	synchronized void finishedDownload(String identifier, boolean success, long dataSize, 
-			String mimeType, int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
+			String mimeType, FetchExceptionMode failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.
 		status.setFinished(success, dataSize, mimeType, failureCode, failureReasonLong,

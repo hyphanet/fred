@@ -18,6 +18,7 @@ import java.util.TimeZone;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
@@ -151,7 +152,7 @@ public class LongTermMHKTest extends LongTermTest {
 					successes++;
 				} catch (InsertException e) {
 					e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
+					csvLine.add(InsertException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
 					System.out.println("INSERT FAILED: "+e+" for insert "+i+" for single block");
 				}
@@ -184,7 +185,7 @@ public class LongTermMHKTest extends LongTermTest {
 					successes++;
 				} catch (InsertException e) {
 					e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
+					csvLine.add(InsertException.getShortMessage(e.getMode()));
 					csvLine.add("N/A");
 					System.out.println("INSERT FAILED: "+e+" for MHK #"+i);
 				}
@@ -364,8 +365,8 @@ public class LongTermMHKTest extends LongTermTest {
 						csvLine.add(String.valueOf(t2 - t1));
 						fetched = true;
 					} catch (FetchException e) {
-						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+						if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
 						System.err.println("FAILED PULL FOR SINGLE URI: "+e);
@@ -381,8 +382,8 @@ public class LongTermMHKTest extends LongTermTest {
 						System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
 						csvLine.add(String.valueOf(t2 - t1));
 					} catch (FetchException e) {
-						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+						if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 							e.printStackTrace();
 						csvLine.add(FetchException.getShortMessage(e.getMode()));
 						System.err.println("FAILED PULL FOR MHK #"+i+": "+e);

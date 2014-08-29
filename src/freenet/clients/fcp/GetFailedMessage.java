@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
@@ -22,7 +23,7 @@ import freenet.support.SimpleFieldSet;
 public class GetFailedMessage extends FCPMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    final int code;
+    final FetchExceptionMode code;
 	final String extraDescription;
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
@@ -68,7 +69,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	public GetFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) throws MalformedURLException {
 		identifier = fs.get("Identifier");
 		if(identifier == null) throw new NullPointerException();
-		code = Integer.parseInt(fs.get("Code"));
+		code = FetchExceptionMode.getByCode(Integer.parseInt(fs.get("Code")));
 		
 		if(useVerboseFields) {
 			isFatal = fs.getBoolean("Fatal", false);
@@ -100,7 +101,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	
 	protected GetFailedMessage() {
 	    // For serialization.
-	    code = 0;
+	    code = null;
 	    extraDescription = null;
 	    tracker = null;
 	    isFatal = false;
@@ -125,7 +126,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
 	 */
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.put("Code", code);
+		sfs.put("Code", code.code);
 		if(verbose)
 			sfs.putSingle("CodeDescription", getFailedMessage());
 		if(extraDescription != null)
@@ -180,7 +181,7 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
     public void writeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(VERSION);
         // Do not write anything redundant.
-        dos.writeInt(code);
+        dos.writeInt(code.code);
         writePossiblyNull(extraDescription, dos);
         dos.writeBoolean(finalizedExpected);
         writePossiblyNull(redirectURI == null ? null : redirectURI.toString(), dos);
@@ -190,9 +191,12 @@ public class GetFailedMessage extends FCPMessage implements Serializable {
             long expectedSize, String expectedType) throws StorageFormatException, IOException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version in GetFailedMessage");
-        code = dis.readInt();
-        if(!FetchException.isErrorCode(code))
+        int x = dis.readInt();
+        try {
+            code = FetchExceptionMode.getByCode(x);
+        } catch (IllegalArgumentException e) {
             throw new StorageFormatException("Bad error code");
+        }
         this.isFatal = FetchException.isFatal(code);
         this.extraDescription = readPossiblyNull(dis);
         this.finalizedExpected = dis.readBoolean();

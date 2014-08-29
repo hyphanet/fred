@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import freenet.client.FECCodec;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
@@ -217,14 +218,14 @@ public class SplitFileFetcherCrossSegmentStorage {
         ClientCHK key = getKey(i);
         if(key == null) {
             Logger.error(this, "Key not found");
-            failOffThread(new FetchException(FetchException.INTERNAL_ERROR, "Key not found"));
+            failOffThread(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Key not found"));
             return;
         }
         ClientCHKBlock block = encodeBlock(key, data);
         String decoded = i >= dataBlockCount ? "Encoded" : "Decoded";
         if(block == null || !key.getNodeCHK().equals(block.getKey())) {
             Logger.error(this, decoded+" cross-segment block "+i+" failed!");
-            failOffThread(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, decoded+" cross-segment block does not match expected key"));
+            failOffThread(new FetchException(FetchExceptionMode.SPLITFILE_DECODE_ERROR, decoded+" cross-segment block does not match expected key"));
             return;
         } else {
             reportBlockToSegmentOffThread(i, key, block, data);

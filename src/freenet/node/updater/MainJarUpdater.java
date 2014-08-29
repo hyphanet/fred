@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
@@ -130,9 +131,9 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 			try {
 				tempFile = File.createTempFile(filename.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, parent);
 			} catch (InsufficientDiskSpaceException e) {
-			    throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
+			    throw new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);
 			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
+				throw new FetchException(FetchExceptionMode.BUCKET_ERROR, "Cannot create temp file for "+filename+" in "+parent+" - disk full? permissions problem?");
 			}
 			getter = new ClientGetter(this,  
 					chk, myCtx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
@@ -192,7 +193,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
                 Logger.error(this, "Unable to download dependency "+filename+" : not the expected size or hash!");
                 System.err.println("Download of "+filename+" for update failed because temp file appears to be corrupted!");
                 if(cb != null)
-                    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
+                    cb.onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Downloaded jar from Freenet but failed consistency check: "+tempFile+" length "+tempFile.length()+" "));
                 tempFile.delete();
                 return;
             }
@@ -200,7 +201,7 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 				Logger.error(this, "Unable to rename temp file "+tempFile+" to "+filename);
 				System.err.println("Download of "+filename+" for update failed because cannot rename from "+tempFile);
 				if(cb != null)
-				    cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
+				    cb.onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Unable to rename temp file "+tempFile+" to "+filename));
                 tempFile.delete();
 				return;
 			}

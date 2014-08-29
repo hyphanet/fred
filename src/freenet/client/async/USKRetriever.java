@@ -14,6 +14,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
@@ -120,15 +121,15 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 		} catch (InsufficientDiskSpaceException e) {
-            onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), state, context);
+            onFailure(new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE), state, context);
             return;
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, e), state, context);
 			return;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
 			return;
 		}
 
@@ -156,10 +157,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			}
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, e), state, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
+			onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
 			return;
 		} finally {
 			Closer.close(output);
@@ -187,8 +188,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	@Override
 	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		switch(e.mode) {
-		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
-		case FetchException.PERMANENT_REDIRECT:
+		case NOT_ENOUGH_PATH_COMPONENTS:
+		case PERMANENT_REDIRECT:
 			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 			return;
 		}

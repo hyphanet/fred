@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -1042,7 +1043,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			@Override
 			public void onFailure(FetchException e, ClientGetter state) {
-				if(e.mode == FetchException.CANCELLED) {
+				if(e.mode == FetchExceptionMode.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from " + source);
 					System.err.println("Cancelled fetch from store/blob of revocation certificate from " + source + " to " + temp + " - please report to developers");
@@ -1513,7 +1514,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 			@Override
 			public void onFailure(FetchException e, ClientGetter state) {
-				if(e.mode == FetchException.CANCELLED) {
+				if(e.mode == FetchExceptionMode.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of main jar (" + version + ") from " + toString);
 					System.err.println("Cancelled fetch from store/blob of main jar (" + version + ") from " + toString + " to " + temp + " - please report to developers");

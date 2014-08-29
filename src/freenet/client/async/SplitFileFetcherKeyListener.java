@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.SHA256;
 import freenet.keys.CHKBlock;
@@ -79,7 +80,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         long elementsLong = origSize * mainElementsPerKey;
         // REDFLAG: SIZE LIMIT: 3.36TB limit!
         if(elementsLong > Integer.MAX_VALUE)
-            throw new FetchException(FetchException.TOO_BIG, "Cannot fetch splitfiles with more than "+(Integer.MAX_VALUE/mainElementsPerKey)+" keys! (approx 3.3TB)");
+            throw new FetchException(FetchExceptionMode.TOO_BIG, "Cannot fetch splitfiles with more than "+(Integer.MAX_VALUE/mainElementsPerKey)+" keys! (approx 3.3TB)");
         int mainSizeBits = (int)elementsLong; // counting filter
         mainSizeBits = (mainSizeBits + 7) & ~7; // round up to bytes
         mainBloomFilterSizeBytes = mainSizeBits / 8 * 2; // counting filter

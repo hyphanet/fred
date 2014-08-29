@@ -10,6 +10,7 @@ import java.util.List;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
@@ -114,7 +115,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         }
         blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
         if(parent.isCancelled())
-            throw new FetchException(FetchException.CANCELLED);
+            throw new FetchException(FetchExceptionMode.CANCELLED);
         
         try {
             // Completion via truncation.
@@ -147,17 +148,17 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                     fileCompleteViaTruncation, context.getDiskSpaceCheckingRandomAccessThingFactory(persistent), 
                     context.getChkFetchScheduler(realTimeFlag).fetchingKeys());
         } catch (InsufficientDiskSpaceException e) {
-            throw new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
+            throw new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);
         } catch (IOException e) {
             Logger.error(this, "Failed to start splitfile fetcher because of disk I/O error?: "+e, e);
-            throw new FetchException(FetchException.BUCKET_ERROR, e);
+            throw new FetchException(FetchExceptionMode.BUCKET_ERROR, e);
         }
         long eventualLength = Math.max(storage.decompressedLength, metadata.uncompressedDataLength());
         cb.onExpectedSize(eventualLength, context);
         if(metadata.uncompressedDataLength() > 0)
             cb.onFinalizedMetadata();
         if(eventualLength > 0 && fetchContext.maxOutputLength > 0 && eventualLength > fetchContext.maxOutputLength)
-            throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
+            throw new FetchException(FetchExceptionMode.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
         getter = new SplitFileFetcherGet(this, storage);
         raf = storage.getRAF();
         if(logMINOR)
@@ -192,7 +193,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
      */
     @Override
     public void failOnDiskError(IOException e) {
-        fail(new FetchException(FetchException.BUCKET_ERROR));
+        fail(new FetchException(FetchExceptionMode.BUCKET_ERROR));
     }
     
     /** Fail the whole splitfile request when we get unrecoverable data corruption, e.g. can't 
@@ -200,7 +201,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
      * restarting from the metadata or the original URI. */
     @Override
     public void failOnDiskError(ChecksumFailedException e) {
-        fail(new FetchException(FetchException.BUCKET_ERROR));
+        fail(new FetchException(FetchExceptionMode.BUCKET_ERROR));
     }
     
     public void fail(FetchException e) {
@@ -219,7 +220,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
 
     @Override
     public void cancel(ClientContext context) {
-        fail(new FetchException(FetchException.CANCELLED));
+        fail(new FetchException(FetchExceptionMode.CANCELLED));
     }
 
     @Override
@@ -398,15 +399,15 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
         } catch (ResumeFailedException e) {
             raf.free();
             Logger.error(this, "Failed to resume storage file: "+e+" for "+raf, e);
-            throw new FetchException(FetchException.BUCKET_ERROR, e);
+            throw new FetchException(FetchExceptionMode.BUCKET_ERROR, e);
         } catch (IOException e) {
             raf.free();
             Logger.error(this, "Failed to resume due to I/O error: "+e+" raf = "+raf, e);
-            throw new FetchException(FetchException.BUCKET_ERROR, e);
+            throw new FetchException(FetchExceptionMode.BUCKET_ERROR, e);
         } catch (StorageFormatException e) {
             raf.free();
             Logger.error(this, "Failed to resume due to storage error: "+e+" raf = "+raf, e);
-            throw new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e);
+            throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Resume failed: "+e, e);
         } catch (FetchException e) {
             raf.free();
             throw e;
@@ -417,7 +418,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                 getter.schedule(context, storage.hasCheckedStore());
         } catch (KeyListenerConstructionException e) {
             Logger.error(this, "Key listener construction failed during resume: "+e, e);
-            fail(new FetchException(FetchException.INTERNAL_ERROR, "Resume failed: "+e, e));
+            fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Resume failed: "+e, e));
             return;
         }
     }

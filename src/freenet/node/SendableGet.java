@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -112,26 +113,26 @@ public abstract class SendableGet extends BaseSendableGet {
 	    switch(e.code) {
 	    case LowLevelGetException.DATA_NOT_FOUND:
 	    case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-	        return new FetchException(FetchException.DATA_NOT_FOUND);
+	        return new FetchException(FetchExceptionMode.DATA_NOT_FOUND);
 	    case LowLevelGetException.RECENTLY_FAILED:
-	        return new FetchException(FetchException.RECENTLY_FAILED);
+	        return new FetchException(FetchExceptionMode.RECENTLY_FAILED);
 	    case LowLevelGetException.DECODE_FAILED:
-	        return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+	        return new FetchException(FetchExceptionMode.BLOCK_DECODE_ERROR);
 	    case LowLevelGetException.INTERNAL_ERROR:
-	        return new FetchException(FetchException.INTERNAL_ERROR);
+	        return new FetchException(FetchExceptionMode.INTERNAL_ERROR);
 	    case LowLevelGetException.REJECTED_OVERLOAD:
-	        return new FetchException(FetchException.REJECTED_OVERLOAD);
+	        return new FetchException(FetchExceptionMode.REJECTED_OVERLOAD);
 	    case LowLevelGetException.ROUTE_NOT_FOUND:
-	        return new FetchException(FetchException.ROUTE_NOT_FOUND);
+	        return new FetchException(FetchExceptionMode.ROUTE_NOT_FOUND);
 	    case LowLevelGetException.TRANSFER_FAILED:
-	        return new FetchException(FetchException.TRANSFER_FAILED);
+	        return new FetchException(FetchExceptionMode.TRANSFER_FAILED);
 	    case LowLevelGetException.VERIFY_FAILED:
-	        return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+	        return new FetchException(FetchExceptionMode.BLOCK_DECODE_ERROR);
 	    case LowLevelGetException.CANCELLED:
-	        return new FetchException(FetchException.CANCELLED);
+	        return new FetchException(FetchExceptionMode.CANCELLED);
 	    default:
 	        Logger.error(SimpleSingleFileFetcher.class, "Unknown LowLevelGetException code: "+e.code);
-	        return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
+	        return new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Unknown error code: "+e.code);
 	    }
 	}
 

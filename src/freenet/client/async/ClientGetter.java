@@ -23,6 +23,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.async.BinaryBlobWriter.BinaryBlobAlreadyClosedException;
@@ -235,7 +236,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
-			throw new FetchException(FetchException.INVALID_URI, e);
+			throw new FetchException(FetchExceptionMode.INVALID_URI, e);
 		} catch (KeyListenerConstructionException e) {
 			onFailure(e.getFetchException(), currentState, context);
 		}
@@ -265,17 +266,17 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		try {
 			if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
 		} catch (IOException ioe) {
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, context);
 			return;
 		} catch (BinaryBlobAlreadyClosedException e) {
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, context);
 			return;
 		}
 		String mimeType = clientMetadata == null ? null : clientMetadata.getMIMEType();
 		
 		if(forceCompatibleExtension != null && ctx.filterData) {
 		    if(mimeType == null) {
-		        onFailure(new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+"\""), null, context);
+		        onFailure(new FetchException(FetchExceptionMode.MIME_INCOMPATIBLE_WITH_EXTENSION, "No MIME type but need specific extension \""+forceCompatibleExtension+"\""), null, context);
 		        return;
 		    }
 			try {
@@ -374,22 +375,22 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		} catch(URISyntaxException e) {
 			//Impossible
 			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
-			ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+			ex = new FetchException(FetchExceptionMode.INTERNAL_ERROR, e);
 			/*Not really the state's fault*/
 		} catch(CompressionOutputSizeException e) {
 			Logger.error(this, "Caught "+e, e);
-			ex = new FetchException(FetchException.TOO_BIG, e);
+			ex = new FetchException(FetchExceptionMode.TOO_BIG, e);
 		} catch (InsufficientDiskSpaceException e) {
-		    ex = new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE);
+		    ex = new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
-			ex = new FetchException(FetchException.BUCKET_ERROR, e);
+			ex = new FetchException(FetchExceptionMode.BUCKET_ERROR, e);
 		} catch(FetchException e) {
 			Logger.error(this, "Caught "+e, e);
 			ex = e;
 		} catch(Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			ex = new FetchException(FetchException.INTERNAL_ERROR, t);
+			ex = new FetchException(FetchExceptionMode.INTERNAL_ERROR, t);
 		} finally {
 			Closer.close(dataInput);
 			Closer.close(dataOutput);
@@ -417,10 +418,10 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
         try {
             if (binaryBlobWriter != null && !dontFinalizeBlobWriter) binaryBlobWriter.finalizeBucket();
         } catch (IOException ioe) {
-            onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, context);
+            onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe), null, context);
             return;
         } catch (BinaryBlobAlreadyClosedException e) {
-            onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, context);
+            onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+e, e), null, context);
             return;
         }
         File completionFile = getCompletionFile();
@@ -454,7 +455,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             // We are still here so it worked.
             
             if(!FileUtil.renameTo(tempFile, completionFile))
-                throw new FetchException(FetchException.BUCKET_ERROR, "Failed to rename from temp file "+tempFile);
+                throw new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to rename from temp file "+tempFile);
             
             // FIXME Hack only necessary because FileBucket tracks its own length.
             ((FileBucket)returnBucket).recheckLength();
@@ -472,17 +473,17 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             
         } catch (IOException e) {
             Logger.error(this, "Failed while completing via truncation: "+e, e);
-            ex = new FetchException(FetchException.BUCKET_ERROR, e);
+            ex = new FetchException(FetchExceptionMode.BUCKET_ERROR, e);
         } catch (URISyntaxException e) {
             Logger.error(this, "Impossible failure while completing via truncation: "+e, e);
-            ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+            ex = new FetchException(FetchExceptionMode.INTERNAL_ERROR, e);
         } catch(FetchException e) {
             // Hashes failed.
             Logger.error(this, "Caught "+e, e);
             ex = e;
         } catch (Throwable e) {
             Logger.error(this, "Failed while completing via truncation: "+e, e);
-            ex = new FetchException(FetchException.INTERNAL_ERROR, e);
+            ex = new FetchException(FetchExceptionMode.INTERNAL_ERROR, e);
         }
         if(ex != null) {
             onFailure(ex, state, context, true);
@@ -524,7 +525,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		
 		context.getJobRunner(persistent()).setCheckpointASAP();
 
-		if(e.mode == FetchException.TOO_BIG && ctx.filterData) {
+		if(e.mode == FetchExceptionMode.TOO_BIG && ctx.filterData) {
 			// Check for MIME type issues first. Because of the filtering behaviour the user needs to see these first.
 			if(e.finalizedSize()) {
 				// Since the size is finalized, so must the MIME type be.
@@ -542,7 +543,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		}
 		
 		while(true) {
-			if(e.mode == FetchException.ARCHIVE_RESTART) {
+			if(e.mode == FetchExceptionMode.ARCHIVE_RESTART) {
 				int ar;
 				synchronized(this) {
 					archiveRestarts++;
@@ -551,7 +552,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 				if(logMINOR)
 					Logger.minor(this, "Archive restart on "+this+" ar="+ar);
 				if(ar > ctx.maxArchiveRestarts)
-					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
+					e = new FetchException(FetchExceptionMode.TOO_MANY_ARCHIVE_RESTARTS);
 				else {
 					try {
 						start(context);
@@ -579,17 +580,17 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 				} catch (IOException ioe) {
 					// the request is already failed but fblob creation failed too
 					// the invalid fblob must be told, more important then an valid but incomplete fblob (ADNF for example)
-					if(e.mode != FetchException.CANCELLED && !force)
-						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
+					if(e.mode != FetchExceptionMode.CANCELLED && !force)
+						e = new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream: "+ioe);
 				} catch (BinaryBlobAlreadyClosedException ee) {
-					if(e.mode != FetchException.BUCKET_ERROR && e.mode != FetchException.CANCELLED && !force)
-						e = new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
+					if(e.mode != FetchExceptionMode.BUCKET_ERROR && e.mode != FetchExceptionMode.CANCELLED && !force)
+						e = new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to close binary blob stream, already closed: "+ee, ee);
 				}
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
-				e = new FetchException(e.errorCodes.getFirstCode());
-			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
-				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
+				e = new FetchException(e.errorCodes.getFirstCodeFetch());
+			if(e.mode == FetchExceptionMode.DATA_NOT_FOUND && super.successfulBlocks > 0)
+				e = new FetchException(e, FetchExceptionMode.ALL_DATA_NOT_FOUND);
 			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
 			if(!alreadyFinished)
@@ -625,7 +626,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		}
 		if(state == null) return;
 		Logger.error(this, "Cancelling "+currentState+" did not call onFailure(), so did not removeFrom() or call callback");
-		this.onFailure(new FetchException(FetchException.CANCELLED), state, context);
+		this.onFailure(new FetchException(FetchExceptionMode.CANCELLED), state, context);
 	}
 
 	/** Has the fetch completed? */
@@ -744,10 +745,10 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			binaryBlobWriter.addKey(block, context);
 		} catch (IOException e) {
 			Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, context);
 		} catch (BinaryBlobAlreadyClosedException e) {
 			Logger.error(this, "Failed to write key to binary blob stream (already closed??): "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): "+e), null, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to write key to binary blob stream (already closed??): "+e), null, context);
 		}
 	}
 
@@ -787,7 +788,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			// Not our problem, will be picked up elsewhere.
 			return;
 		if(!DefaultMIMETypes.isValidExt(mimeType, forceCompatibleExtension))
-			throw new FetchException(FetchException.MIME_INCOMPATIBLE_WITH_EXTENSION);
+			throw new FetchException(FetchExceptionMode.MIME_INCOMPATIBLE_WITH_EXTENSION);
 	}
 
 	/** Called when we have some idea of the length of the final data */

@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
@@ -154,7 +155,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 			return wasRunning;
 		} catch (FetchException e) {
-			if(e.mode == FetchException.RECENTLY_FAILED) {
+			if(e.mode == FetchExceptionMode.RECENTLY_FAILED) {
 				Logger.error(this, "Cannot start revocation fetcher because recently failed");
 			} else {
 				Logger.error(this, "Cannot start fetch for the auto-update revocation key: "+e, e);
@@ -268,10 +269,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	void onFailure(FetchException e, ClientGetter state, Bucket blob) {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
-		int errorCode = e.getMode();
+		FetchExceptionMode errorCode = e.getMode();
 		boolean completed = false;
 		long now = System.currentTimeMillis();
-		if(errorCode == FetchException.CANCELLED) {
+		if(errorCode == FetchExceptionMode.CANCELLED) {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
@@ -298,7 +299,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?", false);
 		}
 		synchronized(this) {
-			if(errorCode == FetchException.DATA_NOT_FOUND){
+			if(errorCode == FetchExceptionMode.DATA_NOT_FOUND){
 				revocationDNFCounter++;
 				if(logMINOR) Logger.minor(this, "Incremented DNF counter to "+revocationDNFCounter);
 			}
@@ -312,7 +313,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		if(completed)
 			manager.noRevocationFound();
 		else {
-			if(errorCode == FetchException.RECENTLY_FAILED) {
+			if(errorCode == FetchExceptionMode.RECENTLY_FAILED) {
 				// Try again in 1 second.
 				// This ensures we don't constantly start them, fail them, and start them again.
 				this.manager.node.ticker.queueTimedJob(new Runnable() {

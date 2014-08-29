@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
@@ -82,7 +83,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				FetchResult res = fw.waitForCompletion();
 				return res.asBucket().getInputStream();
 			} catch (FetchException e) {
-				if ((e.getMode() == FetchException.PERMANENT_REDIRECT) || (e.getMode() == FetchException.TOO_MANY_PATH_COMPONENTS)) {
+				if ((e.getMode() == FetchExceptionMode.PERMANENT_REDIRECT) || (e.getMode() == FetchExceptionMode.TOO_MANY_PATH_COMPONENTS)) {
 					uri = e.newURI;
 					continue;
 				}

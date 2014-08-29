@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 
 /**
  * Thrown by the filter when it cannot guarantee the safety of the data, because it is an unknown type,
@@ -52,8 +53,8 @@ public abstract class UnsafeContentTypeException extends IOException {
 	 * Subclasses of this exception may override this method to provide more 
 	 * detailed error messages.
 	 */
-	public int getFetchErrorCode() {
-		return FetchException.CONTENT_VALIDATION_FAILED;
+	public FetchExceptionMode getFetchErrorCode() {
+		return FetchExceptionMode.CONTENT_VALIDATION_FAILED;
 	}
 
 	public FetchException recreateFetchException(FetchException e, String mime) {

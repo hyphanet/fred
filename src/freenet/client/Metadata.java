@@ -25,6 +25,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
@@ -1801,7 +1802,7 @@ public class Metadata implements Cloneable, Serializable {
 	public SplitFileSegmentKeys[] grabSegmentKeys() throws FetchException {
 		synchronized(this) {
 			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
-				throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+				throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
 			SplitFileSegmentKeys[] segs = segments;
 			segments = null;
 			return segs;
@@ -1811,7 +1812,7 @@ public class Metadata implements Cloneable, Serializable {
     public SplitFileSegmentKeys[] getSegmentKeys() throws FetchException {
         synchronized(this) {
             if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
-                throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+                throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
             return segments;
         }
     }

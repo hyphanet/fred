@@ -19,6 +19,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
@@ -322,7 +323,7 @@ public class SplitFileFetcherStorage {
         if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
             if(splitfileCheckBlocks > 0) {
                 Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
-                throw new FetchException(FetchException.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
+                throw new FetchException(FetchExceptionMode.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
             }
         } else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
             
@@ -334,7 +335,7 @@ public class SplitFileFetcherStorage {
                     minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
                     dontCompress = topDontCompress;
                 } else
-                    throw new FetchException(FetchException.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
+                    throw new FetchException(FetchExceptionMode.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
             }
             // We assume we are the bottom layer. 
             // If the top-block stats are passed in then we can safely say the report is definitive.
@@ -342,7 +343,7 @@ public class SplitFileFetcherStorage {
 
             if((blocksPerSegment > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocksPerSegment > origFetchContext.maxCheckBlocksPerSegment))
-                throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
+                throw new FetchException(FetchExceptionMode.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
             
                 
         } else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
@@ -356,7 +357,7 @@ public class SplitFileFetcherStorage {
         long checkLength = 1L * (splitfileDataBlocks - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
         if(checkLength > finalLength) {
             if(checkLength - finalLength > CHKBlock.DATA_LENGTH)
-                throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+checkLength+" bytes long but length is "+finalLength+" bytes");
+                throw new FetchException(FetchExceptionMode.INVALID_METADATA, "Splitfile is "+checkLength+" bytes long but length is "+finalLength+" bytes");
         }
         
         byte[] localSalt = new byte[32];
@@ -399,7 +400,7 @@ public class SplitFileFetcherStorage {
             final int checkBlocks = keys.getCheckBlocks();
             if((dataBlocks > origFetchContext.maxDataBlocksPerSegment)
                     || (checkBlocks > origFetchContext.maxCheckBlocksPerSegment))
-                throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
+                throw new FetchException(FetchExceptionMode.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
             segments[i] = new SplitFileFetcherSegmentStorage(this, i, splitfileType, 
                     dataBlocks,
                     checkBlocks, crossCheckBlocks, dataOffset, 
@@ -475,7 +476,7 @@ public class SplitFileFetcherStorage {
                 metadata.writeTo(new DataOutputStream(mos));
                 mos.getResults()[0].writeTo(bos);
             } catch (MetadataUnresolvedException e) {
-                throw new FetchException(FetchException.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
+                throw new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Metadata not resolved starting splitfile fetch?!: "+e, e);
             }
             bos.close();
             long metadataLength = metadataTemp.size();
@@ -798,7 +799,7 @@ public class SplitFileFetcherStorage {
                 if(segment.hasFailed()) {
                     raf.close();
                     raf.free(); // Failed, so free it.
-                    throw new FetchException(FetchException.SPLITFILE_ERROR, errors);
+                    throw new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors);
                 }
             } catch (ChecksumFailedException e) {
                 Logger.error(this, "Progress for segment "+segment.segNo+" on "+this+" corrupted.");
@@ -1101,7 +1102,7 @@ public class SplitFileFetcherStorage {
             callSuccessOffThread();
         } else if(allFinished() && !allSucceeded()) {
             // Some failed.
-            fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+            fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
         }
     }
     
@@ -1247,7 +1248,7 @@ public class SplitFileFetcherStorage {
         }
         if(allFinished() && !allSucceeded()) {
             // No more blocks will be found, so fail *now*.
-            fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+            fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
             failed = true;
         } else {
             if(waitingForFetcher) return; // Waiting for the fetcher to finish so we can free the RAF.
@@ -1327,7 +1328,7 @@ public class SplitFileFetcherStorage {
      * @param segment The segment that failed.
      */
     public void failOnSegment(SplitFileFetcherSegmentStorage segment) {
-        fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+        fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
     }
 
     public void failOnDiskError(final IOException e) {
@@ -1485,7 +1486,7 @@ public class SplitFileFetcherStorage {
     public void finishedCheckingDatastoreOnLocalRequest(ClientContext context) {
         // At this point, all the blocks will have been processed.
         if(hasFinished()) return; // Don't need to do anything.
-        this.errors.inc(FetchException.ALL_DATA_NOT_FOUND);
+        this.errors.inc(FetchExceptionMode.ALL_DATA_NOT_FOUND);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             segment.onFinishedCheckingDatastoreNoFetch(context);
         }

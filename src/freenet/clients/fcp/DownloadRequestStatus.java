@@ -3,6 +3,7 @@ package freenet.clients.fcp;
 import java.io.File;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
@@ -12,7 +13,7 @@ import freenet.support.api.Bucket;
 /** Cached status of a download of a file i.e. a ClientGet */
 public class DownloadRequestStatus extends RequestStatus {
 	
-	private int failureCode;
+	private FetchExceptionMode failureCode;
 	private String failureReasonShort;
 	private String failureReasonLong;
 	// These can be guesses
@@ -29,9 +30,9 @@ public class DownloadRequestStatus extends RequestStatus {
 	private boolean detectedDontCompress;
 	
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
-			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
+	        FetchExceptionMode failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		setFinished(success);
-		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+		if(mimeType == null && (failureCode == FetchExceptionMode.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchExceptionMode.CONTENT_VALIDATION_BAD_MIME)) {
 			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+getIdentifier()+" : "+uri, new Exception("error"));
 		}
 		this.dataSize = dataSize;
@@ -46,11 +47,11 @@ public class DownloadRequestStatus extends RequestStatus {
 	DownloadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
-			int failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
+			FetchExceptionMode failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
 			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, boolean overriddenDataType, Bucket dataShadow, boolean filterData, boolean dontCompress) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
-		if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+		if(mimeType == null && (failureCode == FetchExceptionMode.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchExceptionMode.CONTENT_VALIDATION_BAD_MIME)) {
 			Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+identifier+" : "+uri, new Exception("error"));
 		}
 		this.overriddenDataType = overriddenDataType;
@@ -72,7 +73,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		return destFilename == null;
 	}
 
-	public int getFailureCode() {
+	public FetchExceptionMode getFailureCode() {
 		return failureCode;
 	}
 

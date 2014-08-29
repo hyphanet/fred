@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
@@ -1232,13 +1233,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					else // to disk
 						completedDownloadToDisk.add(download);
 				} else if(download.hasFinished()) {
-					int failureCode = download.getFailureCode();
+				    FetchExceptionMode failureCode = download.getFailureCode();
 					String mimeType = download.getMIMEType();
-					if(mimeType == null && (failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME)) {
+					if(mimeType == null && (failureCode == FetchExceptionMode.CONTENT_VALIDATION_UNKNOWN_MIME || failureCode == FetchExceptionMode.CONTENT_VALIDATION_BAD_MIME)) {
 						Logger.error(this, "MIME type is null but failure code is "+FetchException.getMessage(failureCode)+" for "+download.getIdentifier()+" : "+download.getURI());
 						mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 					}
-					if(failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME) {
+					if(failureCode == FetchExceptionMode.CONTENT_VALIDATION_UNKNOWN_MIME) {
 						mimeType = ContentFilter.stripMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list = failedUnknownMIMEType.get(mimeType);
 						if(list == null) {
@@ -1246,7 +1247,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							failedUnknownMIMEType.put(mimeType, list);
 						}
 						list.add(download);
-					} else if(failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME) {
+					} else if(failureCode == FetchExceptionMode.CONTENT_VALIDATION_BAD_MIME) {
 						mimeType = ContentFilter.stripMIMEType(mimeType);
 						FilterMIMEType type = ContentFilter.getMIMEType(mimeType);
 						LinkedList<DownloadRequestStatus> list;

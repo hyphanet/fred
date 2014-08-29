@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.StorageFormatException;
@@ -59,6 +60,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	}
 	
 	private HashMap<Integer, Integer> map;
+	
+	public void inc(FetchExceptionMode k) {
+	    if(insert) throw new IllegalStateException();
+	    inc(k.code);
+	}
 
 	public synchronized void inc(int k) {
 		if(k == 0) {
@@ -73,6 +79,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		    map.put(key, i+1);
 		total++;
 	}
+
+    public void inc(FetchExceptionMode k, int val) {
+        if(insert) throw new IllegalStateException();
+        inc(k.code, val);
+    }
 
 	public synchronized void inc(Integer k, int val) {
 		if(k == 0) {
@@ -94,7 +105,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer x = e.getKey();
 			Integer val = e.getValue();
-			String s = insert ? InsertException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
+			String s = getMessage(x);
 			sb.append(val);
 			sb.append('\t');
 			sb.append(s);
@@ -103,7 +114,12 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		return sb.toString();
 	}
 
-	@Override
+	public String getMessage(Integer x) {
+	    return insert ? InsertException.getMessage(x.intValue()) : 
+	        FetchException.getMessage(FetchExceptionMode.getByCode(x));
+    }
+
+    @Override
 	public synchronized String toString() {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder(super.toString());
@@ -151,7 +167,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			merge(e.errorCodes);
 		}
 		// Increment mode anyway, so we get the splitfile error as well.
-		inc(e.mode);
+		inc(e.mode.code);
 	}
 
 	public synchronized int totalCount() {
@@ -169,8 +185,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
-				sfs.putSingle(Integer.toString(code)+".Description", 
-						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
+				sfs.putSingle(Integer.toString(code)+".Description", getMessage(code));
 			sfs.put(Integer.toString(code)+".Count", item);
 		}
 		}
@@ -181,6 +196,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	    if(map == null) return true;
 		return map.size() == 1;
 	}
+	
+    public FetchExceptionMode getFirstCodeFetch() {
+        if(insert) throw new IllegalStateException();
+        return FetchExceptionMode.getByCode(getFirstCode());
+    }
 
 	public synchronized int getFirstCode() {
 		return ((Integer) map.keySet().toArray()[0]).intValue();
@@ -192,9 +212,9 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			Integer code = e.getKey();
 			if(e.getValue() == 0) continue;
 			if(insert) {
-				if(InsertException.isFatal(code.intValue())) return true;
+				if(InsertException.isFatal(code)) return true;
 			} else {
-				if(FetchException.isFatal(code.intValue())) return true;
+				if(FetchException.isFatal(FetchExceptionMode.getByCode(code))) return true;
 			}
 		}
 		return false;
@@ -221,9 +241,10 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	}
 
 	public synchronized boolean isDataFound() {
+	    if(!insert) throw new IllegalStateException();
 		for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
 			if(entry.getValue() <= 0) continue;
-			if(FetchException.isDataFound(entry.getKey(), null)) return true;
+			if(FetchException.isDataFound(FetchExceptionMode.getByCode(entry.getKey()), null)) return true;
 		}
 		return false;
 	}

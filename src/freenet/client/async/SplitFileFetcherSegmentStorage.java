@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Random;
 
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
@@ -304,7 +305,7 @@ public class SplitFileFetcherSegmentStorage {
                     shutdown = true;
                 } catch (Throwable e) {
                     Logger.error(this, "Failed to decode "+this+" because of internal error: "+e, e);
-                    parent.fail(new FetchException(FetchException.INTERNAL_ERROR, e));
+                    parent.fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, e));
                 } finally {
                     chunk.release();
                     synchronized(this) {
@@ -535,7 +536,7 @@ public class SplitFileFetcherSegmentStorage {
                         return;
                     } else {
                         // Usual case.
-                        parent.fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
+                        parent.fail(new FetchException(FetchExceptionMode.SPLITFILE_DECODE_ERROR, "Decoded block does not match expected key"));
                         return;
                     }
                 }
@@ -543,7 +544,7 @@ public class SplitFileFetcherSegmentStorage {
                     parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
-                parent.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                parent.fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Decoded block could not be encoded"));
                 Logger.error(this, "Impossible: Decoded block could not be encoded");
                 return;
             }
@@ -568,7 +569,7 @@ public class SplitFileFetcherSegmentStorage {
                     parent.fetcher.maybeAddToBinaryBlob(block);
             } catch (CHKEncodeException e) {
                 // Impossible!
-                parent.fail(new FetchException(FetchException.INTERNAL_ERROR, "Decoded block could not be encoded"));
+                parent.fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Decoded block could not be encoded"));
                 Logger.error(this, "Impossible: Decoded block could not be encoded");
                 return;
             }
@@ -717,7 +718,7 @@ public class SplitFileFetcherSegmentStorage {
                 Logger.warning(this, "Ignoring last block");
                 return false;
             } else {
-                parent.fail(new FetchException(FetchException.SPLITFILE_ERROR, "Splitfile block is too short"));
+                parent.fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, "Splitfile block is too short"));
                 return false;
             }
         }

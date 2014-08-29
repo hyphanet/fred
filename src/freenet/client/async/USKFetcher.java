@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKey;
@@ -242,7 +243,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				innerSuccess(data, context);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, context);
+				onFailure(new FetchException(FetchExceptionMode.INTERNAL_ERROR, t), state, context);
 				return;
 			} finally {
 				boolean dbrsFinished;

@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
@@ -37,7 +38,6 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
-import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessBucket;
 
@@ -207,8 +207,8 @@ public class LongTermPushPullTest extends LongTermTest {
 					System.out.println("PULL-TIME-" + i + ":" + (t2 - t1));
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
-					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
+					if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+					        && e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 						e.printStackTrace();
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}

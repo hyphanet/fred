@@ -17,6 +17,7 @@ import java.util.zip.ZipInputStream;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
@@ -442,7 +443,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!isRunning)
 			return;
-		int errorCode = e.getMode();
+		FetchExceptionMode errorCode = e.getMode();
 		tempBlobFile.delete();
 
 		if(logMINOR)
@@ -451,7 +452,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			this.cg = null;
 			isFetching = false;
 		}
-		if(errorCode == FetchException.CANCELLED ||
+		if(errorCode == FetchExceptionMode.CANCELLED ||
 			!e.isFatal()) {
 			Logger.normal(this, "Rescheduling new request");
 			ticker.queueTimedJob(new Runnable() {

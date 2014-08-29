@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.clients.fcp.ListPersistentRequestsMessage.PersistentListJob;
@@ -119,7 +120,7 @@ public class FCPClient {
 			if(get instanceof ClientGet) {
 				ClientGet download = (ClientGet)get;
 				GetFailedMessage msg = download.getFailureMessage();
-				int failureCode = -1;
+				FetchExceptionMode failureCode = null;
 				String shortFailMessage = null;
 				String longFailMessage = null;
 				if(msg != null) {

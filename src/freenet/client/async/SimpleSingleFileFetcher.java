@@ -9,6 +9,7 @@ import java.io.Serializable;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
@@ -77,7 +78,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
 		if(parent.isCancelled() || cancelled) {
 			if(logMINOR) Logger.minor(this, "Failing: cancelled");
-			e = new FetchException(FetchException.CANCELLED);
+			e = new FetchException(FetchExceptionMode.CANCELLED);
 			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
@@ -102,7 +103,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	protected void onSuccess(FetchResult data, ClientContext context) {
 		if(parent.isCancelled()) {
 			data.asBucket().free();
-			onFailure(new FetchException(FetchException.CANCELLED), false, context);
+			onFailure(new FetchException(FetchExceptionMode.CANCELLED), false, context);
 			return;
 		}
 		rcb.onSuccess(new SingleFileStreamGenerator(data.asBucket(), persistent), data.getMetadata(), null, this, context);
@@ -118,7 +119,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(new ClientMetadata(null), data), context);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, context);
+			onFailure(new FetchException(FetchExceptionMode.INVALID_METADATA, "Metadata where expected data"), false, context);
 		}
 	}
 
@@ -132,17 +133,17 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		} catch (KeyDecodeException e1) {
 			if(logMINOR)
 				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, context);
+			onFailure(new FetchException(FetchExceptionMode.BLOCK_DECODE_ERROR, e1.getMessage()), false, context);
 			return null;
 		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e), false, context);
+			onFailure(new FetchException(FetchExceptionMode.TOO_BIG, e), false, context);
 			return null;
 		} catch (InsufficientDiskSpaceException e) {
-		    onFailure(new FetchException(FetchException.NOT_ENOUGH_DISK_SPACE), false, context);
+		    onFailure(new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE), false, context);
 		    return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, context);
+			onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, e), false, context);
 			return null;
 		}
 		return data;
@@ -162,17 +163,17 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	@Override
 	public void cancel(ClientContext context) {
 		super.cancel(context);
-		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, context);
+		rcb.onFailure(new FetchException(FetchExceptionMode.CANCELLED), this, context);
 	}
 
 	@Override
 	protected void notFoundInStore(ClientContext context) {
-		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, context);
+		this.onFailure(new FetchException(FetchExceptionMode.DATA_NOT_FOUND), true, context);
 	}
 
 	@Override
 	protected void onBlockDecodeError(SendableRequestItem token, ClientContext context) {
-		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, context);
+		onFailure(new FetchException(FetchExceptionMode.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, context);
 	}
 
     @Override

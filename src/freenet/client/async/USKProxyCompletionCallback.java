@@ -8,6 +8,7 @@ import java.util.List;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
@@ -42,8 +43,8 @@ public class USKProxyCompletionCallback implements GetCompletionCallback, Serial
 	@Override
 	public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
 		switch(e.mode) {
-		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
-		case FetchException.PERMANENT_REDIRECT:
+		case NOT_ENOUGH_PATH_COMPONENTS:
+		case PERMANENT_REDIRECT:
 			context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
 		}
 		FreenetURI uri = e.newURI;

@@ -19,6 +19,7 @@ import java.util.TimeZone;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
@@ -254,7 +255,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 					System.out.println("Pushed block "+i+" : "+uris[i]+" in "+times[i]);
 					successes++;
 				} else {
-					csvLine.add(FetchException.getShortMessage(errors[i].getMode()));
+					csvLine.add(InsertException.getShortMessage(errors[i].getMode()));
 					csvLine.add("N/A");
 					System.out.println("Failed to push block "+i+" : "+errors[i]);
 				}
@@ -367,8 +368,8 @@ loopOverLines:
 								csvLine.add(String.valueOf(t2 - t1));
 								pulled++;
 							} catch (FetchException e) {
-								if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-										&& e.getMode() != FetchException.DATA_NOT_FOUND)
+								if (e.getMode() != FetchExceptionMode.ALL_DATA_NOT_FOUND
+										&& e.getMode() != FetchExceptionMode.DATA_NOT_FOUND)
 									e.printStackTrace();
 								csvLine.add(FetchException.getShortMessage(e.getMode()));
 								System.err.println("FAILED PULL FOR BLOCK "+j+": "+e);

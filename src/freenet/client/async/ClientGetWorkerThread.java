@@ -14,6 +14,7 @@ import java.net.URISyntaxException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
@@ -146,7 +147,7 @@ public class ClientGetWorkerThread extends Thread {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
 					Logger.error(this, "Hashes failed verification (length read is "+hashStream.getReadBytes()+") "+" for "+uri);
-					throw new FetchException(FetchException.CONTENT_HASH_FAILED);
+					throw new FetchException(FetchExceptionMode.CONTENT_HASH_FAILED);
 				}
 			}
 
