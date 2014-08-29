@@ -269,7 +269,7 @@ public final class FCPPluginClient {
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet,
-     *                          Bucket)} and {@link ClientSideFCPMessageHandler#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     *                          Bucket)} and {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
      * @throws IOException If the connection has been closed meanwhile.<br/>
      *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
      *                     
@@ -300,7 +300,7 @@ public final class FCPPluginClient {
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)} and
-     *                          {@link ClientSideFCPMessageHandler#handleFCPPluginServerMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
+     *                          {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}.
      * @throws FCPCallFailedException If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
      *                                
      *                                <p>This can be used to decide to retry certain operations. A practical example would be a user trying to create an account
