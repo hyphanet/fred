@@ -14,7 +14,6 @@ import freenet.crypt.SHA256;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
-import freenet.node.BaseSendableGet;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
@@ -22,8 +21,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 /**
- * <p>Base class for @see ClientRequestSchedulerCore and @see ClientRequestSchedulerNonPersistent.
- * The purpose of these classes is to track exactly which keys we are listening for. This is 
+ * <p>Tracks exactly which keys we are listening for. This is 
  * decoupled from actually requesting them because we want to pick up the data even if we didn't 
  * request it - some nearby node requested it, it got inserted through this node, it was offered 
  * via ULPRs some time after we requested it etc.</p>
@@ -36,7 +34,7 @@ import freenet.support.Logger.LogLevel;
  * with the ClientRequestSelector.
  * @author toad
  */
-abstract class ClientRequestSchedulerBase implements KeySalter {
+class ClientRequestSchedulerBase implements KeySalter {
 	
 	private static volatile boolean logMINOR;
 	
@@ -65,9 +63,13 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 	/** Transient even for persistent scheduler. There is one for each of transient, persistent. */
 	protected final ArrayList<KeyListener> keyListeners;
 
-	abstract boolean persistent();
+	final boolean persistent;
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched, byte[] globalSalt) {
+	public boolean persistent() {
+	    return persistent;
+	}
+	
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, ClientRequestScheduler sched, byte[] globalSalt, boolean persistent) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
@@ -78,6 +80,7 @@ abstract class ClientRequestSchedulerBase implements KeySalter {
 		    random.nextBytes(globalSalt);
 		}
 		this.globalSalt = globalSalt;
+		this.persistent = persistent;
 	}
 	
 	/**

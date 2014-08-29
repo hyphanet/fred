@@ -34,8 +34,8 @@ import freenet.support.io.NativeThread;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
-	private ClientRequestSchedulerCore schedCore;
-	final ClientRequestSchedulerNonPersistent schedTransient;
+	private ClientRequestSchedulerBase schedCore;
+	final ClientRequestSchedulerBase schedTransient;
 	final transient ClientRequestSelector selector;
 	
 	private static volatile boolean logMINOR;
@@ -70,7 +70,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
-		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, forRT, random);
+		schedTransient = new ClientRequestSchedulerBase(forInserts, forSSKs, forRT, random, this, null, false);
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
 		this.random = random;
@@ -90,7 +90,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void startCore(byte[] globalSaltPersistent) {
-	    schedCore = new ClientRequestSchedulerCore(node, isInsertScheduler, isSSKScheduler, isRTScheduler, COOLDOWN_PERIOD, this, globalSaltPersistent);
+	    schedCore = new ClientRequestSchedulerBase(isInsertScheduler, isSSKScheduler, isRTScheduler, random, this, globalSaltPersistent, true);
 	}
 	
 	/** Called by the  config. Callback

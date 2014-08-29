@@ -124,7 +124,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerBase schedCore, ClientRequestSchedulerBase schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -135,7 +135,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		// PRIO will do 0,1,2,3,4,5,6,0
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
-			boolean persistent = false;
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = newPriorities[priority];
 			if(result != null) {
@@ -172,7 +171,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, boolean realTime, ClientContext context) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerBase schedTransient, short maxPrio, boolean realTime, ClientContext context) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
@@ -272,7 +271,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerBase schedCore, ClientRequestSchedulerBase schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
