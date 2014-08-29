@@ -192,23 +192,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 		return realTimeFlag;
 	}
 
-	/** This always uses the default implementation for persistent objects, which will return a more or 
-	 * less unique value for activated persistent objects, and class@0 for deactivated ones. Transient
-	 * only objects may override via overrideToString(). REDFLAG DB4O: This is not necessary if we get
-	 * rid of db4o or if we move away from manual activation.
-	 */
-	public final String toString() {
-		if(hashCode != 0 && !persistent)
-			return transientToString();
-		return super.toString();
-	}
-	
 	protected final String objectToString() {
 		return super.toString();
 	}
 
-	/** Method to safely override toString(), will only be called if the object is transient. */
-	protected String transientToString() {
-		return super.toString();
-	}
 }

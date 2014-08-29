@@ -99,7 +99,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	@Override
-	protected String transientToString() {
+	public String toString() {
 		return "USKChecker for "+key.getURI()+" for "+cb;
 	}
 
