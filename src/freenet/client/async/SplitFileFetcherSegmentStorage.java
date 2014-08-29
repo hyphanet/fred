@@ -920,9 +920,11 @@ public class SplitFileFetcherSegmentStorage {
         boolean kill = false;
         boolean wake = false;
         boolean write = false;
+        if(logMINOR) Logger.minor(this, "Non-fatal failure on block "+blockNumber+" for "+this+" for "+parent);
         synchronized(this) {
             long cooldown = blockChooser.overallCooldownTime();
             if(blockChooser.onNonFatalFailure(blockNumber)) {
+                if(logMINOR) Logger.minor(this, "Giving up on block "+blockNumber+" on "+this);
                 givenUp = true;
                 failedBlocks++;
                 int target = checkBlocks;
@@ -940,6 +942,7 @@ public class SplitFileFetcherSegmentStorage {
                     write = true;
                 }
             } else {
+                if(logMINOR) Logger.minor(this, "Block "+blockNumber+" on "+this+" : "+blockChooser.getRetries(blockNumber)+"/"+blockChooser.maxRetries);
                 if(blockChooser.overallCooldownTime() < cooldown)
                     wake = true;
                 write = true;
@@ -1119,13 +1122,20 @@ public class SplitFileFetcherSegmentStorage {
             }
             if(corruptMetadata) return -1; // Will be fetchable after we've found out what blocks we actually have.
             chosen = blockChooser.chooseKey();
+            if(chosen != -1) {
+                if(logMINOR) Logger.minor(this, "Chosen key "+chosen+"/"+totalBlocks()+" for "+this+" (retries "+blockChooser.getRetries(chosen)+"/"+blockChooser.maxRetries+")");
+            } else {
+                if(logMINOR) Logger.minor(this, "No keys chosen for "+this);
+            }
         }
         if(chosen == -1) {
             long cooldownTime = blockChooser.overallCooldownTime();
             if(cooldownTime > System.currentTimeMillis())
                 parent.increaseCooldown(this, cooldownTime);
             return -1;
-        } else return chosen;
+        } else {
+            return chosen;
+        }
     }
     
     public void cancel() {
