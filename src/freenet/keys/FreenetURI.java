@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -1082,7 +1083,7 @@ public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializab
 	 * structure. */
 	public void checkInsertURI() throws InsertException {
 		if(metaStr != null && metaStr.length > 0)
-			throw new InsertException(InsertException.META_STRINGS_NOT_SUPPORTED, this);
+			throw new InsertException(InsertExceptionMode.META_STRINGS_NOT_SUPPORTED, this);
 	}
 
 	/** Throw an InsertException if the argument has any meta-strings. They

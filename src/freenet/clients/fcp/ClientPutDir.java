@@ -13,6 +13,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
@@ -365,7 +366,7 @@ public class ClientPutDir extends ClientPutBase {
 	RequestStatus getStatus() {
 		FreenetURI finalURI = getFinalURI();
 		if(finalURI != null) finalURI = getFinalURI().clone();
-		int failureCode = (short)-1;
+		InsertExceptionMode failureCode = null;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
 		if(putFailedMessage != null) {

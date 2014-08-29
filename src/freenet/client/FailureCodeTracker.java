@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import freenet.client.FetchException.FetchExceptionMode;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.StorageFormatException;
@@ -66,6 +67,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	    inc(k.code);
 	}
 
+    public void inc(InsertExceptionMode k) {
+        if(!insert) throw new IllegalStateException();
+        inc(k.code);
+    }
+
 	public synchronized void inc(int k) {
 		if(k == 0) {
 			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
@@ -82,6 +88,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 
     public void inc(FetchExceptionMode k, int val) {
         if(insert) throw new IllegalStateException();
+        inc(k.code, val);
+    }
+
+    public void inc(InsertExceptionMode k, int val) {
+        if(!insert) throw new IllegalStateException();
         inc(k.code, val);
     }
 
@@ -115,7 +126,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	}
 
 	public String getMessage(Integer x) {
-	    return insert ? InsertException.getMessage(x.intValue()) : 
+	    return insert ? InsertException.getMessage(InsertExceptionMode.getByCode(x)) : 
 	        FetchException.getMessage(FetchExceptionMode.getByCode(x));
     }
 
@@ -202,6 +213,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
         return FetchExceptionMode.getByCode(getFirstCode());
     }
 
+    public InsertExceptionMode getFirstCodeInsert() {
+        if(!insert) throw new IllegalStateException();
+        return InsertExceptionMode.getByCode(getFirstCode());
+    }
+
 	public synchronized int getFirstCode() {
 		return ((Integer) map.keySet().toArray()[0]).intValue();
 	}
@@ -212,7 +228,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			Integer code = e.getKey();
 			if(e.getValue() == 0) continue;
 			if(insert) {
-				if(InsertException.isFatal(code)) return true;
+				if(InsertException.isFatal(InsertExceptionMode.getByCode(code))) return true;
 			} else {
 				if(FetchException.isFatal(FetchExceptionMode.getByCode(code))) return true;
 			}
@@ -274,6 +290,18 @@ public class FailureCodeTracker implements Cloneable, Serializable {
         if(map == null) return 0;
         Integer item = map.get(mode);
         return item == null ? 0 : item;
+    }
+    
+    /** Get number of errors of count mode */
+    public synchronized int getErrorCount(InsertExceptionMode mode) {
+        if(!insert) throw new IllegalStateException();
+        return getErrorCount(mode.code);
+    }
+    
+    /** Get number of errors of count mode */
+    public synchronized int getErrorCount(FetchExceptionMode mode) {
+        if(insert) throw new IllegalStateException();
+        return getErrorCount(mode.code);
     }
     
     public FailureCodeTracker(boolean insert, DataInputStream dis) throws IOException, StorageFormatException {

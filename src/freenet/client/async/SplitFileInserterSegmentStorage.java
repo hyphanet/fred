@@ -10,6 +10,7 @@ import java.util.Random;
 
 import freenet.client.FECCodec;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -424,7 +425,7 @@ public class SplitFileInserterSegmentStorage {
             parent.failOnDiskError(e);
         } catch (Throwable t) {
             Logger.error(this, "Failed: "+t, t);
-            parent.fail(new InsertException(InsertException.INTERNAL_ERROR, t, null));
+            parent.fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, t, null));
         } finally {
             if(lock != null) lock.unlock();
         }
@@ -568,7 +569,7 @@ public class SplitFileInserterSegmentStorage {
         if(e.isFatal()) {
             parent.failFatalErrorInBlock();
         } else {
-            if(e.mode == InsertException.ROUTE_NOT_FOUND && 
+            if(e.mode == InsertExceptionMode.ROUTE_NOT_FOUND && 
                     blockChooser.consecutiveRNFsCountAsSuccess > 0) {
                 try {
                     readKey(blockNo);

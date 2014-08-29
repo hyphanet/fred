@@ -7,6 +7,7 @@ import java.util.List;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.ClientPut.COMPRESS_STATE;
@@ -79,7 +80,7 @@ public class RequestStatusCache {
 	}
 	
 	synchronized void finishedUpload(String identifier, boolean success,  
-			FreenetURI finalURI, int failureCode, String failureReasonShort, 
+			FreenetURI finalURI, InsertExceptionMode failureCode, String failureReasonShort, 
 			String failureReasonLong) {
 		UploadRequestStatus status = (UploadRequestStatus) requestsByIdentifier.get(identifier);
 		if(status == null) return; // Can happen during cancel etc.

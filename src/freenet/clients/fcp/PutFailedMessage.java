@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -15,7 +16,7 @@ import freenet.support.SimpleFieldSet;
 public class PutFailedMessage extends FCPMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    final int code;
+    final InsertExceptionMode code;
 	final String codeDescription;
 	final String extraDescription;
 	final String shortCodeDescription;
@@ -38,7 +39,7 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 		extraDescription = null;
 		expectedURI = null;
 		codeDescription = null;
-		code = 0;
+		code = null;
 	}
 
 	public PutFailedMessage(InsertException e, String identifier, boolean global) {
@@ -65,7 +66,7 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 		identifier = fs.get("Identifier");
 		if(identifier == null) throw new NullPointerException();
 		global = fs.getBoolean("Global", false);
-		code = Integer.parseInt(fs.get("Code"));
+		code = InsertExceptionMode.getByCode(Integer.parseInt(fs.get("Code")));
 		
 		if(useVerboseFields) {
 			codeDescription = fs.get("CodeDescription");
@@ -102,7 +103,7 @@ public class PutFailedMessage extends FCPMessage implements Serializable {
 			throw new NullPointerException();
 		fs.putSingle("Identifier", identifier);
 		fs.put("Global", global);
-		fs.put("Code", code);
+		fs.put("Code", code.code);
 		if(verbose)
 			fs.putSingle("CodeDescription", codeDescription);
 		if(extraDescription != null)

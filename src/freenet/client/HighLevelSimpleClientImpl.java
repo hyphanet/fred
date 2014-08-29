@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -288,10 +289,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
 		} catch (MetadataUnresolvedException e) {
 			Logger.error(this, "Impossible error: "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
 		}
 
 		InsertBlock block = new InsertBlock(b, null, insertURI);
@@ -315,7 +316,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
         try {
             putter = new DefaultManifestPutter(pw, BaseManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, forceCryptoKey, core.clientContext);
         } catch (TooManyFilesInsertException e1) {
-            throw new InsertException(InsertException.TOO_MANY_FILES);
+            throw new InsertException(InsertExceptionMode.TOO_MANY_FILES);
         }
 		try {
 			core.clientContext.start(putter);

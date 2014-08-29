@@ -19,6 +19,7 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
@@ -341,7 +342,7 @@ public class SplitFileInserterStorageTest extends TestCase {
             keys.addInsert(chosen);
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
-            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         keys.clear();
         // Choose and succeed all blocks.
@@ -389,7 +390,7 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
             segment.setKey(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
-            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         chosenBlocks = new boolean[segment.totalBlockCount];
         // Second RNF.
@@ -400,7 +401,7 @@ public class SplitFileInserterStorageTest extends TestCase {
             keys.addInsert(chosen);
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
-            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         // Should count as success at this point.
         cb.waitForSucceededInsert();
@@ -431,21 +432,21 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(segment.crossCheckBlockCount, 0);
         assertEquals(storage.getStatus(), Status.ENCODED);
         segment.setKey(0, segment.encodeBlock(0).getClientKey());
-        segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        segment.onFailure(0, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         assertEquals(storage.getStatus(), Status.ENCODED);
-        segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+        segment.onFailure(0, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         assertEquals(storage.getStatus(), Status.ENCODED);
-        segment.onFailure(0, new InsertException(InsertException.REJECTED_OVERLOAD));
+        segment.onFailure(0, new InsertException(InsertExceptionMode.REJECTED_OVERLOAD));
         // Should count as success at this point.
         try {
             cb.waitForSucceededInsert();
             assertTrue(false);
         } catch (InsertException e) {
             // Expected.
-            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertEquals(e.mode, InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS);
             assertTrue(e.errorCodes != null);
-            assertEquals(e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND), 2);
-            assertEquals(e.errorCodes.getErrorCount(InsertException.REJECTED_OVERLOAD), 1);
+            assertEquals(e.errorCodes.getErrorCount(InsertExceptionMode.ROUTE_NOT_FOUND), 2);
+            assertEquals(e.errorCodes.getErrorCount(InsertExceptionMode.REJECTED_OVERLOAD), 1);
             assertEquals(e.errorCodes.totalCount(), 3);
             assertEquals(storage.getStatus(), Status.FAILED);
         }
@@ -474,15 +475,15 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(segment.crossCheckBlockCount, 0);
         assertEquals(storage.getStatus(), Status.ENCODED);
         for(int i=0;i<3;i++) {
-            segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(0, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         try {
             cb.waitForSucceededInsert();
             assertTrue(false);
         } catch (InsertException e) {
-            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertEquals(e.mode, InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS);
             assertTrue(e.errorCodes != null);
-            assertEquals(e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND), 3);
+            assertEquals(e.errorCodes.getErrorCount(InsertExceptionMode.ROUTE_NOT_FOUND), 3);
             assertEquals(e.errorCodes.totalCount(), 3);
             assertEquals(storage.getStatus(), Status.FAILED);
         }
@@ -509,15 +510,15 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(segment.checkBlockCount, 3);
         assertEquals(segment.crossCheckBlockCount, 0);
         assertEquals(storage.getStatus(), Status.ENCODED);
-        assertTrue(InsertException.isFatal(InsertException.INTERNAL_ERROR));
-        segment.onFailure(0, new InsertException(InsertException.INTERNAL_ERROR));
+        assertTrue(InsertException.isFatal(InsertExceptionMode.INTERNAL_ERROR));
+        segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
         try {
             cb.waitForSucceededInsert();
             assertTrue(false);
         } catch (InsertException e) {
-            assertEquals(e.mode, InsertException.FATAL_ERRORS_IN_BLOCKS);
+            assertEquals(e.mode, InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS);
             assertTrue(e.errorCodes != null);
-            assertEquals(e.errorCodes.getErrorCount(InsertException.INTERNAL_ERROR), 1);
+            assertEquals(e.errorCodes.getErrorCount(InsertExceptionMode.INTERNAL_ERROR), 1);
             assertEquals(e.errorCodes.totalCount(), 1);
             assertEquals(storage.getStatus(), Status.FAILED);
         }
@@ -1017,7 +1018,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(storage.getStatus(), Status.STARTED);
         assertEquals(storage.segments.length, 1);
         SplitFileInserterSegmentStorage segment = storage.segments[0];
-        segment.onFailure(0, new InsertException(InsertException.INTERNAL_ERROR));
+        segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
         data.proceed(); // Now it will complete encoding, and then report in, and then fail.
         try {
             cb.waitForFinishedEncode();
@@ -1166,15 +1167,15 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertEquals(segment.checkBlockCount, 3);
             assertEquals(segment.crossCheckBlockCount, 0);
             assertTrue(resumed.getStatus() == Status.ENCODED);
-            segment.onFailure(0, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(0, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         try {
             cb.waitForSucceededInsert();
             assertTrue(false);
         } catch (InsertException e) {
-            assertEquals(e.mode, InsertException.TOO_MANY_RETRIES_IN_BLOCKS);
+            assertEquals(e.mode, InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS);
             assertTrue(e.errorCodes != null);
-            assertEquals(3, e.errorCodes.getErrorCount(InsertException.ROUTE_NOT_FOUND));
+            assertEquals(3, e.errorCodes.getErrorCount(InsertExceptionMode.ROUTE_NOT_FOUND));
             assertEquals(e.errorCodes.totalCount(), 3);
             assertEquals(Status.FAILED, resumed.getStatus());
         }
@@ -1223,7 +1224,7 @@ public class SplitFileInserterStorageTest extends TestCase {
             keys.addInsert(chosen);
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
-            segment.onFailure(chosen.blockNumber, new InsertException(InsertException.ROUTE_NOT_FOUND));
+            segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
         }
         keys.clear();
         // Choose and succeed all blocks.

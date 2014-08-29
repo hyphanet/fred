@@ -9,6 +9,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
@@ -166,7 +167,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
             System.err.println("Caught in OffThreadCompressor: "+t);
             t.printStackTrace();
             // Try to fail gracefully
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, context);
+			cb.onFailure(new InsertException(InsertExceptionMode.INTERNAL_ERROR, t, null), SingleFileInserter.this, context);
 		}
 	}
 	
@@ -226,7 +227,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 			isCHK = true;
 		} else {
-			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
+			throw new InsertException(InsertExceptionMode.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
 		// Compressed data ; now insert it
@@ -246,7 +247,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize <= CHKBlock.DATA_LENGTH : compressedDataSize <= CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 
 		if((fitsInOneBlockAsIs || fitsInOneCHK) && origSize > Integer.MAX_VALUE)
-			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
+			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
 		if((noMetadata || metadata) && archiveType == null) {
@@ -303,11 +304,11 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e, e);
-					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+					throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
 				} catch (MetadataUnresolvedException e) {
 					// Impossible, we're not inserting a manifest.
 					Logger.error(this, "Caught "+e, e);
-					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
+					throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
 				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, ctx, mcb, true, (int)origSize, -1, true, context, true, false);
 				if(logMINOR)
@@ -341,7 +342,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
         try {
             dataRAF = data.toRandomAccessThing();
         } catch (IOException e) {
-            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+            throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         }
 		if(reportMetadataOnly) {
 			SplitFileInserter sfi = new SplitFileInserter(persistent, parent, cb, 
@@ -393,7 +394,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e+" while copying non-persistent data", e);
-			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
 		}
 		// Note that SegmentedBCB *does* support splitting, so we don't need to do anything to the data
 		// if it doesn't fit in a single block.
@@ -417,7 +418,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else {
-			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
+			throw new InsertException(InsertExceptionMode.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
 		// We always want SHA256, even for small files.
@@ -456,7 +457,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				try {
 					BucketTools.copyTo(data, hasher, data.size());
 				} catch (IOException e) {
-					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", e, null);
+					throw new InsertException(InsertExceptionMode.BUCKET_ERROR, "I/O error generating hashes", e, null);
 				}
 				hashes = hasher.getResults();
 			}
@@ -510,7 +511,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 					addToParent, this.token, context, freeData, persistent, realTimeFlag, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 			} catch (MalformedURLException e) {
-				throw new InsertException(InsertException.INVALID_URI, e, null);
+				throw new InsertException(InsertExceptionMode.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
@@ -668,10 +669,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					metaInsertSuccess = true;
 				} else if(state == metadataPutter) {
 					Logger.error(this, "Got metadata for metadata");
-					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
+					e = new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
 				} else if(state != sfi) {
 					Logger.error(this, "Got metadata from unknown state "+state+" sfi="+sfi+" metadataPutter="+metadataPutter+" on "+this+" persistent="+persistent, new Exception("debug"));
-					e = new InsertException(InsertException.INTERNAL_ERROR, "Got metadata from unknown state", null);
+					e = new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Got metadata from unknown state", null);
 				} else {
 					// Already started metadata putter ? (in which case we've got the metadata twice)
 					if(metadataPutter != null) return;
@@ -692,7 +693,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				Logger.error(this, "Impossible: "+e1, e1);
-				fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), context);
+				fail((InsertException)new InsertException(InsertExceptionMode.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), context);
 				return;
 			}
 			
@@ -709,7 +710,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 						metaBytes = meta.writeToByteArray();
 					} catch (MetadataUnresolvedException e1) {
 						Logger.error(this, "Impossible (2): "+e1, e1);
-						fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), context);
+						fail((InsertException)new InsertException(InsertExceptionMode.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), context);
 						return;
 					}
 				}
@@ -719,7 +720,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			try {
 				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), metaBytes);
 			} catch (IOException e1) {
-				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
+				InsertException ex = new InsertException(InsertExceptionMode.BUCKET_ERROR, e1, null);
 				fail(ex, context);
 				return;
 			}
@@ -754,7 +755,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
 			if(!startMetadata(context)) {
 				Logger.error(this, "onMetadata() yet unable to start metadata due to not having all URIs?!?!");
-				fail(new InsertException(InsertException.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), context);
+				fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), context);
 				return;
 			}
 			synchronized(this) {
@@ -993,7 +994,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			block.free();
 		}
 		// Must call onFailure so get removeFrom()'ed
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
+		cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
 	}
 
 	@Override

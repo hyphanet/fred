@@ -7,6 +7,7 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.ClientMetadata;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.CRCChecksumChecker;
@@ -81,7 +82,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             parent.addRedundantBlocksInsert(storage.topTotalBlocks - topTotalBlocks - mustSucceed);
             parent.notifyClients(context);
         } catch (IOException e) {
-            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+            throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         }
         this.raf = storage.getRAF();
         this.sender = new SplitFileInserterSender(this, storage);
@@ -97,7 +98,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
     @Override
     public void cancel(ClientContext context) {
-        storage.fail(new InsertException(InsertException.CANCELLED));
+        storage.fail(new InsertException(InsertExceptionMode.CANCELLED));
     }
 
     @Override
@@ -133,7 +134,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             originalData.close();
             if(freeData)
                 originalData.free();
-            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+            throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         } catch (StorageFormatException e) {
             Logger.error(this, "Resume failed: "+e, e);
             raf.close();
@@ -141,7 +142,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             originalData.close();
             if(freeData)
                 originalData.free();
-            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+            throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         } catch (ChecksumFailedException e) {
             Logger.error(this, "Resume failed: "+e, e);
             raf.close();
@@ -149,7 +150,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
             originalData.close();
             if(freeData)
                 originalData.free();
-            throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+            throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
         }
     }
 
@@ -180,9 +181,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
                         if(ctx.getCHKOnly)
                             onSucceeded(metadata);
                     } catch (IOException e) {
-                        storage.fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
+                        storage.fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null));
                     } catch (MissingKeyException e) {
-                        storage.fail(new InsertException(InsertException.BUCKET_ERROR, "Lost one or more keys", e, null));
+                        storage.fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, "Lost one or more keys", e, null));
                     }
                     return false;
                 }

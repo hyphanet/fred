@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.ClientContext;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
@@ -86,7 +87,7 @@ public class RealCompressor implements PrioRunnable {
 								System.err.println("Caught in OffThreadCompressor: " + t);
 								t.printStackTrace();
 								// Try to fail gracefully
-								finalJob.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, context);
+								finalJob.onFailure(new InsertException(InsertExceptionMode.INTERNAL_ERROR, t, null), null, context);
 							}
 
 					} catch(Throwable t) {

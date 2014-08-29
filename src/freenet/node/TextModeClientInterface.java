@@ -37,6 +37,7 @@ import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
@@ -565,8 +566,8 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Error: ").append(e.getMessage());
             	if(e.uri != null)
                     outsb.append("URI would have been: ").append(e.uri);
-            	int mode = e.getMode();
-            	if((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+            	InsertExceptionMode mode = e.getMode();
+            	if((mode == InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
 		outsb.append("\r\n");

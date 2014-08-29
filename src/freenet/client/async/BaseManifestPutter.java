@@ -18,6 +18,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
@@ -100,7 +101,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					try {
 						tryStartParentContainer(ph.parentPutHandler, context);
 					} catch (InsertException e) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
+						fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
 						return;
 					}
 				}
@@ -234,7 +235,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 						try {
 							resolve(e, context);
 						} catch (IOException e1) {
-							fail(new InsertException(InsertException.BUCKET_ERROR, e1, null), context);
+							fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e1, null), context);
 							return;
 						} catch (InsertException e1) {
 							fail(e1, context);
@@ -471,7 +472,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				oldState = currentState;
 			}
 			if(oldState != null) oldState.cancel(context);
-			onFailure(new InsertException(InsertException.CANCELLED), oldState, context);
+			onFailure(new InsertException(InsertExceptionMode.CANCELLED), oldState, context);
 		}
 
 		@Override
@@ -965,7 +966,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
 				break;
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
+				fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
@@ -975,7 +976,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					resolve(e, context);
 					return;
 				} catch (IOException e1) {
-					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
+					fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 					return;
 				} catch (InsertException e2) {
 					fail(e2, context);
@@ -1070,7 +1071,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	private void fail(Exception e, ClientContext context) {
-		InsertException ie = new InsertException(InsertException.INTERNAL_ERROR, e, null);
+		InsertException ie = new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
 		fail(ie, context);
 	}
 
@@ -1172,7 +1173,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			if(finished) return;
 			if(super.cancel()) return;
 		}
-		fail(new InsertException(InsertException.CANCELLED), context);
+		fail(new InsertException(InsertExceptionMode.CANCELLED), context);
 	}
 
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */

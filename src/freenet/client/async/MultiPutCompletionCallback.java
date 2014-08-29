@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.ListUtils;
@@ -98,7 +99,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
 	@Override
 	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
-		if(collisionIsOK && e.getMode() == InsertException.COLLISION) {
+		if(collisionIsOK && e.getMode() == InsertExceptionMode.COLLISION) {
 			onSuccess(state, context);
 			return;
 		}
@@ -139,7 +140,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(finished) return;
 			finished = true;
 			if(e != null && this.e != null && this.e != e) {
-				if(e.getMode() == InsertException.CANCELLED) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
+				if(e.getMode() == InsertExceptionMode.CANCELLED) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
 					// Ignore the new failure mode, use the old one
 					e = this.e;
 					if(persistent) {

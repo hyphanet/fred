@@ -10,6 +10,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
@@ -157,7 +158,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent());
 
 			if(data == null)
-				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
+				throw new InsertException(InsertExceptionMode.BUCKET_ERROR, "No data to insert", null);
 
 			boolean cancel = false;
 			synchronized(this) {
@@ -183,7 +184,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(overrideSplitfileCrypto != null) {
 					cryptoKey = overrideSplitfileCrypto;
 					if (cryptoKey.length != 32)
-						throw new InsertException(InsertException.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
+						throw new InsertException(InsertExceptionMode.INVALID_URI, "overrideSplitfileCryptoKey must be of length 32", null);
 				} else if(randomiseSplitfileKeys) {
 					cryptoKey = new byte[32];
 					context.random.nextBytes(cryptoKey);
@@ -201,14 +202,14 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				}
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, context);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 			synchronized(this) {
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, context);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 			if(logMINOR)
@@ -221,7 +222,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, context);
+				onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 				return false;
 			}
 		} catch (InsertException e) {
@@ -242,7 +243,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), this);
 			}
 		} catch (BinaryBlobFormatException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -252,7 +253,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertExceptionMode.BINARY_BLOB_FORMAT_ERROR, e, null), this);
 			}
 		}
 		if(logMINOR)
@@ -366,7 +367,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			oldState = currentState;
 		}
 		if(oldState != null) oldState.cancel(context);
-		onFailure(new InsertException(InsertException.CANCELLED), null, context);
+		onFailure(new InsertException(InsertExceptionMode.CANCELLED), null, context);
 	}
 
 	/** Has the insert completed already? */

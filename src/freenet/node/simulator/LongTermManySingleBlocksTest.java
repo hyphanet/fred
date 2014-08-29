@@ -24,6 +24,7 @@ import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -110,7 +111,7 @@ public class LongTermManySingleBlocksTest extends LongTermTest {
 							if(f != null)
 								failed = f;
 							else
-								f = new InsertException(InsertException.INTERNAL_ERROR);
+								f = new InsertException(InsertExceptionMode.INTERNAL_ERROR);
 						}
 							
 						InsertBatch.this.notifyAll();

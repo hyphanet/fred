@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.node.PrioRunnable;
@@ -235,9 +236,9 @@ public class InsertCompressor implements CompressJob {
 			if(bestCompressedData != null && bestCompressedData != origData)
 				bestCompressedData.free();
 		} catch (InvalidCompressionCodecException e) {
-			fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context, bestCompressedData);
+			fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context, bestCompressedData);
 		} catch (final IOException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context, bestCompressedData);
+			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context, bestCompressedData);
 		}	
 	}
 

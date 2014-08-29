@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
@@ -72,7 +73,7 @@ public class PutWaiter implements ClientPutCallback {
 		}
 		if(succeeded) return uri;
 		Logger.error(this, "Did not succeed but no error");
-		throw new InsertException(InsertException.INTERNAL_ERROR, "Did not succeed but no error", uri);
+		throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
 	@Override

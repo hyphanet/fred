@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
@@ -229,7 +230,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if( !finished ) {
 			synchronized(this) {
 				finished = true;
-				InsertException cancelled = new InsertException(InsertException.CANCELLED);
+				InsertException cancelled = new InsertException(InsertExceptionMode.CANCELLED);
 				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
 			}
 			trySendFinalMessage(null);

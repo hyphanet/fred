@@ -12,6 +12,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
@@ -170,14 +171,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (KeyEncodeException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
 		} catch (MalformedURLException e) {
-			throw new InsertException(InsertException.INVALID_URI, e, null);
+			throw new InsertException(InsertExceptionMode.INVALID_URI, e, null);
 		} catch (IOException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e+" encoding data "+sourceData, e);
-			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
 		} catch (InvalidCompressionCodecException e) {
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
 		}
 			
 	}
@@ -190,7 +191,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			InsertableClientSSK ik = InsertableClientSSK.create(uri);
 			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random, compressorDescriptor, pre1254);
 		} else {
-			throw new InsertException(InsertException.INVALID_URI, "Unknown keytype "+uriType, null);
+			throw new InsertException(InsertExceptionMode.INVALID_URI, "Unknown keytype "+uriType, null);
 		}
 	}
 
@@ -253,30 +254,30 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 		}
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), context);
+			fail(new InsertException(InsertExceptionMode.CANCELLED), context);
 			return;
 		}
 		if(logMINOR) Logger.minor(this, "onFailure() on "+e+" for "+this);
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
-			fail(new InsertException(InsertException.COLLISION), context);
+			fail(new InsertException(InsertExceptionMode.COLLISION), context);
 			return;
 		case LowLevelPutException.INTERNAL_ERROR:
-			fail(new InsertException(InsertException.INTERNAL_ERROR), context);
+			fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR), context);
 			return;
 		case LowLevelPutException.REJECTED_OVERLOAD:
-			errors.inc(InsertException.REJECTED_OVERLOAD);
+			errors.inc(InsertExceptionMode.REJECTED_OVERLOAD);
 			break;
 		case LowLevelPutException.ROUTE_NOT_FOUND:
-			errors.inc(InsertException.ROUTE_NOT_FOUND);
+			errors.inc(InsertExceptionMode.ROUTE_NOT_FOUND);
 			break;
 		case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
-			errors.inc(InsertException.ROUTE_REALLY_NOT_FOUND);
+			errors.inc(InsertExceptionMode.ROUTE_REALLY_NOT_FOUND);
 			break;
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
-			errors.inc(InsertException.INTERNAL_ERROR);
+			errors.inc(InsertExceptionMode.INTERNAL_ERROR);
 		}
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
@@ -330,7 +331,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return null;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, context);
+			cb.onFailure(new InsertException(InsertExceptionMode.INTERNAL_ERROR, t, null), this, context);
 			return null;
 		}
 	}
@@ -383,7 +384,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	    onEncode(key, context);
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), context);
+			fail(new InsertException(InsertExceptionMode.CANCELLED), context);
 			return;
 		}
 		synchronized(this) {
@@ -426,7 +427,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			sourceData = null;
 		}
 		super.unregister(context, getPriorityClass());
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
+		cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
 	}
 
 	@Override
@@ -633,7 +634,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent) {
 				if(sourceData == null) {
 					Logger.error(this, "getBlockItem(): sourceData = null", new Exception("error"));
-					fail(new InsertException(InsertException.INTERNAL_ERROR), context);
+					fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR), context);
 					return null;
 				}
 			}
@@ -649,7 +650,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 			return new BlockItem(key, data, isMetadata, compressionCodec, sourceLength, u, persistent, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (IOException e) {
-			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+			throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);
 		}
 	}
 	

@@ -17,6 +17,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
@@ -248,7 +249,7 @@ public class SplitFileInserterStorage {
         this.persistent = persistent;
         dataLength = originalData.size();
         if (dataLength > ((long) Integer.MAX_VALUE) * CHKBlock.DATA_LENGTH)
-            throw new InsertException(InsertException.TOO_BIG);
+            throw new InsertException(InsertExceptionMode.TOO_BIG);
         totalDataBlocks = (int) ((dataLength + CHKBlock.DATA_LENGTH - 1) / CHKBlock.DATA_LENGTH);
         this.decompressedLength = decompressedLength;
         this.compressionCodec = compressionCodec;
@@ -451,7 +452,7 @@ public class SplitFileInserterStorage {
             try {
                 crossSegmentSettings = encodeCrossSegmentSettings(bf); // Checksummed with length
             } catch (IOException e) {
-                throw new InsertException(InsertException.BUCKET_ERROR,
+                throw new InsertException(InsertExceptionMode.BUCKET_ERROR,
                         "Failed to write to temporary storage while creating splitfile inserter",
                         null);
             }
@@ -1366,7 +1367,7 @@ public class SplitFileInserterStorage {
                         }
                         callback.onSucceeded(metadata);
                     } catch (IOException e) {
-                        InsertException e1 = new InsertException(InsertException.BUCKET_ERROR);
+                        InsertException e1 = new InsertException(InsertExceptionMode.BUCKET_ERROR);
                         synchronized(this) {
                             failing = e1;
                             status = Status.FAILED;
@@ -1375,7 +1376,7 @@ public class SplitFileInserterStorage {
                     } catch (MissingKeyException e) {
                         // Fail here too. If we're getting disk corruption on keys, we're probably 
                         // getting it on the original data too.
-                        InsertException e1 = new InsertException(InsertException.BUCKET_ERROR, "Missing keys", null);
+                        InsertException e1 = new InsertException(InsertExceptionMode.BUCKET_ERROR, "Missing keys", null);
                         synchronized(this) {
                             failing = e1;
                             status = Status.FAILED;
@@ -1436,15 +1437,15 @@ public class SplitFileInserterStorage {
 
     public void failOnDiskError(IOException e) {
         Logger.error(this, "Failing with disk error: "+e, e);
-        fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
+        fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null));
     }
     
     public void failFatalErrorInBlock() {
-        fail(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null));
+        fail(new InsertException(InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS, errors, null));
     }
     
     public void failTooManyRetriesInBlock() {
-        fail(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null));
+        fail(new InsertException(InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS, errors, null));
     }
     
     void fail(final InsertException e) {

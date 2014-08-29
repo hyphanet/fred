@@ -21,6 +21,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
@@ -132,7 +133,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 			cancelled = true;
 		}
 		// Must call onFailure so get removeFrom()'ed
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
+		cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
 	}
 
 	@Override
@@ -181,7 +182,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 			// We ought to be able to !!
 			block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent ? targetURI.clone() : targetURI);
 		} catch (IOException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
+			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 			return;
 		} finally {
 			Closer.close(os);
@@ -200,7 +201,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		try {
 			sfi.schedule(context);
 		} catch (InsertException e) {
-			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context);
+			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 			return;
 		}
 	}
@@ -221,11 +222,11 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				try {
 					x = resolve(e, x, null, null, context);
 				} catch (IOException e1) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
+					fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
 					return;
 				}
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context);
+				fail(new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null), context);
 				return;
 			}
 		}

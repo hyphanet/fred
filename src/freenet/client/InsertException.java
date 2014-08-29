@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.util.HashMap;
+
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
@@ -19,7 +21,7 @@ public class InsertException extends Exception implements Cloneable {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	/** Failure mode, see the constants below. */
-	public final int mode;
+	public final InsertExceptionMode mode;
 	/** Collect errors when there are multiple failures. The error mode will be FATAL_ERRORS_IN_BLOCKS or
 	 * TOO_MANY_RETRIES_IN_BLOCKS i.e. a splitfile failed. */
 	public FailureCodeTracker errorCodes;
@@ -30,7 +32,7 @@ public class InsertException extends Exception implements Cloneable {
 	public final String extra;
 	
 	/** Get the failure mode. */
-	public int getMode() {
+	public InsertExceptionMode getMode() {
 		return mode;
 	}
 	
@@ -51,91 +53,79 @@ public class InsertException extends Exception implements Cloneable {
 	 */
 	@SuppressWarnings("unused")
 	private InsertException() {
-		mode = 0;
+		mode = null;
 		extra = null;
 	}
 
-	public InsertException(int m, String msg, FreenetURI expectedURI) {
+	public InsertException(InsertExceptionMode m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
-		if(m == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = msg;
 		mode = m;
 		errorCodes = null;
 		this.uri = expectedURI;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 	}
 	
-	public InsertException(int m, FreenetURI expectedURI) {
+	public InsertException(InsertExceptionMode m, FreenetURI expectedURI) {
 		super(getMessage(m));
-		if(m == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		mode = m;
 		errorCodes = null;
 		this.uri = expectedURI;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
-	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
+	public InsertException(InsertExceptionMode mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
-		if(mode == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
 		this.uri = expectedURI;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
 	}
 
-	public InsertException(int mode, String message, Throwable e, FreenetURI expectedURI) {
+	public InsertException(InsertExceptionMode mode, String message, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+message+": "+e.getMessage());
-		if(mode == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
 		this.uri = expectedURI;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
 	}
 
-	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
+	public InsertException(InsertExceptionMode mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
 		super(getMessage(mode));
-		if(mode == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		this.mode = mode;
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
-	public InsertException(int mode) {
+	public InsertException(InsertExceptionMode mode) {
 		super(getMessage(mode));
-		if(mode == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;
-		if(mode == INTERNAL_ERROR)
+		if(mode == InsertExceptionMode.INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
@@ -143,8 +133,6 @@ public class InsertException extends Exception implements Cloneable {
 
 	public InsertException(InsertException e) {
 		super(e.getMessage());
-		if(e.mode == 0)
-			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.extra;
 		mode = e.mode;
 		errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
@@ -155,74 +143,95 @@ public class InsertException extends Exception implements Cloneable {
 	}
 
 	public InsertException(TooManyFilesInsertException e) {
-		this(TOO_MANY_FILES, (String)null, null);
+		this(InsertExceptionMode.TOO_MANY_FILES, (String)null, null);
 	}
 
 	public static InsertException constructFrom(LowLevelPutException e) {
 	    switch(e.code) {
 	    case LowLevelPutException.COLLISION:
-	        return new InsertException(COLLISION);
+	        return new InsertException(InsertExceptionMode.COLLISION);
 	    case LowLevelPutException.INTERNAL_ERROR:
-	        return new InsertException(INTERNAL_ERROR);
+	        return new InsertException(InsertExceptionMode.INTERNAL_ERROR);
 	    case LowLevelPutException.REJECTED_OVERLOAD:
-	        return new InsertException(REJECTED_OVERLOAD);
+	        return new InsertException(InsertExceptionMode.REJECTED_OVERLOAD);
 	    case LowLevelPutException.ROUTE_NOT_FOUND:
-	        return new InsertException(ROUTE_NOT_FOUND);
+	        return new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND);
         case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
-            return new InsertException(ROUTE_REALLY_NOT_FOUND);
+            return new InsertException(InsertExceptionMode.ROUTE_REALLY_NOT_FOUND);
 	    default:
 	        Logger.error(InsertException.class, "Unknown LowLevelPutException: "+e+" code "+e.code, new Exception("error"));
-	        return new InsertException(INTERNAL_ERROR, "Unknown error "+e.code, null);
+	        return new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Unknown error "+e.code, null);
 	    }
     }
-
-    /** Caller supplied a URI we cannot use */
-	public static final int INVALID_URI = 1;
-	/** Failed to read from or write to a bucket; a kind of internal error */
-	public static final int BUCKET_ERROR = 2;
-	/** Internal error of some sort */
-	public static final int INTERNAL_ERROR = 3;
-	/** Downstream node was overloaded */
-	public static final int REJECTED_OVERLOAD = 4;
-	/** Couldn't find enough nodes to send the data to */
-	public static final int ROUTE_NOT_FOUND = 5;
-	/** There were fatal errors in a splitfile insert. */
-	public static final int FATAL_ERRORS_IN_BLOCKS = 6;
-	/** Could not insert a splitfile because a block failed too many times */
-	public static final int TOO_MANY_RETRIES_IN_BLOCKS = 7;
-	/** Not able to leave the node at all */
-	public static final int ROUTE_REALLY_NOT_FOUND = 8;
-	/** Collided with pre-existing content */
-	public static final int COLLISION = 9;
-	/** Cancelled by user */
-	public static final int CANCELLED = 10;
-	/** Meta string used in the key (most probably '/') */
-	public static final int META_STRINGS_NOT_SUPPORTED = 11;
-	/** Invalid binary blob data supplied so cannot insert it */
-	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
-	/** Too many files in a directory in a site insert */
-	public static final int TOO_MANY_FILES = 13;
-	/** File being uploaded is bigger than maximum supported size */
-    public static final int TOO_BIG = 14;
-    
 	
+    private static final HashMap<Integer, InsertExceptionMode> modes = 
+        new HashMap<Integer, InsertExceptionMode>();
+
+    public static enum InsertExceptionMode {
+        
+        /** Caller supplied a URI we cannot use */
+        INVALID_URI(1),
+        /** Failed to read from or write to a bucket; a kind of internal error */
+        BUCKET_ERROR(2),
+        /** Internal error of some sort */
+        INTERNAL_ERROR(3),
+        /** Downstream node was overloaded */
+        REJECTED_OVERLOAD(4),
+        /** Couldn't find enough nodes to send the data to */
+        ROUTE_NOT_FOUND(5),
+        /** There were fatal errors in a splitfile insert. */
+        FATAL_ERRORS_IN_BLOCKS(6),
+        /** Could not insert a splitfile because a block failed too many times */
+        TOO_MANY_RETRIES_IN_BLOCKS(7),
+        /** Not able to leave the node at all */
+        ROUTE_REALLY_NOT_FOUND(8),
+        /** Collided with pre-existing content */
+        COLLISION(9),
+        /** Cancelled by user */
+        CANCELLED(10),
+        /** Meta string used in the key (most probably '/') */
+        META_STRINGS_NOT_SUPPORTED(11),
+        /** Invalid binary blob data supplied so cannot insert it */
+        BINARY_BLOB_FORMAT_ERROR(12),
+        /** Too many files in a directory in a site insert */
+        TOO_MANY_FILES(13),
+        /** File being uploaded is bigger than maximum supported size */
+        TOO_BIG(14);
+        
+        
+        public final int code;
+        InsertExceptionMode(int code) {
+            this.code = code;
+            if(code < 0 || code >= UPPER_LIMIT_ERROR_CODE)
+                throw new IllegalArgumentException();
+            if(modes.containsKey(code))
+                throw new IllegalArgumentException();
+            modes.put(code, this);
+        }
+        public static InsertExceptionMode getByCode(int code) {
+            if(modes.get(code) == null) throw new IllegalArgumentException();
+            return modes.get(code);
+        }
+
+    }
+
 	/** There will never be more error codes than this constant. Must not change, used for some
 	 * data structures. */
 	public static final int UPPER_LIMIT_ERROR_CODE = 1024;
 
 	/** Get the (localised) short name of this failure mode. */
-	public static String getMessage(int mode) {
-	    if(mode >= UPPER_LIMIT_ERROR_CODE)
-	        throw new IllegalArgumentException("Bogus error code "+mode);
-		String ret = NodeL10n.getBase().getString("InsertException.longError."+mode);
+	public static String getMessage(InsertExceptionMode mode) {
+        // FIXME change the l10n to use the keyword not the code
+		String ret = NodeL10n.getBase().getString("InsertException.longError."+mode.code);
 		if(ret == null)
 			return "Unknown error "+mode;
 		else return ret;
 	}
 
 	/** Get the (localised) long explanation for this failure mode. */
-	public static String getShortMessage(int mode) {
-		String ret = NodeL10n.getBase().getString("InsertException.shortError."+mode);
+	public static String getShortMessage(InsertExceptionMode mode) {
+	    // FIXME change the l10n to use the keyword not the code
+		String ret = NodeL10n.getBase().getString("InsertException.shortError."+mode.code);
 		if(ret == null)
 			return "Unknown error "+mode;
 		else return ret;
@@ -235,7 +244,7 @@ public class InsertException extends Exception implements Cloneable {
 		return isFatal(mode);
 	}
 	
-	public static boolean isFatal(int mode) {
+	public static boolean isFatal(InsertExceptionMode mode) {
 		switch(mode) {
 		case INVALID_URI:
 		case FATAL_ERRORS_IN_BLOCKS:
@@ -265,13 +274,13 @@ public class InsertException extends Exception implements Cloneable {
 		if(errors == null) return null;
 		if(errors.isEmpty()) return null;
 		if(errors.isOneCodeOnly()) {
-			return new InsertException(errors.getFirstCode());
+			return new InsertException(errors.getFirstCodeInsert());
 		}
-		int mode;
+		InsertExceptionMode mode;
 		if(errors.isFatal(true))
-			mode = FATAL_ERRORS_IN_BLOCKS;
+			mode = InsertExceptionMode.FATAL_ERRORS_IN_BLOCKS;
 		else
-			mode = TOO_MANY_RETRIES_IN_BLOCKS;
+			mode = InsertExceptionMode.TOO_MANY_RETRIES_IN_BLOCKS;
 		return new InsertException(mode, errors, null);
 	}
 	

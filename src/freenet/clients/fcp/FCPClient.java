@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.FetchException.FetchExceptionMode;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.clients.fcp.ListPersistentRequestsMessage.PersistentListJob;
@@ -134,7 +135,7 @@ public class FCPClient {
 			} else if(get instanceof ClientPutBase) {
 				ClientPutBase upload = (ClientPutBase)get;
 				PutFailedMessage msg = upload.getFailureMessage();
-				int failureCode = -1;
+				InsertExceptionMode failureCode = null;
 				String shortFailMessage = null;
 				String longFailMessage = null;
 				if(msg != null) {

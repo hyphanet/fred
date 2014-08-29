@@ -11,6 +11,7 @@ import java.util.Arrays;
 
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -172,7 +173,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			} catch (IOException e) {
 				Logger.error(this, "Unable to insert USK date hints due to disk I/O error: "+e, e);
 				if(!added) {
-					cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, pubUSK.getSSK(edition).getURI()), this, context);
+					cb.onFailure(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, pubUSK.getSSK(edition).getURI()), this, context);
 					return;
 				} // Else try to insert the other hints.
 			} catch (InsertException e) {
@@ -240,7 +241,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public void onFailure(InsertException e, ClientPutState state, ClientContext context) {
 		synchronized(this) {
 			sbi = null;
-			if(e.getMode() == InsertException.COLLISION) {
+			if(e.getMode() == InsertExceptionMode.COLLISION) {
 				// Try the next slot
 				edition++;
 				consecutiveCollisions++;
@@ -351,7 +352,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				}
 			}
 		}
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, context);
+		cb.onFailure(new InsertException(InsertExceptionMode.CANCELLED), this, context);
 	}
 
 	@Override

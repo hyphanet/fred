@@ -16,6 +16,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
@@ -314,7 +315,7 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
+			onFailure(new InsertException(InsertExceptionMode.INTERNAL_ERROR, t, null), null);
 		}
 	}
 
@@ -507,7 +508,7 @@ public class ClientPut extends ClientPutBase {
 	RequestStatus getStatus() {
 		FreenetURI finalURI = getFinalURI();
 		if(finalURI != null) finalURI = getFinalURI().clone();
-		int failureCode = -1;
+		InsertExceptionMode failureCode = null;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
 		if(putFailedMessage != null) {
