@@ -20,8 +20,10 @@ import freenet.support.Logger;
  * - Enough information to produce a real SSK.
  * - Site name.
  * - Site edition number.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class USK extends BaseClientKey implements Comparable<USK>, Serializable {
 
     private static final long serialVersionUID = 1L;

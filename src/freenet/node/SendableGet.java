@@ -16,8 +16,10 @@ import freenet.support.io.NativeThread;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads. (Some children of this class are actually stored)
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableGet extends BaseSendableGet {
 
     private static final long serialVersionUID = 1L;

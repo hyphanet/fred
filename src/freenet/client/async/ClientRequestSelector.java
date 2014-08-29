@@ -34,7 +34,7 @@ import freenet.support.TimeUtil;
 /** The global request queue. Both transient and persistent requests are kept on this in-RAM 
  * structure, which supports choosing a request to run. See ClientRequestSchedulerBase for the code
  * that matches up a fetched block with whoever was waiting for it, which needs to be separate for
- * various reasons. */
+ * various reasons. This class is not persistent. */
 class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final boolean isInsertScheduler;

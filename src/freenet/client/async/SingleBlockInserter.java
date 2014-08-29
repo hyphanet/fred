@@ -48,7 +48,10 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.ResumeFailedException;
 
 /**
- * Insert *ONE KEY*.
+ * Insert a single block.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
 public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable, Serializable {
 

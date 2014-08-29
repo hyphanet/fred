@@ -9,8 +9,11 @@ import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.compress.Compressor;
 
-/** Context object for an insert operation, including both simple and multi-file inserts */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/** Context object for an insert operation, including both simple and multi-file inserts.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * losing uploads. 
+ */
 public class InsertContext implements Cloneable, Serializable {
 
     private static final long serialVersionUID = 1L;

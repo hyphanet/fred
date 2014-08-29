@@ -15,6 +15,8 @@ import freenet.support.Logger.LogLevel;
 
 /**
  * Checks a single USK slot.
+ * 
+ * Not persistent, used by USKFetcher.
  */
 @SuppressWarnings("serial")
 class USKChecker extends BaseSingleFileFetcher {

@@ -13,8 +13,10 @@ import java.io.Serializable;
  * Currently this is just the MIME type, but in future it might be more than
  * that. Size is not stored here, but maybe things like dublin core or 
  * whatever.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ClientMetadata implements Cloneable, Serializable {
 	
     private static final long serialVersionUID = 1L;

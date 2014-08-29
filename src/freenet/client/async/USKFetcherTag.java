@@ -13,9 +13,11 @@ import freenet.support.io.NativeThread;
  * Not the actual fetcher. Just a tag associating a USK with the client that should be called when
  * the fetch has been done. Can be included in persistent requests. On startup, all USK fetches are
  * restarted, but this remains the same: the actual USKFetcher's are always transient.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  * @author toad
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable {
 
     private static final long serialVersionUID = 1L;

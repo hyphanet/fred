@@ -18,8 +18,8 @@ import freenet.support.Logger.LogLevel;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
- * block. Not designed for use by the client layer. Used by the node layer for the
- * 1 in every 200 successful requests which starts an insert.
+ * block. Not designed for use by the client layer (and not persistent). Used by the node layer 
+ * for the 1 in every 200 successful requests which starts an insert.
  */
 public class SimpleSendableInsert extends SendableInsert {
 

@@ -50,6 +50,13 @@ import freenet.support.io.Closer;
 import freenet.support.io.InsufficientDiskSpaceException;
 import freenet.support.io.TempBucketFactory;
 
+/**
+ * Does most of the complicated metadata handling for fetching single files.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
+ * @author toad
+ */
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
     private static final long serialVersionUID = 1L;

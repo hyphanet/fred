@@ -25,8 +25,9 @@ import freenet.support.io.ResumeFailedException;
  * created by a client, has a FetchContext or InsertContext for configuration. Compare to 
  * @see SendableRequest for a low-level request (which may still be multiple actual requests or 
  * inserts).
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class ClientRequester implements Serializable {
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;

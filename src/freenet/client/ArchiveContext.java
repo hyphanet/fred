@@ -14,8 +14,10 @@ import freenet.keys.FreenetURI;
  * Object passed down a full fetch, including all the recursion.
  * Used, at present, for detecting archive fetch loops, hence the
  * name.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext implements Serializable {
 
     private static final long serialVersionUID = 1L;

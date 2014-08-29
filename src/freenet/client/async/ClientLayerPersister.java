@@ -74,6 +74,9 @@ import freenet.support.io.TempBucketFactory;
  * Note that inserts may be somewhat less robust than requests. This is intentional as inserts 
  * should be relatively short-lived or they won't be much use to anyone as the data will have 
  * fallen out.
+ * 
+ * SCHEMA MIGRATION: Note that changing classes that are Serializable can result in restarting 
+ * downloads or losing uploads.
  * @author toad
  */
 public class ClientLayerPersister extends PersistentJobRunnerImpl {

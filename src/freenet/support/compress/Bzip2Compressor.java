@@ -29,7 +29,6 @@ import freenet.support.io.HeaderStreams;
 ** rather than commons-compress) the compressed streams **DO NOT** have the
 ** standard "BZ" header.
 */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class Bzip2Compressor implements Compressor {
 
 	final public static byte[] BZ_HEADER;

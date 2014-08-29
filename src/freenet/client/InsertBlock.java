@@ -6,13 +6,14 @@ package freenet.client;
 import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
-import freenet.support.api.Bucket;
 import freenet.support.io.RandomAccessBucket;
 
 /**
  * Class to contain everything needed for an insert.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertBlock implements Serializable {
 
     private static final long serialVersionUID = 1L;

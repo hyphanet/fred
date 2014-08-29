@@ -19,7 +19,8 @@ import freenet.support.io.StorageFormatException;
  * Essentially a map of integer to incrementible integer.
  * FIXME maybe move this to support, give it a better name?
  * 
- * PERSISTENCE: This class is serialized for requests.
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
 public class FailureCodeTracker implements Cloneable, Serializable {
 

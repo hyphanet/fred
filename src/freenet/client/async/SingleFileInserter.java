@@ -40,9 +40,12 @@ import freenet.support.io.ResumeFailedException;
  * 
  * This stage:
  * Attempt to compress the file. Off-thread if it will take a while.
- * Then hand it off to SimpleFileInserter.
+ * Then hand it off to some combination of SingleBlockInserters and SplitFileInserters, possibly 
+ * under the supervision of its own handler class SplitHandler.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class SingleFileInserter implements ClientPutState, Serializable {
 
     private static final long serialVersionUID = 1L;

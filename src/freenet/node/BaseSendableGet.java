@@ -3,7 +3,11 @@ package freenet.node;
 import freenet.client.async.ClientContext;
 import freenet.keys.Key;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/**
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads. (Some children of this class are actually stored)
+ * @author toad
+ */
 public abstract class BaseSendableGet extends SendableRequest {
 	
     private static final long serialVersionUID = 1L;

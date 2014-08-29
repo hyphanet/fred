@@ -20,15 +20,20 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
 /**
- * Handles persistent temp files. These are used for e.g. persistent downloads. Anything of exactly 32KB
- * length will be stored in the blob file, otherwise these are simply temporary files in the directory 
- * specified for the PersistentFileTracker (which supports changing the directory, i.e. moving the files).
+ * Handles persistent temp files. These are used for e.g. persistent downloads. These are 
+ * temporary files in the directory specified for the PersistentFileTracker (which supports 
+ * changing the directory, i.e. moving the files).
+ * 
  * These temporary files are encrypted using an ephemeral key (unless the node is configured not to encrypt
- * temporary files as happens with physical security level LOW). Note that the files are only deleted *after*
- * the transaction containing their deletion reaches disk - so we should not leak temporary files, or 
- * forget that we deleted a bucket and try to reuse it, if there is an unclean shutdown.
+ * temporary files as happens with physical security level LOW). FIXME NO CRYPTO AT THE MOMENT. 
+ * 
+ * Note that the files are only deleted *after* the transaction containing their deletion reaches 
+ * disk - so we should not leak temporary files, or forget that we deleted a bucket and try to 
+ * reuse it, if there is an unclean shutdown.
+ * 
+ * PERSISTENCE: This class is involved in persistence but is not itself Serializable; it is 
+ * recreated on every startup, and persistent Bucket's register themselves with it.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
 	/** Original contents of directory. This used to be used to delete any files that we can't account for.

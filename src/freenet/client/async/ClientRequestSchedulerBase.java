@@ -30,10 +30,12 @@ import freenet.support.Logger.LogLevel;
  * 
  * <p>The queue of requests to run, and the algorithm to choose which to start, is in
  * @see ClientRequestSchedulerSelector .</p>
-
+ * 
+ * PERSISTENCE: This class is NOT serialized, it is recreated on every startup, and downloads are
+ * re-registered with this class (for KeyListeners) and downloads and uploads are re-registered 
+ * with the ClientRequestSelector.
  * @author toad
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 abstract class ClientRequestSchedulerBase implements KeySalter {
 	
 	private static volatile boolean logMINOR;

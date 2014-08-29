@@ -10,12 +10,14 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 
 /**
- * An array which supports very fast remove-and-return-a-random-element. NOT used persistently!
+ * An array which supports very fast remove-and-return-a-random-element.
  * 
- * A lot of this is over-complicated and over-expensive because of db4o. A lot of it is O(n).
- * This is all kept in RAM now so we can change it at will, plus there is only one object 
- * queued per splitfile now, so memory pressure is much less of an issue. 
- * FIXME Simplify and improve performance!
+ * This is *NOT* persistent. The request selection structures are reconstructed on restart. However
+ * it used to be, and probably has a lot of cruft and inefficiency as a result. 
+ * 
+ * FIXME Simply and improve performance. A lot of this is O(n), and this should probably be fixed. 
+ * Memory usage was an issue but probably isn't now given that the individual items are now quite 
+ * large (entire splitfiles or at least entire segments).
  */
 public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private static volatile boolean logMINOR;
@@ -25,7 +27,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 	
 	private static class Block {
-		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 		RandomGrabArrayItem[] reqs;
 	}
 	

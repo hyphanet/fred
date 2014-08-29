@@ -98,6 +98,9 @@ import freenet.support.io.Closer;
  * - Hierarchical DBRs.
  * - TUKs (when we have TUKs).
  * - Passive requests (when we have passive requests).
+ * 
+ * PERSISTENCE: This class is not persistent. USKFetcherTag is used to mark persistent USK fetches,
+ * which will be restarted on startup.
  */
 public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, KeyListener {
     private static volatile boolean logMINOR;

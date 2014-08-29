@@ -20,6 +20,13 @@ import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
+/**
+ * Base class implements most of what is needed for fetching a single block.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
+ * @author toad
+ */
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
 
     private static final long serialVersionUID = 1L;

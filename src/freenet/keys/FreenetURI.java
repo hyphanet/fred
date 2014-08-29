@@ -78,8 +78,10 @@ import freenet.support.io.FileUtil;
  * </p>
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FreenetURI implements Cloneable, Comparable<FreenetURI>, Serializable {
 
     /**

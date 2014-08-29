@@ -17,8 +17,10 @@ import freenet.support.Logger.LogLevel;
  * LOCKING: Because some subclasses may do wierd things like locking on an external object 
  * (see e.g. SplitFileFetcherSubSegment), if we do take the lock we need to do it last i.e.
  * not call any subclass methods inside it.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads. Not all subclasses of this class are actually persisted.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableRequest implements RandomGrabArrayItem, Serializable {
 	
     private static final long serialVersionUID = 1L;

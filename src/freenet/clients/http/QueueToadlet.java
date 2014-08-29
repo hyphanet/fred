@@ -1503,9 +1503,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		if (SimpleToadletServer.isPanicButtonToBeShown) {
-			// db4o may leak data, so show this even if there are no requests queued.
-			// Also it may be better for usability.
-			// FIXME reconsider after purging db4o.
+		    // There may be persistent downloads etc under other FCPClient's, so still show it.
 			contentNode.addChild(createPanicBox(pageMaker, ctx));
 		}
 

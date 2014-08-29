@@ -23,7 +23,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class NewLZMACompressor implements Compressor {
 	
     // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.

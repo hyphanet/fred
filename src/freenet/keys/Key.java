@@ -33,8 +33,10 @@ import freenet.support.io.BucketTools;
  * @author amphibian
  *
  * Base class for node keys.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class Key implements WritableToDataOutputStream, Comparable<Key> {
 
     final int hash;

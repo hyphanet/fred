@@ -12,7 +12,9 @@ import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
 
-/** Actually does the splitfile fetch. Only one fetcher object for an entire splitfile. */
+/** Actually does the splitfile fetch. Only one fetcher object for an entire splitfile.
+ * 
+ * PERSISTENCE: Not persistent, recreated on startup by SplitFileFetcher. */
 @SuppressWarnings("serial")
 public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     

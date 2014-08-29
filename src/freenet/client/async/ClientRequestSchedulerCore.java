@@ -8,13 +8,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-/**
- * @author toad
- * A persistent class that functions as the core of the ClientRequestScheduler.
- * Does not refer to any non-persistable classes as member variables: Node must always
- * be passed in if we need to use it!
- */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 	/** Identifier in the database for the node we are attached to */

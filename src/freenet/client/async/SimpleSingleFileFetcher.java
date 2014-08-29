@@ -23,8 +23,11 @@ import freenet.support.api.Bucket;
 import freenet.support.io.InsufficientDiskSpaceException;
 
 /** 
- * Fetch a single block file.
- * Used by SplitFileFetcherSegment.
+ * Fetch a single block file. Used directly for very simple fetches, but also base class for 
+ * SingleFileFetcher.
+ * 
+ * WARNING: Changing non-transient members on classes that are Serializable can result in 
+ * restarting downloads or losing uploads.
  */
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState, Serializable {
 

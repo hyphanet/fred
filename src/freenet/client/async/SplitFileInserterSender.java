@@ -20,6 +20,12 @@ import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
 import freenet.support.io.ResumeFailedException;
 
+/**
+ * Interface to the low level insertion code for inserting a splitfile.
+ * 
+ * PERSISTENCE: Not persisted, recreated on resume by SplitFileInserter.
+ * @author toad
+ */
 @SuppressWarnings("serial") // Not persisted.
 public class SplitFileInserterSender extends SendableInsert {
     
