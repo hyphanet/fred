@@ -61,17 +61,25 @@ import freenet.support.math.MersenneTwister;
  * isolation. Actual details of inserting the blocks will be kept on
  * SplitFileInserter.
  * 
- * CONTENTS OF FILE:
+ * CONTENTS OF FILE: (for persistent case, transient leaves out most of the below)
+ * * Magic, version etc. 
+ * * Basic settings. 
+ * * Settings for each segment. 
+ * * Settings for each cross-segment (including block lists). 
+ * * Padded last block (if necessary)
+ * * Global status 
+ * * (Padding to a 4096 byte boundary) 
+ * * Cross-check blocks (by cross-segment). 
+ * * Check blocks 
+ * * Segment status 
+ * * Segment key list (each key separately stored and checksummed)
  * 
- * Magic, version etc. Basic settings. Settings for each segment. Settings for
- * each cross-segment (including block lists). Padded last block (if necessary)
- * Global status (Padding to a 4096 byte boundary) Cross-check blocks (by
- * cross-segment). Check blocks Segment status Segment key list - For each
- * segment, every key is stored separately with a checksum.
- * 
- * Intentionally not as robust as SplitFileFetcherStorage: We don't keep
- * checksums for the blocks. Inserts generally are relatively short-lived,
- * because if they're not the data will have fallen out by the time it finishes.
+ * Intentionally not as robust (against disk corruption in particular) as SplitFileFetcherStorage: 
+ * We encode the block CHKs when we encode the check blocks, and if the block data has changed by
+ * the time we insert the data, we fail; there's no way to obtain correct data. Similarly, we fail
+ * if the keys are corrupted. However, for most of the duration of the insert neither the data, the
+ * check blocks or the keys will be written, so it's still reasonable assuming you only get errrors
+ * when writing, and it isn't really possible to improve on this much anyway...
  * 
  * FIXME do we want to wait until it has finished encoding everything before
  * inserting anything?

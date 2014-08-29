@@ -17,8 +17,9 @@ import freenet.support.io.StorageFormatException;
 
 /**
  * Essentially a map of integer to incrementible integer.
- * FIXME maybe move this to support, give it a better name? Be careful, it's a persistent object, use the
- * db4o migration tools, or derive it from something in support?
+ * FIXME maybe move this to support, give it a better name?
+ * 
+ * PERSISTENCE: This class is serialized for requests.
  */
 public class FailureCodeTracker implements Cloneable, Serializable {
 

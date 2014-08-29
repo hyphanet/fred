@@ -70,6 +70,10 @@ import freenet.support.io.TempBucketFactory;
  * reliability implications! One query per block is not feasible on typical end user hardware, and
  * disks aren't reliable. Losing all downloads when there is a one byte data corruption is 
  * unacceptable. And blocks should be kept close to where they are supposed to end up...
+ * 
+ * Note that inserts may be somewhat less robust than requests. This is intentional as inserts 
+ * should be relatively short-lived or they won't be much use to anyone as the data will have 
+ * fallen out.
  * @author toad
  */
 public class ClientLayerPersister extends PersistentJobRunnerImpl {

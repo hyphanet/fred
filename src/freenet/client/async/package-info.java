@@ -23,7 +23,7 @@
  * @see freenet.node.FailureTable for a closely related mechanism at the node level.</li>
  * <li>USK-related code</li>
  * <li>The healing queue</li>
- * <li>Misc persistence-related code</li>
+ * <li>Misc persistence-related code, @see ClientLayerPersister for the persistence architecture.</li>
  * </ul>
  * 
  * <p>The main connections to other layers: Code which uses the client layer:</p>
