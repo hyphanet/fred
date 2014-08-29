@@ -1429,6 +1429,10 @@ public class SplitFileFetcherStorage {
             result = prime * result + segmentNumber;
             return result;
         }
+        
+        public String toString() {
+            return "MyKey:"+segmentNumber+":"+blockNumber;
+        }
 
     }
 
@@ -1502,6 +1506,7 @@ public class SplitFileFetcherStorage {
     }
 
     public void onFailure(MyKey key, FetchException fe) {
+        if(logMINOR) Logger.minor(this, "Failure: "+fe.mode+" for block "+key.blockNumber+" for "+key.segmentNumber);
         synchronized(this) {
             if(cancelled || finishedFetcher) return;
             dirtyGeneralProgress = true;
