@@ -80,9 +80,6 @@ import freenet.support.math.MersenneTwister;
  * check blocks or the keys will be written, so it's still reasonable assuming you only get errrors
  * when writing, and it isn't really possible to improve on this much anyway...
  * 
- * FIXME do we want to wait until it has finished encoding everything before
- * inserting anything?
- * 
  * @author toad
  * 
  */
