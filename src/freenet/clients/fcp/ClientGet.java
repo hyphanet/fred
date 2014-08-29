@@ -956,6 +956,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     @Override
     public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
+        if(persistenceType != PERSIST_FOREVER) return;
         super.getClientDetail(dos, checker);
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);

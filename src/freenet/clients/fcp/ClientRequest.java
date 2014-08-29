@@ -441,6 +441,7 @@ public abstract class ClientRequest implements Serializable {
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
     public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
+        if(persistenceType != PERSIST_FOREVER) return;
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);
         // Identify the request first.
