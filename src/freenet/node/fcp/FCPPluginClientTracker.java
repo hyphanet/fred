@@ -23,7 +23,7 @@ import freenet.support.io.NativeThread;
  * <p>To understand the purpose of this, please consider the following:<br/>
  * The normal flow of plugin FCP is that clients send messages to a server plugin, and the server plugin immediately sends a reply via the
  * {@link FCPPluginClient} which was passed to its message handling function
- * {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
+ * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
  * <br/>This might not be sufficient for certain usecases: The reply to a message might take quite some time to compute, possibly hours. Then a reference
  * to the original client needs to be stored in the plugin's database, not memory. <br/>
  * Thus, this class exists to serve the purpose of allowing plugin servers to query clients by their ID (see {@link FCPPluginClient#getID()}).</p>
@@ -80,7 +80,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * Stores the {@link FCPPluginClient} so in the future it can be obtained by its ID with {@link FCPPluginClientTracker#getClient(UUID)}.
      * 
      * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
-     * {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
+     * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet, freenet.support.api.Bucket)}.
      * 
      * Unregistration is not supported and not necessary. 
      */
@@ -103,7 +103,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * The job of keeping the strong references is at the client.
      * 
      * @param clientID The ID of{@link FCPPluginClient#getID()} of a client which has already sent a message to your plugin via
-     *                 {@link ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet,
+     *                 {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet,
      *                 freenet.support.api.Bucket)}
      * @return The client with the given ID, for as long as it is still connected to the node. 
      * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.

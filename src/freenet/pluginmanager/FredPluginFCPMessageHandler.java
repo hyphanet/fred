@@ -116,7 +116,7 @@ public interface FredPluginFCPMessageHandler {
          * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
          * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
          */
-        void handleFCPPluginClientMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
+        void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
     }
 
     /**

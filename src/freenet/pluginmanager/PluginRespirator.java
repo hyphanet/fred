@@ -140,7 +140,7 @@ public class PluginRespirator {
      * it from {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard reference and only
      * stored the ID, the {@link FCPPluginClient} would be garbage collected and thus considered as disconnected.
      * 
-     * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handleFCPPluginClientMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet,
+     * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, freenet.support.SimpleFieldSet,
      *      freenet.support.api.Bucket)
      *      The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler provides an explanation of when to use this.
      * @param clientID The ID as obtained by {@link FCPPluginClient#getID()}
