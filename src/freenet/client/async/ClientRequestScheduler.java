@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import freenet.client.FetchException;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
@@ -227,18 +225,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		return false;
 	}
-	
-	/** The maximum number of requests that we will keep on the in-RAM request
-	 * starter queue. */
-	static final int MAX_STARTER_QUEUE_SIZE = 512; // two full segments
-	
-	/** The above doesn't include in-flight requests. In-flight requests will
-	 * of course still have PersistentChosenRequest's 
-	 * even though they are not on the starter queue and so don't count towards
-	 * the above limit. So we have a higher limit before we complain that 
-	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
-	static final int WARNING_STARTER_QUEUE_SIZE = 800;
-	private static final long WAIT_AFTER_NOTHING_TO_START = SECONDS.toMillis(60);
 	
 	/**
 	 * Called by RequestStarter to find a request to run.
