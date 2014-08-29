@@ -75,7 +75,7 @@ public abstract class ClientRequester implements Serializable {
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
-		requests = new TransientSendableRequestSet();
+		requests = new SendableRequestSet();
 		synchronized(allRequesters) {
 			if(!persistent())
 				allRequesters.put(this, dumbValue);
@@ -386,7 +386,7 @@ public abstract class ClientRequester implements Serializable {
     protected void innerOnResume(ClientContext context) throws ResumeFailedException {
         ClientBaseCallback cb = getCallback();
         client = cb.getRequestClient();
-        requests = new TransientSendableRequestSet();
+        requests = new SendableRequestSet();
         if(sentToNetwork)
             innerToNetwork(context);
     }
