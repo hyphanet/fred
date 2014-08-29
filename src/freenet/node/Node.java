@@ -2776,8 +2776,6 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.freespace().useBTreeSystem();
 		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		dbConfig.objectClass(freenet.clients.fcp.FCPClient.class).objectField("name").indexed(true);
-		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
-		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("getter").indexed(true);
 		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
 		dbConfig.objectClass(PluginStore.class).cascadeOnDelete(true);
 		/*

@@ -132,7 +132,6 @@ public class DatastoreChecker implements PrioRunnable {
 		Key[] keys = null;
 		SendableGet getter = null;
 		ClientRequestScheduler sched = null;
-		DatastoreCheckerItem item = null;
 		BlockSet blocks = null;
 		boolean waited = false;
 		synchronized(this) {
@@ -143,7 +142,6 @@ public class DatastoreChecker implements PrioRunnable {
 						keys = trans.keys;
 						getter = trans.getter;
 						// sched assigned out of loop
-						item = null;
 						blocks = trans.blockSet;
 						if(logMINOR)
 							Logger.minor(this, "Checking transient request "+getter+" prio "+prio+" of "+transientQueue[prio].size());
@@ -194,14 +192,13 @@ public class DatastoreChecker implements PrioRunnable {
 			final SendableGet get = getter;
 			final ClientRequestScheduler scheduler = sched;
 			final boolean valid = anyValid;
-			final DatastoreCheckerItem it = item;
 			try {
 				context.jobRunner.queue(new PersistentJob() {
 
 					@Override
 					public boolean run(ClientContext context) {
 						try {
-							scheduler.finishRegister(new SendableGet[] { get }, true, valid, it);
+							scheduler.finishRegister(new SendableGet[] { get }, true, valid);
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to register "+get+": "+t, t);
 							try {
@@ -223,7 +220,7 @@ public class DatastoreChecker implements PrioRunnable {
 				// Impossible
 			}
 		} else {
-			sched.finishRegister(new SendableGet[] { getter }, false, anyValid, item);
+			sched.finishRegister(new SendableGet[] { getter }, false, anyValid);
 		}
 	}
 

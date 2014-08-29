@@ -147,12 +147,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		        if(!(getter.isCancelled() || getter.getCooldownTime(clientContext, System.currentTimeMillis()) != 0))
 		            anyValid = true;
 		    }
-		    finishRegister(getters, false, anyValid, null);
+		    finishRegister(getters, false, anyValid);
 		}
 	}
 	
-	void finishRegister(final SendableGet[] getters, boolean persistent, final boolean anyValid, final DatastoreCheckerItem reg) {
-		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
+	void finishRegister(final SendableGet[] getters, boolean persistent, final boolean anyValid) {
+		if(logMINOR) Logger.minor(this, "finishRegister for "+Fields.commaList(getters)+" anyValid="+anyValid+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(SendableGet getter : getters) {
