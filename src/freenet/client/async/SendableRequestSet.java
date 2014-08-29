@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.Serializable;
 import java.util.HashSet;
 
 import freenet.node.SendableRequest;
@@ -7,9 +8,10 @@ import freenet.node.SendableRequest;
 /**
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class SendableRequestSet {
+public class SendableRequestSet implements Serializable {
 
-	private final HashSet<SendableRequest> set;
+    private static final long serialVersionUID = 1L;
+    private final HashSet<SendableRequest> set;
 	
 	SendableRequestSet() {
 		set = new HashSet<SendableRequest>();
