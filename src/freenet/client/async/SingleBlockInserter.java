@@ -53,7 +53,7 @@ import freenet.support.io.ResumeFailedException;
  * WARNING: Changing non-transient members on classes that are Serializable can result in 
  * restarting downloads or losing uploads.
  */
-public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable, Serializable {
+public class SingleBlockInserter extends SendableInsert implements ClientPutState, Serializable {
 
     private static final long serialVersionUID = 1L;
     private static volatile boolean logMINOR;
@@ -344,7 +344,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return;
 			}
 		}
-		if(ctx.getCHKOnly) {
+		if(ctx.getCHKOnly || ctx.earlyEncode) {
 			tryEncode(context);
 			onSuccess(null, getKeyNoEncode(), context);
 		} else {
@@ -579,7 +579,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	/** Attempt to encode the block, if necessary */
-	@Override
 	public void tryEncode(ClientContext context) {
 		synchronized(this) {
 			if(resultingKey != null) return;
