@@ -21,7 +21,6 @@ import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.MetadataParseException;
-import freenet.client.async.SplitFileFetcherStorage.MyKey;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.ChecksumChecker;
