@@ -46,7 +46,7 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			int num = Integer.parseInt(name);
 			int count = Integer.parseInt(f.get("Count"));
 			if(count < 0) throw new IllegalArgumentException("Count < 0");
-			map.put(Integer.valueOf(num), new Item(count));
+			map.put(Integer.valueOf(num), count);
 			total += count;
 		}
 	}
@@ -56,30 +56,19 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	    this.insert = false;
 	}
 	
-	private static class Item {
-		Item(int count) {
-			this.x = count;
-		}
-
-		Item() {
-			this.x = 0;
-		}
-
-		int x;
-	}
-
-	private HashMap<Integer, Item> map;
+	private HashMap<Integer, Integer> map;
 
 	public synchronized void inc(int k) {
 		if(k == 0) {
 			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
 		}
-		if(map == null) map = new HashMap<Integer, Item>();
+		if(map == null) map = new HashMap<Integer, Integer>();
 		Integer key = k;
-		Item i = map.get(key);
+		Integer i = map.get(key);
 		if(i == null)
-			map.put(key, i = new Item());
-		i.x++;
+			map.put(key, 1);
+		else
+		    map.put(key, i+1);
 		total++;
 	}
 
@@ -87,23 +76,24 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 		if(k == 0) {
 			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
 		}
-		if(map == null) map = new HashMap<Integer, Item>();
+		if(map == null) map = new HashMap<Integer, Integer>();
 		Integer key = k;
-		Item i = map.get(key);
+		Integer i = map.get(key);
 		if(i == null)
-			map.put(key, i = new Item());
-		i.x+=val;
+			map.put(key, 1);
+		else
+		    map.put(key, i+val);
 		total += val;
 	}
 	
 	public synchronized String toVerboseString() {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder();
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer x = e.getKey();
-			Item val = e.getValue();
+			Integer val = e.getValue();
 			String s = insert ? InsertException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
-			sb.append(val.x);
+			sb.append(val);
 			sb.append('\t');
 			sb.append(s);
 			sb.append('\n');
@@ -122,15 +112,15 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 			Integer code = (Integer) (map.keySet().toArray())[0];
 			sb.append(code);
 			sb.append('=');
-			sb.append((map.get(code)).x);
+			sb.append((map.get(code)));
 		} else if(map.size() < 10) {
 			boolean needComma = false;
-			for(Map.Entry<Integer, Item> entry : map.entrySet()) {
+			for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
 				if(needComma)
 					sb.append(',');
 				sb.append(entry.getKey()); // code
 				sb.append('=');
-				sb.append(entry.getValue().x);
+				sb.append(entry.getValue());
 				needComma = true;
 			}
 		} else {
@@ -144,11 +134,11 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	 */
 	public synchronized FailureCodeTracker merge(FailureCodeTracker source) {
 		if(source.map == null) return this;
-		if(map == null) map = new HashMap<Integer, Item>();
-		for (Map.Entry<Integer, Item> e : source.map.entrySet()) {
+		if(map == null) map = new HashMap<Integer, Integer>();
+		for (Map.Entry<Integer, Integer> e : source.map.entrySet()) {
 			Integer k = e.getKey();
-			Item item = e.getValue();
-			inc(k, item.x);
+			Integer item = e.getValue();
+			inc(k, item);
 		}
 		return this;
 	}
@@ -170,16 +160,16 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		if(map != null) {
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer k = e.getKey();
-			Item item = e.getValue();
+			Integer item = e.getValue();
 			int code = k.intValue();
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
 			if(verbose)
 				sfs.putSingle(Integer.toString(code)+".Description", 
 						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
-			sfs.put(Integer.toString(code)+".Count", item.x);
+			sfs.put(Integer.toString(code)+".Count", item);
 		}
 		}
 		return sfs;
@@ -196,9 +186,9 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 
 	public synchronized boolean isFatal(boolean insert) {
 		if(map == null) return false;
-		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
 			Integer code = e.getKey();
-			if(e.getValue().x == 0) continue;
+			if(e.getValue() == 0) continue;
 			if(insert) {
 				if(InsertException.isFatal(code.intValue())) return true;
 			} else {
@@ -229,8 +219,8 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	}
 
 	public synchronized boolean isDataFound() {
-		for(Map.Entry<Integer, Item> entry : map.entrySet()) {
-			if(entry.getValue().x <= 0) continue;
+		for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
+			if(entry.getValue() <= 0) continue;
 			if(FetchException.isDataFound(entry.getKey(), null)) return true;
 		}
 		return false;
@@ -259,8 +249,8 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	/** Get number of errors of count mode */
     public synchronized int getErrorCount(int mode) {
         if(map == null) return 0;
-        Item item = map.get(mode);
-        return item == null ? 0 : item.x;
+        Integer item = map.get(mode);
+        return item == null ? 0 : item;
     }
     
     public FailureCodeTracker(boolean insert, DataInputStream dis) throws IOException, StorageFormatException {
@@ -277,9 +267,9 @@ public class FailureCodeTracker implements Cloneable, Serializable {
             int x = dis.readInt();
             if(x < 0) throw new StorageFormatException("Negative error counts");
             if(x == 0) continue;
-            if(map == null) map = new HashMap<Integer, Item>();
+            if(map == null) map = new HashMap<Integer, Integer>();
             total += x;
-            map.put(i, new Item(x));
+            map.put(i, x);
         }
     }
 }
