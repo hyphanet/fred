@@ -79,18 +79,29 @@ public interface FredPluginFCPMessageHandler {
             this.data = data;
             this.success = success;
         }
+        
+        /**
+         * @return True if the message is merely a reply to a previous message from your side.
+         *         In that case, you should probably not send another reply message back to prevent infinite bouncing of "success!" replies. 
+         */
+        public boolean isReplyMessage() {
+            return success != null;
+        }
+        
+        // FIXME: Add constructor which eats a FCPPluginMessage so reply messages can be properly constructed to have the right identifier and success values.
     }
 
     /**
-     * Message handling function for messages received from a plugin FCP server or client.
-     * <b>ATTENTION</b>: Please read the different constraints for server and client side message handlers at:<br/>
-     * - {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}<br/>
-     * - {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, String, SimpleFieldSet, Bucket)}<br/>
+     * Message handling function for messages received from a plugin FCP server or client.<br/><br/>
+     * 
+     * <b>ATTENTION</b>: Please read the different constraints for server and client side message handlers at the child interfaces:<br/>
+     * - {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}<br/>
+     * - {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}<br/>
      * 
      * To stress those different constraints, you should also not implement this interface but one of the child interfaces {@link ServerSideFCPMessageHandler}
      * and {@link ClientSideFCPMessageHandler}.
      */
-    void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
+    FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
 
     /**
      * Plugins which provide FCP services to clients must implement this interface.<br/>
@@ -115,15 +126,33 @@ public interface FredPluginFCPMessageHandler {
          * - Once you're ready to send the reply, use {@link PluginRespirator#getPluginClientByID(java.util.UUID)} to obtain the client.<br/>
          * </p>
          *  
-         * @param client The client which sent the message. To be used for sending back a reply.<br/>
+         * @param client The client which sent the message.<br/><br/>
+         * 
          *               You <b>must not</b> keep a hard reference to this object outside of the scope of this function: This would prevent client plugins from
          *               being unloaded. See the head of the documentation of this function for an explanation of how to store a pointer to a certain client.
-         * @param messageIdentifier The identifier of the client message as specified by the client. Must be passed through when sending a reply.
-         * @param parameters Part 1 of client message: Human-readable parameters. Shall be small amount of data.
-         * @param data Part 2 of client message: Non-human readable, large size bulk data. Can be null.
+         *               <br/><br/>
+         * 
+         *               You <b>must not</b> use its send functions for sending back the main reply. Instead, use the return value for shipping the reply.<br/>
+         *               You are free to send "out of band" secondary replies using the client.<br/>
+         *               This is to ensure that if the sender of the original message used a <i>synchronous</i> send function at {@link FCPPluginClient}, the
+         *               send function will be able to return your reply message: This mechanism only works for returned replies, not for out of band replies.
+         *               <br/><br/>
+         * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
+         * @return Your reply message.<br/><br/>
+         * 
+         *         You <b>must</b> construct this by passing the original message to the constructor to ensure that the {@link FCPPluginMessage#identifier}
+         *         gets preserved.<br/><br/>
+         *         
+         *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
+         *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
+         *         to them again.<br/>
+         *         If you still have to send a message to do further operations, you should create a new "dialog" by sending an "out of band" message
+         *         using the passed {@link FCPPluginClient}, as explained in the description of this function.<br/>
+         *         Consider the whole of this as a remote procedure call process: A non-reply message is the procedure call, a reply message is the procedure
+         *         result. When receiving the result, the procedure call is finished, and shouldn't contain further replies.
          */
         @Override
-        void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
+        FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
     }
 
     /**
@@ -135,16 +164,34 @@ public interface FredPluginFCPMessageHandler {
      */
     public interface ClientSideFCPMessageHandler extends FredPluginFCPMessageHandler {
         /**
-         * @param client The client which you used to send the original message.
-         * @param messageIdentifier The identifier of the message which the server is replying to. The JavaDoc of the server-side message handler instructs it
-         *                          to specify the messageIdentifier of replies to be the same as the messageIdentifier you specified in the message which
-         *                          caused the reply to be sent. However the server is free to send messages to you on its own without any original message from
-         *                          your side, for example for event propagation. In that case, the messageIdentifier might not match any previous message from
-         *                          your side. 
-         * @param parameters Part 1 of server reply: Human-readable parameters. Shall be small amount of data.
-         * @param data Part 2 of server reply: Non-human readable, large size bulk data. Can be null.
+         * Is called to handle messages from the server after you sent a message to it using a {@link FCPPluginClient}.<br/><br/>
+         * 
+         * <b>ATTENTION:</b> The server is free to send messages to you on its own, that is not triggered by any message which you sent.<br/>
+         * This can happen for as long as you keep the connection open by having a hard reference to the original {@link FCPPluginClient} in memory.<br/>
+         * The purpose of this mechanism is for example to allow the server to tell you about events which happened at its side.
+         * 
+         * @param client The client which you used to open the connection to the server.<br/><br/>
+         * 
+         *               You <b>must not</b> use its send functions for sending back the main reply. Instead, use the return value for shipping the reply.<br/>
+         *               You are free to send "out of band" secondary replies using the client.<br/>
+         *               This is to ensure that if the sender of the original message used a <i>synchronous</i> send function at {@link FCPPluginClient}, the
+         *               send function will be able to return your reply message: This mechanism only works for returned replies, not for out of band replies.
+         *               <br/><br/>
+         * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
+         * @return Your reply message.<br/><br/>
+         * 
+         *         You <b>must</b> construct this by passing the original message to the constructor to ensure that the {@link FCPPluginMessage#identifier}
+         *         gets preserved.<br/><br/>
+         *         
+         *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
+         *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
+         *         to them again.<br/>
+         *         If you still have to send a message to do further operations, you should create a new "dialog" by sending an "out of band" message
+         *         using the passed {@link FCPPluginClient}, as explained in the description of this function.<br/>
+         *         Consider the whole of this as a remote procedure call process: A non-reply message is the procedure call, a reply message is the procedure
+         *         result. When receiving the result, the procedure call is finished, and shouldn't contain further replies.
          */
         @Override
-        void handlePluginFCPMessage(FCPPluginClient client, String messageIdentifier, SimpleFieldSet parameters, Bucket data);
+        FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
     }
 }
