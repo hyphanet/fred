@@ -688,8 +688,7 @@ public class StatisticsToadlet extends Toadlet {
 				continue;
 			row = table.addChild("tr");
 			RequestClient client = request.getClient();
-			// client can be null if the request is stored in DB4O and then deactivated
-			row.addChild("td", client==null ? "null" : client.toString());
+			row.addChild("td", client.toString());
 			try {
 				String s = request.toString();
 				if(s.indexOf(':') > s.indexOf('@')) {
