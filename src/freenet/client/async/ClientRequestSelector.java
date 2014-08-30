@@ -779,13 +779,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
             HasCooldownCacheItem parent, ClientContext context) {
         cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
     }
-    public synchronized void removeCooldown(HasCooldownTrackerItem parent) {
-        cooldownTracker.remove(parent);
-    }
-    
-    public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent) {
-        return cooldownTracker.make(parent);
-    }
     
     public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck) {
         return cooldownTracker.clearCachedWakeup(toCheck);

@@ -27,7 +27,7 @@ import freenet.support.TimeUtil;
  * restarting downloads or losing uploads.
  * @author toad
  */
-public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
+public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener {
 
     private static final long serialVersionUID = 1L;
 
@@ -195,7 +195,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public void unregister(ClientContext context, short oldPrio) {
-	    getScheduler(context).selector.removeCooldown(this);
 		super.unregister(context, oldPrio);
 	}
 

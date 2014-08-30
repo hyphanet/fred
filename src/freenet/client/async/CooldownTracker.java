@@ -35,20 +35,6 @@ public class CooldownTracker {
 		Logger.registerClass(CooldownTracker.class);
 	}
 
-	/** CooldownTrackerItem's by HasCooldownTrackerItem */
-	private final WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem> trackerItemsTransient = new WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem>();
-	
-	public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent) {
-	    CooldownTrackerItem item = trackerItemsTransient.get(parent);
-	    if(item == null)
-	        trackerItemsTransient.put(parent, item = parent.makeCooldownTrackerItem());
-	    return item;
-	}
-	
-	public synchronized CooldownTrackerItem remove(HasCooldownTrackerItem parent) {
-	    return trackerItemsTransient.remove(parent);
-	}
-	
 	/** Transient CooldownCacheItem's by object */
 	private final WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem> cacheItemsTransient = new WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem>();
 	
