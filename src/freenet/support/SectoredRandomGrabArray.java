@@ -39,7 +39,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	}
 
 	/** Add directly to a RandomGrabArrayWithClient under us. */
-	public synchronized void add(Object client, RandomGrabArrayItem item, ClientContext context) {
+	public void add(Object client, RandomGrabArrayItem item, ClientContext context) {
+	    synchronized(root) {
 		RandomGrabArrayWithClient rga;
 		int clientIndex = haveClient(client);
 		if(clientIndex == -1) {
@@ -62,9 +63,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
+	    }
 	}
 
-	private synchronized void addElement(Object client, RemoveRandomWithObject rga) {
+	private void addElement(Object client, RemoveRandomWithObject rga) {
+	    synchronized(root) {
 		final int len = grabArrays.length;
 
 		grabArrays = Arrays.copyOf(grabArrays, len+1);
@@ -72,34 +75,42 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		
 		grabClients = Arrays.copyOf(grabClients, len+1);
 		grabClients[len] = client;
+	    }
 	}
 
-	private synchronized int haveClient(Object client) {
+	private int haveClient(Object client) {
+	    synchronized(root) {
 		for(int i=0;i<grabClients.length;i++) {
 			if(grabClients[i] == client) return i;
 		}
 		return -1;
+	    }
 	}
 
 	/**
 	 * Get a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized RemoveRandomWithObject getGrabber(Object client) {
+	public RemoveRandomWithObject getGrabber(Object client) {
+	    synchronized(root) {
 		int idx = haveClient(client);
 		if(idx == -1) return null;
 		else return grabArrays[idx];
+	    }
 	}
 	
-	public synchronized Object getClient(int x) {
+	public Object getClient(int x) {
+	    synchronized(root) {
 		return grabClients[x];
+	    }
 	}
 
 	/**
 	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ClientContext context) {
+	public void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ClientContext context) {
+	    synchronized(root) {
 		if(requestGrabber.getObject() != client)
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
@@ -108,10 +119,12 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(parent != null)
 				root.clearCachedWakeup(parent);
 		}
+	    }
 	}
 
 	@Override
-	public synchronized RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ClientContext context, long now) {
+	public RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ClientContext context, long now) {
+	    synchronized(root) {
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			if(grabArrays.length == 1) {
@@ -128,11 +141,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			else
 				return removeRandomExhaustive(excluding, context, now);
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomExhaustive(
+	private RemoveRandomReturn removeRandomExhaustive(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		if(grabArrays.length == 0) return null;
 		int x = context.fastWeakRandom.nextInt(grabArrays.length);
@@ -170,11 +185,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 		root.setCachedWakeup(wakeupTime, this, parent, context);
 		return new RemoveRandomReturn(wakeupTime);
+	    }
 	}
 
-	private synchronized RandomGrabArrayItem removeRandomLimited(
+	private RandomGrabArrayItem removeRandomLimited(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
+	    synchronized(root) {
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		final int MAX_EXCLUDED = 10;
 		int excluded = 0;
@@ -229,11 +246,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				continue;
 			}
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomTwoOnly(
+	private RemoveRandomReturn removeRandomTwoOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		// Another simple common case
 		int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
@@ -317,11 +336,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
+	    }
 	}
 
-	private synchronized RemoveRandomReturn removeRandomOneOnly(
+	private RemoveRandomReturn removeRandomOneOnly(
 			RandomGrabArrayItemExclusionList excluding,
 			ClientContext context, long now) {
+	    synchronized(root) {
 		long wakeupTime = Long.MAX_VALUE;
 		// Optimise the common case
 		RemoveRandomWithObject rga = grabArrays[0];
@@ -361,9 +382,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			root.setCachedWakeup(wakeupTime, this, parent, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
+	    }
 	}
 
-	private synchronized void removeElement(int x) {
+	private void removeElement(int x) {
+	    synchronized(root) {
 		final int grabArraysLength = grabArrays.length;
 		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
 		RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[newLen];
@@ -379,21 +402,26 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(x < grabArraysLength-1)
 			System.arraycopy(grabClients, x+1, newClients, x, grabArraysLength - (x+1));
 		grabClients = newClients;
+	    }
 	}
 
-	public synchronized boolean isEmpty() {
+	public boolean isEmpty() {
+	    synchronized(root) {
 		return grabArrays.length == 0;
+	    }
 	}
 	
-	public synchronized int size() {
+	public int size() {
+	    synchronized(root) {
 		return grabArrays.length;
+	    }
 	}
 	
 	@Override
 	public void maybeRemove(RemoveRandom r, ClientContext context) {
 		int count = 0;
 		int finalSize;
-		synchronized(this) {
+		synchronized(root) {
 			while(true) {
 				int found = -1;
 				for(int i=0;i<grabArrays.length;i++) {

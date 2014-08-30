@@ -68,7 +68,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			return;
 		}
 		req.setParentGrabArray(this); // will store() self
-		synchronized(this) {
+		synchronized(root) {
 			if(context != null) {
 				root.clearCachedWakeup(req);
 				root.clearCachedWakeup(this);
@@ -129,7 +129,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	@Override
 	public RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ClientContext context, long now) {
 		if(logMINOR) Logger.minor(this, "removeRandom() on "+this+" index="+index);
-		synchronized(this) {
+		synchronized(root) {
 			if(index == 0) {
 				if(logMINOR) Logger.minor(this, "All null on "+this);
 				return null;
@@ -355,7 +355,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		
 		boolean matched = false;
 		boolean empty = false;
-		synchronized(this) {
+		synchronized(root) {
 			if(blocks.length == 1) {
 				Block block = blocks[0];
 				for(int i=0;i<index;i++) {
@@ -409,12 +409,14 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 	}
 
-	public synchronized boolean isEmpty() {
-		return index == 0;
+	public boolean isEmpty() {
+	    synchronized(root) {
+	        return index == 0;
+	    }
 	}
 	
 	public boolean contains(RandomGrabArrayItem item) {
-		synchronized(this) {
+		synchronized(root) {
 			if(blocks.length == 1) {
 				Block block = blocks[0];
 				for(int i=0;i<index;i++) {
@@ -439,14 +441,18 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		return false;
 	}
 	
-	public synchronized int size() {
-		return index;
+	public int size() {
+	    synchronized(root) {
+	        return index;
+	    }
 	}
 
-	public synchronized RandomGrabArrayItem get(int idx) {
-		int blockNo = idx / BLOCK_SIZE;
-		RandomGrabArrayItem item = blocks[blockNo].reqs[idx % BLOCK_SIZE];
-		return item;
+	public RandomGrabArrayItem get(int idx) {
+	    synchronized(root) {
+	        int blockNo = idx / BLOCK_SIZE;
+	        RandomGrabArrayItem item = blocks[blockNo].reqs[idx % BLOCK_SIZE];
+	        return item;
+	    }
 	}
 	
 	// REDFLAG this method does not move cooldown items.
