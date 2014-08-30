@@ -145,11 +145,15 @@ public class CooldownTracker {
 		    while(true) {
 		        TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 		        if(item == null) break;
+		        assert(item.node == toCheck);
 		        if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
 		        ret = true;
 		        cacheItemsTransient.remove(toCheck);
 		        toCheck = item.node.getParentGrabArray();
-		        if(toCheck == null) break;
+		        if(toCheck == null) {
+		            if(logMINOR) Logger.minor(this, "No parent for "+toCheck);
+		            break;
+		        }
 		        if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
 		    }
 		}
