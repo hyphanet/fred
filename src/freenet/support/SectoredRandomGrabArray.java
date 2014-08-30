@@ -29,6 +29,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	private Object[] grabClients;
 	private RemoveRandomParent parent;
 	private final ClientRequestSelector root;
+	private long wakeupTime;
 	
 	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
 		grabClients = new Object[0];
@@ -182,7 +183,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				removeElement(x);
 			}
 		}
-		root.setCachedWakeup(wakeupTime, this, parent, context);
+		root.setCachedWakeup(wakeupTime, this, context);
 		return new RemoveRandomReturn(wakeupTime);
 	    }
 	}
@@ -300,7 +301,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				Logger.error(this, "Other RGA is null later on on "+this);
 				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 				grabClients = new Object[] { grabClients[1-x] };
-				root.setCachedWakeup(wakeupTime, this, parent, context);
+				root.setCachedWakeup(wakeupTime, this, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, now);
@@ -331,7 +332,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-				root.setCachedWakeup(wakeupTime, this, parent, context);
+				root.setCachedWakeup(wakeupTime, this, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
@@ -378,7 +379,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-			root.setCachedWakeup(wakeupTime, this, parent, context);
+			root.setCachedWakeup(wakeupTime, this, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
 	    }
@@ -443,10 +444,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			root.removeCachedWakeup(r);
 		}
 		if(finalSize == 0 && parent != null) {
-			root.removeCachedWakeup(this);
 			parent.maybeRemove(this, context);
 		}
 	}
@@ -465,4 +464,29 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
         }
     }
 	
+    @Override
+    public long getCooldownTime(ClientContext context, long now) {
+        synchronized(root) {
+            if(wakeupTime < now) wakeupTime = 0;
+            return wakeupTime;
+        }
+    }
+    
+    @Override
+    public boolean reduceCooldownTime(long wakeupTime) {
+        synchronized(root) {
+            if(this.wakeupTime > wakeupTime) {
+                this.wakeupTime = wakeupTime;
+                return true;
+            } else return false;
+        }
+    }
+
+    @Override
+    public void clearCooldownTime() {
+        synchronized(root) {
+            wakeupTime = 0;
+        }
+    }
+    
 }

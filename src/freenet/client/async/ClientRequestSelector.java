@@ -99,10 +99,6 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		cooldownTracker = new CooldownTracker();
 	}
 	
-	public void start(ClientContext context) {
-	    cooldownTracker.startMaintenance(context.ticker);
-	}
-	
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -170,7 +166,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
 			if(result != null) {
-			    long cooldownTime = cooldownTracker.getCachedWakeup(result, now);
+			    long cooldownTime = result.getCooldownTime(context, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        if(logMINOR) {
@@ -342,7 +338,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				continue; // Try next priority
 			}
 			while(true) {
-			    long cooldownTime = cooldownTracker.getCachedWakeup(chosenTracker, now);
+			    long cooldownTime = chosenTracker.getCooldownTime(context, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        Logger.normal(this, "Priority "+choosenPriorityClass+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
@@ -771,26 +767,12 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
     }
     
     public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, 
-            RequestSelectionTreeNode parent, ClientContext context, boolean dontLogOnClearingParents) {
-        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
+            ClientContext context) {
+        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, context);
     }
 
-    public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck,
-            RequestSelectionTreeNode parent, ClientContext context) {
-        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
-    }
-    
     public synchronized boolean clearCachedWakeup(RequestSelectionTreeNode toCheck) {
         return cooldownTracker.clearCachedWakeup(toCheck);
     }
-
-    public synchronized long getCachedWakeup(RequestSelectionTreeNode item, long now) {
-        return cooldownTracker.getCachedWakeup(item, now);
-    }
-
-    public synchronized void removeCachedWakeup(RequestSelectionTreeNode toCheck) {
-        cooldownTracker.removeCachedWakeup(toCheck);
-    }
-
 
 }

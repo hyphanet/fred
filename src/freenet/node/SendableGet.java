@@ -104,7 +104,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	public void unregister(ClientContext context, short oldPrio) {
 		super.unregister(context, oldPrio);
 		ClientRequestScheduler scheduler = getScheduler(context);
-		scheduler.getSelector().removeCachedWakeup(this);
 		context.checker.removeRequest(this, persistent, context, oldPrio == -1 ? getPriorityClass() : oldPrio);
 	}
 	

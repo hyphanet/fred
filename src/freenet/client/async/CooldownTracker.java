@@ -1,14 +1,11 @@
 package freenet.client.async;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
-import java.util.Iterator;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 import freenet.support.Logger;
+import freenet.support.RandomGrabArrayItem;
 import freenet.support.RemoveRandomWithObject;
-import freenet.support.Ticker;
 
 /** 
  * When a SendableGet is completed, we add it to the cooldown tracker. We 
@@ -34,32 +31,6 @@ public class CooldownTracker {
 		Logger.registerClass(CooldownTracker.class);
 	}
 
-	/** Transient CooldownCacheItem's by object */
-	private final WeakHashMap<RequestSelectionTreeNode, TransientCooldownCacheItem> cacheItemsTransient = new WeakHashMap<RequestSelectionTreeNode, TransientCooldownCacheItem>();
-	
-	/** Check the hierarchical cooldown cache for a specific object.
-	 * @param now The current time. Used to update the cache so please don't pass in 
-	 * future times!
-	 * @return -1 if there is no cache, or a time before which the RequestSelectionTreeNode is
-	 * guaranteed to have all of its keys in cooldown. */
-	public synchronized long getCachedWakeup(RequestSelectionTreeNode toCheck, long now) {
-		if(toCheck == null) {
-			Logger.error(this, "Asked to check wakeup time for null!", new Exception("error"));
-			return -1;
-		}
-		CooldownCacheItem item = cacheItemsTransient.get(toCheck);
-		if(item == null) return -1;
-		if(item.timeValid < now) {
-		    cacheItemsTransient.remove(toCheck);
-		    return -1;
-		}
-		return item.timeValid;
-	}
-
-	public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, RequestSelectionTreeNode parent, ClientContext context) {
-		setCachedWakeup(wakeupTime, toCheck, parent, context, false);
-	}
-	
 	/** Must be called when a request goes into cooldown, or is not fetchable because all of its
 	 * requests are running. Recording the parent is essential so that when the request wakes up, 
 	 * its parents in the fetch structure will also be woken up so that it can actually be tried 
@@ -71,52 +42,30 @@ public class CooldownTracker {
 	 * @param context
 	 * @param dontLogOnClearingParents
 	 */
-	public void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, RequestSelectionTreeNode parent, ClientContext context, boolean dontLogOnClearingParents) {
+	public void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, ClientContext context) {
+        List<WantsCooldownCallback> maybeWantCallbacks = null;
 		synchronized(this) {
-		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
-		TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
-		if(item == null) {
-		    cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(toCheck, wakeupTime));
-		} else {
-		    if(item.timeValid < wakeupTime)
-		        item.timeValid = wakeupTime;
-		}
-		if(parent != null) {
-		    // All items above this should have a wakeup time no later than this.
-		    while(true) {
-		        TransientCooldownCacheItem checkParent = cacheItemsTransient.get(parent);
-		        if(checkParent == null) break;
-		        if(checkParent.timeValid < item.timeValid) break;
-		        else if(checkParent.timeValid > item.timeValid) {
-		            if(!dontLogOnClearingParents)
-		                Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
-		            else {
-		                if(logMINOR) 
-		                    Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
-		            }
-		            checkParent.timeValid = item.timeValid;
+		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck);
+		toCheck = toCheck.getParentGrabArray();
+		// All items above this should have a wakeup time no later than this.
+		while(true) {
+		    if(toCheck == null) break;
+		    if(toCheck.reduceCooldownTime(wakeupTime)) break;
+		    if(toCheck instanceof RemoveRandomWithObject) {
+		        Object client = ((RemoveRandomWithObject)toCheck).getObject();
+		        if(client instanceof WantsCooldownCallback) {
+		            if(maybeWantCallbacks == null) maybeWantCallbacks = new ArrayList<WantsCooldownCallback>();
+		            maybeWantCallbacks.add((WantsCooldownCallback)client);
 		        }
-		        parent = checkParent.node.getParentGrabArray();
-		        if(parent == null) break;
 		    }
+		    toCheck = toCheck.getParentGrabArray();
 		}
 		}
-		if(toCheck instanceof RemoveRandomWithObject) {
-			Object client = ((RemoveRandomWithObject)toCheck).getObject();
-			if(client instanceof WantsCooldownCallback) {
-				((WantsCooldownCallback)client).enterCooldown(wakeupTime, context);
+		if(maybeWantCallbacks != null) {
+		    for(WantsCooldownCallback cb : maybeWantCallbacks) {
+				cb.enterCooldown(wakeupTime, context);
 			}
 		}
-	}
-	
-	/** The cached item has been completed, failed etc. It should be removed but will 
-	 * not affect its ancestors' cached times.
-	 * @param toCheck
-	 * @param persistent
-	 * @param container
-	 */
-	public synchronized boolean removeCachedWakeup(RequestSelectionTreeNode toCheck) {
-	    return cacheItemsTransient.remove(toCheck) != null;
 	}
 	
 	/** The cached item has become fetchable unexpectedly. It should be cleared along with
@@ -141,15 +90,15 @@ public class CooldownTracker {
 		}
 		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for "+toCheck);
 		boolean ret = false;
+		if(toCheck instanceof RandomGrabArrayItem)
+		    toCheck = toCheck.getParentGrabArray(); // Start clearing at parent.
 		synchronized(this) {
 		    while(true) {
-		        TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
-		        if(item == null) break;
-		        assert(item.node == toCheck);
+		        if(toCheck == null) break;
 		        if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
 		        ret = true;
-		        cacheItemsTransient.remove(toCheck);
-		        toCheck = item.node.getParentGrabArray();
+		        toCheck.clearCooldownTime();
+		        toCheck = toCheck.getParentGrabArray();
 		        if(toCheck == null) {
 		            if(logMINOR) Logger.minor(this, "No parent for "+toCheck);
 		            break;
@@ -166,46 +115,4 @@ public class CooldownTracker {
 		return ret;
 	}
 	
-	/** Clear expired items from the cache */
-	public synchronized void clearExpired(long now) {
-		// FIXME more efficient implementation using a queue???
-		int removedPersistent = 0;
-		int removedTransient = 0;
-		Iterator<Map.Entry<RequestSelectionTreeNode, TransientCooldownCacheItem>> it2 =
-			cacheItemsTransient.entrySet().iterator();
-		while(it2.hasNext()) {
-			Map.Entry<RequestSelectionTreeNode, TransientCooldownCacheItem> item = it2.next();
-			if(item.getValue().timeValid < now) {
-				removedTransient++;
-				it2.remove();
-			}
-		}
-		if(logMINOR) Logger.minor(this, "Removed "+removedPersistent+" persistent cooldown cache items and "+removedTransient+" transient cooldown cache items");
-	}
-	
-	private static final long MAINTENANCE_PERIOD = MINUTES.toMillis(10);
-	
-	public void startMaintenance(final Ticker ticker) {
-		ticker.queueTimedJob(new Runnable() {
-
-			@Override
-			public void run() {
-				clearExpired(System.currentTimeMillis());
-				ticker.queueTimedJob(this, MAINTENANCE_PERIOD);
-			}
-			
-		}, MAINTENANCE_PERIOD);
-	}
-
-}
-
-class TransientCooldownCacheItem extends CooldownCacheItem {
-	
-	public TransientCooldownCacheItem(RequestSelectionTreeNode node, long wakeupTime) {
-		super(wakeupTime);
-		this.node = node;
-	}
-	
-	final RequestSelectionTreeNode node;
-
 }

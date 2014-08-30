@@ -197,5 +197,15 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	protected final String objectToString() {
 		return super.toString();
 	}
+	
+    @Override
+    public boolean reduceCooldownTime(long wakeupTime) {
+        throw new UnsupportedOperationException("Request cannot set cooldown time, only nodes further up the tree can do that");
+    }
+
+    @Override
+    public void clearCooldownTime() {
+        throw new UnsupportedOperationException("Request cannot set cooldown time, only nodes further up the tree can do that");
+    }
 
 }

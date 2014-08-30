@@ -10,4 +10,19 @@ public interface RequestSelectionTreeNode {
      * priority classes are kept in an array on ClientRequestSelector). */
     public RequestSelectionTreeNode getParentGrabArray();
 
+    /** Unless this is a RandomGrabArrayItem, this will return the wakeup time for the subtree 
+     * rooted at this node. For a RandomGrabArrayItem it returns the wakeup time for just that 
+     * single request. */
+    public long getCooldownTime(ClientContext context, long now);
+    
+    /** If the current cooldown time is larger than the parameter, reduce it and return true. 
+     * Otherwise return false. NOT VALID FOR LEAVES i.e. RandomGrabArrayItem.
+     * @param wakeupTime
+     * @return
+     */
+    public boolean reduceCooldownTime(long wakeupTime);
+
+    /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. */
+    public void clearCooldownTime();
+    
 }

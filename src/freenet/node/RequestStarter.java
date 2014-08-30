@@ -320,7 +320,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	@Override
 	public long excludeSummarily(RequestSelectionTreeNode item,
 			RequestSelectionTreeNode parent, long now) {
-	    return sched.getSelector().getCachedWakeup(item, now);
+	    return item.getCooldownTime(core.clientContext, now);
 	}
 
 }

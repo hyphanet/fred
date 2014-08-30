@@ -46,6 +46,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	private final int hashCode;
 	private RemoveRandomParent parent;
 	private ClientRequestSelector root;
+	private long wakeupTime;
 
 	public RandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
 		this.blocks = new Block[] { new Block() };
@@ -313,7 +314,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				root.setCachedWakeup(wakeupTime, this, parent, context);
+				root.setCachedWakeup(wakeupTime, this, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -348,7 +349,6 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	}
 
 	public void remove(RandomGrabArrayItem it, ClientContext context) {
-		root.removeCachedWakeup(it);
 		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
 		
@@ -482,6 +482,31 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
     public RequestSelectionTreeNode getParentGrabArray() {
         synchronized(root) {
             return parent;
+        }
+    }
+
+    @Override
+    public long getCooldownTime(ClientContext context, long now) {
+        synchronized(root) {
+            if(wakeupTime < now) wakeupTime = 0;
+            return wakeupTime;
+        }
+    }
+
+    @Override
+    public boolean reduceCooldownTime(long wakeupTime) {
+        synchronized(root) {
+            if(this.wakeupTime > wakeupTime) {
+                this.wakeupTime = wakeupTime;
+                return true;
+            } else return false;
+        }
+    }
+
+    @Override
+    public void clearCooldownTime() {
+        synchronized(root) {
+            wakeupTime = 0;
         }
     }
 	

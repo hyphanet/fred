@@ -75,7 +75,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.node = node;
 		this.clientContext = context;
 		selector = new ClientRequestSelector(forInserts, forSSKs, forRT, this);
-		selector.start(context);
 		
 		this.name = name;
 		

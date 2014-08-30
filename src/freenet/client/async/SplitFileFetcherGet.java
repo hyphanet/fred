@@ -73,7 +73,7 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
         // It is essential to call setCachedWakeup(), because it sets up the hierarchical wakeup
         // mechanism, so when we come *out* of cooldown suddenly, our parent will also be woken up
         // and so on upwards.
-        getScheduler(context).selector.setCachedWakeup(wakeTime, this, this.getParentGrabArray(), context, true);
+        getScheduler(context).selector.setCachedWakeup(wakeTime, this, context);
         return wakeTime;
     }
 
