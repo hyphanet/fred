@@ -8,7 +8,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
-import freenet.client.async.CooldownTracker;
 import freenet.client.async.HasCooldownCacheItem;
 
 /**
@@ -472,14 +471,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 	}
 
-	@Override
-	public void moveElementsTo(RemoveRandom existingGrabber, boolean canCommit) {
-		if(existingGrabber instanceof RandomGrabArray)
-			moveElementsTo((RandomGrabArray)existingGrabber, canCommit);
-		else
-			throw new IllegalArgumentException("Expected RGA but got "+existingGrabber);
-	}
-	
 	@Override
 	public void setParent(RemoveRandomParent newParent) {
 		this.parent = newParent;

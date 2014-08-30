@@ -24,13 +24,6 @@ public interface RemoveRandom extends HasCooldownCacheItem {
 	 * if the RGA is empty and should be removed by the parent. */
 	public RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ClientContext context, long now);
 
-	/**
-	 * @param existingGrabber
-	 * @param container
-	 * @param canCommit If true, can commit to limit memory footprint.
-	 */
-	public void moveElementsTo(RemoveRandom existingGrabber, boolean canCommit);
-	
 	public void setParent(RemoveRandomParent newTopLevel);
 
 }

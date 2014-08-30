@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
-import freenet.client.async.CooldownTracker;
 import freenet.client.async.HasCooldownCacheItem;
 
 /**
@@ -450,48 +449,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			root.removeCachedWakeup(this);
 			parent.maybeRemove(this, context);
 		}
-	}
-
-	public void moveElementsTo(SectoredRandomGrabArray newTopLevel,
-			boolean canCommit) {
-		for(int i=0;i<grabArrays.length;i++) {
-			RemoveRandomWithObject grabber = grabArrays[i];
-			Object client = grabClients[i];
-			if(grabber == null && client == null) continue;
-			if(grabber == null && client != null) {
-				System.err.println("Grabber is null but client is not null? client is "+client);
-				continue;
-			}
-			if(grabber != null && client == null) {
-				System.err.println("Client is null but grabber is not? grabber is "+grabber);
-			}
-			RemoveRandomWithObject existingGrabber = newTopLevel.getGrabber(client);
-			if(existingGrabber != null)
-				System.out.println("Merging with existing grabber for client "+client);
-			if(existingGrabber != null) {
-				grabber.moveElementsTo(existingGrabber,  canCommit);
-			} else {
-				grabber.setParent(newTopLevel);
-				if(grabber.getObject() == null && client != null) {
-					Logger.error(this, "Minor corruption on migration: client is "+client+" but grabber reports null, correcting");
-					grabber.setObject(client);
-				}
-				newTopLevel.addGrabber(client, grabber, null);
-			}
-			grabArrays[i] = null;
-			grabClients[i] = null;
-		}
-		grabArrays = new RemoveRandomWithObject[0];
-		grabClients = new Object[0];
-	}
-
-	@Override
-	public void moveElementsTo(RemoveRandom existingGrabber,
-			boolean canCommit) {
-		if(existingGrabber instanceof SectoredRandomGrabArray)
-			moveElementsTo((SectoredRandomGrabArray)existingGrabber, canCommit);
-		else
-			throw new IllegalArgumentException();
 	}
 
 	@Override
