@@ -2,7 +2,6 @@ package freenet.client.async;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -77,16 +76,10 @@ public class CooldownTracker {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
 		TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 		if(item == null) {
-		    cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(wakeupTime, parent));
+		    cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(toCheck, wakeupTime));
 		} else {
 		    if(item.timeValid < wakeupTime)
 		        item.timeValid = wakeupTime;
-		    if(item.parent.get() != parent) {
-		        if(parent == null)
-		            item.parent = null;
-		        else
-		            item.parent = new WeakReference<RequestSelectionTreeNode>(parent);
-		    }
 		}
 		if(parent != null) {
 		    // All items above this should have a wakeup time no later than this.
@@ -103,7 +96,7 @@ public class CooldownTracker {
 		            }
 		            checkParent.timeValid = item.timeValid;
 		        }
-		        parent = checkParent.parent.get();
+		        parent = checkParent.node.getParentGrabArray();
 		        if(parent == null) break;
 		    }
 		}
@@ -155,7 +148,7 @@ public class CooldownTracker {
 		        if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
 		        ret = true;
 		        cacheItemsTransient.remove(toCheck);
-		        toCheck = item.parent.get();
+		        toCheck = item.node.getParentGrabArray();
 		        if(toCheck == null) break;
 		        if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
 		    }
@@ -204,13 +197,11 @@ public class CooldownTracker {
 
 class TransientCooldownCacheItem extends CooldownCacheItem {
 	
-	public TransientCooldownCacheItem(long wakeupTime,
-			RequestSelectionTreeNode parent2) {
+	public TransientCooldownCacheItem(RequestSelectionTreeNode node, long wakeupTime) {
 		super(wakeupTime);
-		this.parent = new WeakReference<RequestSelectionTreeNode>(parent2);
+		this.node = node;
 	}
-
-	/** A reference to the parent object. Can be null but only if no parent. */
-	WeakReference<RequestSelectionTreeNode> parent;
 	
+	final RequestSelectionTreeNode node;
+
 }
