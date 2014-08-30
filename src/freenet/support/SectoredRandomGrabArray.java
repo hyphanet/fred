@@ -496,7 +496,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 
 	@Override
 	public void setParent(RemoveRandomParent newParent) {
+	    synchronized(root) {
 		this.parent = newParent;
+	    }
 	}
 	
 }
