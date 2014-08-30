@@ -628,7 +628,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         synchronized(this) {
             SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
             if(clientGrabber == null) {
-                clientGrabber = new SectoredRandomGrabArray(null, cooldownTracker);
+                clientGrabber = new SectoredRandomGrabArray(null, this);
                 newPriorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
@@ -638,7 +638,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 // Request
                 SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
                 if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, cooldownTracker);
+                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, this);
                     if(logMINOR)
                         Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                     clientGrabber.addGrabber(client, requestGrabber, context);
@@ -770,10 +770,15 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         }
     }
     
-    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
+    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, 
+            HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
         cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
     }
 
+    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck,
+            HasCooldownCacheItem parent, ClientContext context) {
+        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
+    }
     public synchronized void removeCooldown(HasCooldownTrackerItem parent) {
         cooldownTracker.remove(parent);
     }
@@ -793,5 +798,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
     public synchronized void removeCachedWakeup(HasCooldownCacheItem toCheck) {
         cooldownTracker.removeCachedWakeup(toCheck);
     }
+
 
 }

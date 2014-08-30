@@ -1,13 +1,13 @@
 package freenet.support;
 
-import freenet.client.async.CooldownTracker;
+import freenet.client.async.ClientRequestSelector;
 
 public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray implements IntNumberedItem {
 
 	private final int number;
 
-	public SectoredRandomGrabArrayWithInt(int number, RemoveRandomParent parent, CooldownTracker tracker) {
-		super(parent, tracker);
+	public SectoredRandomGrabArrayWithInt(int number, RemoveRandomParent parent, ClientRequestSelector root) {
+		super(parent, root);
 		this.number = number;
 	}
 
