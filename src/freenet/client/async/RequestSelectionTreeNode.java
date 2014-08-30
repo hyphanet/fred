@@ -15,14 +15,12 @@ public interface RequestSelectionTreeNode {
      * single request. */
     public long getCooldownTime(ClientContext context, long now);
     
-    /** If the current cooldown time is larger than the parameter, reduce it and return true. 
-     * Otherwise return false. NOT VALID FOR LEAVES i.e. RandomGrabArrayItem.
-     * @param wakeupTime
-     * @return
-     */
-    public boolean reduceCooldownTime(long wakeupTime, ClientContext context);
+    /** If the current cooldown time is larger than the parameter, reduce it and recurse up the
+     * tree. If we reach the root and wake it up, then wake up the scheduler. NOT VALID FOR LEAVES 
+     * i.e. RandomGrabArrayItem. */
+    public void reduceCooldownTime(long wakeupTime, ClientContext context);
 
-    /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. */
+    /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. Will recurse up the tree. */
     public void clearCooldownTime(ClientContext context);
     
 }

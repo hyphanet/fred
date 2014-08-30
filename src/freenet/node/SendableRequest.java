@@ -189,8 +189,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	}
 	
     @Override
-    public boolean reduceCooldownTime(long wakeupTime, ClientContext context) {
-        throw new UnsupportedOperationException("Request cannot set cooldown time, only nodes further up the tree can do that");
+    public void reduceCooldownTime(long wakeupTime, ClientContext context) {
+        RandomGrabArray parent = getParentGrabArray();
+        if(parent == null) return;
+        parent.reduceCooldownTime(wakeupTime, context);
     }
 
     @Override
