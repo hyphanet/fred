@@ -23,6 +23,6 @@ public interface RequestSelectionTreeNode {
     public boolean reduceCooldownTime(long wakeupTime);
 
     /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. */
-    public void clearCooldownTime();
+    public void clearCooldownTime(ClientContext context);
     
 }

@@ -180,11 +180,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 		ClientRequestScheduler sched = getScheduler(context);
 		ClientRequestSelector selector = sched.getSelector();
 		synchronized(selector) {
-			selector.clearCachedWakeup(this);
+			selector.clearCachedWakeup(this, context);
 			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 			// We should wake up the parent as well even if this item is not in cooldown.
 			if(rga != null)
-				selector.clearCachedWakeup(rga);
+				selector.clearCachedWakeup(rga, context);
 			// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
 		}
 		sched.wakeStarter();
@@ -204,7 +204,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
     }
 
     @Override
-    public void clearCooldownTime() {
+    public void clearCooldownTime(ClientContext context) {
         throw new UnsupportedOperationException("Request cannot set cooldown time, only nodes further up the tree can do that");
     }
 

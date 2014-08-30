@@ -45,7 +45,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	private final static int BLOCK_SIZE = 1024;
 	private final int hashCode;
 	private RemoveRandomParent parent;
-	private ClientRequestSelector root;
+	protected ClientRequestSelector root;
 	private long wakeupTime;
 
 	public RandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
@@ -70,10 +70,10 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 		req.setParentGrabArray(this); // will store() self
 		synchronized(root) {
 			if(context != null) {
-				root.clearCachedWakeup(req);
-				root.clearCachedWakeup(this);
+				root.clearCachedWakeup(req, context);
+				root.clearCachedWakeup(this, context);
 				if(parent != null)
-					root.clearCachedWakeup(parent);
+					root.clearCachedWakeup(parent, context);
 			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
@@ -504,9 +504,10 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
     }
 
     @Override
-    public void clearCooldownTime() {
+    public void clearCooldownTime(ClientContext context) {
         synchronized(root) {
             wakeupTime = 0;
+            if(parent != null) parent.clearCooldownTime(context);
         }
     }
 	

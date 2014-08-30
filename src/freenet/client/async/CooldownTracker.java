@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import freenet.support.Logger;
-import freenet.support.RandomGrabArrayItem;
 import freenet.support.RemoveRandomWithObject;
 
 /** 
@@ -66,53 +65,6 @@ public class CooldownTracker {
 				cb.enterCooldown(wakeupTime, context);
 			}
 		}
-	}
-	
-	/** The cached item has become fetchable unexpectedly. It should be cleared along with
-	 * all its ancestors.
-	 * 
-	 * CALLER SHOULD CALL wakeStarter() on the ClientRequestScheduler. We can't do that 
-	 * here because we don't know which scheduler to wake and will often be inside locks 
-	 * etc.
-	 * 
-	 * LOCKING: Caller should hold the ClientRequestScheduler lock, or otherwise we
-	 * can get nasty race conditions, involving one thread seeing the cooldowns and 
-	 * adding a higher one while another clears it (the overlapping case is 
-	 * especially bad). Callers of callers should hold as few locks as possible.
-	 * @param toCheck
-	 * @param persistent
-	 * @param container
-	 */
-	public boolean clearCachedWakeup(RequestSelectionTreeNode toCheck) {
-		if(toCheck == null) {
-			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
-			return false;
-		}
-		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for "+toCheck);
-		boolean ret = false;
-		if(toCheck instanceof RandomGrabArrayItem)
-		    toCheck = toCheck.getParentGrabArray(); // Start clearing at parent.
-		synchronized(this) {
-		    while(true) {
-		        if(toCheck == null) break;
-		        if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
-		        ret = true;
-		        toCheck.clearCooldownTime();
-		        toCheck = toCheck.getParentGrabArray();
-		        if(toCheck == null) {
-		            if(logMINOR) Logger.minor(this, "No parent for "+toCheck);
-		            break;
-		        }
-		        if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
-		    }
-		}
-		if(toCheck instanceof RemoveRandomWithObject) {
-		    Object client = ((RemoveRandomWithObject)toCheck).getObject();
-		    if(client instanceof WantsCooldownCallback) {
-		        ((WantsCooldownCallback)client).clearCooldown();
-		    }
-		}
-		return ret;
 	}
 	
 }

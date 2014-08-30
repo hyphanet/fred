@@ -28,7 +28,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
 	private RemoveRandomParent parent;
-	private final ClientRequestSelector root;
+	protected final ClientRequestSelector root;
 	private long wakeupTime;
 	
 	public SectoredRandomGrabArray(RemoveRandomParent parent, ClientRequestSelector root) {
@@ -57,9 +57,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(context != null) {
 			// It's safest to always clear the parent too if we have one.
 			// FIXME strictly speaking it shouldn't be necessary, investigate callers of clearCachedWakeup(), but be really careful to avoid stalling!
-			root.clearCachedWakeup(this);
+			root.clearCachedWakeup(this, context);
 			if(parent != null)
-				root.clearCachedWakeup(parent);
+				root.clearCachedWakeup(parent, context);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -115,9 +115,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(context != null) {
-			root.clearCachedWakeup(this);
+			root.clearCachedWakeup(this, context);
 			if(parent != null)
-				root.clearCachedWakeup(parent);
+				root.clearCachedWakeup(parent, context);
 		}
 	    }
 	}
@@ -481,11 +481,12 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
             } else return false;
         }
     }
-
+    
     @Override
-    public void clearCooldownTime() {
+    public void clearCooldownTime(ClientContext context) {
         synchronized(root) {
             wakeupTime = 0;
+            if(parent != null) parent.clearCooldownTime(context);
         }
     }
     

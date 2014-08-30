@@ -1,6 +1,8 @@
 package freenet.support;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
+import freenet.client.async.WantsCooldownCallback;
 
 public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray implements RemoveRandomWithObject {
 
@@ -13,7 +15,9 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 
 	@Override
 	public Object getObject() {
-		return object;
+	    synchronized(root) {
+	        return object;
+	    }
 	}
 	
 	@Override
@@ -23,7 +27,29 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 
 	@Override
 	public void setObject(Object client) {
-		object = client;
+	    synchronized(root) {
+	        object = client;
+	    }
 	}
+	
+	   
+    @Override
+    public void clearCooldownTime(ClientContext context) {
+        super.clearCooldownTime(context);
+        final Object c;
+        synchronized(root) {
+            c = object;
+        }
+        if(c instanceof WantsCooldownCallback) {
+            context.mainExecutor.execute(new Runnable() {
 
+                @Override
+                public void run() {
+                    ((WantsCooldownCallback)c).clearCooldown();
+                }
+                
+            });
+        }
+    }
+    
 }

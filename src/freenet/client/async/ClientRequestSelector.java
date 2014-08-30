@@ -556,9 +556,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						synchronized(this) {
-							cooldownTracker.clearCachedWakeup(get);
-						}
+						clearCachedWakeup(get, sched.getContext());
 					}
 				}
 			}
@@ -628,21 +626,17 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 priorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
-            // SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
-            // To avoid a race condition it is essential to mirror that here.
-            synchronized(clientGrabber) {
-                // Request
-                SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-                if(requestGrabber == null) {
-                    requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, this);
-                    if(logMINOR)
-                        Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-                    clientGrabber.addGrabber(client, requestGrabber, context);
-                    // FIXME unnecessary as it knows its parent and addGrabber() will call it???
-                    cooldownTracker.clearCachedWakeup(clientGrabber);
-                }
-                requestGrabber.add(cr, req, context);
+            // Request
+            SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+            if(requestGrabber == null) {
+                requestGrabber = new SectoredRandomGrabArrayWithObject(client, clientGrabber, this);
+                if(logMINOR)
+                    Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
+                clientGrabber.addGrabber(client, requestGrabber, context);
+                // FIXME unnecessary as it knows its parent and addGrabber() will call it???
+                clearCachedWakeup(clientGrabber, sched.getContext());
             }
+            requestGrabber.add(cr, req, context);
         }
         sched.wakeStarter();
     }
@@ -771,8 +765,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         cooldownTracker.setCachedWakeup(wakeupTime, toCheck, context);
     }
 
-    public synchronized boolean clearCachedWakeup(RequestSelectionTreeNode toCheck) {
-        return cooldownTracker.clearCachedWakeup(toCheck);
+    public synchronized void clearCachedWakeup(RequestSelectionTreeNode toCheck, 
+            ClientContext context) {
+        if(logMINOR) Logger.minor(this, "clearCachedWakeup("+toCheck+")");
+        toCheck.clearCooldownTime(context);
     }
 
 }
