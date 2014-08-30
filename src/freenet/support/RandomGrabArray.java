@@ -245,14 +245,12 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					continue;
 				}
 				boolean excludeItem = false;
-				boolean activated = false;
 				long excludeTime = excluding.excludeSummarily(item, this, now);
 				if(excludeTime > 0) {
 					// In cooldown, will be wanted later.
 					excludeItem = true;
 					if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				} else {
-					activated = true;
 					long itemWakeTime = item.getCooldownTime(context, now);
 					if(itemWakeTime == -1) {
 						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);

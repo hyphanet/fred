@@ -297,8 +297,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 	}
 
-	/** Can this item be excluded, based on e.g. already running requests? It must have 
-	 * been activated already if it is persistent.
+	/** Can this item be excluded, based on e.g. already running requests?
 	 */
 	@Override
 	public long exclude(RandomGrabArrayItem item, ClientContext context, long now) {
