@@ -168,18 +168,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	/** Requeue after an internal error */
 	public abstract void internalError(Throwable t, RequestScheduler sched, ClientContext context, boolean persistent);
 
-	/** Must be called when we retry a block. 
-	 * LOCKING: Caller should hold as few locks as possible */ 
-	public void clearCooldown(ClientContext context, boolean definitelyExists) {
-		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
-		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
-		// we clear here for stuff that doesn't use it.
-		// Note also that the performance cost of going over that particular part of the tree again should be very low.
-		ClientRequestScheduler sched = getScheduler(context);
-		clearCooldownTime(context);
-		sched.wakeStarter();
-	}
-	
 	public boolean realTimeFlag() {
 		return realTimeFlag;
 	}
@@ -197,7 +185,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 
     @Override
     public void clearCooldownTime(ClientContext context) {
-        throw new UnsupportedOperationException("Request cannot set cooldown time, only nodes further up the tree can do that");
+        RandomGrabArray parent = getParentGrabArray();
+        if(parent == null) return;
+        parent.clearCooldownTime(context);
     }
 
 }

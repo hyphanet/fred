@@ -296,7 +296,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(InsertException.construct(persistent ? errors.clone() : errors), context);
 			return;
 		}
-		clearCooldown(context, true);
+		clearCooldownTime(context);
 	}
 
 	private void fail(InsertException e, ClientContext context) {

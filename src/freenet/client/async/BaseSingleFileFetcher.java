@@ -141,7 +141,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				onEnterFiniteCooldown(context);
 			} else {
 				// Wake the CRS after clearing cache.
-				this.clearCooldown(context, true);
+				clearCooldownTime(context);
 			}
 			return true; // We will retry in any case, maybe not just not yet.
 		}

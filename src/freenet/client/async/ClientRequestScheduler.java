@@ -215,7 +215,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
-		request.clearCooldown(clientContext, false);
+		request.clearCooldownTime(clientContext);
 	}
 	
 	@Override
@@ -370,7 +370,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		selector.removeInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
-		insert.clearCooldown(clientContext, false);
+		insert.clearCooldownTime(clientContext);
 	}
 	
 	@Override
