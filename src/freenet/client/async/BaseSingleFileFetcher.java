@@ -129,10 +129,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		int r;
-		if(maxRetries == -1)
-			r = ++tracker.retryCount;
-		else
-			r = ++retryCount;
+		r = ++retryCount;
 		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+r+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
