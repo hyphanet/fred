@@ -65,11 +65,6 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final ClientRequestScheduler sched;
 	
-	/** Must take (this) when accessing the cooldown tracker *or* the RGA tree. This prevents nasty
-	 * race conditions involving one thread reading the tree and adding a cooldown while another 
-	 * unblocks a request. */
-	private final CooldownTracker cooldownTracker;
-	
 	/**
      * The base of the tree.
      * array (by priority) -> // one element per possible priority
@@ -96,7 +91,6 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			recentSuccesses = null;
 		}
 		priorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		cooldownTracker = new CooldownTracker();
 	}
 	
 	private static volatile boolean logMINOR;
@@ -762,7 +756,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
     
     public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, 
             ClientContext context) {
-        cooldownTracker.setCachedWakeup(wakeupTime, toCheck, context);
+        toCheck.getParentGrabArray().reduceCooldownTime(wakeupTime, context);
     }
 
     public synchronized void clearCachedWakeup(RequestSelectionTreeNode toCheck, 

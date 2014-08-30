@@ -20,7 +20,7 @@ public interface RequestSelectionTreeNode {
      * @param wakeupTime
      * @return
      */
-    public boolean reduceCooldownTime(long wakeupTime);
+    public boolean reduceCooldownTime(long wakeupTime, ClientContext context);
 
     /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. */
     public void clearCooldownTime(ClientContext context);

@@ -45,4 +45,25 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
             });
         }
     }
+    
+    @Override
+    public boolean reduceCooldownTime(final long wakeupTime, final ClientContext context) {
+        if(super.reduceCooldownTime(wakeupTime, context)) {
+            final Object c;
+            synchronized(root) {
+                c = client;
+            }
+            if(c instanceof WantsCooldownCallback) {
+                context.mainExecutor.execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        ((WantsCooldownCallback)c).enterCooldown(wakeupTime, context);
+                    }
+                    
+                });
+            }
+            return true;
+        } else return false;
+    }
 }
