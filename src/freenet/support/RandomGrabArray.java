@@ -16,7 +16,7 @@ import freenet.client.async.HasCooldownCacheItem;
  * This is *NOT* persistent. The request selection structures are reconstructed on restart. However
  * it used to be, and probably has a lot of cruft and inefficiency as a result. 
  * 
- * FIXME Simply and improve performance. A lot of this is O(n), and this should probably be fixed. 
+ * FIXME Simplify and improve performance. A lot of this is O(n), and this should probably be fixed. 
  * Memory usage was an issue but probably isn't now given that the individual items are now quite 
  * large (entire splitfiles or at least entire segments).
  */
