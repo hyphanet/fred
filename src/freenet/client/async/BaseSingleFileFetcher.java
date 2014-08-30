@@ -331,7 +331,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(wakeTime == 0)
 			return 0;
-		HasCooldownCacheItem parentRGA = getParentGrabArray();
+		RequestSelectionTreeNode parentRGA = getParentGrabArray();
 		getScheduler(context).selector.setCachedWakeup(wakeTime, this, parentRGA, context, true);
 		return wakeTime;
 	}

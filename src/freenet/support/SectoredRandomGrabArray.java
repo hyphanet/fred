@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
@@ -18,7 +18,7 @@ import freenet.client.async.HasCooldownCacheItem;
  * queued per splitfile now, so memory pressure is much less of an issue. 
  * FIXME Simplify and improve performance!
  */
-public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent, HasCooldownCacheItem {
+public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent, RequestSelectionTreeNode {
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -459,7 +459,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	}
 
     @Override
-    public HasCooldownCacheItem getParentGrabArray() {
+    public RequestSelectionTreeNode getParentGrabArray() {
         synchronized(root) {
             return parent;
         }

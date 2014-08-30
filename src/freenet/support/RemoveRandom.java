@@ -1,9 +1,9 @@
 package freenet.support;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 
-public interface RemoveRandom extends HasCooldownCacheItem {
+public interface RemoveRandom extends RequestSelectionTreeNode {
 
 	// OPTIMISE: Would a stack-trace-less exception be faster?
 	/** Either a RandomGrabArrayItem or the time at which we should try again. */

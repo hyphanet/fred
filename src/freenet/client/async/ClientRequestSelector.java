@@ -770,25 +770,25 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         }
     }
     
-    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, 
-            HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
+    public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, 
+            RequestSelectionTreeNode parent, ClientContext context, boolean dontLogOnClearingParents) {
         cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
     }
 
-    public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck,
-            HasCooldownCacheItem parent, ClientContext context) {
+    public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck,
+            RequestSelectionTreeNode parent, ClientContext context) {
         cooldownTracker.setCachedWakeup(wakeupTime, toCheck, parent, context);
     }
     
-    public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck) {
+    public synchronized boolean clearCachedWakeup(RequestSelectionTreeNode toCheck) {
         return cooldownTracker.clearCachedWakeup(toCheck);
     }
 
-    public synchronized long getCachedWakeup(HasCooldownCacheItem item, long now) {
+    public synchronized long getCachedWakeup(RequestSelectionTreeNode item, long now) {
         return cooldownTracker.getCachedWakeup(item, now);
     }
 
-    public synchronized void removeCachedWakeup(HasCooldownCacheItem toCheck) {
+    public synchronized void removeCachedWakeup(RequestSelectionTreeNode toCheck) {
         cooldownTracker.removeCachedWakeup(toCheck);
     }
 

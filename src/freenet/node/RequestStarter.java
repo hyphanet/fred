@@ -8,7 +8,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 import freenet.client.async.ChosenBlockImpl;
 import freenet.keys.Key;
 import freenet.node.NodeStats.RejectReason;
@@ -318,8 +318,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * @return -1 if the item can be run now, or the time at which it is on the cooldown queue until.
 	 */
 	@Override
-	public long excludeSummarily(HasCooldownCacheItem item,
-			HasCooldownCacheItem parent, long now) {
+	public long excludeSummarily(RequestSelectionTreeNode item,
+			RequestSelectionTreeNode parent, long now) {
 	    return sched.getSelector().getCachedWakeup(item, now);
 	}
 

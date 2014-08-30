@@ -8,7 +8,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
@@ -23,7 +23,7 @@ import freenet.client.async.HasCooldownCacheItem;
  * Memory usage was an issue but probably isn't now given that the individual items are now quite 
  * large (entire splitfiles or at least entire segments).
  */
-public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
+public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -479,7 +479,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	}
 
     @Override
-    public HasCooldownCacheItem getParentGrabArray() {
+    public RequestSelectionTreeNode getParentGrabArray() {
         synchronized(root) {
             return parent;
         }

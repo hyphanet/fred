@@ -1,9 +1,9 @@
 package freenet.support;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.HasCooldownCacheItem;
+import freenet.client.async.RequestSelectionTreeNode;
 
-public interface RandomGrabArrayItem extends HasCooldownCacheItem {
+public interface RandomGrabArrayItem extends RequestSelectionTreeNode {
 
 	/** @return -1 if the item is no longer needed and should be removed, because it 
 	 * is cancelled, is completing with the blocks it has already, etc. 0 if there are

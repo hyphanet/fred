@@ -36,14 +36,14 @@ public class CooldownTracker {
 	}
 
 	/** Transient CooldownCacheItem's by object */
-	private final WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem> cacheItemsTransient = new WeakHashMap<HasCooldownCacheItem, TransientCooldownCacheItem>();
+	private final WeakHashMap<RequestSelectionTreeNode, TransientCooldownCacheItem> cacheItemsTransient = new WeakHashMap<RequestSelectionTreeNode, TransientCooldownCacheItem>();
 	
 	/** Check the hierarchical cooldown cache for a specific object.
 	 * @param now The current time. Used to update the cache so please don't pass in 
 	 * future times!
-	 * @return -1 if there is no cache, or a time before which the HasCooldownCacheItem is
+	 * @return -1 if there is no cache, or a time before which the RequestSelectionTreeNode is
 	 * guaranteed to have all of its keys in cooldown. */
-	public synchronized long getCachedWakeup(HasCooldownCacheItem toCheck, long now) {
+	public synchronized long getCachedWakeup(RequestSelectionTreeNode toCheck, long now) {
 		if(toCheck == null) {
 			Logger.error(this, "Asked to check wakeup time for null!", new Exception("error"));
 			return -1;
@@ -57,7 +57,7 @@ public class CooldownTracker {
 		return item.timeValid;
 	}
 
-	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context) {
+	public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, RequestSelectionTreeNode parent, ClientContext context) {
 		setCachedWakeup(wakeupTime, toCheck, parent, context, false);
 	}
 	
@@ -72,7 +72,7 @@ public class CooldownTracker {
 	 * @param context
 	 * @param dontLogOnClearingParents
 	 */
-	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, ClientContext context, boolean dontLogOnClearingParents) {
+	public void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, RequestSelectionTreeNode parent, ClientContext context, boolean dontLogOnClearingParents) {
 		synchronized(this) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
 		TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
@@ -85,7 +85,7 @@ public class CooldownTracker {
 		        if(parent == null)
 		            item.parent = null;
 		        else
-		            item.parent = new WeakReference<HasCooldownCacheItem>(parent);
+		            item.parent = new WeakReference<RequestSelectionTreeNode>(parent);
 		    }
 		}
 		if(parent != null) {
@@ -122,7 +122,7 @@ public class CooldownTracker {
 	 * @param persistent
 	 * @param container
 	 */
-	public synchronized boolean removeCachedWakeup(HasCooldownCacheItem toCheck) {
+	public synchronized boolean removeCachedWakeup(RequestSelectionTreeNode toCheck) {
 	    return cacheItemsTransient.remove(toCheck) != null;
 	}
 	
@@ -141,7 +141,7 @@ public class CooldownTracker {
 	 * @param persistent
 	 * @param container
 	 */
-	public boolean clearCachedWakeup(HasCooldownCacheItem toCheck) {
+	public boolean clearCachedWakeup(RequestSelectionTreeNode toCheck) {
 		if(toCheck == null) {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
@@ -174,10 +174,10 @@ public class CooldownTracker {
 		// FIXME more efficient implementation using a queue???
 		int removedPersistent = 0;
 		int removedTransient = 0;
-		Iterator<Map.Entry<HasCooldownCacheItem, TransientCooldownCacheItem>> it2 =
+		Iterator<Map.Entry<RequestSelectionTreeNode, TransientCooldownCacheItem>> it2 =
 			cacheItemsTransient.entrySet().iterator();
 		while(it2.hasNext()) {
-			Map.Entry<HasCooldownCacheItem, TransientCooldownCacheItem> item = it2.next();
+			Map.Entry<RequestSelectionTreeNode, TransientCooldownCacheItem> item = it2.next();
 			if(item.getValue().timeValid < now) {
 				removedTransient++;
 				it2.remove();
@@ -205,12 +205,12 @@ public class CooldownTracker {
 class TransientCooldownCacheItem extends CooldownCacheItem {
 	
 	public TransientCooldownCacheItem(long wakeupTime,
-			HasCooldownCacheItem parent2) {
+			RequestSelectionTreeNode parent2) {
 		super(wakeupTime);
-		this.parent = new WeakReference<HasCooldownCacheItem>(parent2);
+		this.parent = new WeakReference<RequestSelectionTreeNode>(parent2);
 	}
 
 	/** A reference to the parent object. Can be null but only if no parent. */
-	WeakReference<HasCooldownCacheItem> parent;
+	WeakReference<RequestSelectionTreeNode> parent;
 	
 }
