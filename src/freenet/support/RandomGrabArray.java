@@ -70,10 +70,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 		req.setParentGrabArray(this); // will store() self
 		synchronized(root) {
 			if(context != null) {
-				root.clearCachedWakeup(req, context);
-				root.clearCachedWakeup(this, context);
-				if(parent != null)
-					root.clearCachedWakeup(parent, context);
+			    clearCooldownTime(context);
 			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {

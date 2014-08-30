@@ -550,7 +550,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						clearCachedWakeup(get, sched.getContext());
+						get.clearCooldownTime(sched.getContext());
 					}
 				}
 			}
@@ -627,8 +627,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 if(logMINOR)
                     Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                 clientGrabber.addGrabber(client, requestGrabber, context);
-                // FIXME unnecessary as it knows its parent and addGrabber() will call it???
-                clearCachedWakeup(clientGrabber, sched.getContext());
+                clientGrabber.clearCooldownTime(context);
             }
             requestGrabber.add(cr, req, context);
         }
@@ -757,12 +756,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
     public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, 
             ClientContext context) {
         toCheck.getParentGrabArray().reduceCooldownTime(wakeupTime, context);
-    }
-
-    public synchronized void clearCachedWakeup(RequestSelectionTreeNode toCheck, 
-            ClientContext context) {
-        if(logMINOR) Logger.minor(this, "clearCachedWakeup("+toCheck+")");
-        toCheck.clearCooldownTime(context);
     }
 
 }

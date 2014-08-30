@@ -55,11 +55,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
 		rga.add(item, context);
 		if(context != null) {
-			// It's safest to always clear the parent too if we have one.
-			// FIXME strictly speaking it shouldn't be necessary, investigate callers of clearCachedWakeup(), but be really careful to avoid stalling!
-			root.clearCachedWakeup(this, context);
-			if(parent != null)
-				root.clearCachedWakeup(parent, context);
+		    clearCooldownTime(context);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -115,9 +111,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(context != null) {
-			root.clearCachedWakeup(this, context);
-			if(parent != null)
-				root.clearCachedWakeup(parent, context);
+		    clearCooldownTime(context);
 		}
 	    }
 	}
