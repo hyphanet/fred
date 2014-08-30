@@ -67,13 +67,13 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
     }
     
     @Override
-    public long getCooldownTime(ClientContext context, long now) {
+    public long getWakeupTime(ClientContext context, long now) {
         long wakeTime = storage.getCooldownWakeupTime(now);
         if(wakeTime == 0) return 0;
         // It is essential to call setCachedWakeup(), because it sets up the hierarchical wakeup
         // mechanism, so when we come *out* of cooldown suddenly, our parent will also be woken up
         // and so on upwards.
-        reduceCooldownTime(wakeTime, context);
+        reduceWakeupTime(wakeTime, context);
         return wakeTime;
     }
 

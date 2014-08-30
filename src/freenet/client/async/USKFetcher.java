@@ -1553,7 +1553,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long getCooldownTime(ClientContext context, long now) {
+		public long getWakeupTime(ClientContext context, long now) {
 			return 0;
 		}
 		

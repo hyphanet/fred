@@ -374,7 +374,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     @Override
     public void clearCooldown() {
         if(hasFinished()) return;
-        getter.clearCooldownTime(context);
+        getter.clearWakeupTime(context);
     }
 
     @Override

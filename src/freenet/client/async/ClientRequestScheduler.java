@@ -142,7 +142,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 		    boolean anyValid = false;
 		    for(SendableGet getter : getters) {
-		        if(!(getter.isCancelled() || getter.getCooldownTime(clientContext, System.currentTimeMillis()) != 0))
+		        if(!(getter.isCancelled() || getter.getWakeupTime(clientContext, System.currentTimeMillis()) != 0))
 		            anyValid = true;
 		    }
 		    finishRegister(getters, false, anyValid);
@@ -215,7 +215,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
-		request.clearCooldownTime(clientContext);
+		request.clearWakeupTime(clientContext);
 	}
 	
 	@Override
@@ -370,7 +370,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		selector.removeInsertFetching(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
-		insert.clearCooldownTime(clientContext);
+		insert.clearWakeupTime(clientContext);
 	}
 	
 	@Override

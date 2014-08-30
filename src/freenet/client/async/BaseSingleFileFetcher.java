@@ -135,13 +135,13 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					cooldownWakeupTime = now + cachedCooldownTime;
-					reduceCooldownTime(cooldownWakeupTime, context);
+					reduceWakeupTime(cooldownWakeupTime, context);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(cooldownWakeupTime - now));
 				}
 				onEnterFiniteCooldown(context);
 			} else {
 				// Wake the CRS after clearing cache.
-				clearCooldownTime(context);
+				clearWakeupTime(context);
 			}
 			return true; // We will retry in any case, maybe not just not yet.
 		}
@@ -319,7 +319,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public synchronized long getCooldownTime(ClientContext context, long now) {
+	public synchronized long getWakeupTime(ClientContext context, long now) {
 		if(cancelled || finished) return -1;
 		long wakeTime = cooldownWakeupTime;
 		if(wakeTime <= now)
@@ -331,7 +331,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(wakeTime == 0)
 			return 0;
-		reduceCooldownTime(wakeTime, context);
+		reduceWakeupTime(wakeTime, context);
 		return wakeTime;
 	}
 	

@@ -16,7 +16,7 @@ public interface RandomGrabArrayItem extends RequestSelectionTreeNode {
 	 * @param excluding Can be null.
 	 * @param container Database handle.
 	 */
-	public long getCooldownTime(ClientContext context, long now);
+	public long getWakeupTime(ClientContext context, long now);
 	
 	/** Does this RandomGrabArrayItem support remembering where it is registered? */
 	public boolean knowsParentGrabArray();

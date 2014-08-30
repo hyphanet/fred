@@ -13,14 +13,14 @@ public interface RequestSelectionTreeNode {
     /** Unless this is a RandomGrabArrayItem, this will return the wakeup time for the subtree 
      * rooted at this node. For a RandomGrabArrayItem it returns the wakeup time for just that 
      * single request. */
-    public long getCooldownTime(ClientContext context, long now);
+    public long getWakeupTime(ClientContext context, long now);
     
     /** If the current cooldown time is larger than the parameter, reduce it and recurse up the
      * tree. If we reach the root and wake it up, then wake up the scheduler. NOT VALID FOR LEAVES 
      * i.e. RandomGrabArrayItem. */
-    public void reduceCooldownTime(long wakeupTime, ClientContext context);
+    public void reduceWakeupTime(long wakeupTime, ClientContext context);
 
     /** NOT VALID FOR LEAVES i.e. RandomGrabArrayItem. Will recurse up the tree. */
-    public void clearCooldownTime(ClientContext context);
+    public void clearWakeupTime(ClientContext context);
     
 }

@@ -177,17 +177,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 	}
 	
     @Override
-    public void reduceCooldownTime(long wakeupTime, ClientContext context) {
+    public void reduceWakeupTime(long wakeupTime, ClientContext context) {
         RandomGrabArray parent = getParentGrabArray();
         if(parent == null) return;
-        parent.reduceCooldownTime(wakeupTime, context);
+        parent.reduceWakeupTime(wakeupTime, context);
     }
 
     @Override
-    public void clearCooldownTime(ClientContext context) {
+    public void clearWakeupTime(ClientContext context) {
         RandomGrabArray parent = getParentGrabArray();
         if(parent == null) return;
-        parent.clearCooldownTime(context);
+        parent.clearWakeupTime(context);
     }
 
 }

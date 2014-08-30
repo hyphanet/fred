@@ -311,7 +311,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return -1;
 		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		return get.getCooldownTime(context, now);
+		return get.getWakeupTime(context, now);
 	}
 
 	/** Can this item be excluded based solely on the cooldown queue?
@@ -320,7 +320,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	@Override
 	public long excludeSummarily(RequestSelectionTreeNode item,
 			RequestSelectionTreeNode parent, long now) {
-	    return item.getCooldownTime(core.clientContext, now);
+	    return item.getWakeupTime(core.clientContext, now);
 	}
 
 }

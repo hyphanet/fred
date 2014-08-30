@@ -63,14 +63,14 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 	}
 	
 	public void add(RandomGrabArrayItem req, ClientContext context) {
-		if(context != null && req.getCooldownTime(context, System.currentTimeMillis()) < 0) { 
+		if(context != null && req.getWakeupTime(context, System.currentTimeMillis()) < 0) { 
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
 		req.setParentGrabArray(this); // will store() self
 		synchronized(root) {
 			if(context != null) {
-			    clearCooldownTime(context);
+			    clearWakeupTime(context);
 			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
@@ -167,7 +167,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				continue;
 			}
 			oret = ret;
-			long itemWakeTime = ret.getCooldownTime(context, now);
+			long itemWakeTime = ret.getWakeupTime(context, now);
 			if(itemWakeTime == -1) {
 				if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 				ret = null;
@@ -252,7 +252,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 					excludeItem = true;
 					if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				} else {
-					long itemWakeTime = item.getCooldownTime(context, now);
+					long itemWakeTime = item.getWakeupTime(context, now);
 					if(itemWakeTime == -1) {
 						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
 						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
@@ -311,7 +311,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				reduceCooldownTime(wakeupTime, context);
+				reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
@@ -483,7 +483,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
     }
 
     @Override
-    public long getCooldownTime(ClientContext context, long now) {
+    public long getWakeupTime(ClientContext context, long now) {
         synchronized(root) {
             if(wakeupTime < now) wakeupTime = 0;
             return wakeupTime;
@@ -491,22 +491,22 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
     }
 
     @Override
-    public void reduceCooldownTime(long wakeupTime, ClientContext context) {
+    public void reduceWakeupTime(long wakeupTime, ClientContext context) {
         if(logMINOR) Logger.minor(this, "reduceCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
         synchronized(root) {
             if(this.wakeupTime > wakeupTime) {
                 this.wakeupTime = wakeupTime;
-                if(parent != null) parent.reduceCooldownTime(wakeupTime, context);
+                if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
             }
         }
     }
 
     @Override
-    public void clearCooldownTime(ClientContext context) {
+    public void clearWakeupTime(ClientContext context) {
         if(logMINOR) Logger.minor(this, "clearCooldownTime() on "+this);
         synchronized(root) {
             wakeupTime = 0;
-            if(parent != null) parent.clearCooldownTime(context);
+            if(parent != null) parent.clearWakeupTime(context);
         }
     }
 	

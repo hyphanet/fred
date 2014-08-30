@@ -244,7 +244,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public long getCooldownTime(ClientContext context, long now) {
+	public long getWakeupTime(ClientContext context, long now) {
 		if(isEmpty()) {
 		    return Long.MAX_VALUE;
 		}

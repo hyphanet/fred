@@ -55,7 +55,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
 		rga.add(item, context);
 		if(context != null) {
-		    clearCooldownTime(context);
+		    clearWakeupTime(context);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -111,7 +111,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(context != null) {
-		    clearCooldownTime(context);
+		    clearWakeupTime(context);
 		}
 	    }
 	}
@@ -177,7 +177,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				removeElement(x);
 			}
 		}
-		reduceCooldownTime(wakeupTime, context);
+		reduceWakeupTime(wakeupTime, context);
 		return new RemoveRandomReturn(wakeupTime);
 	    }
 	}
@@ -295,7 +295,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				Logger.error(this, "Other RGA is null later on on "+this);
 				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 				grabClients = new Object[] { grabClients[1-x] };
-                reduceCooldownTime(wakeupTime, context);
+                reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, now);
@@ -326,7 +326,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-                reduceCooldownTime(wakeupTime, context);
+                reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
@@ -373,7 +373,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-            reduceCooldownTime(wakeupTime, context);
+            reduceWakeupTime(wakeupTime, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
 	    }
@@ -459,7 +459,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
     }
 	
     @Override
-    public long getCooldownTime(ClientContext context, long now) {
+    public long getWakeupTime(ClientContext context, long now) {
         synchronized(root) {
             if(wakeupTime < now) wakeupTime = 0;
             return wakeupTime;
@@ -467,13 +467,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
     }
     
     @Override
-    public void reduceCooldownTime(long wakeupTime, ClientContext context) {
+    public void reduceWakeupTime(long wakeupTime, ClientContext context) {
         if(logMINOR) Logger.minor(this, "reduceCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
         boolean reachedRoot = false;
         synchronized(root) {
             if(this.wakeupTime > wakeupTime) {
                 this.wakeupTime = wakeupTime;
-                if(parent != null) parent.reduceCooldownTime(wakeupTime, context);
+                if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
                 else reachedRoot = true; // Even if it reduces it we need to wake it up.
             }
         }
@@ -482,11 +482,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
     }
     
     @Override
-    public void clearCooldownTime(ClientContext context) {
+    public void clearWakeupTime(ClientContext context) {
         if(logMINOR) Logger.minor(this, "clearCooldownTime() on "+this);
         synchronized(root) {
             wakeupTime = 0;
-            if(parent != null) parent.clearCooldownTime(context);
+            if(parent != null) parent.clearWakeupTime(context);
         }
     }
     

@@ -160,7 +160,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
 			if(result != null) {
-			    long cooldownTime = result.getCooldownTime(context, now);
+			    long cooldownTime = result.getWakeupTime(context, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        if(logMINOR) {
@@ -222,7 +222,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
 			return null;
 		}
-		if(req.getCooldownTime(context, now) != 0) {
+		if(req.getWakeupTime(context, now) != 0) {
 			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
 			return null;
 		}
@@ -303,7 +303,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		if(tryOfferedKeys) {
-			if(offeredKeys.getCooldownTime(context, now) == 0)
+			if(offeredKeys.getWakeupTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
 		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, context, now);
@@ -314,7 +314,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
-				if(offeredKeys != null && offeredKeys.getCooldownTime(context, now) == 0)
+				if(offeredKeys != null && offeredKeys.getWakeupTime(context, now) == 0)
 					return new SelectorReturn(offeredKeys);
 			}
 			if(logMINOR)
@@ -332,7 +332,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				continue; // Try next priority
 			}
 			while(true) {
-			    long cooldownTime = chosenTracker.getCooldownTime(context, now);
+			    long cooldownTime = chosenTracker.getWakeupTime(context, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        Logger.normal(this, "Priority "+choosenPriorityClass+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
@@ -408,7 +408,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
-					if(altReq != null && (l = altReq.getCooldownTime(context, now)) != 0) {
+					if(altReq != null && (l = altReq.getWakeupTime(context, now)) != 0) {
 						if(logMINOR) {
 							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
 							altReq = null;
@@ -550,7 +550,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						get.clearCooldownTime(sched.getContext());
+						get.clearWakeupTime(sched.getContext());
 					}
 				}
 			}
@@ -627,7 +627,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
                 if(logMINOR)
                     Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
                 clientGrabber.addGrabber(client, requestGrabber, context);
-                clientGrabber.clearCooldownTime(context);
+                clientGrabber.clearWakeupTime(context);
             }
             requestGrabber.add(cr, req, context);
         }

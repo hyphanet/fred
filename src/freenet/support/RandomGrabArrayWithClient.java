@@ -28,8 +28,8 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
 	}
 	
     @Override
-    public void clearCooldownTime(ClientContext context) {
-        super.clearCooldownTime(context);
+    public void clearWakeupTime(ClientContext context) {
+        super.clearWakeupTime(context);
         final Object c;
         synchronized(root) {
             c = client;
@@ -47,8 +47,8 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
     }
     
     @Override
-    public void reduceCooldownTime(final long wakeupTime, final ClientContext context) {
-        super.reduceCooldownTime(wakeupTime, context);
+    public void reduceWakeupTime(final long wakeupTime, final ClientContext context) {
+        super.reduceWakeupTime(wakeupTime, context);
         final Object c;
         synchronized(root) {
             c = client;
