@@ -31,13 +31,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
     private static final long serialVersionUID = 1L;
 
-    public static class MyCooldownTrackerItem implements CooldownTrackerItem {
-
-		public int retryCount;
-		public long cooldownWakeupTime;
-
-	}
-
 	protected final ClientKey key;
 	protected boolean cancelled;
 	protected boolean finished;
@@ -48,6 +41,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	private int cachedCooldownTries;
 	private long cachedCooldownTime;
+    public transient long cooldownWakeupTime;
+
 	
 	private static volatile boolean logMINOR;
 	
@@ -94,8 +89,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(maxRetries == -1 || (maxRetries >= RequestScheduler.COOLDOWN_RETRIES)) {
 				// FIXME synchronization!!!
 				if(logMINOR) Logger.minor(this, "RecentlyFailed -> cooldown until "+TimeUtil.formatTime(l-now)+" on "+this);
-				MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
-				tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+				cooldownWakeupTime = Math.max(cooldownWakeupTime, l);
 				return null;
 			} else {
 				this.onFailure(new LowLevelGetException(LowLevelGetException.RECENTLY_FAILED), null, context);
@@ -127,7 +121,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		}
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
 		int r;
 		r = ++retryCount;
 		if(logMINOR)
@@ -137,13 +130,13 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(cachedCooldownTries == 0 || r % cachedCooldownTries == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
-				if(tracker.cooldownWakeupTime > now) {
-					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(tracker.cooldownWakeupTime - now), new Exception("error"));
+				if(cooldownWakeupTime > now) {
+					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(cooldownWakeupTime - now), new Exception("error"));
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
-					tracker.cooldownWakeupTime = now + cachedCooldownTime;
-					getScheduler(context).selector.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), context, true);
-					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
+					cooldownWakeupTime = now + cachedCooldownTime;
+					getScheduler(context).selector.setCachedWakeup(cooldownWakeupTime, this, getParentGrabArray(), context, true);
+					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(cooldownWakeupTime - now));
 				}
 				onEnterFiniteCooldown(context);
 			} else {
@@ -174,15 +167,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		// Do nothing.
 	}
 
-	private MyCooldownTrackerItem makeCooldownTrackerItem(ClientContext context) {
-	    return (MyCooldownTrackerItem) getScheduler(context).selector.make(this);
-	}
-
-	@Override
-	public CooldownTrackerItem makeCooldownTrackerItem() {
-		return new MyCooldownTrackerItem();
-	}
-	
 	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
@@ -268,8 +252,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	
 	@Override
 	public long getCooldownWakeup(SendableRequestItem token, ClientContext context) {
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
-		return tracker.cooldownWakeupTime;
+		return cooldownWakeupTime;
 	}
 
 	public void schedule(ClientContext context) {
@@ -339,10 +322,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	@Override
 	public synchronized long getCooldownTime(ClientContext context, long now) {
 		if(cancelled || finished) return -1;
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(context);
-		long wakeTime = tracker.cooldownWakeupTime;
+		long wakeTime = cooldownWakeupTime;
 		if(wakeTime <= now)
-			tracker.cooldownWakeupTime = wakeTime = 0;
+			cooldownWakeupTime = wakeTime = 0;
 		KeysFetchingLocally fetching = getScheduler(context).fetchingKeys();
 		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null), this)) {
 			wakeTime = Long.MAX_VALUE;
