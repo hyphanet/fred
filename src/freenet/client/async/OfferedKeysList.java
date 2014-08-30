@@ -246,7 +246,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	@Override
 	public long getCooldownTime(ClientContext context, long now) {
 		if(isEmpty()) {
-		    getScheduler(context).selector.setCachedWakeup(Long.MAX_VALUE, this, context);
 		    return Long.MAX_VALUE;
 		}
 		return 0;

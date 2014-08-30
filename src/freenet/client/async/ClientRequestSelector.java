@@ -753,11 +753,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         }
     }
     
-    public synchronized void setCachedWakeup(long wakeupTime, RequestSelectionTreeNode toCheck, 
-            ClientContext context) {
-        toCheck.getParentGrabArray().reduceCooldownTime(wakeupTime, context);
-    }
-
     public void wakeUp(ClientContext context) {
         // Break out of locks. Can be called within RGAs etc!
         context.mainExecutor.execute(new Runnable() {

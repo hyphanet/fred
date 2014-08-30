@@ -311,7 +311,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				root.setCachedWakeup(wakeupTime, this, context);
+				reduceCooldownTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;

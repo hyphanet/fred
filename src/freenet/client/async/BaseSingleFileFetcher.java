@@ -135,7 +135,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					cooldownWakeupTime = now + cachedCooldownTime;
-					getScheduler(context).selector.setCachedWakeup(cooldownWakeupTime, this, context);
+					reduceCooldownTime(cooldownWakeupTime, context);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(cooldownWakeupTime - now));
 				}
 				onEnterFiniteCooldown(context);
@@ -331,7 +331,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(wakeTime == 0)
 			return 0;
-		getScheduler(context).selector.setCachedWakeup(wakeTime, this, context);
+		reduceCooldownTime(wakeTime, context);
 		return wakeTime;
 	}
 	

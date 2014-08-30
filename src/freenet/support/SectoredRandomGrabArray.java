@@ -177,7 +177,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				removeElement(x);
 			}
 		}
-		root.setCachedWakeup(wakeupTime, this, context);
+		reduceCooldownTime(wakeupTime, context);
 		return new RemoveRandomReturn(wakeupTime);
 	    }
 	}
@@ -295,7 +295,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				Logger.error(this, "Other RGA is null later on on "+this);
 				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 				grabClients = new Object[] { grabClients[1-x] };
-				root.setCachedWakeup(wakeupTime, this, context);
+                reduceCooldownTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, now);
@@ -326,7 +326,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item == null) {
 				if(grabArrays.length == 0)
 					return null; // Remove this as well
-				root.setCachedWakeup(wakeupTime, this, context);
+                reduceCooldownTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
 		}
@@ -373,7 +373,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
 			}
-			root.setCachedWakeup(wakeupTime, this, context);
+            reduceCooldownTime(wakeupTime, context);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
 	    }
