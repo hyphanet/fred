@@ -10,7 +10,9 @@ import freenet.client.async.HasCooldownCacheItem;
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
  * returned. Again, not persistent; this is reconstructed on restart.
  * 
- *  FIXME
+ * LOCKING: There is a single lock for the entire tree, the ClientRequestSelector. This must be 
+ * taken before calling any methods on RGA or SRGA. See the javadocs there for deeper explanation.
+ * 
  * A lot of this is over-complicated and over-expensive because of db4o. A lot of it is O(n).
  * This is all kept in RAM now so we can change it at will, plus there is only one object 
  * queued per splitfile now, so memory pressure is much less of an issue. 

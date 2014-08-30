@@ -34,7 +34,29 @@ import freenet.support.TimeUtil;
 /** The global request queue. Both transient and persistent requests are kept on this in-RAM 
  * structure, which supports choosing a request to run. See KeyListenerTracker for the code
  * that matches up a fetched block with whoever was waiting for it, which needs to be separate for
- * various reasons. This class is not persistent. */
+ * various reasons. This class is not persistent. 
+ * 
+ * COOLDOWN TRACKER AND WAKEUP TIMES: Each node in the tree (priority, client, request) keeps a 
+ * "wakeup time". This indicates that until the time given there is no point checking the requests
+ * below that node. This happens either because all the keys are being fetched (in which case the
+ * wakeup time is Long.MAX_VALUE) or because a key has been fetched repeatedly and has entered 
+ * a cooldown period, meaning it will be fetchable in 30 minutes.
+ * 
+ * LOCKING: Consequently we need to lock the entire tree whenever we access either the tree or the
+ * cooldown tracker (which really should be part of the tree, TODO!): When a request completes, we
+ * start at the request itself and go up the tree until we stop updating the wakeup times. However
+ * when we choose a request to send, we start at the top and go down (and update the cooldown times
+ * when backtracking back up the tree if we don't find anything).
+ * 
+ * REDFLAG LOCKING: Actually in the completion case we could find the top and then lock the whole 
+ * tree, and then update the cooldowns; and/or we could avoid updating the cooldowns during request 
+ * selection, e.g. by making sure that each structure always does a bottom-up update when something
+ * changes, although that would not help with locking...
+ * 
+ * FIXME: More seriously, we should really combine the cooldown tracker and the RGAs. The RGAs and 
+ * SRGAs should contain their own wakeup times. This could significantly simplify the code. 
+ * CooldownTracker is left over from the DB4O era.
+ */
 public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	final boolean isInsertScheduler;
