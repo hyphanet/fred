@@ -457,5 +457,12 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		this.parent = newParent;
 	    }
 	}
+
+    @Override
+    public HasCooldownCacheItem getParentGrabArray() {
+        synchronized(root) {
+            return parent;
+        }
+    }
 	
 }

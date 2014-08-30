@@ -477,5 +477,12 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	        this.parent = newParent;
 	    }
 	}
+
+    @Override
+    public HasCooldownCacheItem getParentGrabArray() {
+        synchronized(root) {
+            return parent;
+        }
+    }
 	
 }
