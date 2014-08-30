@@ -76,7 +76,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
      * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
      * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
      */
-    protected SectoredRandomGrabArray[] newPriorities;
+    protected SectoredRandomGrabArray[] priorities;
     
     protected final Deque<BaseSendableGet>recentSuccesses;
     
@@ -95,7 +95,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			runningInserts = new HashSet<RunningTransientInsert>();
 			recentSuccesses = null;
 		}
-		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		priorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		cooldownTracker = new CooldownTracker();
 	}
 	
@@ -168,16 +168,16 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			result = newPriorities[priority];
+			result = priorities[priority];
 			if(result != null) {
 			    long cooldownTime = cooldownTracker.getCachedWakeup(result, now);
 			    if(cooldownTime > 0) {
 			        if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
 			        if(logMINOR) {
 			            if(cooldownTime == Long.MAX_VALUE)
-			                Logger.minor(this, "Priority "+priority+" (persistent) is waiting until a request finishes or is empty");
+			                Logger.minor(this, "Priority "+priority+" is waiting until a request finishes or is empty");
 			            else
-			                Logger.minor(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+			                Logger.minor(this, "Priority "+priority+" is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
 			        }
 			        result = null;
 				}
@@ -336,7 +336,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SectoredRandomGrabArray chosenTracker = newPriorities[choosenPriorityClass];
+			SectoredRandomGrabArray chosenTracker = priorities[choosenPriorityClass];
 			if(chosenTracker == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
@@ -626,10 +626,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
             throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
         // Client
         synchronized(this) {
-            SectoredRandomGrabArray clientGrabber = newPriorities[priorityClass];
+            SectoredRandomGrabArray clientGrabber = priorities[priorityClass];
             if(clientGrabber == null) {
                 clientGrabber = new SectoredRandomGrabArray(null, this);
-                newPriorities[priorityClass] = clientGrabber;
+                priorities[priorityClass] = clientGrabber;
                 if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
             }
             // SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
@@ -653,8 +653,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 
     public synchronized long countQueuedRequests(ClientContext context) {
         long total = 0;
-        for(int i=0;i<newPriorities.length;i++) {
-            SectoredRandomGrabArray prio = newPriorities[i];
+        for(int i=0;i<priorities.length;i++) {
+            SectoredRandomGrabArray prio = priorities[i];
             if(prio == null || prio.isEmpty())
                 System.out.println("Priority "+i+" : empty");
             else {
