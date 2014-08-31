@@ -51,13 +51,16 @@ public interface FredPluginFCPMessageHandler {
         public final ClientPermissions permissions;
         
         /**
-         * <p>The identifier of the client message as specified by the client.</p>
+         * The unique identifier of the message.<br><br>
          * 
-         * <p>The JavaDoc of the server-side message handler instructs it to specify the identifier of replies to be the same as the identifier which the client
-         * specified in the message which caused the reply to be sent.<br/>
-         * <b>HOWEVER</b> the server is free to send messages to the client on its own without any original message from the client side, for example for event
-         * propagation. In that case, the identifier might not match any previous message from the client.
-         * </p>
+         * For reply messages, this shall be the same as the identifier of the message to which this is a reply.<br>
+         * For non-reply message, this shall be a sufficiently random String to prevent collisions with any previous message identifiers.<br><br>
+         * 
+         * <b>Notice:</b> Custom client implementations can chose the identifier freely when sending messages, and thus violate these rules. This is highly
+         * discouraged though, as non-unique identifiers make tracking messages impossible. But if a client does violate the rules and thereby breaks its
+         * message tracking, thats not the server's problem, and thus should not cause complexification of the server code.<br>
+         * So server implementations <b>should</b> assume that the client chooses the identifier in a sane manner which follows the rules.<br>
+         * This class does follow the rules, and thus client and server implementations using it will do so as well.
          */
         public final String identifier; 
         
