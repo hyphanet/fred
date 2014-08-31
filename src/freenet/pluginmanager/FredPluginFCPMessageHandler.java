@@ -31,8 +31,7 @@ import freenet.support.api.Bucket;
 public interface FredPluginFCPMessageHandler {
 
     /**
-     * FCP messages are passed as an object of this container class to the message handling function.
-     * Also, the server and client shall construct objects of this class for sending outgoing messages.
+     * Container class for both incoming and outgoing FCP messages.
      */
     public final class FCPPluginMessage {
         public static enum ClientPermissions {
