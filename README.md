@@ -76,7 +76,7 @@ location-based services (geo.enabled) and GoBrowsing (keyword.enabled) in firefo
 probably a number of plugins. Note that this is not unique to Firefox - until version 9
 or so, Internet Explorer had much worse problems. The most fundamental thing is browser
 history probing via CSS. This can be turned off globally and will improve your privacy,
-see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still safer to
+but it is probably still safer to
 use a separate browser, and the fact that you have turned it off will likely be
 detectable. If you do use a separate browser, you can do some helpful tricks such as
 turning off javascript, not loading any addons or plugins, turning off the cache and
@@ -152,7 +152,7 @@ few other classes from the 0.5 source.
 - Freenet now uses 32kB fixed block sizes, to improve performance and simplify 
   the code.
 - The Freenet Client Protocol is completely different, see the spec here:
-  http://wiki.freenetproject.org/FreenetFCPSpec2Point0
+  https://wiki.freenetproject.org/FCPv2
 - Many more changes...
 
 ## LICENSING
