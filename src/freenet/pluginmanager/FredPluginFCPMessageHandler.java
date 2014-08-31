@@ -169,6 +169,7 @@ public interface FredPluginFCPMessageHandler {
      */
     FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
 
+
     /**
      * Plugins which provide FCP services to clients must implement this interface.<br/>
      * The purpose of this interface is to provide a message handling function for processing messages received from the clients.
@@ -204,10 +205,11 @@ public interface FredPluginFCPMessageHandler {
          *               send function will be able to return your reply message: This mechanism only works for returned replies, not for out of band replies.
          *               <br/><br/>
          * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
-         * @return Your reply message.<br/><br/>
+         * @return Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by passing the original message to the constructor to ensure that the {@link FCPPluginMessage#identifier}
-         *         gets preserved.<br/><br/>
+         *         You <b>must</b> construct this by using the constructor 
+         *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} to ensure that the
+         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          *         
          *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
          *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
@@ -234,7 +236,8 @@ public interface FredPluginFCPMessageHandler {
          * 
          * <b>ATTENTION:</b> The server is free to send messages to you on its own, that is not triggered by any message which you sent.<br/>
          * This can happen for as long as you keep the connection open by having a hard reference to the original {@link FCPPluginClient} in memory.<br/>
-         * The purpose of this mechanism is for example to allow the server to tell you about events which happened at its side.
+         * The purpose of this mechanism is for example to allow the server to tell you about events which happened at its side.<br>
+         * For such messages, the {@link FCPPluginMessage#identifier} will not match any of your previous messages.
          * 
          * @param client The client which you used to open the connection to the server.<br/><br/>
          * 
@@ -244,10 +247,11 @@ public interface FredPluginFCPMessageHandler {
          *               send function will be able to return your reply message: This mechanism only works for returned replies, not for out of band replies.
          *               <br/><br/>
          * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
-         * @return Your reply message.<br/><br/>
+         * @return Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by passing the original message to the constructor to ensure that the {@link FCPPluginMessage#identifier}
-         *         gets preserved.<br/><br/>
+         *         You <b>must</b> construct this by using the constructor 
+         *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} to ensure that the
+         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          *         
          *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
          *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
