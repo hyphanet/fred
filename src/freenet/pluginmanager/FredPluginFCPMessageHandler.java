@@ -47,7 +47,7 @@ public interface FredPluginFCPMessageHandler {
         };
         
         /**
-         * The permissions of the client which sent the messages. Null for messages sent by the server.
+         * The permissions of the client which sent the messages. Null for server-to-client and outgoing messages.
          */
         public final ClientPermissions permissions;
         
