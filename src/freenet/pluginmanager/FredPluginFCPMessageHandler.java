@@ -3,17 +3,24 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.util.UUID;
+
 import freenet.node.fcp.FCPPluginClient;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a {@link FCPPluginClient} must implement this interface to provide a function
- * which handles the received messages.
+ * which handles the received messages.<br><br>
  * 
- * For symmetry, the child interfaces {@link ClientSideFCPMessageHandler} and {@link ServerSideFCPMessageHandler} do not provide any different functions.
- * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are allowed to do.
- * You <b>must</b> follow the restrictions which are explained there.
+ * For symmetry, the child interfaces {@link ClientSideFCPMessageHandler} and {@link ServerSideFCPMessageHandler} do not provide any different functions.<br>
+ * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are allowed to do.<br>
+ * You <b>must</b> follow the restrictions which are explained there.<br><br>
+ * 
+ * As opposed to the old {@link PluginTalker} and {@link PluginReplySender} interfaces, this new API is as symmetric as possible:<br>
+ * With the old interface, the server could only <i>reply</i> to messages of the client, it could not send a message without a previous client message.<br>
+ * With this implementation, server and client are free to send messages to each others whenever they like to.<br>
+ * The only restriction upon this is that the opening and closing of connections is dictated by the client. The server cannot connect to a client on its own.
  * 
  * @author xor (xor@freenetproject.org)
  * @see PluginRespirator#connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler) PluginRespirator provides the function to connect
