@@ -87,7 +87,9 @@ public interface FredPluginFCPMessageHandler {
          */
         public FCPPluginMessage(ClientPermissions permissions, String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
             this.permissions = permissions;
+            assert(identifier != null);
             this.identifier = identifier;
+            assert(parameters != null);
             this.parameters = parameters;
             this.data = data;
             this.success = success;
