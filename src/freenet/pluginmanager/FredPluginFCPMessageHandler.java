@@ -28,11 +28,14 @@ public interface FredPluginFCPMessageHandler {
      */
     public final class FCPPluginMessage {
         public static enum ClientPermissions {
-            /** The client plugin is running within the same node as the server plugin.
-             * TODO FIXME: Is there any reason not to assume {@link #ACCESS_FCP_FULL}? */
-            ACCESS_DIRECT,
+            /** The client is connected by network and the owner of the node has configured restricted access for the client's IP */
             ACCESS_FCP_RESTRICTED,
-            ACCESS_FCP_FULL
+            /** The client is connected by network and the owner of the node has configured full access for the client's IP */
+            ACCESS_FCP_FULL,
+            /** The client plugin is running within the same node as the server plugin.<br>
+             * This probably should be interpreted as {@link #ACCESS_FCP_FULL}: If the client plugin is running inside the node, it can probably do whatever it
+             * wants. We're nevertheless shipping this information to you as it is available anyway. */
+            ACCESS_DIRECT
         };
         
         /**

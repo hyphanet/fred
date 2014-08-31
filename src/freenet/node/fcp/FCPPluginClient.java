@@ -11,6 +11,7 @@ import java.util.UUID;
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage.ClientPermissions;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -239,6 +240,22 @@ public final class FCPPluginClient {
      */
     public boolean isDead() {
         return server.get() == null;
+    }
+    
+    /**
+     * @return The permission level of this client, depending on things such as its IP address.<br>
+     *         For intra-node connections, it is {@link ClientPermissions#ACCESS_DIRECT}.<br><br>
+     *         
+     *         <b>ATTENTION:</b> The return value can change at any point in time, so you should check this before deploying each FCP message.<br>
+     *         This is because the user is free to reconfigure IP-address restrictions on the node's web interface whenever he wants to.
+     */
+    private ClientPermissions computePermissions() {
+        if(clientConnection != null) { // Networked FCP
+            return clientConnection.hasFullAccess() ? ClientPermissions.ACCESS_FCP_FULL : ClientPermissions.ACCESS_FCP_RESTRICTED;
+        } else { // Intra-node FCP
+            assert(client != null);
+            return ClientPermissions.ACCESS_DIRECT;
+        }
     }
 
     /**
