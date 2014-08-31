@@ -81,11 +81,19 @@ public interface FredPluginFCPMessageHandler {
          * For non-reply messages, this is null.
          */
         public final Boolean success;
+
+        /**
+         * @return True if the message is merely a reply to a previous message from your side.<br>
+         *         In that case, you should probably not send another reply message back to prevent infinite bouncing of "success!" replies. 
+         */
+        public boolean isReplyMessage() {
+            return success != null;
+        }
         
         /**
          * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.
          */
-        public FCPPluginMessage(ClientPermissions permissions, String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
+        private FCPPluginMessage(ClientPermissions permissions, String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
             this.permissions = permissions;
             assert(identifier != null);
             this.identifier = identifier;
@@ -96,15 +104,58 @@ public interface FredPluginFCPMessageHandler {
         }
         
         /**
-         * @return True if the message is merely a reply to a previous message from your side.
-         *         In that case, you should probably not send another reply message back to prevent infinite bouncing of "success!" replies. 
+         * For being used by server or client to construct outgoing messages.<br>
+         * Those can then be passed to the send functions of {@link FCPPluginClient} or returned in the message handlers of {@link FredPluginFCPMessageHandler}.
+         * 
+         * <b>Notice</b>: Messages constructed with this constructor are <b>not</b> reply messages.<br>
+         * If you are replying to a message, notably when returning a message in the message handling function, use
+         * {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} instead.
+         *  
+         * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.
          */
-        public boolean isReplyMessage() {
-            return success != null;
+        public static FCPPluginMessage construct(SimpleFieldSet parameters, Bucket data) {
+            // Notice: While the specification of FCP formally allows the client to freely chose the ID, we hereby restrict it to be a random UUID instead of
+            // allowing the client (or server) to chose it. This is to prevent accidental collisions with the IDs of other messages. 
+            // I cannot think of any usecase of free-choice identifiers. And collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
+            // This would in turn break things such as the sendSynchronous() functions of FCPPluginClient. 
+            return new FCPPluginMessage(null, UUID.randomUUID().toString(), parameters, data, null);
         }
         
-        // FIXME: Add constructor which eats a FCPPluginMessage so reply messages can be properly constructed to have the right identifier and success values.
+        /**
+         * For being used by server or client to construct outgoing messages which are a reply to an original message.<br>
+         * Those then can be returned from the message handler {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+         * 
+         * @throws IllegalStateException If the original message was a reply message already.<br>
+         *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
+         *         to them again.<br>
+         *         Consider the whole of this as a remote procedure call process: A non-reply message is the procedure call, a reply message is the procedure
+         *         result. When receiving the result, the procedure call is finished, and shouldn't contain further replies.<br>
+         *         <b>Notice</b>: The JavaDoc of the aforementioned message handling function explains how you can nevertheless send a reply to reply messages.
+         */
+        public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage, SimpleFieldSet parameters, Bucket data, boolean success) {
+            if(originalMessage.isReplyMessage())
+                throw new IllegalStateException("Constructing a reply message for a message which was a reply message already not allowed.");
+            
+            return new FCPPluginMessage(null, originalMessage.identifier, parameters, data, success);
+        }
+        
+        /**
+         * Only for being used by internal network code.<br><br>
+         * 
+         * You <b>must not</b> use this for constructing outgoing messages in server or client implementations.<br>
+         * There, use {@link #construct(SimpleFieldSet, Bucket)} and {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)}.<br><br>
+         * 
+         * This function is typically to construct incoming messages for passing them to the message handling function
+         * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.<br><br>
+         * 
+         * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.<br>
+         */
+        public static FCPPluginMessage constructRawMessage(ClientPermissions permissions, String identifier, SimpleFieldSet parameters, Bucket data,
+                Boolean success) {
+            return new FCPPluginMessage(permissions, identifier, parameters, data, success);
+        }
     }
+
 
     /**
      * Message handling function for messages received from a plugin FCP server or client.<br/><br/>
