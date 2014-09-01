@@ -90,11 +90,11 @@ public class SplitFileFetcherCrossSegmentStorage {
             }
             if(tryDecode || succeeded || cancelled) return;
             if(!found) {
-                Logger.error(this, "Block "+blockNo+" on "+segment+" not wanted by "+this);
+                Logger.warning(this, "Block "+blockNo+" on "+segment+" not wanted by "+this);
                 return;
             }
             if(totalFound < dataBlockCount) {
-                Logger.normal(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlockCount+" (total "+segments.length+")");
+                if(logMINOR) Logger.minor(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlockCount+" (total "+segments.length+")");
                 return;
             }
             tryDecodeOrEncode();
@@ -210,7 +210,7 @@ public class SplitFileFetcherCrossSegmentStorage {
             succeeded = true;
         }
         
-        Logger.error(this, "Completed a cross-segment: decoded="+decoded+" encoded="+encoded);
+        if(logMINOR) Logger.minor(this, "Completed a cross-segment: decoded="+decoded+" encoded="+encoded);
     }
 
 
@@ -252,10 +252,13 @@ public class SplitFileFetcherCrossSegmentStorage {
                     if(keys == null) return false;
                     boolean success = segments[blockNo].innerOnGotKey(key.getNodeCHK(), block, keys, 
                             blockNumbers[blockNo], data);
-                    if(success)
-                        Logger.error(this, "Successfully decoded cross-segment block");
-                    else
-                        Logger.error(this, "Decoded cross-segment block but not wanted by segment");
+                    if(success) {
+                        if(logMINOR)
+                            Logger.minor(this, "Successfully decoded cross-segment block");
+                    } else {
+                        // Not really a big deal, but potentially interesting...
+                        Logger.warning(this, "Decoded cross-segment block but not wanted by segment");
+                    }
                 } catch (IOException e) {
                     parent.failOnDiskError(e);
                     return true;
@@ -406,7 +409,6 @@ public class SplitFileFetcherCrossSegmentStorage {
             if(succeeded) return;
         }
         synchronized(this) {
-            System.out.println("Cross-segment "+crossSegmentNumber+" : "+totalFound+"/"+dataBlockCount);
             if(totalBlocks < dataBlockCount) return;
             tryDecodeOrEncode();
         }
