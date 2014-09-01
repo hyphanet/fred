@@ -266,20 +266,11 @@ public final class FCPPluginClient {
      * To prevent us from having to duplicate the send functions, this enum specifies in which situation we are.
      * 
      * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket, String) User of this enum.
-     * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket) User of this enum.
      * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String) User of this enum.
-     * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long) User of this enum.
      */
     public static enum SendDirection {
         ToServer,
         ToClient
-    }
-
-    /**
-     * Same as {@link #send(SendDirection, SimpleFieldSet, Bucket, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
-     */
-    public void send(SendDirection direction, SimpleFieldSet parameters, Bucket data) throws IOException {
-        send(direction, parameters, data, UUID.randomUUID().toString());
     }
 
     /**
@@ -292,10 +283,8 @@ public final class FCPPluginClient {
      *                     
      *                     <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the connection is alive. Messages are sent asynchronously, so it
      *                     can happen that a closed connection is not detected before this function returns.<br/>
-     *                     If you need to know whether the send succeeded, use {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}
-     *                     or {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long)}.
+     *                     If you need to know whether the send succeeded, use {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}.
      *                     </p>
-     * @see #send(SendDirection, SimpleFieldSet, Bucket) Uses a random messageIdentifier. Should be prefered when possible.
      */
     void send(SendDirection direction, SimpleFieldSet parameters, Bucket data, String messageIdentifier) throws IOException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
@@ -304,14 +293,6 @@ public final class FCPPluginClient {
 
     @SuppressWarnings("serial")
     public static final class FCPCallFailedException extends IOException { };
-
-    /**
-     * Same as {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)} with messageIdentifier == {@link UUID#randomUUID()}.toString()
-     */
-    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds)
-            throws FCPCallFailedException, IOException {
-        sendSynchronous(direction, parameters, data, timeoutMilliseconds, UUID.randomUUID().toString());
-    }
 
     /**
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
@@ -326,7 +307,6 @@ public final class FCPPluginClient {
      *                                detect it by this exception type. The UI then could prompt the user to chose a valid username.</p>
      * @throws IOException If the connection has been closed meanwhile.<br/>
      *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
-     * @see #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String) Uses a random messageIdentifier. Should be prefered when possible.
      */
     void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data, long timeoutMilliseconds, String messageIdentifier)
             throws FCPCallFailedException, IOException {
