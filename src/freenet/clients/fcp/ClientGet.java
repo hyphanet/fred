@@ -387,7 +387,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    if(persistenceType == PERSIST_CONNECTION) {
 	        if(handler == null)
 	            handler = origHandler.outputHandler;
-	        handler.queue(getAllDataMessage());
+	        FCPMessage allData = getAllDataMessage();
+	        if(allData != null)
+	            handler.queue(allData);
 	    }
 	}
 
