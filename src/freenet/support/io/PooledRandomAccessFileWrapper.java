@@ -304,6 +304,8 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     public void onResume(ClientContext context) throws ResumeFailedException {
         if(!file.exists()) throw new ResumeFailedException("File does not exist");
         if(length > file.length()) throw new ResumeFailedException("Bad length");
+        if(persistentTempID != -1)
+            context.persistentFileTracker.register(file);
     }
     
     public String toString() {
