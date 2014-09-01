@@ -374,7 +374,12 @@ public class NodeClientCore implements Persistable {
                     }
 		    
 		}, false);
-		nodeConfig.register("memoryLimitedJobMemoryLimit", FECCodec.MIN_MEMORY_ALLOCATION, sortOrder++, true, false, 
+		long defaultMemoryLimitedJobMemoryLimit = FECCodec.MIN_MEMORY_ALLOCATION;
+		long overallMemoryLimit = NodeStarter.getMemoryLimitBytes();
+		if(overallMemoryLimit > 512*1024*1024) {
+		    defaultMemoryLimitedJobMemoryLimit += (overallMemoryLimit - 512*1024*1024) / 20;
+		}
+		nodeConfig.register("memoryLimitedJobMemoryLimit", defaultMemoryLimitedJobMemoryLimit, sortOrder++, true, false, 
 		        "NodeClientCore.memoryLimitedJobMemoryLimit", "NodeClientCore.memoryLimitedJobMemoryLimitLong", new LongCallback() {
 
                     @Override
