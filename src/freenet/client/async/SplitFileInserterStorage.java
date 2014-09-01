@@ -754,6 +754,7 @@ public class SplitFileInserterStorage {
                     splitfileCryptoAlgorithm, splitfileCryptoKey, random, maxRetries, consecutiveRNFsCountAsSuccess, keysFetching);
             underlyingOffsetDataSegments[i] = blocks * CHKBlock.DATA_LENGTH;
             blocks += segments[i].dataBlockCount;
+            assert(underlyingOffsetDataSegments[i] < dataLength);
         }
         dis.close();
         if(blocks != totalDataBlocks)
@@ -1278,6 +1279,8 @@ public class SplitFileInserterStorage {
             }
         }
         long offset = underlyingOffsetDataSegments[segNo] + blockNo * CHKBlock.DATA_LENGTH;
+        assert(offset < dataLength);
+        assert(offset + buf.length <= dataLength);
         originalData.pread(offset, buf, 0, buf.length);
         return buf;
     }
