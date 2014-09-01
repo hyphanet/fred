@@ -1038,7 +1038,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * cross-segment redundancy. This greatly improves reliability on files over 80MB, see bug #3370.
 	 */
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, CompatibilityMode topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		this.hashThisLayerOnly = hashThisLayerOnly;
@@ -1074,8 +1074,8 @@ public class Metadata implements Cloneable, Serializable {
 		topBlocksRequired = requiredBlocks;
 		topBlocksTotal = totalBlocks;
 		this.topDontCompress = topDontCompress;
-		this.topCompatibilityMode = topCompatibilityMode;
-		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null || topCompatibilityMode != 0)
+		this.topCompatibilityMode = (short) topCompatibilityMode.ordinal();
+		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null || this.topCompatibilityMode != 0)
 			parsedVersion = 1;
 		if(deductBlocksFromSegments != 0 || splitfileCryptoKey != null)
 			parsedVersion = 1;

@@ -1326,7 +1326,7 @@ public class SplitFileInserterStorage {
                 deductBlocksFromSegments, clientMetadata, dataLength, archiveType, compressionCodec, 
                 decompressedLength, isMetadata, hashes, hashThisLayerOnly, origDataSize, 
                 origCompressedDataSize, topRequiredBlocks, topTotalBlocks, topDontCompress, 
-                (short)cmode.ordinal(), splitfileCryptoAlgorithm, splitfileCryptoKey, 
+                cmode, splitfileCryptoAlgorithm, splitfileCryptoKey, 
                 specifySplitfileKeyInMetadata, crossCheckBlocks);
     }
 

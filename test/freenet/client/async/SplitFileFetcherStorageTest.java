@@ -74,7 +74,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     private static final OnionFECCodec codec = new OnionFECCodec();
     private static final int MAX_SEGMENT_SIZE = 256;
     static final int KEY_LENGTH = 32;
-    static final short COMPATIBILITY_MODE = (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal();
+    static final CompatibilityMode COMPATIBILITY_MODE = InsertContext.CompatibilityMode.COMPAT_1416;
     static FreenetURI URI;
     private static final List<COMPRESSOR_TYPE> NO_DECOMPRESSORS = Collections.emptyList();
     
@@ -177,7 +177,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
          */
         static TestSplitfile constructMultipleSegments(long size, int[] segmentDataBlockCount, 
                 int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize, 
-                int deductBlocksFromSegments, short topCompatibilityMode, String mime, boolean persistent) 
+                int deductBlocksFromSegments, CompatibilityMode topCompatibilityMode, String mime, boolean persistent) 
         throws IOException, CHKEncodeException, MetadataUnresolvedException, MetadataParseException {
             int dataBlocks = sum(segmentDataBlockCount);
             int checkBlocks = sum(segmentCheckBlockCount);
@@ -285,7 +285,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
                 
             };
             return new SplitFileFetcherStorage(metadata, cb, NO_DECOMPRESSORS, metadata.getClientMetadata(), false,
-                    COMPATIBILITY_MODE, ctx, false, salt, URI, URI, true, new byte[0], random, bf,
+                    (short) COMPATIBILITY_MODE.ordinal(), ctx, false, salt, URI, URI, true, new byte[0], random, bf,
                     f, jobRunner, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), persistent, null, null, fetchingKeys);
         }
 
@@ -737,21 +737,21 @@ public class SplitFileFetcherStorageTest extends TestCase {
         // Simplest case: Same number of blocks in each segment.
         // 2 blocks in each of 2 segments.
         testMultiSegment(32768*4, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0, 
-                (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal());
+                InsertContext.CompatibilityMode.COMPAT_1416);
         testMultiSegment(32768*4-1, new int[] { 2, 2 }, new int[] { 3, 3 }, 2, 3, 0, 
-                (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal());
+                InsertContext.CompatibilityMode.COMPAT_1416);
         
         // 3 blocks in 3 segments
         testMultiSegment(32768*9-1, new int[] { 3, 3, 3 }, new int[] { 4, 4, 4 }, 3, 4, 0, 
-                (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal());
+                InsertContext.CompatibilityMode.COMPAT_1416);
         
         // Deduct blocks. This is how we handle this situation in modern splitfiles.
         testMultiSegment(32768*7-1, new int[] { 3, 2, 2 }, new int[] { 4, 4, 4 }, 3, 4, 2, 
-                (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal());
+                InsertContext.CompatibilityMode.COMPAT_1416);
         
         // Sharp truncation. This is how we used to handle non-divisible numbers...
         testMultiSegment(32768*9-1, new int[] { 7, 2 }, new int[] { 7, 2 }, 7, 7, 0,
-                (short)InsertContext.CompatibilityMode.COMPAT_1416.ordinal());
+                InsertContext.CompatibilityMode.COMPAT_1416);
         // Still COMPAT_1416 because has crypto key etc.
         
         // FIXME test old splitfiles.
@@ -761,7 +761,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
     
     private void testMultiSegment(long size, int[] segmentDataBlockCount, 
                 int[] segmentCheckBlockCount, int segmentSize, int checkSegmentSize, 
-                int deductBlocksFromSegments, short topCompatibilityMode) throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
+                int deductBlocksFromSegments, CompatibilityMode topCompatibilityMode) throws CHKEncodeException, IOException, MetadataUnresolvedException, MetadataParseException, FetchException {
         TestSplitfile test = TestSplitfile.constructMultipleSegments(size, segmentDataBlockCount,
                 segmentCheckBlockCount, segmentSize, checkSegmentSize, deductBlocksFromSegments,
                 topCompatibilityMode, null, false);
