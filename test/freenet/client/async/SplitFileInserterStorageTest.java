@@ -114,7 +114,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
         checker = new CRCChecksumChecker();
-        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, executor);
+        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 20, executor);
         jobRunner = new DummyJobRunner(executor, null);
         URI = FreenetURI.generateRandomCHK(r);
     }

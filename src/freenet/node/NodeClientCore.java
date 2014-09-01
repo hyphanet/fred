@@ -105,6 +105,7 @@ public class NodeClientCore implements Persistable {
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
+	public final MemoryLimitedJobRunner memoryLimitedJobRunner;
 	/**
 	 * <p>Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully.</p>
 	 * <p>The name of the variable is badly chosen: formPassword is an <a href="https://www.owasp.org/index.php/Cross-Site_Request_Forgery_%28CSRF%29">
@@ -354,7 +355,10 @@ public class NodeClientCore implements Persistable {
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
-		MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobsMemoryLimit, node.executor);
+		int maxMemoryLimitedJobThreads = Runtime.getRuntime().availableProcessors() * 2; // Some disk I/O ... tunable REDFLAG
+		maxMemoryLimitedJobThreads = Math.min(maxMemoryLimitedJobThreads, node.nodeStats.getThreadLimit()/20);
+		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
+		MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobsMemoryLimit, nodeConfig.getInt("memoryLimitedJobThreads"), node.executor);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 

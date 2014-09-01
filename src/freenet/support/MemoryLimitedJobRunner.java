@@ -17,19 +17,22 @@ public class MemoryLimitedJobRunner {
     /** The jobs we can't start yet. FIXME Always FIFO order? Small jobs first? Prioritised even? */
     private final Deque<MemoryLimitedJob> jobs;
     private final Executor executor;
+    private int runningThreads;
+    private final int maxThreads;
     
-    public MemoryLimitedJobRunner(long capacity, Executor executor) {
+    public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor) {
         this.capacity = capacity;
         this.counter = 0;
         this.jobs = new ArrayDeque<MemoryLimitedJob>();
         this.executor = executor;
+        this.maxThreads = maxThreads;
         
     }
     
     /** Run the job if the counter is below some threshold, otherwise queue it. */
     public synchronized void queueJob(final MemoryLimitedJob job) {
         if(job.initialAllocation > capacity) throw new IllegalArgumentException("Job size "+job.initialAllocation+" > capacity "+capacity);
-        if(counter + job.initialAllocation <= capacity) {
+        if(counter + job.initialAllocation <= capacity && runningThreads < maxThreads) {
             startJob(job);
         } else {
             jobs.add(job);
@@ -41,10 +44,11 @@ public class MemoryLimitedJobRunner {
         if(size < 0) throw new IllegalArgumentException();
         assert(size <= counter);
         counter -= size;
+        if(counter == 0) runningThreads--;
         while(true) {
             MemoryLimitedJob job = jobs.peekFirst();
             if(job == null) return;
-            if(job.initialAllocation + counter <= capacity) {
+            if(job.initialAllocation + counter <= capacity && runningThreads < maxThreads) {
                 jobs.removeFirst();
                 startJob(job);
             } else return;
@@ -53,6 +57,7 @@ public class MemoryLimitedJobRunner {
     
     private void startJob(final MemoryLimitedJob job) {
         counter += job.initialAllocation;
+        runningThreads++;
         executor.execute(new PrioRunnable() {
 
             @Override

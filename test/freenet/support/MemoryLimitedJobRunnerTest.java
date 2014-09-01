@@ -111,7 +111,9 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
         final Object completion = new Object();
         for(int i=0;i<jobs.length;i++) jobs[i] = new SynchronousJob(JOB_SIZE, startLive, completion);
-        MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, executor);
+        // If it all fits, run all the jobs at once. If some are going to be queued, use a small thread limit.
+        int maxThreads = JOB_COUNT <= JOB_LIMIT ? JOB_COUNT : 10;
+        MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, maxThreads, executor);
         for(SynchronousJob job : jobs)
             runner.queueJob(job);
         Thread.sleep(100);
@@ -303,7 +305,9 @@ public class MemoryLimitedJobRunnerTest extends TestCase {
         SynchronousJob[] jobs = new SynchronousJob[JOB_COUNT];
         final Object completion = new Object();
         for(int i=0;i<jobs.length;i++) jobs[i] = new SynchronousJob(JOB_SIZE, startLive, completion);
-        MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, executor);
+        // If it all fits, run all the jobs at once. If some are going to be queued, use a small thread limit.
+        int maxThreads = JOB_COUNT <= JOB_LIMIT ? JOB_COUNT : 10;
+        MemoryLimitedJobRunner runner = new MemoryLimitedJobRunner(JOB_LIMIT, maxThreads, executor);
         for(SynchronousJob job : jobs)
             runner.queueJob(job);
         Thread.sleep(100);
