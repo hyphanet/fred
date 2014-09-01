@@ -11,14 +11,14 @@ import freenet.node.PrioRunnable;
  */
 public class MemoryLimitedJobRunner {
     
-    public final long capacity;
+    public long capacity;
     /** The amount of some limited resource that is in use */
     private long counter;
     /** The jobs we can't start yet. FIXME Always FIFO order? Small jobs first? Prioritised even? */
     private final Deque<MemoryLimitedJob> jobs;
     private final Executor executor;
     private int runningThreads;
-    private final int maxThreads;
+    private int maxThreads;
     
     public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor) {
         this.capacity = capacity;
@@ -45,6 +45,10 @@ public class MemoryLimitedJobRunner {
         assert(size <= counter);
         counter -= size;
         if(counter == 0) runningThreads--;
+        maybeStartJobs();
+    }
+    
+    private synchronized void maybeStartJobs() {
         while(true) {
             MemoryLimitedJob job = jobs.peekFirst();
             if(job == null) return;
@@ -78,6 +82,24 @@ public class MemoryLimitedJobRunner {
     /** For tests and stats. How much of the scarce resource is used right now? */
     long used() {
         return counter;
+    }
+
+    public synchronized void setMaxThreads(int val) {
+        this.maxThreads = val;
+        maybeStartJobs();
+    }
+
+    public synchronized int getMaxThreads() {
+        return maxThreads;
+    }
+
+    public synchronized long getCapacity() {
+        return capacity;
+    }
+
+    public synchronized void setCapacity(long val) {
+        capacity = val;
+        maybeStartJobs();
     }
 
 }

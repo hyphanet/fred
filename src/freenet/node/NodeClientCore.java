@@ -347,7 +347,6 @@ public class NodeClientCore implements Persistable {
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		long memoryLimitedJobsMemoryLimit = FECCodec.MIN_MEMORY_ALLOCATION; // FIXME
 		LockableRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
@@ -358,7 +357,40 @@ public class NodeClientCore implements Persistable {
 		int maxMemoryLimitedJobThreads = Runtime.getRuntime().availableProcessors() * 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads = Math.min(maxMemoryLimitedJobThreads, node.nodeStats.getThreadLimit()/20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
-		MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobsMemoryLimit, nodeConfig.getInt("memoryLimitedJobThreads"), node.executor);
+        // FIXME l10n the errors?
+		nodeConfig.register("memoryLimitedJobThreadLimit", maxMemoryLimitedJobThreads, sortOrder++, true, false, 
+		        "NodeClientCore.memoryLimitedJobThreadLimit", "NodeClientCore.memoryLimitedJobThreadLimitLong", new IntCallback() {
+
+                    @Override
+                    public Integer get() {
+                        return memoryLimitedJobRunner.getMaxThreads();
+                    }
+
+                    @Override
+                    public void set(Integer val) throws InvalidConfigValueException,
+                            NodeNeedRestartException {
+                        if(val < 1) throw new InvalidConfigValueException("memoryLimitedJobThreadLimit cannot be negative");
+                        memoryLimitedJobRunner.setMaxThreads(val);
+                    }
+		    
+		}, false);
+		nodeConfig.register("memoryLimitedJobMemoryLimit", FECCodec.MIN_MEMORY_ALLOCATION, sortOrder++, true, false, 
+		        "NodeClientCore.memoryLimitedJobMemoryLimit", "NodeClientCore.memoryLimitedJobMemoryLimitLong", new LongCallback() {
+
+                    @Override
+                    public Long get() {
+                        return memoryLimitedJobRunner.getCapacity();
+                    }
+
+                    @Override
+                    public void set(Long val) throws InvalidConfigValueException,
+                            NodeNeedRestartException {
+                        if(val < FECCodec.MIN_MEMORY_ALLOCATION) throw new InvalidConfigValueException("memoryLimitedJobMemoryLimit must be at least "+FECCodec.MIN_MEMORY_ALLOCATION);
+                        memoryLimitedJobRunner.setCapacity(val);
+                    }
+		    
+		}, true);
+		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
