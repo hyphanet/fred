@@ -33,6 +33,7 @@ public class SplitFileInserterSender extends SendableInsert {
     final SplitFileInserterStorage storage;
 
     public SplitFileInserterSender(SplitFileInserter parent, SplitFileInserterStorage storage) {
+        super(false, parent.realTime); // The request itself is non-persistent regardless of the parent.
         this.parent = parent;
         this.storage = storage;
     }

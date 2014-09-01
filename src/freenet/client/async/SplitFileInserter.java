@@ -28,7 +28,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     
     private static final long serialVersionUID = 1L;
     /** Is the insert persistent? */
-    private final boolean persistent;
+    final boolean persistent;
     /** Parent ClientPutter etc */
     final BaseClientPutter parent;
     /** Callback to send Metadata, completion status etc to */
