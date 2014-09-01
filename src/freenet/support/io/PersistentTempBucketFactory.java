@@ -136,15 +136,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Deletes any old temp files still unclaimed.
 	 */
 	public synchronized void completedInit() {
-		// Persisting requests in the database means we don't register() files...
-		// So keep all the temp files for now.
-		// FIXME: tidy up unwanted temp files.
-		
-//		for(File f: originalFiles) {
-//			if(Logger.shouldLog(LogLevel.MINOR, this))
-//				Logger.minor(this, "Deleting old tempfile "+f);
-//			f.delete();
-//		}
+		for(File f: originalFiles) {
+			if(Logger.shouldLog(LogLevel.MINOR, this))
+				Logger.minor(this, "Deleting old tempfile "+f);
+			f.delete();
+		}
 		originalFiles = null;
 	}
 

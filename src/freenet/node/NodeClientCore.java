@@ -416,7 +416,6 @@ public class NodeClientCore implements Persistable {
         
         try {
             initStorage(databaseKey);
-            initPTBF(nodeConfig);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
             node.setDatabaseAwaitingPassword();
@@ -649,10 +648,6 @@ public class NodeClientCore implements Persistable {
         // Do not register the UserAlert yet, since we haven't finished constructing stuff it uses.
     }
 
-	private void initPTBF(SubConfig nodeConfig) throws NodeInitException {
-	    this.persistentTempBucketFactory.completedInit();
-	}
-
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container, DatabaseKey databaseKey) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
 		try {
@@ -662,7 +657,6 @@ public class NodeClientCore implements Persistable {
 		    return true;
 		}
 		// Don't actually start the database thread yet, messy concurrency issues.
-		initPTBF(node.config.get("node"));
 		fcpServer.load(this.fcpPersistentRoot);
 		System.out.println("Late database initialisation completed.");
 		return true;
@@ -676,6 +670,7 @@ public class NodeClientCore implements Persistable {
 	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
+	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
 
     private static String l10n(String key) {
