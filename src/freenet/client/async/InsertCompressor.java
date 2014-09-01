@@ -28,7 +28,6 @@ import freenet.support.io.RandomAccessBucket;
  * 
  * @author toad
  */
-// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertCompressor implements CompressJob {
 	
 	/** The SingleFileInserter we report to. We were created by it and when we have compressed our data we will
