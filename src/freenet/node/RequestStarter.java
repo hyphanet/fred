@@ -314,13 +314,4 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		return get.getWakeupTime(context, now);
 	}
 
-	/** Can this item be excluded based solely on the cooldown queue?
-	 * @return -1 if the item can be run now, or the time at which it is on the cooldown queue until.
-	 */
-	@Override
-	public long excludeSummarily(RequestSelectionTreeNode item,
-			RequestSelectionTreeNode parent, long now) {
-	    return item.getWakeupTime(core.clientContext, now);
-	}
-
 }

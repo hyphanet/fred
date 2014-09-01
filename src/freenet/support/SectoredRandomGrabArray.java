@@ -149,7 +149,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			x++;
 			if(x >= grabArrays.length) x = 0;
 			RemoveRandomWithObject rga = grabArrays[x];
-			long excludeTime = excluding.excludeSummarily(rga, this, now);
+			long excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				continue;
@@ -203,7 +203,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 				continue;
 			}
-			long excludeTime = excluding.excludeSummarily(rga, this, now);
+			long excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
@@ -269,7 +269,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		RandomGrabArrayItem item = null;
 		RemoveRandomReturn val = null;
 		if(logMINOR) Logger.minor(this, "Only 2, trying "+rga);
-		long excludeTime = excluding.excludeSummarily(rga, this, now);
+		long excludeTime = rga.getWakeupTime(context, now);
 		if(excludeTime > 0) {
 			wakeupTime = excludeTime;
 			rga = null;
@@ -298,7 +298,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
                 reduceWakeupTime(wakeupTime, context);
 				return new RemoveRandomReturn(wakeupTime);
 			}
-			excludeTime = excluding.excludeSummarily(rga, this, now);
+			excludeTime = rga.getWakeupTime(context, now);
 			if(excludeTime > 0) {
 				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				rga = null;
@@ -341,7 +341,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		// Optimise the common case
 		RemoveRandomWithObject rga = grabArrays[0];
 		if(logMINOR) Logger.minor(this, "Only one RGA: "+rga);
-		long excludeTime = excluding.excludeSummarily(rga, this, now);
+		long excludeTime = rga.getWakeupTime(context, now);
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
 		if(rga == null) {

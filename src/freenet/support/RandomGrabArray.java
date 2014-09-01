@@ -159,7 +159,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 				remove(blockNo, i);
 				continue;
 			}
-			if(excluding.excludeSummarily(ret, this, now) > 0) {
+			if(ret.getWakeupTime(context, now) > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
 					return null;
@@ -246,7 +246,7 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
 					continue;
 				}
 				boolean excludeItem = false;
-				long excludeTime = excluding.excludeSummarily(item, this, now);
+				long excludeTime = item.getWakeupTime(context, now);
 				if(excludeTime > 0) {
 					// In cooldown, will be wanted later.
 					excludeItem = true;
