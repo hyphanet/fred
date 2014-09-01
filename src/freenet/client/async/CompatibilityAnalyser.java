@@ -38,6 +38,8 @@ public class CompatibilityAnalyser implements Serializable {
             Logger.warning(this, "merge() after definitive", new Exception("debug"));
             return;
         }
+        assert(min != InsertContext.CompatibilityMode.COMPAT_CURRENT.ordinal());
+        assert(max != InsertContext.CompatibilityMode.COMPAT_CURRENT.ordinal());
         if(definitive) this.definitive = true;
         if(!dontCompress) this.dontCompress = false;
         if(min > this.min) this.min = min;

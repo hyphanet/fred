@@ -110,7 +110,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				}
 			}
 		}
-		compatibilityMode = cmode;
+		compatibilityMode = cmode.intern();
 		s = fs.get("OverrideSplitfileCryptoKey");
 		if(s == null)
 			overrideSplitfileCryptoKey = null;

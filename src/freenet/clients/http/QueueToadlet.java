@@ -559,9 +559,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.equals(""))
-					cmode = CompatibilityMode.COMPAT_CURRENT;
+					cmode = CompatibilityMode.COMPAT_CURRENT.intern();
 				else
-					cmode = CompatibilityMode.valueOf(compatibilityMode);
+					cmode = CompatibilityMode.valueOf(compatibilityMode).intern();
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
 				final byte[] overrideSplitfileKey;
 				if(s != null && !s.equals(""))

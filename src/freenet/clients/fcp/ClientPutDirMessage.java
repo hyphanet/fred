@@ -81,7 +81,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 				}
 			}
 		}
-		compatibilityMode = cmode;
+		compatibilityMode = cmode.intern();
 		s = fs.get("OverrideSplitfileCryptoKey");
 		if(s == null)
 			overrideSplitfileCryptoKey = null;
