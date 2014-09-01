@@ -427,7 +427,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
         File completionFile = getCompletionFile();
         assert(completionFile != null);
         assert(!ctx.filterData);
-        Logger.error(this, "Succeeding via truncation from "+tempFile+" to "+completionFile);
+        Logger.normal(this, "Succeeding via truncation from "+tempFile+" to "+completionFile);
         FetchException ex = null;
         RandomAccessFile raf = null;
         FetchResult result = null;

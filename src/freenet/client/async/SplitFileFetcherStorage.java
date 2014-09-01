@@ -512,9 +512,8 @@ public class SplitFileFetcherStorage {
                 throw new IOException("Must have already created storage file");
             if(storageFile.length() > 0)
                 throw new IOException("Storage file must be empty");
-            // FIXME dirty layer violation.
             raf = diskSpaceCheckingRAFFactory.createNewRAF(storageFile, totalLength, random);
-            Logger.error(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
+            Logger.normal(this, "Creating splitfile storage file for complete-via-truncation: "+storageFile);
         } else {
             raf = rafFactory.makeRAF(totalLength);
         }
