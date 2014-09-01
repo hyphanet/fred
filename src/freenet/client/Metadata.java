@@ -1070,16 +1070,25 @@ public class Metadata implements Cloneable, Serializable {
 			setMIMEType(cm.getMIMEType());
 		else
 			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
+        if(topCompatibilityMode.ordinal() < CompatibilityMode.COMPAT_1255.ordinal()) {
+            if(splitfileCryptoKey != null) throw new IllegalArgumentException();
+            if(hashes != null) throw new IllegalArgumentException();
+            if(deductBlocksFromSegments != 0) throw new IllegalArgumentException();
+            origDataSize = 0;
+            origCompressedDataSize = 0;
+            requiredBlocks = 0;
+            totalBlocks = 0;
+            parsedVersion = 0;
+        } else {
+            if(splitfileCryptoKey == null) throw new IllegalArgumentException();
+            parsedVersion = 1;
+        }
 		topSize = origDataSize;
 		topCompressedSize = origCompressedDataSize;
 		topBlocksRequired = requiredBlocks;
 		topBlocksTotal = totalBlocks;
 		this.topDontCompress = topDontCompress;
 		this.topCompatibilityMode = (short) topCompatibilityMode.ordinal();
-		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null || this.topCompatibilityMode != 0)
-			parsedVersion = 1;
-		if(deductBlocksFromSegments != 0 || splitfileCryptoKey != null)
-			parsedVersion = 1;
 		if(parsedVersion == 0) {
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
 		} else {
