@@ -408,6 +408,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		parent.completedBlock(false, context);
 		unregister(context, getPriorityClass());
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
+		cb.onEncode(key, this, context); // In case of race conditions etc, especially for LocalRequestOnly.
 		cb.onSuccess(this, context);
 	}
 
