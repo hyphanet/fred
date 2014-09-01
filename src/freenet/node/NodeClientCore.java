@@ -18,11 +18,9 @@ import freenet.client.InsertContext;
 import freenet.client.FECCodec;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientLayerPersister;
-import freenet.client.async.InsertCompressorTracker;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
-import freenet.client.async.InsertCompressor;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -400,7 +398,7 @@ public class NodeClientCore implements Persistable {
 		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
-		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
+		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
 		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets,
 		        defaultFetchContext, defaultInsertContext);
@@ -418,7 +416,6 @@ public class NodeClientCore implements Persistable {
         
         try {
             initStorage(databaseKey);
-            InsertCompressor.load(clientContext);
             initPTBF(nodeConfig);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
@@ -664,7 +661,6 @@ public class NodeClientCore implements Persistable {
 		    Logger.error(this, "Impossible: can't load even though have key? "+(databaseKey != null));
 		    return true;
 		}
-        InsertCompressor.load(clientContext);
 		// Don't actually start the database thread yet, messy concurrency issues.
 		initPTBF(node.config.get("node"));
 		fcpServer.load(this.fcpPersistentRoot);

@@ -1047,6 +1047,8 @@ class SingleFileInserter implements ClientPutState, Serializable {
             block.getData().onResume(context);
         if(cb != null && cb != parent)
             cb.onResume(context);
+        if(started || cancelled) return;
+        tryCompress(context);
     }
 
     @Override

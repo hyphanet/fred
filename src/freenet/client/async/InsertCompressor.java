@@ -206,7 +206,6 @@ public class InsertCompressor implements CompressJob {
 					@Override
 					public boolean run(ClientContext context) {
 						inserter.onCompressed(output, context);
-						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
 					
@@ -250,7 +249,6 @@ public class InsertCompressor implements CompressJob {
 					@Override
 					public boolean run(ClientContext context) {
 						inserter.cb.onFailure(ie, inserter, context);
-						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
 					
@@ -277,18 +275,9 @@ public class InsertCompressor implements CompressJob {
 	 */
 	public static InsertCompressor start(ClientContext ctx, SingleFileInserter inserter, 
 	        RandomAccessBucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
-	    InsertCompressorTracker tracker = ctx.getInsertCompressors(persistent);
 		InsertCompressor compressor = new InsertCompressor(inserter, origData, minSize, bf, persistent, generateHashes, pre1254);
-		tracker.add(compressor);
 		compressor.init(ctx);
 		return compressor;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static void load(ClientContext context) {
-	    for(InsertCompressor comp : context.transientInsertCompressors.list()) {
-			comp.init(context);
-		}
 	}
 
 	@Override
@@ -300,7 +289,6 @@ public class InsertCompressor implements CompressJob {
 					@Override
 					public boolean run(ClientContext context) {
 						inserter.cb.onFailure(e, inserter, context);
-						context.persistentInsertCompressors.remove(InsertCompressor.this);
 						return true;
 					}
 					
