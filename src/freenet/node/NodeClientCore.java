@@ -357,6 +357,7 @@ public class NodeClientCore implements Persistable {
 		int maxMemoryLimitedJobThreads = Runtime.getRuntime().availableProcessors() * 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads = Math.min(maxMemoryLimitedJobThreads, node.nodeStats.getThreadLimit()/20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
+        // FIXME review thread limits. This isn't just memory, it's CPU and disk as well, so we don't want it too big??
         // FIXME l10n the errors?
 		nodeConfig.register("memoryLimitedJobThreadLimit", maxMemoryLimitedJobThreads, sortOrder++, true, false, 
 		        "NodeClientCore.memoryLimitedJobThreadLimit", "NodeClientCore.memoryLimitedJobThreadLimitLong", new IntCallback() {
@@ -377,6 +378,7 @@ public class NodeClientCore implements Persistable {
 		long defaultMemoryLimitedJobMemoryLimit = FECCodec.MIN_MEMORY_ALLOCATION;
 		long overallMemoryLimit = NodeStarter.getMemoryLimitBytes();
 		if(overallMemoryLimit > 512*1024*1024) {
+		    // FIXME review default memory limits
 		    defaultMemoryLimitedJobMemoryLimit += (overallMemoryLimit - 512*1024*1024) / 20;
 		}
 		nodeConfig.register("memoryLimitedJobMemoryLimit", defaultMemoryLimitedJobMemoryLimit, sortOrder++, true, false, 
