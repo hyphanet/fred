@@ -59,8 +59,9 @@ public class InsertContext implements Cloneable, Serializable {
 	public static enum CompatibilityMode {
 		/** We do not know. */
 		COMPAT_UNKNOWN,
-		/** No compatibility issues, use the most efficient metadata possible. 
-		 * Used only for configuring an insert, *NOT* in Metadata compatibility mode detection. */
+		/** No compatibility issues, use the most efficient metadata possible. Used only in the 
+		 * front-end: MUST NOT be stored: Code should convert this to a specific mode as early as
+		 * possible, or inserts will break when a new mode is added. InsertContext does this. */
 		COMPAT_CURRENT,
 		// The below *are* used in Metadata compatibility mode detection. And they are comparable by ordinal().
 		// This means we have to check for COMPAT_CURRENT as a special case.
@@ -82,6 +83,13 @@ public class InsertContext implements Cloneable, Serializable {
 		// problems when an insert is restarted on a newer build with a newer default compat mode.
 		public static CompatibilityMode latest() {
 			return values[values.length-1];
+		}
+		
+		/** Must be called whenever we accept a CompatibilityMode as e.g. a config option. Converts
+		 * the pseudo- */
+		public CompatibilityMode intern() {
+		    if(this == COMPAT_CURRENT) return latest();
+		    return this;
 		}
 	}
 	
@@ -105,9 +113,7 @@ public class InsertContext implements Cloneable, Serializable {
 	}
 
 	public void setCompatibilityMode(CompatibilityMode mode) {
-		if(mode == CompatibilityMode.COMPAT_CURRENT)
-			mode = CompatibilityMode.latest();
-		this.compatibilityMode = mode.ordinal();
+		this.compatibilityMode = mode.intern().ordinal();
 	}
 
 	public InsertContext(
@@ -125,9 +131,7 @@ public class InsertContext implements Cloneable, Serializable {
 		this.compressorDescriptor = compressorDescriptor;
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
-		if(compatibilityMode == CompatibilityMode.COMPAT_CURRENT)
-			compatibilityMode = CompatibilityMode.latest();
-		this.compatibilityMode = compatibilityMode.ordinal();
+		this.compatibilityMode = compatibilityMode.intern().ordinal();
 		this.localRequestOnly = localRequestOnly;
 		this.ignoreUSKDatehints = false;
 	}
