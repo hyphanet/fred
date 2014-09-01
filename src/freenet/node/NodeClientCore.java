@@ -354,7 +354,7 @@ public class NodeClientCore implements Persistable {
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
-		int maxMemoryLimitedJobThreads = Runtime.getRuntime().availableProcessors() * 2; // Some disk I/O ... tunable REDFLAG
+		int maxMemoryLimitedJobThreads = Runtime.getRuntime().availableProcessors() / 2; // Some disk I/O ... tunable REDFLAG
 		maxMemoryLimitedJobThreads = Math.min(maxMemoryLimitedJobThreads, node.nodeStats.getThreadLimit()/20);
 		maxMemoryLimitedJobThreads = Math.max(1, maxMemoryLimitedJobThreads);
         // FIXME review thread limits. This isn't just memory, it's CPU and disk as well, so we don't want it too big??
