@@ -314,16 +314,20 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 		FreenetURI u;
 		synchronized(this) {
-			if(this.uri != null) {
-				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
-			}
+		    u = key.getURI(); 
 			if(gotFinalMetadata) {
 				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
 			}
-			this.uri = key.getURI();
+			this.uri = u;
 			if(targetFilename != null)
-				uri = uri.pushMetaString(targetFilename);
-			u = uri;
+				u = u.pushMetaString(targetFilename);
+			if(this.uri != null) {
+			    if(!this.uri.equals(u)) {
+			        Logger.error(this, "onEncode() called twice with different URIs: "+this.uri+" -> "+u+" for "+this, new Exception("error"));
+			    }
+			    return;
+			}
+            uri = u;
 		}
 		if(persistent()) {
 			u = u.clone();
