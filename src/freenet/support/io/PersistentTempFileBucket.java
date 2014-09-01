@@ -72,4 +72,9 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
         super(dis);
     }
 
+    @Override
+    protected long getPersistentTempID() {
+        return filenameID;
+    }
+
 }
