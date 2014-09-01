@@ -752,4 +752,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
         this.schedule(context);
     }
 
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
+    }
+
 }

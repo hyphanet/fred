@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
@@ -306,6 +307,17 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
         for(ClientPutState s : waitingFor)
             s.onResume(context);
         if(cb != parent) cb.onResume(context);
+    }
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        for(ClientPutState state : getWaitingFor()) {
+            state.onShutdown(context);
+        }
+    }
+
+    private synchronized List<ClientPutState> getWaitingFor() {
+        return new ArrayList<ClientPutState>(waitingFor);
     }
 
 }

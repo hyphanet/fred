@@ -431,4 +431,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
         if(sbi != null) sbi.onResume(context);
     }
 
+    @Override
+    public void onShutdown(ClientContext context) {
+        SingleBlockInserter sbi;
+        synchronized(this) {
+            sbi = this.sbi;
+        }
+        if(sbi != null) sbi.onShutdown(context);
+    }
+
 }

@@ -34,4 +34,8 @@ public interface ClientPutState {
      * @throws InsertException 
      * @throws ResumeFailedException */
     public void onResume(ClientContext context) throws InsertException, ResumeFailedException;
+
+    /** Called just before the final write of client.dat before the node shuts down. Should write
+     * any dirty data to disk etc. */
+    public void onShutdown(ClientContext context);
 }

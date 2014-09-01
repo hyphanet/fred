@@ -249,5 +249,10 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     public void onInsertedBlock() {
         parent.completedBlock(false, context);
     }
+    
+    @Override
+    public void onShutdown(ClientContext context) {
+        storage.onShutdown(context);
+    }
 
 }

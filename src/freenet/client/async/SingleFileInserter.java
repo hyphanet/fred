@@ -975,6 +975,20 @@ class SingleFileInserter implements ClientPutState, Serializable {
                     metadataPutter.schedule(context);
             }
         }
+
+        @Override
+        public void onShutdown(ClientContext context) {
+            ClientPutState splitfileInserter;
+            ClientPutState metadataInserter;
+            synchronized(this) {
+                splitfileInserter = sfi;
+                metadataInserter = metadataPutter;
+            }
+            if(splitfileInserter != null)
+                splitfileInserter.onShutdown(context);
+            if(metadataInserter != null)
+                metadataInserter.onShutdown(context);
+        }
 		
 	}
 
@@ -1033,6 +1047,11 @@ class SingleFileInserter implements ClientPutState, Serializable {
             block.getData().onResume(context);
         if(cb != null && cb != parent)
             cb.onResume(context);
+    }
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
     }
 
 }

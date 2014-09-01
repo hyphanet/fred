@@ -558,4 +558,14 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
         return client;
     }
     
+    @Override
+    public void onShutdown(ClientContext context) {
+        ClientPutState state;
+        synchronized(this) {
+            state = currentState;
+        }
+        if(state != null)
+            state.onShutdown(context);
+    }
+
 }

@@ -219,4 +219,9 @@ public class BinaryBlobInserter implements ClientPutState {
         throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, "Persistence not supported yet", null);
     }
 
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
+    }
+
 }

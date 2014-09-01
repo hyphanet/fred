@@ -372,4 +372,9 @@ public class ContainerInserter implements ClientPutState, Serializable {
             }
         }
     }
+
+    @Override
+    public void onShutdown(ClientContext context) {
+        // Ignore.
+    }
 }
