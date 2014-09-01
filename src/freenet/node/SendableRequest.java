@@ -41,15 +41,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem, Serializab
 		});
 	}
 
-	/**
-	 * zero arg c'tor for db4o on jamvm and serialization.
-	 */
-	protected SendableRequest() {
-		hashCode = 0;
-		persistent = false;
-		realTimeFlag = false;
-	}
-
 	SendableRequest(boolean persistent, boolean realTimeFlag) {
 		this.persistent = persistent;
 		this.realTimeFlag = realTimeFlag;

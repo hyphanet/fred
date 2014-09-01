@@ -95,27 +95,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final byte cryptoAlgorithm;
 
 	/**
-	 * zero arg c'tor for serialization
-	 */
-	@SuppressWarnings("unused")
-	private SingleBlockInserter() {
-		uri = null;
-		tokenObject = null;
-		token = 0;
-		sourceLength = 0;
-		parent = null;
-		isMetadata = false;
-		extraInserts = 0;
-		errors = null;
-		dontSendEncoded = false;
-		ctx = null;
-		cryptoKey = null;
-		cryptoAlgorithm = 0;
-		compressionCodec = 0;
-		cb = null;
-	}
-
-	/**
 	 * Create a SingleBlockInserter.
 	 * @param parent The parent. Must be activated.
 	 * @param data

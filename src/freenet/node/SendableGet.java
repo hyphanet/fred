@@ -58,11 +58,6 @@ public abstract class SendableGet extends BaseSendableGet {
 		this.parent = parent;
 	}
 	
-	protected SendableGet() {
-	    // For serialization.
-	    parent = null;
-	}
-	
 	static final SendableGetRequestSender sender = new SendableGetRequestSender();
 	
 	@Override

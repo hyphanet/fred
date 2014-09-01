@@ -62,13 +62,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(ctx == null) throw new NullPointerException();
 	}
 	
-	protected BaseSingleFileFetcher() {
-	    // For serialization.
-	    key = null;
-	    maxRetries = 0;
-	    ctx = null;
-	}
-
 	@Override
 	public long countAllKeys(ClientContext context) {
 		return 1;

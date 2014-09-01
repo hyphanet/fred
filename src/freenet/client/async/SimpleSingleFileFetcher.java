@@ -48,12 +48,6 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		}
 	}
     
-    protected SimpleSingleFileFetcher() {
-        // For serialization.
-        rcb = null;
-        token = 0;
-    }
-
 	final GetCompletionCallback rcb;
 	final long token;
 

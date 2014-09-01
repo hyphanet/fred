@@ -184,19 +184,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.topCompatibilityMode = fetcher.topCompatibilityMode;
 	}
 	
-	protected SingleFileFetcher() {
-	    // For serialization.
-	    uri = null;
-	    metaStrings = null;
-	    clientMetadata = null;
-	    decompressors = null;
-	    dontTellClientGet = false;
-	    isFinal = false;
-	    metaSnoop = null;
-	    bucketSnoop = null;
-	    actx = null;
-	}
-
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
 	@Override

@@ -21,12 +21,6 @@ public abstract class SendableInsert extends SendableRequest {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-	 * zero arg c'tor for db4o on jamvm
-	 */
-	protected SendableInsert() {
-	}
-
 	public SendableInsert(boolean persistent, boolean realTimeFlag) {
 		super(persistent, realTimeFlag);
 	}
