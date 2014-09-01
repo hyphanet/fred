@@ -90,11 +90,11 @@ public class ClientContext {
 	public ClientContext(long bootID, long nodeDBHandle, ClientLayerPersister jobRunner, Executor mainExecutor,
 			ArchiveManager archiveManager, PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
 			InsertCompressorTracker transientInsertCompressors, InsertCompressorTracker persistentInsertCompressors,
-			HealingQueue hq, USKManager uskManager, RandomSource strongRandom,
-			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
+			HealingQueue hq, USKManager uskManager, RandomSource strongRandom, Random fastWeakRandom, 
+			Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
 			RealCompressor rc, DatastoreChecker checker, FCPPersistentRoot persistentRoot,
-			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit,
+			LinkFilterExceptionProvider linkFilterExceptionProvider,
 			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
 		this.bootID = bootID;
 		this.jobRunner = jobRunner;
@@ -117,7 +117,7 @@ public class ClientContext {
 		this.rc = rc;
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
-		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
+		this.memoryLimitedJobRunner = memoryLimitedJobRunner;
 		this.tempRAFFactory = rafFactory; 
 		this.persistentRoot = persistentRoot;
 		this.dummyJobRunner = new DummyJobRunner(mainExecutor, this);

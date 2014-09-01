@@ -69,6 +69,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
@@ -353,11 +354,12 @@ public class NodeClientCore implements Persistable {
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
+		MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobsMemoryLimit, node.executor);
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, new InsertCompressorTracker(), new InsertCompressorTracker(), healingQueue, uskManager, random, node.fastWeakRandom, 
-		        node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets, memoryLimitedJobsMemoryLimit,
+		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
+		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets,
 		        defaultFetchContext, defaultInsertContext);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
