@@ -1069,7 +1069,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
 		// Also doing it this way means we don't need to worry about
-		if(persistent()) removePutHandlers(context);
 		cb.onSuccess(this);
 	}
 
@@ -1085,55 +1084,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			finished = true;
 		}
 		cancelAndFinish(context);
-		if(persistent()) removePutHandlers(context);
 
 		cb.onFailure(e, this);
-	}
-
-	private void removePutHandlers(ClientContext context) {
-		new Error("RefactorME").printStackTrace();
-
-		if(!runningPutHandlers.isEmpty()) {
-			Logger.error(this, "Running put handlers not part of putHandlersByName: "+runningPutHandlers.size()+" in removePutHandlers() on "+this, new Exception("error"));
-			PutHandler[] handlers = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
-			for(PutHandler handler : handlers) {
-				Logger.error(this, "Still running, but not in putHandlersByName: "+handler);
-				handler.cancel();
-			}
-			runningPutHandlers.clear();
-		}
-		if(!putHandlersWaitingForMetadata.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for metadata, not part of putHandlersByName: "+putHandlersWaitingForMetadata.size()+" in removePutHandlers() on "+this, new Exception("error"));
-			PutHandler[] handlers = putHandlersWaitingForMetadata.toArray(new PutHandler[putHandlersWaitingForMetadata.size()]);
-			for(PutHandler handler : handlers) {
-				Logger.error(this, "Still waiting for metadata, but not in putHandlersByName: "+handler);
-				handler.cancel();
-			}
-			putHandlersWaitingForMetadata.clear();
-		}
-		if(!putHandlerWaitingForBlockSets.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for block sets, not part of putHandlersByName: "+putHandlerWaitingForBlockSets.size()+" in removePutHandlers() on "+this, new Exception("error"));
-			PutHandler[] handlers = putHandlerWaitingForBlockSets.toArray(new PutHandler[putHandlerWaitingForBlockSets.size()]);
-			for(PutHandler handler : handlers) {
-				Logger.error(this, "Still waiting for block set, but not in putHandlersByName: "+handler);
-				handler.cancel();
-			}
-			putHandlerWaitingForBlockSets.clear();
-		}
-		if(!putHandlersWaitingForFetchable.isEmpty()) {
-			Logger.error(this, "Put handlers waiting for fetchable, not part of putHandlersByName: "+putHandlersWaitingForFetchable.size()+" in removePutHandlers() on "+this, new Exception("error"));
-			PutHandler[] handlers = putHandlersWaitingForFetchable.toArray(new PutHandler[putHandlersWaitingForFetchable.size()]);
-			for(PutHandler handler : handlers) {
-				Logger.error(this, "Still waiting for fetchable, but not in putHandlersByName: "+handler);
-				handler.cancel();
-			}
-			putHandlersWaitingForFetchable.clear();
-		}
-
-		runningPutHandlers = null;
-		putHandlersWaitingForMetadata = null;
-		putHandlerWaitingForBlockSets = null;
-		putHandlersWaitingForFetchable = null;
 	}
 
 	/**
