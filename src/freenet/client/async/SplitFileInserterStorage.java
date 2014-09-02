@@ -279,10 +279,10 @@ public class SplitFileInserterStorage {
         int segs;
         cmode = ctx.getCompatibilityMode();
         if(cmode.ordinal() < CompatibilityMode.COMPAT_1255.ordinal()) {
-            if(hashes != null) Logger.error(this, "Should not have hashes with compat mode "+cmode, new Exception("error"));
-            hashes = null;
+            this.hashes = null;
+        } else {
+            this.hashes = hashes;
         }
-        this.hashes = hashes;
         if (cmode == CompatibilityMode.COMPAT_1250_EXACT) {
             segs = (totalDataBlocks + 128 - 1) / 128;
             segmentSize = 128;
