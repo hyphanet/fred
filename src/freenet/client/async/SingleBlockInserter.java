@@ -614,6 +614,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return null;
 		}
 	}
+	
+	@Override
+	public long getWakeupTime(ClientContext context, long now) {
+	    KeysFetchingLocally keysFetching = getScheduler(context).fetchingKeys();
+	    synchronized(this) {
+	        if(finished) return -1;
+            BlockItemKey key = new BlockItemKey(this, hashCode());
+            if(keysFetching.hasInsert(this, key))
+                return Long.MAX_VALUE;
+            return 0;
+	    }
+	}
 
 	private BlockItem getBlockItem(BlockItemKey key, ClientContext context) throws InsertException {
 		try {

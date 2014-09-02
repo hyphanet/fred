@@ -216,6 +216,9 @@ public class SplitFileInserterStorage {
 
     private final int overallStatusLength;
     
+    private final Object cooldownLock = new Object();
+    private boolean noBlocksToSend;
+    
     /**
      * Create a SplitFileInserterStorage.
      * 
@@ -1100,6 +1103,9 @@ public class SplitFileInserterStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    noBlocksToSend = false;
+                }
                 callback.encodingProgress();
                 if(maybeFail()) return true;
                 if(allFinishedCrossEncoding()) {
@@ -1128,6 +1134,9 @@ public class SplitFileInserterStorage {
 
             @Override
             public boolean run(ClientContext context) {
+                synchronized(cooldownLock) {
+                    noBlocksToSend = false;
+                }
                 completed.storeStatus(true);
                 callback.encodingProgress();
                 if(maybeFail()) return true;
@@ -1621,6 +1630,7 @@ public class SplitFileInserterStorage {
     public BlockInsert chooseBlock() {
         // FIXME this should probably use SimpleBlockChooser and hence use lowest-retry-count from each segment?
         // Less important for inserts than for requests though...
+        synchronized(cooldownLock) {
         synchronized(this) {
             if(status == Status.FAILED || status == Status.SUCCEEDED || 
                     status == Status.GENERATING_METADATA || failing != null) return null;
@@ -1630,7 +1640,10 @@ public class SplitFileInserterStorage {
         int segNo = random.nextInt(segments.length);
         SplitFileInserterSegmentStorage segment = segments[segNo];
         BlockInsert ret = segment.chooseBlock();
-        if(ret != null) return ret;
+        if(ret != null) {
+            noBlocksToSend = false;
+            return ret;
+        }
         // Looks like we are close to completion ...
         boolean[] tried = new boolean[segments.length];
         tried[segNo] = true;
@@ -1639,12 +1652,22 @@ public class SplitFileInserterStorage {
             tried[segNo] = true;
             segment = segments[segNo];
             ret = segment.chooseBlock();
-            if(ret != null) return ret;
+            if(ret != null) {
+                noBlocksToSend = false;
+                return ret;
+            }
         }
+        noBlocksToSend = true;
         return null;
-
+        }
     }
-
+    
+    public boolean noBlocksToSend() {
+        synchronized(cooldownLock) {
+            return noBlocksToSend;
+        }
+    }
+    
     public long countAllKeys() {
         long total = 0;
         for(SplitFileInserterSegmentStorage segment : segments)

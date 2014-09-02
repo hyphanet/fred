@@ -208,5 +208,12 @@ public class SplitFileInserterSender extends SendableInsert {
         if(getParentGrabArray() != null) return; // If change priority will unregister first.
         context.getChkInsertScheduler(parent.realTime).registerInsert(this, persistent);
     }
-
+    
+    @Override
+    public long getWakeupTime(ClientContext context, long now) {
+        if(storage.noBlocksToSend())
+            return Long.MAX_VALUE;
+        else
+            return 0;
+    }
 }

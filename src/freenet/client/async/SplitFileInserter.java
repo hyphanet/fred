@@ -105,8 +105,10 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     public void schedule(ClientContext context) throws InsertException {
         cb.onBlockSetFinished(this, context);
         storage.start();
-        if(!ctx.getCHKOnly)
+        if(!ctx.getCHKOnly) {
+            sender.clearWakeupTime(context);
             sender.schedule(context);
+        }
     }
 
     @Override
