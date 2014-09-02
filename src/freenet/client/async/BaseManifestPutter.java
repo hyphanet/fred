@@ -704,7 +704,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         
         @Override
         protected ClientBaseCallback getCallback() {
-            return null;
+            return cb;
         }
 
 	}
