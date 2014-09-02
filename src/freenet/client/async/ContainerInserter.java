@@ -81,7 +81,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
 	private final boolean realTimeFlag;
-	private boolean started;
 
 	/**
 	 * Insert a bunch of files as single Archive with .metadata
@@ -155,9 +154,6 @@ public class ContainerInserter implements ClientPutState, Serializable {
 
 	private void start(ClientContext context) {
 		if(logDEBUG) Logger.debug(this, "Atempt to start a container inserter", new Exception("debug"));
-		synchronized(this) {
-		    started = true;
-		}
 		
 		makeMetadata(context);
 		
@@ -377,10 +373,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
                     e.data.onResume(context);
             }
         }
-        synchronized(this) {
-            if(!started) return;
-        }
-        start(context);
+        // Do not call start(). start() immediately transitions to another state.
     }
 
     @Override
