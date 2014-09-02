@@ -4,8 +4,8 @@ import freenet.client.InsertContext.CompatibilityMode;
 
 public class SplitfileCompatibilityModeEvent implements ClientEvent {
 
-	public final int minCompatibilityMode;
-	public final int maxCompatibilityMode;
+	public final short minCompatibilityMode;
+	public final short maxCompatibilityMode;
 	public final byte[] splitfileCryptoKey;
 	public final boolean dontCompress;
 	public final boolean bottomLayer;
@@ -26,8 +26,8 @@ public class SplitfileCompatibilityModeEvent implements ClientEvent {
 	}
 	
 	public SplitfileCompatibilityModeEvent(CompatibilityMode min, CompatibilityMode max, byte[] splitfileCryptoKey, boolean dontCompress, boolean bottomLayer) {
-		this.minCompatibilityMode = min.ordinal();
-		this.maxCompatibilityMode = max.ordinal();
+		this.minCompatibilityMode = min.code;
+		this.maxCompatibilityMode = max.code;
 		this.splitfileCryptoKey = splitfileCryptoKey;
 		this.dontCompress = dontCompress;
 		this.bottomLayer = bottomLayer;
