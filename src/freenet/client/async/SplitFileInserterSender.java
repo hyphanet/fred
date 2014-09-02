@@ -3,6 +3,7 @@ package freenet.client.async;
 import java.io.IOException;
 
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -18,6 +19,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
+import freenet.support.Logger;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -115,8 +117,8 @@ public class SplitFileInserterSender extends SendableInsert {
     class MySendableRequestSender implements SendableRequestSender {
         
         @Override
-        public boolean send(NodeClientCore node, RequestScheduler sched, ClientContext context,
-                ChosenBlock request) {
+        public boolean send(NodeClientCore node, final RequestScheduler sched, ClientContext context,
+                final ChosenBlock request) {
             final BlockInsert token = (BlockInsert) request.token;
             try {
                 ClientCHKBlock clientBlock = token.segment.encodeBlock(token.blockNumber);
@@ -140,31 +142,22 @@ public class SplitFileInserterSender extends SendableInsert {
                 } else {
                     node.realPut(block, request.canWriteClientCache, request.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, request.realTimeFlag);
                 }
-                context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
-                    
-                    @Override
-                    public boolean run(ClientContext context) {
-                        onSuccess(token, key, context);
-                        return false;
-                    }
-                });
+                request.onInsertSuccess(key, context);
                 return true;
             } catch (final LowLevelPutException e) {
-                context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
-                    
-                    @Override
-                    public boolean run(ClientContext context) {
-                        onFailure(e, token, context);
-                        return false;
-                    }
-                });
+                request.onFailure(e, context);
                 return true;
             } catch (final IOException e) {
                 context.getJobRunner(request.isPersistent()).queueNormalOrDrop(new PersistentJob() {
                     
                     @Override
                     public boolean run(ClientContext context) {
-                        storage.failOnDiskError(e);
+                        try {
+                            storage.failOnDiskError(e);
+                        } finally {
+                            // Must terminate the request anyway.
+                            request.onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Disk error", e), context);
+                        }
                         return true;
                     }
                 });
