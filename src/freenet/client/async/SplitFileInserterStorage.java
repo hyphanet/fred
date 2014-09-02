@@ -558,8 +558,8 @@ public class SplitFileInserterStorage {
     }
     
     /** Create a splitfile insert from stored data.
-     * @param raf The file the insert was stored to.
-     * @param originalData 
+     * @param raf The file the insert was stored to. Caller must resume it before calling constructor.
+     * @param originalData The original data to be inserted. Caller must resume it before calling constructor.
      * @param callback The parent callback (e.g. SplitFileInserter).
      * @param checker The checksum checker to be used.
      * @param random
@@ -1606,8 +1606,6 @@ public class SplitFileInserterStorage {
     }
 
     public void onResume(ClientContext context) throws ResumeFailedException {
-        originalData.onResume(context);
-        raf.onResume(context);
         if(crossSegments != null && status != Status.ENCODED_CROSS_SEGMENTS) {
             this.startCrossSegmentEncode();
         } else {
