@@ -49,6 +49,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final boolean collisionIsOK;
 	private final boolean finishOnFailure;
 	private transient boolean resumed;
+	private BaseClientKey encodedKey;
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
 		this(cb, parent, token, persistent, false);
@@ -208,6 +209,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {
 		synchronized(this) {
 			if(state != generator) return;
+			if(encodedKey != null) {
+			    if(key.equals(encodedKey)) return; // Squash duplicated call to onEncode().
+			    else Logger.error(this, "Encoded twice with different keys for "+this+" : "+encodedKey+" -> "+key);
+			}
+			encodedKey = key;
 		}
 		cb.onEncode(key, this, context);
 	}
