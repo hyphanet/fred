@@ -93,9 +93,8 @@ public class InsertContext implements Cloneable, Serializable {
 		}
 	}
 	
-	/** Backward compatibility support for network level metadata. 
-	 * Not an enum because of back compatibility and because db4o tends to do bad things to enums i.e. copy the values. */
-	private long compatibilityMode;
+	/** Backward compatibility support for network level metadata. */
+	private CompatibilityMode compatibilityMode;
 	/** If true, don't insert, just generate the CHK */
     public boolean getCHKOnly;
     /** If true, try to find the final URI as quickly as possible, and insert the upper layers as 
@@ -105,15 +104,15 @@ public class InsertContext implements Cloneable, Serializable {
     public boolean earlyEncode;
 	
 	public CompatibilityMode getCompatibilityMode() {
-		return CompatibilityMode.values[(int)compatibilityMode];
+	    return compatibilityMode;
 	}
 	
 	public long getCompatibilityCode() {
-		return compatibilityMode;
+		return compatibilityMode.ordinal();
 	}
 
 	public void setCompatibilityMode(CompatibilityMode mode) {
-		this.compatibilityMode = mode.intern().ordinal();
+		this.compatibilityMode = mode.intern();
 	}
 
 	public InsertContext(
@@ -131,7 +130,7 @@ public class InsertContext implements Cloneable, Serializable {
 		this.compressorDescriptor = compressorDescriptor;
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
-		this.compatibilityMode = compatibilityMode.intern().ordinal();
+		this.compatibilityMode = compatibilityMode.intern();
 		this.localRequestOnly = localRequestOnly;
 		this.ignoreUSKDatehints = false;
 	}
@@ -169,7 +168,7 @@ public class InsertContext implements Cloneable, Serializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + (canWriteClientCache ? 1231 : 1237);
-        result = prime * result + (int) (compatibilityMode ^ (compatibilityMode >>> 32));
+        result = prime * result + compatibilityMode.ordinal();
         result = prime * result
                 + ((compressorDescriptor == null) ? 0 : compressorDescriptor.hashCode());
         result = prime * result + consecutiveRNFsCountAsSuccess;
