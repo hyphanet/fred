@@ -45,7 +45,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	public static class DDACheckJob {
 		final File directory, readFilename, writeFilename;
-		final String readContent, writeContent; 
+		final String readContent, writeContent;
 		
 		/**
 		 * null if not requested.
@@ -93,7 +93,7 @@ public class FCPConnectionHandler implements Closeable {
     private final ReadWriteLock pluginClientsByServerPluginNameLock = new ReentrantReadWriteLock();
 
 	/**
-	 * 16 random bytes hex-encoded as String. Unique for each instance of this class. 
+	 * 16 random bytes hex-encoded as String. Unique for each instance of this class.
 	 * @deprecated Use {@link #connectionIdentifierUUID} instead.
 	 */
 	@Deprecated
@@ -639,7 +639,7 @@ public class FCPConnectionHandler implements Closeable {
 	 * @return The {@link FCPPluginClient} for the given serverPluginName (see {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it
 	 *         if there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a
 	 *         given serverPluginName.
-	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server. 
+	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server.
 	 */
 	public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
         // The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
@@ -674,7 +674,7 @@ public class FCPConnectionHandler implements Closeable {
                     // table, so we opportunistically clean nulled clients from it here. The reason why this is sufficient memory management is explained at
                     // FCPPluginClient.server
                     // NOTICE: Even if there was automatic disposal of nulled references, we still would have to manually remove dead ones here: I have
-                    // observed that it can take minutes until the JVM flushes a ReferenceQueue. So if we relied upon that only, during those minutes a 
+                    // observed that it can take minutes until the JVM flushes a ReferenceQueue. So if we relied upon that only, during those minutes a
                     // client would be unable to send messages to a re-loaded server plugin because the continued existence of the dead old client would prevent
                     // a new one from being created.
                     pluginClientsByServerPluginName.remove(serverPluginName);
@@ -686,7 +686,7 @@ public class FCPConnectionHandler implements Closeable {
             
             return newClient;
         } finally {
-            pluginClientsByServerPluginNameLock.writeLock().unlock();    
+            pluginClientsByServerPluginNameLock.writeLock().unlock();
         }
 	}
 
@@ -795,7 +795,7 @@ public class FCPConnectionHandler implements Closeable {
 			inTestDirectories.put(directory, result);
 		}
 		
-		if(read && (readFile != null) && readFile.canWrite()){ 
+		if(read && (readFile != null) && readFile.canWrite()){
 			// We don't want to attempt to write before: in case an IOException is raised, we want to inform the
 			// client somehow that the node can't write there... And setting readFile to null means we won't inform
 			// it on the status (as if it hadn't requested us to do the test).
