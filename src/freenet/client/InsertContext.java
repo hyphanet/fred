@@ -4,6 +4,9 @@
 package freenet.client;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -57,24 +60,33 @@ public class InsertContext implements Cloneable, Serializable {
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	
 	public static enum CompatibilityMode {
+	    
 		/** We do not know. */
-		COMPAT_UNKNOWN,
+		COMPAT_UNKNOWN((short)0),
 		/** No compatibility issues, use the most efficient metadata possible. Used only in the 
 		 * front-end: MUST NOT be stored: Code should convert this to a specific mode as early as
 		 * possible, or inserts will break when a new mode is added. InsertContext does this. */
-		COMPAT_CURRENT,
+		COMPAT_CURRENT((short)1),
 		// The below *are* used in Metadata compatibility mode detection. And they are comparable by ordinal().
 		// This means we have to check for COMPAT_CURRENT as a special case.
 		/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
-		COMPAT_1250_EXACT,
+		COMPAT_1250_EXACT((short)2),
 		/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
-		COMPAT_1250,
+		COMPAT_1250((short)3),
 		/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
-		COMPAT_1251,
+		COMPAT_1251((short)4),
 		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
-		COMPAT_1255,
+		COMPAT_1255((short)5),
 		/** 1416: New CHK encryption */
-		COMPAT_1416;
+		COMPAT_1416((short)6);
+		
+		/** Code used in metadata for this CompatibilityMode. Hence we can remove old 
+		 * CompatibilityMode's, and it's also convenient. */
+		public final short code;
+		
+		CompatibilityMode(short code) {
+		    this.code = code;
+		}
 		
 		/** cached values(). Never modify or pass this array to outside code! */
 		private static final CompatibilityMode[] values = values();
@@ -91,6 +103,27 @@ public class InsertContext implements Cloneable, Serializable {
 		    if(this == COMPAT_CURRENT) return latest();
 		    return this;
 		}
+		
+        private static final Map<Short, CompatibilityMode> modesByCode;
+        
+        static {
+            HashMap<Short, CompatibilityMode> cmodes = new HashMap<Short, CompatibilityMode>();
+            for(CompatibilityMode mode : CompatibilityMode.values) {
+                if(cmodes.containsKey(mode.code)) throw new Error("Duplicated code!");
+                cmodes.put(mode.code, mode);
+            }
+            modesByCode = Collections.unmodifiableMap(cmodes);
+        }
+
+	    public static CompatibilityMode byCode(short code) {
+	        if(!modesByCode.containsKey(code)) throw new IllegalArgumentException();
+	        return modesByCode.get(code);
+	    }
+	    
+        public static boolean hasCode(short min) {
+            return modesByCode.containsKey(min);
+        }
+        
 	}
 	
 	/** Backward compatibility support for network level metadata. */
