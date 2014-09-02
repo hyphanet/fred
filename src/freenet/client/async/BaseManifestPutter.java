@@ -90,6 +90,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				// transform the placeholders to redirects (redirects to 'uri/name') and
 				// remove from waitfor lists
 				ArrayList<PutHandler> phv = putHandlersArchiveTransformMap.get(this);
+				if(phv == null) return; // Already encoded.
 				for (PutHandler ph : phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
