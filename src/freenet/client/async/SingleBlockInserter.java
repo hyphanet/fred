@@ -366,6 +366,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(new InsertException(InsertExceptionMode.CANCELLED), context);
 			return;
 		}
+		boolean shouldSendKey = false;
 		synchronized(this) {
 			if(extraInserts > 0 && !ctx.getCHKOnly) {
 				if(++completedInserts <= extraInserts) {
@@ -379,6 +380,13 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return;
 			}
 			finished = true;
+			if(resultingKey == null) {
+			    shouldSendKey = true;
+			    resultingKey = key;
+			} else {
+			    if(!resultingKey.equals(key))
+			        Logger.error(this, "Different key: "+resultingKey+" -> "+key+" for "+this);
+			}
 		}
 		if(freeData) {
 			sourceData.free();
@@ -387,7 +395,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		parent.completedBlock(false, context);
 		unregister(context, getPriorityClass());
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
-		cb.onEncode(key, this, context); // In case of race conditions etc, especially for LocalRequestOnly.
+		if(shouldSendKey)
+		    cb.onEncode(key, this, context); // In case of race conditions etc, especially for LocalRequestOnly.
 		cb.onSuccess(this, context);
 	}
 
