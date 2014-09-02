@@ -34,6 +34,7 @@ public class HashResult implements Comparable<HashResult>, Cloneable, Serializab
 
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
 		int bitmask = dis.readInt();
+		if(bitmask == 0) return null;
 		int count = 0;
 		for(HashType h : HashType_values) {
 			if((bitmask & h.bitmask) == h.bitmask) {
