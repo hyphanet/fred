@@ -257,7 +257,6 @@ public class SplitFileInserterStorage {
         this.checker = checker;
         this.memoryLimitedJobRunner = memoryLimitedJobRunner;
         this.jobRunner = jobRunner;
-        this.hashes = hashes;
         this.isMetadata = isMetadata;
         this.archiveType = archiveType;
         this.hashThisLayerOnly = hashThisLayerOnly;
@@ -276,6 +275,11 @@ public class SplitFileInserterStorage {
 
         int segs;
         cmode = ctx.getCompatibilityMode();
+        if(cmode.ordinal() < CompatibilityMode.COMPAT_1255.ordinal()) {
+            if(hashes != null) Logger.error(this, "Should not have hashes with compat mode "+cmode, new Exception("error"));
+            hashes = null;
+        }
+        this.hashes = hashes;
         if (cmode == CompatibilityMode.COMPAT_1250_EXACT) {
             segs = (totalDataBlocks + 128 - 1) / 128;
             segmentSize = 128;
