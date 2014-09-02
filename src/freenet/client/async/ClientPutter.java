@@ -318,7 +318,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(gotFinalMetadata) {
 				Logger.error(this, "Generated URI *and* sent final metadata??? on "+this+" from "+state);
 			}
-			this.uri = u;
 			if(targetFilename != null)
 				u = u.pushMetaString(targetFilename);
 			if(this.uri != null) {
@@ -327,7 +326,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			    }
 			    return;
 			}
-            uri = u;
+            this.uri = u;
 		}
 		if(persistent()) {
 			u = u.clone();
