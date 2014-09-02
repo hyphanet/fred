@@ -167,6 +167,7 @@ public class SplitFileFetcherStorage {
     private boolean finishedFetcher;
     private boolean finishedEncoding;
     private boolean cancelled;
+    private boolean succeeded;
     
     /** Errors. For now, this is not persisted (FIXME). */
     private FailureCodeTracker errors;
@@ -1110,6 +1111,11 @@ public class SplitFileFetcherStorage {
             
             @Override
             public boolean run(ClientContext context) {
+                synchronized(SplitFileFetcherStorage.this) {
+                    // Race conditions are possible, make sure we only call it once.
+                    if(succeeded) return false;
+                    succeeded = true;
+                }
                 fetcher.onSuccess();
                 return true;
             }
