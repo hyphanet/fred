@@ -162,6 +162,11 @@ public class SplitFileInserterSender extends SendableInsert {
                     }
                 });
                 return true;
+            } catch (Throwable t) {
+                Logger.error(this, "Failed to send insert: "+t, t);
+                // We still need to terminate the insert.
+                request.onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Failed: "+t, t), context);
+                return true;
             }
         }
 
