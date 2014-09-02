@@ -89,10 +89,10 @@ public class CompatibilityAnalyser implements Serializable {
         int ver = dis.readInt();
         if(ver != VERSION) throw new StorageFormatException("Unknown version for CompatibilityAnalyser");
         min = dis.readShort();
-        if(min < 0 || CompatibilityMode.hasCode(min))
+        if(!CompatibilityMode.hasCode(min))
             throw new StorageFormatException("Bad min value");
         max = dis.readShort();
-        if(max < 0 || max >= InsertContext.CompatibilityMode.values().length)
+        if(!CompatibilityMode.hasCode(max))
             throw new StorageFormatException("Bad max value");
         if(dis.readBoolean()) {
             cryptoKey = new byte[32];
