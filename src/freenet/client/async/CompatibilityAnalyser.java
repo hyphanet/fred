@@ -25,14 +25,6 @@ public class CompatibilityAnalyser implements Serializable {
         this.max = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
     }
     
-    CompatibilityAnalyser(short min, short max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
-        this.min = min;
-        this.max = max;
-        this.cryptoKey = cryptoKey;
-        this.dontCompress = dontCompress;
-        this.definitive = definitive;
-    }
-    
     public void merge(short min, short max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
         if(this.definitive) {
             Logger.warning(this, "merge() after definitive", new Exception("debug"));
