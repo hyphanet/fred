@@ -691,6 +691,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         @Override
         public void innerOnResume(ClientContext context) throws ResumeFailedException {
             super.innerOnResume(context);
+            try {
+                if(currentState != null)
+                    currentState.onResume(context);
+                if(origSFI != null)
+                    origSFI.onResume(context);
+            } catch (InsertException e) {
+                Logger.error(this, "Failed to start insert on resume: "+e, e);
+                throw new ResumeFailedException("Insert error: "+e);
+            }
         }
         
         @Override
@@ -1608,5 +1617,19 @@ public abstract class BaseManifestPutter extends ManifestPutter {
             } else
                 throw new IllegalStateException(String.valueOf(o));
         }
+    }
+    
+    protected void innerOnResume(ClientContext context) throws ResumeFailedException {
+        super.innerOnResume(context);
+        for(PutHandler h : runningPutHandlers)
+            h.onResume(context);
+        if(rootContainerPutHandler != null)
+            rootContainerPutHandler.onResume(context);
+        if(containerPutHandlers != null) {
+            for(PutHandler h : containerPutHandlers)
+                h.onResume(context);
+        }
+        if(rootMetaPutHandler != null)
+            rootMetaPutHandler.onResume(context);
     }
 }
