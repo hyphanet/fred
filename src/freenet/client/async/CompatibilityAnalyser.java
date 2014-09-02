@@ -57,7 +57,7 @@ public class CompatibilityAnalyser implements Serializable {
     }
     
     public CompatibilityMode max() {
-        return InsertContext.CompatibilityMode.values()[(int)min];
+        return InsertContext.CompatibilityMode.values()[(int)max];
     }
 
     public byte[] getCryptoKey() {
