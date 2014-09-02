@@ -691,6 +691,15 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         }
         
         @Override
+        public void onShutdown(ClientContext context) {
+            ClientPutState s;
+            synchronized(this) {
+                s = currentState;
+            }
+            if(s != null) s.onShutdown(context);
+        }
+        
+        @Override
         protected ClientBaseCallback getCallback() {
             return cb;
         }
@@ -1557,6 +1566,20 @@ public abstract class BaseManifestPutter extends ManifestPutter {
             } else
                 throw new IllegalStateException(String.valueOf(o));
         }
+    }
+    
+    @Override
+    public void onShutdown(ClientContext context) {
+        for(PutHandler h : runningPutHandlers)
+            h.onShutdown(context);
+        if(rootContainerPutHandler != null)
+            rootContainerPutHandler.onShutdown(context);
+        if(containerPutHandlers != null) {
+            for(PutHandler h : containerPutHandlers)
+                h.onShutdown(context);
+        }
+        if(rootMetaPutHandler != null)
+            rootMetaPutHandler.onShutdown(context);
     }
     
     protected void innerOnResume(ClientContext context) throws ResumeFailedException {
