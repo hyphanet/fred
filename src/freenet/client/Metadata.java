@@ -1085,7 +1085,7 @@ public class Metadata implements Cloneable, Serializable {
             parsedVersion = 0;
         } else {
             if(splitfileCryptoKey == null) throw new IllegalArgumentException();
-            this.topCompatibilityMode = (short) topCompatibilityMode.ordinal();
+            this.topCompatibilityMode = topCompatibilityMode.code;
             parsedVersion = 1;
         }
 		topSize = origDataSize;
