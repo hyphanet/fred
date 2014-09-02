@@ -331,7 +331,7 @@ public class Metadata implements Cloneable, Serializable {
 			topBlocksRequired = 0;
 			topBlocksTotal = 0;
 			topDontCompress = false;
-			topCompatibilityMode = (short)InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal();
+			topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
@@ -555,7 +555,7 @@ public class Metadata implements Cloneable, Serializable {
 					// If we have top compatibility mode, then we can give a definitive answer immediately, with the splitfile key, with dontcompress, etc etc.
 					if(minCompatMode == CompatibilityMode.COMPAT_UNKNOWN ||
 							!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
-						minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
+						minCompatMode = maxCompatMode = CompatibilityMode.byCode(topCompatibilityMode);
 					} else
 						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode: min="+minCompatMode+" max="+maxCompatMode+" top="+topCompatibilityMode);
 				}
@@ -1775,7 +1775,7 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	public CompatibilityMode getTopCompatibilityMode() {
-		return InsertContext.CompatibilityMode.values()[this.topCompatibilityMode];
+		return InsertContext.CompatibilityMode.byCode(topCompatibilityMode);
 	}
 
 	public boolean getTopDontCompress() {
