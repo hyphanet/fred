@@ -1093,7 +1093,7 @@ public class SplitFileFetcherStorage {
      * @throws PersistenceDisabledException */
     public void finishedSuccess(SplitFileFetcherSegmentStorage segment) {
         if(logMINOR) Logger.minor(this, "finishedSuccess on "+this+" from "+segment+" for "+fetcher, new Exception("debug"));
-        if(!completeViaTruncation)
+        if(!(completeViaTruncation || fetcher.wantBinaryBlob()))
             maybeComplete();
     }
     
@@ -1237,7 +1237,7 @@ public class SplitFileFetcherStorage {
 
     private void finishedEncoding() {
         // This is rather convoluted in the failure case ...
-        boolean failed;
+        boolean lateCompletion = false;
         boolean waitingForFetcher = false;
         synchronized(this) {
             if(finishedEncoding) {
@@ -1246,27 +1246,29 @@ public class SplitFileFetcherStorage {
             }
             if(logMINOR) Logger.minor(this, "Finished encoding");
             finishedEncoding = true;
-            if(!cancelled && !completeViaTruncation) {
+            if(cancelled) {
+                // Must close off-thread.
+            } else if((completeViaTruncation || fetcher.wantBinaryBlob()) && !succeeded) {
+                // Must complete.
+                lateCompletion = true;
+            } else {
+                // May wait for fetcher.
                 waitingForFetcher = !finishedFetcher;
             }
-            failed = cancelled;
         }
-        if(allFinished() && !allSucceeded()) {
-            // No more blocks will be found, so fail *now*.
-            fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
-            failed = true;
-        } else {
-            if(waitingForFetcher) return; // Waiting for the fetcher to finish so we can free the RAF.
+        if(lateCompletion) {
+            // We have not called onSuccess() or fail() yet.
+            if(allFinished() && !allSucceeded()) {
+                // No more blocks will be found, so fail *now*.
+                fail(new FetchException(FetchExceptionMode.SPLITFILE_ERROR, errors));
+            } else {
+                if(completeViaTruncation) raf.close();
+                maybeComplete();
+                return;
+            }
         }
-        if(completeViaTruncation && !failed) {
-            // For the truncation case, we wait until the encoding has finished, and then call
-            // the callback, which will truncate the file and pass it on.
-            raf.close(); // DO NOT free!
-            maybeComplete();
-            return;
-        } else {            
-            closeOffThread();
-        }
+        if(waitingForFetcher) return;
+        closeOffThread();
     }
     
     /** Shutdown and free resources. CONCURRENCY: Caller is responsible for making sure this is 
