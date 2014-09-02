@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
 import freenet.support.io.RandomAccessBucket;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Represents an element in a manifest. Fed to *ManifestPutter. An element can be a file or a 
@@ -126,5 +127,9 @@ public class ManifestElement implements Serializable {
 	public FreenetURI getTargetURI() {
 		return targetURI;
 	}
+
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        if(data != null) data.onResume(context);
+    }
 
 }

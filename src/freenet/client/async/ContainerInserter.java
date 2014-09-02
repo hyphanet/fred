@@ -373,7 +373,23 @@ public class ContainerInserter implements ClientPutState, Serializable {
                     e.data.onResume(context);
             }
         }
+        resumeMetadata(origMetadata, context);
         // Do not call start(). start() immediately transitions to another state.
+    }
+
+    @SuppressWarnings("unchecked")
+    private void resumeMetadata(Map<String, Object> map, ClientContext context) throws ResumeFailedException {
+        Map<String, Object> manifestElements = (Map<String, Object>)map;
+        for (Object o : manifestElements.values()) {
+            if(o instanceof HashMap) {
+                resumeMetadata((Map<String, Object>)o, context);
+            } else if(o instanceof ManifestElement) {
+                ManifestElement e = (ManifestElement) o;
+                e.onResume(context);
+            } else if(o instanceof Metadata) {
+                // Ignore
+            } else throw new IllegalArgumentException();
+        }
     }
 
     @Override
