@@ -591,7 +591,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			synchronized(this) {
 				minSuccessFetchBlocks++;
 			}
-			super.addBlock();
 		}
 
 		@Override
@@ -600,25 +599,21 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			synchronized(this) {
 				minSuccessFetchBlocks+=num;
 			}
-			super.addBlocks(num);
 		}
 
 		@Override
 		public void completedBlock(boolean dontNotify, ClientContext context) {
 			BaseManifestPutter.this.completedBlock(dontNotify, context);
-			super.completedBlock(dontNotify, context);
 		}
 
 		@Override
 		public void failedBlock(ClientContext context) {
 			BaseManifestPutter.this.failedBlock(context);
-			super.failedBlock(context);
 		}
 
 		@Override
 		public void fatallyFailedBlock(ClientContext context) {
 			BaseManifestPutter.this.fatallyFailedBlock(context);
-			super.fatallyFailedBlock(context);
 		}
 
 		@Override
@@ -627,13 +622,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			synchronized(this) {
 				minSuccessFetchBlocks += blocks;
 			}
-			super.addMustSucceedBlocks(blocks);
 		}
 		
 		@Override
 		public synchronized void addRedundantBlocksInsert(int blocks) {
 			BaseManifestPutter.this.addRedundantBlocksInsert(blocks);
-			super.addRedundantBlocksInsert(blocks);
 		}
 		
 		@Override
@@ -643,7 +636,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		
 		@Override
 		public void notifyClients(ClientContext context) {
-			BaseManifestPutter.this.notifyClients(context);
+		    // Ignore.
 		}
 
 		@Override
