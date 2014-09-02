@@ -10,7 +10,9 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 
 /**
- * A single selected request, including everything needed to execute it.
+ * A single selected request, including everything needed to execute it. Most important functions 
+ * are the callbacks, which run off-thread, call the upstream callbacks on the SendableGet etc, and
+ * remove the fetching keys from the KeysFetchingLocally.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public abstract class ChosenBlock {

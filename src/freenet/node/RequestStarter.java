@@ -262,7 +262,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 		@Override
 		public void run() {
-			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 		    // FIXME ? key is not known for inserts here
 		    if (key != null)
@@ -275,16 +274,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(logMINOR) 
 				Logger.minor(this, "Finished "+req);
-			} finally {
-				if(req.sendIsBlocking()) {
-					if(key != null) sched.removeFetchingKey(key);
-					else if(((ChosenBlockImpl)req).request instanceof SendableInsert)
-						sched.removeTransientInsertFetching((SendableInsert)(((ChosenBlockImpl)req).request), req.token.getKey());
-					// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
-					// so wake the starter thread.
-					wakeUp();
-				}
-			}
 		}
 		
 	}

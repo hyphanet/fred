@@ -173,14 +173,14 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 					@Override
 					public void onSucceeded() {
+                        // We don't use ChosenBlockImpl so have to remove the keys from the fetching set ourselves.
 						sched.removeFetchingKey(key);
-						// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
-						// so wake the starter thread.
 						sched.wakeStarter();
 					}
 
 					@Override
 					public void onFailed(LowLevelGetException e) {
+					    // We don't use ChosenBlockImpl so have to remove the keys from the fetching set ourselves.
 						sched.removeFetchingKey(key);
 						// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
 						// so wake the starter thread.
