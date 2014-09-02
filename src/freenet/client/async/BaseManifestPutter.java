@@ -1224,6 +1224,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	@Override
 	public void onTransition(ClientPutState from, ClientPutState to) {
+	    // Everything should be on the PutHandler's, right?
+	    Logger.error(this, "Ignoring transition from "+from+" to "+to+" on "+this);
 		// Ignore
 	}
 
