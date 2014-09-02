@@ -325,6 +325,8 @@ public class Metadata implements Cloneable, Serializable {
 			topBlocksTotal = dis.readInt();
 			topDontCompress = dis.readBoolean();
 			topCompatibilityMode = dis.readShort();
+			if(!CompatibilityMode.hasCode(topCompatibilityMode))
+			    throw new MetadataParseException("Unknown compatibility mode "+topCompatibilityMode);
 		} else {
 			topSize = 0;
 			topCompressedSize = 0;
@@ -980,6 +982,7 @@ public class Metadata implements Cloneable, Serializable {
 			this.topBlocksTotal = totalBlocks;
 			this.topDontCompress = topDontCompress;
 			this.topCompatibilityMode = topCompatibilityMode;
+			assert(CompatibilityMode.hasCode(topCompatibilityMode));
 			parsedVersion = 1;
 		} else {
 			this.topSize = 0;
