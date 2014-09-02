@@ -79,25 +79,29 @@ public class FCPConnectionHandler implements Closeable {
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 
-	/**
-	 * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
-	 */
-	private final TreeMap<String, FCPPluginClient> pluginClientsByServerPluginName = new TreeMap<String, FCPPluginClient>();
-	
+    /**
+     * {@link FCPPluginClient} indexed by {@link FCPPluginClient#getServerPluginName()}.
+     */
+    private final TreeMap<String, FCPPluginClient> pluginClientsByServerPluginName
+        = new TreeMap<String, FCPPluginClient>();
+
     /**
      * Lock for {@link #pluginClientsByServerPluginName}.
      * 
-     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes - {@link ReadWriteLock} can do that faster than a regular Lock.
-     * (A {@link ReentrantReadWriteLock} because thats the only implementation of {@link ReadWriteLock}.)
+     * A {@link ReadWriteLock} because the usage pattern is mostly reads, very few writes -
+     * {@link ReadWriteLock} can do that faster than a regular Lock.
+     * (A {@link ReentrantReadWriteLock} because thats the only implementation of
+     * {@link ReadWriteLock}.)
      */
     private final ReadWriteLock pluginClientsByServerPluginNameLock = new ReentrantReadWriteLock();
 
-	/**
-	 * 16 random bytes hex-encoded as String. Unique for each instance of this class.
-	 * @deprecated Use {@link #connectionIdentifierUUID} instead.
-	 */
-	@Deprecated
-	protected final String connectionIdentifier;
+    /**
+     * 16 random bytes hex-encoded as String. Unique for each instance of this class.
+     * 
+     * @deprecated Use {@link #connectionIdentifierUUID} instead.
+     */
+    @Deprecated
+    protected final String connectionIdentifier;
 	
 	/** Random UUID unique for each instance of this class */
 	protected final UUID connectionIdentifierUUID;
@@ -168,9 +172,10 @@ public class FCPConnectionHandler implements Closeable {
 		server.node.random.nextBytes(identifier);
 		this.connectionIdentifier = HexUtil.bytesToHex(identifier);
 		
-		// The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also 16 byetes, so we can re-use the bytes.
-		// TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
-		this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
+        // The random 16-byte identifier was used before we added the UUID. Luckily, UUIDs are also
+        // 16 byetes, so we can re-use the bytes.
+        // TODO: When getting rid of the non-UUID connectionIdentifier, use UUID.randomUUID();
+        this.connectionIdentifierUUID = UUID.nameUUIDFromBytes(identifier);
 	}
 	
 	void start() {
@@ -635,19 +640,25 @@ public class FCPConnectionHandler implements Closeable {
 		return rebootClient;
 	}
 
-	/**
-	 * @return The {@link FCPPluginClient} for the given serverPluginName (see {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it
-	 *         if there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}, there can be only one {@link FCPPluginClient} for a
-	 *         given serverPluginName.
-	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server.
-	 */
-	public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
-        // The typical usage pattern of this function is that the great majority of calls will return an existing client. Creating a fresh one will typically
-        // only happen at the start of a connection and then it will be re-used a lot.
-        // Therefore, it would cost a lot of performance to use synchronized() and we instead use a ReadWriteLock which is optimal for such patterns.
+    /**
+     * @return The {@link FCPPluginClient} for the given serverPluginName (see
+     *         {@link FCPPluginClient#getServerPluginName()}). Atomically creates and stores it if
+     *         there does not exist one yet. This ensures that for each {@link FCPConnectionHandler}
+     *         , there can be only one {@link FCPPluginClient} for a given serverPluginName.
+     * @throws PluginNotFoundException
+     *             If the specified plugin is not loaded or does not provide an FCP server.
+     */
+    public FCPPluginClient getPluginClient(String serverPluginName) throws PluginNotFoundException {
+        // The typical usage pattern of this function is that the great majority of calls will
+        // return an existing client. Creating a fresh one will typically only happen at the start
+        // of a connection and then it will be re-used a lot.
+        // Therefore, it would cost a lot of performance to use synchronized() and we instead use a
+        // ReadWriteLock which is optimal for such patterns.
         //
-        // The double-checked locking pattern which this induces is necessary due to the fact that a read-lock cannot be upgraded to a write lock.
-        // The JavaDoc of ReentrantReadWriteLock specifically recommends this pattern, so it ought to be a safe version of double-checked locking.
+        // The double-checked locking pattern which this induces is necessary due to the fact that a
+        // read-lock cannot be upgraded to a write lock.
+        // The JavaDoc of ReentrantReadWriteLock specifically recommends this pattern, so it ought
+        // to be a safe version of double-checked locking.
         
         pluginClientsByServerPluginNameLock.readLock().lock();
         try {
@@ -662,21 +673,27 @@ public class FCPConnectionHandler implements Closeable {
 
         pluginClientsByServerPluginNameLock.writeLock().lock();
         try {
-            // Re-check whether there is an existing client since we had to re-acquire the lock meanwhile.
+            // Re-check whether there is an existing client since we had to re-acquire the lock
+            // meanwhile.
             FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
             if(oldClient != null) {
                 if(!oldClient.isDead())
                     return oldClient;
                 else {
-                    // oldClient.isDead() returned true because the WeakReference to the server has been nulled because the plugin was unloaded or reloaded.
-                    // The client should be discarded then. We have no ReferenceQueue to discard affected clients from the pluginClientsByServerPluginName
-                    // table, so we opportunistically clean nulled clients from it here. The reason why this is sufficient memory management is explained at
+                    // oldClient.isDead() returned true because the WeakReference to the server has
+                    // been nulled because the plugin was unloaded or reloaded.
+                    // The client should be discarded then. We have no ReferenceQueue to discard
+                    // affected clients from the pluginClientsByServerPluginName table, so we
+                    // opportunistically clean nulled clients from it here.
+                    // The reason why this is sufficient memory management is explained at
                     // FCPPluginClient.server
-                    // NOTICE: Even if there was automatic disposal of nulled references, we still would have to manually remove dead ones here: I have
-                    // observed that it can take minutes until the JVM flushes a ReferenceQueue. So if we relied upon that only, during those minutes a
-                    // client would be unable to send messages to a re-loaded server plugin because the continued existence of the dead old client would prevent
-                    // a new one from being created.
+                    // NOTICE: Even if there was automatic disposal of nulled references, we still
+                    // would have to manually remove dead ones here: I have observed that it can
+                    // take minutes until the JVM flushes a ReferenceQueue. So if we relied upon
+                    // that only, during those minutes a client would be unable to send messages to
+                    // a re-loaded server plugin because the continued existence of the dead old
+                    // client would prevent a new one from being created.
                     pluginClientsByServerPluginName.remove(serverPluginName);
                 }
             }
