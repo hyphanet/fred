@@ -550,11 +550,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			throw new UnsupportedOperationException();
 		}
 
-		/**
-		 * The caller of onTransition removes the old state, so we don't have to.
-		 * However, in onSuccess or onFailure, we need to remove the new state, even if
-		 * what is passed in is different (in which case we remove that too).
-		 */
 		@Override
 		public void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(newState == null) throw new NullPointerException();
