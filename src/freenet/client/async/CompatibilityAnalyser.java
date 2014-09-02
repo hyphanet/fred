@@ -73,10 +73,7 @@ public class CompatibilityAnalyser implements Serializable {
     }
 
     public InsertContext.CompatibilityMode[] getModes() {
-        return new InsertContext.CompatibilityMode[] {
-                InsertContext.CompatibilityMode.values()[(int)min],
-                InsertContext.CompatibilityMode.values()[(int)max]
-        };
+        return new InsertContext.CompatibilityMode[] { min(), max() };
     }
     
     static final int VERSION = 1;
