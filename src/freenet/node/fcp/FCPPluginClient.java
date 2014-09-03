@@ -30,13 +30,13 @@ import freenet.support.api.Bucket;
  * <h1>Internals</h1>
  * 
  * <h2>Code path of sending messages</h2>
- * <p>There are two possible code paths for client connections, depending upon the location of the client. The server is always running inside the node. 
+ * <p>There are two possible code paths for client connections, depending upon the location of the client. The server is always running inside the node.
  * The two possible paths are:<br/>
  * <p>1. The server is running in the node, the client is not - also called networked FCP connections:<br/>
  * - The client connects to the node via network and sends FCP message of type
  *   <a href="https://wiki.freenetproject.org/FCPv2/FCPPluginMessage">freenet.node.fcp.FCPPluginMessage</a><br/>
  * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose {@link FCPConnectionInputHandler} receives the FCP message.<br/>
- * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)} to parse the message and obtain the 
+ * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)} to parse the message and obtain the
  *   actual {@link FCPPluginMessage}.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to obtain the FCPPluginClient which wants to send.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket, String)} or
@@ -45,7 +45,7 @@ import freenet.support.api.Bucket;
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)}.<br/>
  * - As each FCPPluginClient object exists for the lifetime of a network connection, the FCP server plugin may store the ID of the FCPPluginClient and query
  *   it via {@link PluginRespirator#getPluginClientByID(UUID)}. It can use this to send messages to the client application on its own, that is not triggered
- *   by any client messages.<br/> 
+ *   by any client messages.<br/>
  * </p>
  * <p>2. The server and the client are running in the same node, also called intra-node FCP connections:</br>
  * - The client plugin uses {@link PluginRespirator#connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} to try to create a
@@ -68,10 +68,10 @@ import freenet.support.api.Bucket;
  * 
  * <h2>Object lifecycle</h2>
  * <p>For each {@link #serverPluginName}, a single {@link FCPConnectionHandler} can only have a single FCPPluginClient with the plugin of that name as
- * connection partner. This is enforced by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One {@link FCPConnectionHandler} can only 
+ * connection partner. This is enforced by {@link FCPConnectionHandler#getPluginClient(String)}. In other words: One {@link FCPConnectionHandler} can only
  * have one connection to a certain plugin.<br/>
  * The reason for this is the following: Certain plugins might need to store the ID of a client in their database so they are able to send data to the
- * client if an event of interest to the client happens in the future. Therefore, the {@link FCPConnectionHandler} needs to store clients by ID. To 
+ * client if an event of interest to the client happens in the future. Therefore, the {@link FCPConnectionHandler} needs to store clients by ID. To
  * prevent excessive growth of that table, we need to re-use existing clients. One client per pluginName per {@link FCPConnectionHandler} is the re-use.<br/>
  * If you  nevertheless need multiple clients to a plugin, you have to create multiple FCP connections.<br/></p>
  * 
@@ -98,7 +98,7 @@ import freenet.support.api.Bucket;
 public final class FCPPluginClient {
 
     /**
-     * Unique identifier among all FCPPluginClients. 
+     * Unique identifier among all FCPPluginClients.
      */
     private final UUID id = UUID.randomUUID();
 
@@ -121,7 +121,7 @@ public final class FCPPluginClient {
      *   tries to send a message using a FCPPluginClient whose server WeakReference is null, it is purged from the said table at FCPConnectionHandler.
      *   So memory will not leak as long as the clients keep trying to send messages to the nulled server plugin - which they probably will do because they
      *   did already in the past.<br/>
-     * NOTICE: If you do implement this, make sure to not rewrite the ReferenceQueue polling thread but instead base it upon {@link FCPPluginClientTracker}. 
+     * NOTICE: If you do implement this, make sure to not rewrite the ReferenceQueue polling thread but instead base it upon {@link FCPPluginClientTracker}.
      *         You should probably extract a generic class WeakValueMap from that one and use to to power both the existing class and the one which deals
      *         with this variable here.
      * </p>
@@ -144,7 +144,7 @@ public final class FCPPluginClient {
 
     /**
      * For being used by networked FCP connections:<br/>
-     * The server is running within the node, and its message handler is accessible as an implementor of {@link ServerSideFCPMessageHandler}.<br/> 
+     * The server is running within the node, and its message handler is accessible as an implementor of {@link ServerSideFCPMessageHandler}.<br/>
      * The client is not running within the node, it is attached by network with a {@link FCPConnectionHandler}.<br/>
      * 
      * @see #constructForNetworkedFCP(FCPConnectionHandler, String) The public interface to this constructor.
@@ -229,10 +229,10 @@ public final class FCPPluginClient {
         return serverPluginName;
     }
     
-    /** 
+    /**
      * @return <p>True if the server plugin has been unloaded. Once this returns true, this FCPPluginClient <b>cannot</b> be repaired, even if the server plugin
      *         is loaded again. Then you should discard this client and create a fresh one.</p>
-     *         
+     * 
      *         <p><b>ATTENTION:</b> Future implementations of {@link FCPPluginClient} might allow the server plugin to reside in a different node, and only be
      *         attached by network. To prepare for that, you <b>must not</b> assume that the connection to the server is still fine just because this returns
      *         false = server is alive. Consider false / server is alive merely an indication, true / server is dead as the definite truth.
@@ -245,7 +245,7 @@ public final class FCPPluginClient {
     /**
      * @return The permission level of this client, depending on things such as its IP address.<br>
      *         For intra-node connections, it is {@link ClientPermissions#ACCESS_DIRECT}.<br><br>
-     *         
+     * 
      *         <b>ATTENTION:</b> The return value can change at any point in time, so you should check this before deploying each FCP message.<br>
      *         This is because the user is free to reconfigure IP-address restrictions on the node's web interface whenever he wants to.
      */
@@ -274,13 +274,13 @@ public final class FCPPluginClient {
     }
 
     /**
-     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
+     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} and
      *                          {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)}.
      * @throws IOException If the connection has been closed meanwhile.<br/>
      *                     This FCPPluginClient <b>should be</b> considered as dead once this happens, you should then discard it and obtain a fresh one.
-     *                     
+     * 
      *                     <p><b>ATTENTION:</b> If this is not thrown, that does NOT mean that the connection is alive. Messages are sent asynchronously, so it
      *                     can happen that a closed connection is not detected before this function returns.<br/>
      *                     If you need to know whether the send succeeded, use {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}.
@@ -295,12 +295,12 @@ public final class FCPPluginClient {
     public static final class FCPCallFailedException extends IOException { };
 
     /**
-     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a 
+     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} and
      *                          {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)}.
      * @throws FCPCallFailedException If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
-     *                                
+     * 
      *                                <p>This can be used to decide to retry certain operations. A practical example would be a user trying to create an account
      *                                at an FCP server application: Your UI would use this function to try to create the account by FCP. The user might type
      *                                an invalid character in the username. The server could then indicate failure of creating the account, and your UI could
