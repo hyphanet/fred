@@ -280,6 +280,7 @@ public class SplitFileInserterStorage {
         cmode = ctx.getCompatibilityMode();
         if(cmode.ordinal() < CompatibilityMode.COMPAT_1255.ordinal()) {
             this.hashes = null;
+            splitfileCryptoKey = null;
         } else {
             this.hashes = hashes;
         }
