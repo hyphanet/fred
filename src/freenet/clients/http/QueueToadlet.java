@@ -428,7 +428,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType, false, downloadsDir);
 				} catch (NotAllowedException e) {
-					this.writeError(l10n("QueueToadlet.errorDToDisk"), l10n("QueueToadlet.errorDToDiskConfig"), ctx);
+					this.writeError(l10n("errorDToDisk"), l10n("errorDToDiskConfig"), ctx);
 					return;
 				} catch (PersistenceDisabledException e) {
 					sendPersistenceDisabledError(ctx);
@@ -815,7 +815,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 								writeError(l10n("errorInvalidURI"), l10n("errorInvalidURIToU"), ctx);
 								return false;
 							} catch (FileNotFoundException e) {
-								writeError(l10n("errorNoFileOrCannotRead"), l10n("QueueToadlet.errorAccessDeniedFile", "file", file.toString()), ctx);
+								writeError(l10n("errorNoFileOrCannotRead"), l10n("errorAccessDeniedFile", "file", file.toString()), ctx);
 								return false;
 							} catch (TooManyFilesInsertException e) {
 								writeError(l10n("tooManyFilesInOneFolder"), l10n("tooManyFilesInOneFolder"), ctx);
