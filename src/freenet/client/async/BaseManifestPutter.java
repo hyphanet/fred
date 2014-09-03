@@ -631,7 +631,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		
 		@Override
 		public void notifyClients(ClientContext context) {
-		    // Ignore.
+		    BaseManifestPutter.this.notifyClients(context);
 		}
 
 		@Override
