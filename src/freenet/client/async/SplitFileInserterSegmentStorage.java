@@ -547,11 +547,13 @@ public class SplitFileInserterSegmentStorage {
     /** Called when a block insert succeeds */
     public void onInsertedBlock(int blockNo, ClientCHK key) {
         try {
+            if(parent.hasFinished()) return;
             this.setKey(blockNo, key);
             if(blockChooser.onSuccess(blockNo))
                 parent.callback.onInsertedBlock();
             lazyWriteMetadata();
         } catch (IOException e) {
+            if(parent.hasFinished()) return; // Race condition possible as this is a callback
             parent.failOnDiskError(e);
         }
     }
@@ -565,6 +567,7 @@ public class SplitFileInserterSegmentStorage {
     }
     
     public void onFailure(int blockNo, InsertException e) {
+        if(parent.hasFinished()) return; // Race condition possible as this is a callback
         parent.addFailure(e);
         if(e.isFatal()) {
             parent.failFatalErrorInBlock();
@@ -578,6 +581,7 @@ public class SplitFileInserterSegmentStorage {
                 } catch (MissingKeyException e1) {
                     Logger.error(this, "RNF but no key on block "+blockNo+" on "+this);
                 } catch (IOException e1) {
+                    if(parent.hasFinished()) return; // Race condition possible as this is a callback
                     parent.failOnDiskError(e1);
                     return;
                 }

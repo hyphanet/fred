@@ -77,8 +77,10 @@ public class SplitFileInserterSender extends SendableInsert {
         BlockInsert block = (BlockInsert) token;
         // Should already be set. This is a sanity check.
         try {
+            if(storage.hasFinished()) return;
             block.segment.setKey(block.blockNumber, (ClientCHK) key);
         } catch (IOException e) {
+            if(storage.hasFinished()) return; // Race condition possible as this is a callback
             storage.failOnDiskError(e);
         }
     }
