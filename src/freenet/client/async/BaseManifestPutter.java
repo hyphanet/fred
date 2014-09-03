@@ -1488,6 +1488,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
+			numberOfFiles++;
+			if(element.data != null)
+			    totalSize += element.data.size();
 		}
 
 		@Override
@@ -1508,6 +1511,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
+			numberOfFiles++;
+			totalSize += data.size();
 		}
 
 		/** FIXME what is going on here? Why do we need to add a JokerPutHandler, when a lot of code just
@@ -1523,6 +1528,9 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
+			numberOfFiles++;
+			if(element.data != null)
+			    totalSize += element.data.size();
 		}
 	}
 	

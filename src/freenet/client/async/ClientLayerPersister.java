@@ -619,7 +619,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             oos.close();
             fos = null;
-            System.out.println("Saved "+requests.length+" requests to "+writeToFilename);
+            // FIXME downgrade logging further
+            Logger.error(this, "Saved "+requests.length+" requests to "+writeToFilename);
             persistentTempFactory.finishDelayedFree(buckets, rafs);
             return true;
         } catch (IOException e) {
