@@ -368,7 +368,7 @@ public class NodeClientCore implements Persistable {
                     @Override
                     public void set(Integer val) throws InvalidConfigValueException,
                             NodeNeedRestartException {
-                        if(val < 1) throw new InvalidConfigValueException("memoryLimitedJobThreadLimit cannot be negative");
+                        if(val < 1) throw new InvalidConfigValueException(l10n("memoryLimitedJobThreadLimitMustBe1Plus"));
                         memoryLimitedJobRunner.setMaxThreads(val);
                     }
 		    
@@ -390,7 +390,7 @@ public class NodeClientCore implements Persistable {
                     @Override
                     public void set(Long val) throws InvalidConfigValueException,
                             NodeNeedRestartException {
-                        if(val < FECCodec.MIN_MEMORY_ALLOCATION) throw new InvalidConfigValueException("memoryLimitedJobMemoryLimit must be at least "+FECCodec.MIN_MEMORY_ALLOCATION);
+                        if(val < FECCodec.MIN_MEMORY_ALLOCATION) throw new InvalidConfigValueException(l10n("memoryLimitedJobMemoryLimitMustBeAtLeast", "min", SizeUtil.formatSize(FECCodec.MIN_MEMORY_ALLOCATION)));
                         memoryLimitedJobRunner.setCapacity(val);
                     }
 		    
@@ -676,6 +676,10 @@ public class NodeClientCore implements Persistable {
     private static String l10n(String key) {
 		return NodeL10n.getBase().getString("NodeClientCore." + key);
 	}
+
+    private static String l10n(String key, String pattern, String value) {
+        return NodeL10n.getBase().getString("NodeClientCore." + key, pattern, value);
+    }
 
 	public boolean isDownloadDisabled() {
 		return downloadDisabled;
