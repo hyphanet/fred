@@ -457,9 +457,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             if(!FileUtil.renameTo(tempFile, completionFile))
                 throw new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to rename from temp file "+tempFile);
             
-            // FIXME Hack only necessary because FileBucket tracks its own length.
-            ((FileBucket)returnBucket).recheckLength();
-            
             // Success!
             
             synchronized(this) {

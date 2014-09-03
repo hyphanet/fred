@@ -35,9 +35,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
         });
     }
 
-	// JVM caches File.size() and there is no way to flush the cache, so we
-	// need to track it ourselves. FIXME this hack is out of date, get rid?
-	protected transient long length;
 	protected transient long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
@@ -59,7 +56,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	 */
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
-		this.length = file.length();
 		maybeSetDeleteOnExit(deleteOnExit, file);
         assert(!(createFileOnly() && tempFileAlreadyExists())); // Mutually incompatible!
 	}
@@ -160,10 +156,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 		return f;
 	}
 	
-	protected synchronized void resetLength() {
-		length = 0;
-	}
-
 	/**
 	 * Internal OutputStream impl.
 	 * If createFileOnly is set, we won't overwrite an existing file, and we write to a temp file
@@ -185,7 +177,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			if(logMINOR)
 				Logger.minor(FileBucketOutputStream.class, "Writing to "+tempfile+" for "+getFile()+" : "+this);
 			this.tempfile = tempfile;
-			resetLength();
 			this.restartCount = restartCount;
 			closed = false;
 		}
@@ -207,7 +198,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
-				length += b.length;
 			}
 		}
 
@@ -216,7 +206,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b, off, len);
-				length += len;
 			}
 		}
 
@@ -225,7 +214,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
-				length++;
 			}
 		}
 		
@@ -319,7 +307,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 
 	@Override
 	public synchronized long size() {
-		return length;
+	    return getFile().length();
 	}
 
 	/**
@@ -420,6 +408,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	}
 
 	public synchronized Bucket[] split(int splitSize) {
+	    long length = size();
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
@@ -501,7 +490,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 
 	@Override
 	public void onResume(ClientContext context) throws ResumeFailedException {
-	    length = getFile().length();
+	    // Do nothing.
 	}
 	
 	public static final int MAGIC = 0xc4b7533d;
@@ -523,20 +512,13 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
         freed = dis.readBoolean();
     }
     
-    /** Call when doing something on disk independantly of the Bucket. 
-     * FIXME remove when we remove BaseFileBucket.length. */
-    public void recheckLength() {
-        synchronized(this) {
-            length = getFile().length();
-        }
-    }
-    
     @Override
     public LockableRandomAccessThing toRandomAccessThing() throws IOException {
         if(freed) throw new IOException("Already freed");
-        if(length == 0) throw new IOException("Must not be empty");
+        long size = size();
+        if(size == 0) throw new IOException("Must not be empty");
         freed = true;
-        return new PooledRandomAccessFileWrapper(getFile(), isReadOnly(), length, null, 
+        return new PooledRandomAccessFileWrapper(getFile(), isReadOnly(), size, null, 
                 getPersistentTempID(), deleteOnFree());
     }
     
