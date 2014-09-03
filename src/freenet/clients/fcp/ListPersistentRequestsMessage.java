@@ -30,11 +30,11 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	
 	public static abstract class ListJob implements PersistentJob {
 
-		final FCPClient client;
+		final PersistentRequestClient client;
 		final FCPConnectionOutputHandler outputHandler;
 		boolean sentRestartJobs;
 		
-		ListJob(FCPClient client, FCPConnectionOutputHandler outputHandler) {
+		ListJob(PersistentRequestClient client, FCPConnectionOutputHandler outputHandler) {
 			this.client = client;
 			this.outputHandler = outputHandler;
 		}
@@ -87,7 +87,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
 		final ClientContext context;
 		
-		TransientListJob(FCPClient client, FCPConnectionOutputHandler handler, ClientContext context) {
+		TransientListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context) {
 			super(client, handler);
 			this.context = context;
 		}
@@ -108,7 +108,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		final ClientContext context;
 		
-		PersistentListJob(FCPClient client, FCPConnectionOutputHandler handler, ClientContext context) {
+		PersistentListJob(PersistentRequestClient client, FCPConnectionOutputHandler handler, ClientContext context) {
 			super(client, handler);
 			this.context = context;
 		}
@@ -133,7 +133,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		
-		FCPClient rebootClient = handler.getRebootClient();
+		PersistentRequestClient rebootClient = handler.getRebootClient();
 		
 		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext) {
 
@@ -141,7 +141,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			void complete(ClientContext context) {
 				
 				if(handler.getRebootClient().watchGlobal) {
-					FCPClient globalRebootClient = handler.server.globalRebootClient;
+					PersistentRequestClient globalRebootClient = handler.server.globalRebootClient;
 					
 					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context) {
 
@@ -164,13 +164,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
                         	@Override
                         	public boolean run(ClientContext context) {
-                        		FCPClient foreverClient = handler.getForeverClient();
+                        		PersistentRequestClient foreverClient = handler.getForeverClient();
                         		PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
 
                         			@Override
                         			void complete(ClientContext context) {
                         				if(handler.getRebootClient().watchGlobal) {
-                        					FCPClient globalForeverClient = handler.server.globalForeverClient;
+                        					PersistentRequestClient globalForeverClient = handler.server.globalForeverClient;
                         					PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context) {
 
                         						@Override

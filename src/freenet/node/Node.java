@@ -2775,7 +2775,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * This is unacceptable, hence btree freespace. */
 		dbConfig.freespace().useBTreeSystem();
 		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
-		dbConfig.objectClass(freenet.clients.fcp.FCPClient.class).objectField("name").indexed(true);
+		dbConfig.objectClass(freenet.clients.fcp.PersistentRequestClient.class).objectField("name").indexed(true);
 		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
 		dbConfig.objectClass(PluginStore.class).cascadeOnDelete(true);
 		/*

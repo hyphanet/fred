@@ -4,11 +4,11 @@ import freenet.node.RequestClient;
 
 public class FCPClientRequestClient implements RequestClient {
 	
-	public final FCPClient client;
+	public final PersistentRequestClient client;
 	public final boolean forever;
 	public final boolean realTimeFlag;
 	
-	public FCPClientRequestClient(FCPClient fcpClient, boolean forever2, boolean realTime) {
+	public FCPClientRequestClient(PersistentRequestClient fcpClient, boolean forever2, boolean realTime) {
 		this.client = fcpClient;
 		this.forever = forever2;
 		this.realTimeFlag = realTime;

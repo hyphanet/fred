@@ -111,7 +111,7 @@ public class ClientPut extends ClientPutBase {
 	 * @throws MetadataUnresolvedException 
 	 * @throws InsertException 
 	 */
-	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
+	public ClientPut(PersistentRequestClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			String charset, short priorityClass, short persistenceType, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
 			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {

@@ -27,9 +27,9 @@ import freenet.support.api.Bucket;
  * Identified by its Name which is sent on connection. 
  * Tracks persistent requests for either PERSISTENCE_REBOOT or PERSISTENCE_FOREVER.
  */
-public class FCPClient {
+public class PersistentRequestClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
+	public PersistentRequestClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -70,7 +70,7 @@ public class FCPClient {
 	transient boolean watchGlobal;
 	transient int watchGlobalVerbosityMask;
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
-	private transient LinkedList<FCPClient> clientsWatching;
+	private transient LinkedList<PersistentRequestClient> clientsWatching;
 	private final Object clientsWatchingLock = new Object();
 	private RequestClient lowLevelClient;
 	private RequestClient lowLevelClientRT;
@@ -373,23 +373,23 @@ public class FCPClient {
 		if(conn != null) {
 			conn.outputHandler.queue(msg);
 		}
-		FCPClient[] clients;
+		PersistentRequestClient[] clients;
 		if(isGlobalQueue) {
 			synchronized(clientsWatchingLock) {
 				if(clientsWatching != null)
-				clients = clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
+				clients = clientsWatching.toArray(new PersistentRequestClient[clientsWatching.size()]);
 				else
 					clients = null;
 			}
 			if(clients != null)
-			for(FCPClient client: clients) {
+			for(PersistentRequestClient client: clients) {
 				if(client.persistenceType != persistenceType) continue;
 				client.queueClientRequestMessage(msg, verbosityLevel, true);
 			}
 		}
 	}
 	
-	private void unwatch(FCPClient client) {
+	private void unwatch(PersistentRequestClient client) {
 		if(!isGlobalQueue) return;
 		synchronized(clientsWatchingLock) {
 			if(clientsWatching != null)
@@ -397,11 +397,11 @@ public class FCPClient {
 		}
 	}
 
-	private void watch(FCPClient client) {
+	private void watch(PersistentRequestClient client) {
 		if(!isGlobalQueue) return;
 		synchronized(clientsWatchingLock) {
 			if(clientsWatching == null)
-				clientsWatching = new LinkedList<FCPClient>();
+				clientsWatching = new LinkedList<PersistentRequestClient>();
 			clientsWatching.add(client);
 		}
 	}

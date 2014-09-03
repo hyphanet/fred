@@ -44,7 +44,7 @@ public abstract class ClientRequest implements Serializable {
     /** If the request isn't on the global queue, what is the client's name? */
     protected final String clientName;
 	/** Client */
-	protected transient FCPClient client;
+	protected transient PersistentRequestClient client;
 	/** Priority class */
 	protected short priorityClass;
 	/** Is the request scheduled as "real-time" (as opposed to bulk)? */
@@ -85,7 +85,7 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global) {
+			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -431,7 +431,7 @@ public abstract class ClientRequest implements Serializable {
 		return client.isGlobalQueue;
 	}
 
-	public FCPClient getClient(){
+	public PersistentRequestClient getClient(){
 		return client;
 	}
 
@@ -506,7 +506,7 @@ public abstract class ClientRequest implements Serializable {
      * purpose of this method is to give us an opportunity to connect to the various (transient) 
      * system utilities we get from ClientContext, e.g. bucket factories, the FCP persistent root 
      * etc. The base class implementation in ClientRequest will register the request with an 
-     * FCPClient via the new FCPPersistentRoot.
+     * PersistentRequestClient via the new FCPPersistentRoot.
      * @param context Contains all the important system utilities.
      * @throws ResumeFailedException 
      */

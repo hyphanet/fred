@@ -64,9 +64,9 @@ public class FCPServer implements Runnable, DownloadCache {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-	final WeakHashMap<String, FCPClient> rebootClientsByName;
-	final FCPClient globalRebootClient;
-	FCPClient globalForeverClient;
+	final WeakHashMap<String, PersistentRequestClient> rebootClientsByName;
+	final PersistentRequestClient globalRebootClient;
+	PersistentRequestClient globalForeverClient;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
 	private boolean assumeDownloadDDAIsAllowed;
@@ -86,9 +86,9 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.assumeUploadDDAIsAllowed = assumeDDAUploadAllowed;
 		this.neverDropAMessage = neverDropAMessage;
 		this.maxMessageQueueLength = maxMessageQueueLength;
-		rebootClientsByName = new WeakHashMap<String, FCPClient>();
+		rebootClientsByName = new WeakHashMap<String, PersistentRequestClient>();
 
-		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
+		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
 		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -453,13 +453,13 @@ public class FCPServer implements Runnable, DownloadCache {
 		return NodeL10n.getBase().getString("FcpServer."+key, pattern, value);
 	}
 
-	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
-		FCPClient oldClient;
+	public PersistentRequestClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+		PersistentRequestClient oldClient;
 		synchronized(this) {
 			oldClient = rebootClientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null);
+				PersistentRequestClient client = new PersistentRequestClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null);
 				rebootClientsByName.put(name, client);
 				return client;
 			} else {
@@ -481,15 +481,15 @@ public class FCPServer implements Runnable, DownloadCache {
 		}
 	}
 
-	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+	public PersistentRequestClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		return persistentRoot.registerForeverClient(name, handler);
 	}
 
-    public FCPClient getForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+    public PersistentRequestClient getForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
         return persistentRoot.getForeverClient(name, handler);
     }
 
-	public void unregisterClient(FCPClient client) {
+	public void unregisterClient(PersistentRequestClient client) {
 		if(client.persistenceType == ClientRequest.PERSIST_REBOOT) {
 		synchronized(this) {
 			String name = client.name;
@@ -726,7 +726,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			returnFilename = makeReturnFilename(fetchURI, expectedMimeType, downloadsDir);
 		}
-//		public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
+//		public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 //				int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 //				short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
@@ -805,7 +805,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 *
 	 * @return The global FCP client
 	 */
-	public FCPClient getGlobalForeverClient() {
+	public PersistentRequestClient getGlobalForeverClient() {
 		return globalForeverClient;
 	}
 

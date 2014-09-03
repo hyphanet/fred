@@ -67,8 +67,8 @@ public class FCPConnectionHandler implements Closeable {
 	private boolean inputClosed;
 	private boolean outputClosed;
 	private String clientName;
-	private FCPClient rebootClient;
-	private FCPClient foreverClient;
+	private PersistentRequestClient rebootClient;
+	private PersistentRequestClient foreverClient;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;
@@ -232,7 +232,7 @@ public class FCPConnectionHandler implements Closeable {
 		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
-		FCPClient client = server.getForeverClient(name, server.core, this);
+		PersistentRequestClient client = server.getForeverClient(name, server.core, this);
 		if(client != null) {
 		    synchronized(this) {
 		        foreverClient = client;
@@ -241,11 +241,11 @@ public class FCPConnectionHandler implements Closeable {
 		}
 	}
 	
-	protected FCPClient createForeverClient(String name) {
+	protected PersistentRequestClient createForeverClient(String name) {
 		synchronized(FCPConnectionHandler.this) {
 			if(foreverClient != null) return foreverClient;
 		}
-		FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this);
+		PersistentRequestClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this);
 		synchronized(FCPConnectionHandler.this) {
 			foreverClient = client;
 			FCPConnectionHandler.this.notifyAll();
@@ -561,11 +561,11 @@ public class FCPConnectionHandler implements Closeable {
 		}
 	}
 	
-	public FCPClient getRebootClient() {
+	public PersistentRequestClient getRebootClient() {
 		return rebootClient;
 	}
 
-	public FCPClient getForeverClient() {
+	public PersistentRequestClient getForeverClient() {
 		synchronized(this) {
 			if(foreverClient == null) {
 				foreverClient = createForeverClient(clientName);
@@ -708,7 +708,7 @@ public class FCPConnectionHandler implements Closeable {
 	
 	/**
 	 * Delete the files we have created using DDATest
-	 * called by FCPClient.onDisconnect(handler)
+	 * called by PersistentRequestClient.onDisconnect(handler)
 	 */
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
@@ -747,7 +747,7 @@ public class FCPConnectionHandler implements Closeable {
 	}
 	
 	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
-		FCPClient client =
+		PersistentRequestClient client =
 			global ? server.globalRebootClient :
 			getRebootClient();
 		ClientRequest req = client.getRequest(identifier);
@@ -758,7 +758,7 @@ public class FCPConnectionHandler implements Closeable {
 	}
 	
 	ClientRequest removePersistentForeverRequest(boolean global, String identifier) throws MessageInvalidException {
-		FCPClient client =
+		PersistentRequestClient client =
 			global ? server.globalForeverClient :
 			getForeverClient();
 		ClientRequest req = client.getRequest(identifier);

@@ -1504,7 +1504,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 
 		if (SimpleToadletServer.isPanicButtonToBeShown) {
-		    // There may be persistent downloads etc under other FCPClient's, so still show it.
+		    // There may be persistent downloads etc under other PersistentRequestClient's, so still show it.
 			contentNode.addChild(createPanicBox(pageMaker, ctx));
 		}
 

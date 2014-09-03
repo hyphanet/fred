@@ -123,7 +123,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * @throws NotAllowedException
 	 * @throws IOException
 	 */
-	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
+	public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
 			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server) throws IdentifierCollisionException, NotAllowedException, IOException {

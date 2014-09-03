@@ -17,7 +17,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.io.NoFreeBucket;
 
-/** Per-FCPClient cache of status of requests. */
+/** Per-PersistentRequestClient cache of status of requests. */
 public class RequestStatusCache {
 	
     private static volatile boolean logMINOR;
