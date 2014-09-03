@@ -1,7 +1,5 @@
 package freenet.clients.fcp;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,7 +27,7 @@ import freenet.support.api.Bucket;
  */
 public class PersistentRequestClient {
 	
-	public PersistentRequestClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
+	public PersistentRequestClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, PersistentRequestRoot root) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -53,7 +51,7 @@ public class PersistentRequestClient {
 	}
 	
 	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
-	final FCPPersistentRoot root;
+	final PersistentRequestRoot root;
 	/** The client's Name sent in the ClientHello message */
 	final String name;
 	/** The current connection handler, if any. */

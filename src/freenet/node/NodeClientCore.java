@@ -30,7 +30,7 @@ import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.fcp.ClientRequest;
-import freenet.clients.fcp.FCPPersistentRoot;
+import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.clients.fcp.FCPServer;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -142,7 +142,7 @@ public class NodeClientCore implements Persistable {
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
-	private final FCPPersistentRoot fcpPersistentRoot;
+	private final PersistentRequestRoot fcpPersistentRoot;
 	final FCPServer fcpServer;
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
@@ -236,7 +236,7 @@ public class NodeClientCore implements Persistable {
 		this.persistentTempDir = node.setupProgramDir(installConfig, "persistentTempDir", node.userDir().file("persistent-temp").toString(),
 		  "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong", nodeConfig);
 		
-		fcpPersistentRoot = new FCPPersistentRoot();
+		fcpPersistentRoot = new PersistentRequestRoot();
 		try {
 		    this.persistentTempBucketFactory = new PersistentTempBucketFactory(persistentTempDir.dir(), 
 		            "freenet-temp-", node.random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));

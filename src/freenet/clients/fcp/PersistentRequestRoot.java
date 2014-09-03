@@ -16,7 +16,7 @@ import freenet.support.Logger.LogLevel;
  * Tracks persistent requests by PersistentRequestClient. Not persistent itself. Populated on startup.
  * @author toad
  */
-public class FCPPersistentRoot {
+public class PersistentRequestRoot {
 
     private static final long serialVersionUID = 1L;
     
@@ -33,7 +33,7 @@ public class FCPPersistentRoot {
 		});
 	}
 	
-	public FCPPersistentRoot() {
+	public PersistentRequestRoot() {
 		globalForeverClient = new PersistentRequestClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this);
 		clients = new TreeMap<String, PersistentRequestClient>();
 	}

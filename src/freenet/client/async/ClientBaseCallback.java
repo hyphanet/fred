@@ -19,7 +19,7 @@ public interface ClientBaseCallback {
 	
 	/**
 	 * Called for a persistent request when the node is restarted. Must re-register with whatever
-	 * infrastructure the request is using, e.g. FCPPersistentRoot, persistent temp buckets etc.
+	 * infrastructure the request is using, e.g. PersistentRequestRoot, persistent temp buckets etc.
 	 * @param context
 	 */
 	public void onResume(ClientContext context) throws ResumeFailedException;

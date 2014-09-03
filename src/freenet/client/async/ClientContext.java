@@ -12,7 +12,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.LinkFilterExceptionProvider;
-import freenet.clients.fcp.FCPPersistentRoot;
+import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -75,7 +75,7 @@ public class ClientContext {
 	 * I/O and we don't guarantee to serialise them. The new splitfile code does FEC decodes 
 	 * entirely in memory, which saves a lot of seeks and improves robustness. */
 	public transient final MemoryLimitedJobRunner memoryLimitedJobRunner;
-	public transient final FCPPersistentRoot persistentRoot;
+	public transient final PersistentRequestRoot persistentRoot;
 	private transient FetchContext defaultPersistentFetchContext;
 	private transient InsertContext defaultPersistentInsertContext;
 
@@ -90,7 +90,7 @@ public class ClientContext {
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom, Random fastWeakRandom, 
 			Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
-			RealCompressor rc, DatastoreChecker checker, FCPPersistentRoot persistentRoot,
+			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot,
 			LinkFilterExceptionProvider linkFilterExceptionProvider,
 			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
 		this.bootID = bootID;

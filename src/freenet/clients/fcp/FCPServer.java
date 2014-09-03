@@ -52,7 +52,7 @@ import freenet.support.io.NoFreeBucket;
  */
 public class FCPServer implements Runnable, DownloadCache {
 
-	FCPPersistentRoot persistentRoot;
+	PersistentRequestRoot persistentRoot;
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
@@ -95,7 +95,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	}
 
-	public void load(FCPPersistentRoot root) {
+	public void load(PersistentRequestRoot root) {
 		persistentRoot = root;
 		root.setRequestStatusCache(new RequestStatusCache());
 		globalForeverClient = persistentRoot.globalForeverClient;

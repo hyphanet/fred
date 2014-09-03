@@ -506,7 +506,7 @@ public abstract class ClientRequest implements Serializable {
      * purpose of this method is to give us an opportunity to connect to the various (transient) 
      * system utilities we get from ClientContext, e.g. bucket factories, the FCP persistent root 
      * etc. The base class implementation in ClientRequest will register the request with an 
-     * PersistentRequestClient via the new FCPPersistentRoot.
+     * PersistentRequestClient via the new PersistentRequestRoot.
      * @param context Contains all the important system utilities.
      * @throws ResumeFailedException 
      */
