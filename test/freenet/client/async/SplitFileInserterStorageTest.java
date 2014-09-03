@@ -540,12 +540,16 @@ public class SplitFileInserterStorageTest extends TestCase {
     }
     
     public void testRoundTripSimple() throws FetchException, MetadataParseException, Exception {
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2);
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2-1);
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128);
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128+1);
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192);
-        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192+1);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2, CompatibilityMode.COMPAT_CURRENT);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*2-1, CompatibilityMode.COMPAT_CURRENT);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128, CompatibilityMode.COMPAT_CURRENT);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*128+1, CompatibilityMode.COMPAT_CURRENT);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192, CompatibilityMode.COMPAT_CURRENT);
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*192+1, CompatibilityMode.COMPAT_CURRENT);
+    }
+    
+    public void testRoundTripOneBlockSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+        testRoundTripSimpleRandom(CHKBlock.DATA_LENGTH*(128+1)-1, CompatibilityMode.COMPAT_1250_EXACT);
     }
     
     public void testRoundTripCrossSegment() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
@@ -594,7 +598,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         
     }
     
-    private void testRoundTripSimpleRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+    private void testRoundTripSimpleRandom(long size, CompatibilityMode cmode) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
         LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
         Bucket dataBucket = new RAFBucket(data);
@@ -602,10 +606,18 @@ public class SplitFileInserterStorageTest extends TestCase {
         MyCallback cb = new MyCallback();
         InsertContext context = baseContext.clone();
         context.earlyEncode = true;
+        context.setCompatibilityMode(cmode);
+        cmode = context.getCompatibilityMode();
         KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        boolean old = cmode.code < CompatibilityMode.COMPAT_1255.code;
+        byte cryptoAlgorithm = this.cryptoAlgorithm;
+        if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1416.ordinal()))
+            cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+        else
+            cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
         SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
                 new ClientMetadata(), false, null, smallRAFFactory, false, context, 
-                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                cryptoAlgorithm, old ? null : cryptoKey, null, hashes, smallBucketFactory, checker, 
                 r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
         storage.start();
         cb.waitForFinishedEncode();
@@ -625,10 +637,8 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
         
-        short cmode = (short) context.getCompatibilityMode().ordinal();
-        
         SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
-                new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
+                new ClientMetadata(), false, cmode.code, fctx, false, salt, URI, URI, true, new byte[0],
                 r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
                 checker, false, null, null, keys);
         
