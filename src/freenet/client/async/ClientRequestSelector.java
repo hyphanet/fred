@@ -146,7 +146,9 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
+	// LOCKING: Synchronized because we may create new priorities.
+	// Both the cooldown queue and the RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock.
+	private synchronized long removeFirstAccordingToPriorities(int fuzz, RandomSource random, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -189,19 +191,11 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		return wakeupTime;
 	}
 	
-	// LOCKING: ClientRequestScheduler locks on (this) before calling. 
-	// We prevent a number of race conditions (e.g. adding a retry count and then another 
-	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
-	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, KeyListenerTracker schedTransient, short maxPrio, boolean realTime, ClientContext context) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
-			SelectorReturn r;
-			synchronized(sched) {
-				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, now);
-			}
+			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, now);
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -375,8 +369,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					if(clientGrabber != null) {
 						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
-							// Must synchronize on scheduler to avoid nasty race conditions with cooldown.
-							synchronized(sched) {
+							// Must synchronize to avoid nasty race conditions with cooldown.
+							synchronized(this) {
 								baseRGA.remove(req, context);
 							}
 						} else {
