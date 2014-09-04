@@ -1,11 +1,13 @@
 package freenet.client.async;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.FECCodec;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
+import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Logger;
@@ -292,6 +294,14 @@ public class SplitFileInserterCrossSegmentStorage {
         dos.writeBoolean(encoded);
     }
     
+    void readStatus() throws IOException, ChecksumFailedException, StorageFormatException {
+        byte[] data = new byte[statusLength-parent.checker.checksumLength()];
+        parent.preadChecksummed(parent.crossSegmentStatusOffset(segNo), data, 0, data.length);
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+        if(dis.readInt() != segNo) throw new StorageFormatException("Bad segment number");
+        encoded = dis.readBoolean();
+    }
+
     int[] getSegmentNumbers() {
         int[] ret = new int[totalBlocks];
         for(int i=0;i<totalBlocks;i++)

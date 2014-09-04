@@ -783,6 +783,11 @@ public class SplitFileInserterStorage {
         for(SplitFileInserterSegmentStorage segment : segments) {
             segment.readStatus();
         }
+        if(crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+                segment.readStatus();
+            }
+        }
         computeStatus();
     }
     
