@@ -396,6 +396,22 @@ public class NodeClientCore implements Persistable {
 		    
 		}, true);
 		memoryLimitedJobRunner = new MemoryLimitedJobRunner(nodeConfig.getLong("memoryLimitedJobMemoryLimit"), nodeConfig.getInt("memoryLimitedJobThreadLimit"), node.executor);
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
+		    
+		    public void realRun() {
+		        System.out.println("Stopping FEC decode threads...");
+		        memoryLimitedJobRunner.shutdown();
+		    }
+		    
+		});
+		shutdownHook.addLateJob(new NativeThread("Shutdown FEC", NativeThread.HIGH_PRIORITY, true) {
+		    
+		    public void realRun() {
+		        memoryLimitedJobRunner.waitForShutdown();
+		        System.out.println("FEC decoding threads finished.");
+		    }
+		    
+		});
 		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
