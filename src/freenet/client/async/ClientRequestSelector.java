@@ -48,6 +48,8 @@ import freenet.support.TimeUtil;
  * when we choose a request to send, we start at the top and go down (and update the cooldown times
  * when backtracking back up the tree if we don't find anything).
  * 
+ * **We lock on ClientRequestSelector** when using the tree, including the cooldown times.
+ * 
  * REDFLAG LOCKING: Actually in the completion case we could find the top and then lock the whole 
  * tree, and then update the cooldowns; and/or we could avoid updating the cooldowns during request 
  * selection, e.g. by making sure that each structure always does a bottom-up update when something
