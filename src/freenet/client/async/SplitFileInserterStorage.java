@@ -780,8 +780,8 @@ public class SplitFileInserterStorage {
         dis = new DataInputStream(checker.checksumReaderWithLength(ois, new ArrayBucketFactory(), 1024*1024));
         errors = new FailureCodeTracker(true, dis);
         dis.close();
-        for(int i=0;i<segments.length;i++) {
-            segments[i].readStatus();
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            segment.readStatus();
         }
         computeStatus();
     }
