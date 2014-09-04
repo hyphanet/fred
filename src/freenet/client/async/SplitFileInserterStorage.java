@@ -1079,6 +1079,8 @@ public class SplitFileInserterStorage {
             if(status == Status.FAILED || status == Status.GENERATING_METADATA || 
                     status == Status.SUCCEEDED) return;
         }
+        for(SplitFileInserterSegmentStorage segment : segments)
+            segment.checkKeys();
         if (crossSegments != null) {
             // Cross-segment encode must complete before main encode.
             startCrossSegmentEncode();

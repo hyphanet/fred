@@ -318,6 +318,8 @@ public class SplitFileInserterSegmentStorage {
             // Ok.
             writeKey(blockNumber, key);
         }
+        // Must be called either way as we don't regenerate blocksHaveKeys on startup.
+        setHasKey(blockNumber);
     }
     
     /** Write a key for a block.
@@ -328,6 +330,11 @@ public class SplitFileInserterSegmentStorage {
     void writeKey(int blockNumber, ClientCHK key) throws IOException {
         byte[] buf = encodeKey(segNo, blockNumber, key, parent.hasSplitfileKey(), parent.checker, parent);
         parent.innerWriteSegmentKey(segNo, blockNumber, buf);
+    }
+    
+    /** Set a flag indicating that we have a key. Call parent.onHasKeys if we have all of them.
+     * Note that this structure is not persisted! */
+    private void setHasKey(int blockNumber) {
         synchronized(this) {
             if(blocksHaveKeys[blockNumber]) return;
             blocksHaveKeys[blockNumber] = true;
@@ -339,6 +346,30 @@ public class SplitFileInserterSegmentStorage {
     
     public synchronized boolean hasKeys() {
         return blocksWithKeysCounter == totalBlockCount;
+    }
+
+    /** Called on startup to check which keys we actually have. Does nothing unless the segment 
+     * claims to have been encoded already. FIXME consider calling this later on for robustness, 
+     * but we would then need to re-encode ... */
+    public void checkKeys() {
+        synchronized(this) {
+            if(!encoded) return;
+        }
+        try {
+            for(int i=0;i<totalBlockCount;i++) {
+                readKey(i);
+            }
+        } catch (IOException e) {
+            parent.failOnDiskError(e);
+            return;
+        } catch (MissingKeyException e) {
+            // Easy to recover so may as well...
+            Logger.error(this, "Missing key even though segment encoded. Recovering by re-encoding...");
+            synchronized(this) {
+                encoded = false;
+            }
+            return;
+        }
     }
 
     public int storedKeysLength() {
@@ -524,7 +555,9 @@ public class SplitFileInserterSegmentStorage {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buf));
         byte b = dis.readByte();
         if(b != 1) throw new MissingKeyException();
-        return innerReadKey(dis);
+        ClientCHK key = innerReadKey(dis);
+        setHasKey(blockNumber);
+        return key;
     }
 
     public class MissingKeyException extends Exception {
