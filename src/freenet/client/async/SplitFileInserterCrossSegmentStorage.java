@@ -206,6 +206,7 @@ public class SplitFileInserterCrossSegmentStorage {
                 encoded = true;
             }
             if(logMINOR) Logger.minor(this, "Finished encoding "+this);
+            storeStatus();
         } catch (IOException e) {
             parent.failOnDiskError(e);
         }
