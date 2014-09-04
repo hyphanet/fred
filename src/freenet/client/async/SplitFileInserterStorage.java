@@ -1088,12 +1088,31 @@ public class SplitFileInserterStorage {
         }
         for(SplitFileInserterSegmentStorage segment : segments)
             segment.checkKeys();
+        Logger.normal(this, "Starting splitfile, "+countEncodedSegments()+"/"+segments.length+" segments encoded");
+        if(crossSegments != null)
+            Logger.normal(this, "Starting splitfile, "+countEncodedCrossSegments()+"/"+crossSegments.length+" cross-segments encoded");
         if(startSegments) {
             startSegmentEncode();
         } else {
             // Cross-segment encode must complete before main encode.
             startCrossSegmentEncode();
         }
+    }
+
+    public int countEncodedSegments() {
+        int total = 0;
+        for(SplitFileInserterSegmentStorage segment : segments) {
+            if(segment.hasEncoded()) total++;
+        }
+        return total;
+    }
+
+    public int countEncodedCrossSegments() {
+        int total = 0;
+        for(SplitFileInserterCrossSegmentStorage segment : crossSegments) {
+            if(segment.isFinishedEncoding()) total++;
+        }
+        return total;
     }
 
     private void startSegmentEncode() {
