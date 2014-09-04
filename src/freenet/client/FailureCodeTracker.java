@@ -268,13 +268,15 @@ public class FailureCodeTracker implements Cloneable, Serializable {
 	private int MAGIC = 0xb605aa08;
 	private int VERSION = 1;
 	
-	/** Get the length of the fixed-size representation produce by writeFixedLengthTo(). */
+	/** Get the length of the fixed-size representation produced by writeFixedLengthTo(). */
 	public static int getFixedLength(boolean insert) {
         int upperLimit = 
             insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
         return 4 + 4 + 4 + 4 * upperLimit;
 	}
 	
+	/** Write a fixed-size representation to a DataOutputStream. This is important for e.g. 
+	 * splitfiles, where we have a fixed part of the disk file to save it to. */
 	public synchronized void writeFixedLengthTo(DataOutputStream dos) throws IOException {
 	    int upperLimit = 
 	        insert ? InsertException.UPPER_LIMIT_ERROR_CODE : FetchException.UPPER_LIMIT_ERROR_CODE;
