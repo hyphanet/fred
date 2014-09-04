@@ -563,6 +563,16 @@ public class SplitFileInserterStorageTest extends TestCase {
         testResumeCrossSegment(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    public void testEncodeAfterShutdownCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        //if(!TestProperty.EXTENSIVE) return;
+        testEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
+    }
+    
+    public void testRepeatedEncodeAfterShutdownCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        //if(!TestProperty.EXTENSIVE) return;
+        testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
+    }
+    
     static class MyKeysFetchingLocally implements KeysFetchingLocally {
         private final HashSet<Key> keys = new HashSet<Key>();
         private final HashSet<SendableRequestItemKey> inserts = new HashSet<SendableRequestItemKey>();
@@ -694,7 +704,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         DataOutputStream os = new DataOutputStream(mBucket1.getOutputStream());
         metadata.writeTo(os);
         os.close();
-        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), null, cb, r, 
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
                 memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
         // Doesn't need to start since already encoded.
         Metadata metadata2 = storage.encodeMetadata();
@@ -729,6 +739,77 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertEquals(Status.SUCCEEDED, resumed.getStatus());
     }
     
+    private void testEncodeAfterShutdownCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        Random r = new Random(12121);
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        executor.waitForIdle();
+        // Has not encoded anything.
+        for(SplitFileInserterSegmentStorage segment : storage.segments)
+            assert(!segment.isFinishedEncoding());
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
+                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+        resumed.start();
+        cb.waitForFinishedEncode();
+        cb.waitForHasKeys();
+        executor.waitForIdle();
+        resumed.encodeMetadata();
+        assertTrue(resumed.getStatus() == Status.ENCODED);
+        resumed.originalData.free();
+        resumed.getRAF().free();
+    }
+    
+    private void testRepeatedEncodeAfterShutdownCrossSegment(long size) throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        Random r = new Random(12121);
+        LockableRandomAccessThing data = generateData(r, size, bigRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        // Only enough for one segment at a time.
+        MemoryLimitedJobRunner memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, true, baseContext.clone(), 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        executor.waitForIdle();
+        // Has not encoded anything.
+        for(SplitFileInserterSegmentStorage segment : storage.segments)
+            assert(!segment.isFinishedEncoding());
+        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
+                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+        resumed.start();
+        // The memoryLimitedJobRunner will only encode one segment at a time.
+        // Wait for it to encode one segment.
+        memoryLimitedJobRunner.shutdown();
+        memoryLimitedJobRunner.waitForShutdown();
+        assertEquals(countEncodedCrossSegments(resumed), 1);
+        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+        resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
+                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+        resumed.start();
+        cb.waitForFinishedEncode();
+        cb.waitForHasKeys();
+        executor.waitForIdle();
+        resumed.encodeMetadata();
+        assertTrue(resumed.getStatus() == Status.ENCODED);
+        resumed.originalData.free();
+        resumed.getRAF().free();
+    }
+    
+    private int countEncodedCrossSegments(SplitFileInserterStorage storage) {
+        int total = 0;
+        for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments) {
+            if(segment.isFinishedEncoding()) total++;
+        }
+        return total;
+    }
+
     private void testRoundTripCrossSegmentRandom(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
         RandomSource r = new DummyRandomSource(12123);
         LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
