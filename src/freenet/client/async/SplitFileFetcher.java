@@ -378,6 +378,11 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
     }
 
     @Override
+    public void reduceCooldown(long wakeupTime) {
+        getter.reduceWakeupTime(wakeupTime, context);
+    }
+
+    @Override
     public HasKeyListener getHasKeyListener() {
         return getter;
     }

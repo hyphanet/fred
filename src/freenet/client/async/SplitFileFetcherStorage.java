@@ -1580,17 +1580,21 @@ public class SplitFileFetcherStorage {
             @Override
             public boolean run(ClientContext context) {
                 long now = System.currentTimeMillis();
+                long wakeupTime;
                 synchronized(cooldownLock) {
                     if(cooldownTime < now) return false;
+                    long oldCooldownTime = overallCooldownWakeupTime;
                     if(overallCooldownWakeupTime > now) return false; // Wait for it to wake up.
-                    long wakeupTime = Long.MAX_VALUE;
+                    wakeupTime = Long.MAX_VALUE;
                     for(SplitFileFetcherSegmentStorage segment : segments) {
                         long segmentTime = segment.getOverallCooldownTime();
                         if(segmentTime < now) return false;
                         wakeupTime = Math.min(segmentTime, wakeupTime);
                     }
                     overallCooldownWakeupTime = wakeupTime;
+                    if(overallCooldownWakeupTime < oldCooldownTime) return false;
                 }
+                fetcher.reduceCooldown(wakeupTime);
                 return false;
             }
             

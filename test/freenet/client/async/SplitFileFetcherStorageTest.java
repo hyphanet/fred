@@ -533,6 +533,11 @@ public class SplitFileFetcherStorageTest extends TestCase {
         public void clearCooldown() {
             // Ignore.
         }
+        
+        @Override
+        public void reduceCooldown(long wakeupTime) {
+            // Ignore.
+        }
 
         @Override
         public HasKeyListener getHasKeyListener() {

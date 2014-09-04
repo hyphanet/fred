@@ -1110,7 +1110,12 @@ public class SplitFileInserterStorageTest extends TestCase {
         public void clearCooldown() {
             // Ignore.
         }
-
+        
+        @Override
+        public void reduceCooldown(long wakeupTime) {
+            // Ignore.
+        }
+        
         @Override
         public HasKeyListener getHasKeyListener() {
             return null;
@@ -1120,7 +1125,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         public KeySalter getSalter() {
             return salt;
         }
-        
+
     }
 
     public void testCancel() throws IOException, InsertException, MissingKeyException {

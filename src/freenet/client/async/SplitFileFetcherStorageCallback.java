@@ -93,6 +93,9 @@ public interface SplitFileFetcherStorageCallback {
     /** Called when the fetcher may have exited cooldown early. */
     void clearCooldown();
 
+    /** Called when the wakeup time reduces but it is still not fetchable. */
+    void reduceCooldown(long wakeupTime);
+
     /** Can be null. Provided for KeyListeners. */
     HasKeyListener getHasKeyListener();
 
