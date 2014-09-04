@@ -53,8 +53,8 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
     }
     
     @Override
-    public void reduceWakeupTime(final long wakeupTime, final ClientContext context) {
-        super.reduceWakeupTime(wakeupTime, context);
+    public boolean reduceWakeupTime(final long wakeupTime, final ClientContext context) {
+        if(!super.reduceWakeupTime(wakeupTime, context)) return false;
         final Object c;
         synchronized(root) {
             c = object;
@@ -69,6 +69,7 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
                 
             });
         }
+        return true;
     }
     
 }

@@ -467,7 +467,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
     }
     
     @Override
-    public void reduceWakeupTime(long wakeupTime, ClientContext context) {
+    public boolean reduceWakeupTime(long wakeupTime, ClientContext context) {
         if(logMINOR) Logger.minor(this, "reduceCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
         boolean reachedRoot = false;
         synchronized(root) {
@@ -475,10 +475,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
                 this.wakeupTime = wakeupTime;
                 if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
                 else reachedRoot = true; // Even if it reduces it we need to wake it up.
-            }
+            } else return false;
         }
         if(reachedRoot)
             root.wakeUp(context);
+        return true;
     }
     
     @Override

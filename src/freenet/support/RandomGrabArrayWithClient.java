@@ -47,8 +47,8 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
     }
     
     @Override
-    public void reduceWakeupTime(final long wakeupTime, final ClientContext context) {
-        super.reduceWakeupTime(wakeupTime, context);
+    public boolean reduceWakeupTime(final long wakeupTime, final ClientContext context) {
+        if(!super.reduceWakeupTime(wakeupTime, context)) return false;
         final Object c;
         synchronized(root) {
             c = client;
@@ -63,5 +63,6 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
                 
             });
         }
+        return true;
     }
 }

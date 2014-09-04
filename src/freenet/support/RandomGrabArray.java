@@ -491,13 +491,15 @@ public class RandomGrabArray implements RemoveRandom, RequestSelectionTreeNode {
     }
 
     @Override
-    public void reduceWakeupTime(long wakeupTime, ClientContext context) {
+    public boolean reduceWakeupTime(long wakeupTime, ClientContext context) {
         if(logMINOR) Logger.minor(this, "reduceCooldownTime("+(wakeupTime-System.currentTimeMillis())+") on "+this);
         synchronized(root) {
             if(this.wakeupTime > wakeupTime) {
                 this.wakeupTime = wakeupTime;
                 if(parent != null) parent.reduceWakeupTime(wakeupTime, context);
+                return true;
             }
+            return false;
         }
     }
 

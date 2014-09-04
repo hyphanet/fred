@@ -16,8 +16,9 @@ public interface RequestSelectionTreeNode {
     public long getWakeupTime(ClientContext context, long now);
     
     /** If the current cooldown time is larger than the parameter, reduce it and recurse up the
-     * tree. If we reach the root and wake it up, then wake up the scheduler. */
-    public void reduceWakeupTime(long wakeupTime, ClientContext context);
+     * tree. If we reach the root and wake it up, then wake up the scheduler. Returns true if 
+     * anything changed. */
+    public boolean reduceWakeupTime(long wakeupTime, ClientContext context);
 
     /** When a request becomes fetchable, set all the wakeup times above it to 0. Will recurse up 
      * the tree. */

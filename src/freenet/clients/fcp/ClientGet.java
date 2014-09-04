@@ -1171,7 +1171,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             foundDataMimeType = null;
         compatMode = new CompatibilityAnalyser(dis);
         HashResult[] hashes = HashResult.readHashes(dis);
-        if(hashes.length == 0) {
+        if(hashes == null || hashes.length == 0) {
             expectedHashes = null;
         } else {
             expectedHashes = new ExpectedHashes(hashes, identifier, global);
