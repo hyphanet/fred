@@ -1072,9 +1072,12 @@ public class SplitFileInserterStorage {
 
     public void start() {
         synchronized (this) {
-            if (status != Status.NOT_STARTED)
-                return;
-            status = Status.STARTED;
+            if(status == Status.NOT_STARTED) {
+                status = Status.STARTED;
+            }
+            if(status == Status.ENCODED) return;
+            if(status == Status.FAILED || status == Status.GENERATING_METADATA || 
+                    status == Status.SUCCEEDED) return;
         }
         if (crossSegments != null) {
             // Cross-segment encode must complete before main encode.
