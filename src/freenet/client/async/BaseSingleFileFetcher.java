@@ -324,7 +324,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(wakeTime == 0)
 			return 0;
-		reduceWakeupTime(wakeTime, context);
 		return wakeTime;
 	}
 	
