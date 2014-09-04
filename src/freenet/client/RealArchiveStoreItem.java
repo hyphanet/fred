@@ -39,8 +39,8 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		mb = new MultiReaderBucket(bucket);
 		this.bucket = mb.getReaderBucket();
 		if(this.bucket == null) throw new NullPointerException();
-		bucket.setReadOnly();
-		spaceUsed = bucket.size();
+		this.bucket.setReadOnly();
+		spaceUsed = this.bucket.size();
 	}
 
 	/**
