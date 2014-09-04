@@ -568,9 +568,10 @@ public class SplitFileInserterStorageTest extends TestCase {
         testEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
     }
     
-    public void testRepeatedEncodeAfterShutdownCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+    public void testRepeatedEncodeAfterShutdown() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
+        testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*5); // Not cross-segment.
         //if(!TestProperty.EXTENSIVE) return;
-        testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
+        testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21); // Cross-segment.
     }
     
     static class MyKeysFetchingLocally implements KeysFetchingLocally {
@@ -781,18 +782,41 @@ public class SplitFileInserterStorageTest extends TestCase {
         // Has not encoded anything.
         for(SplitFileInserterSegmentStorage segment : storage.segments)
             assert(!segment.isFinishedEncoding());
-        SplitFileInserterStorage resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
-                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
-        resumed.start();
-        // The memoryLimitedJobRunner will only encode one segment at a time.
-        // Wait for it to encode one segment.
-        memoryLimitedJobRunner.shutdown();
-        memoryLimitedJobRunner.waitForShutdown();
-        assertEquals(countEncodedCrossSegments(resumed), 1);
-        memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
-        resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
-                memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
-        resumed.start();
+        SplitFileInserterStorage resumed = null;
+        if(storage.crossSegments != null) {
+            for(int i=0;i<storage.crossSegments.length;i++) {
+                memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+                resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
+                        memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+                assertEquals(i, countEncodedCrossSegments(resumed));
+                resumed.start();
+                // The memoryLimitedJobRunner will only encode one segment at a time.
+                // Wait for it to encode one segment.
+                memoryLimitedJobRunner.shutdown();
+                memoryLimitedJobRunner.waitForShutdown();
+                executor.waitForIdle();
+                assertEquals(i+1, countEncodedCrossSegments(resumed));
+            }
+        }
+        
+        for(int i=0;i<storage.segments.length;i++) {
+            memoryLimitedJobRunner = new MemoryLimitedJobRunner(9*1024*1024L, 1, executor);
+            resumed = new SplitFileInserterStorage(storage.getRAF(), data, cb, r, 
+                    memoryLimitedJobRunner, jobRunner, ticker, keys, fg, persistentFileTracker);
+            assertEquals(i, countEncodedSegments(resumed));
+            if(storage.crossSegments != null) {
+                assertEquals(resumed.crossSegments.length, countEncodedCrossSegments(resumed));
+                assertTrue(resumed.getStatus() == Status.ENCODED_CROSS_SEGMENTS);
+            }
+            resumed.start();
+            // The memoryLimitedJobRunner will only encode one segment at a time.
+            // Wait for it to encode one segment.
+            memoryLimitedJobRunner.shutdown();
+            memoryLimitedJobRunner.waitForShutdown();
+            executor.waitForIdle();
+            assertEquals(i+1, countEncodedSegments(resumed));
+        }
+        
         cb.waitForFinishedEncode();
         cb.waitForHasKeys();
         executor.waitForIdle();
@@ -802,6 +826,14 @@ public class SplitFileInserterStorageTest extends TestCase {
         resumed.getRAF().free();
     }
     
+    private int countEncodedSegments(SplitFileInserterStorage storage) {
+        int total = 0;
+        for(SplitFileInserterSegmentStorage segment : storage.segments) {
+            if(segment.isFinishedEncoding()) total++;
+        }
+        return total;
+    }
+
     private int countEncodedCrossSegments(SplitFileInserterStorage storage) {
         int total = 0;
         for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments) {
