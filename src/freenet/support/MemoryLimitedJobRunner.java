@@ -66,7 +66,7 @@ public class MemoryLimitedJobRunner {
         }
     }
     
-    private void startJob(final MemoryLimitedJob job) {
+    private synchronized void startJob(final MemoryLimitedJob job) {
         counter += job.initialAllocation;
         runningThreads++;
         executor.execute(new PrioRunnable() {
