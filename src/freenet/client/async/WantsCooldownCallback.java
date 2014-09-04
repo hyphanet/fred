@@ -5,9 +5,9 @@ package freenet.client.async;
 public interface WantsCooldownCallback {
 
 	/** The request has gone into cooldown for some period. */
-	void enterCooldown(long wakeupTime, ClientContext context);
+	void enterCooldown(ClientGetState state, long wakeupTime, ClientContext context);
 
 	/** The request has unexpectedly left cooldown. */
-	void clearCooldown();
+	void clearCooldown(ClientGetState state);
 
 }

@@ -1556,6 +1556,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public long getWakeupTime(ClientContext context, long now) {
 			return 0;
 		}
+
+        @Override
+        protected ClientGetState getClientGetState() {
+            return USKFetcher.this;
+        }
 		
 	};
 

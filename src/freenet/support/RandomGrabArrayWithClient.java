@@ -1,8 +1,6 @@
 package freenet.support;
 
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestSelector;
-import freenet.client.async.WantsCooldownCallback;
 
 public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithObject {
 
@@ -27,42 +25,4 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
 	    }
 	}
 	
-    @Override
-    public void clearWakeupTime(ClientContext context) {
-        super.clearWakeupTime(context);
-        final Object c;
-        synchronized(root) {
-            c = client;
-        }
-        if(c instanceof WantsCooldownCallback) {
-            context.mainExecutor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    ((WantsCooldownCallback)c).clearCooldown();
-                }
-                
-            });
-        }
-    }
-    
-    @Override
-    public boolean reduceWakeupTime(final long wakeupTime, final ClientContext context) {
-        if(!super.reduceWakeupTime(wakeupTime, context)) return false;
-        final Object c;
-        synchronized(root) {
-            c = client;
-        }
-        if(c instanceof WantsCooldownCallback) {
-            context.mainExecutor.execute(new Runnable() {
-                
-                @Override
-                public void run() {
-                    ((WantsCooldownCallback)c).enterCooldown(wakeupTime, context);
-                }
-                
-            });
-        }
-        return true;
-    }
 }

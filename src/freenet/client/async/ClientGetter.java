@@ -883,7 +883,10 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	}
 
 	@Override
-	public void enterCooldown(long wakeupTime, ClientContext context) {
+	public void enterCooldown(ClientGetState state, long wakeupTime, ClientContext context) {
+	    synchronized(this) {
+	        if(state != currentState) return;
+	    }
 		if(wakeupTime == Long.MAX_VALUE) {
 			// Ignore.
 			// FIXME implement when implement clearCooldown().
@@ -894,7 +897,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	}
 
 	@Override
-	public void clearCooldown() {
+	public void clearCooldown(ClientGetState state) {
 		// Ignore for now. FIXME.
 	}
 

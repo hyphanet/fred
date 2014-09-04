@@ -175,4 +175,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
         // Do nothing.
     }
 
+    @Override
+    protected ClientGetState getClientGetState() {
+        return this;
+    }
+    
 }

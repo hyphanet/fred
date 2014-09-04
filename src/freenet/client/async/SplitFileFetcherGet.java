@@ -174,4 +174,9 @@ public class SplitFileFetcherGet extends SendableGet implements HasKeyListener {
         return storage.hasCheckedStore();
     }
 
+    @Override
+    protected ClientGetState getClientGetState() {
+        return parent;
+    }
+    
 }

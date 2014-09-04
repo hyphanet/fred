@@ -7,9 +7,12 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetState;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.PersistentJob;
 import freenet.client.async.SimpleSingleFileFetcher;
+import freenet.client.async.WantsCooldownCallback;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -128,5 +131,40 @@ public abstract class SendableGet extends BaseSendableGet {
 	        return new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Unknown error code: "+e.code);
 	    }
 	}
+	
+    @Override
+    public boolean reduceWakeupTime(final long wakeupTime, ClientContext context) {
+        if(!super.reduceWakeupTime(wakeupTime, context)) return false;
+        if(this.parent instanceof WantsCooldownCallback) {
+            context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+                @Override
+                public boolean run(ClientContext context) {
+                    ((WantsCooldownCallback)parent).enterCooldown(getClientGetState(), wakeupTime, context);
+                    return false;
+                }
+                
+            });
+        }
+        return true;
+    }
+    
+    @Override
+    public void clearWakeupTime(ClientContext context) {
+        super.clearWakeupTime(context);
+        if(this.parent instanceof WantsCooldownCallback) {
+            context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
+
+                @Override
+                public boolean run(ClientContext context) {
+                    ((WantsCooldownCallback)parent).clearCooldown(getClientGetState());
+                    return false;
+                }
+                
+            });
+        }
+    }
+
+    protected abstract ClientGetState getClientGetState();
 
 }

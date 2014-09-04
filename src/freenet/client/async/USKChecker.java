@@ -131,4 +131,9 @@ class USKChecker extends BaseSingleFileFetcher {
 		onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, context);
 	}
 
+    @Override
+    protected ClientGetState getClientGetState() {
+        return null;
+    }
+
 }
