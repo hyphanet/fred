@@ -134,7 +134,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	
     @Override
     public boolean reduceWakeupTime(final long wakeupTime, ClientContext context) {
-        if(!super.reduceWakeupTime(wakeupTime, context)) return false;
+        boolean ret = super.reduceWakeupTime(wakeupTime, context);
         if(this.parent instanceof WantsCooldownCallback) {
             context.getJobRunner(persistent).queueNormalOrDrop(new PersistentJob() {
 
@@ -146,7 +146,7 @@ public abstract class SendableGet extends BaseSendableGet {
                 
             });
         }
-        return true;
+        return ret;
     }
     
     @Override
