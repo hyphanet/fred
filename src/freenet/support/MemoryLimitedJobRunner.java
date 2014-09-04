@@ -42,12 +42,12 @@ public class MemoryLimitedJobRunner {
         }
     }
 
-    synchronized void deallocate(long size) {
+    synchronized void deallocate(long size, boolean finishedThread) {
         if(size == 0) return; // Can't do anything, legal no-op.
         if(size < 0) throw new IllegalArgumentException();
         assert(size <= counter);
         counter -= size;
-        if(counter == 0) {
+        if(finishedThread) {
             runningThreads--;
             if(shutdown) notifyAll();
         }
