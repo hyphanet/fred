@@ -19,6 +19,7 @@ public class MemoryLimitedJobRunner {
     private final Executor executor;
     private int runningThreads;
     private int maxThreads;
+    private boolean shutdown;
     
     public MemoryLimitedJobRunner(long capacity, int maxThreads, Executor executor) {
         this.capacity = capacity;
@@ -29,8 +30,10 @@ public class MemoryLimitedJobRunner {
         
     }
     
-    /** Run the job if the counter is below some threshold, otherwise queue it. */
+    /** Run the job if the counter is below some threshold, otherwise queue it. Will ignore if 
+     * shutting down. */
     public synchronized void queueJob(final MemoryLimitedJob job) {
+        if(shutdown) return;
         if(job.initialAllocation > capacity) throw new IllegalArgumentException("Job size "+job.initialAllocation+" > capacity "+capacity);
         if(counter + job.initialAllocation <= capacity && runningThreads < maxThreads) {
             startJob(job);
@@ -44,11 +47,15 @@ public class MemoryLimitedJobRunner {
         if(size < 0) throw new IllegalArgumentException();
         assert(size <= counter);
         counter -= size;
-        if(counter == 0) runningThreads--;
+        if(counter == 0) {
+            runningThreads--;
+            if(shutdown) notifyAll();
+        }
         maybeStartJobs();
     }
     
     private synchronized void maybeStartJobs() {
+        if(shutdown) return;
         while(true) {
             MemoryLimitedJob job = jobs.peekFirst();
             if(job == null) return;
@@ -100,6 +107,21 @@ public class MemoryLimitedJobRunner {
     public synchronized void setCapacity(long val) {
         capacity = val;
         maybeStartJobs();
+    }
+    
+    public synchronized void shutdown() {
+        shutdown = true;
+    }
+    
+    public synchronized void waitForShutdown() {
+        shutdown = true;
+        while(runningThreads > 0) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
+        }
     }
 
 }
