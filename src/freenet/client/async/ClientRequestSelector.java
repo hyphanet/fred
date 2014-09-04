@@ -566,10 +566,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(runningInserts) {
 			boolean retval = runningInserts.add(tmp);
 			if(!retval) {
-				Logger.normal(this, "Already in runningTransientInserts: "+insert+" : "+token);
+				Logger.normal(this, "Already in runningInserts: "+insert+" : "+token);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Added to runningTransientInserts: "+insert+" : "+token);
+					Logger.minor(this, "Added to runningInserts: "+insert+" : "+token);
 			}
 			return retval;
 		}
@@ -578,7 +578,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	public void removeInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
 		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
 		if(logMINOR)
-			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);
+			Logger.minor(this, "Removing from runningInserts: "+insert+" : "+token);
 		synchronized(runningInserts) {
 			runningInserts.remove(tmp);
 		}
