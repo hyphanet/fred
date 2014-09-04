@@ -564,13 +564,13 @@ public class SplitFileInserterStorageTest extends TestCase {
     }
     
     public void testEncodeAfterShutdownCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
-        //if(!TestProperty.EXTENSIVE) return;
+        if(!TestProperty.EXTENSIVE) return;
         testEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21);
     }
     
     public void testRepeatedEncodeAfterShutdown() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*5); // Not cross-segment.
-        //if(!TestProperty.EXTENSIVE) return;
+        if(!TestProperty.EXTENSIVE) return;
         testRepeatedEncodeAfterShutdownCrossSegment(CHKBlock.DATA_LENGTH*128*21); // Cross-segment.
     }
     
