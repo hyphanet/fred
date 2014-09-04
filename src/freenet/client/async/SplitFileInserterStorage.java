@@ -1076,21 +1076,23 @@ public class SplitFileInserterStorage {
     }
 
     public void start() {
+        boolean startSegments = (crossSegments == null);
         synchronized (this) {
             if(status == Status.NOT_STARTED) {
                 status = Status.STARTED;
             }
+            if(status == Status.ENCODED_CROSS_SEGMENTS) startSegments = true;
             if(status == Status.ENCODED) return;
             if(status == Status.FAILED || status == Status.GENERATING_METADATA || 
                     status == Status.SUCCEEDED) return;
         }
         for(SplitFileInserterSegmentStorage segment : segments)
             segment.checkKeys();
-        if (crossSegments != null) {
+        if(startSegments) {
+            startSegmentEncode();
+        } else {
             // Cross-segment encode must complete before main encode.
             startCrossSegmentEncode();
-        } else {
-            startSegmentEncode();
         }
     }
 
