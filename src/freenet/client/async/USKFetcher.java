@@ -437,8 +437,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
             synchronized(this) {
                 c = checker;
             }
-			if(checker != null)
-				checker.cancel(context);
+			if(c != null)
+				c.cancel(context);
 			onCancelled(context);
 		}
 		
