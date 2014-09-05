@@ -863,10 +863,13 @@ public class PluginManager {
 	 * look for PluginInfo for a Plugin with given classname
 	 * @param plugname
 	 * @return the PluginInfo or null if not found
-	 * @deprecated As opposed to its JavaDoc, this function will also return plugins with a matching filename, no only class name.
-	 *             To fix this ambiguity, instead use either {@link #getPluginInfoByClassName(String)} or {@link #getPluginInfoByFileName(String)}.
+     * @deprecated As opposed to its JavaDoc, this function will also return plugins with a matching
+     *             filename, no only class name.
+     *             To fix this ambiguity, instead use either
+     *             {@link #getPluginInfoByClassName(String)} or
+     *             {@link #getPluginInfoByFileName(String)}.
 	 */
-	@Deprecated
+    @Deprecated
 	public PluginInfoWrapper getPluginInfo(String plugname) {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
@@ -878,41 +881,44 @@ public class PluginManager {
 		return null;
 	}
 
-	/**
-	 * @param pluginClassName The name of the main class of the plugin - that is the class which implements {@link FredPlugin}.
-	 * @return The plugin with the given class, or null if no matching plugin was found.
-	 */
-	public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper piw : pluginWrappers) {
-				if(piw.getPluginClassName().equals(pluginClassName))
-					return piw;
-			}
-		}
-		return null;
-	}
+    /**
+     * @param pluginClassName
+     *            The name of the main class of the plugin - that is the class which implements
+     *            {@link FredPlugin}.
+     * @return The plugin with the given class, or null if no matching plugin was found.
+     */
+    public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
+        synchronized(pluginWrappers) {
+            for(PluginInfoWrapper piw : pluginWrappers) {
+                if(piw.getPluginClassName().equals(pluginClassName))
+                    return piw;
+            }
+        }
+        return null;
+    }
 
-	/**
-	 * @param pluginFileName The filename of the JAR from which the plugin was loaded.
-	 * @return Null if no matching plugin was found.
-	 */
-	public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
-		synchronized(pluginWrappers) {
-			for(PluginInfoWrapper piw : pluginWrappers) {
-				if(piw.getFilename().equals(pluginFileName))
-					return piw;
-			}
-		}
-		return null;
-	}
+    /**
+     * @param pluginFileName
+     *            The filename of the JAR from which the plugin was loaded.
+     * @return Null if no matching plugin was found.
+     */
+    public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
+        synchronized(pluginWrappers) {
+            for(PluginInfoWrapper piw : pluginWrappers) {
+                if(piw.getFilename().equals(pluginFileName))
+                    return piw;
+            }
+        }
+        return null;
+    }
 
 	/**
 	 * look for a FCPPlugin with given classname
 	 * @param plugname
 	 * @return the plugin or null if not found
-	 * @deprecated Use {@link #getPluginFCPServer(String)} instead. 
+     * @deprecated Use {@link #getPluginFCPServer(String)} instead.
 	 */
-	@Deprecated
+    @Deprecated
 	public FredPluginFCP getFCPPlugin(String plugname) {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
@@ -924,19 +930,25 @@ public class PluginManager {
 		return null;
 	}
 
-	/**
-	 * Get the {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} of the plugin with the given class name.
-	 * 
-	 * @param pluginClassName See {@link #getPluginInfoByClassName(String)}.
-	 * @throws PluginNotFoundException If the specified plugin is not loaded or does not provide an FCP server.
-	 */
-	public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler getPluginFCPServer(String pluginClassName) throws PluginNotFoundException{
-		PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
-		if(piw != null & piw.isFCPServerPlugin())
-			return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)piw.plug;
-		else
-			throw new PluginNotFoundException(pluginClassName);
-	}
+    /**
+     * Get the {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} of the plugin with
+     * the given class name.
+     * 
+     * @param pluginClassName
+     *            See {@link #getPluginInfoByClassName(String)}.
+     * @throws PluginNotFoundException
+     *             If the specified plugin is not loaded or does not provide an FCP server.
+     */
+    public FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
+            getPluginFCPServer(String pluginClassName)
+                throws PluginNotFoundException{
+        
+        PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
+        if(piw != null & piw.isFCPServerPlugin())
+            return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)piw.plug;
+        else
+            throw new PluginNotFoundException(pluginClassName);
+    }
 
 	/**
 	 * look for a Plugin with given classname
