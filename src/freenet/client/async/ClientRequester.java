@@ -258,6 +258,7 @@ public abstract class ClientRequester implements Serializable {
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 	
+	/** Notify clients by calling innerNotifyClients off-thread. */
 	public final void notifyClients(ClientContext context) {
 	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
 
@@ -270,7 +271,10 @@ public abstract class ClientRequester implements Serializable {
 	    });
 	}
 	
-	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
+	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. Called 
+	 * off-thread. Please do not change SimpleEventProducer to always produce events off-thread, it
+	 * is better to deal with that here, because events could be re-ordered, which matters for some
+	 * events notably SimpleProgressEvent. */
 	protected abstract void innerNotifyClients(ClientContext context);
 	
 	/** Called when we first send a request to the network. Ensures that it really is the first time and

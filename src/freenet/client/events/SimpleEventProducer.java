@@ -51,6 +51,11 @@ public class SimpleEventProducer implements ClientEventProducer, Serializable {
 
     /**
      * Sends the ClientEvent to all registered listeners of this object.
+     * 
+     * Please do not change SimpleEventProducer to always produce events off-thread, it
+     * is better to run the client layer method that produces the event off-thread, because events 
+     * could be re-ordered, which matters for some events notably SimpleProgressEvent.
+     * See e.g. ClientGetter.innerNotifyClients()),  
      **/
     @Override
     public void produceEvent(ClientEvent ce, ClientContext context) {
