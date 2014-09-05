@@ -62,7 +62,7 @@ public interface FredPluginFCPMessageHandler {
          * So server implementations <b>should</b> assume that the client chooses the identifier in a sane manner which follows the rules.<br>
          * This class does follow the rules, and thus client and server implementations using it will do so as well.
          */
-        public final String identifier; 
+        public final String identifier;
         
         /**
          * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
@@ -84,7 +84,7 @@ public interface FredPluginFCPMessageHandler {
 
         /**
          * @return True if the message is merely a reply to a previous message from your side.<br>
-         *         In that case, you should probably not send another reply message back to prevent infinite bouncing of "success!" replies. 
+         *         In that case, you should probably not send another reply message back to prevent infinite bouncing of "success!" replies.
          */
         public boolean isReplyMessage() {
             return success != null;
@@ -110,14 +110,14 @@ public interface FredPluginFCPMessageHandler {
          * <b>Notice</b>: Messages constructed with this constructor are <b>not</b> reply messages.<br>
          * If you are replying to a message, notably when returning a message in the message handling function, use
          * {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} instead.
-         *  
+         * 
          * See the JavaDoc of the member variables with the same name as the parameters for an explanation of the parameters.
          */
         public static FCPPluginMessage construct(SimpleFieldSet parameters, Bucket data) {
             // Notice: While the specification of FCP formally allows the client to freely chose the ID, we hereby restrict it to be a random UUID instead of
-            // allowing the client (or server) to chose it. This is to prevent accidental collisions with the IDs of other messages. 
+            // allowing the client (or server) to chose it. This is to prevent accidental collisions with the IDs of other messages.
             // I cannot think of any usecase of free-choice identifiers. And collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
-            // This would in turn break things such as the sendSynchronous() functions of FCPPluginClient. 
+            // This would in turn break things such as the sendSynchronous() functions of FCPPluginClient.
             return new FCPPluginMessage(null, UUID.randomUUID().toString(), parameters, data, null);
         }
         
@@ -192,7 +192,7 @@ public interface FredPluginFCPMessageHandler {
          * - Compute your reply in another thread.</br>
          * - Once you're ready to send the reply, use {@link PluginRespirator#getPluginClientByID(java.util.UUID)} to obtain the client.<br/>
          * </p>
-         *  
+         * 
          * @param client The client which sent the message.<br/><br/>
          * 
          *               You <b>must not</b> keep a hard reference to this object outside of the scope of this function: This would prevent client plugins from
@@ -207,10 +207,10 @@ public interface FredPluginFCPMessageHandler {
          * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
          * @return Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by using the constructor 
+         *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
-         *         
+         * 
          *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
          *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
          *         to them again.<br/>
@@ -249,10 +249,10 @@ public interface FredPluginFCPMessageHandler {
          * @param message The actual message. See the JavaDoc of its member variables for an explanation of their meaning.
          * @return Your reply message, or null if you don't want to reply.<br/><br/>
          * 
-         *         You <b>must</b> construct this by using the constructor 
+         *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)} to ensure that the
          *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
-         *         
+         * 
          *         You <b>must</b> return null if the original message was a reply message as indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
          *         Replies often shall only indicate success / failure instead of triggering actual operations, so it could cause infinite bouncing if you reply
          *         to them again.<br/>
