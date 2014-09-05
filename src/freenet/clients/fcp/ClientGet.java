@@ -39,6 +39,7 @@ import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -126,12 +127,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
-			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server) throws IdentifierCollisionException, NotAllowedException, IOException {
+			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true);
 
-		fctx = server.core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.clientContext.getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -149,7 +150,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
-			if(!(server.core.allowDownloadTo(returnFilename)))
+			if(!(core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			ret = new FileBucket(returnFilename, false, true, false, false, false);
 			if(filterData) {
@@ -173,12 +174,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		getter = makeGetter(ret);
 	}
 
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, 
+	        NodeClientCore core) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, message.charset, handler,
 				message.priorityClass, message.persistenceType, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = server.core.clientContext.getDefaultPersistentFetchContext();
+		fctx = core.clientContext.getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -206,7 +208,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
-			if(!server.core.allowDownloadTo(targetFile))
+			if(!core.allowDownloadTo(targetFile))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+targetFile, identifier, global);
 			else if(!(handler.allowDDAFrom(targetFile, true)))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to " + targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);

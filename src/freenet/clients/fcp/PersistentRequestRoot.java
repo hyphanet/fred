@@ -108,5 +108,9 @@ public class PersistentRequestRoot {
         if(client == null) return false;
         return client.getRequest(req.identifier) != null;
     }
+
+    public PersistentRequestClient getGlobalForeverClient() {
+        return globalForeverClient;
+    }
 	
 }

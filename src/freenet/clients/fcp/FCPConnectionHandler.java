@@ -281,7 +281,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					
 					if(!persistent) {
-						cg = new ClientGet(this, message, server);
+						cg = new ClientGet(this, message, server.core);
 						requestsByIdentifier.put(id, cg);
 					} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					    try {
@@ -291,7 +291,7 @@ public class FCPConnectionHandler implements Closeable {
 					            public boolean run(ClientContext context) {
 					                ClientGet getter;
 					                try {
-					                    getter = new ClientGet(FCPConnectionHandler.this, message, server);
+					                    getter = new ClientGet(FCPConnectionHandler.this, message, server.core);
 					                } catch (IdentifierCollisionException e1) {
 					                    Logger.normal(this, "Identifier collision on "+this);
 					                    FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -320,7 +320,7 @@ public class FCPConnectionHandler implements Closeable {
 					    }
 						return; // Don't run the start() below
 					} else {
-						cg = new ClientGet(this, message, server);
+						cg = new ClientGet(this, message, server.core);
 					}
 				} catch (IdentifierCollisionException e) {
 					success = false;
