@@ -618,23 +618,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			progress = new EnterFiniteCooldown(identifier, global, event.wakeupTime);
 		}
 		else return; // Don't know what to do with event
-		if(persistenceType == PERSIST_FOREVER && context.jobRunner.hasStarted()) {
-			try {
-				context.jobRunner.queue(new PersistentJob() {
-
-					@Override
-					public boolean run(ClientContext context) {
-						trySendProgress(progress, verbosityMask, null);
-						return false;
-					}
-
-				}, NativeThread.HIGH_PRIORITY);
-			} catch (PersistenceDisabledException e) {
-				// Not much we can do
-			}
-		} else {
-			trySendProgress(progress, verbosityMask, null);
-		}
+		trySendProgress(progress, verbosityMask, null);
 	}
 	
 	private void handleCompatibilityMode(final SplitfileCompatibilityModeEvent ce, ClientContext context) {
