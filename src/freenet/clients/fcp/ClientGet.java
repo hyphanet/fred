@@ -521,12 +521,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public void receive(ClientEvent ce, ClientContext context) {
 	    if(logMINOR) Logger.minor(this, "Receiving "+ce+" on "+this);
-		// Don't need to lock, verbosity is final and finished is never unset.
 	    final FCPMessage progress;
 		final int verbosityMask;
-		// FIXME we are doing this backwards.
-		// FIXME update the internal state via a handle* method, possibly running a job.
-		// FIXME then check verbosityMask when sending messages.
 		if(ce instanceof SplitfileProgressEvent) {
 			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
 			synchronized(this) {
