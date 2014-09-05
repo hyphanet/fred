@@ -503,7 +503,15 @@ public class SplitFileFetcherSegmentStorage {
         // Check these *after* we complete, to reduce the critical path.
         // FIXME possibility of inconsistency with malicious splitfiles?
         if(checkDecodedKeys) {
-            checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys, capturingBinaryBlob);
+            if(!checkEncodedDataBlocks(checkBlocks, checkBlocksPresent, keys, capturingBinaryBlob)) {
+                // The downloaded blocks were correct, the encoded blocks are not.
+                // That means the splitfile is broken as inserted, or there's some wierd in-memory data corruption.
+                synchronized(this) {
+                    finished = true;
+                }
+                parent.fail(new FetchException(FetchExceptionMode.SPLITFILE_DECODE_ERROR, "Encoded blocks do not match metadata"));
+                return;
+            }
             parent.finishedSuccess(this);
         }
         queueHeal(dataBlocks, checkBlocks, dataBlocksPresent, checkBlocksPresent);
@@ -551,7 +559,7 @@ public class SplitFileFetcherSegmentStorage {
         }
     }
 
-    private void checkEncodedDataBlocks(byte[][] checkBlocks, boolean[] checkBlocksPresent, 
+    private boolean checkEncodedDataBlocks(byte[][] checkBlocks, boolean[] checkBlocksPresent, 
             SplitFileSegmentKeys keys, boolean capturingBinaryBlob) {
         for(int i=0;i<checkBlocks.length;i++) {
             if(checkBlocksPresent[i]) continue;
@@ -563,7 +571,7 @@ public class SplitFileFetcherSegmentStorage {
                 ClientCHK actualKey = block.getClientKey();
                 if(!actualKey.equals(decodeKey)) {
                     Logger.error(this, "Splitfile check block "+i+" does not encode to expected key for "+this+" for "+parent);
-                    return;
+                    return false;
                 }
                 if(capturingBinaryBlob)
                     parent.fetcher.maybeAddToBinaryBlob(block);
@@ -571,9 +579,10 @@ public class SplitFileFetcherSegmentStorage {
                 // Impossible!
                 parent.fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, "Decoded block could not be encoded"));
                 Logger.error(this, "Impossible: Decoded block could not be encoded");
-                return;
+                return false;
             }
         }
+        return true;
     }
 
     private void queueHeal(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] dataBlocksPresent, boolean[] checkBlocksPresent) throws IOException {
