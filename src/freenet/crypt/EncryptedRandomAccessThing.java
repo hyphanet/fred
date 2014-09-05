@@ -32,7 +32,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     private final SkippingStreamCipher cipherRead;
     private final SkippingStreamCipher cipherWrite;
-    private ParametersWithIV cipherParams;//includes key
+    private final ParametersWithIV cipherParams;//includes key
     
     private final SecretKey headerMacKey;
     
@@ -108,18 +108,18 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         		throw new GeneralSecurityException("MAC is incorrect");
         	}
         }
-
+        ParametersWithIV tempPram = null;
         try{
             KeyParameter cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
         			(Class<?>)this.getClass(), kdfInput.underlyingKey.input, 
         			type.encryptKey).getEncoded());
-        	this.cipherParams = new ParametersWithIV(cipherKey, 
+            tempPram = new ParametersWithIV(cipherKey, 
         			KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, this.getClass(), 
         					kdfInput.underlyingIV.input, type.encryptKey).getIV());
         } catch(InvalidKeyException e) {
             Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
         }
-
+        this.cipherParams = tempPram;
     	cipherRead.init(false, cipherParams);
     	cipherWrite.init(true, cipherParams);
     }
