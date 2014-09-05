@@ -418,6 +418,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				return;
 			}
 		}
+		if(persistent())
+		    context.jobRunner.setCheckpointASAP();
 		Logger.normal(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
