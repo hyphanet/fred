@@ -394,6 +394,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
+	    if(logMINOR) Logger.minor(this, "Maybe sending "+msg+" for verbosity "+verbosityMask+" on "+this);
 		if(msg instanceof SimpleProgressMessage) {
 		    synchronized(this) {
 		        progressPending = (SimpleProgressMessage)msg;
@@ -569,6 +570,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	public void receive(ClientEvent ce, ClientContext context) {
+	    if(logMINOR) Logger.minor(this, "Receiving "+ce+" on "+this);
 		// Don't need to lock, verbosity is final and finished is never unset.
 		final FCPMessage progress;
 		final int verbosityMask;

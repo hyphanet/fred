@@ -452,7 +452,6 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             dos.writeLong(raf.size());
         }
         dos.writeLong(token);
-        Logger.normal(this, "Written splitfile progress (for emergency recovery) for "+this);
         return true;
     }
     
