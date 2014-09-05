@@ -141,6 +141,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * Garbage-collection thread: Pools {@link #disconnectedClientsQueue} for clients whose {@link WeakReference} has been nulled and removes them from the
      * {@link #clientsByID} {@link TreeMap}.
      */
+    @Override
     public void realRun() {
         try {
             FCPPluginClientWeakReference disconnectedClient = (FCPPluginClientWeakReference)disconnectedClientsQueue.remove();
