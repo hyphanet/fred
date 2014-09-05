@@ -1203,6 +1203,8 @@ public class SplitFileFetcherSegmentStorage {
                     if(!(block.getClientKey().equals(key))) {
                         Logger.error(this, "Block "+blockNum+" in blocksFound["+i+"] is not valid!");
                         blockChooser.onUnSuccess(blockNum);
+                        succeeded = false;
+                        finished = false;
                     } else {
                         return buf;
                     }
