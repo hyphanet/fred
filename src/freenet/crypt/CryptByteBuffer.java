@@ -79,10 +79,7 @@ public final class CryptByteBuffer implements Serializable{
                 encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
                 decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
             }
-        }catch (UnsupportedCipherException e) {
-            e.printStackTrace();
-            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
-        } catch (GeneralSecurityException e) {
+        }catch (UnsupportedCipherException | GeneralSecurityException e) {
             e.printStackTrace();
             Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
         } 
