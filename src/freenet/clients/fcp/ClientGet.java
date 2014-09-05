@@ -393,56 +393,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    }
 	}
 
-	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler) {
-	    if(logMINOR) Logger.minor(this, "Maybe sending "+msg+" for verbosity "+verbosityMask+" on "+this);
-		if(msg instanceof SimpleProgressMessage) {
-		    synchronized(this) {
-		        progressPending = (SimpleProgressMessage)msg;
-		    }
-			if(client != null) {
-				RequestStatusCache cache = client.getRequestStatusCache();
-				if(cache != null) {
-					cache.updateStatus(identifier, (progressPending).getEvent());
-				}
-			}
-		} else if(msg instanceof SendingToNetworkMessage) {
-		    synchronized(this) {
-		        sentToNetwork = true;
-		    }
-		} else if(msg instanceof ExpectedHashes) {
-		    synchronized(this) {
-		        if(expectedHashes != null) {
-		            Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
-		        } else {
-		            this.expectedHashes = (ExpectedHashes)msg;
-		        }
-		    }
-		} else if(msg instanceof ExpectedMIME) {
-		    synchronized(this) {
-		        foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
-		    }
-			if(client != null) {
-				RequestStatusCache cache = client.getRequestStatusCache();
-				if(cache != null) {
-					cache.updateExpectedMIME(identifier, foundDataMimeType);
-				}
-			}
-		} else if(msg instanceof ExpectedDataLength) {
-		    synchronized(this) {
-		        foundDataLength = ((ExpectedDataLength) msg).dataLength;
-		    }
-			if(client != null) {
-				RequestStatusCache cache = client.getRequestStatusCache();
-				if(cache != null) {
-					cache.updateExpectedDataLength(identifier, foundDataLength);
-				}
-			}
-		} else if(msg instanceof EnterFiniteCooldown) {
-			// Do nothing, it's not persistent.
-		} else
-			assert(false);
-		queueProgressMessageInner(msg, handler, verbosityMask);
-	}
 
 	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
 	    if(persistenceType == PERSIST_CONNECTION && handler == null)
@@ -572,22 +522,31 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public void receive(ClientEvent ce, ClientContext context) {
 	    if(logMINOR) Logger.minor(this, "Receiving "+ce+" on "+this);
 		// Don't need to lock, verbosity is final and finished is never unset.
-		final FCPMessage progress;
+	    final FCPMessage progress;
 		final int verbosityMask;
 		// FIXME we are doing this backwards.
 		// FIXME update the internal state via a handle* method, possibly running a job.
 		// FIXME then check verbosityMask when sending messages.
 		if(ce instanceof SplitfileProgressEvent) {
 			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
-			if((verbosity & verbosityMask) == 0)
-				return;
 			synchronized(this) {
-			    lastActivity = System.currentTimeMillis();
+                lastActivity = System.currentTimeMillis();
+			    progress = progressPending = 
+			        new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 			}
-			progress =
-				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+			if(client != null) {
+			    RequestStatusCache cache = client.getRequestStatusCache();
+			    if(cache != null) {
+			        cache.updateStatus(identifier, (progressPending).getEvent());
+			    }
+			}
+            if((verbosity & verbosityMask) == 0)
+                return;
 		} else if(ce instanceof SendingToNetworkEvent) {
 			verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
+			synchronized(this) {
+			    sentToNetwork = true;
+			}
 			if((verbosity & verbosityMask) == 0)
 				return;
 			progress = new SendingToNetworkMessage(identifier, global);
@@ -595,22 +554,47 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		    handleCompatibilityMode((SplitfileCompatibilityModeEvent)ce, context);
 		    return;
 		} else if(ce instanceof ExpectedHashesEvent) {
+            ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
+		    synchronized(this) {
+		        if(expectedHashes != null) {
+		            Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
+		            return;
+		        } else {
+		            progress = this.expectedHashes = new ExpectedHashes(event, identifier, global);
+		        }
+		    }
 			verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
 			if((verbosity & verbosityMask) == 0)
 				return;
-			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
-			progress = new ExpectedHashes(event, identifier, global);
 		} else if(ce instanceof ExpectedMIMEEvent) {
+            ExpectedMIMEEvent event = (ExpectedMIMEEvent)ce;
+		    synchronized(this) {
+		        foundDataMimeType = event.expectedMIMEType;
+		    }
+		    if(client != null) {
+		        RequestStatusCache cache = client.getRequestStatusCache();
+		        if(cache != null) {
+		            cache.updateExpectedMIME(identifier, foundDataMimeType);
+		        }
+		    }
 			verbosityMask = VERBOSITY_EXPECTED_TYPE;
+            progress = new ExpectedMIME(identifier, global, event.expectedMIMEType);
 			if((verbosity & verbosityMask) == 0)
 				return;
-			ExpectedMIMEEvent event = (ExpectedMIMEEvent)ce;
-			progress = new ExpectedMIME(identifier, global, event.expectedMIMEType);
 		} else if(ce instanceof ExpectedFileSizeEvent) {
+            ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
+		    synchronized(this) {
+		        foundDataLength = event.expectedSize;
+		    }
+		    if(client != null) {
+		        RequestStatusCache cache = client.getRequestStatusCache();
+		        if(cache != null) {
+		            cache.updateExpectedDataLength(identifier, foundDataLength);
+		        }
+		    }
 			verbosityMask = VERBOSITY_EXPECTED_SIZE;
 			if((verbosity & verbosityMask) == 0)
 				return;
-			ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
 			progress = new ExpectedDataLength(identifier, global, event.expectedSize);
 		} else if(ce instanceof EnterFiniteCooldownEvent) {
 			verbosityMask = VERBOSITY_ENTER_FINITE_COOLDOWN;
@@ -620,7 +604,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			progress = new EnterFiniteCooldown(identifier, global, event.wakeupTime);
 		}
 		else return; // Don't know what to do with event
-		trySendProgress(progress, verbosityMask, null);
+		queueProgressMessageInner(progress, null, verbosityMask);
 	}
 	
 	private void handleCompatibilityMode(final SplitfileCompatibilityModeEvent ce, ClientContext context) {
