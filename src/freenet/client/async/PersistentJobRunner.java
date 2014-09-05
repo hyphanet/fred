@@ -77,4 +77,9 @@ public interface PersistentJobRunner {
      * down. */
     public CheckpointLock lock() throws PersistenceDisabledException;
 
+    /** For persistent requests, return true if the bloom filter salt has changed when loading the
+     * requests. In which case all the Bloom filters will be invalid and will need to be 
+     * recomputed. */
+    boolean newSalt();
+
 }

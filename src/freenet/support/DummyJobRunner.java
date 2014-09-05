@@ -72,4 +72,9 @@ public class DummyJobRunner implements PersistentJobRunner {
         };
     }
 
+    @Override
+    public boolean newSalt() {
+        return false;
+    }
+
 }

@@ -52,7 +52,7 @@ public class ClientContext {
 	public transient final Executor mainExecutor;
 	/** We need to be able to suspend execution of jobs changing persistent state in order to write
 	 * it to disk consistently. Also, some jobs may want to request immediate serialization. */
-	public transient final ClientLayerPersister jobRunner;
+	public transient final PersistentJobRunner jobRunner;
 	public transient final long nodeDBHandle;
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
