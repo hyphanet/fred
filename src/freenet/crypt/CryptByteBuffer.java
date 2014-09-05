@@ -66,7 +66,7 @@ public final class CryptByteBuffer implements Serializable{
         this.type = type;
         this.key = key;
         try{
-            if(type.cipherName == "RIJNDAEL"){
+            if(type.cipherName.equals("RIJNDAEL")){
                 blockCipher = new Rijndael(type.keyType.keySize, type.blockSize);
                 blockCipher.initialize(key.getEncoded());
                 if(type == CryptByteBufferType.RijndaelPCFB){
@@ -228,7 +228,7 @@ public final class CryptByteBuffer implements Serializable{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 return ByteBuffer.wrap(encryptPCFB.blockEncipher(input, offset, len));
             } 
-            else if(type.cipherName == "RIJNDAEL"){
+            else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
                 blockCipher.encipher(extractSmallerArray(input, offset, len), result);
                 return ByteBuffer.wrap(result);
@@ -286,7 +286,7 @@ public final class CryptByteBuffer implements Serializable{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 return ByteBuffer.wrap(decryptPCFB.blockDecipher(input, offset, len));
             } 
-            else if(type.cipherName == "RIJNDAEL"){
+            else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
                 blockCipher.decipher(extractSmallerArray(input, offset, len), result);
                 return ByteBuffer.wrap(result);
