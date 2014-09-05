@@ -698,6 +698,8 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 				return;
 			}
 		}
+		if(persistent())
+		    context.jobRunner.setCheckpointASAP();
 	}
 
 	/**
