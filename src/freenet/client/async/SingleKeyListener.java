@@ -14,14 +14,12 @@ public class SingleKeyListener implements KeyListener {
 	private boolean done;
 	private short prio;
 	private final boolean persistent;
-	private final boolean realTime;
 
-	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent, boolean realTime) {
+	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent) {
 		this.key = key;
 		this.fetcher = fetcher;
 		this.prio = prio;
 		this.persistent = persistent;
-		this.realTime = realTime;
 	}
 
 	@Override
@@ -91,11 +89,6 @@ public class SingleKeyListener implements KeyListener {
 	@Override
 	public boolean isSSK() {
 		return key instanceof NodeSSK;
-	}
-
-	@Override
-	public boolean isRealTime() {
-		return realTime;
 	}
 
 }

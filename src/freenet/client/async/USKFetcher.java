@@ -203,7 +203,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final USKDateHint.Type type;
 		DBRAttempt(ClientKey key, ClientContext context, USKDateHint.Type type) {
 			fetcher = new DBRFetcher(key, ctxDBR.maxUSKRetries, ctxDBR, parent, 
-					this, false, true, 0, context, false, isRealTime());
+					this, false, true, 0, context, false, realTimeFlag);
 			this.type = type;
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
@@ -1663,11 +1663,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
-	@Override
-	public boolean isRealTime() {
-		return realTimeFlag;
-	}
-	
 	/** FIXME this is a special case hack
 	 * For a generic solution see https://bugs.freenetproject.org/view.php?id=4984
 	 */

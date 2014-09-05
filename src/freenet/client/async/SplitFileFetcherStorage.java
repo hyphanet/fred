@@ -364,7 +364,7 @@ public class SplitFileFetcherStorage {
         byte[] localSalt = new byte[32];
         random.nextBytes(localSalt);
         
-        keyListener = new SplitFileFetcherKeyListener(fetcher, this, realTime, false, 
+        keyListener = new SplitFileFetcherKeyListener(fetcher, this, false, 
                 localSalt, splitfileDataBlocks + totalCrossCheckBlocks + splitfileCheckBlocks, blocksPerSegment + 
                 checkBlocksPerSegment, segmentCount);
 
@@ -791,7 +791,7 @@ public class SplitFileFetcherStorage {
         for(int i=0;i<crossSegments;i++) {
             this.crossSegments[i] = new SplitFileFetcherCrossSegmentStorage(this, i, dis);
         }
-        this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, realTime, false, newSalt);
+        this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {

@@ -58,7 +58,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     /** The per-segment bloom filters, containing the keys for each segment. These are not changed. */
     private final BinaryBloomFilter[] segmentFilters;
     private boolean finishedSetup;
-    private final boolean realTime;
     private final boolean persistent;
     /** Does the main bloom filter need writing? */
     private boolean dirty;
@@ -68,12 +67,11 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     /** Create a set of bloom filters for a new download.
      * @throws FetchException */
     public SplitFileFetcherKeyListener(SplitFileFetcherStorageCallback fetcher, SplitFileFetcherStorage storage, 
-            boolean realTime, boolean persistent, byte[] localSalt, int origSize, int segBlocks, 
-            int segments) throws FetchException {
+            boolean persistent, byte[] localSalt, int origSize, int segBlocks, int segments) 
+    throws FetchException {
         this.fetcher = fetcher;
         this.storage = storage;
         this.localSalt = localSalt;
-        this.realTime = realTime;
         this.persistent = persistent;
         int mainElementsPerKey = DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY;
         mainBloomK = (int) (mainElementsPerKey * 0.7);
@@ -113,11 +111,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     }
     
     public SplitFileFetcherKeyListener(SplitFileFetcherStorage storage, 
-            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean realTime, boolean persistent, boolean newSalt) 
+            SplitFileFetcherStorageCallback callback, DataInputStream dis, boolean persistent, boolean newSalt) 
     throws IOException, StorageFormatException {
         this.storage = storage;
         this.fetcher = callback;
-        this.realTime = realTime;
         this.persistent = persistent;
         localSalt = new byte[32];
         dis.readFully(localSalt);
@@ -335,11 +332,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
     @Override
     public boolean isSSK() {
         return false;
-    }
-
-    @Override
-    public boolean isRealTime() {
-        return realTime;
     }
 
     public void writeStaticSettings(DataOutputStream dos) throws IOException {
