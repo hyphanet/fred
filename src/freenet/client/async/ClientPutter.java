@@ -525,7 +525,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore, at the moment
 	}
 

@@ -688,7 +688,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 * ignore it.
 	 */
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;

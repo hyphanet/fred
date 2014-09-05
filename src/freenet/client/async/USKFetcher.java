@@ -322,7 +322,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		@Override
 		public void onTransition(ClientGetState oldState,
-				ClientGetState newState) {
+				ClientGetState newState, ClientContext context) {
 			// Ignore
 		}
 		@Override

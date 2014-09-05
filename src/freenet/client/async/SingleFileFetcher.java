@@ -635,7 +635,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// The new fetcher has our metadata so we don't need to removeMetadata().
 				this.metadata = null;
 				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
-				parent.onTransition(this, f);
+				parent.onTransition(this, f, context);
 				
 				// Break locks. Must not call onFailure(), etc, from within SFF lock.
 				context.getJobRunner(persistent).queueInternal(new PersistentJob() {
@@ -721,7 +721,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
 				}
-				parent.onTransition(this, f);
+				parent.onTransition(this, f, context);
 				f.schedule(context);
 				// All done! No longer our problem!
 				archiveMetadata = null; // passed on
@@ -809,7 +809,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				    return;
 				}
 				this.deleteFetchContext = false;
-				parent.onTransition(this, sf);
+				parent.onTransition(this, sf, context);
 				try {
 					sf.schedule(context);
 				} catch (KeyListenerConstructionException e) {
@@ -862,7 +862,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// available.
 		
 		// We need to transition here, so that everything gets deleted if we are cancelled during the archive fetch phase.
-		parent.onTransition(this, f);
+		parent.onTransition(this, f, context);
 		
         // Break locks. Must not call onFailure(), etc, from within SFF lock.
 		context.getJobRunner(persistent).queueInternal(new PersistentJob() {
@@ -953,7 +953,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 
 			// Run directly, even if persistent.
-			parent.onTransition(state, SingleFileFetcher.this);
+			parent.onTransition(state, SingleFileFetcher.this, context);
 			innerSuccess(data, context);
 		}
 
@@ -1010,7 +1010,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 			// Ignore
 		}
 
@@ -1100,7 +1100,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 
 			try {
-				parent.onTransition(state, SingleFileFetcher.this);
+				parent.onTransition(state, SingleFileFetcher.this, context);
 				//FIXME: Pass an InputStream here, and save ourselves a Bucket
 				Metadata meta = Metadata.construct(finalData);
 				synchronized(SingleFileFetcher.this) {
@@ -1124,7 +1124,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		@Override
 		public void onFailure(FetchException e, ClientGetState state, ClientContext context) {
-			parent.onTransition(state, SingleFileFetcher.this);
+			parent.onTransition(state, SingleFileFetcher.this, context);
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
 			SingleFileFetcher.this.onFailure(e, true, context);
 		}
@@ -1135,7 +1135,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 			// Ignore
 		}
 
@@ -1297,7 +1297,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, realTimeFlag, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, true, false, (short)0, context, false);
 					if(tag != null) {
-						cb.onTransition(tag, sf);
+						cb.onTransition(tag, sf, context);
 					}
 					sf.schedule(context);
 				} else {

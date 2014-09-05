@@ -32,7 +32,7 @@ public interface GetCompletionCallback {
 	 * @param newState The new ClientGetState.
 	 * @param container The database handle. Must not be used by other threads.
 	 */
-	public void onTransition(ClientGetState oldState, ClientGetState newState);
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context);
 
 	/** Called when we know the size of the final data. Not the same as onExpectedTopSize(),
 	 * which is called for new metadata and gives more information. This might be called 

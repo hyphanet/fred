@@ -661,7 +661,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 			// Ignore
 		}
 
@@ -1222,7 +1222,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore
 	}
 

@@ -62,7 +62,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback, Serial
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore
 	}
 

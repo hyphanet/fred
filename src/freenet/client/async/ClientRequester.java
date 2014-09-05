@@ -36,7 +36,7 @@ public abstract class ClientRequester implements Serializable {
 		Logger.registerClass(ClientRequester.class);
 	}
 
-	public abstract void onTransition(ClientGetState oldState, ClientGetState newState);
+	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context);
 	
 	// FIXME move the priority classes from RequestStarter here
 	/** Priority class of the request or insert. */
