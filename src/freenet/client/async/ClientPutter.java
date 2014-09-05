@@ -528,6 +528,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ClientContext context) {
 		// Ignore, at the moment
+	    // This exists here because e.g. USKInserter does requests as well as inserts.
+	    // FIXME I'm not sure that's a good enough reason though! Get rid ...
 	}
 
 	@Override
