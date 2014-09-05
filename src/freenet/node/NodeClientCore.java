@@ -288,6 +288,7 @@ public class NodeClientCore implements Persistable {
                 if (get().equals(val) || (tempBucketFactory == null))
                             return;
                 tempBucketFactory.setMaxRamUsed(val);
+                updatePersistentRAFSpaceLimit();
             }
         }, true);
 
@@ -348,7 +349,7 @@ public class NodeClientCore implements Persistable {
 		LockableRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
-		        persistentTempDir.dir(), minDiskFreeLongTerm);
+		        persistentTempDir.dir(), minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
@@ -618,7 +619,20 @@ public class NodeClientCore implements Persistable {
         alerts.register(new DiskSpaceUserAlert(this));
 	}
 
-	private void initDiskSpaceLimits(SubConfig nodeConfig, int sortOrder) {
+	protected void updatePersistentRAFSpaceLimit() {
+	    // The temp bucket factory may have to migrate everything to disk.
+	    // So we add the RAM limit for the temp factory to the disk limit for the persistent one.
+        if(persistentRAFFactory != null) {
+            long size;
+            synchronized(this) {
+                size = minDiskFreeLongTerm;
+            }
+            size += tempBucketFactory.getMaxRamUsed();
+            persistentRAFFactory.setMinDiskSpace(size);
+        }
+    }
+
+    private void initDiskSpaceLimits(SubConfig nodeConfig, int sortOrder) {
         nodeConfig.register("minDiskFreeLongTerm", "100M", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
 
             @Override
@@ -634,8 +648,7 @@ public class NodeClientCore implements Persistable {
                     if(val < 0) throw new InvalidConfigValueException(l10n("minDiskFreeMustBePositive"));
                     minDiskFreeLongTerm = val;
                 }
-                if(persistentRAFFactory != null)
-                    persistentRAFFactory.setMinDiskSpace(val);
+                updatePersistentRAFSpaceLimit();
             }
             
         }, true);
