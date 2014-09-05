@@ -98,56 +98,80 @@ public class PluginRespirator {
 		return formNode;
 	}
 	
-	/**
-	 * Get a PluginTalker so you can talk with other plugins.
-	 * 
-	 * @deprecated Use {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} instead.
-	 */
-	@Deprecated
+    /**
+     * Get a PluginTalker so you can talk with other plugins.
+     * 
+     * @deprecated Use {@link #connecToOtherPlugin(String,
+     *             FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} instead.
+     */
+    @Deprecated
 	public PluginTalker getPluginTalker(FredPluginTalker fpt, String pluginname, String identifier) throws PluginNotFoundException {
 		return new PluginTalker(fpt, node, pluginname, identifier);
 	}
-	
-	/**
-	 * <p>Creates a FCP connection with another plugin running in the same node.</p>
-	 * 
-	 * <p>While you are formally connecting via FCP, there is no actual network connection being created. The FCP messages are passed-through directly as Java
-	 * objects. Therefore, this mechanism should be somewhat efficient.</p>
-	 * 
-	 * <p>(Plugins should communicate via FCP instead of passing objects of their own Java classes even if they are running within the same node because this
-	 * encourages implementation of FCP servers, which in turn allows people to write alternative user interfaces for plugins.<br/>
-	 * Also, this will allow future changes to the node to make it able to run each plugin within its own node and only connect them via real networked FC
-	 * connections. This could be used for load balancing of plugins across multiple machines, CPU usage monitoring and other nice stuff.)</p>
-	 * 
-	 * @param pluginName The name of the main class of the plugin - that is the class which implements {@link FredPlugin}.
-	 *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
-	 * @param messageHandler An object of your plugin which implements the {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface.
-	 *                       Its purpose is to handle FCP messages which the remote plugin sends back to your plugin.
-	 * @return A {@link FCPPluginClient} representing the connection. <b>You are encouraged to keep it in memory and use it for as long as you need it.</b> 
-	 *         Notice especially that keeping it in memory won't block unloading of the server plugin. If the server plugin is unloaded, the send-functions will
-	 *         fail. To get reconnected once the server plugin is loaded again, you must obtain a fresh client from this function: Existing clients will stay
-	 *         disconnected.
-	 */
-    public FCPPluginClient connecToOtherPlugin(String pluginName, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
-            throws PluginNotFoundException {
-        return node.clientCore.getFCPServer().createPluginClientForIntraNodeFCP(pluginName, messageHandler);
+
+    /**
+     * <p>Creates a FCP connection with another plugin running in the same node.</p>
+     * 
+     * <p>While you are formally connecting via FCP, there is no actual network connection being
+     * created. The FCP messages are passed-through directly as Java objects. Therefore, this
+     * mechanism should be somewhat efficient.</p>
+     * 
+     * <p>(Plugins should communicate via FCP instead of passing objects of their own Java classes
+     * even if they are running within the same node because this encourages implementation of FCP
+     * servers, which in turn allows people to write alternative user interfaces for plugins.<br/>
+     * Also, this will allow future changes to the node to make it able to run each plugin within
+     * its own node and only connect them via real networked FC connections. This could be used for
+     * load balancing of plugins across multiple machines, CPU usage monitoring and other nice
+     * stuff.)</p>
+     * 
+     * @param pluginName
+     *            The name of the main class of the plugin - that is the class which implements
+     *            {@link FredPlugin}. See {@link PluginManager#getPluginInfoByClassName(String)}.
+     * @param messageHandler
+     *            An object of your plugin which implements the
+     *            {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler} interface. Its
+     *            purpose is to handle FCP messages which the remote plugin sends back to your
+     *            plugin.
+     * @return A {@link FCPPluginClient} representing the connection. <b>You are encouraged to keep
+     *         it in memory and use it for as long as you need it.</b> <br>
+     *         Notice especially that keeping it in memory won't block unloading of the server
+     *         plugin. If the server plugin is unloaded, the send-functions will fail. To get
+     *         reconnected once the server plugin is loaded again, you must obtain a fresh client
+     *         from this function: Existing clients will stay disconnected.
+     */
+    public FCPPluginClient connecToOtherPlugin(String pluginName,
+            FredPluginFCPMessageHandler.ClientSideFCPMessageHandler messageHandler)
+                throws PluginNotFoundException {
+        
+        return node.clientCore.getFCPServer().createPluginClientForIntraNodeFCP(pluginName,
+            messageHandler);
     }
 
     /**
-     * Allows FCP server plugins, that is plugins which implement {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
-     * connection by its ID - if the client is still connected.<br/>
-     * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the {@link FCPPluginClient} in memory after they have received
-     * it from {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}. If they did not keep a hard reference and only
-     * stored the ID, the {@link FCPPluginClient} would be garbage collected and thus considered as disconnected.
+     * Allows FCP server plugins, that is plugins which implement
+     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}, to obtain an existing client
+     * connection by its ID - if the client is still connected.<br>
      * 
-     * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)
-     *      The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler provides an explanation of when to use this.
-     * @param clientID The ID as obtained by {@link FCPPluginClient#getID()}
+     * <b>Must not</b> be used by client plugins: They shall instead keep a hard reference to the
+     * {@link FCPPluginClient} in memory after they have received it from
+     * {@link #connecToOtherPlugin(String, FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)}
+     * . If they did not keep a hard reference and only stored the ID, the {@link FCPPluginClient}
+     * would be garbage collected and thus considered as disconnected.
+     * 
+     * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
+     *      FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)
+     *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
+     *          provides an explanation of when to use this.
+     * @param clientID
+     *            The ID as obtained by {@link FCPPluginClient#getID()}
      * @return The client if it is still connected.
-     * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.
-     *                                 Notice: The client does not necessarily have to be a plugin, it can also be connected via networked FCP.
-     *                                 The type of the Exception is PluginNotFoundException so it matches what the send() functions of {@link FCPPluginClient}
-     *                                 throw and you only need a single catch-block.
+     * @throws PluginNotFoundException
+     *             If there has been no client with the given ID or if it has disconnected
+     *             meanwhile.<br>
+     *             Notice: The client does not necessarily have to be a plugin, it can also be
+     *             connected via networked FCP. The type of the Exception is PluginNotFoundException
+     *             so it matches what the send() functions of {@link FCPPluginClient} throw and you
+     *             only need a single catch-block.
      */
     public FCPPluginClient getPluginClientByID(UUID clientID) throws PluginNotFoundException {
         return node.clientCore.getFCPServer().getPluginClient(clientID);
