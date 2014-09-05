@@ -35,7 +35,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
         });
     }
 
-	protected transient long fileRestartCounter;
+	protected long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
 	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
