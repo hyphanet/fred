@@ -558,6 +558,13 @@ public class SplitFileInserterStorageTest extends TestCase {
         testRoundTripCrossSegmentRandom(CHKBlock.DATA_LENGTH*128*21);
     }
     
+    public void testRoundTripDataBlocksOnly() throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+        testRoundTripCrossSegmentDataBlocks(CHKBlock.DATA_LENGTH*128*5);
+        if(!TestProperty.EXTENSIVE) return;
+        // Test cross-segment:
+        testRoundTripCrossSegmentDataBlocks(CHKBlock.DATA_LENGTH*128*21);
+    }
+    
     public void testResumeCrossSegment() throws InsertException, IOException, MissingKeyException, StorageFormatException, ChecksumFailedException, ResumeFailedException, MetadataUnresolvedException {
         if(!TestProperty.EXTENSIVE) return;
         testResumeCrossSegment(CHKBlock.DATA_LENGTH*128*21);
@@ -909,6 +916,74 @@ public class SplitFileInserterStorageTest extends TestCase {
         assertTrue(i >= requiredBlocks);
         assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks());
         assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks() - 1); // Implies at least one cross-segment block decoded.
+        executor.waitForIdle(); // Wait for no encodes/decodes running.
+        fcb.waitForFinished();
+        verifyOutput(fetcherStorage, dataBucket);
+        fetcherStorage.finishedFetcher();
+        fcb.waitForFree();
+    }
+    
+    private void testRoundTripCrossSegmentDataBlocks(long size) throws IOException, InsertException, MissingKeyException, FetchException, MetadataParseException, Exception {
+        RandomSource r = new DummyRandomSource(12123);
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        Bucket dataBucket = new RAFBucket(data);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.earlyEncode = true;
+        KeysFetchingLocally keysFetching = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keysFetching, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        // Encoded. Now try to decode it ...
+        cb.waitForHasKeys();
+        Metadata metadata = storage.encodeMetadata();
+        assertTrue(storage.getStatus() == Status.ENCODED);
+
+        // Ugly hack because Metadata behaves oddly.
+        // FIXME make Metadata behave consistently and get rid.
+        Bucket metaBucket = metadata.toBucket(smallBucketFactory);
+        Metadata m1 = Metadata.construct(metaBucket);
+        Bucket copyBucket = m1.toBucket(smallBucketFactory);
+        assertTrue(BucketTools.equalBuckets(metaBucket, copyBucket));
+        
+        MyFetchCallback fcb = new MyFetchCallback();
+        
+        FetchContext fctx = HighLevelSimpleClientImpl.makeDefaultFetchContext(size*2, size*2, smallBucketFactory, new SimpleEventProducer());
+        
+        short cmode = (short) context.getCompatibilityMode().ordinal();
+        
+        SplitFileFetcherStorage fetcherStorage = new SplitFileFetcherStorage(m1, fcb, new ArrayList<COMPRESSOR_TYPE>(),
+                new ClientMetadata(), false, cmode, fctx, false, salt, URI, URI, true, new byte[0],
+                r, smallBucketFactory, smallRAFFactory, jobRunner, ticker, memoryLimitedJobRunner, 
+                checker, false, null, null, keysFetching);
+        
+        fetcherStorage.start(false);
+        
+        if(storage.crossSegments != null) {
+            int segments = storage.segments.length;
+            for(int i=0;i<segments;i++) {
+                assertEquals(storage.crossSegments[i].dataBlockCount, fetcherStorage.crossSegments[i].dataBlockCount);
+                assertTrue(Arrays.equals(storage.crossSegments[i].getSegmentNumbers(), fetcherStorage.crossSegments[i].getSegmentNumbers()));
+                assertTrue(Arrays.equals(storage.crossSegments[i].getBlockNumbers(), fetcherStorage.crossSegments[i].getBlockNumbers()));
+            }
+        }
+        
+        // It should be able to decode from just the data blocks.
+        
+        for(int segNo=0;segNo<storage.segments.length;segNo++) {
+            SplitFileInserterSegmentStorage inserterSegment = storage.segments[segNo];
+            SplitFileFetcherSegmentStorage fetcherSegment = fetcherStorage.segments[segNo];
+            for(int blockNo=0;blockNo<inserterSegment.dataBlockCount;blockNo++) {
+                ClientCHKBlock block = inserterSegment.encodeBlock(blockNo);
+                boolean success = fetcherSegment.onGotKey(block.getClientKey().getNodeCHK(), block.getBlock());
+                assertTrue(success);
+            }
+        }
+        
         executor.waitForIdle(); // Wait for no encodes/decodes running.
         fcb.waitForFinished();
         verifyOutput(fetcherStorage, dataBucket);
