@@ -21,11 +21,12 @@ import freenet.support.Logger;
  * CryptByteBuffer will encrypt and decrypt both byte[]s and BitSets with a specified
  * algorithm, key, and also an iv if the algorithm requires one. 
  * @author unixninja92
+ * 
+ * Suggested CryptByteBufferType to use: ChaCha128
  */
 @SuppressWarnings("deprecation") // Suppresses warnings about RijndaelPCFB being deprecated
 public final class CryptByteBuffer implements Serializable{
     private static final long serialVersionUID = 6143338995971755362L;
-    public static final CryptByteBufferType preferredCryptBitAlg = CryptByteBufferType.ChaCha128;
     private final CryptByteBufferType type;
     private final SecretKey key;
     private IvParameterSpec iv;

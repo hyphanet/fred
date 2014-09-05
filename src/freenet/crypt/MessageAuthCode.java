@@ -20,10 +20,9 @@ import freenet.support.Logger;
  * The MessageAuthCode class will generate the Message Authentication Code of a given set
  * of bytes using a secret key. It can also verify 
  * @author unixninja92
- *
+ * Suggested MACType to use: Poly1305AES
  */
 public final class MessageAuthCode {
-    public static final MACType preferredMAC = MACType.Poly1305AES;
     private final MACType type;
     private final Mac mac;
     private final SecretKey key;

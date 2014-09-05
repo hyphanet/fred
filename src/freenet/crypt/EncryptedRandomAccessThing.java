@@ -22,7 +22,7 @@ import freenet.support.io.RandomAccessThing;
  * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
  * SkippingStreamCipher. 
  * @author unixninja92
- *
+ * Suggested EncryptedRandomAccessThingType to use: ChaCha128
  */
 public final class EncryptedRandomAccessThing implements RandomAccessThing { 
     private final ReentrantLock readLock = new ReentrantLock();
