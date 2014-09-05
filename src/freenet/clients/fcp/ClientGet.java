@@ -581,7 +581,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
 			if((verbosity & verbosityMask) == 0)
 				return;
-			lastActivity = System.currentTimeMillis();
+			synchronized(this) {
+			    lastActivity = System.currentTimeMillis();
+			}
 			progress =
 				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 		} else if(ce instanceof SendingToNetworkEvent) {
