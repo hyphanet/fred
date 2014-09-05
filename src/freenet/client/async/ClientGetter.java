@@ -617,13 +617,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		} else {
 			if(logMINOR) Logger.minor(this, "Nothing to cancel");
 		}
-		ClientGetState state;
-		synchronized(this) {
-			state = currentState;
-		}
-		if(state == null) return;
-		Logger.error(this, "Cancelling "+currentState+" did not call onFailure(), so did not removeFrom() or call callback");
-		this.onFailure(new FetchException(FetchExceptionMode.CANCELLED), state, context);
 	}
 
 	/** Has the fetch completed? */
