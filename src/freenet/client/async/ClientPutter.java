@@ -409,7 +409,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** Called when a ClientPutState transitions to a new state. If this is the current state, then we update
 	 * it, but it might also be a subsidiary state, in which case we ignore it. */
 	@Override
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		if(newState == null) throw new NullPointerException();
 
 		// onTransition is *not* responsible for removing the old state, the caller is.

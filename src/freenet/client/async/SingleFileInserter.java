@@ -259,7 +259,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)origSize, -1, true, context, shouldFreeData, forSplitfile);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
-				cb.onTransition(this, bi);
+				cb.onTransition(this, bi, context);
 				if(ctx.earlyEncode && bi instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)bi).getBlock(context, true);
 				bi.schedule(context);
@@ -284,7 +284,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(context), hashes);
 				cb.onMetadata(meta, this, context);
-				cb.onTransition(this, dataPutter);
+				cb.onTransition(this, dataPutter, context);
 				dataPutter.schedule(context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, context);
@@ -315,7 +315,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter);
 				mcb.add(dataPutter);
-				cb.onTransition(this, mcb);
+				cb.onTransition(this, mcb, context);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(context);
 				dataPutter.schedule(context);
@@ -353,7 +353,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			        realTimeFlag, token);
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
-			cb.onTransition(this, sfi);
+			cb.onTransition(this, sfi, context);
 			sfi.schedule(context);
 			block.nullData();
 			block.nullMetadata();
@@ -375,7 +375,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			sh.sfi = sfi;
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
-			cb.onTransition(this, sh);
+			cb.onTransition(this, sh, context);
 			sfi.schedule(context);
 			started = true;
 			// SplitHandler will need this.origHashes.
@@ -575,7 +575,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		}
 
 		@Override
-		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 			if(persistent) { // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 			}

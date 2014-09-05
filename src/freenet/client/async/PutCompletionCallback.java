@@ -19,7 +19,7 @@ public interface PutCompletionCallback {
 	 * on the ClientPutter, which relays to the fcp layer, which sends a URIGenerated message. */
 	public void onEncode(BaseClientKey usk, ClientPutState state, ClientContext context);
 	
-	public void onTransition(ClientPutState oldState, ClientPutState newState);
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context);
 	
 	/** Only called if explicitly asked for, in which case, generally
 	 * the metadata won't be inserted. Won't be called if there isn't

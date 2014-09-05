@@ -197,7 +197,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, reportMetadataOnly, token, archiveType, true, null, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
-		cb.onTransition(this, sfi);
+		cb.onTransition(this, sfi, context);
 		try {
 			sfi.schedule(context);
 		} catch (InsertException e) {

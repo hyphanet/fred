@@ -551,7 +551,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onTransition(ClientPutState oldState, ClientPutState newState) {
+		public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 			if(newState == null) throw new NullPointerException();
 
 			// onTransition is *not* responsible for removing the old state, the caller is.
@@ -1227,7 +1227,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	public void onTransition(ClientPutState from, ClientPutState to) {
+	public void onTransition(ClientPutState from, ClientPutState to, ClientContext context) {
 	    // Everything should be on the PutHandler's, right?
 	    Logger.error(this, "Ignoring transition from "+from+" to "+to+" on "+this);
 		// Ignore

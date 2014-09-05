@@ -154,7 +154,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		// Should never happen
 		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from "+oldState+" to "+newState, new Exception("debug"));
 	}

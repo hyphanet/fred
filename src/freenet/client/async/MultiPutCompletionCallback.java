@@ -232,7 +232,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	@Override
-	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		if(generator == oldState)
 			generator = newState;
 		if(oldState == newState) return;

@@ -184,7 +184,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				} // Else try to insert the other hints.
 			}
 		}
-		cb.onTransition(this, m);
+		cb.onTransition(this, m, context);
 		m.arm(context);
 	}
 
@@ -377,7 +377,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	@Override
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		// Shouldn't happen
 		Logger.error(this, "Got onTransition("+oldState+ ',' +newState+ ')');
 	}
