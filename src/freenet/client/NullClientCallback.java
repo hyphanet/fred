@@ -47,11 +47,6 @@ public class NullClientCallback implements ClientGetCallback, ClientPutCallback 
 	}
 
 	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
-	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess result=" + result + ", state=" + state);
 		result.data.free();

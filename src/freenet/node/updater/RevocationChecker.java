@@ -335,12 +335,6 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				pattern, value);
 	}
 
-	@Override
-	public void onMajorProgress() {
-		// TODO Auto-generated method stub
-		
-	}
-
 	public void kill() {
 		if(revocationGetter != null)
 			revocationGetter.cancel(core.clientContext);

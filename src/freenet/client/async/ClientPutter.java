@@ -303,12 +303,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onFailure(e, this);
 	}
 
-	/** Called when significant milestones are passed. */
-	@Override
-	public void onMajorProgress() {
-		client.onMajorProgress();
-	}
-
 	/** Called when we know the final URI of the insert. */
 	@Override
 	public void onEncode(BaseClientKey key, ClientPutState state, ClientContext context) {

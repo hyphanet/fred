@@ -63,10 +63,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			final RequestClient client, USKRetrieverCallback cb, USK origUSK) {
 		super(prio, new ClientBaseCallback() {
             @Override
-            public void onMajorProgress() {
-                // Ignore.
-            }
-            @Override
             public void onResume(ClientContext context) {
                 throw new IllegalStateException();
             }

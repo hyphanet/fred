@@ -389,11 +389,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
-	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Bucket droppedData = null;
 		synchronized(this) {

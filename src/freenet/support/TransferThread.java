@@ -226,9 +226,4 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	@Override
 	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public abstract void onMajorProgress();
-
 }

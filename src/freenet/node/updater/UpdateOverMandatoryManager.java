@@ -1073,10 +1073,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					cleanedBlob.free();
 				}
 			}
-			@Override
-			public void onMajorProgress() {
-				// Ignore
-			}
 
 			@Override
 			public void onSuccess(FetchResult result, ClientGetter state) {
@@ -1128,11 +1124,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			
 			@Override
 			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-				// Ignore
-			}
-			
-			@Override
-			public void onMajorProgress() {
 				// Ignore
 			}
 			
@@ -1532,11 +1523,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to fetch main jar " + version + " from blob from " + toString);
 					System.err.println("Failed to fetch main jar " + version + " from blob from " + toString);
 				}
-			}
-
-			@Override
-			public void onMajorProgress() {
-				// Ignore
 			}
 
 			@Override

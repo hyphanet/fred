@@ -22,8 +22,6 @@ public abstract class BaseClientPutter extends ClientRequester {
 		super(priorityClass, cb);
 	}
 
-	public abstract void onMajorProgress();
-
 	public void dump() {
 		// Do nothing
 	}

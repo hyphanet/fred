@@ -267,11 +267,6 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 
 	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
-	@Override
 	public void onFetchable(BaseClientPutter state) {
 		// Ignore, we don't care
 	}

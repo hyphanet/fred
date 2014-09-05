@@ -50,10 +50,6 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
     static final ClientBaseCallback BOGUS_CALLBACK = 
         new ClientBaseCallback() {
             @Override
-            public void onMajorProgress() {
-                // Ignore.
-            }
-            @Override
             public void onResume(ClientContext context) {
                 throw new IllegalStateException(); // Impossible.
             }
@@ -102,11 +98,6 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	public void queue(Bucket data, byte[] cryptoKey, byte cryptoAlgorithm, ClientContext context) {
 		if(!innerQueue(data, cryptoKey, cryptoAlgorithm, context))
 			data.free();
-	}
-
-	@Override
-	public void onMajorProgress() {
-		// Ignore
 	}
 
 	@Override

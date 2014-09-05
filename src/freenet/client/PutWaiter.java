@@ -77,11 +77,6 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
-	@Override
 	public void onFetchable(BaseClientPutter state) {
 		// Ignore
 	}

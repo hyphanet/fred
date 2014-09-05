@@ -166,11 +166,6 @@ public class MainJarUpdater extends NodeUpdater implements Deployer {
 		}
 		
 		@Override
-		public void onMajorProgress() {
-			// Ignore.
-		}
-		
-		@Override
 		public boolean persistent() {
 			return false;
 		}

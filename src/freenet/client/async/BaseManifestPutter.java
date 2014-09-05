@@ -650,11 +650,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 
 		@Override
-		public void onMajorProgress() {
-			BaseManifestPutter.this.onMajorProgress();
-		}
-
-		@Override
 		public void onFetchable(ClientPutState state) {
 			if(logMINOR) Logger.minor(this, "onFetchable " + this, new Exception("debug"));
 			BaseManifestPutter.this.onFetchable(this);
@@ -1196,11 +1191,6 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	public long totalSize() {
 		return totalSize;
-	}
-
-	@Override
-	public void onMajorProgress() {
-		cb.onMajorProgress();
 	}
 
 	protected void onFetchable(PutHandler handler) {

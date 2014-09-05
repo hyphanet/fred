@@ -452,11 +452,6 @@ public class NodeUpdateManager {
 			}
 		}
 
-		@Override
-		public void onMajorProgress() {
-			// Ignore
-		}
-
         @Override
         public void onResume(ClientContext context) {
             // Not persistent.

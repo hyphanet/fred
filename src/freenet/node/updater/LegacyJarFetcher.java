@@ -144,11 +144,6 @@ class LegacyJarFetcher implements ClientGetCallback {
 	}
 
 	@Override
-	public void onMajorProgress() {
-		// Ignore.
-	}
-
-	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		result.asBucket().free();
 		if(!FileUtil.renameTo(tempFile, saveTo)) {

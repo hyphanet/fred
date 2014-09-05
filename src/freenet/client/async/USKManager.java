@@ -264,11 +264,6 @@ public class USKManager {
 		final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 
 			@Override
-			public void onMajorProgress() {
-				// Ignore
-			}
-
-			@Override
 			public void onSuccess(FetchResult result, ClientGetter state) {
 				cb.success(origURI, token);
 			}
@@ -428,11 +423,6 @@ public class USKManager {
 						updateKnownGood(key, l, context);
 					}
 					
-					@Override
-					public void onMajorProgress() {
-						// Ignore
-					}
-
                     @Override
                     public void onResume(ClientContext context) {
                         // Do nothing. Not persistent.

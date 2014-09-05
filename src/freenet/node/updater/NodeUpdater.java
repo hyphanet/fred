@@ -503,11 +503,6 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		return URI;
 	}
 
-	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
 	public synchronized boolean canUpdateNow() {
 		return fetchedVersion > currentVersion;
 	}

@@ -50,11 +50,6 @@ public class FetchWaiter implements ClientGetCallback {
 		return result;
 	}
 
-	@Override
-	public void onMajorProgress() {
-		// Ignore
-	}
-
     @Override
     public void onResume(ClientContext context) {
         throw new UnsupportedOperationException();

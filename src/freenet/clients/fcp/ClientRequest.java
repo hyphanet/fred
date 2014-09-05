@@ -288,10 +288,6 @@ public abstract class ClientRequest implements Serializable {
 	 */
 	public abstract boolean isTotalFinalized();
 
-	public void onMajorProgress() {
-		// Ignore
-	}
-
 	/** Start the request, if it has not already been started. */
 	public abstract void start(ClientContext context);
 

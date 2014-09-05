@@ -11,11 +11,6 @@ import freenet.support.io.ResumeFailedException;
  * GlobalPersistentClient, implement this somewhere.
  */
 public interface ClientBaseCallback {
-	/**
-	 * Called when freenet.async thinks that the request should be serialized to disk, if it is a
-	 * persistent request.
-	 */
-	public void onMajorProgress();
 	
 	/**
 	 * Called for a persistent request when the node is restarted. Must re-register with whatever
