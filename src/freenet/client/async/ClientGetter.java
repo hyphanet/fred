@@ -656,6 +656,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	        }
 	        e = new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized);
 	    }
+	    // Already off-thread.
 		ctx.eventProducer.produceEvent(e, context);
 	}
 
@@ -665,7 +666,15 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 */
 	@Override
 	protected void innerToNetwork(ClientContext context) {
-		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
+	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), context);
+                return false;
+            }
+	        
+	    });
 	}
 
 	/**
@@ -780,7 +789,19 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		synchronized(this) {
 			expectedMIME = mime;
 		}
-		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), context);
+		context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                String mime;
+                synchronized(this) {
+                    mime = expectedMIME;
+                }
+                ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), context);
+                return false;
+            }
+		    
+		});
 	}
 
 	private void checkCompatibleExtension(String mimeType) throws FetchException {
@@ -794,11 +815,19 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
 	/** Called when we have some idea of the length of the final data */
 	@Override
-	public void onExpectedSize(long size, ClientContext context) {
+	public void onExpectedSize(final long size, ClientContext context) {
 		if(finalizedMetadata) return;
 		if(finalBlocksRequired != 0) return;
 		expectedSize = size;
-		ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(size), context);
+		context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(size), context);
+                return false;
+            }
+		    
+		});
 	}
 
 	/** Called when we are fairly sure that the expected MIME and size won't change */
@@ -867,8 +896,19 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	}
 
 	@Override
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), context);
+	public void onSplitfileCompatibilityMode(final CompatibilityMode min, 
+	        final CompatibilityMode max, final byte[] customSplitfileKey, 
+	        final boolean dontCompress, final boolean bottomLayer, final boolean definitiveAnyway, 
+	        ClientContext context) {
+	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey, dontCompress, bottomLayer || definitiveAnyway), context);
+                return false;
+            }
+	        
+	    });
 	}
 
 	@Override
@@ -883,7 +923,16 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		}
 		HashResult[] clientHashes = hashes;
 		if(persistent()) clientHashes = HashResult.copy(hashes);
-		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(clientHashes), context);
+		final HashResult[] h = clientHashes;
+		context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                ctx.eventProducer.produceEvent(new ExpectedHashesEvent(h), context);
+                return false;
+            }
+		    
+		});
 	}
 
 	@Override
@@ -896,6 +945,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			// FIXME implement when implement clearCooldown().
 			// It means everything that can be started has been started.
 		} else {
+		    // Already off-thread.
 			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), context);
 		}
 	}
