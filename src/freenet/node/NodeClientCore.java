@@ -247,6 +247,23 @@ public class NodeClientCore implements Persistable {
 		    throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 		
+		// Delete the old blob file. We don't use it now, and it uses a lot of disk space.
+		// Hopefully it will free up enough space for auto-migration...
+        File oldBlobFile = new File(persistentTempDir.dir(), "persistent-blob.tmp");
+        if(oldBlobFile.exists()) {
+            System.err.println("Deleting "+oldBlobFile);
+            if(persistentTempBucketFactory.isEncrypting()) {
+                try {
+                    FileUtil.secureDelete(oldBlobFile);
+                } catch (IOException e) {
+                    System.err.println("Unable to delete old blob file "+oldBlobFile+" : error: "+e);
+                    System.err.println("Please delete "+oldBlobFile+" yourself.");
+                }
+            } else {
+                oldBlobFile.delete();
+            }
+        }
+        
 	      // Allocate 10% of the RAM to the RAMBucketPool by default
         int defaultRamBucketPoolSize;
         long maxMemory = NodeStarter.getMemoryLimitMB();
