@@ -33,7 +33,7 @@ import freenet.support.io.NativeThread;
  * connected.</p>
  * 
  * <p>After constructing an object of this class, you must call {@link #start()} to start its garbage collection thread.<br/>
- * For shutdown, no action is required: The thread will be a daemon thread and thus the JVM will deal with shutdown.</p> 
+ * For shutdown, no action is required: The thread will be a daemon thread and thus the JVM will deal with shutdown.</p>
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -67,7 +67,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * to remove those {@link WeakReference}s from the {@link TreeMap}. For fast removal, we need their key in the map, which is the client ID, so we should
      * store it in the {@link WeakReference}.
      */
-    private static final class FCPPluginClientWeakReference extends WeakReference<FCPPluginClient> {     
+    private static final class FCPPluginClientWeakReference extends WeakReference<FCPPluginClient> {
         public final UUID clientID;
 
         public FCPPluginClientWeakReference(FCPPluginClient referent, ReferenceQueue<FCPPluginClient> referenceQueue) {
@@ -83,7 +83,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * <b>Must</b> be called for any newly created {@link FCPPluginClient} before passing it to
      * {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
      * 
-     * Unregistration is not supported and not necessary. 
+     * Unregistration is not supported and not necessary.
      */
    void registerClient(FCPPluginClient client) {
         clientsByIDLock.writeLock().lock();
@@ -105,7 +105,7 @@ final class FCPPluginClientTracker extends NativeThread {
      * 
      * @param clientID The ID of{@link FCPPluginClient#getID()} of a client which has already sent a message to your plugin via
      *                 {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
-     * @return The client with the given ID, for as long as it is still connected to the node. 
+     * @return The client with the given ID, for as long as it is still connected to the node.
      * @throws PluginNotFoundException If there has been no client with the given ID or if it has disconnected meanwhile.
      *                                 Notice: The client does not necessarily have to be a plugin. The type of the Exception is similar to
      *                                 PluginNotFoundException so it matches what the send() functions of {@link FCPPluginClient} throw.
@@ -117,7 +117,7 @@ final class FCPPluginClientTracker extends NativeThread {
         try {
             ref = clientsByID.get(clientID);
         } finally {
-            clientsByIDLock.readLock().unlock();    
+            clientsByIDLock.readLock().unlock();
         }
         
         FCPPluginClient client = ref != null ? ref.get() : null;
@@ -154,11 +154,11 @@ final class FCPPluginClientTracker extends NativeThread {
                                            + "; client ID = " + disconnectedClient.clientID);
                 }
             } finally {
-                clientsByIDLock.writeLock().unlock();    
+                clientsByIDLock.writeLock().unlock();
             }
         } catch(InterruptedException e) {
             // We did setDaemon(true), which causes the JVM to exit even if the thread is still running: Daemon threads are force terminated during shutdown.
-            // Thus, this thread does not need an exit mechanism, it can be an infinite loop. So nothing should try to terminate it by InterruptedException. 
+            // Thus, this thread does not need an exit mechanism, it can be an infinite loop. So nothing should try to terminate it by InterruptedException.
             // If it does happen nevertheless, we honor it by exiting the thread, because interrupt requests should never be ignored, but log it as an error.
             Logger.error(this, "Thread interruption requested even though this is a daemon thread!", e);
             throw new RuntimeException(e);
