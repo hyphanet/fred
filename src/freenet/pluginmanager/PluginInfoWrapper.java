@@ -32,12 +32,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isBandwidthIndicator;
 	private final boolean isPortForwardPlugin;
 	private final boolean isMultiplePlugin;
-	/**
-	 * Use {@link #isFCPServerPlugin} instead.
-	 */
-	@Deprecated
-	private final boolean isFCPPlugin;
-	private final boolean isFCPServerPlugin;
+    /** Use {@link #isFCPServerPlugin} instead. */
+    @Deprecated
+    private final boolean isFCPPlugin;
+    private final boolean isFCPServerPlugin;
 	private final boolean isVersionedPlugin;
 	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
@@ -63,8 +61,9 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
-		isFCPPlugin = (plug instanceof FredPluginFCP);
-		isFCPServerPlugin = (plug instanceof FredPluginFCPMessageHandler.ServerSideFCPMessageHandler);
+        isFCPPlugin = (plug instanceof FredPluginFCP);
+        isFCPServerPlugin
+            = (plug instanceof FredPluginFCPMessageHandler.ServerSideFCPMessageHandler);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
@@ -234,18 +233,18 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	public boolean isMultiplePlugin() {
 		return isMultiplePlugin;
 	}
-	
-	/**
-	 * @deprecated Use {@link #isFCPServerPlugin()}
-	 */
-	@Deprecated
-	public boolean isFCPPlugin() {
-		return isFCPPlugin;
-	}
 
-	public boolean isFCPServerPlugin() {
-		return isFCPServerPlugin;
-	}
+    /**
+     * @deprecated Use {@link #isFCPServerPlugin()}
+     */
+    @Deprecated
+    public boolean isFCPPlugin() {
+        return isFCPPlugin;
+    }
+
+    public boolean isFCPServerPlugin() {
+        return isFCPServerPlugin;
+    }
 
 	public boolean isThemedPlugin() {
 		return isThemedPlugin;
