@@ -412,14 +412,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ClientContext context) {
 		if(newState == null) throw new NullPointerException();
 
-		// onTransition is *not* responsible for removing the old state, the caller is.
 		synchronized (this) {
 			if (currentState == oldState) {
 				currentState = newState;
 				return;
 			}
 		}
-		Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
+		Logger.normal(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
 	/** Called when we have generated metadata for the insert. This should not happen, because we should
