@@ -32,7 +32,6 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     private SkippingStreamCipher cipherRead;
     private SkippingStreamCipher cipherWrite;
-    private KeyParameter cipherKey;
     private ParametersWithIV cipherParams;//includes key
     
     private SecretKey headerMacKey;
@@ -111,7 +110,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }
 
         try{
-        	this.cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
+            KeyParameter cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
         			(Class<?>)this.getClass(), kdfInput.underlyingKey.input, 
         			type.encryptKey).getEncoded());
         	this.cipherParams = new ParametersWithIV(cipherKey, 
