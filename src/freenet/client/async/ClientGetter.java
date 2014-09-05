@@ -644,15 +644,19 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 */
 	@Override
 	public void notifyClients(ClientContext context) {
-		int total = this.totalBlocks;
-		int minSuccess = this.minSuccessBlocks;
-		boolean finalized = blockSetFinalized;
-		if(this.finalBlocksRequired != 0) {
-			total = finalBlocksTotal;
-			minSuccess = finalBlocksRequired;
-			finalized = true;
-		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized), context);
+	    SplitfileProgressEvent e;
+	    synchronized(this) {
+	        int total = this.totalBlocks;
+	        int minSuccess = this.minSuccessBlocks;
+	        boolean finalized = blockSetFinalized;
+	        if(this.finalBlocksRequired != 0) {
+	            total = finalBlocksTotal;
+	            minSuccess = finalBlocksRequired;
+	            finalized = true;
+	        }
+	        e = new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized);
+	    }
+		ctx.eventProducer.produceEvent(e, context);
 	}
 
 	/**

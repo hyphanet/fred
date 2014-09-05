@@ -478,7 +478,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	@Override
 	public void notifyClients(ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), context);
+	    SplitfileProgressEvent e;
+	    synchronized(this) {
+	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized);
+	    }
+		ctx.eventProducer.produceEvent(e, context);
 	}
 
 	/** Notify listening clients that an insert has been sent to the network. */

@@ -1173,7 +1173,11 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 	@Override
 	public void notifyClients(ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized), context);
+	    SplitfileProgressEvent e;
+	    synchronized(this) {
+	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized);
+	    }
+		ctx.eventProducer.produceEvent(e, context);
 	}
 
 	@Override
