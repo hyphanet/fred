@@ -35,7 +35,7 @@ import freenet.support.api.Bucket;
  *          PluginRespirator provides the function to connect to a FCP server plugin.
  * @see FCPPluginClient
  *          A client will be represented as class FCPPluginClient to the client and server plugin.
- *          It's Java provides an overview of the internal code paths through which plugin FCP
+ *          It's JavaDoc provides an overview of the internal code paths through which plugin FCP
  *          messages flow.
  */
 public interface FredPluginFCPMessageHandler {
