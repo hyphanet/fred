@@ -40,12 +40,12 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     
     private SecretKey unencryptedBaseKey;
     
-    private MasterSecret masterSecret;
     private SecretKey headerEncKey;
     private byte[] headerEncIV;
     private int version; 
     
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
+    private static final int VERSION_AND_MAGIC_LENGTH = 12;
     
     /**
      * Creates an instance of EncryptedRandomAccessThing wrapping underlyingThing. Keys for key 
@@ -67,11 +67,11 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         this.cipherRead = this.type.get();
         this.cipherWrite = this.type.get();
         
-        this.masterSecret = masterKey;
+        MasterSecret masterSecret = masterKey;
         
-        this.headerEncKey = this.masterSecret.deriveKey(type.encryptKey);
+        this.headerEncKey = masterSecret.deriveKey(type.encryptKey);
         
-        this.headerMacKey = this.masterSecret.deriveKey(type.macKey);
+        this.headerMacKey = masterSecret.deriveKey(type.macKey);
         
         
         if(underlyingThing.size() < type.footerLen){
@@ -79,10 +79,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
                     + "footer.");
         }
         
-        int len = 12;
-        byte[] footer = new byte[len];
+        byte[] footer = new byte[VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(underlyingThing.size()-len, footer, offset, len);
+        underlyingThing.pread(underlyingThing.size()-VERSION_AND_MAGIC_LENGTH, footer, offset, 
+                VERSION_AND_MAGIC_LENGTH);
         
         int readVersion = ByteBuffer.wrap(footer, offset, 4).getInt();
         offset += 4;
@@ -104,8 +104,8 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         				+ "incompatible with this ERATType");
         	}
 
-        	if(!readFooter()){
-        		throw new GeneralSecurityException("Mac is incorrect");
+        	if(!verifyFooter()){
+        		throw new GeneralSecurityException("MAC is incorrect");
         	}
         }
 
@@ -250,10 +250,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
      * @throws IOException
      * @throws InvalidKeyException
      */
-    private boolean readFooter() throws IOException, InvalidKeyException {
-        byte[] footer = new byte[type.footerLen-12];
+    private boolean verifyFooter() throws IOException, InvalidKeyException {
+        byte[] footer = new byte[type.footerLen-VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(size(), footer, offset, type.footerLen-12);
+        underlyingThing.pread(size(), footer, offset, type.footerLen-VERSION_AND_MAGIC_LENGTH);
         
         headerEncIV = new byte[type.encryptType.ivSize];
         System.arraycopy(footer, offset, headerEncIV, 0, headerEncIV.length);
