@@ -223,7 +223,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	@Override
-	public void notifyClients(ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 		// Ignore for now
 	}
 

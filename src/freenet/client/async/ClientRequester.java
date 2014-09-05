@@ -258,8 +258,20 @@ public abstract class ClientRequester implements Serializable {
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 	
+	public final void notifyClients(ClientContext context) {
+	    context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
+
+            @Override
+            public boolean run(ClientContext context) {
+                innerNotifyClients(context);
+                return false;
+            }
+	        
+	    });
+	}
+	
 	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
-	public abstract void notifyClients(ClientContext context);
+	protected abstract void innerNotifyClients(ClientContext context);
 	
 	/** Called when we first send a request to the network. Ensures that it really is the first time and
 	 * passes on to innerToNetwork().

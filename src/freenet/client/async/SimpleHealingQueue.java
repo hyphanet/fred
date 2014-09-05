@@ -120,7 +120,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void notifyClients(ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 		// Do nothing
 	}
 

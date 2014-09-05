@@ -643,7 +643,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	 * SplitfileProgressEvent.
 	 */
 	@Override
-	public void notifyClients(ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 	    SplitfileProgressEvent e;
 	    synchronized(this) {
 	        int total = this.totalBlocks;

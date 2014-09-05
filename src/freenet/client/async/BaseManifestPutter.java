@@ -630,7 +630,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		
 		@Override
-		public void notifyClients(ClientContext context) {
+		protected void innerNotifyClients(ClientContext context) {
 		    BaseManifestPutter.this.notifyClients(context);
 		}
 
@@ -1172,7 +1172,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 	}
 
 	@Override
-	public void notifyClients(ClientContext context) {
+	public void innerNotifyClients(ClientContext context) {
 	    SplitfileProgressEvent e;
 	    synchronized(this) {
 	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized);

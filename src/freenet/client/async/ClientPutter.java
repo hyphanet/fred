@@ -477,7 +477,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	@Override
-	public void notifyClients(ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 	    SplitfileProgressEvent e;
 	    synchronized(this) {
 	        e = new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized);

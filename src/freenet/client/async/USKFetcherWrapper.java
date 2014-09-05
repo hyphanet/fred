@@ -55,7 +55,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void notifyClients(ClientContext context) {
+	protected void innerNotifyClients(ClientContext context) {
 		// Do nothing
 	}
 
