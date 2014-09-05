@@ -145,9 +145,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		originalFiles = null;
 	}
 
-	/** Create a persistent temporary bucket. Use a blob if it is exactly 32KB, otherwise use a temporary
-	 * file. Encrypted if appropriate. Wrapped in a DelayedFreeBucket so that they will not be deleted until
-	 * after the transaction deleting them in the database commits. */
+	/** Create a persistent temporary bucket. Encrypted if appropriate. Wrapped in a 
+	 * DelayedFreeBucket so that they will not be deleted until after the transaction deleting 
+	 * them in the database commits. */
 	@Override
 	public RandomAccessBucket makeBucket(long size) throws IOException {
 		RandomAccessBucket rawBucket = null;
