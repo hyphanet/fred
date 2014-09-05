@@ -662,136 +662,141 @@ public class SplitFileFetcherStorage {
             throw new StorageFormatException("Basic settings checksum invalid");
         }
         dis = new DataInputStream(new ByteArrayInputStream(basicSettingsBuffer));
-        splitfileType = dis.readShort();
-        if(!Metadata.isValidSplitfileType(splitfileType))
-            throw new StorageFormatException("Invalid splitfile type "+splitfileType);
-        this.fecCodec = FECCodec.getInstance(splitfileType);
-        splitfileSingleCryptoAlgorithm = dis.readByte();
-        if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileSingleCryptoAlgorithm))
-            throw new StorageFormatException("Invalid splitfile crypto algorithm "+splitfileType);
-        if(dis.readBoolean()) {
-            splitfileSingleCryptoKey = new byte[32];
-            dis.readFully(splitfileSingleCryptoKey);
-        } else {
-            splitfileSingleCryptoKey = null;
-        }
-        finalLength = dis.readLong();
-        if(finalLength < 0)
-            throw new StorageFormatException("Invalid final length "+finalLength);
-        decompressedLength = dis.readLong();
-        if(decompressedLength < 0)
-            throw new StorageFormatException("Invalid decompressed length "+decompressedLength);
         try {
-            clientMetadata = ClientMetadata.construct(dis);
-        } catch (MetadataParseException e) {
-            throw new StorageFormatException("Invalid MIME type");
-        }
-        int decompressorCount = dis.readInt();
-        if(decompressorCount < 0)
-            throw new StorageFormatException("Invalid decompressor count "+decompressorCount);
-        decompressors = new ArrayList<COMPRESSOR_TYPE>(decompressorCount);
-        for(int i=0;i<decompressorCount;i++) {
-            short type = dis.readShort();
-            COMPRESSOR_TYPE d = COMPRESSOR_TYPE.getCompressorByMetadataID(type);
-            if(d == null) throw new StorageFormatException("Invalid decompressor ID "+type);
-            decompressors.add(d);
-        }
-        offsetKeyList = dis.readLong();
-        if(offsetKeyList < 0 || offsetKeyList > rafLength) 
-            throw new StorageFormatException("Invalid offset (key list)");
-        offsetSegmentStatus = dis.readLong();
-        if(offsetSegmentStatus < 0 || offsetSegmentStatus > rafLength) 
-            throw new StorageFormatException("Invalid offset (segment status)");
-        offsetGeneralProgress = dis.readLong();
-        if(offsetGeneralProgress < 0 || offsetGeneralProgress > rafLength) 
-            throw new StorageFormatException("Invalid offset (general progress)");
-        offsetMainBloomFilter = dis.readLong();
-        if(offsetMainBloomFilter < 0 || offsetMainBloomFilter > rafLength) 
-            throw new StorageFormatException("Invalid offset (main bloom filter)");
-        offsetSegmentBloomFilters = dis.readLong();
-        if(offsetSegmentBloomFilters < 0 || offsetSegmentBloomFilters > rafLength) 
-            throw new StorageFormatException("Invalid offset (segment bloom filters)");
-        offsetOriginalMetadata = dis.readLong();
-        if(offsetOriginalMetadata < 0 || offsetOriginalMetadata > rafLength) 
-            throw new StorageFormatException("Invalid offset (original metadata)");
-        offsetOriginalDetails = dis.readLong();
-        if(offsetOriginalDetails < 0 || offsetOriginalDetails > rafLength) 
-            throw new StorageFormatException("Invalid offset (original metadata)");
-        offsetBasicSettings = dis.readLong();
-        if(offsetBasicSettings != basicSettingsOffset)
-            throw new StorageFormatException("Invalid basic settings offset (not the same as computed)");
-        if(completeViaTruncation != dis.readBoolean())
-            throw new StorageFormatException("Complete via truncation flag is wrong");
-        int compatMode = dis.readInt();
-        if(compatMode < 0 || compatMode > CompatibilityMode.values().length)
-            throw new StorageFormatException("Invalid compatibility mode "+compatMode);
-        finalMinCompatMode = CompatibilityMode.values()[compatMode];
-        int segmentCount = dis.readInt();
-        if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
-        this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
-        int totalDataBlocks = dis.readInt();
-        if(totalDataBlocks < 0) 
-            throw new StorageFormatException("Invalid total data blocks "+totalDataBlocks);
-        int totalCheckBlocks = dis.readInt();
-        if(totalCheckBlocks < 0) 
-            throw new StorageFormatException("Invalid total check blocks "+totalDataBlocks);
-        int totalCrossCheckBlocks = dis.readInt();
-        if(totalCrossCheckBlocks < 0)
-            throw new StorageFormatException("Invalid total cross-check blocks "+totalDataBlocks);
-        long dataOffset = 0;
-        long crossCheckBlocksOffset;
-        if(completeViaTruncation) {
-            crossCheckBlocksOffset = totalDataBlocks * CHKBlock.DATA_LENGTH;
-        } else {
-            crossCheckBlocksOffset = 0;
-        }
-        long segmentKeysOffset = offsetKeyList;
-        long segmentStatusOffset = offsetSegmentStatus;
-        int countDataBlocks = 0;
-        int countCheckBlocks = 0;
-        int countCrossCheckBlocks = 0;
-        for(int i=0;i<segments.length;i++) {
-            segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, 
-                    dataOffset, completeViaTruncation ? crossCheckBlocksOffset : -1,
-                    segmentKeysOffset, segmentStatusOffset, keysFetching);
-            int dataBlocks = segments[i].dataBlocks;
-            countDataBlocks += dataBlocks;
-            int checkBlocks = segments[i].checkBlocks;
-            countCheckBlocks += checkBlocks;
-            int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
-            countCrossCheckBlocks += crossCheckBlocks;
-            dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
-            if(completeViaTruncation)
-                crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+            splitfileType = dis.readShort();
+            if(!Metadata.isValidSplitfileType(splitfileType))
+                throw new StorageFormatException("Invalid splitfile type "+splitfileType);
+            this.fecCodec = FECCodec.getInstance(splitfileType);
+            splitfileSingleCryptoAlgorithm = dis.readByte();
+            if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileSingleCryptoAlgorithm))
+                throw new StorageFormatException("Invalid splitfile crypto algorithm "+splitfileType);
+            if(dis.readBoolean()) {
+                splitfileSingleCryptoKey = new byte[32];
+                dis.readFully(splitfileSingleCryptoKey);
+            } else {
+                splitfileSingleCryptoKey = null;
+            }
+            finalLength = dis.readLong();
+            if(finalLength < 0)
+                throw new StorageFormatException("Invalid final length "+finalLength);
+            decompressedLength = dis.readLong();
+            if(decompressedLength < 0)
+                throw new StorageFormatException("Invalid decompressed length "+decompressedLength);
+            try {
+                clientMetadata = ClientMetadata.construct(dis);
+            } catch (MetadataParseException e) {
+                throw new StorageFormatException("Invalid MIME type");
+            }
+            int decompressorCount = dis.readInt();
+            if(decompressorCount < 0)
+                throw new StorageFormatException("Invalid decompressor count "+decompressorCount);
+            decompressors = new ArrayList<COMPRESSOR_TYPE>(decompressorCount);
+            for(int i=0;i<decompressorCount;i++) {
+                short type = dis.readShort();
+                COMPRESSOR_TYPE d = COMPRESSOR_TYPE.getCompressorByMetadataID(type);
+                if(d == null) throw new StorageFormatException("Invalid decompressor ID "+type);
+                decompressors.add(d);
+            }
+            offsetKeyList = dis.readLong();
+            if(offsetKeyList < 0 || offsetKeyList > rafLength) 
+                throw new StorageFormatException("Invalid offset (key list)");
+            offsetSegmentStatus = dis.readLong();
+            if(offsetSegmentStatus < 0 || offsetSegmentStatus > rafLength) 
+                throw new StorageFormatException("Invalid offset (segment status)");
+            offsetGeneralProgress = dis.readLong();
+            if(offsetGeneralProgress < 0 || offsetGeneralProgress > rafLength) 
+                throw new StorageFormatException("Invalid offset (general progress)");
+            offsetMainBloomFilter = dis.readLong();
+            if(offsetMainBloomFilter < 0 || offsetMainBloomFilter > rafLength) 
+                throw new StorageFormatException("Invalid offset (main bloom filter)");
+            offsetSegmentBloomFilters = dis.readLong();
+            if(offsetSegmentBloomFilters < 0 || offsetSegmentBloomFilters > rafLength) 
+                throw new StorageFormatException("Invalid offset (segment bloom filters)");
+            offsetOriginalMetadata = dis.readLong();
+            if(offsetOriginalMetadata < 0 || offsetOriginalMetadata > rafLength) 
+                throw new StorageFormatException("Invalid offset (original metadata)");
+            offsetOriginalDetails = dis.readLong();
+            if(offsetOriginalDetails < 0 || offsetOriginalDetails > rafLength) 
+                throw new StorageFormatException("Invalid offset (original metadata)");
+            offsetBasicSettings = dis.readLong();
+            if(offsetBasicSettings != basicSettingsOffset)
+                throw new StorageFormatException("Invalid basic settings offset (not the same as computed)");
+            if(completeViaTruncation != dis.readBoolean())
+                throw new StorageFormatException("Complete via truncation flag is wrong");
+            int compatMode = dis.readInt();
+            if(compatMode < 0 || compatMode > CompatibilityMode.values().length)
+                throw new StorageFormatException("Invalid compatibility mode "+compatMode);
+            finalMinCompatMode = CompatibilityMode.values()[compatMode];
+            int segmentCount = dis.readInt();
+            if(segmentCount < 0) throw new StorageFormatException("Invalid segment count "+segmentCount);
+            this.segments = new SplitFileFetcherSegmentStorage[segmentCount];
+            int totalDataBlocks = dis.readInt();
+            if(totalDataBlocks < 0) 
+                throw new StorageFormatException("Invalid total data blocks "+totalDataBlocks);
+            int totalCheckBlocks = dis.readInt();
+            if(totalCheckBlocks < 0) 
+                throw new StorageFormatException("Invalid total check blocks "+totalDataBlocks);
+            int totalCrossCheckBlocks = dis.readInt();
+            if(totalCrossCheckBlocks < 0)
+                throw new StorageFormatException("Invalid total cross-check blocks "+totalDataBlocks);
+            long dataOffset = 0;
+            long crossCheckBlocksOffset;
+            if(completeViaTruncation) {
+                crossCheckBlocksOffset = totalDataBlocks * CHKBlock.DATA_LENGTH;
+            } else {
+                crossCheckBlocksOffset = 0;
+            }
+            long segmentKeysOffset = offsetKeyList;
+            long segmentStatusOffset = offsetSegmentStatus;
+            int countDataBlocks = 0;
+            int countCheckBlocks = 0;
+            int countCrossCheckBlocks = 0;
+            for(int i=0;i<segments.length;i++) {
+                segments[i] = new SplitFileFetcherSegmentStorage(this, dis, i, maxRetries != -1, 
+                        dataOffset, completeViaTruncation ? crossCheckBlocksOffset : -1,
+                                segmentKeysOffset, segmentStatusOffset, keysFetching);
+                int dataBlocks = segments[i].dataBlocks;
+                countDataBlocks += dataBlocks;
+                int checkBlocks = segments[i].checkBlocks;
+                countCheckBlocks += checkBlocks;
+                int crossCheckBlocks = segments[i].crossSegmentCheckBlocks;
+                countCrossCheckBlocks += crossCheckBlocks;
+                dataOffset += dataBlocks * CHKBlock.DATA_LENGTH;
+                if(completeViaTruncation)
+                    crossCheckBlocksOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+                else
+                    dataOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
+                segmentKeysOffset += 
+                    SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
+                segmentStatusOffset +=
+                    SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
+                            crossCheckBlocks, maxRetries != -1, checksumLength, true);
+                if(dataOffset > rafLength)
+                    throw new StorageFormatException("Data offset past end of file "+dataOffset+" of "+rafLength);
+                if(segments[i].segmentCrossCheckBlockDataOffset > rafLength)
+                    throw new StorageFormatException("Cross-check blocks offset past end of file "+segments[i].segmentCrossCheckBlockDataOffset+" of "+rafLength);
+                if(logDEBUG) Logger.debug(this, "Segment "+i+": data blocks offset "+
+                        segments[i].segmentBlockDataOffset+" cross-check blocks offset "+segments[i].segmentCrossCheckBlockDataOffset+" for segment "+i+" of "+this);
+            }
+            if(countDataBlocks != totalDataBlocks) 
+                throw new StorageFormatException("Total data blocks "+countDataBlocks+" but expected "+totalDataBlocks);
+            if(countCheckBlocks != totalCheckBlocks) 
+                throw new StorageFormatException("Total check blocks "+countCheckBlocks+" but expected "+totalCheckBlocks);
+            if(countCrossCheckBlocks != totalCrossCheckBlocks) 
+                throw new StorageFormatException("Total cross-check blocks "+countCrossCheckBlocks+" but expected "+totalCrossCheckBlocks);
+            int crossSegments = dis.readInt();
+            if(crossSegments == 0)
+                this.crossSegments = null;
             else
-                dataOffset += crossCheckBlocks * CHKBlock.DATA_LENGTH;
-            segmentKeysOffset += 
-                SplitFileFetcherSegmentStorage.storedKeysLength(dataBlocks+crossCheckBlocks, checkBlocks, splitfileSingleCryptoKey != null, checksumLength);
-            segmentStatusOffset +=
-                SplitFileFetcherSegmentStorage.paddedStoredSegmentStatusLength(dataBlocks, checkBlocks, 
-                        crossCheckBlocks, maxRetries != -1, checksumLength, true);
-            if(dataOffset > rafLength)
-                throw new StorageFormatException("Data offset past end of file "+dataOffset+" of "+rafLength);
-            if(segments[i].segmentCrossCheckBlockDataOffset > rafLength)
-                throw new StorageFormatException("Cross-check blocks offset past end of file "+segments[i].segmentCrossCheckBlockDataOffset+" of "+rafLength);
-            if(logDEBUG) Logger.debug(this, "Segment "+i+": data blocks offset "+
-                    segments[i].segmentBlockDataOffset+" cross-check blocks offset "+segments[i].segmentCrossCheckBlockDataOffset+" for segment "+i+" of "+this);
+                this.crossSegments = new SplitFileFetcherCrossSegmentStorage[crossSegments];
+            for(int i=0;i<crossSegments;i++) {
+                this.crossSegments[i] = new SplitFileFetcherCrossSegmentStorage(this, i, dis);
+            }
+            this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, false, newSalt);
+        } catch (IOException e) {
+            // We are reading from an array! Bad as written perhaps?
+            throw new StorageFormatException("Cannot read basic settings even though passed checksum: "+e, e);
         }
-        if(countDataBlocks != totalDataBlocks) 
-            throw new StorageFormatException("Total data blocks "+countDataBlocks+" but expected "+totalDataBlocks);
-        if(countCheckBlocks != totalCheckBlocks) 
-            throw new StorageFormatException("Total check blocks "+countCheckBlocks+" but expected "+totalCheckBlocks);
-        if(countCrossCheckBlocks != totalCrossCheckBlocks) 
-            throw new StorageFormatException("Total cross-check blocks "+countCrossCheckBlocks+" but expected "+totalCrossCheckBlocks);
-        int crossSegments = dis.readInt();
-        if(crossSegments == 0)
-            this.crossSegments = null;
-        else
-            this.crossSegments = new SplitFileFetcherCrossSegmentStorage[crossSegments];
-        for(int i=0;i<crossSegments;i++) {
-            this.crossSegments[i] = new SplitFileFetcherCrossSegmentStorage(this, i, dis);
-        }
-        this.keyListener = new SplitFileFetcherKeyListener(this, fetcher, dis, false, newSalt);
         for(SplitFileFetcherSegmentStorage segment : segments) {
             boolean needsDecode = false;
             try {
