@@ -598,8 +598,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				return;
 			EnterFiniteCooldownEvent event = (EnterFiniteCooldownEvent)ce;
 			progress = new EnterFiniteCooldown(identifier, global, event.wakeupTime);
+		} else {
+		    Logger.error(this, "Unknown event "+ce);
+		    return; // Don't know what to do with event
 		}
-		else return; // Don't know what to do with event
 		queueProgressMessageInner(progress, null, verbosityMask);
 	}
 	
