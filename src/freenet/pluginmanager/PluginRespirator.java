@@ -120,7 +120,7 @@ public class PluginRespirator {
      * even if they are running within the same node because this encourages implementation of FCP
      * servers, which in turn allows people to write alternative user interfaces for plugins.<br/>
      * Also, this will allow future changes to the node to make it able to run each plugin within
-     * its own node and only connect them via real networked FC connections. This could be used for
+     * its own node and only connect them via real networked FCP connections. This could be used for
      * load balancing of plugins across multiple machines, CPU usage monitoring and other nice
      * stuff.)</p>
      * 
