@@ -30,19 +30,19 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
     private final EncryptedRandomAccessThingType type;
     private final RandomAccessThing underlyingThing;
     
-    private SkippingStreamCipher cipherRead;
-    private SkippingStreamCipher cipherWrite;
+    private final SkippingStreamCipher cipherRead;
+    private final SkippingStreamCipher cipherWrite;
     private ParametersWithIV cipherParams;//includes key
     
-    private SecretKey headerMacKey;
+    private final SecretKey headerMacKey;
     
-    private boolean isClosed = false;
+    private volatile boolean isClosed = false;
     
     private SecretKey unencryptedBaseKey;
     
-    private SecretKey headerEncKey;
+    private final SecretKey headerEncKey;
     private byte[] headerEncIV;
-    private int version; 
+    private final int version; 
     
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     private static final int VERSION_AND_MAGIC_LENGTH = 12;
@@ -126,6 +126,9 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
 
     @Override
     public long size() throws IOException {
+        if(isClosed){
+            throw new IOException("This RandomAccessThing has already been closed.");
+        }
         return underlyingThing.size()-type.footerLen;
     }
 
@@ -186,14 +189,11 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }
         underlyingThing.pwrite(fileOffset, cipherText, 0, length);
     }
-
+    
     @Override
-    public void close() {
+    public void  close() {
         if(!isClosed){
             isClosed = true;
-            cipherRead = null;
-            cipherWrite = null;
-            cipherParams = null;
             underlyingThing.close();
         }
     }
@@ -204,6 +204,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
      * @throws GeneralSecurityException
      */
     private void writeFooter() throws IOException, GeneralSecurityException{
+        if(isClosed){
+            throw new IOException("This RandomAccessThing has already been closed. This should not"
+                    + "happen.");
+        }
         byte[] footer = new byte[type.footerLen];
         int offset = 0;
         
@@ -251,6 +255,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
      * @throws InvalidKeyException
      */
     private boolean verifyFooter() throws IOException, InvalidKeyException {
+        if(isClosed){
+            throw new IOException("This RandomAccessThing has already been closed. This should not"
+                    + "happen.");
+        }
         byte[] footer = new byte[type.footerLen-VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
         underlyingThing.pread(size(), footer, offset, type.footerLen-VERSION_AND_MAGIC_LENGTH);
