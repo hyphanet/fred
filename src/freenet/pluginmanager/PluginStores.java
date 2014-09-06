@@ -90,7 +90,7 @@ public class PluginStores {
     }
 
     public PluginStore loadPluginStore(String storeIdentifier) {
-        boolean isEncrypted = node.isDatabaseEncrypted();
+        boolean isEncrypted = node.wantEncryptedDatabase();
         PluginStore store = loadPluginStore(storeIdentifier, isEncrypted, false);
         if(store != null) return store;
         store = loadPluginStore(storeIdentifier, isEncrypted, true);
@@ -144,7 +144,7 @@ public class PluginStores {
     }
 
     public void writePluginStore(String storeIdentifier, PluginStore store) throws IOException {
-        boolean isEncrypted = node.isDatabaseEncrypted();
+        boolean isEncrypted = node.wantEncryptedDatabase();
         File backup = getPluginStoreFile(storeIdentifier, isEncrypted, true);
         File main = getPluginStoreFile(storeIdentifier, isEncrypted, false);
         if(backup.exists() && main.exists()) {

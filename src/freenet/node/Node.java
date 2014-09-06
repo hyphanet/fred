@@ -2692,8 +2692,6 @@ public class Node implements TimeSkewDetectorCallback {
 		db = null;
 	}
 
-	private boolean databaseEncrypted;
-
 	private static class DB4ODiagnosticListener implements DiagnosticListener {
 		private static volatile boolean logDEBUG;
 
@@ -2807,9 +2805,6 @@ public class Node implements TimeSkewDetectorCallback {
 			} else if(dbFile.exists()) {
 				// Just open it.
 				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
-				synchronized(this) {
-					databaseEncrypted = false;
-				}
 			} else if((dbFileCrypt.exists())) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
@@ -2823,9 +2818,6 @@ public class Node implements TimeSkewDetectorCallback {
 					keys.clearAll();
 				}
 				database = openCryptDatabase(databaseKey);
-				synchronized(this) {
-					databaseEncrypted = true;
-				}
 			} else return;
 		} catch (Db4oException e) {
 			database = null;
@@ -4935,10 +4927,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
 	}
 
-	public boolean isDatabaseEncrypted() {
-		return databaseEncrypted;
-	}
-	
 	public boolean wantEncryptedDatabase() {
 	    return this.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW;
 	}
