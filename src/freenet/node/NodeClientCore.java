@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
 
 import freenet.client.ArchiveManager;
 import freenet.client.FetchContext;
@@ -637,6 +636,8 @@ public class NodeClientCore implements Persistable {
 		});
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
         alerts.register(new DiskSpaceUserAlert(this));
+        if(container != null)
+            finishInitStorage(container);
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
@@ -708,6 +709,7 @@ public class NodeClientCore implements Persistable {
 		// Don't actually start the database thread yet, messy concurrency issues.
 		fcpServer.load(this.fcpPersistentRoot);
 		System.out.println("Late database initialisation completed.");
+		finishInitStorage(container);
 		return true;
 	}
 
@@ -719,6 +721,9 @@ public class NodeClientCore implements Persistable {
 	private void initStorage(DatabaseKey databaseKey, ObjectContainer container) throws MasterKeysWrongPasswordException {
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
+	}
+	
+	private void finishInitStorage(ObjectContainer container) {
 	    if(container != null) {
 	        migrateFromOldDatabase(container);
 	    }
