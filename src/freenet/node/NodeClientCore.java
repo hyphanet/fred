@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
 
 import freenet.client.ArchiveManager;
 import freenet.client.FetchContext;
@@ -57,6 +58,8 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.fcp.FCPClient;
+import freenet.node.fcp.FCPPersistentRoot;
 import freenet.node.useralerts.DiskSpaceUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -168,7 +171,7 @@ public class NodeClientCore implements Persistable {
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
@@ -264,7 +267,7 @@ public class NodeClientCore implements Persistable {
             }
         }
         
-	      // Allocate 10% of the RAM to the RAMBucketPool by default
+        // Allocate 10% of the RAM to the RAMBucketPool by default
         int defaultRamBucketPoolSize;
         long maxMemory = NodeStarter.getMemoryLimitMB();
         if(maxMemory < 0)
@@ -449,7 +452,7 @@ public class NodeClientCore implements Persistable {
         clientContext.init(requestStarters, alerts);
         
         try {
-            initStorage(databaseKey);
+            initStorage(databaseKey, container);
         } catch (MasterKeysWrongPasswordException e) {
             System.err.println("Cannot load persistent requests, awaiting password ...");
             node.setDatabaseAwaitingPassword();
@@ -480,7 +483,7 @@ public class NodeClientCore implements Persistable {
 				}
                 if(clientLayerPersister.hasStarted()) {
                     try {
-                        initStorage(NodeClientCore.this.node.getDatabaseKey());
+                        initStorage(NodeClientCore.this.node.getDatabaseKey(), container);
                     } catch (MasterKeysWrongPasswordException e) {
                         NodeClientCore.this.node.setDatabaseAwaitingPassword();
                     }
@@ -697,7 +700,7 @@ public class NodeClientCore implements Persistable {
 	boolean lateInitDatabase(long nodeDBHandle, ObjectContainer container, DatabaseKey databaseKey) throws NodeInitException {
 		System.out.println("Late database initialisation: starting middle phase");
 		try {
-		    initStorage(databaseKey);
+		    initStorage(databaseKey, container);
 		} catch (MasterKeysWrongPasswordException e) {
 		    Logger.error(this, "Impossible: can't load even though have key? "+(databaseKey != null));
 		    return true;
@@ -713,10 +716,28 @@ public class NodeClientCore implements Persistable {
 	 * @param databaseKey The encryption key.
 	 * @throws MasterKeysWrongPasswordException If it needs an encryption key.
 	 */
-	private void initStorage(DatabaseKey databaseKey) throws MasterKeysWrongPasswordException {
+	private void initStorage(DatabaseKey databaseKey, ObjectContainer container) throws MasterKeysWrongPasswordException {
 	    clientLayerPersister.setFilesAndLoad(node.nodeDir.dir(), "client.dat", 
 	            node.wantEncryptedDatabase(), node.wantNoPersistentDatabase(), databaseKey, clientContext, requestStarters, random);
+	    if(container != null) {
+	        migrateFromOldDatabase(container);
+	    }
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
+    }
+
+    private void migrateFromOldDatabase(ObjectContainer container) {
+        System.err.println("Attempting to migrate from old database ...");
+        try {
+            FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+            oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this);
+            for(FCPClient client : oldRoot.loadClients(this, container))
+                client.migrate(clientContext.persistentRoot, container, this);
+            // FIXME
+        } catch (Throwable t) {
+            System.err.println("Unable to migrate from old database: "+t);
+            t.printStackTrace();
+            Logger.error(this, "Failed migrating from old database: "+t, t);
+        }
     }
 
     private static String l10n(String key) {

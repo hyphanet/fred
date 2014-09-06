@@ -28,7 +28,11 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.IdentifierCollisionException;
+import freenet.clients.fcp.NotAllowedException;
+import freenet.clients.fcp.PersistentRequestClient;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -96,6 +100,28 @@ public class ClientGet extends ClientRequest {
 			}
 		});
 	}
+	
+    @Override
+    public freenet.clients.fcp.ClientGet migrate(PersistentRequestClient newClient, 
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
+        if(finished) {
+            Logger.error(this, "Not migrating download because already finished");
+            return null; // FIXME support migrating finished requests
+        }
+        container.activate(fctx, Integer.MAX_VALUE);
+        container.activate(uri, Integer.MAX_VALUE);
+        container.activate(targetFile, Integer.MAX_VALUE);
+        File f = new File(targetFile.toString()); // Db4o can do odd things with files, best to copy
+        boolean realTime = false;
+        if(lowLevelClient != null) {
+            container.activate(lowLevelClient, Integer.MAX_VALUE);
+            realTime = lowLevelClient.realTimeFlag();
+        }
+        return new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
+                fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
+                fctx.maxOutputLength, returnType, false, identifier, verbosity, priorityClass,
+                f, charset, fctx.canWriteClientCache, realTime, core);
+    }
 
 	protected ClientGet() {
 	    throw new UnsupportedOperationException();

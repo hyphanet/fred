@@ -23,8 +23,13 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
+import freenet.clients.fcp.ClientRequest;
+import freenet.clients.fcp.IdentifierCollisionException;
+import freenet.clients.fcp.NotAllowedException;
+import freenet.clients.fcp.PersistentRequestClient;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
@@ -150,5 +155,14 @@ public class ClientPut extends ClientPutBase {
 			return COMPRESS_STATE.WORKING;
 		}
 	}
+
+    @Override
+    public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
+            NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
+            IOException {
+        // FIXME
+        Logger.error(this, "Not migrating upload");
+        return null;
+    }
 
 }

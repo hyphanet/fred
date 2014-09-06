@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
@@ -23,7 +24,12 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.ManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
+import freenet.clients.fcp.ClientRequest;
+import freenet.clients.fcp.IdentifierCollisionException;
+import freenet.clients.fcp.NotAllowedException;
+import freenet.clients.fcp.PersistentRequestClient;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -51,7 +57,15 @@ public class ClientPutDir extends ClientPutBase {
 			}
 		});
 	}
-
+	
+    @Override
+    public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
+            NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
+            IOException {
+        Logger.error(this, "Not migrating site upload");
+        return null;
+    }
+    
 	/**
 	 * zero arg c'tor for db4o on jamvm
 	 */
@@ -165,5 +179,5 @@ public class ClientPutDir extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
-	
+
 }

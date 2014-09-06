@@ -5,7 +5,11 @@ import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
+import freenet.clients.fcp.PersistentRequestClient;
+import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -26,19 +30,21 @@ public class FCPClient {
         throw new UnsupportedOperationException();
     }
 	
+    /** The persistent root object, null if persistenceType is PERSIST_REBOOT */
+    final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
 	final String name;
 	/** Currently running persistent requests */
 	private final List<ClientRequest> runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
 	private final List<ClientRequest> completedUnackedRequests;
-	/** ClientRequest's by identifier */
-	private final Map<String, ClientRequest> clientRequestsByIdentifier;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */
 	boolean watchGlobal;
 	int watchGlobalVerbosityMask;
+    private RequestClient lowLevelClient;
+    private RequestClient lowLevelClientRT;
 	/** Connection mode */
 	final short persistenceType;
 	        
@@ -52,88 +58,49 @@ public class FCPClient {
 		});
 	}
 
-	public boolean hasPersistentRequests(ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(runningPersistentRequests == null) {
-			if(!container.ext().isActive(this))
-				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
-			throw new NullPointerException();
-		}
-		if(completedUnackedRequests == null) {
-			if(!container.ext().isActive(this))
-				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
-			throw new NullPointerException();
-		}
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-		}
-		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
-	}
-
-	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever, ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-			container.activate(runningPersistentRequests, 2);
-			container.activate(clientRequestsByIdentifier, 2);
-		}
-		synchronized(this) {
-			for(ClientRequest req: runningPersistentRequests) {
-				if(container != null) container.activate(req, 1);
-				if(req == null) {
-					Logger.error(this, "Request is null on runningPersistentRequests for "+this+" - database corruption??");
-					continue;
-				}
-				if((req.isPersistentForever()) || !onlyForever)
-					v.add(req);
-			}
-			if(container != null) {
-				for(ClientRequest req : completedUnackedRequests) {
-					container.activate(req, 1);
-				}
-			}
-			v.addAll(completedUnackedRequests);
-		}
-	}
-	
-	public synchronized ClientRequest getRequest(String identifier, ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(container != null) {
-			container.activate(clientRequestsByIdentifier, 2);
-		}
-		ClientRequest req = clientRequestsByIdentifier.get(identifier);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			container.activate(req, 1);
-		return req;
-	}
+	/** Migrate the FCPClient */
+    public void migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core) {
+        try {
+            PersistentRequestClient newClient;
+            if(isGlobalQueue) {
+                newClient = newRoot.getGlobalForeverClient();
+                Logger.error(this, "Migrating global queue");
+            } else {
+                newClient = newRoot.registerForeverClient(name, null);
+                Logger.error(this, "Migrating client \""+name+"\"");
+            }
+            container.activate(runningPersistentRequests, 2);
+            for(ClientRequest req : runningPersistentRequests) {
+                if(req == null) continue;
+                try {
+                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
+                    if(request == null) continue;
+                    newClient.resume(request);
+                    // FIXME catch standard exceptions.
+                } catch (Throwable t) {
+                    Logger.error(this, "Unable to migrate request: "+t, t);
+                }
+            }
+            container.activate(completedUnackedRequests, 2);
+            for(ClientRequest req : completedUnackedRequests) {
+                if(req == null) continue;
+                try {
+                    freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
+                    if(request == null) continue;
+                    newClient.resume(request);
+                    // FIXME catch standard exceptions.
+                } catch (Throwable t) {
+                    Logger.error(this, "Unable to migrate request: "+t, t);
+                }
+            }
+        } catch (Throwable t) {
+            Logger.error(this, "Unable to migrate client: "+t, t);
+        }
+    }
 
 	@Override
 	public String toString() {
 		return super.toString()+ ':' +name;
-	}
-
-	public ClientGet getCompletedRequest(FreenetURI key, ObjectContainer container) {
-		// FIXME speed this up with another hashmap or something.
-		// FIXME keep a transient hashmap in RAM, use it for fproxy.
-		// FIXME consider supporting inserts too.
-		if(container != null) {
-			container.activate(completedUnackedRequests, 2);
-		}
-		for(int i=0;i<completedUnackedRequests.size();i++) {
-			ClientRequest req = completedUnackedRequests.get(i);
-			if(!(req instanceof ClientGet)) continue;
-			ClientGet getter = (ClientGet) req;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.activate(getter, 1);
-			if(getter.getURI(container).equals(key)) {
-				return getter;
-			} else {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(getter, 1);
-			}
-		}
-		return null;
 	}
 
 }

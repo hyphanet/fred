@@ -1,10 +1,19 @@
 package freenet.node.fcp;
 
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
+import freenet.clients.fcp.ClientGet;
+import freenet.clients.fcp.IdentifierCollisionException;
+import freenet.clients.fcp.NotAllowedException;
+import freenet.clients.fcp.PersistentRequestClient;
+import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -43,6 +52,9 @@ public abstract class ClientRequest {
 
 	/** Timestamp: last activity. */
 	protected long lastActivity;
+
+	/** Kept to find out whether realtime or not */
+    protected final RequestClient lowLevelClient;
 
 	private static volatile boolean logMINOR;
 	
@@ -163,5 +175,8 @@ public abstract class ClientRequest {
 	public FCPClient getClient(){
 		return client;
 	}
+
+    public abstract freenet.clients.fcp.ClientRequest migrate(PersistentRequestClient newClient, 
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException;
 	
 }
