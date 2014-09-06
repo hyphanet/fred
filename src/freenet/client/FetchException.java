@@ -497,6 +497,7 @@ public class FetchException extends Exception implements Cloneable {
             if(modes.containsKey(code))
                 throw new IllegalArgumentException();
             modes.put(code, this);
+            if(code > MAX_ERROR_CODE) MAX_ERROR_CODE = code;
         }
         public static FetchExceptionMode getByCode(int code) {
             if(modes.get(code) == null) throw new IllegalArgumentException();
@@ -505,15 +506,7 @@ public class FetchException extends Exception implements Cloneable {
 
 	}
 	
-	
-	
-	private static final int MAX_ERROR_CODE;
-	static {
-	    int x = -1;
-	    for(FetchExceptionMode mode : FetchExceptionMode.values())
-	        x = Math.max(x, mode.code);
-	    MAX_ERROR_CODE = x;
-	}
+	private static int MAX_ERROR_CODE;
 	
 	/** There will never be more error codes than this constant. Must not change, used for some
 	 * data structures. */
