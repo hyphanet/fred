@@ -186,7 +186,7 @@ public class ClientPut extends ClientPutBase {
                 ctx.maxInsertRetries, uploadFrom, f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 
-                isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, core);
+                isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, binaryBlob, core);
     }
 
 }
