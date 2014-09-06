@@ -270,7 +270,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public void setCheckpointASAP() {
         synchronized(sync) {
             mustCheckpoint = true;
+            if(runningJobs != 0) return;
         }
+        checkpointOffThread();
     }
     
     protected void updateLastCheckpointed() {
