@@ -9,6 +9,7 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientPutter;
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
@@ -20,6 +21,9 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
+import freenet.support.io.RandomAccessBucket;
+import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {
 
@@ -142,10 +146,47 @@ public class ClientPut extends ClientPutBase {
     @Override
     public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
             NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
-            IOException {
-        // FIXME
-        Logger.error(this, "Not migrating upload");
-        return null;
+            IOException, MetadataUnresolvedException, ResumeFailedException {
+        if(targetURI != null)
+            container.activate(targetURI, Integer.MAX_VALUE);
+        if(uri != null)
+            container.activate(uri, Integer.MAX_VALUE);
+        container.activate(ctx, Integer.MAX_VALUE);
+        File f = origFilename;
+        if(f != null) {
+            container.activate(f, Integer.MAX_VALUE);
+            f = new File(f.toString());
+        }
+        container.activate(clientMetadata, Integer.MAX_VALUE);
+        RandomAccessBucket data;
+        if(this.data != null) {
+            if(this.data.size() == 0) {
+                Logger.error(this, "No data migrating insert: "+this.data);
+                return null;
+            }
+            if(this.data instanceof RandomAccessBucket) {
+                data = (RandomAccessBucket) this.data;
+                data.onResume(core.clientContext);
+            } else {
+                data = core.persistentTempBucketFactory.makeBucket(this.data.size());
+                BucketTools.copy(this.data, data);
+                this.data.free();
+            }
+        } else {
+            // FIXME already finished
+            return null;
+        }
+        byte[] overrideSplitfileKey = null;
+        if(putter != null) {
+            container.activate(putter, 1);
+            overrideSplitfileKey = putter.getSplitfileCryptoKey();
+        }
+        return new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
+                charset, priorityClass, persistenceType, clientToken, getCHKOnly, ctx.dontCompress, 
+                ctx.maxInsertRetries, uploadFrom, f, clientMetadata.getMIMEType(), data, targetURI,
+                targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
+                ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 
+                isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, core);
     }
 
 }

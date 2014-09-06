@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.clients.fcp.ClientGet;
@@ -163,8 +164,15 @@ public abstract class ClientRequest {
 	public FCPClient getClient(){
 		return client;
 	}
+	
+	protected boolean isRealTime(ObjectContainer container) {
+	    if(lowLevelClient != null) {
+	        container.activate(lowLevelClient, Integer.MAX_VALUE);
+	        return lowLevelClient.realTimeFlag();
+	    } else return false;
+	}
 
     public abstract freenet.clients.fcp.ClientRequest migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException;
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException, MetadataUnresolvedException;
 	
 }

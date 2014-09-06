@@ -96,11 +96,7 @@ public class ClientGet extends ClientRequest {
         File f = targetFile;
         if(f != null)
             f = new File(f.toString()); // Db4o can do odd things with files, best to copy
-        boolean realTime = false;
-        if(lowLevelClient != null) {
-            container.activate(lowLevelClient, Integer.MAX_VALUE);
-            realTime = lowLevelClient.realTimeFlag();
-        }
+        boolean realTime = isRealTime(container);
         freenet.clients.fcp.ClientGet ret =
             new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
                 fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
@@ -146,7 +142,7 @@ public class ClientGet extends ClientRequest {
         return ret;
     }
 
-	protected ClientGet() {
+    protected ClientGet() {
 	    throw new UnsupportedOperationException();
 	}
 	
