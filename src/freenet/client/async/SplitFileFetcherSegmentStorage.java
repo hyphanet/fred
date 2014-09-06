@@ -738,7 +738,7 @@ public class SplitFileFetcherSegmentStorage {
             int slotNumber;
             // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
             synchronized(this) {
-                if(succeeded || failed || finished) return true; // We decoded it, it's definitely OK.
+                if(succeeded || failed || finished) return false; // Don't double remove from bloom filter!
                 if(blockChooser.hasSucceeded(blockNumber)) {
                     blockNumber = blockChooser.getBlockNumber(keys, key);
                     continue;
