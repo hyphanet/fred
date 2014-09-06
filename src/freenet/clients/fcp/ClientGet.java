@@ -122,7 +122,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
-			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
+			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true);
@@ -141,7 +141,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// FIXME fctx.ignoreUSKDatehints = ignoreUSKDatehints;
 		Bucket ret = null;
 		this.returnType = returnType;
-		binaryBlob = false;
+		this.binaryBlob = binaryBlob;
 		String extensionCheck = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;

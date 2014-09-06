@@ -105,7 +105,7 @@ public class ClientGet extends ClientRequest {
             new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
                 fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
                 fctx.maxOutputLength, returnType, false, identifier, verbosity, priorityClass,
-                f, charset, fctx.canWriteClientCache, realTime, core);
+                f, charset, fctx.canWriteClientCache, realTime, binaryBlob, core);
         if(finished) {
             ClientContext context = core.clientContext;
             if(foundDataLength >= 0) {

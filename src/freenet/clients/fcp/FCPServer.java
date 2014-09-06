@@ -795,7 +795,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly,
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_RETRIES, QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id,
-					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, null, false, realTimeFlag, core);
+					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, null, false, realTimeFlag, false, core);
 		cg.register(false);
 		cg.start(core.clientContext);
 	}
