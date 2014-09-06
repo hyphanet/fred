@@ -112,8 +112,10 @@ public class FCPClient {
                 }
             }
             if(failed == 0) {
-                if(migrated > 0)
+                if(migrated > 0) {
                     System.out.println("Migrated "+migrated+" requests successfully");
+                    Logger.normal(this, "Migrated "+migrated+" requests successfully");
+                }
                 return true;
             } else {
                 if(migrated > 0) {
