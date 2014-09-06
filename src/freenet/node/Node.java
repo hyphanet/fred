@@ -473,8 +473,8 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	private final File dbFile;
-	private final File dbFileCrypt;
+	final File dbFile;
+	final File dbFileCrypt;
 	private boolean defragDatabaseOnStartup;
 	private boolean defragOnce;
 	/** db4o database for node and client layer.

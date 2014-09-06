@@ -742,8 +742,17 @@ public class NodeClientCore implements Persistable {
                 }
             }
             if(success) {
+                // FIXME consider deleting anyway ...
                 System.out.println("Migrated all requests successfully");
-                // FIXME remove node.db4o etc
+                container.close();
+                if(node.dbFile.exists()) {
+                    System.out.println("Deleting database file "+node.dbFile);
+                    node.dbFile.delete();
+                }
+                if(node.dbFileCrypt.exists()) {
+                    FileUtil.secureDelete(node.dbFileCrypt);
+                }
+                System.out.println("Migration completed");
             }
         } catch (Throwable t) {
             System.err.println("Unable to migrate from old database: "+t);
