@@ -56,7 +56,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
-	final NodeClientCore core;
+	public final NodeClientCore core;
 	final Node node;
 	final int port;
 	private static boolean ssl = false;
