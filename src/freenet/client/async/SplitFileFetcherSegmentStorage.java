@@ -733,6 +733,7 @@ public class SplitFileFetcherSegmentStorage {
         }
         SplitFileFetcherCrossSegmentStorage callback = null;
         // Clearer to do duplicate handling here, plus we only need to decode once.
+        boolean saved = false;
         do {
             short nextBlockNumber;
             int slotNumber;
@@ -761,6 +762,7 @@ public class SplitFileFetcherSegmentStorage {
                 RAFLock lock = parent.lockRAFOpen();
                 try {
                     writeDownloadedBlock(slotNumber, decodedData);
+                    saved = true;
                 } catch (IOException e) {
                     blocksFetched[slotNumber] = -1;
                     blockChooser.onUnSuccess(blockNumber);
@@ -792,7 +794,7 @@ public class SplitFileFetcherSegmentStorage {
             parent.fetcher.maybeAddToBinaryBlob(block);
             blockNumber = nextBlockNumber;
         } while(blockNumber != -1);
-        return true;
+        return saved; // Return true ONLY if we actually saved the block to disk.
     }
 
     private synchronized int findFreeSlot() {
