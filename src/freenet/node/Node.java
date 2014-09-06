@@ -1219,10 +1219,45 @@ public class Node implements TimeSkewDetectorCallback {
 		dbFileCrypt = userDir.file("node.db4o.crypt");
 
 		boolean dontCreate = (!dbFile.exists()) && (!dbFileCrypt.exists()) && (!toadlets.fproxyHasCompletedWizard());
+		
+        byte[] clientCacheKey = null;
+
+        MasterKeys keys = null;
+        for(int i=0;i<2; i++) {
+
+            try {
+                if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+                    clientCacheKey = new byte[32];
+                    random.nextBytes(clientCacheKey);
+                    databaseKey = DatabaseKey.createRandom(random);
+                } else {
+                    keys = MasterKeys.read(masterKeysFile, random, "");
+                    clientCacheKey = keys.clientCacheMasterKey;
+                    if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
+                        System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
+                        securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+                        databaseKey = keys.createDatabaseKey(random);
+                        break;
+                    } else {
+                        databaseKey = keys.createDatabaseKey(random);
+                        break;
+                    }
+                }
+            } catch (MasterKeysWrongPasswordException e) {
+                break;
+            } catch (MasterKeysFileSizeException e) {
+                System.err.println("Impossible: master keys file "+masterKeysFile+" too " + e.sizeToString() + "! Deleting to enable startup, but you will lose your client cache.");
+                masterKeysFile.delete();
+            } catch (IOException e) {
+                break;
+            } finally {
+                MasterKeys.clear(clientCacheKey);
+            }
+        }
 
 		if(!dontCreate) {
 			try {
-				setupDatabase(null);
+				setupDatabase(databaseKey);
 			} catch (MasterKeysWrongPasswordException e2) {
 				System.out.println("Client database node.db4o is encrypted!");
 				databaseAwaitingPassword = true;
@@ -2237,59 +2272,28 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean startedClientCache = false;
 
-		DatabaseKey key = null;
-		MasterKeys keys = null;
-
-		for(int i=0;i<2 && !startedClientCache; i++) {
 		if (clientCacheType.equals("salt-hash")) {
-
-			byte[] clientCacheKey = null;
-			try {
-				if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-					clientCacheKey = new byte[32];
-					random.nextBytes(clientCacheKey);
-				} else {
-					keys = MasterKeys.read(masterKeysFile, random, "");
-					clientCacheKey = keys.clientCacheMasterKey;
-					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
-						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
-						securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
-						key = keys.createDatabaseKey(random);
-						synchronized(this) {
-						    databaseKey = key;
-						}
-						shouldWriteConfig = true;
-					} else {
-						keys.clearAllNotClientCacheKey();
-					}
-				}
-				initSaltHashClientCacheFS(suffix, false, clientCacheKey);
-				startedClientCache = true;
-			} catch (MasterKeysWrongPasswordException e) {
-				System.err.println("Cannot open client-cache, it is passworded");
-				setClientCacheAwaitingPassword();
-				break;
-			} catch (MasterKeysFileSizeException e) {
-				System.err.println("Impossible: master keys file "+masterKeysFile+" too " + e.sizeToString() + "! Deleting to enable startup, but you will lose your client cache.");
-				masterKeysFile.delete();
-			} catch (IOException e) {
-				break;
-			} finally {
-				MasterKeys.clear(clientCacheKey);
-			}
+		    if(clientCacheKey == null) {
+		        System.err.println("Cannot open client-cache, it is passworded");
+		        setClientCacheAwaitingPassword();
+		    } else {
+		        try {
+		            initSaltHashClientCacheFS(suffix, false, clientCacheKey);
+		            startedClientCache = true;
+		        } finally {
+		            MasterKeys.clear(clientCacheKey);
+		        }
+		    }
 		} else if(clientCacheType.equals("none")) {
 			initNoClientCacheFS();
 			startedClientCache = true;
-			break;
 		} else { // ram
 			initRAMClientCacheFS();
 			startedClientCache = true;
-			break;
-		}
 		}
 		if(!startedClientCache)
 			initRAMClientCacheFS();
-
+		
 		if(db == null && databaseKey != null)  {
 			try {
 				lateSetupDatabase(databaseKey);
@@ -2303,7 +2307,8 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Unable to load database: "+e2);
 				e2.printStackTrace();
 			}
-			keys.clearAll();
+			if(keys != null)
+			    keys.clearAll();
 		}
 
 		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
@@ -2785,16 +2790,6 @@ public class Node implements TimeSkewDetectorCallback {
 				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 			} else if((dbFileCrypt.exists())) {
 				// Open encrypted, regardless of seclevel.
-				if(databaseKey == null) {
-					// Try with no password
-					MasterKeys keys;
-					keys = MasterKeys.read(masterKeysFile, random, "");
-					databaseKey = keys.createDatabaseKey(random);
-					synchronized(this) {
-					    this.databaseKey = databaseKey;
-					}
-					keys.clearAll();
-				}
 				database = openCryptDatabase(databaseKey);
 			} else return;
 		} catch (Db4oException e) {
