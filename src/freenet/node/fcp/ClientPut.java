@@ -160,6 +160,7 @@ public class ClientPut extends ClientPutBase {
         container.activate(clientMetadata, Integer.MAX_VALUE);
         RandomAccessBucket data;
         if(this.data != null) {
+            container.activate(this.data, Integer.MAX_VALUE);
             if(this.data.size() == 0) {
                 Logger.error(this, "No data migrating insert: "+this.data);
                 return null;
@@ -168,6 +169,7 @@ public class ClientPut extends ClientPutBase {
                 data = (RandomAccessBucket) this.data;
                 data.onResume(core.clientContext);
             } else {
+                this.data.onResume(core.clientContext);
                 data = core.persistentTempBucketFactory.makeBucket(this.data.size());
                 BucketTools.copy(this.data, data);
                 this.data.free();
