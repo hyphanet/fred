@@ -272,7 +272,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
         boolean found = false;
         byte[] salted = localSaltKey(key);
         if(logMINOR)
-            Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
+            Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher, new Exception("debug"));
         for(int i=0;i<segmentFilters.length;i++) {
             boolean match;
             synchronized(this) {

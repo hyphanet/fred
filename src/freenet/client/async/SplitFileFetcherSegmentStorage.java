@@ -740,6 +740,7 @@ public class SplitFileFetcherSegmentStorage {
             synchronized(this) {
                 if(succeeded || failed || finished) return false; // Don't double remove from bloom filter!
                 if(blockChooser.hasSucceeded(blockNumber)) {
+                    if(logMINOR) Logger.minor(this, "Already have block "+blockNumber);
                     blockNumber = blockChooser.getBlockNumber(keys, key);
                     continue;
                 }
