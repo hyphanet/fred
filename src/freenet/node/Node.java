@@ -2804,129 +2804,13 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			    return; // No need to migrate
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+			} else if(dbFile.exists()) {
 				// Just open it.
 				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 				synchronized(this) {
 					databaseEncrypted = false;
 				}
-			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
-				// Migrate the encrypted file to plaintext, if we have the key
-				if(databaseKey == null) {
-					// Try with no password
-					MasterKeys keys;
-					try {
-						keys = MasterKeys.read(masterKeysFile, random, "");
-					} catch (MasterKeysWrongPasswordException e) {
-						// User probably changed it in the config file
-						System.err.println("Unable to decrypt the node.db4o. Please enter the correct password and set the physical security level to LOW via the GUI.");
-						securityLevels.setThreatLevel(PHYSICAL_THREAT_LEVEL.HIGH);
-						throw e;
-					}
-					databaseKey = keys.createDatabaseKey(random);
-					synchronized(this) {
-					    this.databaseKey = databaseKey;
-					}
-					keys.clearAll();
-				}
-				System.err.println("Decrypting the old node.db4o.crypt ...");
-				IoAdapter baseAdapter = new RandomAccessFileAdapter();
-				EncryptingIoAdapter adapter =
-				    databaseKey.createEncryptingDb4oAdapter(baseAdapter);
-				File tempFile = new File(dbFile.getPath()+".tmp");
-				tempFile.deleteOnExit();
-				FileOutputStream fos = new FileOutputStream(tempFile);
-				EncryptingIoAdapter readAdapter =
-					(EncryptingIoAdapter) adapter.open(dbFileCrypt.toString(), false, 0, true);
-				long length = readAdapter.getLength();
-				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
-				byte[] buf = new byte[65536];
-				long read = 0;
-				while(read < length) {
-					int bytes = (int) Math.min(buf.length, length - read);
-					bytes = readAdapter.read(buf, bytes);
-					if(bytes < 0) throw new EOFException();
-					read += bytes;
-					fos.write(buf, 0, bytes);
-				}
-				fos.close();
-				readAdapter.close();
-				if(FileUtil.renameTo(tempFile, dbFile)) {
-					dbFileCrypt.delete();
-					database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
-					System.err.println("Completed decrypting the old node.db4o.crypt.");
-					synchronized(this) {
-						databaseEncrypted = false;
-					}
-				} else {
-					synchronized(this) {
-						notEnoughSpaceIsCrypt = false;
-						notEnoughSpaceForAutoCrypt = true;
-						notEnoughSpaceRenameFailed = true;
-						renameFailedFrom = tempFile;
-						renameFailedTo = dbFile;
-						databaseEncrypted = true;
-					}
-					// Still encrypted, but we can still open it.
-					database = openCryptDatabase(databaseKey);
-				}
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
-				// Migrate the unencrypted file to ciphertext.
-				// This will always succeed short of I/O errors.
-				if(databaseKey == null) {
-					// Try with no password
-					MasterKeys keys;
-					keys = MasterKeys.read(masterKeysFile, random, "");
-					databaseKey = keys.createDatabaseKey(random);
-					synchronized(this) {
-					    this.databaseKey = databaseKey;
-					}
-					keys.clearAll();
-				}
-				System.err.println("Encrypting the old node.db4o ...");
-				IoAdapter baseAdapter = new RandomAccessFileAdapter();
-				EncryptingIoAdapter adapter = databaseKey.createEncryptingDb4oAdapter(baseAdapter);
-				File tempFile = new File(dbFileCrypt.getPath()+".tmp");
-				tempFile.delete();
-				tempFile.deleteOnExit();
-				EncryptingIoAdapter readAdapter =
-					(EncryptingIoAdapter) adapter.open(tempFile.getPath(), false, 0, false);
-				FileInputStream fis = new FileInputStream(dbFile);
-				long length = dbFile.length();
-				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
-				byte[] buf = new byte[65536];
-				long read = 0;
-				while(read < length) {
-					int bytes = (int) Math.min(buf.length, length - read);
-					bytes = fis.read(buf, 0, bytes);
-					if(bytes < 0) throw new EOFException();
-					read += bytes;
-					readAdapter.write(buf, bytes);
-				}
-				fis.close();
-				readAdapter.close();
-				if(FileUtil.renameTo(tempFile, dbFileCrypt)) {
-					FileUtil.secureDelete(dbFile);
-					System.err.println("Completed encrypting the old node.db4o.");
-					database = openCryptDatabase(databaseKey);
-					synchronized(this) {
-						databaseEncrypted = true;
-					}
-				} else {
-					synchronized(this) {
-						notEnoughSpaceIsCrypt = true;
-						notEnoughSpaceForAutoCrypt = true;
-						notEnoughSpaceRenameFailed = true;
-						renameFailedFrom = tempFile;
-						renameFailedTo = dbFileCrypt;
-					}
-					throw new IOException("Unable to encrypt the old node.db4o.crypt because cannot rename database file");
-				}
-			} else if((dbFileCrypt.exists() && !dbFile.exists()) ||
-					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
-					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
+			} else if((dbFileCrypt.exists())) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
 					// Try with no password
@@ -2942,15 +2826,7 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else {
-			    if(dbFile.exists()) {
-			        // Open unencrypted.
-			        database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
-			        synchronized(this) {
-			            databaseEncrypted = false;
-			        }
-			    } else return; // Do not create a new database.
-			}
+			} else return;
 		} catch (Db4oException e) {
 			database = null;
 			System.err.println("Failed to open database: "+e);
