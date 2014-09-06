@@ -13,6 +13,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobWriter;
 import freenet.client.async.ClientContext;
@@ -148,7 +149,8 @@ public class ClientGet extends ClientRequest {
                 container.activate(getFailedMessage, Integer.MAX_VALUE);
                 ret.onFailure(getFailedMessage.getFetchException(), null);
             } else if(this.postFetchProtocolErrorMessage != null) {
-                return null; // FIXME
+                tempFile.delete();
+                ret.onFailure(new FetchException(FetchExceptionMode.BUCKET_ERROR, "Failed to rename before migration. We have deleted the file."), null);
             }
         }
         return ret;
