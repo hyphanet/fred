@@ -152,6 +152,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			this.targetFile = returnFilename;
 			if(!(core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
+			if(targetFile.exists()) {
+			    throw new IOException("Target filename exists already");
+			}
 			ret = new FileBucket(returnFilename, false, true, false, false, false);
 			if(filterData) {
 				String name = returnFilename.getName();
