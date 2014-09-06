@@ -127,7 +127,9 @@ public class InsertContext implements Cloneable, Serializable {
 	}
 	
 	/** Backward compatibility support for network level metadata. */
-	private CompatibilityMode compatibilityMode;
+	private CompatibilityMode realCompatMode;
+	/** Only for migration. FIXME remove. */
+	private long compatibilityMode;
 	/** If true, don't insert, just generate the CHK */
     public boolean getCHKOnly;
     /** If true, try to find the final URI as quickly as possible, and insert the upper layers as 
@@ -137,15 +139,15 @@ public class InsertContext implements Cloneable, Serializable {
     public boolean earlyEncode;
 	
 	public CompatibilityMode getCompatibilityMode() {
-	    return compatibilityMode;
+	    return realCompatMode;
 	}
 	
 	public long getCompatibilityCode() {
-		return compatibilityMode.ordinal();
+		return realCompatMode.ordinal();
 	}
 
 	public void setCompatibilityMode(CompatibilityMode mode) {
-		this.compatibilityMode = mode.intern();
+		this.realCompatMode = mode.intern();
 	}
 
 	public InsertContext(
@@ -163,7 +165,7 @@ public class InsertContext implements Cloneable, Serializable {
 		this.compressorDescriptor = compressorDescriptor;
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
-		this.compatibilityMode = compatibilityMode.intern();
+		this.realCompatMode = compatibilityMode.intern();
 		this.localRequestOnly = localRequestOnly;
 		this.ignoreUSKDatehints = false;
 	}
@@ -180,7 +182,7 @@ public class InsertContext implements Cloneable, Serializable {
 		this.forkOnCacheable = ctx.forkOnCacheable;
 		this.extraInsertsSingleBlock = ctx.extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
-		this.compatibilityMode = ctx.compatibilityMode;
+		this.realCompatMode = ctx.realCompatMode;
 		this.localRequestOnly = ctx.localRequestOnly;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
 	}
@@ -201,7 +203,7 @@ public class InsertContext implements Cloneable, Serializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + (canWriteClientCache ? 1231 : 1237);
-        result = prime * result + compatibilityMode.ordinal();
+        result = prime * result + realCompatMode.ordinal();
         result = prime * result
                 + ((compressorDescriptor == null) ? 0 : compressorDescriptor.hashCode());
         result = prime * result + consecutiveRNFsCountAsSuccess;
@@ -263,6 +265,14 @@ public class InsertContext implements Cloneable, Serializable {
         if (splitfileSegmentDataBlocks != other.splitfileSegmentDataBlocks)
             return false;
         return true;
+    }
+    
+    /** Call when migrating from db4o era. FIXME remove.
+     * @deprecated */
+    public void onResume() {
+        if(realCompatMode == null)
+            realCompatMode = CompatibilityMode.byCode((short)compatibilityMode);
+        
     }
 
 }

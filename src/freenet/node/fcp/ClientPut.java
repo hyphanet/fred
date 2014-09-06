@@ -152,6 +152,7 @@ public class ClientPut extends ClientPutBase {
         if(uri != null)
             container.activate(uri, Integer.MAX_VALUE);
         container.activate(ctx, Integer.MAX_VALUE);
+        ctx.onResume();
         File f = origFilename;
         if(f != null) {
             container.activate(f, Integer.MAX_VALUE);
