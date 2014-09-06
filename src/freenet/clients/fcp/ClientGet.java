@@ -161,7 +161,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                     Logger.error(this, "Target file already exists but is zero length, deleting...");
 			    }
 			    if(targetFile.exists())
-			        throw new IOException("Target filename exists already");
+			        throw new IOException("Target filename exists already: "+targetFile);
 			}
 			ret = new FileBucket(returnFilename, false, true, false, false, false);
 			if(filterData) {

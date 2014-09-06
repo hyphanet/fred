@@ -745,6 +745,7 @@ public class SplitFileFetcherSegmentStorage {
                 if(blockChooser.hasSucceeded(blockNumber)) {
                     if(logMINOR) Logger.minor(this, "Already have block "+blockNumber);
                     blockNumber = blockChooser.getBlockNumber(keys, key);
+                    if(logMINOR) Logger.minor(this, "Trying block "+blockNumber);
                     continue;
                 }
                 if(blockChooser.successCount() >= blocksForDecode()) {
