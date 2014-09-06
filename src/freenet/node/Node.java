@@ -47,10 +47,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.config.GlobalOnlyConfigException;
-import com.db4o.defragment.AvailableClassFilter;
-import com.db4o.defragment.BTreeIDMapping;
-import com.db4o.defragment.Defragment;
-import com.db4o.defragment.DefragmentConfig;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
@@ -475,8 +471,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	final File dbFile;
 	final File dbFileCrypt;
-	private boolean defragDatabaseOnStartup;
-	private boolean defragOnce;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -1217,44 +1211,6 @@ public class Node implements TimeSkewDetectorCallback {
 		masterKeysFile = f;
 		FileUtil.setOwnerRW(masterKeysFile);
 		
-		nodeConfig.register("defragDatabaseOnStartup", false, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				synchronized(Node.this) {
-					return defragDatabaseOnStartup;
-				}
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				synchronized(Node.this) {
-					defragDatabaseOnStartup = val;
-				}
-			}
-
-		});
-
-		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
-
-		nodeConfig.register("defragOnce", false, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				synchronized(Node.this) {
-					return defragOnce;
-				}
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				synchronized(Node.this) {
-					defragOnce = val;
-				}
-			}
-
-		});
-		
 		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlertLong", new BooleanCallback() {
 
 			@Override
@@ -1279,8 +1235,6 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		
 		showFriendsVisibilityAlert = nodeConfig.getBoolean("showFriendsVisibilityAlert");
-
-		defragOnce = nodeConfig.getBoolean("defragOnce");
 
 		dbFile = userDir.file("node.db4o");
 		dbFileCrypt = userDir.file("node.db4o.crypt");
@@ -2851,7 +2805,6 @@ public class Node implements TimeSkewDetectorCallback {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			    return; // No need to migrate
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
-				maybeDefragmentDatabase(dbFile, null);
 				// Just open it.
 				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 				synchronized(this) {
@@ -2921,7 +2874,6 @@ public class Node implements TimeSkewDetectorCallback {
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
-				maybeDefragmentDatabase(dbFile, null);
 				if(databaseKey == null) {
 					// Try with no password
 					MasterKeys keys;
@@ -2992,7 +2944,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			} else {
 			    if(dbFile.exists()) {
-			        maybeDefragmentDatabase(dbFile, null);
 			        // Open unencrypted.
 			        database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 			        synchronized(this) {
@@ -3099,7 +3050,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	private ObjectContainer openCryptDatabase(DatabaseKey databaseKey) throws IOException {
-		maybeDefragmentDatabase(dbFileCrypt, databaseKey);
 
 		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
 		synchronized(this) {
@@ -3107,93 +3057,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		return database;
 	}
-
-
-	private void maybeDefragmentDatabase(File databaseFile, final DatabaseKey databaseKey) throws IOException {
-
-		synchronized(this) {
-			if(!defragDatabaseOnStartup) return;
-		}
-
-		// Open it first, because defrag will throw if it needs to upgrade the file.
-
-		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), databaseFile.toString());
-		while(!database.close());
-
-		if(!databaseFile.exists()) return;
-		long length = databaseFile.length();
-		// Estimate approx 1 byte/sec.
-		WrapperManager.signalStarting((int) Math.min(DAYS.toMillis(1), MINUTES.toMillis(5) + length));
-		System.err.println("Defragmenting persistent downloads database.");
-
-		File backupFile = new File(databaseFile.getPath()+".tmp");
-		FileUtil.secureDelete(backupFile);
-
-		File tmpFile = new File(databaseFile.getPath()+".map");
-		FileUtil.secureDelete(tmpFile);
-
-
-
-		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
-		config.storedClassFilter(new AvailableClassFilter());
-		config.db4oConfig(getNewDatabaseConfiguration(databaseKey));
-		try {
-			Defragment.defrag(config);
-		} catch (IOException e) {
-			if(backupFile.exists()) {
-				System.err.println("Defrag failed. Trying to preserve original database file.");
-				FileUtil.secureDelete(databaseFile);
-				if(!backupFile.renameTo(databaseFile)) {
-					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
-					WrapperManager.restart();
-					throw e;
-				}
-			}
-		} catch (Db4oException e) {
-			if(backupFile.exists()) {
-				System.err.println("Defrag failed. Trying to preserve original database file.");
-				FileUtil.secureDelete(databaseFile);
-				if(!backupFile.renameTo(databaseFile)) {
-					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
-					WrapperManager.restart();
-					throw e;
-				}
-			}
-		}
-		System.err.println("Finalising defragmentation...");
-		long oldSize = backupFile.length();
-		long newSize = databaseFile.length();
-
-		if(newSize <= 0) {
-			System.err.println("DEFRAG PRODUCED AN EMPTY FILE! Trying to restore old database file...");
-			databaseFile.delete();
-			if(!tmpFile.renameTo(databaseFile)) {
-				System.err.println("Unable to restore old database file but it should be in "+tmpFile);
-				throw new IOException("Defrag produced an empty file; Unable to restore old database file but it should be in "+tmpFile);
-			}
-		} else {
-			double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
-			FileUtil.secureDelete(tmpFile);
-			FileUtil.secureDelete(backupFile);
-			System.err.println("Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
-		}
-
-		synchronized(this) {
-			if(!defragOnce) return;
-			defragDatabaseOnStartup = false;
-		}
-		// Store after startup
-		this.executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				Node.this.config.store();
-			}
-
-		}, "Store config");
-
-	}
-
 
 	public void killMasterKeysFile() throws IOException {
 		MasterKeys.killMasterKeys(masterKeysFile);
