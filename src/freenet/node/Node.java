@@ -2207,7 +2207,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
-		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 
 		// Client cache
 
@@ -2888,35 +2887,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	}
 
-
-	private volatile boolean notEnoughSpaceForAutoCrypt = false;
-	private volatile boolean notEnoughSpaceIsCrypt = false;
-	private volatile boolean notEnoughSpaceRenameFailed = false;
-	private volatile File renameFailedFrom;
-	private volatile File renameFailedTo;
-	private volatile long notEnoughSpaceMinimumSpace = 0;
-
-	private boolean enoughSpaceForAutoChangeEncryption(File file, boolean isCrypt) {
-		long freeSpace = file.getParentFile().getUsableSpace();
-		if(freeSpace == -1) {
-			return true; // We hope ... FIXME check the error handling ...
-		}
-		long minSpace = (long)(file.length() * 1.1) + 10*1024*1024;
-		if(freeSpace < minSpace) {
-			System.err.println(l10n(isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt", new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(minSpace), dbFile.getAbsolutePath() }));
-			if(this.clientCore != null && this.clientCore.alerts != null)
-				createAutoCryptFailedUserAlert();
-			else {
-				notEnoughSpaceIsCrypt = isCrypt;
-				notEnoughSpaceForAutoCrypt = true;
-				notEnoughSpaceMinimumSpace = minSpace;
-			}
-			return false;
-		}
-		return true;
-	}
-
-
 	private ObjectContainer openCryptDatabase(DatabaseKey databaseKey) throws IOException {
 
 		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
@@ -3032,24 +3002,6 @@ public class Node implements TimeSkewDetectorCallback {
 	};
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
-	}
-
-	private void createAutoCryptFailedUserAlert() {
-		boolean isCrypt = notEnoughSpaceIsCrypt;
-		String title;
-		String text;
-		if(notEnoughSpaceRenameFailed) {
-			title = isCrypt ? l10n("failedToRenameEncryptingTitle") : l10n("failedToRenameDecryptingTitle");
-			text = l10n((isCrypt ? "failedToRenameEncrypting" : "failedToRenameDecrypting"), new String[] { "fromfile", "tofile" }, new String[] { renameFailedFrom.getAbsolutePath(), renameFailedTo.getAbsolutePath() } );
-		} else {
-			title = isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle");
-			text = l10n((isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt"), new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(notEnoughSpaceMinimumSpace), dbFile.getAbsolutePath() });
-		}
-		this.clientCore.alerts.register(new SimpleUserAlert(true,
-				title,
-				text,
-				title,
-				(!isCrypt) && this.db != null ? UserAlert.WARNING : UserAlert.ERROR));
 	}
 
 	private void initRAMClientCacheFS() {
