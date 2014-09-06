@@ -70,9 +70,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
-	/** True only if returnType is RETURN_TYPE_DISK and we were unable to rename from the temp file 
-	 * to to final file. */
-	private boolean returningTempFile;
 	/** Bucket returned when the request was completed, if returnType == RETURN_TYPE_DIRECT. */
 	private Bucket returnBucketDirect;
 	private final boolean binaryBlob;
@@ -395,16 +392,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			handler.queue(msg);
 		else
 			client.queueClientRequestMessage(msg, 0);
-		if(returningTempFile) {
-            FCPMessage postFetchProtocolErrorMessage = 
-                new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
-			if(handler != null)
-				handler.queue(postFetchProtocolErrorMessage);
-			else {
-				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0);
-			}
-		}
-
 	}
 	
 	private synchronized AllDataMessage getAllDataMessage() {
