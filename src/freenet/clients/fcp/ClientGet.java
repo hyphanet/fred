@@ -153,7 +153,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(!(core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			if(targetFile.exists()) {
-			    throw new IOException("Target filename exists already");
+			    if(targetFile.length() == 0) {
+			        // FIXME get rid
+			        // Dirty hack for migration
+			        // Ignore zero length file as we probably created it.
+			        targetFile.delete();
+                    Logger.error(this, "Target file already exists but is zero length, deleting...");
+			    }
+			    if(targetFile.exists())
+			        throw new IOException("Target filename exists already");
 			}
 			ret = new FileBucket(returnFilename, false, true, false, false, false);
 			if(filterData) {
