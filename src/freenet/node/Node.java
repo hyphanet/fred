@@ -481,7 +481,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 * (e.g. because of many-nodes-in-one-VM). */
 	public long nodeDBHandle;
 
-	private boolean autoChangeDatabaseEncryption = true;
 	private DatabaseKey databaseKey;
 
 	/** Stats */
@@ -1159,26 +1158,6 @@ public class Node implements TimeSkewDetectorCallback {
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
 
 		this.securityLevels = new SecurityLevels(this, config);
-
-		nodeConfig.register("autoChangeDatabaseEncryption", true, sortOrder++, true, false, "Node.autoChangeDatabaseEncryption", "Node.autoChangeDatabaseEncryptionLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				synchronized(Node.this) {
-					return autoChangeDatabaseEncryption;
-				}
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				synchronized(Node.this) {
-					autoChangeDatabaseEncryption = val;
-				}
-			}
-
-		});
-
-		autoChangeDatabaseEncryption = nodeConfig.getBoolean("autoChangeDatabaseEncryption");
 
 		// Location of master key
 		nodeConfig.register("masterKeyFile", "master.keys", sortOrder++, true, true, "Node.masterKeyFile", "Node.masterKeyFileLong",
@@ -4899,11 +4878,6 @@ public class Node implements TimeSkewDetectorCallback {
         public String getDatabasePath() throws IOException {
             return clientCore.clientLayerPersister.getWriteFilename().toString();
         }
-
-	public synchronized boolean autoChangeDatabaseEncryption() {
-		return autoChangeDatabaseEncryption;
-	}
-
 
 	/** Should we commit the block to the store rather than the cache?
 	 *

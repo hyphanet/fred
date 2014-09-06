@@ -561,17 +561,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 			HTMLNode inner = input.addChild("p").addChild("i");
 			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold" },
 					new HTMLNode[] { HTMLNode.STRONG });
-			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.wantEncryptedDatabase()) {
-				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
-				else
-					inner.addChild("b", " "+l10nSec("warningWontEncrypt"));
-			} else if(level == PHYSICAL_THREAT_LEVEL.LOW && physicalLevel != PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && node.wantEncryptedDatabase()) {
-				if(node.autoChangeDatabaseEncryption())
-					inner.addChild("b", " "+l10nSec("warningWillDecrypt"));
-				else
-					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
-			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
 				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
 			}
