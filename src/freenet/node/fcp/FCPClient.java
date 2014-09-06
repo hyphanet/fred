@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.clients.fcp.PersistentRequestClient;
 import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.keys.FreenetURI;
@@ -59,7 +60,8 @@ public class FCPClient {
 	}
 
 	/** Migrate the FCPClient */
-    public void migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core) {
+    public void migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core,
+            ClientContext context) {
         try {
             PersistentRequestClient newClient;
             if(isGlobalQueue) {
@@ -76,6 +78,7 @@ public class FCPClient {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
                     if(request == null) continue;
                     newClient.resume(request);
+                    request.start(context);
                     // FIXME catch standard exceptions.
                 } catch (Throwable t) {
                     Logger.error(this, "Unable to migrate request: "+t, t);
@@ -88,6 +91,7 @@ public class FCPClient {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
                     if(request == null) continue;
                     newClient.resume(request);
+                    request.start(context);
                     // FIXME catch standard exceptions.
                 } catch (Throwable t) {
                     Logger.error(this, "Unable to migrate request: "+t, t);
