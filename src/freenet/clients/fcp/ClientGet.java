@@ -62,11 +62,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     /** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
-	/* Policy issue: Responsibility: Progress details, including the final size and MIME type, 
-	 * are kept in the ClientGetter, which is final i.e. we do not null it out once we are done.
-	 * Hence we fill the transient fields below from events fired by onResume(). This may not be
-	 * true for other kinds of ClientRequest, notably ClientPutDir, where we may want to delete the
-	 * ManifestPutter ASAP. */
 	private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
@@ -88,22 +83,25 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
 	private boolean succeeded;
-	/** Length of the found data. Not persistent, ClientGetter sends events in onResume(). */
-	private transient long foundDataLength = -1;
-	/** MIME type of the found data. Not persistent, ClientGetter sends events in onResume(). */
-	private transient String foundDataMimeType;
+	/** Length of the found data. Will be updated from ClientGetter in onResume() but we persist 
+	 * it anyway. */
+	private long foundDataLength = -1;
+	/** MIME type of the found data. Will be updated from ClientGetter in onResume() but we persist 
+     * it anyway. */
+	private String foundDataMimeType;
 	/** Details of request failure. */
 	private GetFailedMessage getFailedMessage;
 	/** Last progress message. Not persistent, ClientGetter will update on onResume(). */
 	private transient SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
-	private transient boolean sentToNetwork;
+	private boolean sentToNetwork;
 	/** Current compatibility mode. This is updated over time as the request progresses, and can be
 	 * used e.g. to reinsert the file. This is NOT transient, as the ClientGetter does not retain 
 	 * this information. */
 	private CompatibilityAnalyser compatMode;
-	/** Expected hashes of the final data. Not persistent, ClientGetter sends events in onResume(). */
-	private transient ExpectedHashes expectedHashes;
+	/** Expected hashes of the final data. Will be updated from ClientGetter in onResume() but we 
+	 * persist it anyway.  */
+	private ExpectedHashes expectedHashes;
 
         private static volatile boolean logMINOR;
 	static {
