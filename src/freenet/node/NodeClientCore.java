@@ -21,6 +21,8 @@ import freenet.client.async.ClientLayerPersister;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
+import freenet.client.async.PersistenceDisabledException;
+import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -723,7 +725,18 @@ public class NodeClientCore implements Persistable {
 	
 	private void finishInitStorage(ObjectContainer container) {
 	    if(container != null) {
-	        migrateFromOldDatabase(container);
+	        CheckpointLock lock = null;
+	        try {
+	            lock = clientLayerPersister.lock();
+	            migrateFromOldDatabase(container);
+	        } catch (PersistenceDisabledException e) {
+	            Logger.error(this, "Cannot migrate as persistence disabled...");
+	            // Try again next time...
+	            return; // Don't GC persistent-temp.
+            } finally {
+	            if(lock != null)
+	                lock.unlock(false, NativeThread.currentThread().getPriority());
+	        }
 	    }
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
