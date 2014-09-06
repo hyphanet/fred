@@ -4890,7 +4890,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean hasDatabase() {
-		return db != null;
+	    return !clientCore.clientLayerPersister.isKilledOrNotLoaded();
 	}
 
         /**
