@@ -32,10 +32,10 @@ public class InsertContext implements Cloneable, Serializable {
 	 * some number of RNFs to equal success. */
 	public int consecutiveRNFsCountAsSuccess;
 	/** Maximum number of data blocks per segment for splitfiles */
-	public final int splitfileSegmentDataBlocks;
+	public int splitfileSegmentDataBlocks;
 	/** Maximum number of check blocks per segment for splitfiles. Will be reduced proportionally if there
 	 * are fewer data blocks. */
-	public final int splitfileSegmentCheckBlocks;
+	public int splitfileSegmentCheckBlocks;
 	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
 	/** Can this insert write to the client-cache? We don't store all requests in the client cache,
@@ -270,9 +270,12 @@ public class InsertContext implements Cloneable, Serializable {
     /** Call when migrating from db4o era. FIXME remove.
      * @deprecated */
     public void onResume() {
+        // Used to encode it as a long.
         if(realCompatMode == null)
             realCompatMode = CompatibilityMode.byCode((short)compatibilityMode);
-        
+        // Max blocks was wrong too.
+        splitfileSegmentDataBlocks = FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT;
+        splitfileSegmentCheckBlocks = FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT;
     }
 
 }
