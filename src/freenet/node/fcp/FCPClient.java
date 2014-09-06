@@ -77,7 +77,7 @@ public class FCPClient {
                 try {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
                     if(request == null) continue;
-                    newClient.resume(request);
+                    newClient.register(request);
                     request.start(context);
                     // FIXME catch standard exceptions.
                 } catch (Throwable t) {
@@ -90,7 +90,7 @@ public class FCPClient {
                 try {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
                     if(request == null) continue;
-                    newClient.resume(request);
+                    newClient.register(request);
                     request.start(context);
                     // FIXME catch standard exceptions.
                 } catch (Throwable t) {
