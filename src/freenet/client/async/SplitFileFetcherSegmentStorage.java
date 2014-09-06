@@ -749,7 +749,9 @@ public class SplitFileFetcherSegmentStorage {
                 }
                 if(blockChooser.successCount() >= blocksForDecode()) {
                     if(logMINOR) Logger.minor(this, "Already decoding");
-                    return true;
+                    // Don't remove it from the filter. We haven't written it, so it could be 
+                    // removed twice. And if we decode successfully, the filter will be ignored.
+                    return false;
                 }
                 slotNumber = findFreeSlot();
                 assert(slotNumber != -1);
