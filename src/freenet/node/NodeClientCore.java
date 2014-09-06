@@ -743,6 +743,7 @@ public class NodeClientCore implements Persistable {
                 }
             }
             if(success) {
+                clientLayerPersister.setCheckpointASAP();
                 // FIXME consider deleting anyway ...
                 System.out.println("Migrated all requests successfully");
                 container.close();
