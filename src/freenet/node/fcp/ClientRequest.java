@@ -17,6 +17,7 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * This is only here so that it can be migrated.
@@ -130,20 +131,7 @@ public abstract class ClientRequest {
 	/** Free cached data bucket(s) */
 	protected abstract void freeData(ObjectContainer container); 
 
-	public abstract double getSuccessFraction(ObjectContainer container);
-
-	public abstract double getTotalBlocks(ObjectContainer container);
-	public abstract double getMinBlocks(ObjectContainer container);
-	public abstract double getFetchedBlocks(ObjectContainer container);
-	public abstract double getFailedBlocks(ObjectContainer container);
-	public abstract double getFatalyFailedBlocks(ObjectContainer container);
-
 	public abstract String getFailureReason(boolean longDescription, ObjectContainer container);
-
-	/**
-	 * Has the total number of blocks to insert been determined yet?
-	 */
-	public abstract boolean isTotalFinalized(ObjectContainer container);
 
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
@@ -177,6 +165,6 @@ public abstract class ClientRequest {
 	}
 
     public abstract freenet.clients.fcp.ClientRequest migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException;
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException;
 	
 }

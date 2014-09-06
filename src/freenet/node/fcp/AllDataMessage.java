@@ -9,7 +9,7 @@ import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
-public class AllDataMessage {
+public class AllDataMessage extends DataCarryingMessage {
 
 	final long dataLength;
 	final boolean global;

@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.LogThresholdCallback;
@@ -55,5 +56,14 @@ public class GetFailedMessage extends FCPMessage {
 		else
 			return shortCodeDescription;
 	}
+
+    public FetchException getFetchException() {
+        // Data length etc have already been handled separately. Ignore them.
+        if(tracker != null) {
+            return new FetchException(FetchExceptionMode.getByCode(code), tracker, extraDescription);
+        } else {
+            return new FetchException(FetchExceptionMode.getByCode(code), extraDescription);
+        }
+    }
 
 }

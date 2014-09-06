@@ -354,6 +354,27 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(client != null)
 			client.notifySuccess(this);
 	}
+	
+    public void setSuccessForMigration(ClientContext context, long completionTime, Bucket data) throws ResumeFailedException {
+        synchronized(this) {
+            succeeded = true;
+            started = true;
+            finished = true;
+            this.completionTime = completionTime;
+            if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+                // OK.
+            } else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+                if(!(targetFile.exists() && targetFile.length() == foundDataLength))
+                    throw new ResumeFailedException("Success but target file doesn't exist or isn't valid");
+            } else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                returnBucketDirect = data;
+                if(returnBucketDirect.size() != foundDataLength)
+                    throw new ResumeFailedException("Success but temporary data bucket doesn't exist or isn't valid");
+            }
+        }
+    }
+    
+
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
 		FCPMessage msg;
@@ -1193,5 +1214,5 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     public boolean fullyResumed() {
         return getter != null && getter.resumedFetcher();
     }
-    
+
 }

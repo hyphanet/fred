@@ -231,6 +231,22 @@ public class FetchException extends Exception implements Cloneable {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
+    public FetchException(FetchExceptionMode mode, FailureCodeTracker errorCodes, String msg) {
+        super(getMessage(mode)+": "+msg);
+        if(errorCodes.isEmpty()) {
+            Logger.error(this, "Failing with no error codes?!", new Exception("error"));
+        }
+        extraMessage = msg;
+        this.mode = mode;
+        this.errorCodes = errorCodes;
+        newURI = null;
+        expectedSize = -1;
+        if(mode == FetchExceptionMode.INTERNAL_ERROR)
+            Logger.error(this, "Internal error: "+this);
+        else if(logMINOR) 
+            Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+    }
+    
 	public FetchException(FetchExceptionMode mode, String msg) {
 		super(getMessage(mode)+": "+msg);
 		extraMessage = msg;

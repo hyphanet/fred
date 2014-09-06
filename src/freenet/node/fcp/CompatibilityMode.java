@@ -2,13 +2,9 @@ package freenet.node.fcp;
 
 import java.util.Arrays;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
-import freenet.node.Node;
-import freenet.support.HexUtil;
+import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 
 public class CompatibilityMode extends FCPMessage {
 	
@@ -53,5 +49,11 @@ public class CompatibilityMode extends FCPMessage {
 				InsertContext.CompatibilityMode.values()[(int)max]
 		};
 	}
+
+    public SplitfileCompatibilityModeEvent toEvent() {
+        InsertContext.CompatibilityMode minMode = InsertContext.CompatibilityMode.values()[(int)min];
+        InsertContext.CompatibilityMode maxMode = InsertContext.CompatibilityMode.values()[(int)max];
+        return new SplitfileCompatibilityModeEvent(minMode, maxMode, cryptoKey, dontCompress, definitive);
+    }
 
 }

@@ -28,6 +28,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.ClientGetMessage;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
@@ -42,6 +43,7 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * This is only here so we can migrate it to the new storage layer. This is a ClientGet, i.e. a 
@@ -83,9 +85,6 @@ public class ClientGet extends ClientRequest {
 	/** AllData (the actual direct-send data) - do not persist, because the bucket
 	 * is not persistent. FIXME make the bucket persistent! */
 	private AllDataMessage allDataPending;
-	/** Last progress message. Not persistent - FIXME this will be made persistent
-	 * when we have proper persistence at the ClientGetter level. */
-	private SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
 	private boolean sentToNetwork;
 	private CompatibilityMode compatMessage;
@@ -103,11 +102,7 @@ public class ClientGet extends ClientRequest {
 	
     @Override
     public freenet.clients.fcp.ClientGet migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
-        if(finished) {
-            Logger.error(this, "Not migrating download because already finished");
-            return null; // FIXME support migrating finished requests
-        }
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException {
         container.activate(fctx, Integer.MAX_VALUE);
         container.activate(uri, Integer.MAX_VALUE);
         container.activate(targetFile, Integer.MAX_VALUE);
@@ -117,10 +112,46 @@ public class ClientGet extends ClientRequest {
             container.activate(lowLevelClient, Integer.MAX_VALUE);
             realTime = lowLevelClient.realTimeFlag();
         }
-        return new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
+        freenet.clients.fcp.ClientGet ret =
+            new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
                 fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
                 fctx.maxOutputLength, returnType, false, identifier, verbosity, priorityClass,
                 f, charset, fctx.canWriteClientCache, realTime, core);
+        if(finished) {
+            ClientContext context = core.clientContext;
+            if(foundDataLength <= 0) throw new ResumeFailedException("No data");
+            ret.receive(new ExpectedFileSizeEvent(foundDataLength), context);
+            if(foundDataMimeType != null)
+                ret.receive(new ExpectedMIMEEvent(foundDataMimeType), context);
+            if(sentToNetwork)
+                ret.receive(new SendingToNetworkEvent(), context);
+            if(expectedHashes != null) {
+                container.activate(expectedHashes, Integer.MAX_VALUE);
+                if(expectedHashes.hashes != null)
+                    ret.receive(new ExpectedHashesEvent(expectedHashes.hashes), context);
+            }
+            if(compatMessage != null) {
+                container.activate(compatMessage, Integer.MAX_VALUE);
+                SplitfileCompatibilityModeEvent e = compatMessage.toEvent();
+                ret.receive(e, context);
+            }
+            if(succeeded) {
+                Bucket data = null;
+                if(returnType == RETURN_TYPE_DIRECT) {
+                    container.activate(allDataPending, Integer.MAX_VALUE);
+                    data = allDataPending.bucket;
+                    if(data == null) throw new ResumeFailedException("No data");
+                    data.onResume(context);
+                }
+                ret.setSuccessForMigration(context, completionTime, data);
+            } else if(this.getFailedMessage != null) {
+                container.activate(getFailedMessage, Integer.MAX_VALUE);
+                ret.onFailure(getFailedMessage.getFetchException(), null);
+            } else if(this.postFetchProtocolErrorMessage != null) {
+                return null; // FIXME
+            }
+        }
+        return ret;
     }
 
 	protected ClientGet() {
@@ -198,66 +229,6 @@ public class ClientGet extends ClientRequest {
 		return targetFile;
 	}
 
-	@Override
-	public double getSuccessFraction(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getFraction();
-		} else
-			return -1;
-	}
-
-	@Override
-	public double getTotalBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getTotalBlocks();
-		} else
-			return 1;
-	}
-
-	@Override
-	public double getMinBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getMinBlocks();
-		} else
-			return 1;
-	}
-
-	@Override
-	public double getFailedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getFailedBlocks();
-		} else
-			return 0;
-	}
-
-	@Override
-	public double getFatalyFailedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getFatalyFailedBlocks();
-		} else
-			return 0;
-	}
-
-	@Override
-	public double getFetchedBlocks(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && progressPending != null)
-			container.activate(progressPending, 2);
-		if(progressPending != null) {
-			return progressPending.getFetchedBlocks();
-		} else
-			return 0;
-	}
-	
 	public InsertContext.CompatibilityMode[] getCompatibilityMode(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
 			container.activate(compatMessage, 2);
@@ -309,17 +280,6 @@ public class ClientGet extends ClientRequest {
 			container.activate(getFailedMessage, 5);
 		return getFailedMessage.code;
 		
-	}
-
-	@Override
-	public boolean isTotalFinalized(ObjectContainer container) {
-		if(finished && succeeded) return true;
-		if(progressPending == null) return false;
-		else {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(progressPending, 1);
-			return progressPending.isTotalFinalized();
-		}
 	}
 
 	public Bucket getFinalBucket(ObjectContainer container) {
