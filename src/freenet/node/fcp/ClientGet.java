@@ -107,7 +107,9 @@ public class ClientGet extends ClientRequest {
         container.activate(fctx, Integer.MAX_VALUE);
         container.activate(uri, Integer.MAX_VALUE);
         container.activate(targetFile, Integer.MAX_VALUE);
-        File f = new File(targetFile.toString()); // Db4o can do odd things with files, best to copy
+        File f = targetFile;
+        if(f != null)
+            f = new File(f.toString()); // Db4o can do odd things with files, best to copy
         boolean realTime = false;
         if(lowLevelClient != null) {
             container.activate(lowLevelClient, Integer.MAX_VALUE);
