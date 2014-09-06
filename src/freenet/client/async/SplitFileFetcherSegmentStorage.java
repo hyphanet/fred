@@ -738,14 +738,19 @@ public class SplitFileFetcherSegmentStorage {
             int slotNumber;
             // LOCKING We have to do the write inside the lock to prevent parallel decodes messing up etc.
             synchronized(this) {
-                if(succeeded || failed || finished) return false; // Don't double remove from bloom filter!
+                if(succeeded || failed || finished) {
+                    if(logMINOR) Logger.minor(this, "Already succeeded/finished/failed");
+                    return false; // Don't double remove from bloom filter!
+                }
                 if(blockChooser.hasSucceeded(blockNumber)) {
                     if(logMINOR) Logger.minor(this, "Already have block "+blockNumber);
                     blockNumber = blockChooser.getBlockNumber(keys, key);
                     continue;
                 }
-                if(blockChooser.successCount() >= blocksForDecode())
+                if(blockChooser.successCount() >= blocksForDecode()) {
+                    if(logMINOR) Logger.minor(this, "Already decoding");
                     return true;
+                }
                 slotNumber = findFreeSlot();
                 assert(slotNumber != -1);
                 blocksFetched[slotNumber] = blockNumber;
