@@ -2739,9 +2739,7 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.blockSize(8);
 		dbConfig.diagnostic().addListener(new DB4ODiagnosticListener());
 
-		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
-		// This prevents us from writing code which is based on misunderstanding of db4o internals...
-		dbConfig.exceptionsOnNotStorable(true);
+		dbConfig.exceptionsOnNotStorable(false);
 
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
