@@ -636,8 +636,6 @@ public class NodeClientCore implements Persistable {
 		});
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
         alerts.register(new DiskSpaceUserAlert(this));
-        if(container != null)
-            finishInitStorage(container);
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
@@ -797,7 +795,10 @@ public class NodeClientCore implements Persistable {
 		}
 	}
 
-	public void start(Config config) throws NodeInitException {
+	public void start(Config config, ObjectContainer container) throws NodeInitException {
+	    
+	    if(container != null)
+	        finishInitStorage(container);
 
 		persister.start();
 

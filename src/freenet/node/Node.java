@@ -3631,7 +3631,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
 
-		this.clientCore.start(config);
+		this.clientCore.start(config, db);
 
 		tracker.startDeadUIDChecker();
 
