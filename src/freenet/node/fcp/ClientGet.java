@@ -120,8 +120,9 @@ public class ClientGet extends ClientRequest {
                 f, charset, fctx.canWriteClientCache, realTime, core);
         if(finished) {
             ClientContext context = core.clientContext;
-            if(foundDataLength <= 0) throw new ResumeFailedException("No data");
-            ret.receive(new ExpectedFileSizeEvent(foundDataLength), context);
+            if(foundDataLength >= 0) {
+                ret.receive(new ExpectedFileSizeEvent(foundDataLength), context);
+            }
             if(foundDataMimeType != null)
                 ret.receive(new ExpectedMIMEEvent(foundDataMimeType), context);
             if(sentToNetwork)
@@ -137,6 +138,7 @@ public class ClientGet extends ClientRequest {
                 ret.receive(e, context);
             }
             if(succeeded) {
+                if(foundDataLength <= 0) throw new ResumeFailedException("No data");
                 Bucket data = null;
                 if(returnType == RETURN_TYPE_DIRECT) {
                     container.activate(allDataPending, Integer.MAX_VALUE);
