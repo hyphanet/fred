@@ -4955,11 +4955,7 @@ public class Node implements TimeSkewDetectorCallback {
          * @return canonical path of the database file in use.
          */
         public String getDatabasePath() throws IOException {
-                if (isDatabaseEncrypted()) {
-                        return dbFileCrypt.getCanonicalPath();
-                } else {
-                        return dbFile.getCanonicalPath();
-                }
+            return clientCore.clientLayerPersister.getWriteFilename().toString();
         }
 
 	public synchronized boolean autoChangeDatabaseEncryption() {

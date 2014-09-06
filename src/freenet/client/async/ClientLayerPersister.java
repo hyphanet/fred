@@ -746,5 +746,9 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         os.writeShort(buf.length - checker.checksumLength());
         os.write(buf);
     }
+
+    public synchronized File getWriteFilename() {
+        return writeToFilename;
+    }
     
 }
