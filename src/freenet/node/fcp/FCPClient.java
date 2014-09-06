@@ -60,8 +60,10 @@ public class FCPClient {
 	}
 
 	/** Migrate the FCPClient */
-    public void migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core,
+    public boolean migrate(PersistentRequestRoot newRoot, ObjectContainer container, NodeClientCore core,
             ClientContext context) {
+        int migrated = 0;
+        int failed = 0;
         try {
             PersistentRequestClient newClient;
             if(isGlobalQueue) {
@@ -76,12 +78,18 @@ public class FCPClient {
                 if(req == null) continue;
                 try {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
-                    if(request == null) continue;
+                    // FIXME it doesn't count as failure if it's already been migrated
+                    if(request == null) {
+                        failed++;
+                        continue;
+                    }
                     newClient.register(request);
                     request.start(context);
                     // FIXME catch standard exceptions.
+                    migrated++;
                 } catch (Throwable t) {
                     Logger.error(this, "Unable to migrate request: "+t, t);
+                    failed++;
                 }
             }
             container.activate(completedUnackedRequests, 2);
@@ -89,16 +97,38 @@ public class FCPClient {
                 if(req == null) continue;
                 try {
                     freenet.clients.fcp.ClientRequest request = req.migrate(newClient, container, core);
-                    if(request == null) continue;
+                    // FIXME it doesn't count as failure if it's already been migrated
+                    if(request == null) {
+                        failed++;
+                        continue;
+                    }
                     newClient.register(request);
                     request.start(context);
                     // FIXME catch standard exceptions.
+                    migrated++;
                 } catch (Throwable t) {
                     Logger.error(this, "Unable to migrate request: "+t, t);
+                    failed++;
                 }
+            }
+            if(failed == 0) {
+                if(migrated > 0)
+                    System.out.println("Migrated "+migrated+" requests successfully");
+                return true;
+            } else {
+                if(migrated > 0) {
+                    Logger.error(this, "Migrated "+migrated+" requests");
+                    System.out.println("Migrated "+migrated+" requests");
+                }
+                if(failed > 0) {
+                    Logger.error(this, "Failed to migrate "+failed+" requests");
+                    System.out.println("Failed to migrate "+failed+" requests");
+                }
+                return false;
             }
         } catch (Throwable t) {
             Logger.error(this, "Unable to migrate client: "+t, t);
+            return false;
         }
     }
 

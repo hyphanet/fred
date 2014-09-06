@@ -730,14 +730,21 @@ public class NodeClientCore implements Persistable {
 
     private void migrateFromOldDatabase(ObjectContainer container) {
         System.err.println("Attempting to migrate from old database ...");
+        boolean success = true;
         try {
             FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
-            oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext);
+            if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
+                success = false;
             for(FCPClient client : oldRoot.loadClients(this, container)) {
-                if(!client.isGlobalQueue)
-                    client.migrate(clientContext.persistentRoot, container, this, clientContext);
+                if(!client.isGlobalQueue) {
+                    if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
+                        success = false;
+                }
             }
-            // FIXME
+            if(success) {
+                System.out.println("Migrated all requests successfully");
+                // FIXME remove node.db4o etc
+            }
         } catch (Throwable t) {
             System.err.println("Unable to migrate from old database: "+t);
             t.printStackTrace();
