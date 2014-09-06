@@ -4,37 +4,20 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.security.MessageDigest;
-import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
-import freenet.client.DefaultMIMETypes;
-import freenet.client.InsertContext;
-import freenet.client.InsertException;
-import freenet.client.Metadata;
-import freenet.client.MetadataUnresolvedException;
-import freenet.client.async.BinaryBlob;
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
-import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
-import freenet.support.Base64;
-import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 

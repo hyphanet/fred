@@ -1,28 +1,15 @@
 package freenet.node.fcp;
 
-import java.net.MalformedURLException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.InsertContext;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
-import freenet.client.async.ClientPutCallback;
-import freenet.client.events.ClientEvent;
-import freenet.client.events.ClientEventListener;
-import freenet.client.events.FinishedCompressionEvent;
-import freenet.client.events.ExpectedHashesEvent;
-import freenet.client.events.SimpleEventProducer;
-import freenet.client.events.SplitfileProgressEvent;
-import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.NativeThread;
 
 /**
  * Base class for ClientPut and ClientPutDir.

@@ -5,31 +5,21 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.FetchResult;
-import freenet.client.InsertContext;
 import freenet.client.FetchException.FetchExceptionMode;
-import freenet.client.async.BinaryBlob;
-import freenet.client.async.BinaryBlobWriter;
+import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
-import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
-import freenet.client.events.ClientEvent;
-import freenet.client.events.ClientEventListener;
-import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
-import freenet.client.events.SplitfileProgressEvent;
-import freenet.clients.fcp.ClientGetMessage;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
@@ -39,11 +29,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
-import freenet.support.io.NativeThread;
-import freenet.support.io.NullBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**
