@@ -1241,9 +1241,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	public static class MyUSKFetcherCallback implements USKFetcherTagCallback {
+	public static class MyUSKFetcherCallback implements USKFetcherTagCallback, Serializable {
 
-		final ClientRequester parent;
+        private static final long serialVersionUID = 1L;
+        final ClientRequester parent;
 		final GetCompletionCallback cb;
 		final USK usk;
 		final ArrayList<String> metaStrings;
