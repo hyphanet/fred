@@ -4849,14 +4849,16 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void panic() {
-		try {
-			db.close();
-		} catch (Throwable t) {
-			// Ignore
-		}
-		synchronized(this) {
-			db = null;
-		}
+	    if(db != null) {
+	        try {
+	            db.close();
+	        } catch (Throwable t) {
+	            // Ignore
+	        }
+	        synchronized(this) {
+	            db = null;
+	        }
+	    }
 		try {
 			FileUtil.secureDelete(dbFile);
 			FileUtil.secureDelete(dbFileCrypt);
