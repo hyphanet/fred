@@ -2849,16 +2849,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-                databaseKey = DatabaseKey.createRandom(random);
-			    synchronized(this) {
-			        this.databaseKey = databaseKey;
-			    }
-				FileUtil.secureDelete(dbFileCrypt);
-				FileUtil.secureDelete(dbFile);
-				database = openCryptDatabase(databaseKey);
-				synchronized(this) {
-					databaseEncrypted = true;
-				}
+			    return; // No need to migrate
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
 				maybeDefragmentDatabase(dbFile, null);
 				// Just open it.
@@ -3000,12 +2991,14 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseEncrypted = true;
 				}
 			} else {
-				maybeDefragmentDatabase(dbFile, null);
-				// Open unencrypted.
-				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
-				synchronized(this) {
-					databaseEncrypted = false;
-				}
+			    if(dbFile.exists()) {
+			        maybeDefragmentDatabase(dbFile, null);
+			        // Open unencrypted.
+			        database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
+			        synchronized(this) {
+			            databaseEncrypted = false;
+			        }
+			    } else return; // Do not create a new database.
 			}
 		} catch (Db4oException e) {
 			database = null;
