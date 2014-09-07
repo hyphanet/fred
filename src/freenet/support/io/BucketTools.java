@@ -601,5 +601,18 @@ public class BucketTools {
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }
     }
+    
+    public static RandomAccessBucket toRandomAccessBucket(Bucket bucket, BucketFactory bf) throws IOException {
+        if(bucket instanceof RandomAccessBucket)
+            return (RandomAccessBucket)bucket;
+        if(bucket instanceof DelayedFreeBucket) {
+            RandomAccessBucket ret = ((DelayedFreeBucket)bucket).toRandomAccessBucket();
+            if(ret != null) return ret;
+        }
+        RandomAccessBucket ret = bf.makeBucket(bucket.size());
+        BucketTools.copy(bucket, ret);
+        bucket.free();
+        return ret;
+    }
 
 }

@@ -17,6 +17,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 
 public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 
@@ -130,6 +131,17 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis);
+    }
+    
+    /** Convert to a RandomAccessBucket if it can be done quickly. Otherwise return null. 
+     * @throws IOException If the bucket has already been freed. */
+    public RandomAccessBucket toRandomAccessBucket() throws IOException {
+        if(freed) throw new IOException("Already freed");
+        if(bucket instanceof RandomAccessBucket) {
+            return new DelayedFreeRandomAccessBucket(factory, (RandomAccessBucket)bucket);
+            // Underlying file is already registered.
+        }
+        return null;
     }
 
 }
