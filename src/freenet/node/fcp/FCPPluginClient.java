@@ -307,7 +307,7 @@ public final class FCPPluginClient {
      *         This is because the user is free to reconfigure IP-address restrictions on the node's
      *         web interface whenever he wants to.
      */
-    private ClientPermissions computePermissions() {
+    ClientPermissions computePermissions() {
         if(clientConnection != null) { // Networked FCP
             return clientConnection.hasFullAccess() ?
                 ClientPermissions.ACCESS_FCP_FULL : ClientPermissions.ACCESS_FCP_RESTRICTED;
