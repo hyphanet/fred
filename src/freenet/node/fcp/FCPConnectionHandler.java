@@ -664,8 +664,9 @@ public class FCPConnectionHandler implements Closeable {
         try {
             FCPPluginClient peekOldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
-            if(peekOldClient != null && !peekOldClient.isDead())
+            if(peekOldClient != null && !peekOldClient.isDead()) {
                 return peekOldClient;
+            }
         } finally {
             // A read-lock cannot be upgraded to a write-lock so we must always unlock
             pluginClientsByServerPluginNameLock.readLock().unlock();
@@ -678,9 +679,9 @@ public class FCPConnectionHandler implements Closeable {
             FCPPluginClient oldClient = pluginClientsByServerPluginName.get(serverPluginName);
             
             if(oldClient != null) {
-                if(!oldClient.isDead())
+                if(!oldClient.isDead()) {
                     return oldClient;
-                else {
+                } else {
                     // oldClient.isDead() returned true because the WeakReference to the server has
                     // been nulled because the plugin was unloaded or reloaded.
                     // The client should be discarded then. We have no ReferenceQueue to discard

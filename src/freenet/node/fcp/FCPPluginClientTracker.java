@@ -146,8 +146,9 @@ final class FCPPluginClientTracker extends NativeThread {
         
         FCPPluginClient client = ref != null ? ref.get() : null;
         
-        if(client == null)
+        if(client == null) {
             throw new PluginNotFoundException();
+        }
         
         return client;
     }

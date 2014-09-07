@@ -175,9 +175,10 @@ public interface FredPluginFCPMessageHandler {
         public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
                 SimpleFieldSet parameters, Bucket data, boolean success) {
             
-            if(originalMessage.isReplyMessage())
+            if(originalMessage.isReplyMessage()) {
                 throw new IllegalStateException("Constructing a reply message for a message which "
                     + "was a reply message already not allowed.");
+            }
             
             return new FCPPluginMessage(null, originalMessage.identifier,
                 parameters, data, success);

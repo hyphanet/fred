@@ -890,8 +890,9 @@ public class PluginManager {
     public PluginInfoWrapper getPluginInfoByClassName(String pluginClassName) {
         synchronized(pluginWrappers) {
             for(PluginInfoWrapper piw : pluginWrappers) {
-                if(piw.getPluginClassName().equals(pluginClassName))
+                if(piw.getPluginClassName().equals(pluginClassName)) {
                     return piw;
+                }
             }
         }
         return null;
@@ -905,8 +906,9 @@ public class PluginManager {
     public PluginInfoWrapper getPluginInfoByFileName(String pluginFileName) {
         synchronized(pluginWrappers) {
             for(PluginInfoWrapper piw : pluginWrappers) {
-                if(piw.getFilename().equals(pluginFileName))
+                if(piw.getFilename().equals(pluginFileName)) {
                     return piw;
+                }
             }
         }
         return null;
@@ -944,10 +946,11 @@ public class PluginManager {
                 throws PluginNotFoundException{
         
         PluginInfoWrapper piw = getPluginInfoByClassName(pluginClassName);
-        if(piw != null & piw.isFCPServerPlugin())
+        if(piw != null & piw.isFCPServerPlugin()) {
             return (FredPluginFCPMessageHandler.ServerSideFCPMessageHandler)piw.plug;
-        else
+        } else {
             throw new PluginNotFoundException(pluginClassName);
+        }
     }
 
 	/**
