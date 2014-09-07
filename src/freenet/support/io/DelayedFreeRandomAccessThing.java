@@ -52,9 +52,9 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     public void free() {
         synchronized(this) {
             if(freed) return;
-            this.factory.delayedFree(this);
             freed = true;
         }
+        this.factory.delayedFree(this);
     }
 
     @Override

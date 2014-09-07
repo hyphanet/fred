@@ -49,13 +49,17 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 
     @Override
 	public OutputStream getOutputStream() throws IOException {
-		if(freed) throw new IOException("Already freed");
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+        }
 		return bucket.getOutputStream();
 	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		if(freed) throw new IOException("Already freed");
+	    synchronized(this) {
+	        if(freed) throw new IOException("Already freed");
+	    }
 		return bucket.getInputStream();
 	}
 
@@ -79,20 +83,20 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 		bucket.setReadOnly();
 	}
 
-    public Bucket getUnderlying() {
+    public synchronized Bucket getUnderlying() {
 		if(freed) return null;
 		return bucket;
 	}
 	
 	@Override
 	public void free() {
-		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
-			if(freed) return;
-			if(logMINOR)
-				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFree(this);
-			freed = true;
-		}
+	    synchronized(this) {
+	        if(freed) return;
+	        freed = true;
+	    }
+	    if(logMINOR)
+	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
+	    this.factory.delayedFree(this);
 	}
 
 	@Override

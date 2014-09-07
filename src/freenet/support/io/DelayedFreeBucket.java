@@ -41,7 +41,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	}
 	
 	@Override
-	public boolean toFree() {
+	public synchronized boolean toFree() {
 		return freed;
 	}
 	
@@ -53,15 +53,19 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 
     @Override
 	public OutputStream getOutputStream() throws IOException {
-        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
-		if(freed) throw new IOException("Already freed");
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
 		return bucket.getOutputStream();
 	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
-		if(freed) throw new IOException("Already freed");
+	    synchronized(this) {
+	        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+	        if(freed) throw new IOException("Already freed");
+	    }
 		return bucket.getInputStream();
 	}
 
@@ -85,7 +89,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 		bucket.setReadOnly();
 	}
 
-    public Bucket getUnderlying() {
+    public synchronized Bucket getUnderlying() {
 		if(freed) return null;
 		if(migrated) return null;
 		return bucket;
@@ -93,14 +97,14 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	
 	@Override
 	public void free() {
-		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
-			if(freed) return;
-			if(migrated) return;
-			if(logMINOR)
-				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFree(this);
-			freed = true;
-		}
+	    synchronized(this) {
+	        if(freed) return;
+	        if(migrated) return;
+	        freed = true;
+	    }
+	    if(logMINOR)
+	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
+	    this.factory.delayedFree(this);
 	}
 
 	@Override
@@ -142,7 +146,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
     
     /** Convert to a RandomAccessBucket if it can be done quickly. Otherwise return null. 
      * @throws IOException If the bucket has already been freed. */
-    public RandomAccessBucket toRandomAccessBucket() throws IOException {
+    public synchronized RandomAccessBucket toRandomAccessBucket() throws IOException {
         if(freed) throw new IOException("Already freed");
         if(bucket instanceof RandomAccessBucket) {
             migrated = true;
