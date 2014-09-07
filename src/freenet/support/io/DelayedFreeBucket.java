@@ -41,7 +41,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 		return freed;
 	}
 	
-	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
+	public DelayedFreeBucket(PersistentFileTracker factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();

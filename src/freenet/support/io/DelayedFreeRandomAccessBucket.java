@@ -41,7 +41,7 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 		return freed;
 	}
 	
-	public DelayedFreeRandomAccessBucket(PersistentTempBucketFactory factory, RandomAccessBucket bucket) {
+	public DelayedFreeRandomAccessBucket(PersistentFileTracker factory, RandomAccessBucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();
