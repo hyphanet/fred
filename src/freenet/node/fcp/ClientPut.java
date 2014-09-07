@@ -166,15 +166,8 @@ public class ClientPut extends ClientPutBase {
                 Logger.error(this, "No data migrating insert: "+this.data);
                 return null;
             }
-            if(this.data instanceof RandomAccessBucket) {
-                data = (RandomAccessBucket) this.data;
-                data.onResume(core.clientContext);
-            } else {
-                this.data.onResume(core.clientContext);
-                data = core.persistentTempBucketFactory.makeBucket(this.data.size());
-                BucketTools.copy(this.data, data);
-                this.data.free();
-            }
+            this.data.onResume(core.clientContext);
+            data = BucketTools.toRandomAccessBucket(this.data, core.clientContext.getBucketFactory(isPersistentForever()));
         } else {
             // FIXME already finished
             return null;
