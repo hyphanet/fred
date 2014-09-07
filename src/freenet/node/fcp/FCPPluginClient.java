@@ -44,9 +44,10 @@ import freenet.support.api.Bucket;
  *   to parse the message and obtain the actual {@link FCPPluginMessage}.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
  *   obtain the FCPPluginClient which wants to send.<br/>
- * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection, SimpleFieldSet,
- *   Bucket, String)} or {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet,
- *   Bucket, long, String)} to send the message to the server plugin.<br/>
+ * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection,
+ *   FredPluginFCPMessageHandler.FCPPluginMessage)} or
+ *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}
+ *   to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
  *   FredPluginFCPMessageHandler.FCPPluginMessage)}.<br/>
@@ -326,7 +327,7 @@ public final class FCPPluginClient {
      * To prevent us from having to duplicate the send functions, this enum specifies in which
      * situation we are.
      * 
-     * @see FCPPluginClient#send(SendDirection, SimpleFieldSet, Bucket, String)
+     * @see FCPPluginClient#send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)
      *          User of this enum.
      * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)
      *          User of this enum.
@@ -337,10 +338,6 @@ public final class FCPPluginClient {
     }
 
     /**
-     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a
-     *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
-     *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} and
-     *                          {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)}.
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
@@ -353,8 +350,7 @@ public final class FCPPluginClient {
      *             {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}.
      *             </p>
      */
-    void send(SendDirection direction, SimpleFieldSet parameters, Bucket data,
-        String messageIdentifier)
+    void send(SendDirection direction, FredPluginFCPMessageHandler.FCPPluginMessage message)
             throws IOException {
         
         throw new UnsupportedOperationException("TODO FIXME: Implement");
