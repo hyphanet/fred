@@ -372,7 +372,7 @@ public final class FCPPluginClient {
      *             {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}.
      *             </p>
      */
-    void send(SendDirection direction, FredPluginFCPMessageHandler.FCPPluginMessage message)
+    public void send(SendDirection direction, FredPluginFCPMessageHandler.FCPPluginMessage message)
             throws IOException {
         
         throw new UnsupportedOperationException("TODO FIXME: Implement");
@@ -410,7 +410,7 @@ public final class FCPPluginClient {
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
      */
-    void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data,
+    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data,
         long timeoutMilliseconds, String messageIdentifier)
             throws FCPCallFailedException, IOException {
         throw new UnsupportedOperationException("TODO FIXME: Implement");
