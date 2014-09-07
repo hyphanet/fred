@@ -34,6 +34,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
+import freenet.support.io.DelayedFree;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.DelayedFreeRandomAccessThing;
 import freenet.support.io.FileBucket;
@@ -526,7 +527,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         PersistentStatsPutter storedStatsPutter = (PersistentStatsPutter) ois.readObject();
         this.bandwidthStatsPutter.addFrom(storedStatsPutter);
         int count = ois.readInt();
-        DelayedFreeBucket[] buckets = new DelayedFreeBucket[count];
+        DelayedFree[] buckets = new DelayedFree[count];
         for(int i=0;i<count;i++) {
             try {
                 buckets[i] = (DelayedFreeBucket) readChecksummedObject(ois, length);
@@ -534,16 +535,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 Logger.error(this, "Failed to load a bucket to free");
             }
         }
-        count = ois.readInt();
-        DelayedFreeRandomAccessThing[] rafs = new DelayedFreeRandomAccessThing[count];
-        for(int i=0;i<count;i++) {
-            try {
-                rafs[i] = (DelayedFreeRandomAccessThing) readChecksummedObject(ois, length);
-            } catch (ChecksumFailedException e) {
-                Logger.error(this, "Failed to load a bucket to free");
-            }
-        }
-        persistentTempFactory.finishDelayedFree(buckets, rafs);
+        persistentTempFactory.finishDelayedFree(buckets);
     }
 
     @Override
@@ -569,8 +561,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     }
     
     private boolean innerSave(boolean shutdown) {
-        DelayedFreeBucket[] buckets = persistentTempFactory.grabBucketsToFree();
-        DelayedFreeRandomAccessThing[] rafs = persistentTempFactory.grabRAFsToFree();
+        DelayedFree[] buckets = persistentTempFactory.grabBucketsToFree();
         OutputStream fos = null;
         try {
             fos = writeToBucket.getOutputStream();
@@ -607,21 +598,14 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                 oos.writeInt(0);
             } else {
                 oos.writeInt(buckets.length);
-                for(DelayedFreeBucket bucket : buckets)
+                for(DelayedFree bucket : buckets)
                     writeChecksummedObject(oos, bucket, null);
-            }
-            if(rafs == null) {
-                oos.writeInt(0);
-            } else {
-                oos.writeInt(rafs.length);
-                for(DelayedFreeRandomAccessThing raf : rafs)
-                    writeChecksummedObject(oos, raf, null);
             }
             oos.close();
             fos = null;
             // FIXME downgrade logging further
             Logger.error(this, "Saved "+requests.length+" requests to "+writeToFilename);
-            persistentTempFactory.finishDelayedFree(buckets, rafs);
+            persistentTempFactory.finishDelayedFree(buckets);
             return true;
         } catch (IOException e) {
             System.err.println("Failed to write persistent requests: "+e);

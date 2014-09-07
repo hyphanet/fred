@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 
-public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, Serializable {
+public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, Serializable, DelayedFree {
     
     private static final long serialVersionUID = 1L;
     final LockableRandomAccessThing underlying;
@@ -52,7 +52,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     public void free() {
         synchronized(this) {
             if(freed) return;
-            this.factory.delayedFreeBucket(this);
+            this.factory.delayedFree(this);
             freed = true;
         }
     }
@@ -85,7 +85,8 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         factory = persistentFileTracker;
     }
     
-    boolean toFree() {
+    @Override
+    public boolean toFree() {
         return freed;
     }
     
@@ -94,7 +95,8 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         return underlying;
     }
 
-    void realFree() {
+    @Override
+    public void realFree() {
         underlying.free();
     }
 

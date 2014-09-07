@@ -18,7 +18,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBucket {
+public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBucket, DelayedFree {
 
     private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
@@ -36,7 +36,8 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 		});
 	}
 	
-	boolean toFree() {
+	@Override
+	public boolean toFree() {
 		return freed;
 	}
 	
@@ -78,7 +79,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 		bucket.setReadOnly();
 	}
 
-	public Bucket getUnderlying() {
+    public Bucket getUnderlying() {
 		if(freed) return null;
 		return bucket;
 	}
@@ -89,7 +90,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 			if(freed) return;
 			if(logMINOR)
 				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFreeBucket(this);
+			this.factory.delayedFree(this);
 			freed = true;
 		}
 	}
@@ -104,7 +105,8 @@ public class DelayedFreeBucket implements Bucket, Serializable, RandomAccessBuck
 		return bucket.createShadow();
 	}
 
-	void realFree() {
+	@Override
+    public void realFree() {
 		bucket.free();
 	}
 

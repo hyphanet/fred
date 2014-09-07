@@ -10,13 +10,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-import freenet.client.async.PersistentJobRunner;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
 /**
@@ -52,8 +50,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	/** Buckets to free. When buckets are freed, we write them to this list, and delete the files *after*
 	 * the transaction recording the buckets being deleted hits the disk. */
-	private final ArrayList<DelayedFreeBucket> bucketsToFree;
-	private final ArrayList<DelayedFreeRandomAccessThing> rafsToFree;
+	private final ArrayList<DelayedFree> bucketsToFree;
 	
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
@@ -114,8 +111,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			originalFiles.add(f);
 		}
 		
-		bucketsToFree = new ArrayList<DelayedFreeBucket>();
-		rafsToFree = new ArrayList<DelayedFreeRandomAccessThing>();
+		bucketsToFree = new ArrayList<DelayedFree>();
 	}
 	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
@@ -166,25 +162,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
 	@Override
-	public void delayedFreeBucket(DelayedFreeBucket b) {
+	public void delayedFree(DelayedFree b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
 		}
 	}
 
-    /**
-     * Free an allocated bucket, but only after the change has been written to disk.
-     */
-    @Override
-    public void delayedFreeBucket(DelayedFreeRandomAccessThing b) {
-        synchronized(this) {
-            rafsToFree.add(b);
-        }
-    }
-
     /** Returns a list of buckets to free. The caller should write the buckets to the checkpoint, 
      * and free them after the checkpoint has written successfully, by calling postCommit(). */
-	public DelayedFreeBucket[] grabBucketsToFree() {
+	public DelayedFree[] grabBucketsToFree() {
 		synchronized(this) {
 			if(bucketsToFree.isEmpty()) return null;
 			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
@@ -193,17 +179,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 	
-    /** Returns a list of RAFs to free. The caller should write the buckets to the checkpoint, 
-     * and free them after the checkpoint has written successfully, by calling postCommit(). */
-    public DelayedFreeRandomAccessThing[] grabRAFsToFree() {
-        synchronized(this) {
-            if(rafsToFree.isEmpty()) return null;
-            DelayedFreeRandomAccessThing[] buckets = rafsToFree.toArray(new DelayedFreeRandomAccessThing[rafsToFree.size()]);
-            rafsToFree.clear();
-            return buckets;
-        }
-    }
-    
 	/** Get the directory we are creating temporary files in */
 	@Override
 	public File getDir() {
@@ -232,19 +207,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Delete the buckets.
 	 */
-	public void finishDelayedFree(DelayedFreeBucket[] buckets, DelayedFreeRandomAccessThing[] rafs) {
+	public void finishDelayedFree(DelayedFree[] buckets) {
 	    if(buckets != null) {
-	        for(DelayedFreeBucket bucket : buckets) {
-	            try {
-	                if(bucket.toFree())
-	                    bucket.realFree();
-	            } catch (Throwable t) {
-	                Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
-	            }
-	        }
-	    }
-	    if(rafs != null) {
-	        for(DelayedFreeRandomAccessThing bucket : rafs) {
+	        for(DelayedFree bucket : buckets) {
 	            try {
 	                if(bucket.toFree())
 	                    bucket.realFree();
