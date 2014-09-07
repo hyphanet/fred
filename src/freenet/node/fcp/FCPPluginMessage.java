@@ -7,8 +7,10 @@ import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
@@ -42,7 +44,15 @@ public class FCPPluginMessage extends DataCarryingMessage {
 	private final long dataLength;
 	
 	private final SimpleFieldSet plugparams;
-	
+
+    /**
+     * For messages which are a reply to another message, this true if the operation requested by
+     * the original messages succeeded.<br>
+     * For non-reply messages, this is null.
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
+     */
+    private final Boolean success;
+
 	FCPPluginMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		if(identifier == null)
@@ -72,6 +82,17 @@ public class FCPPluginMessage extends DataCarryingMessage {
 		}
 		
 		plugparams = fs.subset(PARAM_PREFIX);
+        
+        if(fs.get("Success") != null) {
+            try {
+                success = fs.getBoolean("Success");
+            } catch(FSParseException e) {
+                throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD,
+                    "Success must be a boolean (yes, no, true or false)", identifier, false);
+            }
+        } else {
+            success = null;
+        }
 	}
 
 	@Override
