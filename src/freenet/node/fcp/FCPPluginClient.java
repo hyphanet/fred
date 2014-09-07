@@ -17,7 +17,6 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 
 /**
  * <p>An FCP client communicating with a plugin running within fred.</p>
@@ -59,7 +58,8 @@ import freenet.support.api.Bucket;
  *   obtain the FCPPluginClient which wants to send.<br/>
  * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection,
  *   FredPluginFCPMessageHandler.FCPPluginMessage)} or
- *   {@link FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}
+ *   {@link FCPPluginClient#sendSynchronous(SendDirection,
+ *   FredPluginFCPMessageHandler.FCPPluginMessage, long)}
  *   to send the message to the server plugin.<br/>
  * - The FCP server plugin handles the message at
  *   {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
@@ -364,7 +364,8 @@ public final class FCPPluginClient {
      *             connection is alive. Messages are sent asynchronously, so it can happen that a
      *             closed connection is not detected before this function returns.<br/>
      *             If you need to know whether the send succeeded, use
-     *             {@link #sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)}.
+     *             {@link #sendSynchronous(SendDirection,
+     *             FredPluginFCPMessageHandler.FCPPluginMessage, long)}.
      *             </p>
      */
     public void send(SendDirection direction, FredPluginFCPMessageHandler.FCPPluginMessage message)
@@ -387,10 +388,8 @@ public final class FCPPluginClient {
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.
      * 
-     * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a
-     *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
-     *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} and
-     *                          {@link ClientSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)}.
+     * @param message FIXME
+     * @return FIXME
      * @throws FCPCallFailedException
      *             If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
      * 
@@ -405,9 +404,16 @@ public final class FCPPluginClient {
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
      */
-    public void sendSynchronous(SendDirection direction, SimpleFieldSet parameters, Bucket data,
-        long timeoutMilliseconds, String messageIdentifier)
-            throws FCPCallFailedException, IOException {
+    public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
+            FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutMilliseconds)
+                throws FCPCallFailedException, IOException {
+        
+        if(message.isReplyMessage()) {
+            throw new IllegalArgumentException("sendSynchronous() cannot send reply messages: " +
+                "If it did send a reply message, it would not get another reply back. " +
+                "But a reply is needed for sendSynchronous() to determine when to return.");
+        }
+        
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
