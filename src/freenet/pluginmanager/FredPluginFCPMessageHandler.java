@@ -65,7 +65,11 @@ public interface FredPluginFCPMessageHandler {
         public final ClientPermissions permissions;
         
         /**
-         * The unique identifier of the message.<br><br>
+         * The unique identifier of the message.<br>
+         * Can be used by server and client to track the progress of messages.<br>
+         * This especially applies to the synchronous send functions of {@link FCPPluginClient}
+         * which will wait for a reply with the same identifier as the original message until they
+         * return.<br><br>
          * 
          * For reply messages, this shall be the same as the identifier of the message to which this
          * is a reply.<br>
