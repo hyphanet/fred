@@ -18,12 +18,12 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
+public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, RandomAccessBucket, DelayedFree {
 
     private static final long serialVersionUID = 1L;
     // Only set on construction and on onResume() on startup. So shouldn't need locking.
 	private transient PersistentFileTracker factory;
-	private final Bucket bucket;
+	private final RandomAccessBucket bucket;
 	private boolean freed;
 
         private static volatile boolean logMINOR;
@@ -41,7 +41,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 		return freed;
 	}
 	
-	public DelayedFreeBucket(PersistentTempBucketFactory factory, RandomAccessBucket bucket) {
+	public DelayedFreeRandomAccessBucket(PersistentTempBucketFactory factory, RandomAccessBucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();
@@ -116,7 +116,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
         bucket.onResume(context);
     }
     
-    static final int MAGIC = 0x4e9c9a03;
+    static final int MAGIC = 0xa28f2a2d;
     static final int VERSION = 1;
 
     @Override
@@ -126,10 +126,19 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
         bucket.storeTo(dos);
     }
 
-    protected DelayedFreeBucket(DataInputStream dis) throws StorageFormatException, IOException {
+    protected DelayedFreeRandomAccessBucket(DataInputStream dis) throws StorageFormatException, IOException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis);
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+            freed = true;
+        }
+        return new DelayedFreeRandomAccessThing(bucket.toRandomAccessThing(), factory);
     }
 
 }

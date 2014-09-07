@@ -154,7 +154,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			//rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
 		    throw new UnsupportedOperationException();
 		if(mustWrap)
-			rawBucket = new DelayedFreeBucket(this, rawBucket);
+			rawBucket = new DelayedFreeRandomAccessBucket(this, rawBucket);
 		return rawBucket;
 	}
 
