@@ -27,7 +27,20 @@ import freenet.support.api.Bucket;
  * with plugins only, while {@link FCPClient} provides functions for interacting with the node only.
  * </p>
  * 
- * <h1>Internals</h1>
+ * <h1>How to use this properly</h1><br>
+ * 
+ * You <b>should definitely</b> read the JavaDoc and code of the following interfaces / classes for
+ * a nice overview of how to use this properly from the perspective of your server or client
+ * implementation:<br>
+ * - {@link FredPluginFCPMessageHandler}<br>
+ * - {@link FredPluginFCPMessageHandler.FCPPluginMessage}<br>
+ * - {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}<br>
+ * - {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}<br><br>
+ * 
+ * <h1>Internals</h1><br>
+ * 
+ * This section is not interesting to server or client implementations. You might want to read it
+ * if you plan to work on the fred-side implementation of FCP plugin messaging.
  * 
  * <h2>Code path of sending messages</h2>
  * <p>There are two possible code paths for client connections, depending upon the location of the
@@ -338,6 +351,15 @@ public final class FCPPluginClient {
     }
 
     /**
+     * Can be used by both server and client implementations to send messages to each other.<br><br>
+     * 
+     * ATTENTION: If you plan to use this inside of message handling functions of your
+     * implementations of the interfaces
+     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
+     * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
+     * of the message handling functions first as it puts additional constraints on the usage
+     * of the FCPPluginClient they receive.
+     * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
@@ -361,6 +383,15 @@ public final class FCPPluginClient {
     public static final class FCPCallFailedException extends IOException { };
 
     /**
+     * Can be used by both server and client implementations to send messages to each other.<br><br>
+     * 
+     * ATTENTION: If you plan to use this inside of message handling functions of your
+     * implementations of the interfaces
+     * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
+     * {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}, be sure to read the JavaDoc
+     * of the message handling functions first as it puts additional constraints on the usage
+     * of the FCPPluginClient they receive.
+     * 
      * @param messageIdentifier A String which uniquely identifies the message which is being sent. The server shall use the same value when sending back a
      *                          reply, to allow the client to determine to what it has received a reply. This is passed to the server and client side handlers
      *                          {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} and
