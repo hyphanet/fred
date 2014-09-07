@@ -339,11 +339,6 @@ public final class FCPPluginClient {
      * 
      * To prevent us from having to duplicate the send functions, this enum specifies in which
      * situation we are.
-     * 
-     * @see FCPPluginClient#send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)
-     *          User of this enum.
-     * @see FCPPluginClient#sendSynchronous(SendDirection, SimpleFieldSet, Bucket, long, String)
-     *          User of this enum.
      */
     public static enum SendDirection {
         ToServer,
