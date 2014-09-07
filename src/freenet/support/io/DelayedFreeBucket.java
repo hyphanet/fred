@@ -26,6 +26,10 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	private transient PersistentFileTracker factory;
 	private final Bucket bucket;
 	private boolean freed;
+	/** Has the bucket been migrated to a RandomAccessBucket? If so it should not be accessed 
+	 * again, and in particular it should not be freed, since the new DelayedFreeRandomAccessBucket
+	 * will share share the underlying RandomAccessBucket. */
+	private boolean migrated;
 
         private static volatile boolean logMINOR;
 	static {
@@ -50,12 +54,14 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 
     @Override
 	public OutputStream getOutputStream() throws IOException {
+        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
 		if(freed) throw new IOException("Already freed");
 		return bucket.getOutputStream();
 	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
+        if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
 		if(freed) throw new IOException("Already freed");
 		return bucket.getInputStream();
 	}
@@ -82,6 +88,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 
     public Bucket getUnderlying() {
 		if(freed) return null;
+		if(migrated) return null;
 		return bucket;
 	}
 	
@@ -89,6 +96,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	public void free() {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
+			if(migrated) return;
 			if(logMINOR)
 				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
 			this.factory.delayedFree(this);
@@ -138,6 +146,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
     public RandomAccessBucket toRandomAccessBucket() throws IOException {
         if(freed) throw new IOException("Already freed");
         if(bucket instanceof RandomAccessBucket) {
+            migrated = true;
             return new DelayedFreeRandomAccessBucket(factory, (RandomAccessBucket)bucket);
             // Underlying file is already registered.
         }
