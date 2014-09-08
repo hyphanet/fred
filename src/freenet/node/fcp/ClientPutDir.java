@@ -65,7 +65,7 @@ public class ClientPutDir extends ClientPutBase {
             IOException, ResumeFailedException, TooManyFilesInsertException {
         ClientContext context = core.clientContext;
         container.activate(manifestElements, Integer.MAX_VALUE);
-        migrateManifestElements(manifestElements, context.getBucketFactory(isPersistentForever()));
+        migrateManifestElements(manifestElements, context.getBucketFactory(isPersistentForever()), context);
         container.activate(uri, Integer.MAX_VALUE);
         container.activate(ctx, Integer.MAX_VALUE);
         freenet.clients.fcp.ClientPutDir put =
@@ -101,15 +101,15 @@ public class ClientPutDir extends ClientPutBase {
         return put;
     }
     
-	private void migrateManifestElements(HashMap<String, Object> map, BucketFactory bf) throws ResumeFailedException, IOException {
+	private void migrateManifestElements(HashMap<String, Object> map, BucketFactory bf, ClientContext context) throws ResumeFailedException, IOException {
 	    for(Map.Entry<String, Object> entry : map.entrySet()) {
 	        Object val = entry.getValue();
 	        if(val instanceof HashMap) {
-	            migrateManifestElements((HashMap<String, Object>)val, bf);
+	            migrateManifestElements((HashMap<String, Object>)val, bf, context);
 	        } else if(val instanceof freenet.client.async.ManifestElement) {
 	            freenet.client.async.ManifestElement oldElement = 
 	                (freenet.client.async.ManifestElement) val;
-	            entry.setValue(oldElement.migrate(bf));
+	            entry.setValue(oldElement.migrate(bf, context));
 	        }
 	    }
     }
