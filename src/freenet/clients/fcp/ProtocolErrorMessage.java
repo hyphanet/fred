@@ -60,6 +60,7 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 	static final int TOO_MANY_FILES_IN_INSERT = 34;
 	static final int BAD_MIME_TYPE = 35;
 	static final int WRONG_RETURN_TYPE = 36;
+	static final int IO_ERROR = 37;
 	
 	final int code;
 	final String extra;
@@ -138,6 +139,8 @@ public class ProtocolErrorMessage extends FCPMessage implements Serializable {
 			return "Bad MIME type";
 		case WRONG_RETURN_TYPE:
 		    return "Not supported for that return type";
+		case IO_ERROR:
+		    return "Disk I/O error";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

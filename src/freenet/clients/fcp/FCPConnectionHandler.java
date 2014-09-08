@@ -377,7 +377,9 @@ public class FCPConnectionHandler implements Closeable {
 						return;
 					} catch (MalformedURLException e) {
 						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, e.getMessage(), id, message.global);
-					}
+					} catch (IOException e) {
+					    failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.IO_ERROR, true, e.getMessage(), id, message.global);
+                    }
 				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				    try {
 				        server.core.clientContext.jobRunner.queue(new PersistentJob() {
@@ -398,7 +400,10 @@ public class FCPConnectionHandler implements Closeable {
 				                } catch (MalformedURLException e) {
 				                    outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
 				                    return false;
-				                }
+				                } catch (IOException e) {
+                                    outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.IO_ERROR, true, null, id, message.global));
+                                    return false;
+                                }
 				                try {
 				                    putter.register(false);
 				                } catch (IdentifierCollisionException e) {
@@ -426,7 +431,9 @@ public class FCPConnectionHandler implements Closeable {
 						return;
 					} catch (MalformedURLException e) {
 						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
-					}
+					} catch (IOException e) {
+                        failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.IO_ERROR, true, null, id, message.global);
+                    }
 				}
 			}
 			if(!success) {
