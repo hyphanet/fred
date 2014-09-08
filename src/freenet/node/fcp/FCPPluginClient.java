@@ -422,6 +422,11 @@ public final class FCPPluginClient {
                 throw new IOException("The server plugin has been unloaded.");
             }
         } else {
+            // FIXME: As this returns, switch it with the negation of the above if() so the code
+            // in the above if can be next to the messageDispatcher code below.
+            // This makes more sense because the messageDispatcher code shall only run if the
+            // above if() is true.
+            
             // The message handler is attached by network.
             // In theory, we could construct a mock handler object for it and just let below
             // messageDispatcher eat it. Then we wouldn't know the reply message immediately
