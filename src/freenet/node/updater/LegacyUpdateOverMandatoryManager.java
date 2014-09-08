@@ -93,15 +93,9 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 			
 			final PartiallyReceivedBulk prb;
 			long length;
-			try {
-				length = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-						Node.PACKET_SIZE, raf, true);
-			} catch(IOException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-				raf.close();
-				return;
-			}
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+			        Node.PACKET_SIZE, raf, true);
 			
 			try {
 				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);

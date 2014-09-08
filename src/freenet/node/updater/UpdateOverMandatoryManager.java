@@ -710,15 +710,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final PartiallyReceivedBulk prb;
 		long length;
-		try {
-			length = data.size();
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-				Node.PACKET_SIZE, data, true);
-		} catch(IOException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: " + e, e);
-			data.close();
-			return true;
-		}
+		length = data.size();
+		prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+		        Node.PACKET_SIZE, data, true);
 
 		final BulkTransmitter bt;
 		try {
@@ -1230,15 +1224,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			
 			final PartiallyReceivedBulk prb;
 			long length;
-			try {
-				length = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-						Node.PACKET_SIZE, raf, true);
-			} catch(IOException e) {
-				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-				raf.close();
-				return;
-			}
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+			        Node.PACKET_SIZE, raf, true);
 			
 			try {
 				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
@@ -1702,26 +1690,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		
 		PartiallyReceivedBulk prb;
-		try {
-			if(raf != null) {
-				long thisLength = raf.size();
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
-						Node.PACKET_SIZE, raf, true);
-				if(length != thisLength) {
-					fail = true;
-				}
-			} else {
-				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
-						Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
-				fail = true;
-			}
-		} catch(IOException e) {
-			Logger.error(this, "Peer " + source + " asked us for the dependency with hash "+HexUtil.bytesToHex(buf.getData())+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-			raf.close();
-			fail = true;
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
-					Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
-			fail = true;
+		if(raf != null) {
+		    long thisLength = raf.size();
+		    prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), thisLength,
+		            Node.PACKET_SIZE, raf, true);
+		    if(length != thisLength) {
+		        fail = true;
+		    }
+		} else {
+		    prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
+		            Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
+		    fail = true;
 		}
 		
 		try {
