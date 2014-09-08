@@ -10,7 +10,9 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
+import freenet.client.events.FinishedCompressionEvent;
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
@@ -147,6 +149,7 @@ public class ClientPut extends ClientPutBase {
     public ClientRequest migrate(PersistentRequestClient newClient, ObjectContainer container,
             NodeClientCore core) throws IdentifierCollisionException, NotAllowedException,
             IOException, MetadataUnresolvedException, ResumeFailedException {
+        ClientContext context = core.clientContext;
         if(targetURI != null)
             container.activate(targetURI, Integer.MAX_VALUE);
         if(uri != null)
@@ -166,8 +169,8 @@ public class ClientPut extends ClientPutBase {
                 Logger.error(this, "No data migrating insert: "+this.data);
                 return null;
             }
-            this.data.onResume(core.clientContext);
-            data = BucketTools.toRandomAccessBucket(this.data, core.clientContext.getBucketFactory(isPersistentForever()));
+            this.data.onResume(context);
+            data = BucketTools.toRandomAccessBucket(this.data, context.getBucketFactory(isPersistentForever()));
         } else {
             // FIXME already finished
             return null;
@@ -177,12 +180,36 @@ public class ClientPut extends ClientPutBase {
             container.activate(putter, 1);
             overrideSplitfileKey = putter.getSplitfileCryptoKey();
         }
-        return new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
+        freenet.clients.fcp.ClientPut put = new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
                 charset, priorityClass, persistenceType, clientToken, getCHKOnly, ctx.dontCompress, 
                 ctx.maxInsertRetries, uploadFrom, f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 
                 isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, binaryBlob, core);
+        if(finished) {
+            // Not interested in generated URI if it's not finished.
+            if(putFailedMessage != null) {
+                container.activate(putFailedMessage, Integer.MAX_VALUE);
+                if(generatedURI == null) generatedURI = putFailedMessage.expectedURI;
+            }
+            if(generatedURI != null) {
+                container.activate(generatedURI, Integer.MAX_VALUE);
+                put.onGeneratedURI(generatedURI, null);
+            }
+            if(generatedMetadata != null) {
+                container.activate(generatedMetadata, Integer.MAX_VALUE);
+                generatedMetadata.onResume(context);
+                put.onGeneratedMetadata(generatedMetadata, null);
+            }
+            if(putFailedMessage != null) {
+                // HACK! We don't keep anything from the FinishedCompressionEvent anyway ...
+                put.receive(new FinishedCompressionEvent(-1, 0, 0), context);
+                put.onFailure(putFailedMessage.getException(), null);
+            } else if(succeeded) {
+                put.onSuccess(null);
+            }
+        }
+        return put;
     }
 
 }

@@ -49,7 +49,7 @@ public abstract class ClientPutBase extends ClientRequest {
 	protected final FreenetURI publicURI;
 	
 	/** Metadata returned instead of URI */
-	private Bucket generatedMetadata;
+	protected Bucket generatedMetadata;
 
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";

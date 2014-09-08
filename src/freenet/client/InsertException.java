@@ -119,6 +119,18 @@ public class InsertException extends Exception implements Cloneable {
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
+    public InsertException(InsertExceptionMode mode, String message, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
+        super(message == null ? getMessage(mode) : (getMessage(mode)+": "+message));
+        extra = message;
+        this.mode = mode;
+        this.errorCodes = errorCodes;
+        this.uri = expectedURI;
+        if(mode == InsertExceptionMode.INTERNAL_ERROR)
+            Logger.error(this, "Internal error: "+this);
+        else if(logMINOR) 
+            Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
+    }
+
 	public InsertException(InsertExceptionMode mode) {
 		super(getMessage(mode));
 		extra = null;

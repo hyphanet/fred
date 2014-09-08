@@ -3,15 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.net.MalformedURLException;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
-import freenet.support.SimpleFieldSet;
 
 public class PutFailedMessage extends FCPMessage {
 
@@ -39,5 +34,9 @@ public class PutFailedMessage extends FCPMessage {
 		else
 			return shortCodeDescription;
 	}
+
+    public InsertException getException() {
+        return new InsertException(InsertExceptionMode.getByCode(code), extraDescription, tracker, null);
+    }
 
 }
