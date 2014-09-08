@@ -445,4 +445,8 @@ public final class FCPPluginClient {
         return "FCPPluginClient (ID: " + id + "; server plugin: " + serverPluginName + "; client: "
                    + client + "; clientConnection: " + clientConnection +  ")";
     }
+
+    public String toStringShort() {
+        return "FCPPluginClient for " + serverPluginName;
+    }
 }
