@@ -5,12 +5,12 @@ package freenet.clients.fcp;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
-import freenet.client.async.ManifestElement;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.RandomAccessBucket;
 
 /**

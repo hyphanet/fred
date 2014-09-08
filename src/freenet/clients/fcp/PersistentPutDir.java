@@ -6,13 +6,13 @@ package freenet.clients.fcp;
 import java.util.HashMap;
 
 import freenet.client.async.BaseManifestPutter;
-import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;

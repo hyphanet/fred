@@ -12,6 +12,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.ContainerSizeEstimator;
 import freenet.support.Logger;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.ResumeFailedException;
 
 /**

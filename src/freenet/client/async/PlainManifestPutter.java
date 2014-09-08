@@ -9,6 +9,7 @@ import java.util.Map;
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.ResumeFailedException;
 
 /**

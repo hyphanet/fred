@@ -30,6 +30,7 @@ import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.BucketTools;
 import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
@@ -1344,8 +1345,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		public final void addElement(String name, ManifestElement element, boolean isDefaultDoc) {
 			ClientMetadata cm = makeClientMetadata(element.mimeOverride);
 
-			if (element.data != null) {
-				addExternal(name, element.data, cm, isDefaultDoc);
+			if (element.getData() != null) {
+				addExternal(name, element.getData(), cm, isDefaultDoc);
 				return;
 			}
 			if (element.targetURI != null) {
@@ -1482,8 +1483,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentDir.put("", m);
 			}
 			numberOfFiles++;
-			if(element.data != null)
-			    totalSize += element.data.size();
+			if(element.getData() != null)
+			    totalSize += element.getSize();
 		}
 
 		@Override
@@ -1522,8 +1523,8 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				currentDir.put("", m);
 			}
 			numberOfFiles++;
-			if(element.data != null)
-			    totalSize += element.data.size();
+			if(element.getData() != null)
+			    totalSize += element.getSize();
 		}
 	}
 	

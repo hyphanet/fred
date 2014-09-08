@@ -18,7 +18,6 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.ManifestElement;
 import freenet.client.async.ManifestPutter;
 import freenet.client.async.DefaultManifestPutter;
 import freenet.client.async.TooManyFilesInsertException;
@@ -28,6 +27,7 @@ import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.FileBucket;
 import freenet.support.io.ResumeFailedException;
 

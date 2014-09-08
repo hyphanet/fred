@@ -29,6 +29,7 @@ import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.ManifestElement;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.RandomAccessBucket;
@@ -348,7 +349,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 					m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
 				} else {
 					//System.out.println("Decompose: "+name+" (ManifestElement, Data)");
-					containerItems.add(new ContainerElement(element.data, archivePrefix+name));
+					containerItems.add(new ContainerElement(element.getData(), archivePrefix+name));
 					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
 				}
 				smc.addItem(name, m);
