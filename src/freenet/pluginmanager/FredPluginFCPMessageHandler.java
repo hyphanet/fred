@@ -11,14 +11,15 @@ import freenet.support.api.Bucket;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a
- * {@link FCPPluginClient} must implement this interface to provide a function which handles the
- * received messages.<br><br>
+ * {@link FCPPluginClient} must implement this interface, or even better one of it's child
+ * interfaces, to provide a function which handles the received messages.<br><br>
  * 
  * For symmetry, the child interfaces {@link ClientSideFCPMessageHandler} and
  * {@link ServerSideFCPMessageHandler} do not provide any different functions.<br>
  * They exist nevertheless to allow JavaDoc to explain differences in what the server and client are
  * allowed to do.<br>
- * You <b>must</b> follow the restrictions which are explained there.<br><br>
+ * You <b>must</b> follow the restrictions which are explained there.<br>
+ * For clarity, you <b>should</b> implement the child interfaces instead of this interface.<br><br>
  * 
  * As opposed to the old {@link PluginTalker} and {@link PluginReplySender} interfaces, this new API
  * is as symmetric as possible:<br>
