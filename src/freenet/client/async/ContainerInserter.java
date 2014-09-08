@@ -215,7 +215,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 
 		while(true) {
 			try {
-				bucket = md.toBucket(context.tempBucketFactory);
+				bucket = md.toBucket(context.getBucketFactory(persistent));
 				containerItems.add(new ContainerElement(bucket, ".metadata"));
 				return;
 			} catch (MetadataUnresolvedException e) {
@@ -237,7 +237,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 		Metadata[] metas = e.mustResolve;
 		for(Metadata m: metas) {
 			try {
-				Bucket bucket = m.toBucket(context.tempBucketFactory);
+				Bucket bucket = m.toBucket(context.getBucketFactory(persistent));
 				String nameInArchive = ".metadata-"+(x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
 				m.resolve(nameInArchive);
