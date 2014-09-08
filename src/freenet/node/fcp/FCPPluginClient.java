@@ -12,12 +12,14 @@ import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage.ClientPermissions;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.PrioritizedMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 /**
  * <p>An FCP client communicating with a plugin running within fred.</p>
@@ -477,8 +479,12 @@ public final class FCPPluginClient {
 
             @Override
             public int getPriority() {
-                throw new UnsupportedOperationException(
-                    "FIXME: Get from FredPluginFCPMessageHandler or think of a reasonable value.");
+                NativeThread.PriorityLevel priority
+                    = (messageHandler instanceof PrioritizedMessageHandler) ?
+                        ((PrioritizedMessageHandler)messageHandler).getPriority()
+                        : NativeThread.PriorityLevel.NORM_PRIORITY;
+                
+                return priority.value;
             }
         };
         
