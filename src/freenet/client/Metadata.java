@@ -39,6 +39,8 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.CountedOutputStream;
+import freenet.support.io.NullOutputStream;
 import freenet.support.io.RandomAccessBucket;
 
 /** Metadata parser/writer class. */
@@ -1169,6 +1171,16 @@ public class Metadata implements Cloneable, Serializable {
 		}
 		return baos.toByteArray();
 	}
+	
+    public long writtenLength() throws MetadataUnresolvedException {
+        CountedOutputStream cos = new CountedOutputStream(new NullOutputStream());
+        try {
+            writeTo(new DataOutputStream(cos));
+        } catch (IOException e) {
+            throw new Error("Could not write to CountedOutputStream: "+e, e);
+        }
+        return cos.written();
+    }
 
 	/**
 	 * Read a key using the current settings.

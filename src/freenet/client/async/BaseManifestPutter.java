@@ -229,8 +229,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				} else {
 					// Resolve now to speed up the insert.
 					try {
-						byte[] buf = m.writeToByteArray();
-						if(buf.length > Metadata.MAX_SIZE_IN_MANIFEST)
+					    if(m.writtenLength() > Metadata.MAX_SIZE_IN_MANIFEST)
 							throw new MetadataUnresolvedException(new Metadata[] { m }, "Too big");
 					} catch (MetadataUnresolvedException e) {
 						try {
