@@ -761,6 +761,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	class TempLockableRandomAccessThing extends SwitchableProxyRandomAccessThing implements Migratable {
 	    
 	    protected boolean hasMigrated = false;
+	    private boolean hasFreedRAM = false;
 	    private final long creationTime;
 	    
 	    TempLockableRandomAccessThing(int size, long time) throws IOException {
@@ -778,7 +779,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         public TempLockableRandomAccessThing(LockableRandomAccessThing underlying, long creationTime, boolean migrated) throws IOException {
             super(underlying, underlying.size());
             this.creationTime = creationTime;
-            this.hasMigrated = migrated;
+            this.hasMigrated = hasFreedRAM = migrated;
         }
 
         @Override
@@ -790,6 +791,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
         @Override
         protected void afterFreeUnderlying() {
+            synchronized(this) {
+                if(hasFreedRAM) return;
+                hasFreedRAM = true;
+            }
             _hasFreed(size);
             synchronized(ramBucketQueue) {
                 ramBucketQueue.remove(getReference());
