@@ -570,7 +570,7 @@ public class BucketTools {
         case DelayedFreeBucket.MAGIC:
             return new DelayedFreeBucket(dis);
         case DelayedFreeRandomAccessBucket.MAGIC:
-            return new DelayedFreeBucket(dis);
+            return new DelayedFreeRandomAccessBucket(dis);
         case NoFreeBucket.MAGIC:
             return new NoFreeBucket(dis);
         case PaddedEphemerallyEncryptedBucket.MAGIC:
