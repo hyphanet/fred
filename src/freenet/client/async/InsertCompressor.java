@@ -184,7 +184,8 @@ public class InsertCompressor implements CompressJob {
 						shouldFreeOnFinally = false;
 					}
 				} catch (PersistenceDisabledException e) {
-					Logger.error(this, "Database disabled compressing data", new Exception("error"));
+				    if(!context.jobRunner.shuttingDown())
+				        Logger.error(this, "Database disabled compressing data", new Exception("error"));
 					shouldFreeOnFinally = true;
 					if(bestCompressedData != null && bestCompressedData != origData && bestCompressedData != result)
 						bestCompressedData.free();

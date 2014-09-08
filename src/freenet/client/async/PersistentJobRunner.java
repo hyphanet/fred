@@ -82,4 +82,7 @@ public interface PersistentJobRunner {
      * recomputed. */
     boolean newSalt();
 
+    /** If true, the node is shutting down */
+    boolean shuttingDown();
+
 }

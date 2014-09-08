@@ -303,6 +303,15 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
             killed = true;
         }
     }
+    
+    @Override
+    public boolean shuttingDown() {
+        synchronized(sync) {
+            return killed;
+        }
+    }
+    
+
 
     /** Typically called after shutdown() to wait for current jobs to complete. */
     public void waitForIdleAndCheckpoint() {

@@ -77,4 +77,9 @@ public class DummyJobRunner implements PersistentJobRunner {
         return false;
     }
 
+    @Override
+    public boolean shuttingDown() {
+        return false;
+    }
+
 }
