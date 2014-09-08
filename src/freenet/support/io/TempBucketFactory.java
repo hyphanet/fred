@@ -90,7 +90,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
         long creationTime();
 
-        void migrateToDisk() throws IOException;
+        boolean migrateToDisk() throws IOException;
 	    
 	};
 	
@@ -149,13 +149,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		}
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
-		public final void migrateToDisk() throws IOException {
+		public final boolean migrateToDisk() throws IOException {
 			Bucket toMigrate = null;
 			long size;
 			synchronized(this) {
 				if(!isRAMBucket() || hasBeenFreed)
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
-					return;
+					return false;
 				toMigrate = currentBucket;
 				RandomAccessBucket tempFB = _makeFileBucket();
 				size = currentSize;
@@ -195,6 +195,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			toMigrate.free();
 			// Might have changed already so we can't rely on currentSize!
 			_hasFreed(size);
+			return true;
 		}
 		
 		public synchronized final boolean isRAMBucket() {
@@ -789,11 +790,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
         @Override
         protected void afterFreeUnderlying() {
-            synchronized(this) {
-                // Proliferation of locks! This is okay, migrate is expensive and rarely called.
-                if(hasMigrated) return;
-                hasMigrated = true;
-            }
             _hasFreed(size);
             synchronized(ramBucketQueue) {
                 ramBucketQueue.remove(getReference());
@@ -812,8 +808,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         }
 
         @Override
-        public void migrateToDisk() throws IOException {
+        public boolean migrateToDisk() throws IOException {
+            synchronized(this) {
+                if(hasMigrated) return false;
+                hasMigrated = true;
+            }
             migrate();
+            return true;
         }
 
         public synchronized boolean hasMigrated() {
