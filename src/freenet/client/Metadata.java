@@ -10,6 +10,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -1613,8 +1614,15 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	public RandomAccessBucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
-		byte[] buf = writeToByteArray();
-		return BucketTools.makeImmutableBucket(bf, buf);
+	    RandomAccessBucket b = bf.makeBucket(-1);
+	    DataOutputStream dos = new DataOutputStream(b.getOutputStream());
+	    try {
+	        writeTo(dos);
+	    } finally {
+	        dos.close();
+	    }
+	    b.setReadOnly();
+	    return b;
 	}
 
 	public boolean isResolved() {
