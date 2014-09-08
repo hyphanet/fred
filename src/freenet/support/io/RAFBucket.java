@@ -9,12 +9,12 @@ import java.io.OutputStream;
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
-public class RAFBucket implements Bucket {
+public class RAFBucket implements Bucket, RandomAccessBucket {
     
     private final LockableRandomAccessThing underlying;
     final long size;
 
-    public RAFBucket(LockableRandomAccessThing underlying) throws IOException {
+    public RAFBucket(LockableRandomAccessThing underlying) {
         this.underlying = underlying;
         size = underlying.size();
     }
@@ -75,6 +75,11 @@ public class RAFBucket implements Bucket {
     RAFBucket(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
         underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
         size = underlying.size();
+    }
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() {
+        return underlying;
     }
 
 }
