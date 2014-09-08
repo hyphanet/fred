@@ -173,7 +173,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public DelayedFree[] grabBucketsToFree() {
 		synchronized(this) {
 			if(bucketsToFree.isEmpty()) return null;
-			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
+			DelayedFree[] buckets = bucketsToFree.toArray(new DelayedFree[bucketsToFree.size()]);
 			bucketsToFree.clear();
 			return buckets;
 		}
