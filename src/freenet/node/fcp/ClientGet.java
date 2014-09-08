@@ -152,20 +152,6 @@ public class ClientGet extends ClientRequest {
 	}
 
 	@Override
-	protected void freeData(ObjectContainer container) {
-		Bucket data;
-		synchronized(this) {
-			data = returnBucket;
-			returnBucket = null;
-		}
-		if(data != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(data, 5);
-			data.free();
-		}
-	}
-
-	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}

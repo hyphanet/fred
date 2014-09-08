@@ -129,9 +129,6 @@ public abstract class ClientRequest {
 		return priorityClass;
 	}
 
-	/** Free cached data bucket(s) */
-	protected abstract void freeData(ObjectContainer container); 
-
 	public abstract String getFailureReason(boolean longDescription, ObjectContainer container);
 
 	public void onMajorProgress(ObjectContainer container) {
