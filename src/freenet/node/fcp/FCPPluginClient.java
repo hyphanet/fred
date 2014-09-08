@@ -140,6 +140,14 @@ public final class FCPPluginClient {
     private final UUID id = UUID.randomUUID();
 
     /**
+     * Executor upon which we run threads of the send functions.<br>
+     * Since the send functions can be called very often, it would be inefficient to create a new
+     * {@link Thread} for each one. An {@link Executor} prevents this by having a pool of Threads
+     * which will be recycled.
+     */
+    private final Executor executor;
+
+    /**
      * The class name of the plugin to which this FCPPluginClient is connected.
      */
     private final String serverPluginName;
@@ -203,6 +211,7 @@ public final class FCPPluginClient {
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
+        this.executor = executor;
         this.serverPluginName = serverPluginName;
         this.server = new WeakReference<ServerSideFCPMessageHandler>(serverPlugin);
         this.client = null;
@@ -254,6 +263,7 @@ public final class FCPPluginClient {
         assert(server != null);
         assert(client != null);
         
+        this.executor = executor;
         this.serverPluginName = serverPluginName;
         this.server = new WeakReference<ServerSideFCPMessageHandler>(server);
         this.client = client;
