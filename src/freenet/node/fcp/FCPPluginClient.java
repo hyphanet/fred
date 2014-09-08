@@ -363,7 +363,7 @@ public final class FCPPluginClient {
         ToServer,
         ToClient;
         
-        public final SendDirection inverse() {
+        public final SendDirection invert() {
             return (this == ToServer) ? ToClient : ToServer;
         }
     }
