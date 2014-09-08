@@ -39,6 +39,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.RandomAccessBucket;
@@ -1627,14 +1628,20 @@ public class Metadata implements Cloneable, Serializable {
 
 	public RandomAccessBucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
 	    RandomAccessBucket b = bf.makeBucket(-1);
-	    DataOutputStream dos = new DataOutputStream(b.getOutputStream());
+	    DataOutputStream dos = null;
+	    boolean success = false;
 	    try {
+	        dos = new DataOutputStream(b.getOutputStream());
 	        writeTo(dos);
-	    } finally {
 	        dos.close();
+	        dos = null;
+	        b.setReadOnly(); // Must be after dos.close()
+	        success = true;
+	        return b;
+	    } finally {
+	        Closer.close(dos);
+	        if(!success) b.free();
 	    }
-	    b.setReadOnly();
-	    return b;
 	}
 
 	public boolean isResolved() {
