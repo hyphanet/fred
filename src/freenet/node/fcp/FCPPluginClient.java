@@ -207,6 +207,7 @@ public final class FCPPluginClient {
     private FCPPluginClient(Executor executor, String serverPluginName,
             ServerSideFCPMessageHandler serverPlugin, FCPConnectionHandler clientConnection) {
         
+        assert(executor != null);
         assert(serverPlugin != null);
         assert(serverPluginName != null);
         assert(clientConnection != null);
@@ -234,6 +235,7 @@ public final class FCPPluginClient {
             FCPConnectionHandler clientConnection)
                 throws PluginNotFoundException {
         
+        assert(executor != null);
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
         assert(clientConnection != null);
@@ -259,6 +261,7 @@ public final class FCPPluginClient {
     private FCPPluginClient(Executor executor, String serverPluginName,
             ServerSideFCPMessageHandler server, ClientSideFCPMessageHandler client) {
         
+        assert(executor != null);
         assert(serverPluginName != null);
         assert(server != null);
         assert(client != null);
