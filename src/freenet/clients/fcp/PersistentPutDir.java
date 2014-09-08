@@ -14,6 +14,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.ManifestElement;
 import freenet.support.io.DelayedFreeBucket;
+import freenet.support.io.DelayedFreeRandomAccessBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
@@ -97,13 +98,12 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("UploadFrom", "redirect");
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
-				// Deactivate the top, not the middle.
-				// Deactivating the middle can cause big problems.
 				Bucket origData = e.getData();
 				Bucket data = origData;
-				boolean deactivate = false;
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
+				} else if(data instanceof DelayedFreeRandomAccessBucket) {
+				    data = ((DelayedFreeRandomAccessBucket)data).getUnderlying();
 				}
 				subset.put("DataLength", e.getSize());
 				if(mimeOverride != null)
