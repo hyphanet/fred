@@ -1192,8 +1192,9 @@ public class SplitFileInserterStorage {
     /** Called when we have completed encoding all the cross-segments */
     private void onCompletedCrossSegmentEncode() {
         synchronized (this) {
+            if (status == Status.ENCODED_CROSS_SEGMENTS) return; // Race condition.
             if (status != Status.STARTED) {
-                Logger.error(this, "Wrong state " + status, new Exception("error"));
+                Logger.error(this, "Wrong state " + status+" for "+this, new Exception("error"));
                 return;
             }
             status = Status.ENCODED_CROSS_SEGMENTS;
@@ -1203,8 +1204,9 @@ public class SplitFileInserterStorage {
 
     private void onCompletedSegmentEncode() {
         synchronized (this) {
+            if(status == Status.ENCODED) return; // Race condition.
             if (!(status == Status.ENCODED_CROSS_SEGMENTS || (crossSegments == null && status == Status.STARTED))) {
-                Logger.error(this, "Wrong state " + status, new Exception("error"));
+                Logger.error(this, "Wrong state " + status+" for "+this, new Exception("error"));
                 return;
             }
             status = Status.ENCODED;
