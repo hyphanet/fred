@@ -143,6 +143,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		synchronized(this) {
 			// Including this helps with certain bugs...
 			//progressMessage = null;
+		    started = true; // FIXME remove, used by resuming
 			succeeded = true;
 			finished = true;
 			completionTime = System.currentTimeMillis();
@@ -161,6 +162,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public void onFailure(InsertException e, BaseClientPutter state) {
 		if(finished) return;
 		synchronized(this) {
+		    started = true; // FIXME remove, used by resuming
 			finished = true;
 			completionTime = System.currentTimeMillis();
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
