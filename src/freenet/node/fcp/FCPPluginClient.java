@@ -16,6 +16,7 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHan
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Executor;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -192,7 +193,7 @@ public final class FCPPluginClient {
      * The client is not running within the node, it is attached by network with a
      * {@link FCPConnectionHandler}.<br/>
      * 
-     * @see #constructForNetworkedFCP(FCPConnectionHandler, String)
+     * @see #constructForNetworkedFCP(Executor, PluginManager, String, FCPConnectionHandler)
      *          The public interface to this constructor.
      */
     private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler serverPlugin,
@@ -219,9 +220,10 @@ public final class FCPPluginClient {
      * {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to
      * client application code.</p>
      */
-    static FCPPluginClient constructForNetworkedFCP(PluginManager serverPluginManager,
-        String serverPluginName, FCPConnectionHandler clientConnection)
-            throws PluginNotFoundException {
+    static FCPPluginClient constructForNetworkedFCP(Executor executor,
+            PluginManager serverPluginManager, String serverPluginName,
+            FCPConnectionHandler clientConnection)
+                throws PluginNotFoundException {
         
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
@@ -241,7 +243,7 @@ public final class FCPPluginClient {
      * The client's message handler is accessible as an implementor of
      * {@link ClientSideFCPMessageHandler}.<br>
      * 
-     * @see #constructForIntraNodeFCP(Node, String, ClientSideFCPMessageHandler)
+     * @see #constructForIntraNodeFCP(Executor, PluginManager, String, ClientSideFCPMessageHandler)
      *          The public interface to this constructor.
      */
     private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler server,
@@ -269,10 +271,12 @@ public final class FCPPluginClient {
      * <p>You <b>must</b> register any newly created clients at
      * {@link FCPPluginClientTracker#registerClient(FCPPluginClient)} before handing them out to
      * client application code.</p>
+     * @param executor TODO
      */
-    static FCPPluginClient constructForIntraNodeFCP(PluginManager serverPluginManager,
-        String serverPluginName, ClientSideFCPMessageHandler client)
-            throws PluginNotFoundException {
+    static FCPPluginClient constructForIntraNodeFCP(Executor executor,
+            PluginManager serverPluginManager, String serverPluginName,
+            ClientSideFCPMessageHandler client)
+                throws PluginNotFoundException {
         
         assert(serverPluginManager != null);
         assert(serverPluginName != null);

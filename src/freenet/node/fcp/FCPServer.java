@@ -505,8 +505,8 @@ public class FCPServer implements Runnable, DownloadCache {
         FCPConnectionHandler messageHandler)
             throws PluginNotFoundException {
         
-        FCPPluginClient client= FCPPluginClient.constructForNetworkedFCP(node.pluginManager,
-            serverPluginName, messageHandler);
+        FCPPluginClient client = FCPPluginClient.constructForNetworkedFCP(node.executor,
+            node.pluginManager, serverPluginName, messageHandler);
         pluginClientTracker.registerClient(client);
         return client;
     }
@@ -537,8 +537,8 @@ public class FCPServer implements Runnable, DownloadCache {
         ClientSideFCPMessageHandler messageHandler)
             throws PluginNotFoundException {
         
-        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.pluginManager,
-            serverPluginName, messageHandler);
+        FCPPluginClient client = FCPPluginClient.constructForIntraNodeFCP(node.executor,
+            node.pluginManager, serverPluginName, messageHandler);
         pluginClientTracker.registerClient(client);
         return client;
     }
