@@ -8,7 +8,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
-import freenet.node.Node;
+import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage.ClientPermissions;
@@ -391,10 +391,93 @@ public final class FCPPluginClient {
      *             FredPluginFCPMessageHandler.FCPPluginMessage, long)}.
      *             </p>
      */
-    public void send(SendDirection direction, FredPluginFCPMessageHandler.FCPPluginMessage message)
-            throws IOException {
+    public void send(final SendDirection direction,
+            final FredPluginFCPMessageHandler.FCPPluginMessage message)
+                throws IOException {
         
-        throw new UnsupportedOperationException("TODO FIXME: Implement");
+        // True if the target server or client message handler is running in this VM.
+        // This means that we can call its message handling function in a thread instead of
+        // sending a message over the network.
+        // Notice that we do not check for server != null because that is not allowed by this class.
+        final boolean messageHandlerExistsLocally =
+            (direction == SendDirection.ToServer) ||
+            (direction == SendDirection.ToClient && client != null);
+        
+        // The message will be dispatched to this handler in a thread. What is is will be decided
+        // according to messageHandlerCanExecuteLocally now.
+        final FredPluginFCPMessageHandler messageHandler;
+        
+        if(messageHandlerExistsLocally) {
+            assert(direction == SendDirection.ToServer ? server != null : client != null)
+                : "We already decided that the message handler exists locally. "
+                    + "We should have only decided so if the handler is not null.";
+            
+            messageHandler = (direction == SendDirection.ToServer) ? server.get() : client;
+            
+            if(messageHandler == null) {
+                // server is a WeakReference which can be nulled if the server plugin was unloaded.
+                // client is not a WeakReference, we already checked for it to be non-null.
+                // Thus, in this case here, the server plugin has been unloaded so we can have
+                // an error message which specifically talks about the *server* plugin.
+                throw new IOException("The server plugin has been unloaded.");
+            }
+        } else {
+            // The message handler is attached by network.
+            // In theory, we could construct a mock handler object for it and just let below
+            // messageDispatcher eat it. Then we wouldn't know the reply message immediately
+            // because the messages take time to travel over the network - but the messageDispatcher
+            // needs the reply.
+            // So instead, we just queue the network message here and return.
+            throw new UnsupportedOperationException("FIXME: Implement");
+            return;
+        }
+        
+        final Runnable messageDispatcher = new PrioRunnable() {
+            @Override
+            public void run() {
+                FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
+                
+                try {
+                    reply = messageHandler.handlePluginFCPMessage(FCPPluginClient.this, message);
+                } catch(RuntimeException e) {
+                    // The message handler is a server or client implementation, and thus as third
+                    // party code might have bugs. So we need to catch any RuntimeException here.
+                    throw new UnsupportedOperationException("FIXME: Implement");
+                }
+                
+                if(reply != null && message.isReplyMessage()) {
+                    throw new UnsupportedOperationException("FIXME: Replying to replies is "
+                        + "disallowed to prevent infinite bouncing. Implement proper error "
+                        + "handling for this here.");
+                }
+                
+                if(reply == null) {
+                    // The message handler succeeded in processing the message but does not have
+                    // anything to say as reply.
+                    // We send an empty "Success" reply nevertheless to to trigger eventually
+                    // waiting remote sendSynchronous() threads to return.
+                    // (We don't if the message was a reply, replying to replies is disallowed.)
+                    if(!message.isReplyMessage()) {
+                        reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
+                            message, new SimpleFieldSet(true), null, true);
+                    }
+                }
+                
+                try {
+                    send(direction.invert(), reply);
+                } catch (IOException e) {
+                    throw new UnsupportedOperationException("FIXME: Implement");
+                }
+            }
+
+            @Override
+            public int getPriority() {
+                throw new UnsupportedOperationException(
+                    "FIXME: Get from FredPluginFCPMessageHandler or think of a reasonable value.");
+            }
+        };
+        
+        executor.execute(messageDispatcher, toStringShort());
     }
 
 
