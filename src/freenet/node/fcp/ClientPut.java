@@ -160,6 +160,10 @@ public class ClientPut extends ClientPutBase {
         if(f != null) {
             container.activate(f, Integer.MAX_VALUE);
             f = new File(f.toString());
+            if(!f.exists()) {
+                Logger.error(this, "Not migrating insert as data has been deleted");
+                return null;
+            }
         }
         container.activate(clientMetadata, Integer.MAX_VALUE);
         RandomAccessBucket data;
@@ -172,7 +176,7 @@ public class ClientPut extends ClientPutBase {
             this.data.onResume(context);
             data = BucketTools.toRandomAccessBucket(this.data, context.getBucketFactory(isPersistentForever()));
         } else {
-            // FIXME already finished
+            Logger.error(this, "Not migrating insert as data has been deleted (or very old download?)");
             return null;
         }
         byte[] overrideSplitfileKey = null;
