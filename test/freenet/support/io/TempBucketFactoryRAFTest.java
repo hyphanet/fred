@@ -1,9 +1,11 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Random;
 
 import freenet.crypt.DummyRandomSource;
@@ -89,8 +91,9 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         assertTrue(bucket.isRAMBucket());
         assertEquals(len, bucket.size());
         TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        bucket.getInputStream().close(); // Can read.
         try {
-            bucket.getInputStream();
+            bucket.getOutputStream(); // Cannot write.
             fail();
         } catch (IOException e) {
             // Ok.
@@ -106,9 +109,207 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         assertTrue(raf.hasMigrated());
         assertEquals(factory.getRamUsed(), 0);
         checkArrayInner(buf, raf, len, r);
+        checkBucket(bucket, buf);
         raf.close();
         raf.free();
         assertFalse(f.exists());
+    }
+    
+    public void testBucketToRAFCallTwiceArray() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf != null);
+        raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf != null);
+        raf.close();
+        raf.free();
+    }
+    
+    public void testBucketToRAFCallTwiceFile() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        assertTrue(bucket.migrateToDisk());
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf != null);
+        raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf != null);
+        raf.close();
+        raf.free();
+    }
+    
+    public void testBucketToRAFFreeBucketWhileArray() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        bucket.getInputStream().close();
+        bucket.free();
+        try {
+            TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+    }        
+
+    public void testBucketToRAFFreeWhileArray() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        bucket.getInputStream().close();
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        bucket.free();
+        try {
+            raf.pread(0, new byte[len], 0, buf.length);
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        try {
+            bucket.getInputStream();
+            fail();
+        } catch(IOException e) {
+            // Ok.
+        }
+    }        
+
+    public void testBucketToRAFFreeWhileFile() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        bucket.getInputStream().close();
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf.migrateToDisk());
+        assertFalse(raf.migrateToDisk());
+        assertFalse(bucket.migrateToDisk());
+        assertTrue(raf.hasMigrated());
+        File f = ((PooledRandomAccessFileWrapper) raf.getUnderlying()).file;
+        assertTrue(f.exists());
+        bucket.free();
+        assertFalse(f.exists());
+        try {
+            raf.pread(0, new byte[len], 0, buf.length);
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        try {
+            bucket.getInputStream();
+            fail();
+        } catch(IOException e) {
+            // Ok.
+        }
+    }        
+
+    public void testBucketToRAFFreeWhileFileFreeRAF() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        bucket.getInputStream().close();
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        raf.migrateToDisk();
+        assertTrue(raf.hasMigrated());
+        File f = ((PooledRandomAccessFileWrapper) raf.getUnderlying()).file;
+        assertTrue(f.exists());
+        raf.free();
+        assertFalse(f.exists());
+        try {
+            raf.pread(0, new byte[len], 0, buf.length);
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        try {
+            InputStream is = bucket.getInputStream();
+            is.read(); // Tricky to make it fail on getInputStream(). FIXME.
+            fail();
+        } catch(IOException e) {
+            // Ok.
+        }
+    }        
+
+    public void testBucketToRAFFreeWhileFileMigrateFirst() throws IOException {
+        int len = 4095;
+        Random r = new Random(21162101);
+        TempBucket bucket = (TempBucket) factory.makeBucket(1024);
+        byte[] buf = new byte[len];
+        r.nextBytes(buf);
+        OutputStream os = bucket.getOutputStream();
+        os.write(buf.clone());
+        os.close();
+        assertTrue(bucket.isRAMBucket());
+        assertEquals(len, bucket.size());
+        bucket.getInputStream().close();
+        bucket.migrateToDisk();
+        File f = ((TempFileBucket)(((TempBucket) bucket).getUnderlying())).getFile();
+        assertTrue(f.exists());
+        TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
+        assertTrue(raf.hasMigrated());
+        bucket.free();
+        assertFalse(f.exists());
+        try {
+            raf.pread(0, new byte[len], 0, buf.length);
+            fail();
+        } catch (IOException e) {
+            // Ok.
+        }
+        try {
+            bucket.getInputStream();
+            fail();
+        } catch(IOException e) {
+            // Ok.
+        }
+    }        
+
+    private void checkBucket(TempBucket bucket, byte[] buf) throws IOException {
+        DataInputStream dis = new DataInputStream(bucket.getInputStream());
+        byte[] cbuf = new byte[buf.length];
+        dis.readFully(cbuf);
+        assertTrue(Arrays.equals(buf, cbuf));
     }
 
     public void testBucketToRAFWhileFile() throws IOException {
@@ -166,17 +367,12 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         is.close();
         TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
         try {
-            bucket.getInputStream();
+            bucket.getOutputStream(); // Cannot write.
             fail();
         } catch (IOException e) {
             // Ok.
         }
-        try {
-            bucket.getOutputStream();
-            fail();
-        } catch (IOException e) {
-            // Ok.
-        }
+        checkBucket(bucket, buf);
         raf.free();
     }
 
@@ -184,11 +380,11 @@ public class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
         for(int i=0;i<100;i++) {
             int end = len == 1 ? 1 : r.nextInt(len)+1;
             int start = r.nextInt(end);
-            checkArraySectionEqualsReadData(buf, raf, start, end);
+            checkArraySectionEqualsReadData(buf, raf, start, end, true);
         }
-        checkArraySectionEqualsReadData(buf, raf, 0, len);
+        checkArraySectionEqualsReadData(buf, raf, 0, len, true);
         if(len > 1)
-            checkArraySectionEqualsReadData(buf, raf, 1, len-1);
+            checkArraySectionEqualsReadData(buf, raf, 1, len-1, true);
     }
 
 }

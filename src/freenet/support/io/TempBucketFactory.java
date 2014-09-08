@@ -487,6 +487,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
                 if(hasBeenFreed) throw new IOException("Already freed");
                 if(os != null) throw new IOException("Can't migrate with open OutputStream's");
                 if(!tbis.isEmpty()) throw new IOException("Can't migrate with open InputStream's");
+                setReadOnly();
                 TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
@@ -495,8 +496,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
                         ramBucketQueue.add(raf.getReference());
                     }
                 }
-                hasBeenFreed = true;
-                currentBucket = null;
+                currentBucket = new RAFBucket(raf);
                 return raf;
             }
         }
