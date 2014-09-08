@@ -139,9 +139,7 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
-			byte[] d;
-			d = m.writeToByteArray();
-			tempData = new SimpleReadOnlyArrayBucket(d);
+			tempData = m.toBucket(core.clientContext.getBucketFactory(isPersistentForever()));
 			isMetadata = true;
 		} else
 			targetURI = null;
@@ -211,9 +209,8 @@ public class ClientPut extends ClientPutBase {
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
-			byte[] d;
 			try {
-				d = m.writeToByteArray();
+	            tempData = m.toBucket(server.core.clientContext.getBucketFactory(isPersistentForever()));
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
@@ -223,7 +220,6 @@ public class ClientPut extends ClientPutBase {
 				// This is *not* an InsertException since we don't register it: it's a protocol error.
 				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Impossible: metadata unresolved: "+e, identifier, global);
 			}
-			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else
 			targetURI = null;
