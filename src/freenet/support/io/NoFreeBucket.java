@@ -77,8 +77,9 @@ public class NoFreeBucket implements Bucket, Serializable {
         proxy.storeTo(dos);
     }
 
-    protected NoFreeBucket(DataInputStream dis) throws IOException, StorageFormatException {
-        proxy = BucketTools.restoreFrom(dis);
+    protected NoFreeBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
+        proxy = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
     }
 
 }

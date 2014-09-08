@@ -1018,12 +1018,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
     }
     
     public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID, 
-            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException {
+            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException, ResumeFailedException {
         return new ClientGet(dis, reqID, context, checker);
     }
     
     private ClientGet(DataInputStream dis, RequestIdentifier reqID, ClientContext context, ChecksumChecker checker) 
-    throws IOException, StorageFormatException {
+    throws IOException, StorageFormatException, ResumeFailedException {
         super(dis, reqID, context);
         ClientGetter getter = null;
         long magic = dis.readLong();
@@ -1073,7 +1073,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         else
             extensionCheck = null;
         if(dis.readBoolean()) {
-            initialMetadata = BucketTools.restoreFrom(dis);
+            initialMetadata = BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker);
             // No way to recover if we don't have the initialMetadata.
         } else {
             initialMetadata = null;
@@ -1087,7 +1087,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         DataInputStream innerDIS =
                             new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
                         try {
-                            returnBucketDirect = BucketTools.restoreFrom(innerDIS);
+                            returnBucketDirect = BucketTools.restoreFrom(innerDIS, context.persistentFG, context.persistentFileTracker);
                         } catch (IOException e) {
                             Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
                             returnBucketDirect = null;

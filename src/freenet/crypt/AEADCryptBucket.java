@@ -12,6 +12,8 @@ import freenet.client.async.ClientContext;
 import freenet.node.NodeStarter;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FilenameGenerator;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
@@ -106,7 +108,8 @@ public class AEADCryptBucket implements Bucket, Serializable {
         underlying.storeTo(dos);
     }
 
-    public AEADCryptBucket(DataInputStream dis) throws IOException, StorageFormatException {
+    public AEADCryptBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
         // Magic already read by caller.
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Unknown version "+version);
@@ -116,7 +119,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
         key = new byte[keyLength];
         dis.readFully(key);
         readOnly = dis.readBoolean();
-        underlying = BucketTools.restoreFrom(dis);
+        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
     }
 
 }

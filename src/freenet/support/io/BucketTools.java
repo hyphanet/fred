@@ -557,28 +557,30 @@ public class BucketTools {
     
     /** Inverse of Bucket.storeTo(). Uses the magic value to identify the bucket type. 
      * @throws IOException 
-     * @throws StorageFormatException */
-    public static Bucket restoreFrom(DataInputStream dis) throws IOException, StorageFormatException {
+     * @throws StorageFormatException 
+     * @throws ResumeFailedException */
+    public static Bucket restoreFrom(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
         case AEADCryptBucket.MAGIC:
-            return new AEADCryptBucket(dis);
+            return new AEADCryptBucket(dis, fg, persistentFileTracker);
         case FileBucket.MAGIC:
             return new FileBucket(dis);
         case PersistentTempFileBucket.MAGIC:
             return new PersistentTempFileBucket(dis);
         case DelayedFreeBucket.MAGIC:
-            return new DelayedFreeBucket(dis);
+            return new DelayedFreeBucket(dis, fg, persistentFileTracker);
         case DelayedFreeRandomAccessBucket.MAGIC:
-            return new DelayedFreeRandomAccessBucket(dis);
+            return new DelayedFreeRandomAccessBucket(dis, fg, persistentFileTracker);
         case NoFreeBucket.MAGIC:
-            return new NoFreeBucket(dis);
+            return new NoFreeBucket(dis, fg, persistentFileTracker);
         case PaddedEphemerallyEncryptedBucket.MAGIC:
-            return new PaddedEphemerallyEncryptedBucket(dis);
+            return new PaddedEphemerallyEncryptedBucket(dis, fg, persistentFileTracker);
         case ReadOnlyFileSliceBucket.MAGIC:
             return new ReadOnlyFileSliceBucket(dis);
         case TrivialPaddedBucket.MAGIC:
-            return new TrivialPaddedBucket(dis);
+            return new TrivialPaddedBucket(dis, fg, persistentFileTracker);
         default:
             throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }

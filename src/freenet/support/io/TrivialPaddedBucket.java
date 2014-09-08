@@ -255,14 +255,13 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         underlying.storeTo(dos);
     }
     
-    protected TrivialPaddedBucket(DataInputStream dis) throws IOException, StorageFormatException {
+    protected TrivialPaddedBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         size = dis.readLong();
         readOnly = dis.readBoolean();
-        underlying = BucketTools.restoreFrom(dis);
+        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
     }
-
-
     
 }

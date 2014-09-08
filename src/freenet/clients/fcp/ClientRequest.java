@@ -530,7 +530,7 @@ public abstract class ClientRequest implements Serializable {
     abstract RequestIdentifier.RequestType getType();
 
     public static ClientRequest restartFrom(DataInputStream dis, RequestIdentifier reqID,
-            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException {
+            ClientContext context, ChecksumChecker checker) throws StorageFormatException, IOException, ResumeFailedException {
         switch(reqID.type) {
         case GET:
             return ClientGet.restartFrom(dis, reqID, context, checker);

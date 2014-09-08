@@ -138,10 +138,11 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
         bucket.storeTo(dos);
     }
 
-    protected DelayedFreeBucket(DataInputStream dis) throws StorageFormatException, IOException {
+    protected DelayedFreeBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
-        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis);
+        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker);
     }
     
     /** Convert to a RandomAccessBucket if it can be done quickly. Otherwise return null. 

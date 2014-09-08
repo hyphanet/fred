@@ -399,7 +399,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         bucket.storeTo(dos);
     }
     
-    protected PaddedEphemerallyEncryptedBucket(DataInputStream dis) throws StorageFormatException, IOException {
+    protected PaddedEphemerallyEncryptedBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker) throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         minPaddedSize = dis.readInt();
@@ -413,7 +414,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         }
         dataLength = dis.readLong();
         readOnly = dis.readBoolean();
-        bucket = BucketTools.restoreFrom(dis);
+        bucket = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
     }
 
 }
