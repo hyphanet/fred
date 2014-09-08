@@ -98,7 +98,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         this.persistentTempID = persistentTempID;
         this.deleteOnFree = deleteOnFree;
         lockLevel = 0;
-        RAFLock lock = lockOpen();
+        RAFLock lock = lockOpen(true);
         try {
             raf.write(initialContents, offset, size);
             lock.unlock();
@@ -173,6 +173,10 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     @Override
     public RAFLock lockOpen() throws IOException {
+        return lockOpen(false);
+    }
+    
+    private RAFLock lockOpen(boolean forceWrite) throws IOException {
         RAFLock lock = new RAFLock() {
 
             @Override
@@ -191,7 +195,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                     lockLevel++;
                     OPEN_FDS++;
                     try {
-                        raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
+                        raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
                     } catch (IOException e) {
                         // Don't call unlock(), don't want to add to closables.
                         lockLevel--;
