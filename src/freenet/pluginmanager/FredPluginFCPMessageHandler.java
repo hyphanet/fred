@@ -8,6 +8,7 @@ import java.util.UUID;
 import freenet.node.fcp.FCPPluginClient;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 
 /**
  * FCP server or client plugins which transfer FCP messages to each other using a
@@ -20,6 +21,9 @@ import freenet.support.api.Bucket;
  * allowed to do.<br>
  * You <b>must</b> follow the restrictions which are explained there.<br>
  * For clarity, you <b>should</b> implement the child interfaces instead of this interface.<br><br>
+ * 
+ * If you want to specify the thread priority of the message handling functions, you can
+ * additionally implement the member interface {@link PrioritizedMessageHandler}.<br><br>
  * 
  * As opposed to the old {@link PluginTalker} and {@link PluginReplySender} interfaces, this new API
  * is as symmetric as possible:<br>
@@ -360,5 +364,17 @@ public interface FredPluginFCPMessageHandler {
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
+    }
+    
+    /**
+     * Implement this if you want to specify the thread priority of threads which are used to
+     * execute the message handling function
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}
+     */
+    public interface PrioritizedMessageHandler {
+        /**
+         * @see PrioritizedMessageHandler
+         */
+        public NativeThread.PriorityLevel getPriority();
     }
 }
