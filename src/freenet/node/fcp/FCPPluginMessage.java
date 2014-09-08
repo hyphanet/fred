@@ -56,6 +56,12 @@ public class FCPPluginMessage extends DataCarryingMessage {
      * plugin re-invent it. When adding this, make sure to also add it to the
      * {@link FredPluginFCPMessageHandler.FCPPluginMessage}
      * 
+     * FIXME: To make the distinction between reply and non-reply messages even clearer, maybe have
+     * an "IsReply" field instead of implicitly assuming messages to be replies if they contain
+     * this "Success" field. This will hopefully prevent implementors of custom clients from not
+     * specifying reply messages as replies - they would be more likely to do that with "Success"
+     * because that name doesn't indicate any relation with replys.
+     * 
      * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
      */
     private final Boolean success;
