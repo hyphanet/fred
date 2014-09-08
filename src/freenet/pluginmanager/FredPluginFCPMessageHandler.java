@@ -28,6 +28,9 @@ import freenet.support.io.NativeThread;
  * As opposed to the old {@link FredPluginFCP} and {@link FredPluginTalker} message handler
  * interfaces, and their {@link PluginReplySender} and {@link PluginTalker} message sending
  * counterparts, this new API is as symmetric as possible:<br>
+ * Both the message handler and message sender is now one interface / class shared by both server
+ * and client, instead of different ones for each - {@link FredPluginFCPMessageHandler} and
+ * {@link FCPPluginClient}.<br>
  * With the old interface, the server could only <i>reply</i> to messages of the client, it could
  * not send a message without a previous client message.<br>
  * With this implementation, server and client are free to send messages to each others whenever
