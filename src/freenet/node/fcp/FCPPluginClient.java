@@ -196,8 +196,8 @@ public final class FCPPluginClient {
      * @see #constructForNetworkedFCP(Executor, PluginManager, String, FCPConnectionHandler)
      *          The public interface to this constructor.
      */
-    private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler serverPlugin,
-        FCPConnectionHandler clientConnection) {
+    private FCPPluginClient(Executor executor, String serverPluginName,
+            ServerSideFCPMessageHandler serverPlugin, FCPConnectionHandler clientConnection) {
         
         assert(serverPlugin != null);
         assert(serverPluginName != null);
@@ -229,8 +229,9 @@ public final class FCPPluginClient {
         assert(serverPluginName != null);
         assert(clientConnection != null);
         
-        return new FCPPluginClient(serverPluginName,
-            serverPluginManager.getPluginFCPServer(serverPluginName), clientConnection);
+        return new FCPPluginClient(executor,
+            serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName),
+            clientConnection);
     }
 
 
@@ -246,8 +247,8 @@ public final class FCPPluginClient {
      * @see #constructForIntraNodeFCP(Executor, PluginManager, String, ClientSideFCPMessageHandler)
      *          The public interface to this constructor.
      */
-    private FCPPluginClient(String serverPluginName, ServerSideFCPMessageHandler server,
-        ClientSideFCPMessageHandler client) {
+    private FCPPluginClient(Executor executor, String serverPluginName,
+            ServerSideFCPMessageHandler server, ClientSideFCPMessageHandler client) {
         
         assert(serverPluginName != null);
         assert(server != null);
@@ -278,12 +279,13 @@ public final class FCPPluginClient {
             ClientSideFCPMessageHandler client)
                 throws PluginNotFoundException {
         
+        assert(executor != null);
         assert(serverPluginManager != null);
         assert(serverPluginName != null);
         assert(client != null);
         
-        return new FCPPluginClient(serverPluginName,
-            serverPluginManager.getPluginFCPServer(serverPluginName), client);
+        return new FCPPluginClient(executor,
+            serverPluginName, serverPluginManager.getPluginFCPServer(serverPluginName), client);
     }
     
     /**
