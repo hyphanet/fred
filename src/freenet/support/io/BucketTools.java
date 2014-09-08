@@ -581,6 +581,8 @@ public class BucketTools {
             return new ReadOnlyFileSliceBucket(dis);
         case TrivialPaddedBucket.MAGIC:
             return new TrivialPaddedBucket(dis, fg, persistentFileTracker);
+        case RAFBucket.MAGIC:
+            return new RAFBucket(dis, fg, persistentFileTracker);
         default:
             throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }

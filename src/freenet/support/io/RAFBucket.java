@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,12 +61,20 @@ public class RAFBucket implements Bucket {
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        throw new UnsupportedOperationException();
+        underlying.onResume(context);
     }
+    
+    static final int MAGIC = 0x892a708a;
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        throw new UnsupportedOperationException();
+        dos.writeInt(MAGIC);
+        underlying.storeTo(dos);
+    }
+    
+    RAFBucket(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
+        underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
+        size = underlying.size();
     }
 
 }
