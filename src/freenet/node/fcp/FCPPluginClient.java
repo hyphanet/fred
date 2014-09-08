@@ -409,26 +409,7 @@ public final class FCPPluginClient {
         // according to messageHandlerCanExecuteLocally now.
         final FredPluginFCPMessageHandler messageHandler;
         
-        if(messageHandlerExistsLocally) {
-            assert(direction == SendDirection.ToServer ? server != null : client != null)
-                : "We already decided that the message handler exists locally. "
-                    + "We should have only decided so if the handler is not null.";
-            
-            messageHandler = (direction == SendDirection.ToServer) ? server.get() : client;
-            
-            if(messageHandler == null) {
-                // server is a WeakReference which can be nulled if the server plugin was unloaded.
-                // client is not a WeakReference, we already checked for it to be non-null.
-                // Thus, in this case here, the server plugin has been unloaded so we can have
-                // an error message which specifically talks about the *server* plugin.
-                throw new IOException("The server plugin has been unloaded.");
-            }
-        } else {
-            // FIXME: As this returns, switch it with the negation of the above if() so the code
-            // in the above if can be next to the messageDispatcher code below.
-            // This makes more sense because the messageDispatcher code shall only run if the
-            // above if() is true.
-            
+        if(!messageHandlerExistsLocally) {
             // The message handler is attached by network.
             // In theory, we could construct a mock handler object for it and just let below
             // messageDispatcher eat it. Then we wouldn't know the reply message immediately
@@ -437,6 +418,20 @@ public final class FCPPluginClient {
             // So instead, we just queue the network message here and return.
             throw new UnsupportedOperationException("FIXME: Implement");
             return;
+        }
+        
+        assert(direction == SendDirection.ToServer ? server != null : client != null)
+            : "We already decided that the message handler exists locally. "
+            + "We should have only decided so if the handler is not null.";
+
+        messageHandler = (direction == SendDirection.ToServer) ? server.get() : client;
+
+        if(messageHandler == null) {
+            // server is a WeakReference which can be nulled if the server plugin was unloaded.
+            // client is not a WeakReference, we already checked for it to be non-null.
+            // Thus, in this case here, the server plugin has been unloaded so we can have
+            // an error message which specifically talks about the *server* plugin.
+            throw new IOException("The server plugin has been unloaded.");
         }
         
         final Runnable messageDispatcher = new PrioRunnable() {
