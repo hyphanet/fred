@@ -57,7 +57,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
 	}
 
 	@Override
-	public long size() throws IOException {
+	public long size() {
 		return data.length;
 	}
 

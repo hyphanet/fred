@@ -20,7 +20,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     }
 
     @Override
-    public long size() throws IOException {
+    public long size() {
         return underlying.size();
     }
 

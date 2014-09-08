@@ -15,7 +15,7 @@ import java.io.IOException;
  */
 public interface RandomAccessThing extends Closeable {
 
-	public long size() throws IOException;
+	public long size();
 	
 	/** Read a block of data from a specific location in the file. Guaranteed to read the whole 
 	 * range or to throw, like DataInputStream.readFully(). Must throw if the file is closed.

@@ -32,7 +32,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
     }
     
     @Override
-    public long size() throws IOException {
+    public long size() {
         return size;
     }
 

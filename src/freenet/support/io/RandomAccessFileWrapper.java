@@ -68,7 +68,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 	}
 
 	@Override
-	public long size() throws IOException {
+	public long size() {
 	    return length;
 	}
 
