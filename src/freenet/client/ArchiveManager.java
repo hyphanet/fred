@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -574,7 +575,7 @@ outerZIP:		while(true) {
 				return addStoreElement(ctx, key, ".metadata", bucket, gotElement, element2, callback, context);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, context);
+					x = resolve(e, x, tempBucketFactory, ctx, key, gotElement, element2, callback, context);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
@@ -585,22 +586,14 @@ outerZIP:		while(true) {
 		}
 	}
 
-	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ClientContext context) throws IOException, ArchiveFailureException {
+	private int resolve(MetadataUnresolvedException e, int x, BucketFactory bf, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ClientContext context) throws IOException, ArchiveFailureException {
 		for(Metadata m: e.mustResolve) {
-			byte[] buf;
 			try {
-				buf = m.writeToByteArray();
+			    addStoreElement(ctx, key, ".metadata-"+(x++), m.toBucket(bf), gotElement, element2, callback, context);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, context);
+				x = resolve(e, x, bf, ctx, key, gotElement, element2, callback, context);
 				continue;
 			}
-			OutputStream os = bucket.getOutputStream();
-			try {
-			os.write(buf);
-			} finally {
-			os.close();
-			}
-			addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback, context);
 		}
 		return x;
 	}
