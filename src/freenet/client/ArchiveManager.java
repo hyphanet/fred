@@ -570,7 +570,7 @@ outerZIP:		while(true) {
 		Bucket bucket = null;
 		while(true) {
 			try {
-				bucket = BucketTools.makeImmutableBucket(tempBucketFactory, metadata.writeToByteArray());
+				bucket = metadata.toBucket(tempBucketFactory);
 				return addStoreElement(ctx, key, ".metadata", bucket, gotElement, element2, callback, context);
 			} catch (MetadataUnresolvedException e) {
 				try {

@@ -295,13 +295,13 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent, false, ctx.earlyEncode);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, true, false, token, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, new RAFBucket(data), codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, true, false, token, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(context), hashes);
 				RandomAccessBucket metadataBucket;
 				try {
-					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
+					metadataBucket = meta.toBucket(context.getBucketFactory(persistent));
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null);

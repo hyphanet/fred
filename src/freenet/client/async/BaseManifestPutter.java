@@ -963,7 +963,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		}
 		while(true) {
 			try {
-				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
+			    bucket = baseMetadata.toBucket(context.getBucketFactory(persistent()));
 				if(logMINOR)
 					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
 				break;

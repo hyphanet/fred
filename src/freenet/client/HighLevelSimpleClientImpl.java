@@ -286,7 +286,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
 		RandomAccessBucket b;
 		try {
-			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
+			b = m.toBucket(bucketFactory);
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
 			throw new InsertException(InsertExceptionMode.INTERNAL_ERROR, e, null);
