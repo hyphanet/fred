@@ -25,8 +25,9 @@ import freenet.support.io.NativeThread;
  * If you want to specify the thread priority of the message handling functions, you can
  * additionally implement the member interface {@link PrioritizedMessageHandler}.<br><br>
  * 
- * As opposed to the old {@link PluginTalker} and {@link PluginReplySender} interfaces, this new API
- * is as symmetric as possible:<br>
+ * As opposed to the old {@link FredPluginFCP} and {@link FredPluginTalker} message handler
+ * interfaces, and their {@link PluginReplySender} and {@link PluginTalker} message sending
+ * counterparts, this new API is as symmetric as possible:<br>
  * With the old interface, the server could only <i>reply</i> to messages of the client, it could
  * not send a message without a previous client message.<br>
  * With this implementation, server and client are free to send messages to each others whenever
