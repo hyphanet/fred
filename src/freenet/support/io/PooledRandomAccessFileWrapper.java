@@ -62,6 +62,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         try {
             long currentLength = raf.length();
             if(forceLength >= 0 && forceLength != currentLength) {
+                if(readOnly) throw new IOException("Read only but wrong length");
                 // Preallocate space. We want predictable disk usage, not minimal disk usage, especially for downloads.
                 raf.seek(0);
                 MersenneTwister mt = null;
