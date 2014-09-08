@@ -24,7 +24,7 @@ public class ManifestElement implements Serializable {
 	final String fullName;
 	
 	/** Data to be inserted. Can be null, if the insert has completed. */
-	RandomAccessBucket data;
+	final RandomAccessBucket data;
 	
 	/** MIME type override. null => use default for filename */
 	final String mimeOverride;
@@ -104,7 +104,6 @@ public class ManifestElement implements Serializable {
 	public void freeData() {
 		if(data != null) {
 			data.free();
-			data = null;
 		}
 	}
 
