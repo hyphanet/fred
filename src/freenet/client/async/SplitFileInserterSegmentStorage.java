@@ -439,6 +439,7 @@ public class SplitFileInserterSegmentStorage {
         RAFLock lock = null;
         try {
             lock = parent.lockRAF();
+            if(logMINOR) Logger.minor(this, "Encoding "+this+" for "+parent);
             byte[][] dataBlocks = readDataAndCrossCheckBlocks();
             generateKeys(dataBlocks, 0);
             byte[][] checkBlocks = new byte[checkBlockCount][];
@@ -452,6 +453,7 @@ public class SplitFileInserterSegmentStorage {
             synchronized(this) {
                 encoded = true;
             }
+            if(logMINOR) Logger.minor(this, "Encoded "+this+" for "+parent);
         } catch (IOException e) {
             parent.failOnDiskError(e);
         } catch (Throwable t) {
