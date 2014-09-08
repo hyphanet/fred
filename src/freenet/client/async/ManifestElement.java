@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
+import freenet.support.io.BucketTools;
 import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
@@ -35,5 +38,16 @@ public class ManifestElement implements Serializable {
 	
 	/** Redirect target */
 	private FreenetURI targetURI;
+	
+    public freenet.support.api.ManifestElement migrate(BucketFactory bf) throws ResumeFailedException, IOException {
+        if(data == null) {
+            if(targetURI == null) throw new ResumeFailedException("Must have either a URI or a redirect");
+            return new freenet.support.api.ManifestElement(name, fullName, mimeOverride, targetURI);
+        } else {
+            if(data.size() != dataSize) throw new ResumeFailedException("Bucket in site insert changed size from "+dataSize+" to "+data.size());
+            RandomAccessBucket convertedData = BucketTools.toRandomAccessBucket(data, bf);
+            return new freenet.support.api.ManifestElement(name, fullName, convertedData, mimeOverride, dataSize);
+        }
+	}
 	
 }

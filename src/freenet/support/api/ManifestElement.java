@@ -88,7 +88,17 @@ public class ManifestElement implements Serializable {
 		assert(targetURI != null);
 	}
 	
-	@Override
+    public ManifestElement(String name2, String fullName2, String mimeOverride2,
+            FreenetURI targetURI2) {
+        this.name = name2;
+        this.fullName = fullName2;
+        this.mimeOverride = mimeOverride2;
+        this.targetURI = targetURI2;
+        this.data = null;
+        this.dataSize = -1;
+    }
+
+    @Override
 	public int hashCode() {
 		return name.hashCode();
 	}

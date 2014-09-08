@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.TooManyFilesInsertException;
 import freenet.clients.fcp.ClientGet;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
@@ -170,6 +171,6 @@ public abstract class ClientRequest {
 	}
 
     public abstract freenet.clients.fcp.ClientRequest migrate(PersistentRequestClient newClient, 
-            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException, MetadataUnresolvedException;
+            ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException, MetadataUnresolvedException, TooManyFilesInsertException;
 	
 }
