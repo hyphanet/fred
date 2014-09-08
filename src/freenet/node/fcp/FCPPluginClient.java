@@ -361,7 +361,11 @@ public final class FCPPluginClient {
      */
     public static enum SendDirection {
         ToServer,
-        ToClient
+        ToClient;
+        
+        public final SendDirection inverse() {
+            return (this == ToServer) ? ToClient : ToServer;
+        }
     }
 
     /**
