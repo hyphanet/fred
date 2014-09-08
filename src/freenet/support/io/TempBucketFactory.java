@@ -768,8 +768,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	        hasMigrated = false;
 	    }
 
-        public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time) throws IOException {
-            super(new ByteArrayRandomAccessThing(initialContents, offset, size), size);
+        public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time, boolean readOnly) throws IOException {
+            super(new ByteArrayRandomAccessThing(initialContents, offset, size, readOnly), size);
             creationTime = time;
             hasMigrated = false;
         }
@@ -784,7 +784,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         protected LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException {
             ByteArrayRandomAccessThing b = (ByteArrayRandomAccessThing)underlying;
             byte[] buf = b.getBuffer();
-            return diskRAFFactory.makeRAF(buf, 0, (int)size);
+            return diskRAFFactory.makeRAF(buf, 0, (int)size, b.isReadOnly());
         }
 
         @Override
@@ -867,7 +867,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
     }
 
     @Override
-    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         if(size < 0) throw new IllegalArgumentException();
         
@@ -878,7 +878,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         
         synchronized(this) {
             if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
-                raf = new TempLockableRandomAccessThing(initialContents, offset, size, now);
+                raf = new TempLockableRandomAccessThing(initialContents, offset, size, now, readOnly);
                 bytesInUse += size;
             }
             if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
@@ -893,7 +893,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             }
             return raf;
         } else {
-            return diskRAFFactory.makeRAF(initialContents, offset, size);
+            return diskRAFFactory.makeRAF(initialContents, offset, size, readOnly);
         }
     }
 

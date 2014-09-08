@@ -29,6 +29,6 @@ public interface LockableRandomAccessThingFactory {
      * @return
      * @throws IOException If an I/O error prevented the operation.
      */
-    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size) throws IOException;
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly) throws IOException;
 
 }

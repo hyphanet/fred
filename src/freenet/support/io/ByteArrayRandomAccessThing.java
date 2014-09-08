@@ -22,8 +22,9 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
 	    this.data = new byte[size];
 	}
 
-	public ByteArrayRandomAccessThing(byte[] initialContents, int offset, int size) {
+	public ByteArrayRandomAccessThing(byte[] initialContents, int offset, int size, boolean readOnly) {
 	    data = Arrays.copyOfRange(initialContents, offset, offset+size);
+	    this.readOnly = readOnly;
     }
 	
 	protected ByteArrayRandomAccessThing() {
@@ -64,6 +65,10 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
 		readOnly = true;
 	}
 	
+    public synchronized boolean isReadOnly() {
+        return readOnly;
+    }
+    
     @Override
     public RAFLock lockOpen() {
         return new RAFLock() {
@@ -95,7 +100,7 @@ public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Se
     public void storeTo(DataOutputStream dos) {
         throw new UnsupportedOperationException();
     }
-    
+
     // Default hashCode() and equals() are correct for this type.
 
 }

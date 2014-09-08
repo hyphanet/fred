@@ -43,12 +43,12 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
     }
 
     @Override
-    public synchronized LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
+    public synchronized LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         lock.lock();
         try {
             if(dir.getUsableSpace() > size + minDiskSpace)
-                return underlying.makeRAF(initialContents, offset, size);
+                return underlying.makeRAF(initialContents, offset, size, readOnly);
             else
                 throw new InsufficientDiskSpaceException();
         } finally {

@@ -277,8 +277,8 @@ public class SplitFileFetcherStorageTest extends TestCase {
 
                 @Override
                 public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset,
-                        int size) throws IOException {
-                    LockableRandomAccessThing t = rafFactory.makeRAF(initialContents, offset, size);
+                        int size, boolean readOnly) throws IOException {
+                    LockableRandomAccessThing t = rafFactory.makeRAF(initialContents, offset, size, readOnly);
                     cb.snoopRAF(t);
                     return t;
                 }

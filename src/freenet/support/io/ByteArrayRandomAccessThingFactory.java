@@ -14,11 +14,11 @@ public class ByteArrayRandomAccessThingFactory implements LockableRandomAccessTh
     }
 
     @Override
-    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         if(size < 0) throw new IllegalArgumentException();
         return new ByteArrayRandomAccessThing(Arrays.copyOfRange(initialContents, offset, 
-                offset+size));
+                offset+size), 0, size, readOnly);
     }
 
 }

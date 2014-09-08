@@ -233,7 +233,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         long size = 65535;
         byte[] originalData = new byte[(int)size];
         r.nextBytes(originalData);
-        LockableRandomAccessThing data = smallRAFFactory.makeRAF(originalData, 0, originalData.length);
+        LockableRandomAccessThing data = smallRAFFactory.makeRAF(originalData, 0, originalData.length, true);
         HashResult[] hashes = getHashes(data);
         MyCallback cb = new MyCallback();
         KeysFetchingLocally keys = new MyKeysFetchingLocally();

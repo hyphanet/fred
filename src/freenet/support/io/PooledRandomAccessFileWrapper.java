@@ -91,9 +91,9 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     }
 
     public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
-            int offset, int size, long persistentTempID, boolean deleteOnFree) throws IOException {
+            int offset, int size, long persistentTempID, boolean deleteOnFree, boolean readOnly) throws IOException {
         this.file = file;
-        this.readOnly = false;
+        this.readOnly = readOnly;
         this.length = size;
         this.persistentTempID = persistentTempID;
         this.deleteOnFree = deleteOnFree;

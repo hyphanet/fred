@@ -34,13 +34,13 @@ public class PooledFileRandomAccessThingFactory implements LockableRandomAccessT
     }
 
     @Override
-    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size)
+    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         long id = fg.makeRandomFilename();
         File file = fg.getFilename(id);
         LockableRandomAccessThing ret = null;
         try {
-            ret = new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id, true);
+            ret = new PooledRandomAccessFileWrapper(file, "rw", initialContents, offset, size, id, true, readOnly);
             return ret;
         } finally {
             if(ret == null) file.delete();
