@@ -760,20 +760,20 @@ public class NodeClientCore implements Persistable {
                         success = false;
                 }
             }
-            if(success) {
-                clientLayerPersister.setCheckpointASAP();
-                // FIXME consider deleting anyway ...
-                System.out.println("Migrated all requests successfully");
-                container.close();
-                if(node.dbFile.exists()) {
-                    System.out.println("Deleting database file "+node.dbFile);
-                    node.dbFile.delete();
-                }
-                if(node.dbFileCrypt.exists()) {
-                    FileUtil.secureDelete(node.dbFileCrypt);
-                }
-                System.out.println("Migration completed");
+            clientLayerPersister.setCheckpointASAP();
+            if(success)
+                System.out.println("Migrated all requests successfully.");
+            else
+                System.out.println("Migrated some requests. You may have lost some downloads.");
+            container.close();
+            if(node.dbFile.exists()) {
+                System.out.println("Deleting database file "+node.dbFile);
+                node.dbFile.delete();
             }
+            if(node.dbFileCrypt.exists()) {
+                FileUtil.secureDelete(node.dbFileCrypt);
+            }
+            System.out.println("Migration completed");
         } catch (Throwable t) {
             System.err.println("Unable to migrate from old database: "+t);
             t.printStackTrace();
