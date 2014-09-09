@@ -64,8 +64,6 @@ public class PersistentGet extends FCPMessage {
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("ReturnType", returnType.toString().toLowerCase());
 		fs.putSingle("Persistence", persistence.toString().toLowerCase());
-		// FIXME Persistence is backward compatibility cruft, everything else uses Persistence
-		fs.putSingle("Persistence", persistence.toString().toLowerCase());
 		if(returnType == ReturnType.DISK) {
 			fs.putSingle("Filename", targetFile.getAbsolutePath());
 		}
