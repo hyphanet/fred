@@ -20,9 +20,7 @@ import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
@@ -46,33 +44,13 @@ public class ClientPut extends ClientPutBase {
 	private final boolean binaryBlob;
 	private transient boolean compressing;
 
-	private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-	
 	protected ClientPut() {
 	    throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected freenet.client.async.ClientRequester getClientRequest() {
-		return putter;
-	}
-
-	@Override
 	protected String getTypeName() {
 		return "PUT";
-	}
-
-	@Override
-	public boolean hasSucceeded() {
-		return succeeded;
 	}
 
 	public FreenetURI getFinalURI(ObjectContainer container) {

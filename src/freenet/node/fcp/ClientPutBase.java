@@ -6,9 +6,6 @@ import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
@@ -20,13 +17,6 @@ public abstract class ClientPutBase extends ClientRequest {
 	/** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
 	final InsertContext ctx;
 	final boolean getCHKOnly;
-
-	// Verbosity bitmasks
-	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	
-	private static final int VERBOSITY_EXPECTED_HASHES = 8; // same as ClientGet
-	private static final int VERBOSITY_PUT_FETCHABLE = 256;
-	private static final int VERBOSITY_COMPRESSION_START_END = 512;
 
 	// Stuff waiting for reconnection
 	/** Has the request succeeded? */
@@ -53,16 +43,6 @@ public abstract class ClientPutBase extends ClientRequest {
 
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
-
-        private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
 
 	protected ClientPutBase() {
 	    throw new UnsupportedOperationException();
@@ -92,24 +72,4 @@ public abstract class ClientPutBase extends ClientRequest {
 
 	protected abstract String getTypeName();
 
-	@Override
-	public synchronized String getFailureReason(boolean longDescription, ObjectContainer container) {
-		if(putFailedMessage == null)
-			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(putFailedMessage, 5);
-		String s = putFailedMessage.shortCodeDescription;
-		if(longDescription && putFailedMessage.extraDescription != null)
-			s += ": "+putFailedMessage.extraDescription;
-		return s;
-	}
-
-	public PutFailedMessage getFailureMessage(ObjectContainer container) {
-		if(putFailedMessage == null)
-			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(putFailedMessage, 5);
-		return putFailedMessage;
-	}
-	
 }

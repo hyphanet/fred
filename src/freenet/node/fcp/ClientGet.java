@@ -11,10 +11,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
-import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
-import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientRequester;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
@@ -24,13 +21,8 @@ import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
-import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.FileBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -42,22 +34,13 @@ public class ClientGet extends ClientRequest {
 	/** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
-	private final ClientGetter getter;
+	//private final ClientGetter getter;
 	private final short returnType;
 	private final File targetFile;
 	private final File tempFile;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
-	private Bucket returnBucket;
+	//private Bucket returnBucket;
 	private final boolean binaryBlob;
-
-	// Verbosity bitmasks
-	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	private static final int VERBOSITY_SENT_TO_NETWORK = 2;
-	private static final int VERBOSITY_COMPATIBILITY_MODE = 4;
-	private static final int VERBOSITY_EXPECTED_HASHES = 8;
-	private static final int VERBOSITY_EXPECTED_TYPE = 32;
-	private static final int VERBOSITY_EXPECTED_SIZE = 64;
-	private static final int VERBOSITY_ENTER_FINITE_COOLDOWN = 128;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
@@ -78,16 +61,6 @@ public class ClientGet extends ClientRequest {
 	private CompatibilityMode compatMessage;
 	private ExpectedHashes expectedHashes;
 
-        private static volatile boolean logMINOR;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
-	
     @Override
     public freenet.clients.fcp.ClientGet migrate(PersistentRequestClient newClient, 
             ObjectContainer container, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException, ResumeFailedException {
@@ -151,154 +124,9 @@ public class ClientGet extends ClientRequest {
 	    throw new UnsupportedOperationException();
 	}
 	
-	@Override
-	protected ClientRequester getClientRequest() {
-		return getter;
-	}
-
-	@Override
-	public boolean hasSucceeded() {
-		return succeeded;
-	}
-	
     static final short RETURN_TYPE_DIRECT = 0; // over FCP
     static final short RETURN_TYPE_NONE = 1; // not at all; to cache only; prefetch?
     static final short RETURN_TYPE_DISK = 2; // to a file
     static final short RETURN_TYPE_CHUNKED = 3; // FIXME implement: over FCP, as decoded
-
-	public boolean isDirect() {
-		return this.returnType == RETURN_TYPE_DIRECT;
-	}
-
-	public boolean isToDisk() {
-		return this.returnType == RETURN_TYPE_DISK;
-	}
-
-	public FreenetURI getURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(uri, 5);
-		return uri;
-	}
-
-	public long getDataSize(ObjectContainer container) {
-		if(foundDataLength > 0)
-			return foundDataLength;
-		if(getter != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(getter, 1);
-			return getter.expectedSize();
-		}
-		return -1;
-	}
-
-	public String getMIMEType(ObjectContainer container) {
-		if(foundDataMimeType != null)
-			return foundDataMimeType;
-		if(getter != null) {
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(getter, 1);
-			return getter.expectedMIME();
-		}
-		return null;
-	}
-
-	public File getDestFilename(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(targetFile, 5);
-		return targetFile;
-	}
-
-	public InsertContext.CompatibilityMode[] getCompatibilityMode(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
-			container.activate(compatMessage, 2);
-		if(compatMessage != null) {
-			return compatMessage.getModes();
-		} else
-			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
-	}
-	
-	public boolean getDontCompress(ObjectContainer container) {
-		if(compatMessage == null) return false;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(compatMessage, 2);
-		return compatMessage.dontCompress;
-	}
-	
-	public byte[] getOverriddenSplitfileCryptoKey(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
-			container.activate(compatMessage, 2);
-		if(compatMessage != null) {
-			return compatMessage.cryptoKey;
-		} else
-			return null;
-	}
-
-	@Override
-	public String getFailureReason(boolean longDescription, ObjectContainer container) {
-		if(getFailedMessage == null)
-			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(getFailedMessage, 5);
-		String s = getFailedMessage.shortCodeDescription;
-		if(longDescription && getFailedMessage.extraDescription != null)
-			s += ": "+getFailedMessage.extraDescription;
-		return s;
-	}
-	
-	GetFailedMessage getFailureMessage(ObjectContainer container) {
-		if(getFailedMessage == null) return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(getFailedMessage, 5);
-		return getFailedMessage;
-	}
-	
-	public int getFailureReasonCode(ObjectContainer container) {
-		if(getFailedMessage == null)
-			return -1;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(getFailedMessage, 5);
-		return getFailedMessage.code;
-		
-	}
-
-	public Bucket getFinalBucket(ObjectContainer container) {
-		synchronized(this) {
-			if(!finished) return null;
-			if(!succeeded) return null;
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(returnBucket, 1);
-			return returnBucket;
-		}
-	}
-	
-	/**
-	 * Returns the {@link Bucket} that contains the downloaded data.
-	 *
-	 * @return The data in a {@link Bucket}, or <code>null</code> if this
-	 *         isn&rsquo;t applicable
-	 */
-	public Bucket getBucket(ObjectContainer container) {
-		synchronized(this) {
-			if(targetFile != null) {
-				if(succeeded || tempFile == null) {
-					if(persistenceType == PERSIST_FOREVER) container.activate(targetFile, 5);
-					return new FileBucket(targetFile, false, true, false, false, false);
-				} else {
-					if(persistenceType == PERSIST_FOREVER) container.activate(tempFile, 5);
-					return new FileBucket(tempFile, false, true, false, false, false);
-				}
-			} else return returnBucket;
-		}
-	}
-
-	public synchronized boolean hasPermRedirect() {
-		return getFailedMessage != null && getFailedMessage.redirectURI != null;
-	}
-
-	public boolean filterData(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(fctx, 1);
-		return fctx.filterData;
-	}
 
 }

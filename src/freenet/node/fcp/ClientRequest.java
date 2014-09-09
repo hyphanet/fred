@@ -5,20 +5,13 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.async.ClientContext;
-import freenet.client.async.ClientRequester;
 import freenet.client.async.TooManyFilesInsertException;
-import freenet.clients.fcp.ClientGet;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
-import freenet.clients.fcp.PersistentRequestRoot;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.ResumeFailedException;
 
 /**
@@ -58,18 +51,6 @@ public abstract class ClientRequest {
 
 	/** Kept to find out whether realtime or not */
     protected final RequestClient lowLevelClient;
-
-	private static volatile boolean logMINOR;
-	
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
-	}
 
 	protected ClientRequest() {
 	    // Created only by reading in from the database.
@@ -123,17 +104,9 @@ public abstract class ClientRequest {
 		return identifier;
 	}
 
-	protected abstract ClientRequester getClientRequest();
-
 	/** Return the priority class */
 	public short getPriority(){
 		return priorityClass;
-	}
-
-	public abstract String getFailureReason(boolean longDescription, ObjectContainer container);
-
-	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
 	}
 
 	protected boolean started;
@@ -141,8 +114,6 @@ public abstract class ClientRequest {
 	public boolean isStarted() {
 		return started;
 	}
-
-	public abstract boolean hasSucceeded();
 
 	/**
 	 * Returns the time of the request’s last activity, or {@code 0} if there is

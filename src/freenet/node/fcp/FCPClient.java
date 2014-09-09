@@ -1,14 +1,12 @@
 package freenet.node.fcp;
 
 import java.util.List;
-import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.clients.fcp.PersistentRequestClient;
 import freenet.clients.fcp.PersistentRequestRoot;
-import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;

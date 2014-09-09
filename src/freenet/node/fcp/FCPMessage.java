@@ -1,18 +1,5 @@
 package freenet.node.fcp;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-import com.db4o.ObjectContainer;
-
-import freenet.node.Node;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.PersistentTempBucketFactory;
-
 /** Only included so we can construct those messages which are stored inside ClientGet etc. */
 public abstract class FCPMessage {
 	/*
@@ -37,15 +24,4 @@ public abstract class FCPMessage {
 	public static final String OUTPUT_BANDWIDTH_CLASS = "OutputBandwidthClass";
 	public static final String OVERALL_BULK_OUTPUT_CAPACITY_USAGE = "OverallBulkOutputCapacityUsage";
 	
-
-        private static volatile boolean logDEBUG;
-	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-			@Override
-			public void shouldUpdate(){
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-			}
-		});
-	}
-
 }
