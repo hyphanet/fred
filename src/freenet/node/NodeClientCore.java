@@ -171,6 +171,7 @@ public class NodeClientCore implements Persistable {
 	private UserAlert startingUpAlert;
 	private boolean alwaysCommit;
 	private final PluginStores pluginStores;
+	private final UserAlert migratingAlert;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -639,6 +640,8 @@ public class NodeClientCore implements Persistable {
 		});
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
         alerts.register(new DiskSpaceUserAlert(this));
+        this.migratingAlert = new SimpleUserAlert(true, l10n("migratingAlertTitle"), l10n("migratingAlert"), l10n("migratingAlertTitle"), UserAlert.ERROR);
+        alerts.register(migratingAlert);
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
@@ -739,6 +742,7 @@ public class NodeClientCore implements Persistable {
 	                lock.unlock(false, NativeThread.currentThread().getPriority());
 	        }
 	    }
+	    alerts.unregister(migratingAlert);
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
 
