@@ -463,7 +463,9 @@ public final class FCPPluginClient {
                     // Notice that this is not normal mode of operation: Instead of throwing,
                     // the JavaDoc requests message handlers to return a reply with success=false.
                     
-                    Logger.error(messageHandler, "FCP message handler threw RuntimeException"
+                    Logger.error(messageHandler, "FredPluginFCPMessageHandler threw"
+                        + " RuntimeException. See JavaDoc of its member interfaces for how signal"
+                        + " errors properly."
                         + " Client = " + this + "; SendDirection = " + direction
                         + " message = " + reply, e);
                     
@@ -481,8 +483,8 @@ public final class FCPPluginClient {
                     // Replying to replies is disallowed to prevent infinite bouncing.
                     if(message.isReplyMessage()) {
                         Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
-                            + " reply to a reply. Discarding it. See JavaDoc of its children for"
-                            + " how to do this properly."
+                            + " reply to a reply. Discarding it. See JavaDoc of its member"
+                            + " interfaces for how to do this properly."
                             + " Client = " + this + "; SendDirection = " + direction
                             + " message = " + reply);
                         
@@ -515,8 +517,9 @@ public final class FCPPluginClient {
                     // from a class contained in it. So there is a chance that the developer
                     // has logging enabled for that class, and thus we log it marked as from that.
                     
-                    Logger.warning(messageHandler, "Sending reply failed, the connection was closed"
-                        + " already; Client = " + this + "; SendDirection = " + direction
+                    Logger.warning(messageHandler, "Sending reply from FredPluginFCPMessageHandler"
+                        + " failed, the connection was closed already."
+                        + " Client = " + this + "; SendDirection = " + direction
                         + " message = " + reply, e);
                 }
             }
