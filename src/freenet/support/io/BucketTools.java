@@ -51,8 +51,8 @@ public class BucketTools {
 	 * @throws IOException
 	 */
 	public static void copy(Bucket src, Bucket dst) throws IOException {
-		OutputStream out = dst.getOutputStream();
-		InputStream in = src.getInputStream();
+		OutputStream out = dst.getOutputStreamUnbuffered();
+		InputStream in = src.getInputStreamUnbuffered();
 		ReadableByteChannel readChannel = Channels.newChannel(in);
 		WritableByteChannel writeChannel = Channels.newChannel(out);
 		try {
@@ -73,7 +73,7 @@ public class BucketTools {
 	}
 
 	public static void zeroPad(Bucket b, long size) throws IOException {
-		OutputStream out = b.getOutputStream();
+		OutputStream out = b.getOutputStreamUnbuffered();
 
 		try {
 		// Initialized to zero by default.
@@ -106,9 +106,9 @@ public class BucketTools {
 
 		try {
 
-			out = to.getOutputStream();
+			out = to.getOutputStreamUnbuffered();
 			byte[] buffer = new byte[16384];
-			in = from.getInputStream();
+			in = from.getInputStreamUnbuffered();
 
 			long count = 0;
 			while (count != nBytes) {
@@ -216,7 +216,7 @@ public class BucketTools {
 		long size = bucket.size();
 		if(size > Integer.MAX_VALUE) throw new OutOfMemoryError();
 		byte[] data = new byte[(int)size];
-		InputStream is = bucket.getInputStream();
+		InputStream is = bucket.getInputStreamUnbuffered();
 		DataInputStream dis = null;
 		try {
 			dis = new DataInputStream(is);
@@ -234,7 +234,7 @@ public class BucketTools {
 			throw new IllegalArgumentException("Data does not fit in provided buffer");
 		InputStream is = null;
 		try {
-			is = bucket.getInputStream();
+			is = bucket.getInputStreamUnbuffered();
 			int moved = 0;
 			while(true) {
 				if(moved == size) return moved;
@@ -257,7 +257,7 @@ public class BucketTools {
 	
 	public static RandomAccessBucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int offset, int length) throws IOException {
 		RandomAccessBucket bucket = bucketFactory.makeBucket(length);
-		OutputStream os = bucket.getOutputStream();
+		OutputStream os = bucket.getOutputStreamUnbuffered();
 		try {
 		os.write(data, offset, length);
 		} finally {
@@ -268,7 +268,7 @@ public class BucketTools {
 	}
 
 	public static byte[] hash(Bucket data) throws IOException {
-		InputStream is = data.getInputStream();
+		InputStream is = data.getInputStreamUnbuffered();
 		try {
 			MessageDigest md = SHA256.getMessageDigest();
 			try { 
@@ -302,7 +302,7 @@ public class BucketTools {
 	public static long copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
 		if(truncateLength == 0) return 0;
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
-		InputStream is = decodedData.getInputStream();
+		InputStream is = decodedData.getInputStreamUnbuffered();
 		try {
 			int bufferSize = BUFFER_SIZE;
 			if(truncateLength > 0 && truncateLength < bufferSize) bufferSize = (int) truncateLength;
@@ -333,7 +333,7 @@ public class BucketTools {
 
 	/** Copy data from an InputStream into a Bucket. */
 	public static void copyFrom(Bucket bucket, InputStream is, long truncateLength) throws IOException {
-		OutputStream os = bucket.getOutputStream();
+		OutputStream os = bucket.getOutputStreamUnbuffered();
 		byte[] buf = new byte[BUFFER_SIZE];
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		try {
@@ -395,7 +395,7 @@ public class BucketTools {
 		if(logMINOR)
 			Logger.minor(BucketTools.class, "Splitting bucket "+origData+" of size "+length+" into "+bucketCount+" buckets");
 		Bucket[] buckets = new Bucket[bucketCount];
-		InputStream is = origData.getInputStream();
+		InputStream is = origData.getInputStreamUnbuffered();
 		DataInputStream dis = null;
 		try {
 			dis = new DataInputStream(is);
@@ -407,7 +407,7 @@ public class BucketTools {
 				buckets[i] = bucket;
 				dis.readFully(buf, 0, len);
 				remainingLength -= len;
-				OutputStream os = bucket.getOutputStream();
+				OutputStream os = bucket.getOutputStreamUnbuffered();
 				try {
 					os.write(buf, 0, len);
 				} finally {
@@ -439,7 +439,7 @@ public class BucketTools {
 		byte[] hash = BucketTools.hash(oldBucket);
 		Bucket b = bf.makeBucket(blockLength);
 		MersenneTwister mt = new MersenneTwister(hash);
-		OutputStream os = b.getOutputStream();
+		OutputStream os = b.getOutputStreamUnbuffered();
 		try {
 			BucketTools.copyTo(oldBucket, os, length);
 			byte[] buf = new byte[BUFFER_SIZE];
@@ -471,8 +471,8 @@ public class BucketTools {
         long size = a.size();
         InputStream aIn = null, bIn = null;
         try {
-            aIn = a.getInputStream();
-            bIn = b.getInputStream();
+            aIn = a.getInputStreamUnbuffered();
+            bIn = b.getInputStreamUnbuffered();
             return FileUtil.equalStreams(aIn, bIn, size);
         } finally {
             aIn.close();
@@ -484,7 +484,7 @@ public class BucketTools {
     public static void fill(Bucket bucket, Random random, long length) throws IOException {
         OutputStream os = null;
         try {
-            os = bucket.getOutputStream();
+            os = bucket.getOutputStreamUnbuffered();
             FileUtil.fill(os, random, length);
         } finally {
             if(os != null) os.close();
@@ -508,7 +508,7 @@ public class BucketTools {
     public static void fill(Bucket bucket, long length) throws IOException {
         OutputStream os = null;
         try {
-            os = bucket.getOutputStream();
+            os = bucket.getOutputStreamUnbuffered();
             FileUtil.fill(os, length);
         } finally {
             if(os != null) os.close();
@@ -527,7 +527,7 @@ public class BucketTools {
             long truncateLength) throws IOException {
         if(truncateLength == 0) return 0;
         if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
-        InputStream is = bucket.getInputStream();
+        InputStream is = bucket.getInputStreamUnbuffered();
         try {
             int bufferSize = BUFFER_SIZE;
             if(truncateLength > 0 && truncateLength < bufferSize) bufferSize = (int) truncateLength;
