@@ -18,6 +18,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 
@@ -483,7 +484,20 @@ public final class FCPPluginClient {
                 try {
                     send(direction.invert(), reply);
                 } catch (IOException e) {
-                    throw new UnsupportedOperationException("FIXME: Implement");
+                    // The remote partner has disconnected, which can happen during normal
+                    // operation.
+                    // There is nothing we can do to get the IOException out to the caller of the
+                    // initial send() which triggered the above send() of the reply.
+                    // - We are in a different thread, the initial send() has returned already.
+                    // So we just log it, because it still might indicate problems if we try to
+                    // send after disconnection.
+                    // We log it marked as from the messageHandler instead of the FCPPluginClient:
+                    // The messageHandler will be an object of the server or client plugin,
+                    // from a class contained in it. So there is a chance that the developer
+                    // has logging enabled for that class, and thus we log it marked as from that.
+                    Logger.warning(messageHandler, "Sending reply failed, the connection was closed"
+                        + " already; Client = " + this + "; SendDirection = " + direction
+                        + " message = " + reply, e);
                 }
             }
 
