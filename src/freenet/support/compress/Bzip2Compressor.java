@@ -3,8 +3,6 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -63,18 +61,17 @@ public class Bzip2Compressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
-		BufferedInputStream bis = new BufferedInputStream(is, 32768);
 		BZip2CompressorOutputStream bz2os = null;
 		try {
 			CountedOutputStream cos = new CountedOutputStream(os);
-			bz2os = new BZip2CompressorOutputStream(HeaderStreams.dimOutput(BZ_HEADER, new BufferedOutputStream(cos, 32768)));
+			bz2os = new BZip2CompressorOutputStream(HeaderStreams.dimOutput(BZ_HEADER, cos));
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
 			byte[] buffer = new byte[32768];
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
-				int x = l == 0 ? -1 : bis.read(buffer, 0, buffer.length);
+				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
 				if(x <= -1) break;
 				if(x == 0) throw new IOException("Returned zero from read()");
 				bz2os.write(buffer, 0, x);
@@ -100,7 +97,7 @@ public class Bzip2Compressor implements Compressor {
 	
 	@Override
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		BZip2CompressorInputStream bz2is = new BZip2CompressorInputStream(HeaderStreams.augInput(BZ_HEADER, new BufferedInputStream(is)));
+		BZip2CompressorInputStream bz2is = new BZip2CompressorInputStream(HeaderStreams.augInput(BZ_HEADER, is));
 		long written = 0;
 		int bufSize = 32768;
 		if(maxLength > 0 && maxLength < bufSize)

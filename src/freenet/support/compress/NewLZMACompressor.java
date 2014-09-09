@@ -3,8 +3,6 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -66,8 +64,8 @@ public class NewLZMACompressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
-		cis = new CountedInputStream(new BufferedInputStream(is, 32768));
-		cos = new CountedOutputStream(new BufferedOutputStream(os, 32768));
+		cis = new CountedInputStream(is);
+		cos = new CountedOutputStream(os);
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         int dictionarySize = 1;
@@ -98,10 +96,10 @@ public class NewLZMACompressor implements Compressor {
 		if(logMINOR)
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream is = null;
-		BufferedOutputStream os = null;
+		OutputStream os = null;
 		try {
-			is = new CountedInputStream(new BufferedInputStream(data.getInputStream(), 32768));
-			os = new BufferedOutputStream(output.getOutputStream(), 32768);
+			is = new CountedInputStream(data.getInputStream());
+			os = output.getOutputStream();
 			decompress(is, os, maxLength, maxCheckSizeLength);
 			if(logMINOR)
 				Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());

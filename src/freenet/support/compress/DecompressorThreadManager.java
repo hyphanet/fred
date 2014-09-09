@@ -8,8 +8,11 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import freenet.support.LogThresholdCallback;
 import freenet.support.TimeUtil;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.List;
@@ -155,7 +158,7 @@ public class DecompressorThreadManager {
 		/**The stream compressed data will be read from*/
 		private InputStream input;
 		/**The stream decompressed data will be written*/
-		private PipedOutputStream output;
+		private OutputStream output;
 		/**A upper limit to how much data may be decompressed. This is passed to the decompressor*/
 		final long maxLen;
 		/**The manager which created the thread*/
@@ -165,8 +168,8 @@ public class DecompressorThreadManager {
 
 		public DecompressorThread(Compressor compressor, DecompressorThreadManager manager, InputStream input, PipedOutputStream output, long maxLen) {
 			this.compressor = compressor;
-			this.input = input;
-			this.output = output;
+			this.input = new BufferedInputStream(input);
+			this.output = new BufferedOutputStream(output);
 			this.maxLen = maxLen;
 			this.manager = manager;
 		}

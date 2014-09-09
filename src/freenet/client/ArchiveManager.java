@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -312,8 +313,9 @@ public class ArchiveManager {
 				// LZMA internally uses pipe streams, so we may as well do it here.
 				// In fact we need to for LZMA_NEW, because of the properties bytes.
 				PipedInputStream pis = new PipedInputStream();
-				final PipedOutputStream pos = new PipedOutputStream();
+				PipedOutputStream pos = new PipedOutputStream();
 				pis.connect(pos);
+				final OutputStream os = new BufferedOutputStream(pos);
 				wrapper = new ExceptionWrapper();
 				context.mainExecutor.execute(new Runnable() {
 
@@ -321,7 +323,7 @@ public class ArchiveManager {
 					public void run() {
 						InputStream is = null;
 						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), pos, data.size(), expectedSize);
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), os, data.size(), expectedSize);
 						} catch (CompressionOutputSizeException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
@@ -330,7 +332,7 @@ public class ArchiveManager {
 							wrapper.set(e);
 						} finally {
 							try {
-								pos.close();
+								os.close();
 							} catch (IOException e) {
 								Logger.error(this, "Failed to close PipedOutputStream: "+e, e);
 							}
