@@ -16,7 +16,6 @@ import java.util.Random;
 
 import freenet.support.math.MersenneTwister;
 
-import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
