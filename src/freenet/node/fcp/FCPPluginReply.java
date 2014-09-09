@@ -109,7 +109,7 @@ public class FCPPluginReply extends DataCarryingMessage {
 		sfs.putSingle("PluginName", plugname);
 		sfs.putSingle("Identifier", identifier);
 		if (dataLength() > 0)
-			sfs.put("DataLength", dataLength());			
+			sfs.put("DataLength", dataLength());
 		sfs.put("Replies", plugparams);
         if(success != null)
             sfs.put("Success", success);
