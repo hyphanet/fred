@@ -66,13 +66,20 @@ public class FCPPluginMessage extends DataCarryingMessage {
      * with usually have fields to indicate error messages, so there is a need for them. It will
      * be better to put this here so it can have a standardized format instead of having each
      * plugin re-invent it. When adding this, make sure to also add it to the
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage}
+     * {@link FredPluginFCPMessageHandler.FCPPluginMessage} and {@link FCPPluginReply}.
      * 
      * FIXME: To make the distinction between reply and non-reply messages even clearer, maybe have
      * an "IsReply" field instead of implicitly assuming messages to be replies if they contain
      * this "Success" field. This will hopefully prevent implementors of custom clients from not
      * specifying reply messages as replies - they would be more likely to do that with "Success"
-     * because that name doesn't indicate any relation with replys.
+     * because that name doesn't indicate any relation with replys. When adding this, make sure to
+     * also add it to the {@link FredPluginFCPMessageHandler.FCPPluginMessage} and
+     * {@link FCPPluginReply}. Addendum: To differentiate properly between the name of the
+     * "FCPPluginReply", which is used for any server-to-client messages, including NON-reply ones,
+     * we should probably use "IsAnswer" or something else which is a different word than reply.
+     * (We cannot rename the "FCPPluginReply" message for backwards compatibility, see its JavaDoc.)
+     * This addendum of course also applies to using "answer" instead of reply at
+     * {@link FredPluginFCPMessageHandler.FCPPluginMessage}
      * 
      * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
      */

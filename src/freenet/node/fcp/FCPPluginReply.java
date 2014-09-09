@@ -43,18 +43,42 @@ public class FCPPluginReply extends DataCarryingMessage {
 	private final String identifier;
 	private final SimpleFieldSet plugparams;
 
-	public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
-		bucket = bucket2;
-		if (bucket == null)
-			dataLength = -1;
-		else {
-			bucket.setReadOnly();
-			dataLength = bucket.size();
-		}
-		plugname = pluginname;
-		identifier = identifier2;
-		plugparams = fs;
-	}
+    /**
+     * For messages which are a reply to another message, this true if the operation requested by
+     * the original messages succeeded.<br>
+     * For non-reply messages, this is null.
+     * 
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#success
+     */
+    private final Boolean success;
+
+    /**
+     * @deprecated Use {@link #FCPPluginReply(String, String, SimpleFieldSet, Bucket, Boolean)}.
+     */
+    @Deprecated
+    public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
+        this(pluginname, identifier2, fs, bucket2, null);
+    }
+    
+    /**
+     * The parameters match the member variables of
+     * {@link FredPluginFCPMessageHandler.FCPPluginMessage}, and thus their JavaDoc applies.
+     */
+    public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2,
+            Boolean success) {
+        
+        bucket = bucket2;
+        if (bucket == null)
+            dataLength = -1;
+        else {
+            bucket.setReadOnly();
+            dataLength = bucket.size();
+        }
+        plugname = pluginname;
+        identifier = identifier2;
+        plugparams = fs;
+        this.success = success;
+    }
 
 	@Override
 	String getIdentifier() {
@@ -87,6 +111,8 @@ public class FCPPluginReply extends DataCarryingMessage {
 		if (dataLength() > 0)
 			sfs.put("DataLength", dataLength());			
 		sfs.put("Replies", plugparams);
+        if(success != null)
+            sfs.put("Success", success);
 		return sfs;
 	}
 
