@@ -1218,8 +1218,6 @@ public class Node implements TimeSkewDetectorCallback {
 		dbFile = userDir.file("node.db4o");
 		dbFileCrypt = userDir.file("node.db4o.crypt");
 
-		boolean dontCreate = (!dbFile.exists()) && (!dbFileCrypt.exists()) && (!toadlets.fproxyHasCompletedWizard());
-		
         byte[] clientCacheKey = null;
 
         MasterKeys keys = null;
@@ -1255,21 +1253,17 @@ public class Node implements TimeSkewDetectorCallback {
             }
         }
 
-		if(!dontCreate) {
-			try {
-				setupDatabase(databaseKey);
-			} catch (MasterKeysWrongPasswordException e2) {
-				System.out.println("Client database node.db4o is encrypted!");
-				databaseAwaitingPassword = true;
-			} catch (MasterKeysFileSizeException e2) {
-				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
-			} catch (IOException e2) {
-				System.err.println("Unable to access master.keys file to decrypt database: "+e2);
-				e2.printStackTrace();
-			}
-		} else
-			System.out.println("Not creating node.db4o for now, waiting for config as to security level...");
-
+        try {
+            setupDatabase(databaseKey);
+        } catch (MasterKeysWrongPasswordException e2) {
+            System.out.println("Client database node.db4o is encrypted!");
+            databaseAwaitingPassword = true;
+        } catch (MasterKeysFileSizeException e2) {
+            System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
+        } catch (IOException e2) {
+            System.err.println("Unable to access master.keys file to decrypt database: "+e2);
+            e2.printStackTrace();
+        }
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
