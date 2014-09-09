@@ -17,6 +17,7 @@ import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
+import freenet.clients.fcp.ClientPutMessage.UploadFrom;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
@@ -172,7 +173,7 @@ public class ClientPut extends ClientPutBase {
         }
         freenet.clients.fcp.ClientPut put = new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
                 charset, priorityClass, persistenceType, clientToken, getCHKOnly, ctx.dontCompress, 
-                ctx.maxInsertRetries, uploadFrom, f, clientMetadata.getMIMEType(), data, targetURI,
+                ctx.maxInsertRetries, UploadFrom.getByCode(uploadFrom), f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 
                 isRealTime(container), ctx.getCompatibilityMode(), overrideSplitfileKey, binaryBlob, core);

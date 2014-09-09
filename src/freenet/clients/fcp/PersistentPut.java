@@ -6,6 +6,7 @@ package freenet.clients.fcp;
 import java.io.File;
 
 import freenet.client.InsertContext;
+import freenet.clients.fcp.ClientPutMessage.UploadFrom;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
@@ -20,7 +21,7 @@ public class PersistentPut extends FCPMessage {
 	final FreenetURI privateURI;
 	final int verbosity; 
 	final short priorityClass;
-	final short uploadFrom;
+	final UploadFrom uploadFrom;
 	final short persistenceType; 
 	final File origFilename;
 	final String mimeType;
@@ -39,7 +40,7 @@ public class PersistentPut extends FCPMessage {
 	final String compressorDescriptor;
 	
 	public PersistentPut(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, 
-			short priorityClass, short uploadFrom, FreenetURI targetURI, 
+			short priorityClass, UploadFrom uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
 			boolean global, long size, String clientToken, boolean started, 
 			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor, boolean realTime, byte[] splitfileCryptoKey) {
@@ -76,7 +77,7 @@ public class PersistentPut extends FCPMessage {
 			fs.putSingle("PrivateURI", privateURI.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.put("PriorityClass", priorityClass);
-		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
+		fs.putSingle("UploadFrom", uploadFrom.toString().toLowerCase());
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		if(origFilename != null)
 			fs.putSingle("Filename", origFilename.getAbsolutePath());

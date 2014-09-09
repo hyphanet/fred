@@ -22,6 +22,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
+import freenet.clients.fcp.ClientPutMessage.UploadFrom;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -40,7 +41,7 @@ public class ClientPut extends ClientPutBase {
 
     private static final long serialVersionUID = 1L;
     ClientPutter putter;
-	private final short uploadFrom;
+	private final UploadFrom uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
 	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target of the redirect */
@@ -113,10 +114,10 @@ public class ClientPut extends ClientPutBase {
 	 */
 	public ClientPut(PersistentRequestClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			String charset, short priorityClass, short persistenceType, String clientToken,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, UploadFrom uploadFromType, File origFilename,
 			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, MetadataUnresolvedException, IOException {
 		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
-		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
+		if(uploadFromType == UploadFrom.DISK) {
 			if(!core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
 			if(!(origFilename.exists() && origFilename.canRead()))
@@ -134,8 +135,8 @@ public class ClientPut extends ClientPutBase {
 		RandomAccessBucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
-		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+uploadFrom);
+		if(uploadFrom == UploadFrom.REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			tempData = m.toBucket(core.clientContext.getBucketFactory(isPersistentForever()));
@@ -160,7 +161,7 @@ public class ClientPut extends ClientPutBase {
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;
 		
-		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
+		if(message.uploadFromType == UploadFrom.DISK) {
 			if(!handler.server.core.allowUploadFrom(message.origFilename))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
 
@@ -204,8 +205,8 @@ public class ClientPut extends ClientPutBase {
 		RandomAccessBucket tempData = message.getRandomAccessBucket();
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
-		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+uploadFrom);
+		if(uploadFrom == UploadFrom.REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			try {
@@ -253,7 +254,7 @@ public class ClientPut extends ClientPutBase {
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \""+salt+"\")", identifier, global);
 		}
 		
-		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+uploadFrom);
 		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				isMetadata,
@@ -262,7 +263,7 @@ public class ClientPut extends ClientPutBase {
 	
 	protected ClientPut() {
 	    // For serialization.
-	    uploadFrom = 0;
+	    uploadFrom = null;
 	    origFilename = null;
 	    targetURI = null;
 	    clientMetadata = null;
@@ -368,11 +369,11 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public boolean isDirect() {
-		return uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT;
+		return uploadFrom == UploadFrom.DIRECT;
 	}
 
 	public File getOrigFilename() {
-		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK)
+		if(uploadFrom != UploadFrom.DISK)
 			return null;
 		return origFilename;
 	}

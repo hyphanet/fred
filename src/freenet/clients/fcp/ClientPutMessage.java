@@ -6,6 +6,8 @@ package freenet.clients.fcp;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
@@ -15,7 +17,6 @@ import freenet.node.RequestStarter;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -55,7 +56,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean getCHKOnly;
 	final short priorityClass;
 	final short persistenceType;
-	final short uploadFromType;
+	final UploadFrom uploadFromType;
 	/** The hash of the file you want the node to deal with.
 	 *  it is MANDATORY to do DDA operations and should be computed like that:
 	 *  
@@ -83,9 +84,28 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final long metadataThreshold;
 	final boolean ignoreUSKDatehints;
 	
-	public static final short UPLOAD_FROM_DIRECT = 0;
-	public static final short UPLOAD_FROM_DISK = 1;
-	public static final short UPLOAD_FROM_REDIRECT = 2;
+	private static Map<Integer, UploadFrom> uploadFromByCode = new HashMap<Integer, UploadFrom>();
+	
+	public enum UploadFrom { // Codes must be constant at least for migration
+	    DIRECT(0),
+	    DISK(1),
+	    REDIRECT(2);
+	    
+	    final int code;
+	    
+	    UploadFrom(int code) {
+	        if(uploadFromByCode.containsKey(code)) throw new Error("Duplicate");
+	        uploadFromByCode.put(code, this);
+	        this.code = code;
+	    }
+	    
+	    public static UploadFrom getByCode(int x) {
+	        UploadFrom u = uploadFromByCode.get(x);
+	        if(u == null) throw new IllegalArgumentException();
+	        return u;
+	    }
+	    
+	}
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		String fnam = null;
@@ -182,7 +202,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		this.fileHash = fs.get(ClientPutBase.FILE_HASH);
 		String uploadFrom = fs.get("UploadFrom");
 		if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
-			uploadFromType = UPLOAD_FROM_DIRECT;
+			uploadFromType = UploadFrom.DIRECT;
 			String dataLengthString = fs.get("DataLength");
 			if(dataLengthString == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier, global);
@@ -194,7 +214,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			this.origFilename = null;
 			redirectTarget = null;
 		} else if(uploadFrom.equalsIgnoreCase("disk")) {
-			uploadFromType = UPLOAD_FROM_DISK;
+			uploadFromType = UploadFrom.DISK;
 			String filename = fs.get("Filename");
 			if(filename == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier, global);
@@ -209,7 +229,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			if(fnam == null)
 				fnam = origFilename.getName();
 		} else if(uploadFrom.equalsIgnoreCase("redirect")) {
-			uploadFromType = UPLOAD_FROM_REDIRECT;
+			uploadFromType = UploadFrom.REDIRECT;
 			String target = fs.get("TargetURI");
 			if(target == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier, global);
@@ -286,16 +306,20 @@ public class ClientPutMessage extends DataCarryingMessage {
 		sfs.put("MaxRetries", maxRetries);
 		sfs.putSingle("Metadata.ContentType", contentType);
 		sfs.putSingle("ClientToken", clientToken);
-		if(uploadFromType == UPLOAD_FROM_DIRECT) {
-			sfs.putSingle("UploadFrom", "direct");
-			sfs.put("DataLength", dataLength);
-		} else if(uploadFromType == UPLOAD_FROM_DISK) {
-			sfs.putSingle("UploadFrom", "disk");
-			sfs.putSingle("Filename", origFilename.getAbsolutePath());
-			sfs.put("DataLength", dataLength);
-		} else if(uploadFromType == UPLOAD_FROM_REDIRECT) {
-			sfs.putSingle("UploadFrom", "redirect");
-			sfs.putSingle("TargetURI", redirectTarget.toString());
+		switch(uploadFromType) {
+		case DIRECT:
+            sfs.putSingle("UploadFrom", "direct");
+            sfs.put("DataLength", dataLength);
+		    break;
+		case DISK:
+            sfs.putSingle("UploadFrom", "disk");
+            sfs.putSingle("Filename", origFilename.getAbsolutePath());
+            sfs.put("DataLength", dataLength);
+            break;
+		case REDIRECT:
+            sfs.putSingle("UploadFrom", "redirect");
+            sfs.putSingle("TargetURI", redirectTarget.toString());
+            break;
 		}
 		sfs.put("GetCHKOnly", getCHKOnly);
 		sfs.put("PriorityClass", priorityClass);
@@ -324,7 +348,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	 */
 	@Override
 	long dataLength() {
-		if(uploadFromType == UPLOAD_FROM_DIRECT)
+		if(uploadFromType == UploadFrom.DIRECT)
 			return dataLength;
 		else return -1;
 	}
@@ -340,19 +364,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 			return server.core.persistentTempBucketFactory.makeBucket(length);
 		} else {
 			return super.createBucket(bf, length, server);
-		}
-	}
-
-	public static String uploadFromString(short uploadFrom) {
-		switch(uploadFrom) {
-		case UPLOAD_FROM_DIRECT:
-			return "direct";
-		case UPLOAD_FROM_DISK:
-			return "disk";
-		case UPLOAD_FROM_REDIRECT:
-			return "redirect";
-		default:
-			throw new IllegalArgumentException();
 		}
 	}
 
