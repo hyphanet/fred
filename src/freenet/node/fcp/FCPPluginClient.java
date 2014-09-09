@@ -477,13 +477,18 @@ public final class FCPPluginClient {
                     }
                 }
                 
-                if(reply != null && message.isReplyMessage()) {
-                    throw new UnsupportedOperationException("FIXME: Replying to replies is "
-                        + "disallowed to prevent infinite bouncing. Implement proper error "
-                        + "handling for this here.");
-                }
-                
-                if(reply == null) {
+                if(reply != null) {
+                    // Replying to replies is disallowed to prevent infinite bouncing.
+                    if(message.isReplyMessage()) {
+                        Logger.error(messageHandler, "FredPluginFCPMessageHandler tried to send a"
+                            + " reply to a reply. Discarding it. See JavaDoc of its children for"
+                            + " how to do this properly."
+                            + " Client = " + this + "; SendDirection = " + direction
+                            + " message = " + reply);
+                        
+                        reply = null;
+                    }
+                } else if(reply == null) {
                     // The message handler succeeded in processing the message but does not have
                     // anything to say as reply.
                     // We send an empty "Success" reply nevertheless to to trigger eventually
