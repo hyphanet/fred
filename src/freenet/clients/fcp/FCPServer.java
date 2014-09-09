@@ -24,7 +24,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DownloadCache;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
-import freenet.clients.fcp.ClientGetMessage.ReturnType;
+import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;

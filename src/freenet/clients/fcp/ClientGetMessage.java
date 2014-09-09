@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -71,30 +72,6 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	final boolean ignoreUSKDatehints;
 	private Bucket initialMetadata;
 	private final long initialMetadataLength;
-	
-	private static Map<Short, ReturnType> returnTypeByCode = new HashMap<Short, ReturnType>();
-	
-	public enum ReturnType {
-	    DIRECT((short)0),
-	    NONE((short)1),
-	    DISK((short)2),
-	    CHUNKED((short)3);
-	    
-	    final short code;
-	    
-	    ReturnType(short code) {
-	        if(returnTypeByCode.containsKey(code)) throw new Error("Duplicate");
-	        returnTypeByCode.put(code, this);
-	        this.code = code;
-	    }
-	    
-	    public static ReturnType getByCode(short x) {
-	        ReturnType u = returnTypeByCode.get(x);
-	        if(u == null) throw new IllegalArgumentException();
-	        return u;
-	    }
-	    
-	}
 	
 	private static volatile boolean logMINOR;
 	static {

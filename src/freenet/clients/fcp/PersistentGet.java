@@ -5,7 +5,7 @@ package freenet.clients.fcp;
 
 import java.io.File;
 
-import freenet.clients.fcp.ClientGetMessage.ReturnType;
+import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;

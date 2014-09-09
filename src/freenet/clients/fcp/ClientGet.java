@@ -8,7 +8,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -34,7 +36,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
-import freenet.clients.fcp.ClientGetMessage.ReturnType;
+import freenet.clients.fcp.ClientGet.ReturnType;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -104,7 +106,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * persist it anyway.  */
 	private ExpectedHashes expectedHashes;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -112,6 +114,30 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
+	}
+	
+    private static Map<Short, ReturnType> returnTypeByCode = new HashMap<Short, ReturnType>();
+    
+	public enum ReturnType {
+	    DIRECT((short)0),
+	    NONE((short)1),
+	    DISK((short)2),
+	    CHUNKED((short)3);
+	    
+	    final short code;
+	    
+	    ReturnType(short code) {
+	        if(returnTypeByCode.containsKey(code)) throw new Error("Duplicate");
+	        returnTypeByCode.put(code, this);
+	        this.code = code;
+	    }
+	    
+	    public static ReturnType getByCode(short x) {
+	        ReturnType u = returnTypeByCode.get(x);
+	        if(u == null) throw new IllegalArgumentException();
+	        return u;
+	    }
+	    
 	}
 
 	/**
