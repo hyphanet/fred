@@ -18,7 +18,7 @@ public class TrivialPersistentFileTracker implements PersistentFileTracker {
     }
 
     @Override
-    public void delayedFree(DelayedFree bucket) {
+    public void delayedFree(DelayedFree bucket, long commitID) {
         bucket.realFree();
     }
 
@@ -35,6 +35,11 @@ public class TrivialPersistentFileTracker implements PersistentFileTracker {
     @Override
     public boolean checkDiskSpace(File file, int toWrite, int bufferSize) {
         return true;
+    }
+
+    @Override
+    public long commitID() {
+        return 1;
     }
 
 }

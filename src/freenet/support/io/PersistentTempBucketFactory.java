@@ -57,6 +57,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private volatile boolean encrypt;
 	
 	private DiskSpaceChecker checker;
+	
+	private long commitID;
 
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 	
@@ -115,6 +117,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 		
 		bucketsToFree = new ArrayList<DelayedFree>();
+		commitID = 1; // Must start > 0.
 	}
 	
 	public void setDiskSpaceChecker(DiskSpaceChecker checker) {
@@ -169,10 +172,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
 	@Override
-	public void delayedFree(DelayedFree b) {
+	public void delayedFree(DelayedFree b, long createdCommitID) {
 		synchronized(this) {
-			bucketsToFree.add(b);
+			if(createdCommitID != commitID) {
+			    bucketsToFree.add(b);
+			    return;
+			}
 		}
+		b.realFree();
 	}
 
     /** Returns a list of buckets to free. The caller should write the buckets to the checkpoint, 
@@ -182,10 +189,16 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			if(bucketsToFree.isEmpty()) return null;
 			DelayedFree[] buckets = bucketsToFree.toArray(new DelayedFree[bucketsToFree.size()]);
 			bucketsToFree.clear();
+			commitID++;
 			return buckets;
 		}
 	}
 	
+    @Override
+    public synchronized long commitID() {
+        return commitID;
+    }
+
 	/** Get the directory we are creating temporary files in */
 	@Override
 	public File getDir() {

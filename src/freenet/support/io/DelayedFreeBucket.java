@@ -30,6 +30,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	 * again, and in particular it should not be freed, since the new DelayedFreeRandomAccessBucket
 	 * will share share the underlying RandomAccessBucket. */
 	private boolean migrated;
+	private transient long createdCommitID;
 
         private static volatile boolean logMINOR;
 	static {
@@ -49,6 +50,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	public DelayedFreeBucket(PersistentFileTracker factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
+		this.createdCommitID = factory.commitID();
 		if(bucket == null) throw new NullPointerException();
 	}
 
@@ -123,7 +125,7 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	    }
 	    if(logMINOR)
 	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-	    this.factory.delayedFree(this);
+	    this.factory.delayedFree(this, createdCommitID);
 	}
 
 	@Override

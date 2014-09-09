@@ -13,9 +13,11 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     final LockableRandomAccessThing underlying;
     private boolean freed;
     private transient PersistentFileTracker factory;
+    private transient long createdCommitID;
 
     public DelayedFreeRandomAccessThing(LockableRandomAccessThing raf, PersistentFileTracker factory) {
         underlying = raf;
+        this.createdCommitID = factory.commitID();
         this.factory = factory;
     }
 
@@ -54,7 +56,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
             if(freed) return;
             freed = true;
         }
-        this.factory.delayedFree(this);
+        this.factory.delayedFree(this, createdCommitID);
     }
 
     @Override

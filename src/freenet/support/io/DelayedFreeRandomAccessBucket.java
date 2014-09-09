@@ -26,6 +26,7 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 	private transient PersistentFileTracker factory;
 	private final RandomAccessBucket bucket;
 	private boolean freed;
+	private transient long createdCommitID;
 
         private static volatile boolean logMINOR;
 	static {
@@ -45,6 +46,7 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 	public DelayedFreeRandomAccessBucket(PersistentFileTracker factory, RandomAccessBucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
+		this.createdCommitID = factory.commitID();
 		if(bucket == null) throw new NullPointerException();
 	}
 
@@ -113,7 +115,7 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 	    }
 	    if(logMINOR)
 	        Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-	    this.factory.delayedFree(this);
+	    this.factory.delayedFree(this, createdCommitID);
 	}
 
 	@Override
