@@ -55,8 +55,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public FreenetURI getFinalURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(generatedURI, 5);
+	    container.activate(generatedURI, 5);
 		return generatedURI;
 	}
 	
@@ -71,8 +70,7 @@ public class ClientPut extends ClientPutBase {
 	public File getOrigFilename(ObjectContainer container) {
 		if(uploadFrom != UPLOAD_FROM_DISK)
 			return null;
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(origFilename, 5);
+		container.activate(origFilename, 5);
 		return origFilename;
 	}
 
@@ -80,7 +78,7 @@ public class ClientPut extends ClientPutBase {
 		if(data == null)
 			return finishedSize;
 		else {
-			if(persistenceType == PERSIST_FOREVER) container.activate(data, 1);
+			container.activate(data, 1);
 			return data.size();
 		}
 	}
@@ -100,7 +98,7 @@ public class ClientPut extends ClientPutBase {
 	
 	/** Probably not meaningful for ClientPutDir's */
 	public COMPRESS_STATE isCompressing(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER) container.activate(ctx, 1);
+		container.activate(ctx, 1);
 		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
 		synchronized(this) {
 			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
@@ -140,7 +138,7 @@ public class ClientPut extends ClientPutBase {
                 return null;
             }
             this.data.onResume(context);
-            data = BucketTools.toRandomAccessBucket(this.data, context.getBucketFactory(isPersistentForever()));
+            data = BucketTools.toRandomAccessBucket(this.data, context.getBucketFactory(true));
         } else {
             Logger.error(this, "Not migrating insert as data has been deleted (or very old download?)");
             return null;
@@ -151,7 +149,7 @@ public class ClientPut extends ClientPutBase {
             overrideSplitfileKey = putter.getSplitfileCryptoKey();
         }
         freenet.clients.fcp.ClientPut put = new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
-                charset, priorityClass, Persistence.getByCode(persistenceType), clientToken, getCHKOnly, ctx.dontCompress, 
+                charset, priorityClass, Persistence.FOREVER, clientToken, getCHKOnly, ctx.dontCompress, 
                 ctx.maxInsertRetries, UploadFrom.getByCode(uploadFrom), f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 

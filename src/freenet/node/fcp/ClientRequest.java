@@ -31,7 +31,7 @@ public abstract class ClientRequest {
 	/** Priority class */
 	protected short priorityClass;
 	/** Persistence type */
-	protected final short persistenceType;
+	//protected final short persistenceType; // always FOREVER for migration
 	/** Charset of the request's contents */
 	protected final String charset;
 	/** Has the request finished? */
@@ -84,15 +84,6 @@ public abstract class ClientRequest {
 		if(string.equalsIgnoreCase("forever"))
 			return PERSIST_FOREVER;
 		return Short.parseShort(string);
-	}
-
-	public boolean isPersistentForever() {
-		return persistenceType == ClientRequest.PERSIST_FOREVER;
-	}
-
-	/** Is the request persistent? False = we can drop the request if we lose the connection */
-	public boolean isPersistent() {
-		return persistenceType != ClientRequest.PERSIST_CONNECTION;
 	}
 
 	public boolean hasFinished() {

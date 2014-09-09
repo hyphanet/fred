@@ -40,12 +40,12 @@ public class ClientPutDir extends ClientPutBase {
             IOException, ResumeFailedException, TooManyFilesInsertException {
         ClientContext context = core.clientContext;
         container.activate(manifestElements, Integer.MAX_VALUE);
-        migrateManifestElements(manifestElements, context.getBucketFactory(isPersistentForever()), context);
+        migrateManifestElements(manifestElements, context.getBucketFactory(true), context);
         container.activate(uri, Integer.MAX_VALUE);
         container.activate(ctx, Integer.MAX_VALUE);
         freenet.clients.fcp.ClientPutDir put =
             new freenet.clients.fcp.ClientPutDir(newClient, uri, identifier, verbosity, 
-                priorityClass, Persistence.getByCode(persistenceType), clientToken, ctx.getCHKOnly, ctx.dontCompress,
+                priorityClass, Persistence.FOREVER, clientToken, ctx.getCHKOnly, ctx.dontCompress,
                 ctx.maxInsertRetries, manifestElements, defaultName, global, ctx.earlyEncode,
                 ctx.canWriteClientCache, ctx.forkOnCacheable, ctx.extraInsertsSingleBlock, 
                 ctx.extraInsertsSplitfileHeaderBlock, isRealTime(container), 

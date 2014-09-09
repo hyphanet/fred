@@ -61,13 +61,10 @@ public abstract class ClientPutBase extends ClientRequest {
 
 	public FreenetURI getGeneratedURI(ObjectContainer container) {
 		if(generatedURI == null) return null;
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(generatedURI, Integer.MAX_VALUE);
-			FreenetURI ret = generatedURI.clone();
-			container.deactivate(generatedURI, 1);
-			return ret;
-		} else
-			return generatedURI;
+		container.activate(generatedURI, Integer.MAX_VALUE);
+		FreenetURI ret = generatedURI.clone();
+		container.deactivate(generatedURI, 1);
+		return ret;
 	}
 
 	protected abstract String getTypeName();
