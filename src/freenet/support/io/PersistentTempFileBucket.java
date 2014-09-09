@@ -45,7 +45,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	
 	@Override
 	public OutputStream getOutputStreamUnbuffered() throws IOException {
-	    OutputStream os = super.getOutputStream();
+	    OutputStream os = super.getOutputStreamUnbuffered();
 	    os = new DiskSpaceCheckingOutputStream(os, tracker, getFile(), BUFFER_SIZE);
 	    return os;
 	}
