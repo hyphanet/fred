@@ -15,6 +15,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.TooManyFilesInsertException;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.RequestClient;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
@@ -269,7 +270,7 @@ public class FCPConnectionHandler implements Closeable {
 		final boolean global = message.global;
 		ClientGet cg = null;
 		boolean success;
-		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
+		boolean persistent = message.persistence != Persistence.CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check
@@ -283,7 +284,7 @@ public class FCPConnectionHandler implements Closeable {
 					if(!persistent) {
 						cg = new ClientGet(this, message, server.core);
 						requestsByIdentifier.put(id, cg);
-					} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+					} else if(message.persistence == Persistence.FOREVER) {
 					    try {
 					        server.core.clientContext.jobRunner.queue(new PersistentJob() {
 					            
@@ -330,7 +331,7 @@ public class FCPConnectionHandler implements Closeable {
 				}
 			}
 		}
-		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+		if(message.persistence == Persistence.REBOOT)
 			try {
 				cg.register(false);
 			} catch (IdentifierCollisionException e) {
@@ -352,7 +353,7 @@ public class FCPConnectionHandler implements Closeable {
 		final String id = message.identifier;
 		final boolean global = message.global;
 		ClientPut cp = null;
-		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
+		boolean persistent = message.persistence != Persistence.CONNECTION;
 		FCPMessage failedMessage = null;
 		synchronized(this) {
 			boolean success;
@@ -380,7 +381,7 @@ public class FCPConnectionHandler implements Closeable {
 					} catch (IOException e) {
 					    failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.IO_ERROR, true, e.getMessage(), id, message.global);
                     }
-				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+				} else if(message.persistence == Persistence.FOREVER) {
 				    try {
 				        server.core.clientContext.jobRunner.queue(new PersistentJob() {
 				            
@@ -441,7 +442,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
-		if(message.persistenceType == ClientRequest.PERSIST_REBOOT && cp != null)
+		if(message.persistence == Persistence.REBOOT && cp != null)
 			try {
 				cp.register(false);
 			} catch (IdentifierCollisionException e) {
@@ -468,7 +469,7 @@ public class FCPConnectionHandler implements Closeable {
 		final boolean global = message.global;
 		ClientPutDir cp = null;
 		FCPMessage failedMessage = null;
-		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
+		boolean persistent = message.persistence != Persistence.CONNECTION;
 		// We need to track non-persistent requests anyway, so we may as well check
 		boolean success;
 		synchronized(this) {
@@ -493,7 +494,7 @@ public class FCPConnectionHandler implements Closeable {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.TOO_MANY_FILES_IN_INSERT, true, null, id, message.global);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
-			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+			} else if(message.persistence == Persistence.FOREVER) {
 			    try {
 			        server.core.clientContext.jobRunner.queue(new PersistentJob() {
 			            
@@ -549,7 +550,7 @@ public class FCPConnectionHandler implements Closeable {
 			}
 		}
 		
-		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+		if(message.persistence == Persistence.REBOOT)
 			try {
 				cp.register(false);
 			} catch (IdentifierCollisionException e) {

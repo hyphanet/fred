@@ -12,6 +12,7 @@ import java.util.Map;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.clients.fcp.ClientPutBase.UploadFrom;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -56,7 +57,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final int maxRetries;
 	final boolean getCHKOnly;
 	final short priorityClass;
-	final short persistenceType;
+	final Persistence persistence;
 	final UploadFrom uploadFromType;
 	/** The hash of the file you want the node to deal with.
 	 *  it is MANDATORY to do DDA operations and should be computed like that:
@@ -223,19 +224,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier, global);
 		dontCompress = fs.getBoolean("DontCompress", false);
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
-			// Default: persists until connection loss.
-			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
-			// Reports to client by name; persists over connection loss.
-			// Not saved to disk, so dies on reboot.
-			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
-			// Same as reboot but saved to disk, persists forever.
-			persistenceType = ClientRequest.PERSIST_FOREVER;
-		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
-		}
+		persistence = Persistence.parseOrThrow(persistenceString, identifier, global);
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
 		String f = fs.get("TargetFilename");
@@ -301,7 +290,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		}
 		sfs.put("GetCHKOnly", getCHKOnly);
 		sfs.put("PriorityClass", priorityClass);
-		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
+		sfs.putSingle("Persistence", persistence.toString().toLowerCase());
 		sfs.put("DontCompress", dontCompress);
 		if (compressorDescriptor != null)
 			sfs.putSingle("Codecs", compressorDescriptor);
@@ -338,7 +327,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 
 	@Override
 	RandomAccessBucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			return server.core.persistentTempBucketFactory.makeBucket(length);
 		} else {
 			return super.createBucket(bf, length, server);

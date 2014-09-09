@@ -1,6 +1,7 @@
 package freenet.clients.fcp;
 
 import freenet.client.InsertException.InsertExceptionMode;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 
 /** Base class for cached status of uploads */
@@ -12,7 +13,7 @@ public abstract class UploadRequestStatus extends RequestStatus {
 	private String failureReasonShort;
 	private String failureReasonLong;
 	
-	UploadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	UploadRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FreenetURI finalURI, FreenetURI targetURI, 

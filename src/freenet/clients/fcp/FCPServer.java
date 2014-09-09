@@ -25,6 +25,7 @@ import freenet.client.async.DownloadCache;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
 import freenet.clients.fcp.ClientGet.ReturnType;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -89,7 +90,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.maxMessageQueueLength = maxMessageQueueLength;
 		rebootClientsByName = new WeakHashMap<String, PersistentRequestClient>();
 
-		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
+		globalRebootClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.REBOOT, null);
 		globalRebootClient.setRequestStatusCache(new RequestStatusCache());
 
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -460,7 +461,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			oldClient = rebootClientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				PersistentRequestClient client = new PersistentRequestClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null);
+				PersistentRequestClient client = new PersistentRequestClient(name, handler, false, null, Persistence.REBOOT, null);
 				rebootClientsByName.put(name, client);
 				return client;
 			} else {
@@ -491,7 +492,7 @@ public class FCPServer implements Runnable, DownloadCache {
     }
 
 	public void unregisterClient(PersistentRequestClient client) {
-		if(client.persistenceType == ClientRequest.PERSIST_REBOOT) {
+		if(client.persistence == Persistence.REBOOT) {
 		synchronized(this) {
 			String name = client.name;
 			rebootClientsByName.remove(name);
@@ -844,7 +845,7 @@ public class FCPServer implements Runnable, DownloadCache {
 	 * password etc.
 	 */
 	public void startBlocking(final ClientRequest req, ClientContext context) throws IdentifierCollisionException, PersistenceDisabledException {
-		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
+		if(req.persistence == Persistence.REBOOT) {
 			req.start(core.clientContext);
 		} else {
 			class OutputWrapper {

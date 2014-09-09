@@ -6,6 +6,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -44,7 +45,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.filterData = filtered;
 	}
 	
-	DownloadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	DownloadRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FetchExceptionMode failureCode, String mime, long size, File dest, CompatibilityMode[] compat,

@@ -14,6 +14,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.clients.fcp.ClientPutBase.UploadFrom;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
@@ -150,7 +151,7 @@ public class ClientPut extends ClientPutBase {
             overrideSplitfileKey = putter.getSplitfileCryptoKey();
         }
         freenet.clients.fcp.ClientPut put = new freenet.clients.fcp.ClientPut(newClient, uri, identifier, verbosity, 
-                charset, priorityClass, persistenceType, clientToken, getCHKOnly, ctx.dontCompress, 
+                charset, priorityClass, Persistence.getByCode(persistenceType), clientToken, getCHKOnly, ctx.dontCompress, 
                 ctx.maxInsertRetries, UploadFrom.getByCode(uploadFrom), f, clientMetadata.getMIMEType(), data, targetURI,
                 targetFilename, earlyEncode, ctx.canWriteClientCache, ctx.forkOnCacheable, 
                 ctx.extraInsertsSingleBlock, ctx.extraInsertsSplitfileHeaderBlock, 

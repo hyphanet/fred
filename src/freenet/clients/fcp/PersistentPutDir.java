@@ -6,6 +6,7 @@ package freenet.clients.fcp;
 import java.util.HashMap;
 
 import freenet.client.async.BaseManifestPutter;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
@@ -30,7 +31,7 @@ public class PersistentPutDir extends FCPMessage {
 	final FreenetURI privateURI;
 	final int verbosity; 
 	final short priorityClass;
-	final short persistenceType; 
+	final Persistence persistence; 
 	final boolean global;
 	private final HashMap<String, Object> manifestElements;
 	final String defaultName;
@@ -45,14 +46,14 @@ public class PersistentPutDir extends FCPMessage {
 	final byte[] splitfileCryptoKey;
 	
 	public PersistentPutDir(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, short priorityClass,
-	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
+	        Persistence persistence, boolean global, String defaultName, HashMap<String, Object> manifestElements,
 	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey) {
 		this.identifier = identifier;
 		this.uri = publicURI;
 		this.privateURI = privateURI;
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
-		this.persistenceType = persistenceType;
+		this.persistence = persistence;
 		this.global = global;
 		this.defaultName = defaultName;
 		this.manifestElements = manifestElements;
@@ -74,7 +75,7 @@ public class PersistentPutDir extends FCPMessage {
 		if(privateURI != null)
 			fs.putSingle("PrivateURI", privateURI.toString(false, false));
 		fs.put("Verbosity", verbosity);
-		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("Persistence", persistence.toString().toLowerCase());
 		fs.put("PriorityClass", priorityClass);
 		fs.put("Global", global);
 		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");

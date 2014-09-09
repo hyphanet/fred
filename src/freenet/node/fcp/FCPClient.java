@@ -29,7 +29,7 @@ public class FCPClient {
         throw new UnsupportedOperationException();
     }
 	
-    /** The persistent root object, null if persistenceType is PERSIST_REBOOT */
+    /** The persistent root object, null if persistence is PERSIST_REBOOT */
     final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
 	final String name;

@@ -1,11 +1,12 @@
 package freenet.clients.fcp;
 
 import freenet.client.InsertException.InsertExceptionMode;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 
 public class UploadDirRequestStatus extends UploadRequestStatus {
 	
-	public UploadDirRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	public UploadDirRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FreenetURI finalURI, FreenetURI targetURI, InsertExceptionMode failureCode,

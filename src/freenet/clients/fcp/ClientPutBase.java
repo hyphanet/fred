@@ -16,6 +16,7 @@ import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
@@ -98,9 +99,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 	
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
-			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
+			FCPConnectionHandler handler, short priorityClass, Persistence persistence, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global);
+		super(uri, identifier, verbosity, charset, handler, priorityClass, persistence, realTimeFlag, clientToken, global);
 		ctx = server.core.clientContext.getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
@@ -136,9 +137,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
-			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass, short persistenceType, String clientToken,
+			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass, Persistence persistence, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, boolean ignoreUSKDatehints, NodeClientCore core) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global);
+		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistence, realTimeFlag, clientToken, global);
 		ctx = core.clientContext.getDefaultPersistentInsertContext();
         ctx.getCHKOnly = getCHKOnly;
 		ctx.dontCompress = dontCompress;
@@ -158,7 +159,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	@Override
 	public void onLostConnection(ClientContext context) {
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistence == Persistence.CONNECTION)
 			cancel(context);
 		// otherwise ignore
 	}
@@ -217,7 +218,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
 				FreenetURI u = uri;
-				if(persistenceType == PERSIST_FOREVER) u = u.clone();
+				if(persistence == Persistence.FOREVER) u = u.clone();
 				cache.gotFinalURI(identifier, uri);
 			}
 		}
@@ -225,7 +226,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	
 	public FreenetURI getGeneratedURI() {
 		if(generatedURI == null) return null;
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			FreenetURI ret = generatedURI.clone();
 			return ret;
 		} else
@@ -265,7 +266,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistence == Persistence.CONNECTION)
 			origHandler.outputHandler.queue(msg);
 		else
 		client.queueClientRequestMessage(msg, 0);
@@ -280,7 +281,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(meta != null) {
 			meta.free();
 		}
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			synchronized(this) {
 				putFailedMessage = null;
 				generatedURI = null;
@@ -354,7 +355,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		FCPMessage msg;
 		synchronized (this) {
 			FreenetURI uri = generatedURI;
-			if(persistenceType == PERSIST_FOREVER && uri != null) {
+			if(persistence == Persistence.FOREVER && uri != null) {
 				uri = uri.clone();
 			}
 			if(succeeded) {
@@ -367,7 +368,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(msg == null) {
 			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
 		} else {
-			if(persistenceType == PERSIST_CONNECTION && handler == null)
+			if(persistence == Persistence.CONNECTION && handler == null)
 				handler = origHandler.outputHandler;
 			if(handler != null)
 				handler.queue(msg);
@@ -381,7 +382,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
 		}
-		if(persistenceType == PERSIST_CONNECTION && handler == null)
+		if(persistence == Persistence.CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
@@ -396,7 +397,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	 */
 	private void trySendGeneratedMetadataMessage(Bucket metadata, FCPConnectionOutputHandler handler) {
 		FCPMessage msg = new GeneratedMetadataMessage(identifier, global, metadata);
-		if(persistenceType == PERSIST_CONNECTION && handler == null)
+		if(persistence == Persistence.CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
@@ -413,10 +414,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	 */
 	private void trySendProgressMessage(final FCPMessage msg, final int verbosity, FCPConnectionOutputHandler handler, ClientContext context) {
 	    synchronized(this) {
-	        if(persistenceType != PERSIST_CONNECTION)
+	        if(persistence != Persistence.CONNECTION)
 	            progressMessage = msg;
 	    }
-		if(persistenceType == PERSIST_CONNECTION && handler == null)
+		if(persistence == Persistence.CONNECTION && handler == null)
 			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);

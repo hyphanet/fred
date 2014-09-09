@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freenet.clients.fcp.ClientGet.ReturnType;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -55,7 +56,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	final String identifier;
 	final int verbosity;
 	final ReturnType returnType;
-	final short persistenceType;
+	final Persistence persistence;
 	final long maxSize;
 	final long maxTempSize;
 	final int maxRetries;
@@ -190,23 +191,11 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 			}
 		}
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
-			// Default: persists until connection loss.
-			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
-			// Reports to client by name; persists over connection loss.
-			// Not saved to disk, so dies on reboot.
-			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
-			// Same as reboot but saved to disk, persists forever.
-			persistenceType = ClientRequest.PERSIST_FOREVER;
-		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
-		}
-		if(global && (persistenceType == ClientRequest.PERSIST_CONNECTION)) {
+		persistence = Persistence.parseOrThrow(persistenceString, identifier, global);
+		if(global && (persistence == Persistence.CONNECTION)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier, global);
 		}
-		writeToClientCache = fs.getBoolean("WriteToClientCache", persistenceType == ClientRequest.PERSIST_CONNECTION);
+		writeToClientCache = fs.getBoolean("WriteToClientCache", persistence == Persistence.CONNECTION);
 		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 		initialMetadataLength = fs.getLong("InitialMetadata.DataLength", 0);

@@ -4,6 +4,7 @@ import java.io.File;
 
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.clients.fcp.ClientPut.COMPRESS_STATE;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 
 /** Cached status of a file upload */
@@ -15,7 +16,7 @@ public class UploadFileRequestStatus extends UploadRequestStatus {
 	private final File origFilename;
 	private COMPRESS_STATE compressing;
 	
-	UploadFileRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	UploadFileRequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FreenetURI finalURI, FreenetURI targetURI, 

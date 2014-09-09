@@ -6,6 +6,7 @@ package freenet.clients.fcp;
 import java.io.File;
 
 import freenet.clients.fcp.ClientGet.ReturnType;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -24,7 +25,7 @@ public class PersistentGet extends FCPMessage {
 	final int verbosity;
 	final short priorityClass;
 	final ReturnType returnType;
-	final short persistenceType;
+	final Persistence persistence;
 	final File targetFile;
 	final String clientToken;
 	final boolean global;
@@ -35,7 +36,7 @@ public class PersistentGet extends FCPMessage {
 	final boolean realTime;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
-			short priorityClass, ReturnType returnType, short persistenceType, 
+			short priorityClass, ReturnType returnType, Persistence persistence, 
 			File targetFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize, boolean realTime) {
 		this.identifier = identifier;
 		this.uri = uri;
@@ -44,7 +45,7 @@ public class PersistentGet extends FCPMessage {
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
 		this.returnType = returnType;
-		this.persistenceType = persistenceType;
+		this.persistence = persistence;
 		this.targetFile = targetFile;
 		this.clientToken = clientToken;
 		this.global = global;
@@ -62,9 +63,9 @@ public class PersistentGet extends FCPMessage {
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("ReturnType", returnType.toString().toLowerCase());
-		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
-		// FIXME PersistenceType is backward compatibility cruft, everything else uses Persistence
-		fs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("Persistence", persistence.toString().toLowerCase());
+		// FIXME Persistence is backward compatibility cruft, everything else uses Persistence
+		fs.putSingle("Persistence", persistence.toString().toLowerCase());
 		if(returnType == ReturnType.DISK) {
 			fs.putSingle("Filename", targetFile.getAbsolutePath());
 		}

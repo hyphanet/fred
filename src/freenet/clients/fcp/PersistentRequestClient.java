@@ -11,6 +11,7 @@ import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.ListPersistentRequestsMessage.PersistentListJob;
 import freenet.clients.fcp.ListPersistentRequestsMessage.TransientListJob;
 import freenet.keys.FreenetURI;
@@ -27,30 +28,30 @@ import freenet.support.api.Bucket;
  */
 public class PersistentRequestClient {
 	
-	public PersistentRequestClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, PersistentRequestRoot root) {
+	public PersistentRequestClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, Persistence persistence, PersistentRequestRoot root) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
-		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
+		final boolean forever = (persistence == Persistence.FOREVER);
 		runningPersistentRequests = new ArrayList<ClientRequest>();
 		completedUnackedRequests = new ArrayList<ClientRequest>();
 		clientRequestsByIdentifier = new HashMap<String, ClientRequest>();
 		this.isGlobalQueue = isGlobalQueue;
-		this.persistenceType = persistenceType;
-		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
+		this.persistence = persistence;
+		assert(persistence == Persistence.FOREVER || persistence == Persistence.REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		lowLevelClient = new FCPClientRequestClient(this, forever, false);
 		lowLevelClientRT = new FCPClientRequestClient(this, forever, true);
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			assert(root != null);
 			this.root = root;
 		} else
 			this.root = null;
 	}
 	
-	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
+	/** The persistent root object, null if persistence is PERSIST_REBOOT */
 	final PersistentRequestRoot root;
 	/** The client's Name sent in the ClientHello message */
 	final String name;
@@ -76,7 +77,7 @@ public class PersistentRequestClient {
 	/** The cache where ClientRequests report their progress */
 	private transient RequestStatusCache statusCache;
 	/** Connection mode */
-	final short persistenceType;
+	final Persistence persistence;
 	        
         private static volatile boolean logMINOR;
 	static {
@@ -109,7 +110,7 @@ public class PersistentRequestClient {
 	public void finishedClientRequest(ClientRequest get) {
 		if(logMINOR)
 			Logger.minor(this, "Finished client request", new Exception("debug"));
-		assert(get.persistenceType == persistenceType);
+		assert(get.persistence == persistence);
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
@@ -147,7 +148,7 @@ public class PersistentRequestClient {
 	}
 
 	public void queuePendingMessagesOnConnectionRestartAsync(FCPConnectionOutputHandler outputHandler, ClientContext context) {
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			PersistentListJob job = new PersistentListJob(this, outputHandler, context) {
 
 				@Override
@@ -208,7 +209,7 @@ public class PersistentRequestClient {
 	}
 	
 	public void register(ClientRequest cg) throws IdentifierCollisionException {
-		assert(cg.persistenceType == persistenceType);
+		assert(cg.persistence == persistence);
 		if(logMINOR)
 			Logger.minor(this, "Registering "+cg.getIdentifier());
 		synchronized(this) {
@@ -348,7 +349,7 @@ public class PersistentRequestClient {
 			server.globalForeverClient.watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
-				if(persistenceType == ClientRequest.PERSIST_REBOOT)
+				if(persistence == Persistence.REBOOT)
 					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
 				else
 					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, server.core.clientContext);
@@ -381,7 +382,7 @@ public class PersistentRequestClient {
 			}
 			if(clients != null)
 			for(PersistentRequestClient client: clients) {
-				if(client.persistenceType != persistenceType) continue;
+				if(client.persistence != persistence) continue;
 				client.queueClientRequestMessage(msg, verbosityLevel, true);
 			}
 		}
@@ -418,7 +419,7 @@ public class PersistentRequestClient {
 	 * Callback called when a request succeeds.
 	 */
 	public void notifySuccess(ClientRequest req) {
-		assert(req.persistenceType == persistenceType);
+		assert(req.persistence == persistence);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
         	if(completionCallbacks != null)
@@ -435,7 +436,7 @@ public class PersistentRequestClient {
 	 * @param get
 	 */
 	public void notifyFailure(ClientRequest req) {
-		assert(req.persistenceType == persistenceType);
+		assert(req.persistence == persistence);
         RequestCompletionCallback[] callbacks = null;
         synchronized(this) {
         	if(completionCallbacks != null)
@@ -497,7 +498,7 @@ public class PersistentRequestClient {
 	
 	public void setRequestStatusCache(RequestStatusCache cache) {
 		statusCache = cache;
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			System.out.println("Loading cache of request statuses...");
 			ArrayList<RequestStatus> statuses = new ArrayList<RequestStatus>();
 			addPersistentRequestStatus(statuses, true);

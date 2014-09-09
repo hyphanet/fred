@@ -1,6 +1,7 @@
 package freenet.clients.fcp;
 
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 
@@ -28,7 +29,7 @@ public abstract class RequestStatus implements Cloneable {
 	private int failedBlocks;
 	private boolean isTotalFinalized;
 	private long lastActivity;
-	private final short persistenceType;
+	private final Persistence persistence;
 	
 	/** The download or upload has finished.
 	 * @param success Did it succeed? */
@@ -50,7 +51,7 @@ public abstract class RequestStatus implements Cloneable {
 	
 	/** Constructor for creating a status from a request that has already started, e.g. on
 	 * startup. We will also create status when a request is created. */
-	RequestStatus(String identifier, short persistence, boolean started, boolean finished, 
+	RequestStatus(String identifier, Persistence persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized,
 			long last, short prio) {
@@ -66,7 +67,7 @@ public abstract class RequestStatus implements Cloneable {
 		this.failedBlocks = failed;
 		this.isTotalFinalized = totalFinalized;
 		this.lastActivity = last;
-		this.persistenceType = persistence;
+		this.persistence = persistence;
 	}
 	
 	public boolean hasSucceeded() {
@@ -111,11 +112,11 @@ public abstract class RequestStatus implements Cloneable {
 	public abstract long getDataSize();
 
 	public boolean isPersistentForever() {
-		return persistenceType == ClientRequest.PERSIST_FOREVER;
+		return persistence == Persistence.FOREVER;
 	}
 
 	public boolean isPersistent() {
-		return persistenceType != ClientRequest.PERSIST_CONNECTION;
+		return persistence != Persistence.CONNECTION;
 	}
 
 	public int getFatalyFailedBlocks() {

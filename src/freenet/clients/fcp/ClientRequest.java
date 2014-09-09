@@ -3,14 +3,12 @@ package freenet.clients.fcp;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
-import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
@@ -50,7 +48,7 @@ public abstract class ClientRequest implements Serializable {
 	/** Is the request scheduled as "real-time" (as opposed to bulk)? */
 	protected final boolean realTime;
 	/** Persistence type */
-	protected final short persistenceType;
+	protected final Persistence persistence;
 	/** Has the request finished? */
 	protected boolean finished;
 	/** Client token (string to feed back to the client on a Persistent* when he does a
@@ -85,7 +83,7 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global) {
+			FCPConnectionHandler handler, PersistentRequestClient client, short priorityClass2, Persistence persistenceType2, boolean realTime, String clientToken2, boolean global) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -100,10 +98,10 @@ public abstract class ClientRequest implements Serializable {
 	    }
 		this.finished = false;
 		this.priorityClass = priorityClass2;
-		this.persistenceType = persistenceType2;
+		this.persistence = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION) {
+		if(persistence == Persistence.CONNECTION) {
 			this.origHandler = handler;
 			lowLevelClient = origHandler.connectionRequestClient(realTime);
 			this.client = null;
@@ -111,7 +109,7 @@ public abstract class ClientRequest implements Serializable {
 			origHandler = null;
 			this.client = client;
 			assert client != null;
-			assert(client.persistenceType == persistenceType);
+			assert(client.persistence == persistence);
 			lowLevelClient = client.lowLevelClient(realTime);
 		}
 		assert lowLevelClient != null;
@@ -120,7 +118,7 @@ public abstract class ClientRequest implements Serializable {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, final boolean realTime, String clientToken2, boolean global) {
+			FCPConnectionHandler handler, short priorityClass2, Persistence persistenceType2, final boolean realTime, String clientToken2, boolean global) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -129,10 +127,10 @@ public abstract class ClientRequest implements Serializable {
 		this.identifier = identifier2;
 		this.finished = false;
 		this.priorityClass = priorityClass2;
-		this.persistenceType = persistenceType2;
+		this.persistence = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION) {
+		if(persistence == Persistence.CONNECTION) {
 			this.origHandler = handler;
 			client = null;
 			lowLevelClient = new RequestClient() {
@@ -153,22 +151,22 @@ public abstract class ClientRequest implements Serializable {
 		} else {
 			origHandler = null;
 			if(global) {
-				client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
+				client = persistence == Persistence.FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 	            this.verbosity = Integer.MAX_VALUE;
 	            clientName = null;
 			} else {
-				client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient() : handler.getRebootClient();
+				client = persistence == Persistence.FOREVER ? handler.getForeverClient() : handler.getRebootClient();
 	            this.verbosity = verbosity2;
 	            this.clientName = client.name;
 			}
 			lowLevelClient = client.lowLevelClient(realTime);
 			if(lowLevelClient == null)
-				throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
+				throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistence);
 		}
-		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
-			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
+		if(lowLevelClient.persistent() != (persistence == Persistence.FOREVER))
+			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistence);
 		if(client != null)
-			assert(client.persistenceType == persistenceType);
+			assert(client.persistence == persistence);
 		this.startupTime = System.currentTimeMillis();
 		this.realTime = realTime;
 	}
@@ -181,7 +179,7 @@ public abstract class ClientRequest implements Serializable {
 	    global = false;
 	    clientName = null;
 	    realTime = false;
-	    persistenceType = 0;
+	    persistence = null;
 	    startupTime = 0;
 	    hashCode = 0;
 	}
@@ -194,31 +192,29 @@ public abstract class ClientRequest implements Serializable {
 
 	// Persistence
 
-	public static final short PERSIST_CONNECTION = 0;
-	public static final short PERSIST_REBOOT = 1;
-	public static final short PERSIST_FOREVER = 2;
+	public enum Persistence {
+        /** Default: persists until connection loss. */
+	    CONNECTION,
+	    /** Reports to client by name; persists over connection loss.
+	     * Not saved to disk, so dies on reboot. */
+	    REBOOT,
+        /** Same as reboot but saved to disk, persists forever. */
+	    FOREVER;
 
-	public static String persistenceTypeString(short type) {
-		switch(type) {
-		case PERSIST_CONNECTION:
-			return "connection";
-		case PERSIST_REBOOT:
-			return "reboot";
-		case PERSIST_FOREVER:
-			return "forever";
-		default:
-			return Short.toString(type);
-		}
-	}
+        public static Persistence parseOrThrow(String persistenceString, String identifier, boolean global) throws MessageInvalidException {
+            try {
+                if(persistenceString == null) return Persistence.CONNECTION;
+                else return Persistence.valueOf(persistenceString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
+            }
+        }
 
-	public static short parsePersistence(String string) {
-		if((string == null) || string.equalsIgnoreCase("connection"))
-			return PERSIST_CONNECTION;
-		if(string.equalsIgnoreCase("reboot"))
-			return PERSIST_REBOOT;
-		if(string.equalsIgnoreCase("forever"))
-			return PERSIST_FOREVER;
-		return Short.parseShort(string);
+        @Deprecated // Only for migration
+        public static Persistence getByCode(short persistenceType) {
+            if(persistenceType < 0 || persistenceType > values().length) throw new IllegalArgumentException();
+            return values()[persistenceType];
+        }
 	}
 
 	abstract void register(boolean noTags) throws IdentifierCollisionException;
@@ -226,18 +222,18 @@ public abstract class ClientRequest implements Serializable {
 	public void cancel(ClientContext context) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
-		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
+		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistence = "+persistence);
 		if(cr != null) cr.cancel(context);
 		freeData();
 	}
 
 	public boolean isPersistentForever() {
-		return persistenceType == ClientRequest.PERSIST_FOREVER;
+		return persistence == Persistence.FOREVER;
 	}
 
 	/** Is the request persistent? False = we can drop the request if we lose the connection */
 	public boolean isPersistent() {
-		return persistenceType != ClientRequest.PERSIST_CONNECTION;
+		return persistence != Persistence.CONNECTION;
 	}
 
 	public boolean hasFinished() {
@@ -267,7 +263,7 @@ public abstract class ClientRequest implements Serializable {
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish() {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
+		if(persistence == Persistence.CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
 			client.finishedClientRequest(this);
@@ -379,7 +375,7 @@ public abstract class ClientRequest implements Serializable {
 				cache.updateStarted(identifier, false);
 			}
 		}
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 		server.core.clientContext.jobRunner.queue(new PersistentJob() {
 
 			@Override
@@ -419,7 +415,7 @@ public abstract class ClientRequest implements Serializable {
 	 * If the request is in the database, delete it.
 	 */
 	public void requestWasRemoved(ClientContext context) {
-		if(persistenceType != PERSIST_FOREVER) return;
+		if(persistence != Persistence.FOREVER) return;
 	}
 
 	protected boolean isGlobalQueue() {
@@ -437,7 +433,7 @@ public abstract class ClientRequest implements Serializable {
 	private static final int CLIENT_DETAIL_VERSION = 1;
 
     public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
-        if(persistenceType != PERSIST_FOREVER) return;
+        if(persistence != Persistence.FOREVER) return;
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);
         // Identify the request first.
@@ -447,7 +443,7 @@ public abstract class ClientRequest implements Serializable {
         dos.writeBoolean(realTime);
         dos.writeInt(verbosity);
         dos.writeLong(startupTime);
-        // persistenceType is assumed to be PERSIST_FOREVER.
+        // persistence is assumed to be PERSIST_FOREVER.
         // uri will be handled by subclasses.
         // This can change.
         dos.writeShort(priorityClass);
@@ -485,7 +481,7 @@ public abstract class ClientRequest implements Serializable {
         else
             clientToken = null;
         finished = dis.readBoolean();
-        persistenceType = PERSIST_FOREVER;
+        persistence = Persistence.FOREVER;
         origHandler = null;
         identifier = reqID.identifier;
         global = reqID.globalQueue;
@@ -523,7 +519,7 @@ public abstract class ClientRequest implements Serializable {
 
     /** Get the RequestIdentifier. This just includes the queue and the identifier. */
     public RequestIdentifier getRequestIdentifier() {
-        if(persistenceType == PERSIST_CONNECTION) throw new IllegalStateException(); // Not associated with any client.
+        if(persistence == Persistence.CONNECTION) throw new IllegalStateException(); // Not associated with any client.
         return new RequestIdentifier(global, clientName, identifier, getType());
     }
     

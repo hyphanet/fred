@@ -7,6 +7,7 @@ import java.io.File;
 
 import freenet.client.InsertContext;
 import freenet.clients.fcp.ClientPutBase.UploadFrom;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
@@ -22,7 +23,7 @@ public class PersistentPut extends FCPMessage {
 	final int verbosity; 
 	final short priorityClass;
 	final UploadFrom uploadFrom;
-	final short persistenceType; 
+	final Persistence persistence; 
 	final File origFilename;
 	final String mimeType;
 	final boolean global;
@@ -41,7 +42,7 @@ public class PersistentPut extends FCPMessage {
 	
 	public PersistentPut(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, 
 			short priorityClass, UploadFrom uploadFrom, FreenetURI targetURI, 
-			short persistenceType, File origFilename, String mimeType, 
+			Persistence persistence, File origFilename, String mimeType, 
 			boolean global, long size, String clientToken, boolean started, 
 			int maxRetries, String targetFilename, boolean binaryBlob, InsertContext.CompatibilityMode compatMode, boolean dontCompress, String compressorDescriptor, boolean realTime, byte[] splitfileCryptoKey) {
 		this.identifier = identifier;
@@ -51,7 +52,7 @@ public class PersistentPut extends FCPMessage {
 		this.priorityClass = priorityClass;
 		this.uploadFrom = uploadFrom;
 		this.targetURI = targetURI;
-		this.persistenceType = persistenceType;
+		this.persistence = persistence;
 		this.origFilename = origFilename;
 		this.mimeType = mimeType;
 		this.global = global;
@@ -78,7 +79,7 @@ public class PersistentPut extends FCPMessage {
 		fs.put("Verbosity", verbosity);
 		fs.put("PriorityClass", priorityClass);
 		fs.putSingle("UploadFrom", uploadFrom.toString().toLowerCase());
-		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.putSingle("Persistence", persistence.toString().toLowerCase());
 		if(origFilename != null)
 			fs.putSingle("Filename", origFilename.getAbsolutePath());
 		if(targetURI != null)

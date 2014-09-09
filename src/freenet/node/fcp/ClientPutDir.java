@@ -13,6 +13,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.TooManyFilesInsertException;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.clients.fcp.ClientRequest;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
@@ -44,7 +45,7 @@ public class ClientPutDir extends ClientPutBase {
         container.activate(ctx, Integer.MAX_VALUE);
         freenet.clients.fcp.ClientPutDir put =
             new freenet.clients.fcp.ClientPutDir(newClient, uri, identifier, verbosity, 
-                priorityClass, persistenceType, clientToken, ctx.getCHKOnly, ctx.dontCompress,
+                priorityClass, Persistence.getByCode(persistenceType), clientToken, ctx.getCHKOnly, ctx.dontCompress,
                 ctx.maxInsertRetries, manifestElements, defaultName, global, ctx.earlyEncode,
                 ctx.canWriteClientCache, ctx.forkOnCacheable, ctx.extraInsertsSingleBlock, 
                 ctx.extraInsertsSplitfileHeaderBlock, isRealTime(container), 

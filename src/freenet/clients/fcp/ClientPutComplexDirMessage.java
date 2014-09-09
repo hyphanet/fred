@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -67,7 +68,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		for(int i=0;;i++) {
 			SimpleFieldSet subset = files.subset(Integer.toString(i));
 			if(subset == null) break;
-			DirPutFile f = DirPutFile.create(subset, identifier, global, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
+			DirPutFile f = DirPutFile.create(subset, identifier, global, (persistence == Persistence.FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
 			if(logMINOR) Logger.minor(this, "Adding "+f);
 			if(f instanceof DirectDirPutFile) {

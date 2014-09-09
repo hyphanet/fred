@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -34,7 +35,7 @@ public class PersistentRequestRoot {
 	}
 	
 	public PersistentRequestRoot() {
-		globalForeverClient = new PersistentRequestClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this);
+		globalForeverClient = new PersistentRequestClient("Global Queue", null, true, null, Persistence.FOREVER, this);
 		clients = new TreeMap<String, PersistentRequestClient>();
 	}
 	
@@ -48,7 +49,7 @@ public class PersistentRequestRoot {
 		synchronized(this) {
 		    client = clients.get(name);
 		    if(client == null)
-		        client = new PersistentRequestClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
+		        client = new PersistentRequestClient(name, handler, false, null, Persistence.FOREVER, this);
 		    clients.put(name, client);
 		}
 		if(handler != null)

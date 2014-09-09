@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -42,7 +43,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final int maxRetries;
 	final boolean getCHKOnly;
 	final short priorityClass;
-	final short persistenceType;
+	final Persistence persistence;
 	final boolean dontCompress;
 	final String clientToken;
 	final boolean global;
@@ -146,19 +147,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		}
 		dontCompress = fs.getBoolean("DontCompress", false);
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
-			// Default: persists until connection loss.
-			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
-			// Reports to client by name; persists over connection loss.
-			// Not saved to disk, so dies on reboot.
-			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
-			// Same as reboot but saved to disk, persists forever.
-			persistenceType = ClientRequest.PERSIST_FOREVER;
-		} else {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
-		}
+		persistence = Persistence.parseOrThrow(persistenceString, identifier, global);
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
 		targetFilename = fs.get("TargetFilename");
@@ -195,7 +184,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		sfs.putSingle("ClientToken", clientToken);
 		sfs.put("GetCHKOnly", getCHKOnly);
 		sfs.put("PriorityClass", priorityClass);
-		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
+		sfs.putSingle("Persistence", persistence.toString().toLowerCase());
 		sfs.put("DontCompress", dontCompress);
 		if (compressorDescriptor != null)
 			sfs.putSingle("Codecs", compressorDescriptor);

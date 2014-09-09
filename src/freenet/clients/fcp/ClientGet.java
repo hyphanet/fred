@@ -37,6 +37,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.clients.fcp.ClientGet.ReturnType;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -152,7 +153,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
-				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true);
+				(persistRebootOnly ? Persistence.REBOOT : Persistence.FOREVER), realTimeFlag, null, true);
 
 		fctx = core.clientContext.getDefaultPersistentFetchContext();
 		fctx.eventProducer.addEventListener(this);
@@ -210,7 +211,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, 
 	        NodeClientCore core) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, message.charset, handler,
-				message.priorityClass, message.persistenceType, message.realTimeFlag, message.clientToken, message.global);
+				message.priorityClass, message.persistence, message.realTimeFlag, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
 		fctx = core.clientContext.getDefaultPersistentFetchContext();
@@ -291,14 +292,14 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	void register(boolean noTags) throws IdentifierCollisionException {
 		if(client != null)
-			assert(this.persistenceType == client.persistenceType);
-		if(persistenceType != PERSIST_CONNECTION)
+			assert(this.persistence == client.persistence);
+		if(persistence != Persistence.CONNECTION)
 			try {
 				client.register(this);
 			} catch (IdentifierCollisionException e) {
 				throw e;
 			}
-			if(persistenceType != PERSIST_CONNECTION && !noTags) {
+			if(persistence != Persistence.CONNECTION && !noTags) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
@@ -311,7 +312,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				if(finished) return;
 			}
 			getter.start(context);
-			if(persistenceType != PERSIST_CONNECTION && !finished) {
+			if(persistence != Persistence.CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
@@ -339,7 +340,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	public void onLostConnection(ClientContext context) {
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistence == Persistence.CONNECTION)
 			cancel(context);
 		// Otherwise ignore
 	}
@@ -411,7 +412,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			msg = getFailedMessage;
 		}
 
-		if(handler == null && persistenceType == PERSIST_CONNECTION)
+		if(handler == null && persistence == Persistence.CONNECTION)
 			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
@@ -424,13 +425,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	        return null;
 	    AllDataMessage msg = new AllDataMessage(returnBucketDirect, identifier, global, startupTime, 
 	            completionTime, foundDataMimeType);
-        if(persistenceType == PERSIST_CONNECTION)
+        if(persistence == Persistence.CONNECTION)
             msg.setFreeOnSent();
         return msg;
 	}
 
 	private void trySendAllDataMessage(FCPConnectionOutputHandler handler) {
-	    if(persistenceType == PERSIST_CONNECTION) {
+	    if(persistence == Persistence.CONNECTION) {
 	        if(handler == null)
 	            handler = origHandler.outputHandler;
 	        FCPMessage allData = getAllDataMessage();
@@ -441,7 +442,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 
 	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
-	    if(persistenceType == PERSIST_CONNECTION && handler == null)
+	    if(persistence == Persistence.CONNECTION && handler == null)
 	        handler = origHandler.outputHandler;
 	    if(handler != null)
 	        handler.queue(msg);
@@ -501,7 +502,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	protected FCPMessage persistentTagMessage() {
-		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
+		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistence, targetFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength, isRealTime());
 	}
 	
 	// FIXME code duplication: ClientGet ClientPut ClientPutDir
@@ -555,7 +556,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-		if(persistenceType != PERSIST_CONNECTION) {
+		if(persistence != Persistence.CONNECTION) {
 		client.queueClientRequestMessage(msg, 0);
 		}
 
@@ -652,7 +653,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	private void handleCompatibilityMode(final SplitfileCompatibilityModeEvent ce, ClientContext context) {
-	    if(persistenceType == PERSIST_FOREVER && context.jobRunner.hasStarted()) {
+	    if(persistence == Persistence.FOREVER && context.jobRunner.hasStarted()) {
 	        try {
 	            context.jobRunner.queue(new PersistentJob() {
 	                
@@ -868,7 +869,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		FreenetURI redirect = null;
 		synchronized(this) {
 			finished = false;
-			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null) {
+			if(persistence == Persistence.FOREVER && getFailedMessage != null) {
 				if(getFailedMessage.redirectURI != null) {
 					redirect =
 						getFailedMessage.redirectURI.clone();
@@ -962,7 +963,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		filterData = fctx.filterData;
 		overriddenDataType = fctx.overrideMIME != null || fctx.charset != null;
 		
-		return new DownloadRequestStatus(identifier, persistenceType, started, finished, 
+		return new DownloadRequestStatus(identifier, persistence, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(), getOverriddenSplitfileCryptoKey(), 
@@ -974,7 +975,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
     @Override
     public void getClientDetail(DataOutputStream dos, ChecksumChecker checker) throws IOException {
-        if(persistenceType != PERSIST_FOREVER) return;
+        if(persistence != Persistence.FOREVER) return;
         super.getClientDetail(dos, checker);
         dos.writeLong(CLIENT_DETAIL_MAGIC);
         dos.writeInt(CLIENT_DETAIL_VERSION);

@@ -22,6 +22,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
+import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -78,7 +79,7 @@ public class ClientPut extends ClientPutBase {
 	 * @param charset TODO
 	 * @param priorityClass
 	 *            The priority for this insert
-	 * @param persistenceType
+	 * @param persistence
 	 *            The persistence type of this insert
 	 * @param clientToken
 	 *            The client token of this insert
@@ -112,10 +113,10 @@ public class ClientPut extends ClientPutBase {
 	 * @throws InsertException 
 	 */
 	public ClientPut(PersistentRequestClient globalClient, FreenetURI uri, String identifier, int verbosity, 
-			String charset, short priorityClass, short persistenceType, String clientToken,
+			String charset, short priorityClass, Persistence persistence, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, UploadFrom uploadFromType, File origFilename,
 			String contentType, RandomAccessBucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, InsertContext.CompatibilityMode compatMode, byte[] overrideSplitfileKey, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, MetadataUnresolvedException, IOException {
-		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
+		super(uri = checkEmptySSK(uri, targetFilename, core.clientContext), identifier, verbosity, charset, null, globalClient, priorityClass, persistence, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, compatMode, false/*XXX ignoreUSKDatehints*/, core);
 		if(uploadFromType == UploadFrom.DISK) {
 			if(!core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -154,7 +155,7 @@ public class ClientPut extends ClientPutBase {
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, IOException {
 		super(checkEmptySSK(message.uri, message.targetFilename, server.core.clientContext), message.identifier, message.verbosity, null, 
-				handler, message.priorityClass, message.persistenceType, message.clientToken,
+				handler, message.priorityClass, message.persistence, message.clientToken,
 				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, message.ignoreUSKDatehints, server);
 		String salt = null;
 		byte[] saltedHash = null;
@@ -273,9 +274,9 @@ public class ClientPut extends ClientPutBase {
 	
 	@Override
 	void register(boolean noTags) throws IdentifierCollisionException {
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistence != Persistence.CONNECTION)
 			client.register(this);
-		if(persistenceType != PERSIST_CONNECTION && !noTags) {
+		if(persistence != Persistence.CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
@@ -290,7 +291,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		try {
 			putter.start(false, context);
-			if(persistenceType != PERSIST_CONNECTION && !finished) {
+			if(persistence != Persistence.CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
@@ -339,7 +340,7 @@ public class ClientPut extends ClientPutBase {
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
 		return new PersistentPut(identifier, publicURI, uri, verbosity, priorityClass, uploadFrom, targetURI, 
-				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
+				persistence, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob, this.ctx.getCompatibilityMode(), this.ctx.dontCompress, this.ctx.compressorDescriptor, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
 	}
 
@@ -445,7 +446,7 @@ public class ClientPut extends ClientPutBase {
 	
 	@Override
 	public void requestWasRemoved(ClientContext context) {
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			putter = null;
 		}
 		super.requestWasRemoved(context);
@@ -514,7 +515,7 @@ public class ClientPut extends ClientPutBase {
 			failureReasonShort = putFailedMessage.getLongFailedMessage();
 		}
 		String mimeType = null;
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			mimeType = clientMetadata.getMIMEType();
 		}
 		File fnam = getOrigFilename();
@@ -536,11 +537,11 @@ public class ClientPut extends ClientPutBase {
 		}
 		
 		FreenetURI origURI = uri;
-		if(persistenceType == PERSIST_FOREVER) {
+		if(persistence == Persistence.FOREVER) {
 			origURI = origURI.clone();
 		}
 		
-		return new UploadFileRequestStatus(identifier, persistenceType, started, finished, 
+		return new UploadFileRequestStatus(identifier, persistence, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, finalURI, origURI, failureCode,
 				failureReasonShort, failureReasonLong, getDataSize(), mimeType,
