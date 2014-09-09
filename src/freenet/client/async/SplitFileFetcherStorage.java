@@ -22,6 +22,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
+import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.FECCodec;
@@ -152,7 +153,7 @@ public class SplitFileFetcherStorage {
     /** Final length of the downloaded data, after decompression. (May change if the data is 
      * filtered). */
     final long decompressedLength;
-    final short splitfileType;
+    final SplitfileAlgorithm splitfileType;
     /** MIME type etc. Set on construction and passed to onSuccess(). */
     final ClientMetadata clientMetadata;
     /** Decompressors. Set on construction and passed to onSuccess(). */
@@ -321,12 +322,12 @@ public class SplitFileFetcherStorage {
         
         int segmentCount = metadata.getSegmentCount();
         
-        if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
+        if(splitfileType == SplitfileAlgorithm.NONREDUNDANT) {
             if(splitfileCheckBlocks > 0) {
                 Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
                 throw new FetchException(FetchExceptionMode.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
             }
-        } else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
+        } else if(splitfileType == SplitfileAlgorithm.ONION_STANDARD) {
             
             boolean dontCompress = decompressors.isEmpty();
             if(topCompatibilityMode != 0) {
@@ -663,9 +664,12 @@ public class SplitFileFetcherStorage {
         }
         dis = new DataInputStream(new ByteArrayInputStream(basicSettingsBuffer));
         try {
-            splitfileType = dis.readShort();
-            if(!Metadata.isValidSplitfileType(splitfileType))
-                throw new StorageFormatException("Invalid splitfile type "+splitfileType);
+            short s = dis.readShort();
+            try {
+                splitfileType = SplitfileAlgorithm.getByCode(s);
+            } catch (IllegalArgumentException e) {
+                throw new StorageFormatException("Invalid splitfile type "+s);
+            }
             this.fecCodec = FECCodec.getInstance(splitfileType);
             splitfileSingleCryptoAlgorithm = dis.readByte();
             if(!Metadata.isValidSplitfileCryptoAlgorithm(splitfileSingleCryptoAlgorithm))
@@ -976,7 +980,7 @@ public class SplitFileFetcherStorage {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         try {
-            dos.writeShort(splitfileType);
+            dos.writeShort(splitfileType.code);
             dos.writeByte(this.splitfileSingleCryptoAlgorithm);
             dos.writeBoolean(this.splitfileSingleCryptoKey != null);
             if(this.splitfileSingleCryptoKey != null) {

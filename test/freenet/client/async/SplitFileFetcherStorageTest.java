@@ -16,6 +16,7 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
+import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.MetadataParseException;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.OnionFECCodec;
@@ -137,7 +138,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             byte cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
             ClientCHK[] dataKeys = makeKeys(originalDataBlocks, cryptoKey, cryptoAlgorithm);
             ClientCHK[] checkKeys = makeKeys(originalCheckBlocks, cryptoKey, cryptoAlgorithm);
-            Metadata m = new Metadata(Metadata.SPLITFILE_ONION_STANDARD, dataKeys, checkKeys, dataBlocks, 
+            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, dataBlocks, 
                     checkBlocks, 0, cm, size, null, null, size, false, null, null, size, size, dataBlocks, 
                     dataBlocks + checkBlocks, false, COMPATIBILITY_MODE, 
                     cryptoAlgorithm, cryptoKey, true, 0);
@@ -203,7 +204,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
             byte cryptoAlgorithm = Key.ALGO_AES_CTR_256_SHA256;
             ClientCHK[] dataKeys = makeKeys(originalDataBlocks, cryptoKey, cryptoAlgorithm);
             ClientCHK[] checkKeys = makeKeys(originalCheckBlocks, cryptoKey, cryptoAlgorithm);
-            Metadata m = new Metadata(Metadata.SPLITFILE_ONION_STANDARD, dataKeys, checkKeys, segmentSize, 
+            Metadata m = new Metadata(SplitfileAlgorithm.ONION_STANDARD, dataKeys, checkKeys, segmentSize, 
                     checkSegmentSize, deductBlocksFromSegments, cm, size, null, null, size, false, null, null, 
                     size, size, dataBlocks, dataBlocks + checkBlocks, false, topCompatibilityMode, 
                     cryptoAlgorithm, cryptoKey, true /* FIXME try older splitfiles pre-single-key?? */, 

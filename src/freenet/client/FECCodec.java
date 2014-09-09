@@ -1,6 +1,7 @@
 package freenet.client;
 
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.Metadata.SplitfileAlgorithm;
 
 /** Simple in-memory-only API for FEC encoding/decoding. Does not queue or throttle; see 
  * MemoryLimitedJobRunner for how to deal with that. Caches and creates individual codec engines
@@ -42,11 +43,11 @@ public abstract class FECCodec {
     public abstract void encode(byte[][] dataBlocks, byte[][] checkBlocks, boolean[] checkBlocksPresent,
             int blockLength);
 
-    public static FECCodec getInstance(short splitfileType) {
+    public static FECCodec getInstance(SplitfileAlgorithm splitfileType) {
         switch(splitfileType) {
-        case Metadata.SPLITFILE_NONREDUNDANT:
+        case NONREDUNDANT:
             return null;
-        case Metadata.SPLITFILE_ONION_STANDARD:
+        case ONION_STANDARD:
             return new OnionFECCodec();
         default:
             throw new IllegalArgumentException();

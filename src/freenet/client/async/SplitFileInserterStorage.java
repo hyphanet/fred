@@ -21,6 +21,7 @@ import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
+import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.MetadataParseException;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
@@ -140,7 +141,7 @@ public class SplitFileInserterStorage {
     private final long origCompressedDataSize;
 
     /** Type of splitfile */
-    private final short splitfileType;
+    private final SplitfileAlgorithm splitfileType;
     /** Nominal number of data blocks per segment. */
     private final int segmentSize;
     /** Nominal number of check blocks per segment. */
@@ -623,7 +624,11 @@ public class SplitFileInserterStorage {
         if(totalDataBlocks <= 0) throw new StorageFormatException("Bad total data blocks "+totalDataBlocks);
         this.totalCheckBlocks = dis.readInt();
         if(totalCheckBlocks <= 0) throw new StorageFormatException("Bad total data blocks "+totalCheckBlocks);
-        this.splitfileType = dis.readShort();
+        try {
+            this.splitfileType = SplitfileAlgorithm.getByCode(dis.readShort());
+        } catch (IllegalArgumentException e) {
+            throw new StorageFormatException("Bad splitfile type");
+        }
         try {
             this.codec = FECCodec.getInstance(splitfileType);
         } catch (IllegalArgumentException e) {
@@ -891,7 +896,7 @@ public class SplitFileInserterStorage {
             originalData.storeTo(dos);
             dos.writeInt(totalDataBlocks);
             dos.writeInt(totalCheckBlocks);
-            dos.writeShort(splitfileType); // And hence the FECCodec
+            dos.writeShort(splitfileType.code); // And hence the FECCodec
             dos.writeLong(dataLength);
             dos.writeLong(decompressedLength);
             dos.writeBoolean(isMetadata);

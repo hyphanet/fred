@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.compress.Compressor;
@@ -23,7 +24,7 @@ public class InsertContext implements Cloneable, Serializable {
     /** If true, don't try to compress the data */
 	public boolean dontCompress;
 	/** Splitfile algorithm. */
-	public final short splitfileAlgorithm;
+	public final SplitfileAlgorithm splitfileAlgorithm;
 	/** Maximum number of retries (after the initial attempt) for each block
 	 * inserted. -1 = retry forever or until it succeeds (subject to 
 	 * consecutiveRNFsCountAsSuccess) or until a fatal error. */
@@ -154,7 +155,7 @@ public class InsertContext implements Cloneable, Serializable {
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, CompatibilityMode compatibilityMode) {
 		dontCompress = false;
-		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
+		splitfileAlgorithm = SplitfileAlgorithm.ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
 		this.maxInsertRetries = maxRetries;
 		this.eventProducer = eventProducer;
@@ -215,7 +216,7 @@ public class InsertContext implements Cloneable, Serializable {
         result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
         result = prime * result + (localRequestOnly ? 1231 : 1237);
         result = prime * result + maxInsertRetries;
-        result = prime * result + splitfileAlgorithm;
+        result = prime * result + splitfileAlgorithm.code;
         result = prime * result + splitfileSegmentCheckBlocks;
         result = prime * result + splitfileSegmentDataBlocks;
         return result;

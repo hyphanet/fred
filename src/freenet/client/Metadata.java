@@ -81,7 +81,7 @@ public class Metadata implements Cloneable, Serializable {
 	    }
 	    
 	    static DocumentType byCode(byte b) {
-	        if(b < 0 || b > values().length) throw new IllegalArgumentException();
+	        if(b < 0 || b >= values().length) throw new IllegalArgumentException();
 	        return values()[b];
 	    }
 	}
@@ -147,9 +147,23 @@ public class Metadata implements Cloneable, Serializable {
 	/** Metadata is sometimes used as a key in hashtables. Therefore it needs a persistent hashCode. */
 	private final int hashCode;
 
-	short splitfileAlgorithm;
-	static public final short SPLITFILE_NONREDUNDANT = 0;
-	static public final short SPLITFILE_ONION_STANDARD = 1;
+	SplitfileAlgorithm splitfileAlgorithm;
+	public enum SplitfileAlgorithm {
+	    NONREDUNDANT((short)0),
+	    ONION_STANDARD((short)1);
+	    
+	    public final short code;
+	    
+	    SplitfileAlgorithm(short code) {
+	        this.code = code;
+	    }
+
+        public static SplitfileAlgorithm getByCode(short s) {
+            if(s < 0 || s >= values().length) throw new IllegalArgumentException("Bad splitfile code");
+            return values()[s];
+        }
+	}
+	
 	public static final int MAX_SIZE_IN_MANIFEST = Short.MAX_VALUE;
 
 	/** Splitfile parameters */
@@ -459,12 +473,16 @@ public class Metadata implements Cloneable, Serializable {
 				}
 			}
 		} else if(splitfile) {
-			splitfileAlgorithm = dis.readShort();
-			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
-					(splitfileAlgorithm == SPLITFILE_ONION_STANDARD)))
+		    try {
+		        splitfileAlgorithm = SplitfileAlgorithm.getByCode(dis.readShort());
+		    } catch (IllegalArgumentException e) {
+		        throw new MetadataParseException("Invalid splitfile code"); 
+		    }
+			if(!((splitfileAlgorithm == SplitfileAlgorithm.NONREDUNDANT) ||
+					(splitfileAlgorithm == SplitfileAlgorithm.ONION_STANDARD)))
 				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
 
-			if(splitfileAlgorithm == SPLITFILE_NONREDUNDANT)
+			if(splitfileAlgorithm == SplitfileAlgorithm.NONREDUNDANT)
 				throw new MetadataParseException("Non-redundant splitfile invalid");
 
 			int paramsLength = dis.readInt();
@@ -494,7 +512,7 @@ public class Metadata implements Cloneable, Serializable {
 			
 			crossCheckBlocks = 0;
 			
-			if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT) {
+			if(splitfileAlgorithm == SplitfileAlgorithm.NONREDUNDANT) {
 				// Don't need to do much - just fetch everything and piece it together.
 				blocksPerSegment = -1;
 				checkBlocksPerSegment = -1;
@@ -504,7 +522,7 @@ public class Metadata implements Cloneable, Serializable {
 					Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
 					throw new MetadataParseException("Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
 				}
-			} else if(splitfileAlgorithm == Metadata.SPLITFILE_ONION_STANDARD) {
+			} else if(splitfileAlgorithm == SplitfileAlgorithm.ONION_STANDARD) {
 				byte[] params = splitfileParams();
 				int checkBlocks;
 				if(getParsedVersion() == 0) {
@@ -1052,7 +1070,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * @param crossSegmentBlocks The number of cross-check blocks. If this is specified, we are using 
 	 * cross-segment redundancy. This greatly improves reliability on files over 80MB, see bug #3370.
 	 */
-	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
+	public Metadata(SplitfileAlgorithm algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, CompatibilityMode topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 	    assert(topCompatibilityMode != CompatibilityMode.COMPAT_CURRENT);
 		hashCode = super.hashCode();
@@ -1492,7 +1510,7 @@ public class Metadata implements Cloneable, Serializable {
 		if((!splitfile) && ((documentType == DocumentType.SIMPLE_REDIRECT) || (documentType == DocumentType.ARCHIVE_MANIFEST))) {
 			writeKey(dos, simpleRedirectKey);
 		} else if(splitfile) {
-			dos.writeShort(splitfileAlgorithm);
+			dos.writeShort(splitfileAlgorithm.code);
 			if(splitfileParams != null) {
 				dos.writeInt(splitfileParams.length);
 				dos.write(splitfileParams);
@@ -1590,7 +1608,7 @@ public class Metadata implements Cloneable, Serializable {
 	/**
 	 * Get the splitfile type.
 	 */
-	public short getSplitfileType() {
+	public SplitfileAlgorithm getSplitfileType() {
 		return splitfileAlgorithm;
 	}
 
@@ -1889,11 +1907,6 @@ public class Metadata implements Cloneable, Serializable {
 			return min;
 		return max;
 	}
-
-    public static boolean isValidSplitfileType(short splitfileType) {
-        return splitfileType == SPLITFILE_NONREDUNDANT
-            || splitfileType == SPLITFILE_ONION_STANDARD;
-    }
 
     public static boolean isValidSplitfileCryptoAlgorithm(byte cryptoAlgorithm) {
         return cryptoAlgorithm == 0 || Key.isValidCryptoAlgorithm(cryptoAlgorithm);

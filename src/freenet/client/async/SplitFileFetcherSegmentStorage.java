@@ -13,6 +13,7 @@ import java.util.Random;
 
 import freenet.client.FetchException;
 import freenet.client.FetchException.FetchExceptionMode;
+import freenet.client.Metadata.SplitfileAlgorithm;
 import freenet.client.async.PersistentJobRunner.CheckpointLock;
 import freenet.crypt.ChecksumFailedException;
 import freenet.keys.CHKBlock;
@@ -126,7 +127,7 @@ public class SplitFileFetcherSegmentStorage {
      * @param keys
      */
     public SplitFileFetcherSegmentStorage(SplitFileFetcherStorage parent, int segNumber, 
-            short splitfileType, int dataBlocks, int checkBlocks, int crossCheckBlocks,
+            SplitfileAlgorithm splitfileType, int dataBlocks, int checkBlocks, int crossCheckBlocks,
             long segmentDataOffset, long segmentCrossCheckDataOffset,
             long segmentKeysOffset, long segmentStatusOffset, 
             boolean writeRetries, SplitFileSegmentKeys keys, KeysFetchingLocally keysFetching) {
