@@ -324,7 +324,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
             this.uri = u;
 		}
-		client.onGeneratedURI(uri, this);
+		client.onGeneratedURI(u, this);
 	}
 	
 	/** Called when metadataThreshold was specified and metadata is being returned

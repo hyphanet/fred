@@ -217,7 +217,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				FreenetURI u = uri;
 				cache.gotFinalURI(identifier, uri);
 			}
 		}
