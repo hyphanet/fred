@@ -181,7 +181,7 @@ public class ContainerInserter implements ClientPutState, Serializable {
 			// Can we just insert it, and not bother with a redirect to it?
 			// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 			// We ought to be able to !!
-			block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent ? targetURI.clone() : targetURI);
+			block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), targetURI);
 		} catch (IOException e) {
 			fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null), context);
 			return;

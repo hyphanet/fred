@@ -218,19 +218,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
 				FreenetURI u = uri;
-				if(persistence == Persistence.FOREVER) u = u.clone();
 				cache.gotFinalURI(identifier, uri);
 			}
 		}
 	}
 	
 	public FreenetURI getGeneratedURI() {
-		if(generatedURI == null) return null;
-		if(persistence == Persistence.FOREVER) {
-			FreenetURI ret = generatedURI.clone();
-			return ret;
-		} else
-			return generatedURI;
+		return generatedURI;
 	}
 	
 	@Override
@@ -354,12 +348,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 		FCPMessage msg;
 		synchronized (this) {
-			FreenetURI uri = generatedURI;
-			if(persistence == Persistence.FOREVER && uri != null) {
-				uri = uri.clone();
-			}
 			if(succeeded) {
-				msg = new PutSuccessfulMessage(identifier, global, uri, startupTime, completionTime);
+				msg = new PutSuccessfulMessage(identifier, global, generatedURI, startupTime, completionTime);
 			} else {
 				msg = putFailedMessage;
 			}

@@ -129,7 +129,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(logMINOR) Logger.minor(this, "Metadata: "+metadata);
 		this.clientMetadata = (metadata != null ? metadata.clone() : new ClientMetadata());
 		if(hasInitialMetadata)
-			thisKey = FreenetURI.EMPTY_CHK_URI.clone();
+			thisKey = FreenetURI.EMPTY_CHK_URI;
 		else
 			thisKey = key.getURI();
 		if(origURI == null) throw new NullPointerException();
@@ -172,7 +172,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchExceptionMode.TOO_MUCH_RECURSION);
-		this.thisKey = persistent ? fetcher.thisKey.clone() : fetcher.thisKey;
+		this.thisKey = fetcher.thisKey;
 		// Do not copy the decompressors. Whether the metadata/container is compressed
 		// is independant of whether the final data is; when we find the data we will
 		// call back into the original fetcher.

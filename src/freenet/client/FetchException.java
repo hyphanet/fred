@@ -322,7 +322,7 @@ public class FetchException extends Exception implements Cloneable {
 		super(e.getMessage());
 		initCause(e);
 		this.mode = e.mode;
-		this.newURI = e.newURI == null ? null : e.newURI.clone();
+		this.newURI = e.newURI;
 		this.errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
 		this.expectedMimeType = e.expectedMimeType;
 		this.expectedSize = e.expectedSize;

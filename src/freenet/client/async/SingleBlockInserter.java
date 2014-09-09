@@ -641,8 +641,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			Bucket data = sourceData.createShadow();
 			FreenetURI u = uri;
-			if(u.getKeyType().equals("CHK") && !persistent) u = FreenetURI.EMPTY_CHK_URI;
-			else u = u.clone();
+			if(u.getKeyType().equals("CHK")) u = FreenetURI.EMPTY_CHK_URI;
 			if(data == null) {
 				data = context.tempBucketFactory.makeBucket(sourceData.size());
 				BucketTools.copy(sourceData, data);

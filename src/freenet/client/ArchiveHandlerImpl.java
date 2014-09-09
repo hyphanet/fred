@@ -83,7 +83,7 @@ class ArchiveHandlerImpl implements ArchiveHandler, Serializable {
 
 	@Override
 	public ArchiveHandler cloneHandler() {
-		return new ArchiveHandlerImpl(key.clone(), archiveType, compressorType, forceRefetchArchive);
+		return new ArchiveHandlerImpl(key, archiveType, compressorType, forceRefetchArchive);
 	}
 
 }

@@ -872,7 +872,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistence == Persistence.FOREVER && getFailedMessage != null) {
 				if(getFailedMessage.redirectURI != null) {
 					redirect =
-						getFailedMessage.redirectURI.clone();
+						getFailedMessage.redirectURI;
 				}
 			} else if(getFailedMessage != null)
 				redirect = getFailedMessage.redirectURI;
@@ -967,7 +967,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(), getOverriddenSplitfileCryptoKey(), 
-				getURI().clone(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress());
+				getURI(), failureReasonShort, failureReasonLong, overriddenDataType, shadow, filterData, getDontCompress());
 	}
 
 	private static final long CLIENT_DETAIL_MAGIC = 0x67145b675d2e22f4L;

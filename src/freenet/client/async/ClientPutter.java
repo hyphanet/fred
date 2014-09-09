@@ -113,7 +113,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.isMetadata = isMetadata;
 		this.client = client;
 		this.data = data;
-		this.targetURI = targetURI.clone();
+		this.targetURI = targetURI;
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
@@ -196,7 +196,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						ClientMetadata meta = cm;
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, targetURI), isMetadata, ctx, realTimeFlag, 
 									false, false, null, null, false, targetFilename, false, persistent(), 0, 0, null, cryptoAlgorithm, cryptoKey, metadataThreshold);
 					} else
 						currentState =
@@ -323,9 +323,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			    return;
 			}
             this.uri = u;
-		}
-		if(persistent()) {
-			u = u.clone();
 		}
 		client.onGeneratedURI(uri, this);
 	}

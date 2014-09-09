@@ -505,7 +505,6 @@ public class ClientPut extends ClientPutBase {
 	@Override
 	RequestStatus getStatus() {
 		FreenetURI finalURI = getFinalURI();
-		if(finalURI != null) finalURI = getFinalURI().clone();
 		InsertExceptionMode failureCode = null;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
@@ -536,14 +535,9 @@ public class ClientPut extends ClientPutBase {
 			}
 		}
 		
-		FreenetURI origURI = uri;
-		if(persistence == Persistence.FOREVER) {
-			origURI = origURI.clone();
-		}
-		
 		return new UploadFileRequestStatus(identifier, persistence, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
-				lastActivity, priorityClass, finalURI, origURI, failureCode,
+				lastActivity, priorityClass, finalURI, uri, failureCode,
 				failureReasonShort, failureReasonLong, getDataSize(), mimeType,
 				fnam, isCompressing());
 	}

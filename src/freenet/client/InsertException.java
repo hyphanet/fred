@@ -148,10 +148,7 @@ public class InsertException extends Exception implements Cloneable {
 		extra = e.extra;
 		mode = e.mode;
 		errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
-		if(e.uri == null)
-			uri = null;
-		else
-			uri = e.uri.clone();
+		uri = e.uri;
 	}
 
 	public InsertException(TooManyFilesInsertException e) {

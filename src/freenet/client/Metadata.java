@@ -226,10 +226,6 @@ public class Metadata implements Cloneable, Serializable {
 				entry.setValue((Metadata)entry.getValue().clone());
 			}
 		}
-		if(resolvedURI != null)
-			resolvedURI = resolvedURI.clone();
-		if(simpleRedirectKey != null)
-			simpleRedirectKey = simpleRedirectKey.clone();
 		if(clientMetadata != null)
 			clientMetadata = clientMetadata.clone();
 	}

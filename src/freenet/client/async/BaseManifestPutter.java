@@ -80,7 +80,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI) {
 			super(bmp, parent, name, null, containerPutHandlers);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -134,7 +134,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
+			this.origSFI = new ContainerInserter(this, this, data, insertURI, ctx, false, false, null, ARCHIVE_TYPE.TAR, false, forceCryptoKey, cryptoAlgorithm, realTimeFlag);
 		}
 
 		@Override
@@ -143,7 +143,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 			if (rootContainerPutHandler == this) {
 				finalURI = key.getURI();
-				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
+				cb.onGeneratedURI(finalURI, this);
 			} else {
 				synchronized (BaseManifestPutter.this) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(this);
@@ -182,7 +182,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
         private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, RandomAccessBucket data, ClientMetadata cm2) {
 			super(bmp, parent, name, cm2, runningPutHandlers);
-			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
+			InsertBlock block = new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, true, null, null, false, null, false, persistent(), 0, 0, null, cryptoAlgorithm, forceCryptoKey, -1);
 		}
 
@@ -288,7 +288,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			RandomAccessBucket b = toResolve.toBucket(bf);
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
-			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
+			InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, false, toResolve, null, true, null, true, persistent(), 0, 0, null, cryptoAlgorithm, null, -1);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
@@ -299,7 +299,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 			if (rootMetaPutHandler == this) {
 				finalURI = key.getURI();
-				cb.onGeneratedURI(persistent() ? finalURI.clone() : finalURI, this);
+				cb.onGeneratedURI(finalURI, this);
 				return;
 			}
 
@@ -755,10 +755,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
 			InsertContext ctx, boolean randomiseCryptoKeys, byte [] forceCryptoKey, ClientContext context) throws TooManyFilesInsertException {
 		super(prioClass, cb);
-		if(client.persistent())
-			this.targetURI = target.clone();
-		else
-			this.targetURI = target;
+		this.targetURI = target;
 		this.cb = cb;
 		this.ctx = ctx;
 		if(randomiseCryptoKeys && forceCryptoKey == null) {
@@ -992,7 +989,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			hasResolvedBase = true;
 		}
 		InsertBlock block;
-		block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
+		block = new InsertBlock(bucket, null, targetURI);
 		try {
 			rootMetaPutHandler = new MetaPutHandler(this, null, block);
 

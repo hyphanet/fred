@@ -156,7 +156,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		super(priorityClass, client);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
-		this.uri = uri.clone();
+		this.uri = uri;
 		this.ctx = ctx;
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);

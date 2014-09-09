@@ -366,7 +366,6 @@ public class ClientPutDir extends ClientPutBase {
 	@Override
 	RequestStatus getStatus() {
 		FreenetURI finalURI = getFinalURI();
-		if(finalURI != null) finalURI = getFinalURI().clone();
 		InsertExceptionMode failureCode = null;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
@@ -391,14 +390,9 @@ public class ClientPutDir extends ClientPutBase {
 			}
 		}
 		
-		FreenetURI targetURI = uri;
-		if(persistence == Persistence.FOREVER) {
-			targetURI = targetURI.clone();
-		}
-		
 		return new UploadDirRequestStatus(identifier, persistence, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
-				lastActivity, priorityClass, finalURI, targetURI, failureCode,
+				lastActivity, priorityClass, finalURI, uri, failureCode,
 				failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
 	}
 	
