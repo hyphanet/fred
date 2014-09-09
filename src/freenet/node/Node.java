@@ -4835,6 +4835,13 @@ public class Node implements TimeSkewDetectorCallback {
 		dbFileCrypt.delete();
 		clientCore.clientLayerPersister.panic();
 		clientCore.clientLayerPersister.killAndWaitForNotRunning();
+		try {
+            MasterKeys.killMasterKeys(getMasterPasswordFile());
+        } catch (IOException e) {
+            System.err.println("Unable to wipe master passwords key file!");
+            System.err.println("Please delete "+getMasterPasswordFile()+" to ensure that nobody can recover your old downloads.");
+        }
+		// persistent-temp will be cleaned on restart.
 	}
 
 	public void finishPanic() {
