@@ -7,6 +7,9 @@ import java.io.File;
 
 public interface PersistentFileTracker extends DiskSpaceChecker {
 
+    /** While resuming, register a file with the garbage collector so that it doesn't get deleted
+     * when startup has finished and we cleanup the persistent-temp dir. We will only delete files
+     * which were present at startup and have not been claimed; new files are fine. */
 	public void register(File file);
 	
 	/** A positive number incremented on every transaction. */
