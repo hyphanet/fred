@@ -168,6 +168,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(logMINOR) Logger.minor(this, "Can't restart, not finished and currentState != null : "+currentState);
 						return false;
 					}
+					if(finished)
+					    startedStarting = false;
 					finished = false;
 				}
 				if(startedStarting) {
