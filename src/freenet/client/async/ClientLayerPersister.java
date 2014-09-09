@@ -430,8 +430,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     
     private void innerLoad(PartialLoad loaded, InputStream fis, long length, boolean latest, 
             ClientContext context, RequestStarterGroup requestStarters, Random random, boolean noSerialize) throws NodeInitException, IOException {
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        ObjectInputStream ois = new ObjectInputStream(bis);
+        ObjectInputStream ois = new ObjectInputStream(fis);
         long magic = ois.readLong();
         if(magic != MAGIC) throw new IOException("Bad magic");
         int version = ois.readInt();

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -140,7 +141,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				pipeOut = new PipedOutputStream(pipeIn);
 				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 				pipeIn = decompressorManager.execute();
-				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
+				ClientGetWorkerThread worker = new ClientGetWorkerThread(new BufferedInputStream(pipeIn), output, null, null, null, false, null, null, null, context.linkFilterExceptionProvider);
 				worker.start();
 				streamGenerator.writeTo(pipeOut, context);
 				worker.waitFinished();

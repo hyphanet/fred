@@ -253,10 +253,9 @@ public class Metadata implements Cloneable, Serializable {
 	 */
 	public static Metadata construct(Bucket data) throws MetadataParseException, IOException {
 		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is, 4096);
 		Metadata m;
 		try {
-			DataInputStream dis = new DataInputStream(bis);
+			DataInputStream dis = new DataInputStream(is);
 			m = new Metadata(dis, data.size());
 		} finally {
 			is.close();

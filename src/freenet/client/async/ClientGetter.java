@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -338,7 +339,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 
 			output = finalResult.getOutputStream();
 			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
+			worker = new ClientGetWorkerThread(new BufferedInputStream(dataInput), output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer, context.linkFilterExceptionProvider);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, context);
@@ -436,7 +437,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
             if(raf.length() < length)
                 throw new IOException("File is shorter than target length "+length);
             raf.setLength(length);
-            InputStream is = new FileInputStream(raf.getFD());
+            InputStream is = new BufferedInputStream(new FileInputStream(raf.getFD()));
             // Check hashes...
             
             DecompressorThreadManager decompressorManager = null;
