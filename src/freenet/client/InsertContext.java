@@ -24,7 +24,9 @@ public class InsertContext implements Cloneable, Serializable {
     /** If true, don't try to compress the data */
 	public boolean dontCompress;
 	/** Splitfile algorithm. */
-	public final SplitfileAlgorithm splitfileAlgorithm;
+	private SplitfileAlgorithm splitfileAlgo;
+	/** For migration only. */
+	private final short splitfileAlgorithm;
 	/** Maximum number of retries (after the initial attempt) for each block
 	 * inserted. -1 = retry forever or until it succeeds (subject to 
 	 * consecutiveRNFsCountAsSuccess) or until a fatal error. */
@@ -155,7 +157,8 @@ public class InsertContext implements Cloneable, Serializable {
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, CompatibilityMode compatibilityMode) {
 		dontCompress = false;
-		splitfileAlgorithm = SplitfileAlgorithm.ONION_STANDARD;
+		splitfileAlgo = SplitfileAlgorithm.ONION_STANDARD;
+		splitfileAlgorithm = splitfileAlgo.code;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
 		this.maxInsertRetries = maxRetries;
 		this.eventProducer = eventProducer;
@@ -173,7 +176,8 @@ public class InsertContext implements Cloneable, Serializable {
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
 		this.dontCompress = ctx.dontCompress;
-		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
+		this.splitfileAlgo = ctx.splitfileAlgo;
+        splitfileAlgorithm = splitfileAlgo.code;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
 		this.maxInsertRetries = ctx.maxInsertRetries;
 		this.eventProducer = producer;
@@ -216,7 +220,7 @@ public class InsertContext implements Cloneable, Serializable {
         result = prime * result + (ignoreUSKDatehints ? 1231 : 1237);
         result = prime * result + (localRequestOnly ? 1231 : 1237);
         result = prime * result + maxInsertRetries;
-        result = prime * result + splitfileAlgorithm.code;
+        result = prime * result + splitfileAlgo.code;
         result = prime * result + splitfileSegmentCheckBlocks;
         result = prime * result + splitfileSegmentDataBlocks;
         return result;
@@ -259,13 +263,17 @@ public class InsertContext implements Cloneable, Serializable {
             return false;
         if (maxInsertRetries != other.maxInsertRetries)
             return false;
-        if (splitfileAlgorithm != other.splitfileAlgorithm)
+        if (splitfileAlgo != other.splitfileAlgo)
             return false;
         if (splitfileSegmentCheckBlocks != other.splitfileSegmentCheckBlocks)
             return false;
         if (splitfileSegmentDataBlocks != other.splitfileSegmentDataBlocks)
             return false;
         return true;
+    }
+    
+    public SplitfileAlgorithm getSplitfileAlgorithm() {
+        return splitfileAlgo;
     }
     
     /** Call when migrating from db4o era. FIXME remove.
@@ -277,6 +285,7 @@ public class InsertContext implements Cloneable, Serializable {
         // Max blocks was wrong too.
         splitfileSegmentDataBlocks = FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT;
         splitfileSegmentCheckBlocks = FECCodec.MAX_TOTAL_BLOCKS_PER_SEGMENT;
+        splitfileAlgo = SplitfileAlgorithm.getByCode(splitfileAlgorithm);
     }
 
 }

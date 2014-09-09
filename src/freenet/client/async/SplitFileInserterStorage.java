@@ -346,7 +346,7 @@ public class SplitFileInserterStorage {
 
         this.crossCheckBlocks = crossCheckBlocks;
 
-        this.splitfileType = ctx.splitfileAlgorithm;
+        this.splitfileType = ctx.getSplitfileAlgorithm();
         this.codec = FECCodec.getInstance(splitfileType);
 
         checkSegmentSize = codec.getCheckBlocks(segmentSize + crossCheckBlocks, cmode);
