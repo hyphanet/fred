@@ -448,7 +448,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             ClientRequest request = null;
             RequestIdentifier reqID = readRequestIdentifier(ois);
             if(reqID != null && context.persistentRoot.hasRequest(reqID)) {
-                Logger.error(this, "Not reading request because already have it");
+                Logger.warning(this, "Not reading request because already have it");
                 skipChecksummedObject(ois, length); // Request itself
                 skipChecksummedObject(ois, length); // Recovery data
                 continue;
@@ -488,8 +488,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
                     }
                 } catch (ChecksumFailedException e) {
                     if(request == null) {
-                        Logger.error(this, "Failed to recovery a request (checksum failed)");
-                        System.err.println("Failed to recovery a request (checksum failed)");
+                        Logger.error(this, "Failed to recover a request (checksum failed)");
+                        System.err.println("Failed to recover a request (checksum failed)");
                     } else {
                         Logger.error(this, "Test recovery failed: Checksum failed for "+reqID);
                     }
@@ -531,7 +531,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             try {
                 buckets[i] = (DelayedFreeBucket) readChecksummedObject(ois, length);
             } catch (ChecksumFailedException e) {
-                Logger.error(this, "Failed to load a bucket to free");
+                Logger.warning(this, "Failed to load a bucket to free");
             }
         }
         persistentTempFactory.finishDelayedFree(buckets);
@@ -602,8 +602,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             }
             oos.close();
             fos = null;
-            // FIXME downgrade logging further
-            Logger.error(this, "Saved "+requests.length+" requests to "+writeToFilename);
+            Logger.normal(this, "Saved "+requests.length+" requests to "+writeToFilename);
             persistentTempFactory.finishDelayedFree(buckets);
             return true;
         } catch (IOException e) {
