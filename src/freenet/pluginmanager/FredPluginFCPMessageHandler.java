@@ -99,6 +99,7 @@ public interface FredPluginFCPMessageHandler {
         
         /**
          * Part 1 of the actual message: Human-readable parameters. Shall be small amount of data.
+         * Can be null for data-only or success-indicator messages.
          */
         public final SimpleFieldSet parameters;
         
@@ -132,10 +133,18 @@ public interface FredPluginFCPMessageHandler {
         private FCPPluginMessage(ClientPermissions permissions, String identifier,
                 SimpleFieldSet parameters, Bucket data, Boolean success) {
             
-            this.permissions = permissions;
+            // See JavaDoc of member variables with the same name for reasons of the requirements
+            assert(permissions != null || permissions == null);
             assert(identifier != null);
+            assert(parameters != null || parameters == null);
+            assert(data != null || data == null);
+            assert(success != null || success == null);
+            
+            assert(parameters != null || data != null || success != null)
+                : "Messages should not be empty";
+            
+            this.permissions = permissions;
             this.identifier = identifier;
-            assert(parameters != null);
             this.parameters = parameters;
             this.data = data;
             this.success = success;
