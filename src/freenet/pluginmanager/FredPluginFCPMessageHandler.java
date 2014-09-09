@@ -314,6 +314,11 @@ public interface FredPluginFCPMessageHandler {
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.
+         * @throws RuntimeException
+         *             You <b>must not</b> throw. Please instead return a reply with
+         *             {@link FCPPluginMessage#success} set to false, and the fields for error
+         *             messages set to describe the problem. FIXME: Name the fields once they are
+         *             there.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
@@ -374,6 +379,11 @@ public interface FredPluginFCPMessageHandler {
          *         message is the procedure call, a reply message is the procedure result. When
          *         receiving the result, the procedure call is finished, and shouldn't contain
          *         further replies.
+         * @throws RuntimeException
+         *             You <b>must not</b> throw. Please instead return a reply with
+         *             {@link FCPPluginMessage#success} set to false, and the fields for error
+         *             messages set to describe the problem. FIXME: Name the fields once they are
+         *             there.
          */
         @Override
         FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message);
