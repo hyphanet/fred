@@ -5,7 +5,7 @@ package freenet.support.io;
 
 import java.io.File;
 
-public interface PersistentFileTracker {
+public interface PersistentFileTracker extends DiskSpaceChecker {
 
 	public void register(File file);
 
@@ -21,5 +21,5 @@ public interface PersistentFileTracker {
 	public File getDir();
 
 	public FilenameGenerator getGenerator();
-
+	
 }

@@ -32,4 +32,9 @@ public class TrivialPersistentFileTracker implements PersistentFileTracker {
         return fg;
     }
 
+    @Override
+    public boolean checkDiskSpace(File file, int toWrite, int bufferSize) {
+        return true;
+    }
+
 }

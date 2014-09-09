@@ -1,7 +1,9 @@
 package freenet.support.io;
 
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
@@ -37,6 +39,13 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	protected boolean deleteOnExit() {
 		// DO NOT DELETE ON EXIT !!!!
 		return false;
+	}
+	
+	@Override
+	public OutputStream getOutputStream() throws IOException {
+	    OutputStream os = super.getOutputStream();
+	    os = new DiskSpaceCheckingOutputStream(os, tracker, getFile());
+	    return os;
 	}
 	
 	/** Must override createShadow() so it creates a persistent bucket, which will have

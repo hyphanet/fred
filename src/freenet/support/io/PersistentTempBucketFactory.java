@@ -55,6 +55,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
+	
+	private DiskSpaceChecker checker;
 
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 	
@@ -113,6 +115,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 		
 		bucketsToFree = new ArrayList<DelayedFree>();
+	}
+	
+	public void setDiskSpaceChecker(DiskSpaceChecker checker) {
+	    this.checker = checker;
 	}
 	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
@@ -220,5 +226,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	        }
 	    }
 	}
+
+    @Override
+    public boolean checkDiskSpace(File file, int toWrite, int bufferSize) {
+        return checker.checkDiskSpace(file, toWrite, bufferSize);
+    }
 
 }

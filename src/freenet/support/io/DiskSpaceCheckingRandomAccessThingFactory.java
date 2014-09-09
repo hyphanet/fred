@@ -6,7 +6,9 @@ import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandomAccessThingFactory {
+import freenet.support.Logger;
+
+public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandomAccessThingFactory, DiskSpaceChecker {
 
     private final LockableRandomAccessThingFactory underlying;
     private final File dir;
@@ -79,6 +81,23 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
             }
         } finally {
             if(ret == null) file.delete();
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean checkDiskSpace(File file, int toWrite, int bufferSize) {
+        if(!FileUtil.isParent(dir, file)) {
+            Logger.error(this, "Not checking disk space because "+file+" is not child of "+dir);
+            return true;
+        }
+        lock.lock();
+        try {
+            if(dir.getUsableSpace() - (toWrite + bufferSize) < minDiskSpace)
+                return false;
+            else
+                return true;
+        } finally {
             lock.unlock();
         }
     }

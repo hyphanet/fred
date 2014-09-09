@@ -371,6 +371,7 @@ public class NodeClientCore implements Persistable {
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
 		        persistentTempDir.dir(), minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
+		persistentTempBucketFactory.setDiskSpaceChecker(persistentRAFFactory);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
