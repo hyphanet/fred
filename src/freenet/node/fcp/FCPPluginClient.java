@@ -460,7 +460,21 @@ public final class FCPPluginClient {
                 } catch(RuntimeException e) {
                     // The message handler is a server or client implementation, and thus as third
                     // party code might have bugs. So we need to catch any RuntimeException here.
-                    throw new UnsupportedOperationException("FIXME: Implement");
+                    // Notice that this is not normal mode of operation: Instead of throwing,
+                    // the JavaDoc requests message handlers to return a reply with success=false.
+                    
+                    Logger.error(messageHandler, "FCP message handler threw RuntimeException"
+                        + " Client = " + this + "; SendDirection = " + direction
+                        + " message = " + reply, e);
+                    
+                    if(!message.isReplyMessage()) {
+                        // If the original message was not a reply already, we are allowed to send a
+                        // reply with success=false to indicate the error to the remote side.
+                        // This allows eventually waiting sendSynchronous() calls to fail quickly
+                        // instead of having to wait for the timeout because no reply arrives.
+                        reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
+                            message, null, null, false);
+                    }
                 }
                 
                 if(reply != null && message.isReplyMessage()) {
