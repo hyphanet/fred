@@ -32,7 +32,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		        new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info" },
 		        new HTMLNode[] { HTMLNode.link(ExternalLinkToadlet.escape("http://downloads.freenetproject.org/alpha/jSite/")),
 		                HTMLNode.link("/CHK@1bWi9EOtVyY77cJfioG7BvWzSlU-2j7dNG55c6KlpNk,5EsWJj4BjJa51K6kLTLWb64DEJQ3qHEEmFBITZMtcIw,AAMC--8/jSite-0.11.1-jar-with-dependencies.jar"),
-		                HTMLNode.text("0.11.1"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/jsite.htm"),
+		                HTMLNode.text("0.11.1"), HTMLNode.link("/SSK@1waTsw46L9-JEQ8yX1khjkfHcn--g0MlMsTlYHax9zQ,oYyxr5jyFnaTsVGDQWk9e3ddOWGKnqEASxAk08MHT2Y,AQACAAE/jSite-6/"),
 		        });
 		contentBox.addChild("p", l10n("content3"));
 		HTMLNode ul = contentBox.addChild("ul");
