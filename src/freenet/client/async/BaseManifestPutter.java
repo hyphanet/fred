@@ -2022,7 +2022,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		 * calls addItem()? */
 		public void addArchiveItem(ContainerBuilder archive, String name, ManifestElement element, boolean isDefaultDoc) {
 			assert(element.getData() != null);
-			archive.addItem(name, element, false);
+			archive.addItem(name, new ManifestElement(element, name, name), false);
 			PutHandler ph = new JokerPutHandler(BaseManifestPutter.this, selfHandle, name, guessMime(name, element.mimeOverride));
 			putHandlersTransformMap.put(ph, currentDir);
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);
