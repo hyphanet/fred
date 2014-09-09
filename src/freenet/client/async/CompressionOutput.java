@@ -2,8 +2,8 @@ package freenet.client.async;
 
 import freenet.crypt.HashResult;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.RandomAccessBucket;
 
 class CompressionOutput {
 	public CompressionOutput(RandomAccessBucket bestCompressedData, COMPRESSOR_TYPE bestCodec2, HashResult[] hashes) {

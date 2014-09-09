@@ -7,8 +7,8 @@ import java.io.File;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.FileBucket;
-import freenet.support.io.RandomAccessBucket;
 
 public class DiskDirPutFile extends DirPutFile {
 

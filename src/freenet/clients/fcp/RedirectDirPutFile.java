@@ -9,7 +9,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.ManifestElement;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 
 public class RedirectDirPutFile extends DirPutFile {
 

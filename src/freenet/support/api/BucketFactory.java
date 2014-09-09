@@ -5,7 +5,6 @@ package freenet.support.api;
 
 import java.io.IOException;
 
-import freenet.support.io.RandomAccessBucket;
 
 public interface BucketFactory {
 	/**

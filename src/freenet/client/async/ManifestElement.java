@@ -9,8 +9,8 @@ import java.io.Serializable;
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**

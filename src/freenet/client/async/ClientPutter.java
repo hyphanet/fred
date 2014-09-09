@@ -22,7 +22,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /** A high level insert. */

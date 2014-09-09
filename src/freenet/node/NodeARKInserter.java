@@ -22,7 +22,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 
 public class NodeARKInserter implements ClientPutCallback, RequestClient {
 

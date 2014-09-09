@@ -34,10 +34,10 @@ import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
-import freenet.support.io.RandomAccessBucket;
 
 public class WelcomeToadlet extends Toadlet {
 

@@ -36,11 +36,11 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NullOutputStream;
-import freenet.support.io.RandomAccessBucket;
 
 public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 

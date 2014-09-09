@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.ManifestElement;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * A request to upload a file to a manifest.

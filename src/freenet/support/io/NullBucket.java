@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
 

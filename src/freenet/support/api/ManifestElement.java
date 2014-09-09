@@ -7,7 +7,6 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
-import freenet.support.io.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 /**

@@ -6,9 +6,9 @@ import java.io.OutputStream;
 
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
-import freenet.support.io.RandomAccessBucket;
 
 /**
  * Specialized DirPutFile for direct uploads.

@@ -36,10 +36,10 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
-import freenet.support.io.RandomAccessBucket;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles

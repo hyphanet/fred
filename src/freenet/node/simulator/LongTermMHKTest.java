@@ -31,9 +31,9 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessBucket;
 
 /** Simulates MHKs. Creates 4 CHKs, inserts the first one 3 times, and inserts the
  * others 1 time each. Pulls them all after 1, 3, 7, 15, 31 etc days and computes 

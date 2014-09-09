@@ -34,9 +34,9 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessBucket;
 
 /** 
  * Insert 32x single blocks. Pull them individually, with 0 retries, after 2^n-1 

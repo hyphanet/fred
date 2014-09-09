@@ -33,7 +33,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ResumeFailedException;
 
 public class ClientPut extends ClientPutBase {

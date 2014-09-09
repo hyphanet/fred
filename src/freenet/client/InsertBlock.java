@@ -6,7 +6,7 @@ package freenet.client;
 import java.io.Serializable;
 
 import freenet.keys.FreenetURI;
-import freenet.support.io.RandomAccessBucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * Class to contain everything needed for an insert.

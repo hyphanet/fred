@@ -9,9 +9,9 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.LockableRandomAccessThing;
-import freenet.support.io.RandomAccessBucket;
 
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.

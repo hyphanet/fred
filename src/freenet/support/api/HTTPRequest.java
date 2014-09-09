@@ -8,7 +8,6 @@ import java.util.NoSuchElementException;
 
 import javax.naming.SizeLimitExceededException;
 
-import freenet.support.io.RandomAccessBucket;
 
 /** A parsed HTTP request (GET or POST). Request parameters are parameters
  * encoded into the URI, or part of a POST form which is encoded as 

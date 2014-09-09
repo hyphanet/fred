@@ -8,6 +8,7 @@ import java.io.OutputStream;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 public class RAFBucket implements Bucket, RandomAccessBucket {
     

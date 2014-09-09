@@ -21,8 +21,8 @@ import freenet.support.PooledExecutor;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessBucket;
 
 public class BootstrapPushPullTest {
 
