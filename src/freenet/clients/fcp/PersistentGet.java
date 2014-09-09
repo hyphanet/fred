@@ -5,6 +5,7 @@ package freenet.clients.fcp;
 
 import java.io.File;
 
+import freenet.clients.fcp.ClientGetMessage.ReturnType;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -22,7 +23,7 @@ public class PersistentGet extends FCPMessage {
 	final FreenetURI uri;
 	final int verbosity;
 	final short priorityClass;
-	final short returnType;
+	final ReturnType returnType;
 	final short persistenceType;
 	final File targetFile;
 	final String clientToken;
@@ -34,7 +35,7 @@ public class PersistentGet extends FCPMessage {
 	final boolean realTime;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
-			short priorityClass, short returnType, short persistenceType, 
+			short priorityClass, ReturnType returnType, short persistenceType, 
 			File targetFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize, boolean realTime) {
 		this.identifier = identifier;
 		this.uri = uri;
@@ -60,11 +61,11 @@ public class PersistentGet extends FCPMessage {
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
-		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.putSingle("ReturnType", returnType.toString().toLowerCase());
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		// FIXME PersistenceType is backward compatibility cruft, everything else uses Persistence
 		fs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+		if(returnType == ReturnType.DISK) {
 			fs.putSingle("Filename", targetFile.getAbsolutePath());
 		}
 		fs.put("PriorityClass", priorityClass);

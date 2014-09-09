@@ -34,6 +34,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.fcp.ClientGetMessage.ReturnType;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
@@ -63,7 +64,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
 	private final ClientGetter getter;
-	private final short returnType;
+	private final ReturnType returnType;
 	private final File targetFile;
 	/** Bucket returned when the request was completed, if returnType == RETURN_TYPE_DIRECT. */
 	private Bucket returnBucketDirect;
@@ -121,7 +122,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 */
 	public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
-			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
+			long maxOutputLength, ReturnType returnType, boolean persistRebootOnly, String identifier, int verbosity,
 			short prioClass, File returnFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, boolean binaryBlob, NodeClientCore core) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
@@ -143,7 +144,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		this.returnType = returnType;
 		this.binaryBlob = binaryBlob;
 		String extensionCheck = null;
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+		if(returnType == ReturnType.DISK) {
 			this.targetFile = returnFilename;
 			if(!(core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
@@ -168,7 +169,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						extensionCheck = name.substring(idx);
 				}
 			}
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+		} else if(returnType == ReturnType.NONE) {
 			targetFile = null;
 			ret = new NullBucket();
 		} else {
@@ -212,7 +213,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		this.binaryBlob = message.binaryBlob;
 		Bucket ret = null;
 		String extensionCheck = null;
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+		if(returnType == ReturnType.DISK) {
 			this.targetFile = message.diskFile;
 			if(!core.allowDownloadTo(targetFile))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+targetFile, identifier, global);
@@ -228,7 +229,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						extensionCheck = name.substring(idx);
 				}
 			}
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+		} else if(returnType == ReturnType.NONE) {
 			targetFile = null;
 			ret = new NullBucket();
         } else {
@@ -250,7 +251,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    // For serialization.
 	    fctx = null;
 	    getter = null;
-	    returnType = 0;
+	    returnType = null;
 	    targetFile = null;
 	    binaryBlob = false;
 	    extensionCheck = null;
@@ -340,7 +341,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			this.foundDataLength = data.size();
 			this.succeeded = true;
 			finished = true;
-			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT)
+			if(returnType == ReturnType.DIRECT)
 			    returnBucketDirect = data;
 		}
 		trySendDataFoundOrGetFailed(null);
@@ -356,12 +357,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             started = true;
             finished = true;
             this.completionTime = completionTime;
-            if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+            if(returnType == ReturnType.NONE) {
                 // OK.
-            } else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+            } else if(returnType == ReturnType.DISK) {
                 if(!(targetFile.exists() && targetFile.length() == foundDataLength))
                     throw new ResumeFailedException("Success but target file doesn't exist or isn't valid");
-            } else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+            } else if(returnType == ReturnType.DIRECT) {
                 returnBucketDirect = data;
                 if(returnBucketDirect.size() != foundDataLength)
                     throw new ResumeFailedException("Success but temporary data bucket doesn't exist or isn't valid");
@@ -393,7 +394,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	private synchronized AllDataMessage getAllDataMessage() {
-	    if(returnType != ClientGetMessage.RETURN_TYPE_DIRECT)
+	    if(returnType != ReturnType.DIRECT)
 	        return null;
 	    AllDataMessage msg = new AllDataMessage(returnBucketDirect, identifier, global, startupTime, 
 	            completionTime, foundDataMimeType);
@@ -436,7 +437,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				handler.queue(new SendingToNetworkMessage(identifier, global));
 			if(finished)
 				trySendDataFoundOrGetFailed(handler);
-		} else if(returnType != ClientGetMessage.RETURN_TYPE_DIRECT) {
+		} else if(returnType != ReturnType.DIRECT) {
 		    ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.WRONG_RETURN_TYPE, false, "No AllData", identifier, global);
 		    handler.queue(msg);
 		    return;
@@ -682,11 +683,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public boolean isDirect() {
-		return this.returnType == ClientGetMessage.RETURN_TYPE_DIRECT;
+		return this.returnType == ReturnType.DIRECT;
 	}
 
 	public boolean isToDisk() {
-		return this.returnType == ClientGetMessage.RETURN_TYPE_DISK;
+		return this.returnType == ReturnType.DISK;
 	}
 
 	public FreenetURI getURI() {
@@ -811,11 +812,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 	
 	private Bucket makeBucket(boolean readOnly) {
-	    if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+	    if(returnType == ReturnType.DIRECT) {
 	        synchronized(this) {
 	            return returnBucketDirect;
 	        }
-	    } else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+	    } else if(returnType == ReturnType.DISK) {
 	        return new FileBucket(targetFile, readOnly, false, false, false, false);
 	    } else {
 	        return null;
@@ -953,8 +954,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         dos.writeInt(CLIENT_DETAIL_VERSION);
         dos.writeUTF(uri.toString());
         // Basic details needed for restarting the request.
-        dos.writeShort(returnType);
-        if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+        dos.writeShort(returnType.code);
+        if(returnType == ReturnType.DISK) {
             dos.writeUTF(targetFile.toString());
         }
         dos.writeBoolean(binaryBlob);
@@ -982,7 +983,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                 dos.writeBoolean(succeeded);
                 writeTransientProgressFields(dos);
                 if(succeeded) {
-                    if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                    if(returnType == ReturnType.DIRECT) {
                         innerDOS = 
                             new DataOutputStream(checker.checksumWriterWithLength(dos, new ArrayBucketFactory()));
                         try {
@@ -1038,12 +1039,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         } catch (MalformedURLException e) {
             throw new StorageFormatException("Bad URI");
         }
-        returnType = dis.readShort();
-        if(!(returnType == ClientGetMessage.RETURN_TYPE_DIRECT || 
-                returnType == ClientGetMessage.RETURN_TYPE_DISK || 
-                returnType == ClientGetMessage.RETURN_TYPE_NONE))
-            throw new StorageFormatException("Bad return type "+returnType);
-        if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+        short r = dis.readShort();
+        try {
+            returnType = ReturnType.getByCode(r);
+        } catch (IllegalArgumentException e) {
+            throw new StorageFormatException("Bad return type "+r);
+        }
+        if(returnType == ReturnType.DISK) {
             targetFile = new File(dis.readUTF());
         } else {
             targetFile = null;
@@ -1082,7 +1084,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
             succeeded = dis.readBoolean();
             readTransientProgressFields(dis);
             if(succeeded) {
-                if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+                if(returnType == ReturnType.DIRECT) {
                     try {
                         DataInputStream innerDIS =
                             new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));

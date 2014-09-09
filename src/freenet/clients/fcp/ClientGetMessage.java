@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -51,7 +53,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	final FreenetURI uri;
 	final String identifier;
 	final int verbosity;
-	final short returnType;
+	final ReturnType returnType;
 	final short persistenceType;
 	final long maxSize;
 	final long maxTempSize;
@@ -70,13 +72,31 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	private Bucket initialMetadata;
 	private final long initialMetadataLength;
 	
-	// FIXME move these to the actual getter process
-	static final short RETURN_TYPE_DIRECT = 0; // over FCP
-	static final short RETURN_TYPE_NONE = 1; // not at all; to cache only; prefetch?
-	static final short RETURN_TYPE_DISK = 2; // to a file
-	static final short RETURN_TYPE_CHUNKED = 3; // FIXME implement: over FCP, as decoded
-
-        private static volatile boolean logMINOR;
+	private static Map<Short, ReturnType> returnTypeByCode = new HashMap<Short, ReturnType>();
+	
+	public enum ReturnType {
+	    DIRECT((short)0),
+	    NONE((short)1),
+	    DISK((short)2),
+	    CHUNKED((short)3);
+	    
+	    final short code;
+	    
+	    ReturnType(short code) {
+	        if(returnTypeByCode.containsKey(code)) throw new Error("Duplicate");
+	        returnTypeByCode.put(code, this);
+	        this.code = code;
+	    }
+	    
+	    public static ReturnType getByCode(short x) {
+	        ReturnType u = returnTypeByCode.get(x);
+	        if(u == null) throw new IllegalArgumentException();
+	        return u;
+	    }
+	    
+	}
+	
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -115,14 +135,14 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		}
 		String returnTypeString = fs.get("ReturnType");
 		returnType = parseReturnTypeFCP(returnTypeString);
-		if(returnType == RETURN_TYPE_DIRECT) {
+		if(returnType == ReturnType.DIRECT) {
 			diskFile = null;
 			// default just below FProxy
 			defaultPriority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
-		} else if(returnType == RETURN_TYPE_NONE) {
+		} else if(returnType == ReturnType.NONE) {
 			diskFile = null;
 			defaultPriority = RequestStarter.PREFETCH_PRIORITY_CLASS;
-		} else if(returnType == RETURN_TYPE_DISK) {
+		} else if(returnType == ReturnType.DISK) {
 			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 			String filename = fs.get("Filename");
 			if(filename == null)
@@ -236,7 +256,7 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 	}
 
 	private String getReturnTypeString() {
-		return returnTypeString(returnType);
+		return returnType.toString();
 	}
 
 	@Override
@@ -249,50 +269,15 @@ public class ClientGetMessage extends BaseDataCarryingMessage {
 		handler.startClientGet(this);
 	}
 
-	public static String returnTypeString(short type) {
-		switch(type) {
-		case RETURN_TYPE_DIRECT:
-			return "direct";
-		case RETURN_TYPE_NONE:
-			return "none";
-		case RETURN_TYPE_DISK:
-			return "disk";
-		case RETURN_TYPE_CHUNKED:
-			return "chunked";
-		default:
-			return Short.toString(type);
-		}
-	}
-
-	short parseReturnTypeFCP(String string) throws MessageInvalidException {
+	ReturnType parseReturnTypeFCP(String string) throws MessageInvalidException {
 		try {
-			return parseReturnType(string);
-		} catch (NumberFormatException e) {
+		    if(string == null) return ReturnType.DIRECT;
+		    return ReturnType.valueOf(string.toUpperCase());
+		} catch (IllegalArgumentException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unable to parse ReturnType "+string+" : "+e, identifier, global);
 		}
 	}
 	
-	public static short parseReturnType(String string) {
-		if(string == null)
-			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("direct"))
-			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("none"))
-			return RETURN_TYPE_NONE;
-		if(string.equalsIgnoreCase("disk"))
-			return RETURN_TYPE_DISK;
-		if(string.equalsIgnoreCase("chunked"))
-			return RETURN_TYPE_CHUNKED;
-		return Short.parseShort(string);
-	}
-
-	public static short parseValidReturnType(String string) {
-		short s = parseReturnType(string);
-		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK))
-			return s;
-		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
-	}
-
 	@Override
 	long dataLength() {
 		return initialMetadataLength;

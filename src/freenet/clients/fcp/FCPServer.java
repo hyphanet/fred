@@ -24,6 +24,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DownloadCache;
 import freenet.client.async.PersistenceDisabledException;
 import freenet.client.async.PersistentJob;
+import freenet.clients.fcp.ClientGetMessage.ReturnType;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -721,9 +722,9 @@ public class FCPServer implements Runnable, DownloadCache {
 	 */
 	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, File downloadsDir) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
-		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
+		ReturnType returnType = ReturnType.valueOf(returnTypeString.toUpperCase());
 		File returnFilename = null;
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+		if(returnType == ReturnType.DISK) {
 			returnFilename = makeReturnFilename(fetchURI, expectedMimeType, downloadsDir);
 		}
 //		public ClientGet(PersistentRequestClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
@@ -788,7 +789,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		return f;
 	}
 
-	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, short returnType, String id, File returnFilename,
+	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, ReturnType returnType, String id, File returnFilename,
 			boolean realTimeFlag) throws IdentifierCollisionException, NotAllowedException, IOException {
 	    FetchContext defaultFetchContext = core.clientContext.getDefaultPersistentFetchContext();
 		final ClientGet cg =

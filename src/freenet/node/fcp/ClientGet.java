@@ -23,6 +23,7 @@ import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
+import freenet.clients.fcp.ClientGetMessage.ReturnType;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
@@ -100,7 +101,7 @@ public class ClientGet extends ClientRequest {
         freenet.clients.fcp.ClientGet ret =
             new freenet.clients.fcp.ClientGet(newClient, uri, fctx.localRequestOnly, fctx.ignoreStore, 
                 fctx.filterData, fctx.maxSplitfileBlockRetries, fctx.maxNonSplitfileRetries, 
-                fctx.maxOutputLength, returnType, false, identifier, verbosity, priorityClass,
+                fctx.maxOutputLength, ReturnType.getByCode(returnType), false, identifier, verbosity, priorityClass,
                 f, charset, fctx.canWriteClientCache, realTime, binaryBlob, core);
         if(finished) {
             ClientContext context = core.clientContext;
