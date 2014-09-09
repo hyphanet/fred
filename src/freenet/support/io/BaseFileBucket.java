@@ -125,7 +125,6 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	    return new BufferedOutputStream(getOutputStreamUnbuffered());
 	}
 
-
 	private synchronized void addStream(Object stream) {
 		// BaseFileBucket is a very common object, and often very long lived,
 		// so we need to minimize memory usage even at the cost of frequent allocations.

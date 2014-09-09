@@ -41,16 +41,18 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 		return false;
 	}
 	
+	static final int BUFFER_SIZE = 4096;
+	
 	@Override
 	public OutputStream getOutputStreamUnbuffered() throws IOException {
 	    OutputStream os = super.getOutputStream();
-	    os = new DiskSpaceCheckingOutputStream(os, tracker, getFile());
+	    os = new DiskSpaceCheckingOutputStream(os, tracker, getFile(), BUFFER_SIZE);
 	    return os;
 	}
 	
 	@Override
 	public OutputStream getOutputStream() throws IOException {
-	    return new BufferedOutputStream(getOutputStreamUnbuffered());
+	    return new BufferedOutputStream(getOutputStreamUnbuffered(), BUFFER_SIZE);
 	}
 	
 	/** Must override createShadow() so it creates a persistent bucket, which will have
