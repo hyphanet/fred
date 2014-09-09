@@ -477,7 +477,7 @@ public final class FCPPluginClient {
                     // (We don't if the message was a reply, replying to replies is disallowed.)
                     if(!message.isReplyMessage()) {
                         reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
-                            message, new SimpleFieldSet(true), null, true);
+                            message, null, null, true);
                     }
                 }
                 
