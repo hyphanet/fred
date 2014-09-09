@@ -4833,6 +4833,8 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		dbFile.delete();
 		dbFileCrypt.delete();
+		clientCore.clientLayerPersister.panic();
+		clientCore.clientLayerPersister.killAndWaitForNotRunning();
 	}
 
 	public void finishPanic() {

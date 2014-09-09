@@ -341,7 +341,34 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
         checkpoint(true);
     }
+
+    /** Set the killed flag and wait until we are not writing */
+    protected void killAndWaitForNotWriting() {
+        synchronized(sync) {
+            killed = true;
+            while(writing) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+    }
     
+    public void killAndWaitForNotRunning() {
+        synchronized(sync) {
+            killed = true;
+            while(runningJobs > 0 || writing) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+    }
+
     public boolean isKilledOrNotLoaded() {
         synchronized(sync) {
             return killed || !started;

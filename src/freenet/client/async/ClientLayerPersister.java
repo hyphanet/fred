@@ -99,6 +99,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     private File writeToBackupFilename;
     private File deleteAfterSuccessfulWrite;
     private File otherDeleteAfterSuccessfulWrite;
+    private File dir;
+    private String baseName;
     
     private static final long MAGIC = 0xd332925f3caf4aedL;
     private static final int VERSION = 1;
@@ -132,6 +134,8 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
             DatabaseKey encryptionKey, ClientContext context, RequestStarterGroup requestStarters, 
             Random random) throws MasterKeysWrongPasswordException {
         synchronized(serializeCheckpoints) {
+            this.dir = dir;
+            this.baseName = baseName;
             if(noWrite) {
                 writeToBucket = null;
                 writeToFilename = null;
@@ -732,5 +736,15 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
     public synchronized File getWriteFilename() {
         return writeToFilename;
     }
-    
+
+    public void panic() {
+        killAndWaitForNotWriting();
+        synchronized(serializeCheckpoints) {
+            deleteFile(dir, baseName, false, false);
+            deleteFile(dir, baseName, false, true);
+            deleteFile(dir, baseName, true, false);
+            deleteFile(dir, baseName, true, true);
+        }
+    }
+
 }
