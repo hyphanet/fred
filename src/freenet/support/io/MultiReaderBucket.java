@@ -96,15 +96,25 @@ public class MultiReaderBucket implements Serializable {
 					throw new IOException("Already freed");
 				}
 			}
-			return new ReaderBucketInputStream();
+			return new ReaderBucketInputStream(true);
 		}
 		
+        @Override
+        public InputStream getInputStreamUnbuffered() throws IOException {
+            synchronized(MultiReaderBucket.this) {
+                if(freed || closed) {
+                    throw new IOException("Already freed");
+                }
+            }
+            return new ReaderBucketInputStream(false);
+        }
+        
 		private class ReaderBucketInputStream extends InputStream {
 			
 			InputStream is;
 			
-			ReaderBucketInputStream() throws IOException {
-				is = bucket.getInputStream();
+			ReaderBucketInputStream(boolean buffer) throws IOException {
+				is = buffer ? bucket.getInputStream() : bucket.getInputStreamUnbuffered();
 			}
 			
 			@Override
@@ -151,6 +161,11 @@ public class MultiReaderBucket implements Serializable {
 		public OutputStream getOutputStream() throws IOException {
 			throw new IOException("Read only");
 		}
+
+        @Override
+        public OutputStream getOutputStreamUnbuffered() throws IOException {
+            throw new IOException("Read only");
+        }
 
 		@Override
 		public boolean isReadOnly() {

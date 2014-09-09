@@ -5,6 +5,8 @@ package freenet.support.io;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -164,12 +166,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 					os.flush();
 					os.close();
 					// DO NOT INCREMENT THE osIndex HERE!
-					os = tempFB.getOutputStream();
+					os = tempFB.getOutputStreamUnbuffered();
 					if(size > 0)
 						BucketTools.copyTo(toMigrate, os, size);
 				} else {
 					if(size > 0) {
-						OutputStream temp = tempFB.getOutputStream();
+						OutputStream temp = tempFB.getOutputStreamUnbuffered();
 						try {
 						BucketTools.copyTo(toMigrate, temp, size);
 						} finally {
@@ -202,9 +204,14 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		public synchronized final boolean isRAMBucket() {
 			return (currentBucket instanceof ArrayBucket);
 		}
+		
+		@Override
+		public OutputStream getOutputStream() throws IOException {
+		    return new BufferedOutputStream(getOutputStreamUnbuffered());
+		}
 
 		@Override
-		public synchronized OutputStream getOutputStream() throws IOException {
+		public synchronized OutputStream getOutputStreamUnbuffered() throws IOException {
 			if(os != null)
 				throw new IOException("Only one OutputStream per bucket on "+this+" !");
 			if(hasBeenFreed) throw new IOException("Already freed");
@@ -223,7 +230,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			boolean closed = false;
 			TempBucketOutputStream(short idx) throws IOException {
 				if(os == null)
-					os = currentBucket.getOutputStream();
+					os = currentBucket.getOutputStreamUnbuffered();
 			}
 			
 			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
@@ -308,9 +315,14 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 				}
 			}
 		}
+		
+		@Override
+		public InputStream getInputStream() throws IOException {
+		    return new BufferedInputStream(getInputStreamUnbuffered());
+		}
 
 		@Override
-		public synchronized InputStream getInputStream() throws IOException {
+		public synchronized InputStream getInputStreamUnbuffered() throws IOException {
 			if(!hasWritten)
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			if(hasBeenFreed) throw new IOException("Already freed");
@@ -331,7 +343,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 			
 			TempBucketInputStream(short idx) throws IOException {
 				this.idx = idx;
-				this.currentIS = currentBucket.getInputStream();
+				this.currentIS = currentBucket.getInputStreamUnbuffered();
 			}
 			
 			public void _maybeResetInputStream() throws IOException {
@@ -339,7 +351,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 					close();
 				else {
 					Closer.close(currentIS);
-					currentIS = currentBucket.getInputStream();
+					currentIS = currentBucket.getInputStreamUnbuffered();
 					long toSkip = index;
 					while(toSkip > 0) {
 						toSkip -= currentIS.skip(toSkip);

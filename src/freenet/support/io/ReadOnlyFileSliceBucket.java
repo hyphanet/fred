@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -47,10 +48,20 @@ public class ReadOnlyFileSliceBucket implements Bucket, Serializable {
 		throw new IOException("Bucket is read-only");
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        throw new IOException("Bucket is read-only");
+    }
+
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return new MyInputStream();
+		return new BufferedInputStream(getInputStreamUnbuffered());
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        return new MyInputStream();
+    }
 
 	@Override
 	public String getName() {

@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -26,7 +27,17 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     }
 
     @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        throw new IOException("Not supported");
+    }
+
+    @Override
     public InputStream getInputStream() throws IOException {
+        return new BufferedInputStream(getInputStreamUnbuffered());
+    }
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
         return new RAFInputStream(underlying, 0, underlying.size());
     }
 

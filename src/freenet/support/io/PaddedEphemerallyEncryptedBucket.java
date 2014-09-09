@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -105,13 +107,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 
     @Override
 	public OutputStream getOutputStream() throws IOException {
-		if(readOnly) throw new IOException("Read only");
-		OutputStream os = bucket.getOutputStream();
-		synchronized(this) {
-			dataLength = 0;
-		}
-		return new PaddedEphemerallyEncryptedOutputStream(os, ++lastOutputStream);
+        return new BufferedOutputStream(getOutputStreamUnbuffered());
 	}
+
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        if(readOnly) throw new IOException("Read only");
+        OutputStream os = bucket.getOutputStreamUnbuffered();
+        synchronized(this) {
+            dataLength = 0;
+        }
+        return new PaddedEphemerallyEncryptedOutputStream(os, ++lastOutputStream);
+    }
 
 	private class PaddedEphemerallyEncryptedOutputStream extends OutputStream {
 
@@ -206,8 +212,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return new PaddedEphemerallyEncryptedInputStream(bucket.getInputStream());
+		return new BufferedInputStream(getInputStreamUnbuffered());
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        return new PaddedEphemerallyEncryptedInputStream(bucket.getInputStreamUnbuffered());
+    }
 
 	private class PaddedEphemerallyEncryptedInputStream extends InputStream {
 

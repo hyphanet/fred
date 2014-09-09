@@ -25,9 +25,17 @@ public interface Bucket {
      * Returns an OutputStream that is used to put data in this Bucket, from the 
      * beginning. It is not possible to append data to a Bucket! This simplifies the
      * code significantly for some classes. If you need to append, just pass the 
-     * OutputStream around.
+     * OutputStream around. Will be buffered if appropriate (e.g. byte array backed
+     * buckets don't need to be buffered).
      */
     public OutputStream getOutputStream() throws IOException;
+    
+    /** Get an OutputStream which is not buffered. Should be called when we will buffer the stream 
+     * at a higher level or when we will only be doing large writes (e.g. copying data from one 
+     * Bucket to another). Does not make any more persistence guarantees than getOutputStream() 
+     * does, this is just to save memory.
+     */
+    public OutputStream getOutputStreamUnbuffered() throws IOException;
 
     /**
      * Returns an InputStream that reads data from this Bucket. If there is
@@ -37,6 +45,8 @@ public interface Bucket {
      */
     public InputStream getInputStream() throws IOException;
 
+    public InputStream getInputStreamUnbuffered() throws IOException;
+    
     /**
      * Returns a name for the bucket, may be used to identify them in
      * certain in certain situations.

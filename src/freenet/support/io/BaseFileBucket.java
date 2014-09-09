@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -83,7 +85,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	}
 
 	@Override
-	public OutputStream getOutputStream() throws IOException {
+	public OutputStream getOutputStreamUnbuffered() throws IOException {
 		synchronized (this) {
 			File file = getFile();
 			if(freed)
@@ -117,6 +119,12 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			return os;
 		}
 	}
+	
+	@Override
+	public OutputStream getOutputStream() throws IOException {
+	    return new BufferedOutputStream(getOutputStreamUnbuffered());
+	}
+
 
 	private synchronized void addStream(Object stream) {
 		// BaseFileBucket is a very common object, and often very long lived,
@@ -280,7 +288,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 	}
 
 	@Override
-	public synchronized InputStream getInputStream() throws IOException {
+	public synchronized InputStream getInputStreamUnbuffered() throws IOException {
 		if(freed)
 			throw new IOException("File already freed: "+this);
 		File file = getFile();
@@ -295,6 +303,10 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 				Logger.debug(this, "Creating "+is, new Exception("debug"));
 			return is;
 		}
+	}
+	
+	public InputStream getInputStream() throws IOException {
+	    return new BufferedInputStream(getInputStreamUnbuffered());
 	}
 
 	/**

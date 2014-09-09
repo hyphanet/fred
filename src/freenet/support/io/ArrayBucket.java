@@ -47,7 +47,7 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
 		if(freed) throw new IOException("Already fred");
 		return new ArrayBucketOutputStream();
 	}
-
+	
 	@Override
 	public InputStream getInputStream() throws IOException {
         if(freed) throw new IOException("Already fred");
@@ -131,5 +131,15 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
         readOnly = true;
         LockableRandomAccessThing raf = new ByteArrayRandomAccessThing(data, 0, data.length, true);
         return raf;
+    }
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        return getInputStream();
+    }
+
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        return getOutputStream();
     }
 }

@@ -42,9 +42,19 @@ public class SimpleReadOnlyArrayBucket implements Bucket, RandomAccessBucket {
 		throw new IOException("Read only");
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        throw new IOException("Read only");
+    }
+    
+	@Override
+	public InputStream getInputStreamUnbuffered() throws IOException {
+		return new ByteArrayInputStream(buf, offset, length);
+	}
+	
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return new ByteArrayInputStream(buf, offset, length);
+	    return getInputStreamUnbuffered();
 	}
 
 	@Override

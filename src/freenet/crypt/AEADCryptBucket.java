@@ -1,5 +1,7 @@
 package freenet.crypt;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,20 +42,29 @@ public class AEADCryptBucket implements Bucket, Serializable {
         underlying = null;
         key = null;
     }
-
+    
     @Override
     public OutputStream getOutputStream() throws IOException {
+        return new BufferedOutputStream(getOutputStreamUnbuffered());
+    }
+
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
         synchronized(this) {
             if(readOnly)
                 throw new IOException("Read only");
         }
-        OutputStream os = underlying.getOutputStream();
+        OutputStream os = underlying.getOutputStreamUnbuffered();
         return AEADOutputStream.createAES(os, key, NodeStarter.getGlobalSecureRandom());
+    }
+    
+    public InputStream getInputStream() throws IOException {
+        return new BufferedInputStream(getInputStreamUnbuffered());
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
-        InputStream is = underlying.getInputStream();
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        InputStream is = underlying.getInputStreamUnbuffered();
         return AEADInputStream.createAES(is, key);
     }
 

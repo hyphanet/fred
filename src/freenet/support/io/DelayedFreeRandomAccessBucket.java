@@ -56,6 +56,14 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 		return bucket.getOutputStream();
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getOutputStreamUnbuffered();
+    }
+
 	@Override
 	public InputStream getInputStream() throws IOException {
 	    synchronized(this) {
@@ -63,6 +71,14 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 	    }
 		return bucket.getInputStream();
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getInputStreamUnbuffered();
+    }
 
 	@Override
 	public String getName() {

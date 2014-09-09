@@ -58,6 +58,18 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         return new MyOutputStream(os);
     }
     
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        OutputStream os; 
+        synchronized(this) {
+            if(outputStreamOpen) throw new IOException("Already have an OutputStream for "+this);
+            os = underlying.getOutputStreamUnbuffered();
+            outputStreamOpen = true;
+            size = 0;
+        }
+        return new MyOutputStream(os);
+    }
+    
     private class MyOutputStream extends FilterOutputStream {
         
         MyOutputStream(OutputStream os) {
@@ -134,6 +146,11 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     @Override
     public InputStream getInputStream() throws IOException {
         return new MyInputStream(underlying.getInputStream());
+    }
+    
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        return new MyInputStream(underlying.getInputStreamUnbuffered());
     }
     
     private class MyInputStream extends FilterInputStream {

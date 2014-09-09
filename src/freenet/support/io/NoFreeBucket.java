@@ -29,10 +29,20 @@ public class NoFreeBucket implements Bucket, Serializable {
 		return proxy.getOutputStream();
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        return proxy.getOutputStreamUnbuffered();
+    }
+
 	@Override
 	public InputStream getInputStream() throws IOException {
 		return proxy.getInputStream();
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        return proxy.getInputStreamUnbuffered();
+    }
 
 	@Override
 	public String getName() {

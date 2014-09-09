@@ -34,12 +34,18 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
     @Override
     public OutputStream getOutputStream() { return nullOut; }
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() { return nullOut; }
+
     /**
      * Returns an InputStream that reads data from this Bucket. If there is
      * no data in this bucket, null is returned.
      **/
     @Override
     public InputStream getInputStream() { return nullIn; }
+
+    @Override
+    public InputStream getInputStreamUnbuffered() { return nullIn; }
 
     /**
      * Returns the amount of data currently in this bucket.

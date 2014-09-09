@@ -61,6 +61,15 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 		return bucket.getOutputStream();
 	}
 
+    @Override
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getOutputStreamUnbuffered();
+    }
+
 	@Override
 	public InputStream getInputStream() throws IOException {
 	    synchronized(this) {
@@ -69,6 +78,15 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
 	    }
 		return bucket.getInputStream();
 	}
+
+    @Override
+    public InputStream getInputStreamUnbuffered() throws IOException {
+        synchronized(this) {
+            if(migrated) throw new IOException("Already migrated to a RandomAccessBucket");
+            if(freed) throw new IOException("Already freed");
+        }
+        return bucket.getInputStreamUnbuffered();
+    }
 
 	@Override
 	public String getName() {
