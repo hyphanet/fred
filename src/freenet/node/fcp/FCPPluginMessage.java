@@ -16,7 +16,19 @@ import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
 
 /**
+ * This class parses the network format for a FCP message which is send from a FCP client
+ * to a FCP server plugin.<br>
+ * It is the inverse of {@link FCPPluginReply} which produces the on-network format of server
+ * to client messages.<br>
+ * 
+ * <b>ATTENTION:</b> There is a similar class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
+ * which serves as a container of FCP plugin messages which are produced and consumed by the
+ * actual server and client plugins. Consider this class here as an internal representation of
+ * FCP plugin messages, while the other one is the external representation.
+ * 
+ * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
  * @author saces
+ * @author xor (xor@freenetproject.org)
  * 
  * FCPPluginMessage
  * Identifer=me
