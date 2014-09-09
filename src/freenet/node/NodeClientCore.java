@@ -354,6 +354,7 @@ public class NodeClientCore implements Persistable {
 
             @Override
             public void realRun() {
+                if(NodeClientCore.this.node.hasPanicked()) return;
                 System.out.println("Waiting for jobs to finish");
                 clientLayerPersister.waitForIdleAndCheckpoint();
                 System.out.println("Saved persistent requests to disk");

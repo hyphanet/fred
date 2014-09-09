@@ -476,6 +476,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * patterns and content are completely different), or for plugins (for
 	 * security reasons). */
 	public ObjectContainer db;
+	private volatile boolean hasPanicked;
 	/** A fixed random number which identifies the top-level objects belonging to
 	 * this node, as opposed to any others that might be stored in the same database
 	 * (e.g. because of many-nodes-in-one-VM). */
@@ -4813,8 +4814,13 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized File getMasterPasswordFile() {
 		return masterKeysFile;
 	}
+	
+    boolean hasPanicked() {
+        return hasPanicked;
+    }
 
 	public void panic() {
+	    hasPanicked = true;
 	    if(db != null) {
 	        try {
 	            db.close();
@@ -5076,6 +5082,5 @@ public class Node implements TimeSkewDetectorCallback {
     DatabaseKey getDatabaseKey() {
         return databaseKey;
     }
-
-
+    
 }
