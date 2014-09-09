@@ -730,55 +730,70 @@ public class NodeClientCore implements Persistable {
 	private void finishInitStorage(ObjectContainer container) {
 	    if(container != null) {
 	        CheckpointLock lock = null;
+	        boolean success;
 	        try {
 	            lock = clientLayerPersister.lock();
-	            migrateFromOldDatabase(container);
+	            success = migrateFromOldDatabase(container);
 	        } catch (PersistenceDisabledException e) {
 	            Logger.error(this, "Cannot migrate as persistence disabled...");
 	            // Try again next time...
 	            return; // Don't GC persistent-temp.
+	        } catch (Throwable t) {
+	            System.err.println("Unable to migrate from old database: "+t);
+	            t.printStackTrace();
+	            Logger.error(this, "Failed migrating from old database: "+t, t);
+	            return; // Something went seriously wrong, likely a bug. Don't delete.
             } finally {
 	            if(lock != null)
 	                lock.unlock(false, NativeThread.currentThread().getPriority());
 	        }
-	    }
-	    alerts.unregister(migratingAlert);
-	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
-    }
-
-    private void migrateFromOldDatabase(ObjectContainer container) {
-        System.err.println("Attempting to migrate from old database ...");
-        boolean success = true;
-        try {
-            FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
-            if(oldRoot == null) return;
-            if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
-                success = false;
-            for(FCPClient client : oldRoot.loadClients(this, container)) {
-                if(!client.isGlobalQueue) {
-                    if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
-                        success = false;
-                }
+            try {
+                clientLayerPersister.waitAndCheckpoint();
+            } catch (PersistenceDisabledException e1) {
+                // Shutting down?
+                return;
             }
-            clientLayerPersister.setCheckpointASAP();
             if(success)
                 System.out.println("Migrated all requests successfully.");
             else
                 System.out.println("Migrated some requests. You may have lost some downloads.");
-            container.close();
+            try {
+                container.close();
+            } catch (Throwable t) {
+                // Ignore. We don't care.
+            }
             if(node.dbFile.exists()) {
                 System.out.println("Deleting database file "+node.dbFile);
                 node.dbFile.delete();
             }
             if(node.dbFileCrypt.exists()) {
-                FileUtil.secureDelete(node.dbFileCrypt);
+                try {
+                    FileUtil.secureDelete(node.dbFileCrypt);
+                } catch (IOException e) {
+                    System.err.println("Unable to delete your old database file: "+node.dbFileCrypt);
+                    System.err.println("Please delete the file manually. Until you do Freenet will attempt to re-import the downloads in it every time it starts up.");
+                }
             }
             System.out.println("Migration completed");
-        } catch (Throwable t) {
-            System.err.println("Unable to migrate from old database: "+t);
-            t.printStackTrace();
-            Logger.error(this, "Failed migrating from old database: "+t, t);
+	    }
+	    alerts.unregister(migratingAlert);
+	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
+    }
+
+    private boolean migrateFromOldDatabase(ObjectContainer container) {
+        System.err.println("Attempting to migrate from old database ...");
+        boolean success = true;
+        FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+        if(oldRoot == null) return true;
+        if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
+            success = false;
+        for(FCPClient client : oldRoot.loadClients(this, container)) {
+            if(!client.isGlobalQueue) {
+                if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
+                    success = false;
+            }
         }
+        return success;
     }
 
     private static String l10n(String key) {

@@ -311,12 +311,27 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
-
-
     /** Typically called after shutdown() to wait for current jobs to complete. */
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+        checkpoint(true);
+    }
+    
+    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. 
+     * @throws PersistenceDisabledException */
+    public void waitAndCheckpoint() throws PersistenceDisabledException {
+        synchronized(sync) {
+            mustCheckpoint = true;
+            while(runningJobs > 0 || writing) {
+                if(killed) throw new PersistenceDisabledException();
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {
