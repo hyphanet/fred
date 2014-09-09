@@ -67,6 +67,24 @@ public class FCPPluginReply extends DataCarryingMessage {
     public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2,
             Boolean success) {
         
+        assert(pluginname != null);
+        
+        assert(identifier2 != null)
+            : "Identifier is required for message tracking, see FredPluginFCPMessageHandler";
+        
+        assert(fs != null || fs == null)
+            : "SFS can be null for data-only messages or success-indicator messages";
+        
+        assert(bucket2 != null || bucket2 == null)
+            : "Bucket can be null if the message is reasonably small to fully put it into the fs";
+        
+        assert(success != null || success == null)
+            : "Success can be null for non-reply messages";
+        
+        assert(fs != null || bucket2 != null || success != null)
+            : "Messages should not be empty";
+        
+        
         bucket = bucket2;
         if (bucket == null)
             dataLength = -1;
