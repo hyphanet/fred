@@ -446,7 +446,7 @@ public class TextModeClientInterface implements Runnable {
     	final Bucket output = new ArrayBucket();
     	InputStream inputStream = null;
     	OutputStream outputStream = null;
-    	BufferedInputStream bis = null;
+    	InputStream bis = null;
     	try {
     		inputStream = input.getInputStream();
     		outputStream = output.getOutputStream();
@@ -456,7 +456,7 @@ public class TextModeClientInterface implements Runnable {
     		outputStream.close();
 			outputStream = null;
 
-    		bis = new BufferedInputStream(output.getInputStream());
+    		bis = output.getInputStream();
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}

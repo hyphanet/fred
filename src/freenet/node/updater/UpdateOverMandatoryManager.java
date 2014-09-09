@@ -983,7 +983,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		DataInputStream dis = null;
 		try {
-			dis = new DataInputStream(new BufferedInputStream(temp.getInputStream()));
+			dis = new DataInputStream(temp.getInputStream());
 			BinaryBlob.readBinaryBlob(dis, blocks, true);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source + "!");

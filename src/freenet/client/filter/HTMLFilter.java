@@ -2,8 +2,6 @@
 
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -70,15 +68,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
-		BufferedInputStream bis = new BufferedInputStream(input, 4096);
-		BufferedOutputStream bos = new BufferedOutputStream(output, 4096);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
 		OutputStreamWriter osw = null;
 		try {
-			isr = new InputStreamReader(bis, charset);
-			osw = new OutputStreamWriter(bos, charset);
+			isr = new InputStreamReader(input, charset);
+			osw = new OutputStreamWriter(output, charset);
 			r = new BufferedReader(isr, 4096);
 			w = new BufferedWriter(osw, 4096);
 		} catch(UnsupportedEncodingException e) {

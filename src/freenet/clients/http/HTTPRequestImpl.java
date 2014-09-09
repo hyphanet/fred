@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -477,10 +475,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	private void parseMultiPartData() throws IOException {
 		InputStream is = null;
-		BufferedInputStream bis = null;
 		LineReadingInputStream lis = null;
 		OutputStream bucketos = null;
-		OutputStream bbos = null;
 
 		try {
 			if(data == null)
@@ -522,12 +518,11 @@ public class HTTPRequestImpl implements HTTPRequest {
 				Logger.minor(this, "Boundary is: " + boundary);
 
 			is = this.data.getInputStream();
-			bis = new BufferedInputStream(is, 32768);
-			lis = new LineReadingInputStream(bis);
+			lis = new LineReadingInputStream(is);
 
 			String line;
 			line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
-			while((bis.available() > 0) && !line.equals(boundary)) {
+			while((is.available() > 0) && !line.equals(boundary)) {
 				line = lis.readLine(100, 100, false);
 			}
 
@@ -538,7 +533,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			String filename = null;
 			String contentType = null;
 
-			while(bis.available() > 0) {
+			while(is.available() > 0) {
 				name = null;
 				filename = null;
 				contentType = null;
@@ -588,34 +583,33 @@ public class HTTPRequestImpl implements HTTPRequest {
 			// boundary string
 
 				// we can only give an upper bound for the size of the bucket
-				filedata = this.bucketfactory.makeBucket(bis.available());
+				filedata = this.bucketfactory.makeBucket(is.available());
 				bucketos = filedata.getOutputStream();
-				bbos = new BufferedOutputStream(bucketos, 32768);
 				// buffer characters that match the boundary so far
 			// FIXME use whatever charset was used
 				byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
 				int offset = 0;
-				while((bis.available() > 0) && (offset < bbound.length)) {
-					byte b = (byte) bis.read();
+				while((is.available() > 0) && (offset < bbound.length)) {
+					byte b = (byte) is.read();
 
 					if(b == bbound[offset])
 						offset++;
 					else if((b != bbound[offset]) && (offset > 0)) {
 						// offset bytes matched, but no more
 					// write the bytes that matched, then the non-matching byte
-						bbos.write(bbound, 0, offset);
+						bucketos.write(bbound, 0, offset);
 						offset = 0;
 						if(b == bbound[0])
 							offset = 1;
 						else
-							bbos.write(b);
+							bucketos.write(b);
 					}
 					else
-						bbos.write(b);
+						bucketos.write(b);
 				}
 
-				bbos.close();
-				bbos = null; bucketos = null;
+				bucketos.close();
+				bucketos = null;
 			
 				parts.put(name, filedata);
 				if(logMINOR)
@@ -625,10 +619,9 @@ public class HTTPRequestImpl implements HTTPRequest {
 			}
 		}
 		finally {
-			Closer.close(bbos);
 			Closer.close(bucketos);
 			Closer.close(lis);
-			Closer.close(bis);
+			Closer.close(is);
 			Closer.close(is);
 		}
 	}
