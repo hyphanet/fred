@@ -495,6 +495,7 @@ public final class FCPPluginClient {
                     // The messageHandler will be an object of the server or client plugin,
                     // from a class contained in it. So there is a chance that the developer
                     // has logging enabled for that class, and thus we log it marked as from that.
+                    
                     Logger.warning(messageHandler, "Sending reply failed, the connection was closed"
                         + " already; Client = " + this + "; SendDirection = " + direction
                         + " message = " + reply, e);
