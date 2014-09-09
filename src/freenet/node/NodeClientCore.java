@@ -829,8 +829,7 @@ public class NodeClientCore implements Persistable {
 
 	public void start(Config config, ObjectContainer container) throws NodeInitException {
 	    
-	    if(container != null)
-	        finishInitStorage(container);
+	    finishInitStorage(container);
 
 		persister.start();
 
