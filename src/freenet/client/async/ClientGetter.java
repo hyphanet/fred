@@ -571,6 +571,9 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 				finished = true;
 				oldState = currentState;
 				currentState = null;
+				String mime = e.getExpectedMimeType();
+				if(mime != null)
+				    this.expectedMIME = mime;
 			}
 			if(!alreadyFinished) {
 				try {
