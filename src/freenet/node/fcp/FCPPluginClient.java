@@ -416,7 +416,22 @@ public final class FCPPluginClient {
             // because the messages take time to travel over the network - but the messageDispatcher
             // needs the reply.
             // So instead, we just queue the network message here and return.
-            throw new UnsupportedOperationException("FIXME: Implement");
+            
+            assert (direction == SendDirection.ToClient)
+                : "By design, this class always shall execute in the same VM as the server plugin. "
+                + "So if messageHandlerExistsLocally is false, we should be sending to the client.";
+            
+            assert (clientConnection != null)
+                : "messageHandlerExistsLocally is false, and we are sending to the client."
+                + "So the network connection to it should not be null.";
+            
+            if (clientConnection.isClosed())
+                throw new IOException("Connection to client closed for " + this);
+            
+            clientConnection.outputHandler.queue(
+                new FCPPluginReply(serverPluginName, message.identifier,
+                    message.parameters, message.data, message.success));
+            
             return;
         }
         
