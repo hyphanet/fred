@@ -22,6 +22,7 @@ import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.Metadata.DocumentType;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
@@ -97,7 +98,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
 					if (ph.targetInArchive == null)
 						throw new NullPointerException();
-					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI().setMetaString(new String[] { ph.targetInArchive }), cm);
+					Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, key.getURI().setMetaString(new String[] { ph.targetInArchive }), cm);
 					hm.put(ph.itemName, m);
 					putHandlersTransformMap.remove(ph);
 					try {
@@ -148,7 +149,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 				synchronized (BaseManifestPutter.this) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(this);
 					perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
-					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
+					Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
 					hm.put(this.itemName, m);
 					putHandlersTransformMap.remove(this);
 
@@ -197,7 +198,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			}
 			// The file was too small to have its own metadata, we get this instead.
 			// So we make the key into metadata.
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
+			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
 			onMetadata(m, state, context);
 			//debugDecompose("ExternPutHandler.onEncode End");
 		}
@@ -331,7 +332,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
         /** a normal ( freeform) redirect */
 		public JokerPutHandler(BaseManifestPutter bmp, 	String name, FreenetURI targetURI2, ClientMetadata cm2) {
 			super(bmp, null, name, null, (Metadata)null, cm2);
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI2, cm2);
+			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI2, cm2);
 			metadata = m;
 		}
 
@@ -344,7 +345,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		/** a short symlink */
 		public JokerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, String target) {
 			super(bmp, parent, name, name, (Metadata)null, null);
-			Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, target, null);
+			Metadata m = new Metadata(DocumentType.SYMBOLIC_SHORTLINK, null, null, target, null);
 			metadata = m;
 		}
 
@@ -1476,7 +1477,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 		private void addItem(String name, ManifestElement element, boolean isDefaultDoc) {
 			currentDir.put(name, element);
 			if (isDefaultDoc) {
-				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
+				Metadata m = new Metadata(DocumentType.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
 			numberOfFiles++;
@@ -1486,7 +1487,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 
 		@Override
 		public void addRedirect(String name, FreenetURI targetUri, ClientMetadata cm, boolean isDefaultDoc) {
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetUri, cm);
+			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetUri, cm);
 			currentDir.put(name, m);
 			if (isDefaultDoc) {
 				currentDir.put("", m);
@@ -1499,7 +1500,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);
 			putHandlersTransformMap.put(ph, currentDir);
 			if (isDefaultDoc) {
-				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
+				Metadata m = new Metadata(DocumentType.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
 			numberOfFiles++;
@@ -1516,7 +1517,7 @@ public abstract class BaseManifestPutter extends ManifestPutter {
 			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(ph);
 			putHandlersArchiveTransformMap.get(archive.selfHandle).add(ph);
 			if (isDefaultDoc) {
-				Metadata m = new Metadata(Metadata.SYMBOLIC_SHORTLINK, null, null, name, null);
+				Metadata m = new Metadata(DocumentType.SYMBOLIC_SHORTLINK, null, null, name, null);
 				currentDir.put("", m);
 			}
 			numberOfFiles++;

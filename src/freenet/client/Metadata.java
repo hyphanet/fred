@@ -3,14 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -19,18 +17,18 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.FetchException.FetchExceptionMode;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.SplitFileSegmentKeys;
+import freenet.crypt.HashResult;
+import freenet.crypt.HashType;
+import freenet.crypt.SHA256;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
-import freenet.client.FetchException.FetchExceptionMode;
-import freenet.client.InsertContext.CompatibilityMode;
-import freenet.crypt.HashResult;
-import freenet.crypt.HashType;
-import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -39,7 +37,6 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NullOutputStream;
@@ -66,14 +63,28 @@ public class Metadata implements Cloneable, Serializable {
 	// Actual parsed data
 
 	// document type
-	byte documentType;
-	public static final byte SIMPLE_REDIRECT = 0;
-	static final byte MULTI_LEVEL_METADATA = 1;
-	static final byte SIMPLE_MANIFEST = 2;
-	public static final byte ARCHIVE_MANIFEST = 3;
-	public static final byte ARCHIVE_INTERNAL_REDIRECT = 4;
-	public static final byte ARCHIVE_METADATA_REDIRECT = 5;
-	public static final byte SYMBOLIC_SHORTLINK = 6;
+	DocumentType documentType;
+	
+	public enum DocumentType {
+	    SIMPLE_REDIRECT((byte)0),
+	    MULTI_LEVEL_METADATA((byte)1),
+	    SIMPLE_MANIFEST((byte)2),
+	    ARCHIVE_MANIFEST((byte)3),
+	    ARCHIVE_INTERNAL_REDIRECT((byte)4),
+	    ARCHIVE_METADATA_REDIRECT((byte)5),
+	    SYMBOLIC_SHORTLINK((byte)6);
+	    
+	    final byte code;
+	    
+	    DocumentType(byte code) {
+	        this.code = code;
+	    }
+	    
+	    static DocumentType byCode(byte b) {
+	        if(b < 0 || b > values().length) throw new IllegalArgumentException();
+	        return values()[b];
+	    }
+	}
 
 	short parsedVersion;
 	// 2 bytes of flags
@@ -282,9 +293,11 @@ public class Metadata implements Cloneable, Serializable {
 		if(version < 0 || version > 1)
 			throw new MetadataParseException("Unsupported version "+version);
 		parsedVersion = version;
-		documentType = dis.readByte();
-		if((documentType < 0) || (documentType > 6))
-			throw new MetadataParseException("Unsupported document type: "+documentType);
+		try {
+		    documentType = DocumentType.byCode(dis.readByte());
+		} catch (IllegalArgumentException e) {
+		    throw new MetadataParseException("Unsupported document type: "+documentType);
+		}
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 
 		boolean compressed = false;
@@ -335,7 +348,7 @@ public class Metadata implements Cloneable, Serializable {
 			topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
 		}
 
-		if(documentType == ARCHIVE_MANIFEST) {
+		if(documentType == DocumentType.ARCHIVE_MANIFEST) {
 			if(logMINOR) Logger.minor(this, "Archive manifest");
 			archiveType = ARCHIVE_TYPE.getArchiveType(dis.readShort());
 			if(archiveType == null)
@@ -429,7 +442,7 @@ public class Metadata implements Cloneable, Serializable {
 
 		clientMetadata = new ClientMetadata(mimeType);
 
-		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
+		if((!splitfile) && ((documentType == DocumentType.SIMPLE_REDIRECT) || (documentType == DocumentType.ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
 			if(simpleRedirectKey.isCHK()) {
 				byte algo = ClientCHK.getCryptoAlgorithmFromExtra(simpleRedirectKey.getExtra());
@@ -628,7 +641,7 @@ public class Metadata implements Cloneable, Serializable {
 		
 		}
 			
-		if(documentType == SIMPLE_MANIFEST) {
+		if(documentType == DocumentType.SIMPLE_MANIFEST) {
 			int manifestEntryCount = dis.readInt();
 			if(manifestEntryCount < 0)
 				throw new MetadataParseException("Invalid manifest entry count: "+manifestEntryCount);
@@ -658,7 +671,7 @@ public class Metadata implements Cloneable, Serializable {
 			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
 
-		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK)) {
+		if((documentType == DocumentType.ARCHIVE_INTERNAL_REDIRECT) || (documentType == DocumentType.ARCHIVE_METADATA_REDIRECT) || (documentType == DocumentType.SYMBOLIC_SHORTLINK)) {
 			int len = dis.readShort();
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
@@ -757,7 +770,7 @@ public class Metadata implements Cloneable, Serializable {
 	private void addRedirectionManifest(HashMap<String, Object> dir) throws MalformedURLException {
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
-		documentType = SIMPLE_MANIFEST;
+		documentType = DocumentType.SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
@@ -769,7 +782,7 @@ public class Metadata implements Cloneable, Serializable {
 			if(o instanceof String) {
 				// External redirect
 				FreenetURI uri = new FreenetURI((String)o);
-				target = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
+				target = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, uri, null);
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
 				target.addRedirectionManifest(Metadata.forceMap(o));
@@ -805,7 +818,7 @@ public class Metadata implements Cloneable, Serializable {
 	private void addRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
-		documentType = SIMPLE_MANIFEST;
+		documentType = DocumentType.SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
@@ -848,7 +861,7 @@ public class Metadata implements Cloneable, Serializable {
 		hashes = null;
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
-		documentType = SIMPLE_MANIFEST;
+		documentType = DocumentType.SIMPLE_MANIFEST;
 		noMIME = true;
 		mimeType = null;
 		clientMetadata = new ClientMetadata();
@@ -859,7 +872,7 @@ public class Metadata implements Cloneable, Serializable {
 			Metadata target;
 			if(o instanceof String) {
 				// Archive internal redirect
-				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
+				target = new Metadata(DocumentType.ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata(Metadata.forceMap(o), prefix+key+"/");
@@ -881,9 +894,9 @@ public class Metadata implements Cloneable, Serializable {
 	 * @param arg The argument; in the case of ARCHIVE_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
+	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
 		hashCode = super.hashCode();
-		if((docType == ARCHIVE_INTERNAL_REDIRECT) || (docType == SYMBOLIC_SHORTLINK)) {
+		if((docType == DocumentType.ARCHIVE_INTERNAL_REDIRECT) || (docType == DocumentType.SYMBOLIC_SHORTLINK)) {
 			documentType = docType;
 			this.archiveType = archiveType;
 			// Determine MIME type
@@ -916,10 +929,10 @@ public class Metadata implements Cloneable, Serializable {
 	 * docType = ARCHIVE_METADATA_REDIRECT
 	 * @param name the filename in the archive to read from, must be ".metadata-N" scheme.
 	 */
-	private Metadata(byte docType, String name) {
+	private Metadata(DocumentType docType, String name) {
 		hashCode = super.hashCode();
 		noMIME = true;
-		if(docType == ARCHIVE_METADATA_REDIRECT) {
+		if(docType == DocumentType.ARCHIVE_METADATA_REDIRECT) {
 			documentType = docType;
 			targetName = name;
 			while(true) {
@@ -941,7 +954,7 @@ public class Metadata implements Cloneable, Serializable {
 		topCompatibilityMode = 0;
 	}
 
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
+	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
 		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, false, (short)0, null);
 	}
 	
@@ -951,13 +964,13 @@ public class Metadata implements Cloneable, Serializable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
+	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
 		hashCode = super.hashCode();
 		if(hashes != null && hashes.length == 0) {
 			throw new IllegalArgumentException();
 		}
 		this.hashes = hashes;
-		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
+		if((docType == DocumentType.SIMPLE_REDIRECT) || (docType == DocumentType.ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
 			this.compressionCodec = compressionCodec;
@@ -1048,12 +1061,12 @@ public class Metadata implements Cloneable, Serializable {
 		if(hashThisLayerOnly != null)
 			if(hashThisLayerOnly.length != 32) throw new IllegalArgumentException();
 		if(isMetadata)
-			documentType = MULTI_LEVEL_METADATA;
+			documentType = DocumentType.MULTI_LEVEL_METADATA;
 		else {
 			if(archiveType != null) {
-				documentType = ARCHIVE_MANIFEST;
+				documentType = DocumentType.ARCHIVE_MANIFEST;
 				this.archiveType = archiveType;
-			} else documentType = SIMPLE_REDIRECT;
+			} else documentType = DocumentType.SIMPLE_REDIRECT;
 		}
 		splitfile = true;
 		splitfileAlgorithm = algo;
@@ -1222,7 +1235,7 @@ public class Metadata implements Cloneable, Serializable {
 
 	/** Is a manifest? */
 	public boolean isSimpleManifest() {
-		return documentType == SIMPLE_MANIFEST;
+		return documentType == DocumentType.SIMPLE_MANIFEST;
 	}
 
 	/**
@@ -1278,8 +1291,8 @@ public class Metadata implements Cloneable, Serializable {
 	 */
 	public boolean isSingleFileRedirect() {
 		return ((!splitfile) &&
-				((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA) ||
-				(documentType == ARCHIVE_MANIFEST)));
+				((documentType == DocumentType.SIMPLE_REDIRECT) || (documentType == DocumentType.MULTI_LEVEL_METADATA) ||
+				(documentType == DocumentType.ARCHIVE_MANIFEST)));
 	}
 
 	/**
@@ -1293,7 +1306,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * Is this a Archive manifest?
 	 */
 	public boolean isArchiveManifest() {
-		return documentType == ARCHIVE_MANIFEST;
+		return documentType == DocumentType.ARCHIVE_MANIFEST;
 	}
 
 	/**
@@ -1301,7 +1314,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * @return
 	 */
 	public boolean isArchiveMetadataRedirect() {
-		return documentType == ARCHIVE_METADATA_REDIRECT;
+		return documentType == DocumentType.ARCHIVE_METADATA_REDIRECT;
 	}
 
 	/**
@@ -1309,7 +1322,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * @return
 	 */
 	public boolean isArchiveInternalRedirect() {
-		return documentType == ARCHIVE_INTERNAL_REDIRECT;
+		return documentType == DocumentType.ARCHIVE_INTERNAL_REDIRECT;
 	}
 
 	/**
@@ -1317,7 +1330,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * if this is a archive internal redirect.
 	 */
 	public String getArchiveInternalName() {
-		if ((documentType != ARCHIVE_INTERNAL_REDIRECT) && (documentType != ARCHIVE_METADATA_REDIRECT)) throw new IllegalArgumentException();
+		if ((documentType != DocumentType.ARCHIVE_INTERNAL_REDIRECT) && (documentType != DocumentType.ARCHIVE_METADATA_REDIRECT)) throw new IllegalArgumentException();
 		return targetName;
 	}
 
@@ -1326,7 +1339,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * if this is a symbolic short link.
 	 */
 	public String getSymbolicShortlinkTargetName() {
-		if (documentType != SYMBOLIC_SHORTLINK) throw new IllegalArgumentException();
+		if (documentType != DocumentType.SYMBOLIC_SHORTLINK) throw new IllegalArgumentException();
 		return targetName;
 	}
 
@@ -1344,12 +1357,12 @@ public class Metadata implements Cloneable, Serializable {
 
 	/** Is this a simple splitfile? */
 	public boolean isSimpleSplitfile() {
-		return splitfile && (documentType == SIMPLE_REDIRECT);
+		return splitfile && (documentType == DocumentType.SIMPLE_REDIRECT);
 	}
 
 	/** Is multi-level/indirect metadata? */
 	public boolean isMultiLevelMetadata() {
-		return documentType == MULTI_LEVEL_METADATA;
+		return documentType == DocumentType.MULTI_LEVEL_METADATA;
 	}
 
 	/** What kind of archive is it? */
@@ -1361,14 +1374,14 @@ public class Metadata implements Cloneable, Serializable {
 	 * to fetch split Archive manifests.
 	 */
 	public void setSimpleRedirect() {
-		documentType = SIMPLE_REDIRECT;
+		documentType = DocumentType.SIMPLE_REDIRECT;
 	}
 
 	/** Is this a simple redirect?
 	 * (for KeyExplorer)
 	 */
 	public boolean isSimpleRedirect() {
-		return documentType == SIMPLE_REDIRECT;
+		return documentType == DocumentType.SIMPLE_REDIRECT;
 	}
 
 	/** Is noMime enabled?
@@ -1387,7 +1400,7 @@ public class Metadata implements Cloneable, Serializable {
 
 	/** Is this a symbilic shortlink? */
 	public boolean isSymbolicShortlink() {
-		return documentType == SYMBOLIC_SHORTLINK;
+		return documentType == DocumentType.SYMBOLIC_SHORTLINK;
 	}
 
 	/** Write the metadata as binary.
@@ -1396,7 +1409,7 @@ public class Metadata implements Cloneable, Serializable {
 	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(parsedVersion); // version
-		dos.writeByte(documentType);
+		dos.writeByte(documentType.code);
 		boolean hasTopBlocks = topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != 0;
 		if(haveFlags()) {
 			short flags = 0;
@@ -1432,7 +1445,7 @@ public class Metadata implements Cloneable, Serializable {
 			dos.writeShort(topCompatibilityMode);
 		}
 
-		if(documentType == ARCHIVE_MANIFEST) {
+		if(documentType == DocumentType.ARCHIVE_MANIFEST) {
 			short code = archiveType.metadataID;
 			dos.writeShort(code);
 		}
@@ -1476,7 +1489,7 @@ public class Metadata implements Cloneable, Serializable {
 		if(extraMetadata)
 			throw new UnsupportedOperationException("No extra metadata support yet");
 
-		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
+		if((!splitfile) && ((documentType == DocumentType.SIMPLE_REDIRECT) || (documentType == DocumentType.ARCHIVE_MANIFEST))) {
 			writeKey(dos, simpleRedirectKey);
 		} else if(splitfile) {
 			dos.writeShort(splitfileAlgorithm);
@@ -1510,7 +1523,7 @@ public class Metadata implements Cloneable, Serializable {
 			}
 		}
 
-		if(documentType == SIMPLE_MANIFEST) {
+		if(documentType == DocumentType.SIMPLE_MANIFEST) {
 			dos.writeInt(manifestEntries.size());
 			boolean kill = false;
 			LinkedList<Metadata> unresolvedMetadata = null;
@@ -1527,10 +1540,10 @@ public class Metadata implements Cloneable, Serializable {
 						FreenetURI uri = meta.resolvedURI;
 						String n = meta.resolvedName;
 						if(uri != null) {
-							meta = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
+							meta = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, uri, null);
 							data = meta.writeToByteArray();
 						} else if (n != null) {
-							meta = new Metadata(ARCHIVE_METADATA_REDIRECT, n);
+							meta = new Metadata(DocumentType.ARCHIVE_METADATA_REDIRECT, n);
 							data = meta.writeToByteArray();
 						} else {
 							kill = true;
@@ -1557,7 +1570,7 @@ public class Metadata implements Cloneable, Serializable {
 			}
 		}
 
-		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK)) {
+		if((documentType == DocumentType.ARCHIVE_INTERNAL_REDIRECT) || (documentType == DocumentType.ARCHIVE_METADATA_REDIRECT) || (documentType == DocumentType.SYMBOLIC_SHORTLINK)) {
 			byte[] data = targetName.getBytes("UTF-8");
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
@@ -1569,9 +1582,9 @@ public class Metadata implements Cloneable, Serializable {
 	 * have this metadata flags?
 	 */
 	public boolean haveFlags() {
-		return ((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
-				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT)
-				|| (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK));
+		return ((documentType == DocumentType.SIMPLE_REDIRECT) || (documentType == DocumentType.MULTI_LEVEL_METADATA)
+				|| (documentType == DocumentType.ARCHIVE_MANIFEST) || (documentType == DocumentType.ARCHIVE_INTERNAL_REDIRECT)
+				|| (documentType == DocumentType.ARCHIVE_METADATA_REDIRECT) || (documentType == DocumentType.SYMBOLIC_SHORTLINK));
 	}
 
 	/**
@@ -1647,7 +1660,7 @@ public class Metadata implements Cloneable, Serializable {
 		ARCHIVE_TYPE type = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType());
 		archiveType = type;
 		clientMetadata.clear();
-		documentType = ARCHIVE_MANIFEST;
+		documentType = DocumentType.ARCHIVE_MANIFEST;
 	}
 
 	public String getMIMEType() {
@@ -1691,7 +1704,7 @@ public class Metadata implements Cloneable, Serializable {
 		 */
 		public SimpleManifestComposer() {
 			m = new Metadata();
-			m.documentType = SIMPLE_MANIFEST;
+			m.documentType = DocumentType.SIMPLE_MANIFEST;
 			m.noMIME = true;
 			m.manifestEntries = new HashMap<String, Metadata>();
 		}

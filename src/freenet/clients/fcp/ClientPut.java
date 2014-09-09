@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -18,11 +17,11 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
+import freenet.client.Metadata.DocumentType;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
-import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.clients.fcp.RequestIdentifier.RequestType;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -31,7 +30,6 @@ import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
@@ -138,7 +136,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+uploadFrom);
 		if(uploadFrom == UploadFrom.REDIRECT) {
 			this.targetURI = redirectTarget;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
+			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			tempData = m.toBucket(core.clientContext.getBucketFactory(isPersistentForever()));
 			isMetadata = true;
 		} else
@@ -208,7 +206,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+uploadFrom);
 		if(uploadFrom == UploadFrom.REDIRECT) {
 			this.targetURI = message.redirectTarget;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
+			Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			try {
 	            tempData = m.toBucket(server.core.clientContext.getBucketFactory(isPersistentForever()));
 			} catch (MetadataUnresolvedException e) {

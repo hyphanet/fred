@@ -25,6 +25,7 @@ import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.Metadata.DocumentType;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -346,11 +347,11 @@ public class ContainerInserter implements ClientPutState, Serializable {
 				Metadata m;
 				if(element.targetURI != null) {
 					//System.out.println("Decompose: "+name+" (ManifestElement, Redirect)");
-					m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
+					m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, element.targetURI, cm);
 				} else {
 					//System.out.println("Decompose: "+name+" (ManifestElement, Data)");
 					containerItems.add(new ContainerElement(element.getData(), archivePrefix+name));
-					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
+					m = new Metadata(DocumentType.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
 				}
 				smc.addItem(name, m);
 			}

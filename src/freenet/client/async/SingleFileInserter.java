@@ -14,6 +14,7 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.Metadata.DocumentType;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.StartedCompressionEvent;
@@ -484,9 +485,9 @@ class SingleFileInserter implements ClientPutState, Serializable {
 			compressed = origCompressedDataLength;
 		}
 		if(archiveType != null)
-			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
+			meta = new Metadata(DocumentType.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
 		else // redirect
-			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
+			meta = new Metadata(DocumentType.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
 		if(targetFilename != null) {
 			HashMap<String, Object> hm = new HashMap<String, Object>();
 			hm.put(targetFilename, meta);

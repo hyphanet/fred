@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import freenet.client.InsertException.InsertExceptionMode;
+import freenet.client.Metadata.DocumentType;
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -283,7 +284,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	@Override
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
-		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
+		Metadata m = new Metadata(DocumentType.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
 		RandomAccessBucket b;
 		try {
 			b = m.toBucket(bucketFactory);
