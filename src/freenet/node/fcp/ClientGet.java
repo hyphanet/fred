@@ -104,6 +104,11 @@ public class ClientGet extends ClientRequest {
                 f, charset, fctx.canWriteClientCache, realTime, binaryBlob, core);
         if(finished) {
             ClientContext context = core.clientContext;
+            if(getFailedMessage != null) {
+                container.activate(getFailedMessage, Integer.MAX_VALUE);
+                if(getFailedMessage.expectedMimeType != null)
+                    this.foundDataMimeType = getFailedMessage.expectedMimeType;
+            }
             if(foundDataLength >= 0) {
                 ret.receive(new ExpectedFileSizeEvent(foundDataLength), context);
             }
@@ -132,7 +137,6 @@ public class ClientGet extends ClientRequest {
                 }
                 ret.setSuccessForMigration(context, completionTime, data);
             } else if(this.getFailedMessage != null) {
-                container.activate(getFailedMessage, Integer.MAX_VALUE);
                 ret.onFailure(getFailedMessage.getFetchException(), null);
             } else if(this.postFetchProtocolErrorMessage != null) {
                 tempFile.delete();
