@@ -13,11 +13,11 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutter;
 import freenet.client.events.FinishedCompressionEvent;
+import freenet.clients.fcp.ClientPutBase.UploadFrom;
 import freenet.clients.fcp.ClientRequest;
 import freenet.clients.fcp.IdentifierCollisionException;
 import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.fcp.PersistentRequestClient;
-import freenet.clients.fcp.ClientPutMessage.UploadFrom;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.LogThresholdCallback;
@@ -46,7 +46,7 @@ public class ClientPut extends ClientPutBase {
 	private final boolean binaryBlob;
 	private transient boolean compressing;
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override

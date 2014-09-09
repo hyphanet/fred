@@ -11,6 +11,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.clients.fcp.ClientPutBase.UploadFrom;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -83,29 +84,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean realTimeFlag;
 	final long metadataThreshold;
 	final boolean ignoreUSKDatehints;
-	
-	private static Map<Integer, UploadFrom> uploadFromByCode = new HashMap<Integer, UploadFrom>();
-	
-	public enum UploadFrom { // Codes must be constant at least for migration
-	    DIRECT(0),
-	    DISK(1),
-	    REDIRECT(2);
-	    
-	    final int code;
-	    
-	    UploadFrom(int code) {
-	        if(uploadFromByCode.containsKey(code)) throw new Error("Duplicate");
-	        uploadFromByCode.put(code, this);
-	        this.code = code;
-	    }
-	    
-	    public static UploadFrom getByCode(int x) {
-	        UploadFrom u = uploadFromByCode.get(x);
-	        if(u == null) throw new IllegalArgumentException();
-	        return u;
-	    }
-	    
-	}
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		String fnam = null;

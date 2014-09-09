@@ -1,6 +1,8 @@
 package freenet.clients.fcp;
 
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -62,7 +64,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
 
-        private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
@@ -71,7 +73,30 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			}
 		});
 	}
-
+	
+	private static Map<Integer, UploadFrom> uploadFromByCode = new HashMap<Integer, UploadFrom>();
+	
+	public enum UploadFrom { // Codes must be constant at least for migration
+	    DIRECT(0),
+	    DISK(1),
+	    REDIRECT(2);
+	    
+	    final int code;
+	    
+	    UploadFrom(int code) {
+	        if(uploadFromByCode.containsKey(code)) throw new Error("Duplicate");
+	        uploadFromByCode.put(code, this);
+	        this.code = code;
+	    }
+	    
+	    public static UploadFrom getByCode(int x) {
+	        UploadFrom u = uploadFromByCode.get(x);
+	        if(u == null) throw new IllegalArgumentException();
+	        return u;
+	    }
+	    
+	}
+	
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, boolean ignoreUSKDatehints, FCPServer server) throws MalformedURLException {

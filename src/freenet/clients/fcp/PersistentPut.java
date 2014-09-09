@@ -6,7 +6,7 @@ package freenet.clients.fcp;
 import java.io.File;
 
 import freenet.client.InsertContext;
-import freenet.clients.fcp.ClientPutMessage.UploadFrom;
+import freenet.clients.fcp.ClientPutBase.UploadFrom;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.HexUtil;
