@@ -777,6 +777,9 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 		if(ctx.overrideMIME != null)
 			mime = ctx.overrideMIME;
 		if(mime == null || mime.equals("")) return;
+        synchronized(this) {
+            expectedMIME = mime;
+        }
 		if(ctx.filterData) {
 			UnsafeContentTypeException e = ContentFilter.checkMIMEType(mime);
 			if(e != null) {
@@ -784,9 +787,6 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 			}
 			if(forceCompatibleExtension != null)
 				checkCompatibleExtension(mime);
-		}
-		synchronized(this) {
-			expectedMIME = mime;
 		}
 		context.getJobRunner(persistent()).queueNormalOrDrop(new PersistentJob() {
 
