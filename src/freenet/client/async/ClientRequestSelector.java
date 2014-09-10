@@ -146,8 +146,10 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private transient final HashSet<RunningInsert> runningInserts;
 	
-	// LOCKING: Synchronized because we may create new priorities.
-	// Both the cooldown queue and the RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock.
+	/** Choose a priority to start requests from.
+	 * @return The priority chosen or the time at which a priority will have requests to send.
+	 * LOCKING: Synchronized because we may create new priorities. Both the cooldown queue and the 
+	 * RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock. */
 	private synchronized long choosePriority(int fuzz, RandomSource random, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
