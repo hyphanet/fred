@@ -984,6 +984,7 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static byte[] copyToArray(ByteBuffer buf) {
+	    // FIXME this is still wrong - we should use the position and limit.
 	    if(buf.hasArray()) {
 	        byte[] array = buf.array();
 	        /* We *NEVER* return the original array because we want consistent behaviour: We always 

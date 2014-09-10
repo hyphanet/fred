@@ -272,6 +272,7 @@ public final class CryptByteBuffer implements Serializable{
      */
     public ByteBuffer encrypt(ByteBuffer input){
         if(input.hasArray())
+            // FIXME this is still wrong - we should use the position and limit.
             return encrypt(input.array(), input.arrayOffset(), input.capacity());
         else
             return encrypt(Fields.copyToArray(input));
@@ -347,6 +348,7 @@ public final class CryptByteBuffer implements Serializable{
      */
     public ByteBuffer decrypt(ByteBuffer input){
         if(input.hasArray())
+            // FIXME this is still wrong - we should use the position and limit.
             return decrypt(input.array(), input.arrayOffset(), input.capacity());
         else
             return decrypt(Fields.copyToArray(input));
