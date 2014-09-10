@@ -108,7 +108,7 @@ public class EncryptedRandomAccessThingTest {
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         thrown.expect(GeneralSecurityException.class);
-        thrown.expectMessage("Mac is incorrect");
+        thrown.expectMessage("MAC is incorrect");
         EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[0], barat2, 
                 new MasterSecret());
     }
