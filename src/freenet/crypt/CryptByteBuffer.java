@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 import java.util.BitSet;
 
 import javax.crypto.Cipher;
@@ -233,7 +234,7 @@ public final class CryptByteBuffer implements Serializable{
             } 
             else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
-                blockCipher.encipher(extractSmallerArray(input, offset, len), result);
+                blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
                 return ByteBuffer.wrap(result);
             }
             else{
@@ -298,7 +299,7 @@ public final class CryptByteBuffer implements Serializable{
             } 
             else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
-                blockCipher.decipher(extractSmallerArray(input, offset, len), result);
+                blockCipher.decipher(Arrays.copyOfRange(input, offset, offset+len), result);
                 return ByteBuffer.wrap(result);
             }
             else{
@@ -389,21 +390,5 @@ public final class CryptByteBuffer implements Serializable{
             throw new UnsupportedTypeException(type);
         }
         return iv;
-    }
-
-    /**
-     * Extracts a subset of a byte array
-     * @param input The byte[] to extract from
-     * @param offset Where to start extracting
-     * @param len How many bytes to extract after offset
-     * @return The extracted subset
-     */
-    private byte[] extractSmallerArray(byte[] input, int offset, int len){
-        if(input.length == len && offset == 0){
-            return input;
-        }
-        else{
-            return ByteBuffer.wrap(input, offset, len).array();
-        }
     }
 }
