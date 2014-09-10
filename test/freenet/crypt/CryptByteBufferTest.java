@@ -105,9 +105,9 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            crypt.encrypt(plain);
             ByteBuffer ciphertext = crypt.encrypt(plain);
-            crypt.encrypt(plain);
+            ByteBuffer ciphertext2 = crypt.encrypt(plain);
+            ByteBuffer ciphertext3 = crypt.encrypt(plain);
 
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
@@ -116,6 +116,10 @@ public class CryptByteBufferTest {
             }
             byte[] decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext));
             assertArrayEquals("CryptByteBufferType: "+type.name(), plain, decipheredtext);
+            decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext2));
+            assertArrayEquals("CryptByteBufferType2: "+type.name(), plain, decipheredtext);
+            decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext3));
+            assertArrayEquals("CryptByteBufferType3: "+type.name(), plain, decipheredtext);
         }
     }
 
