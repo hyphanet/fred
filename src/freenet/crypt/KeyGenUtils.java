@@ -28,14 +28,14 @@ import freenet.support.Logger;
 /**
  * KeyGenUtils offers a set of methods to easily generate Keys and KeyPairs for 
  * specific algorithms as well as for generating IVs and nonces. It will also take
- * keys stored in byte arrays and put them in SecertKey or KeyPair instances.
+ * keys stored in byte arrays and put them in SecretKey or KeyPair instances.
  * @author unixninja92
  *
  */
 public final class KeyGenUtils {
 
     /**
-     * Generates a public/private key pair formated for the algorithm specified
+     * Generates a public/private key pair formatted for the algorithm specified
      * and stores the keys in a KeyPair. Can not handle DSA keys.
      * @param type The algorithm format that the key pair should be generated for.
      * @return Returns the generated key pair
