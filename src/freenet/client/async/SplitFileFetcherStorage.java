@@ -431,7 +431,11 @@ public class SplitFileFetcherStorage {
             assert(crossCheckBlocksOffset == storedCrossCheckBlocksLength + storedBlocksLength);
         assert(segmentKeysOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength);
         assert(segmentStatusOffset == storedBlocksLength + storedCrossCheckBlocksLength + storedKeysLength + storedSegmentStatusLength);
-        fetcher.setSplitfileBlocks(splitfileDataBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
+        /* Lie about the required number of blocks. For a cross-segment splitfile, the actual 
+         * number of blocks needed is somewhere between splitfileDataBlocks and 
+         * splitfileDataBlocks + totalCrossCheckBlocks depending on what order we fetch them in. 
+         * Progress over 100% is apparently more annoying than finishing at 98%... */
+        fetcher.setSplitfileBlocks(splitfileDataBlocks + totalCrossCheckBlocks, splitfileCheckBlocks);
         
         keyListener.finishedSetup();
         
@@ -897,7 +901,7 @@ public class SplitFileFetcherStorage {
                 succeededBlocks += segment.foundBlocks();
                 failedBlocks += segment.failedBlocks();
             }
-            fetcher.setSplitfileBlocks(splitfileDataBlocks - totalCrossCheckBlocks, splitfileCheckBlocks + totalCrossCheckBlocks);
+            fetcher.setSplitfileBlocks(splitfileDataBlocks + totalCrossCheckBlocks, splitfileCheckBlocks);
             fetcher.onResume(succeededBlocks, failedBlocks, clientMetadata, decompressedLength);
         }
         if(crossSegments != null) {
