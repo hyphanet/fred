@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import freenet.keys.NodeCHK;
+import freenet.support.Logger;
 import freenet.support.io.StorageFormatException;
 
 /** Tracks which blocks have been completed, how many attempts have been made for which blocks,
@@ -13,6 +14,12 @@ import freenet.support.io.StorageFormatException;
  * @author toad
  */
 public class SimpleBlockChooser {
+    
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(SimpleBlockChooser.class);
+    }
 
     private final int blocks;
     private final boolean[] completed;
@@ -78,7 +85,10 @@ public class SimpleBlockChooser {
             if(completed[blockNo]) return false;
             completed[blockNo] = true;
             completedCount++;
-            if(completedCount < blocks) return true;
+            if(completedCount < blocks) {
+                if(logMINOR) Logger.minor(this, "Completed blocks: "+completedCount+"/"+blocks);
+                return true;
+            }
         }
         onCompletedAll();
         return true;

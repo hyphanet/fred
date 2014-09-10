@@ -3,12 +3,18 @@ package freenet.support;
 import freenet.client.async.ClientContext;
 import freenet.client.async.PersistentJob;
 import freenet.client.async.PersistentJobRunner;
+import freenet.client.async.PersistentJobRunnerImpl;
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
 /** A PersistentJobRunner that isn't persistent. Convenient for transient requests, code doesn't
  * need messy if(persistent) everywhere. */
 public class DummyJobRunner implements PersistentJobRunner {
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(DummyJobRunner.class);
+    }
     
     final Executor executor;
     final ClientContext context;
@@ -20,10 +26,12 @@ public class DummyJobRunner implements PersistentJobRunner {
 
     @Override
     public void queue(final PersistentJob job, final int priority) {
+        if(logMINOR) Logger.minor(this, "Running job off thread: "+job);
         executor.execute(new PrioRunnable() {
 
             @Override
             public void run() {
+                if(logMINOR) Logger.minor(this, "Starting job "+job);
                 job.run(context);
             }
 

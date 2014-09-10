@@ -10,12 +10,19 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.support.Logger;
 
 /**
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  *
  */
 public class ChosenBlockImpl extends ChosenBlock {
+    
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(ChosenBlockImpl.class);
+    }
 
 	public final SendableRequest request;
 	public final RequestScheduler sched;
@@ -27,6 +34,7 @@ public class ChosenBlockImpl extends ChosenBlock {
 		this.request = req;
 		this.sched = sched;
 		this.persistent = persistent;
+		if(logDEBUG) Logger.minor(this, "Created "+this+" for "+(persistent?"persistent":"transient")+" block "+token+" for key "+key, new Exception("debug")); 
 	}
 
 	@Override

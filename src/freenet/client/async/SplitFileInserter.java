@@ -26,6 +26,12 @@ import freenet.support.io.StorageFormatException;
  */
 public class SplitFileInserter implements ClientPutState, Serializable, SplitFileInserterStorageCallback {
     
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+    static {
+        Logger.registerClass(SplitFileInserter.class);
+    }
+
     private static final long serialVersionUID = 1L;
     /** Is the insert persistent? */
     final boolean persistent;
@@ -201,6 +207,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
             @Override
             public boolean run(ClientContext context) {
+                if(logMINOR) Logger.minor(this, "Succeeding on "+this);
                 if(!(ctx.earlyEncode || ctx.getCHKOnly)) {
                     reportMetadata(metadata);
                 }

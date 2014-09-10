@@ -1403,11 +1403,13 @@ public class SplitFileInserterStorage {
     }
 
     /** Called when a segment completes. Can be called inside locks as it runs off-thread. */
-    public void segmentSucceeded(SplitFileInserterSegmentStorage completedSegment) {
+    public void segmentSucceeded(final SplitFileInserterSegmentStorage completedSegment) {
+        if(logMINOR) Logger.minor(this, "Succeeded segment "+completedSegment);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
+                if(logMINOR) Logger.minor(this, "Succeeding segment "+completedSegment+" for "+this);
                 if(maybeFail()) return true;
                 if(allSegmentsSucceeded()) {
                     synchronized(this) {
@@ -1415,6 +1417,7 @@ public class SplitFileInserterStorage {
                         if(hasFinished()) return false;
                         status = Status.GENERATING_METADATA;
                     }
+                    if(logMINOR) Logger.minor(this, "Generating metadata...");
                     try {
                         Metadata metadata = encodeMetadata();
                         synchronized(this) {
@@ -1438,6 +1441,8 @@ public class SplitFileInserterStorage {
                         }
                         callback.onFailed(e1);
                     }
+                } else {
+                    if(logMINOR) Logger.minor(this, "Not all segments succeeded for "+this);
                 }
                 return true;
             }
@@ -1453,9 +1458,13 @@ public class SplitFileInserterStorage {
             synchronized(this) {
                 if(failing == null) return false;
                 e = failing;
-                if(hasFinished()) return true;
+                if(hasFinished()) {
+                    if(logMINOR) Logger.minor(this, "Maybe fail returning true because already finished");
+                    return true;
+                }
                 status = Status.FAILED;
             }
+            if(logMINOR) Logger.minor(this, "Maybe fail returning true with error "+e);
             callback.onFailed(e);
             return true;
         } else {

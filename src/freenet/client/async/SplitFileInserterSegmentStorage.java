@@ -595,6 +595,7 @@ public class SplitFileInserterSegmentStorage {
 
     /** Called by BlockChooser when all blocks have been inserted. */
     void onInsertedAllBlocks() {
+        if(logMINOR) Logger.minor(this, "Inserted all blocks in segment "+this);
         synchronized(this) {
             if(!encoded) return;
         }
