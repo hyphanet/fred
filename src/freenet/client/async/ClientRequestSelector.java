@@ -146,11 +146,9 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private transient final HashSet<RunningInsert> runningInserts;
 	
-	// We pass in the schedTransient to the next two methods so that we can select between either of them.
-	
 	// LOCKING: Synchronized because we may create new priorities.
 	// Both the cooldown queue and the RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock.
-	private synchronized long removeFirstAccordingToPriorities(int fuzz, RandomSource random, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, short maxPrio, ClientContext context, long now){
+	private synchronized long removeFirstAccordingToPriorities(int fuzz, RandomSource random, boolean transientOnly, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -302,7 +300,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.getWakeupTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
-		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, context, now);
+		long l = removeFirstAccordingToPriorities(fuzz, random, transientOnly, maxPrio, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
 			return null;
