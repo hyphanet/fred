@@ -73,7 +73,7 @@ public class TempBucketTest extends TestSuite {
 			try {
 				assertTrue(b.isRAMBucket());
 
-				OutputStream os = b.getOutputStream();
+				OutputStream os = b.getOutputStreamUnbuffered();
 
 				os.write(new byte[16]);
 				assertTrue(b.isRAMBucket());
@@ -94,7 +94,7 @@ public class TempBucketTest extends TestSuite {
 			try {
 				assertTrue(b.isRAMBucket());
 
-				OutputStream os = b.getOutputStream();
+				OutputStream os = b.getOutputStreamUnbuffered();
 
 				os.write(new byte[16]);
 				assertTrue(b.isRAMBucket());
@@ -111,7 +111,7 @@ public class TempBucketTest extends TestSuite {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(64);
-			OutputStream os = bucket.getOutputStream();
+			OutputStream os = bucket.getOutputStreamUnbuffered();
 			os.write(new byte[16]);
 			InputStream is = bucket.getInputStream();
 			bucket.migrateToDisk();
@@ -128,7 +128,7 @@ public class TempBucketTest extends TestSuite {
 			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(2048);
-			OutputStream os = bucket.getOutputStream();
+			OutputStream os = bucket.getOutputStreamUnbuffered();
 			byte[] data = new byte[2048];
 			new Random(89).nextBytes(data);
 			os.write(data);
