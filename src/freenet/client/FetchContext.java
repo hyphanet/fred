@@ -333,7 +333,6 @@ public class FetchContext implements Cloneable, Serializable {
         dos.writeInt(cooldownRetries);
         dos.writeLong(cooldownTime);
         dos.writeBoolean(ignoreUSKDatehints);
-        // Ignore useNewSplitfileCodeTransient, it will go away soon.
     }
     
     /** Create from a saved form, e.g. for restarting a request from scratch. Will create its own
