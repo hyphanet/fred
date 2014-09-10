@@ -138,7 +138,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		    listener = null;
 		if(getters != null && !noCheckStore) {
 		    for(SendableGet getter : getters)
-		        datastoreChecker.queueTransientRequest(getter, blocks);
+		        datastoreChecker.queueRequest(getter, blocks);
 		} else {
 		    boolean anyValid = false;
 		    for(SendableGet getter : getters) {
