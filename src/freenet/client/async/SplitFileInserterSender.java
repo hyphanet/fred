@@ -3,7 +3,6 @@ package freenet.client.async;
 import java.io.IOException;
 
 import freenet.client.InsertException;
-import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.SplitFileInserterSegmentStorage.BlockInsert;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
