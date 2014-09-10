@@ -670,6 +670,8 @@ public class SplitFileInserterStorageTest extends TestCase {
             int minBlocks = inserterSegment.dataBlockCount + inserterSegment.crossCheckBlockCount;
             int totalBlocks = inserterSegment.totalBlockCount;
             boolean[] fetched = new boolean[totalBlocks];
+            if(i == storage.segments.length-1 && cmode.ordinal() < CompatibilityMode.COMPAT_1255.ordinal())
+                fetched[inserterSegment.dataBlockCount-1] = true; // We don't use the last block of the last segment for old splitfiles
             for(int j=0;j<minBlocks;j++) {
                 int blockNo;
                 do {
