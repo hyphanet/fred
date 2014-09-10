@@ -150,7 +150,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	 * @return The priority chosen or the time at which a priority will have requests to send.
 	 * LOCKING: Synchronized because we may create new priorities. Both the cooldown queue and the 
 	 * RGA hierarchy, rooted at the priorities, use ClientRequestSelector lock. */
-	private synchronized long choosePriority(int fuzz, RandomSource random, boolean transientOnly, short maxPrio, ClientContext context, long now){
+	private synchronized long choosePriority(int fuzz, RandomSource random, short maxPrio, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
 		
 		long wakeupTime = Long.MAX_VALUE;
@@ -193,11 +193,11 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		return wakeupTime;
 	}
 	
-	ChosenBlock chooseRequest(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, KeyListenerTracker schedTransient, short maxPrio, boolean realTime, ClientContext context) {
+	ChosenBlock chooseRequest(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, now);
+			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, maxPrio, realTime, context, now);
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -289,27 +289,22 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn chooseRequestInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, KeyListenerTracker schedCore, KeyListenerTracker schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, boolean realTime, ClientContext context, long now) {
+	SelectorReturn chooseRequestInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
-		if(schedCore == null) transientOnly = true;
-		if(transientOnly && notTransient) {
-			Logger.error(this, "Not transient but no core");
-			return null;
-		}
-		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
+		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
 		if(tryOfferedKeys) {
 			if(offeredKeys.getWakeupTime(context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
-		long l = choosePriority(fuzz, random, transientOnly, maxPrio, context, now);
+		long l = choosePriority(fuzz, random, maxPrio, context, now);
 		if(l > Integer.MAX_VALUE) {
 			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
 			return null;
 		}
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
-			if((!notTransient) && !tryOfferedKeys) {
+			if(!tryOfferedKeys) {
 				if(offeredKeys != null && offeredKeys.getWakeupTime(context, now) == 0)
 					return new SelectorReturn(offeredKeys);
 			}
