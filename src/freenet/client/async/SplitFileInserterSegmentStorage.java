@@ -621,7 +621,6 @@ public class SplitFileInserterSegmentStorage {
                 } catch (IOException e1) {
                     if(parent.hasFinished()) return; // Race condition possible as this is a callback
                     parent.failOnDiskError(e1);
-                    parent.clearCooldown();
                     return;
                 }
             } else if(blockChooser.consecutiveRNFsCountAsSuccess > 0) {
