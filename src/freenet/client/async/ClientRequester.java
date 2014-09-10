@@ -402,6 +402,7 @@ public abstract class ClientRequester implements Serializable {
     protected void innerOnResume(ClientContext context) throws ResumeFailedException {
         ClientBaseCallback cb = getCallback();
         client = cb.getRequestClient();
+        assert(client.persistent());
         requests = new SendableRequestSet();
         if(sentToNetwork)
             innerToNetwork(context);
