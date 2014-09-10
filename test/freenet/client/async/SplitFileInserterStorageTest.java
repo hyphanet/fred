@@ -206,6 +206,11 @@ public class SplitFileInserterStorageTest extends TestCase {
             // Ignore.
         }
 
+        @Override
+        public void clearCooldown() {
+            // Ignore.
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
@@ -343,6 +348,58 @@ public class SplitFileInserterStorageTest extends TestCase {
             assertFalse(chosenBlocks[chosen.blockNumber]);
             chosenBlocks[chosen.blockNumber] = true;
             segment.onFailure(chosen.blockNumber, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
+        }
+        keys.clear();
+        // Choose and succeed all blocks.
+        chosenBlocks = new boolean[segment.totalBlockCount];
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            keys.addInsert(chosen);
+            assertTrue(chosen != null);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+            segment.onInsertedBlock(chosen.blockNumber, segment.encodeBlock(chosen.blockNumber).getClientKey());
+        }
+        cb.waitForSucceededInsert();
+        assertEquals(storage.getStatus(), Status.SUCCEEDED);
+    }
+
+    public void testSmallSplitfileChooseCooldown() throws IOException, InsertException, MissingKeyException {
+        Random r = new Random(12121);
+        long size = 65536; // Exact multiple, so no last block
+        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        HashResult[] hashes = getHashes(data);
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.maxInsertRetries = 2;
+        MyKeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        cb.waitForFinishedEncode();
+        assertEquals(storage.segments.length, 1);
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertEquals(segment.dataBlockCount, 2);
+        assertEquals(segment.checkBlockCount, 3);
+        assertEquals(segment.crossCheckBlockCount, 0);
+        assertEquals(storage.getStatus(), Status.ENCODED);
+        boolean[] chosenBlocks = new boolean[segment.totalBlockCount];
+        assertFalse(storage.noBlocksToSend());
+        // Choose and fail all blocks.
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            BlockInsert chosen = segment.chooseBlock();
+            assertTrue(chosen != null);
+            keys.addInsert(chosen);
+            assertFalse(chosenBlocks[chosen.blockNumber]);
+            chosenBlocks[chosen.blockNumber] = true;
+        }
+        assertNull(storage.chooseBlock());
+        assertTrue(storage.noBlocksToSend());
+        for(int i=0;i<segment.totalBlockCount;i++) {
+            segment.onFailure(i, new InsertException(InsertExceptionMode.ROUTE_NOT_FOUND));
+            assertFalse(storage.noBlocksToSend());
         }
         keys.clear();
         // Choose and succeed all blocks.

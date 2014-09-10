@@ -34,4 +34,8 @@ public interface SplitFileInserterStorageCallback {
     /** Called when a block is inserted successfully */
     void onInsertedBlock();
 
+    /** Called when a block becomes fetchable (unless because of an encode, in which case we only 
+     * call encodingProgress() ) */
+    void clearCooldown();
+
 }

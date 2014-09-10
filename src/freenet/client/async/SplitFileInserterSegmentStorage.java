@@ -614,12 +614,14 @@ public class SplitFileInserterSegmentStorage {
                 try {
                     readKey(blockNo);
                     blockChooser.onRNF(blockNo);
+                    parent.clearCooldown();
                     return;
                 } catch (MissingKeyException e1) {
                     Logger.error(this, "RNF but no key on block "+blockNo+" on "+this);
                 } catch (IOException e1) {
                     if(parent.hasFinished()) return; // Race condition possible as this is a callback
                     parent.failOnDiskError(e1);
+                    parent.clearCooldown();
                     return;
                 }
             } else if(blockChooser.consecutiveRNFsCountAsSuccess > 0) {
@@ -632,6 +634,7 @@ public class SplitFileInserterSegmentStorage {
                 parent.failTooManyRetriesInBlock();
             } else {
                 if(blockChooser.maxRetries >= 0) lazyWriteMetadata();
+                parent.clearCooldown();
             }
         }
     }

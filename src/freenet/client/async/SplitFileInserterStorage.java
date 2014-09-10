@@ -1734,4 +1734,11 @@ public class SplitFileInserterStorage {
         return totalDataBlocks + totalCheckBlocks + crossCheckBlocks * segments.length;
     }
 
+    public void clearCooldown() {
+        synchronized(cooldownLock) {
+            noBlocksToSend = false;
+        }
+        this.callback.clearCooldown();
+    }
+
 }

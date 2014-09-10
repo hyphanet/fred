@@ -265,4 +265,9 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         storage.onShutdown(context);
     }
 
+    @Override
+    public void clearCooldown() {
+        sender.clearWakeupTime(context);
+    }
+
 }
