@@ -239,13 +239,16 @@ public final class MessageAuthCode {
     }
     
     /**
-     * Verifies that the two MAC addresses passed are equivalent.
+     * Verifies that the two MAC addresses passed are equivalent. Note that we compare the whole
+     * buffers. This should not be a problem, but is different to the usual meaning of 
+     * ByteBuffer.equal().
      * @param mac1 First MAC to be verified
      * @param mac2 Second MAC to be verified
      * @return Returns true if the MACs match, otherwise false.
      */
     public final static boolean verify(ByteBuffer mac1, ByteBuffer mac2){
-        return mac1.equals(mac2);
+        // Must be constant time, or as close as we can
+        return MessageDigest.isEqual(Fields.copyToArray(mac1), Fields.copyToArray(mac2));
     }
 
     /**
