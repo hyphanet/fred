@@ -234,11 +234,13 @@ public final class CryptByteBuffer implements Serializable{
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
+                if(offset+len > input.length) throw new IllegalArgumentException();
                 byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
                 encryptPCFB.blockEncipher(buf, 0, len);
                 return ByteBuffer.wrap(buf);
             } else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
+                if(offset+len > input.length) throw new IllegalArgumentException();
                 blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
                 return ByteBuffer.wrap(result);
             }
@@ -306,12 +308,14 @@ public final class CryptByteBuffer implements Serializable{
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
+                if(offset+len > input.length) throw new IllegalArgumentException();
                 byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
                 decryptPCFB.blockDecipher(buf, 0, len);
                 return ByteBuffer.wrap(buf);
             } 
             else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
+                if(offset+len > input.length) throw new IllegalArgumentException();
                 blockCipher.decipher(Arrays.copyOfRange(input, offset, offset+len), result);
                 return ByteBuffer.wrap(result);
             }
