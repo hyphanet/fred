@@ -35,7 +35,7 @@ public class SplitFileInserterSender extends SendableInsert {
     final SplitFileInserterStorage storage;
 
     public SplitFileInserterSender(SplitFileInserter parent, SplitFileInserterStorage storage) {
-        super(false, parent.realTime); // The request itself is non-persistent regardless of the parent.
+        super(parent.persistent, parent.realTime); // Persistence should be from parent so that e.g. callbacks get run on the right jobRunner.
         this.parent = parent;
         this.storage = storage;
     }
