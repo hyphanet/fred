@@ -14,6 +14,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -92,7 +93,7 @@ public final class MessageAuthCode {
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type, ByteBuffer cryptoKey) throws InvalidKeyException {
-        this(type, cryptoKey.array());  
+        this(type, Fields.copyToArray(cryptoKey));  
     }
 
     /**
@@ -193,7 +194,8 @@ public final class MessageAuthCode {
      * Generates the MAC of all the bytes in the buffer added with the
      * addBytes methods. The buffer is then cleared after the MAC has been
      * generated.
-     * @return The Message Authentication Code
+     * @return The Message Authentication Code. Will have a backing array and array offset 0, so
+     * you can call array() on it if you really must.
      */
     public final ByteBuffer genMac(){
         return ByteBuffer.wrap(mac.doFinal());
@@ -256,7 +258,7 @@ public final class MessageAuthCode {
      * @return Returns true if it is a match, otherwise false.
      */
     public final boolean verifyData(byte[] otherMac, byte[]... data){
-        return verify(genMac(data).array(), otherMac);
+        return verify(Fields.copyToArray(genMac(data)), otherMac);
     }
     
     /**

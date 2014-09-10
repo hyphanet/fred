@@ -17,6 +17,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 public class MessageAuthCodeTest{
@@ -74,7 +75,7 @@ public class MessageAuthCodeTest{
             for (int j = 0; j < messages[i].length; j++){
                 mac.addByte(messages[i][j]);
             }
-            assertArrayEquals("MACType: "+types[i].name(), mac.genMac().array(), trueMacs[i]);
+            assertArrayEquals("MACType: "+types[i].name(), Fields.copyToArray(mac.genMac()), trueMacs[i]);
         }
     }
 

@@ -22,6 +22,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import freenet.node.NodeStarter;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -80,7 +81,7 @@ public final class KeyGenUtils {
      * @return Public key as PublicKey
      */
     public static PublicKey getPublicKey(KeyPairType type, ByteBuffer pub){
-        return getPublicKey(type, pub.array());
+        return getPublicKey(type, Fields.copyToArray(pub));
     }
 
     /**
@@ -102,7 +103,7 @@ public final class KeyGenUtils {
      * @return Public key as KeyPair with a null private key
      */
     public static KeyPair getPublicKeyPair(KeyPairType type, ByteBuffer pub) {
-        return  getPublicKeyPair(type, pub.array());
+        return  getPublicKeyPair(type, Fields.copyToArray(pub));
     }
 
     /**
@@ -143,7 +144,7 @@ public final class KeyGenUtils {
      * @return The public key and private key in a KeyPair
      */
     public static KeyPair getKeyPair(KeyPairType type, ByteBuffer pub, ByteBuffer pri) {
-        return getKeyPair(type, pub.array(), pri.array());
+        return getKeyPair(type, Fields.copyToArray(pub), Fields.copyToArray(pri));
     }
 
     /**
@@ -194,7 +195,7 @@ public final class KeyGenUtils {
      * @return The key as a SecretKey
      */
     public static SecretKey getSecretKey(KeyType type, ByteBuffer key){
-        return getSecretKey(type, key.array());
+        return getSecretKey(type, Fields.copyToArray(key));
     }
 
     /**
@@ -243,7 +244,7 @@ public final class KeyGenUtils {
      * @return Returns an IvParameterSpec containing the iv. 
      */
     public static IvParameterSpec getIvParameterSpec(ByteBuffer iv){
-        return new IvParameterSpec(iv.array());
+        return new IvParameterSpec(Fields.copyToArray(iv));
     }
 
     /**

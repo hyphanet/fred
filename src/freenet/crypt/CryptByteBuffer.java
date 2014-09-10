@@ -16,6 +16,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -126,7 +127,7 @@ public final class CryptByteBuffer implements Serializable{
      * @throws InvalidKeyException 
      */
     public CryptByteBuffer(CryptByteBufferType type, ByteBuffer key) throws GeneralSecurityException{
-        this(type, key.array());
+        this(type, Fields.copyToArray(key));
     }
 
     /**
@@ -171,7 +172,7 @@ public final class CryptByteBuffer implements Serializable{
      */
     public CryptByteBuffer(CryptByteBufferType type, SecretKey key, ByteBuffer iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
-        this(type, key, iv.array(), 0);
+        this(type, key, Fields.copyToArray(iv), 0);
     }
 
     /**
@@ -216,7 +217,7 @@ public final class CryptByteBuffer implements Serializable{
      */
     public CryptByteBuffer(CryptByteBufferType type, ByteBuffer key, ByteBuffer iv) 
             throws InvalidKeyException, InvalidAlgorithmParameterException{
-        this(type, key.array(), iv.array(), 0);
+        this(type, Fields.copyToArray(key), Fields.copyToArray(iv), 0);
     }
 
     /**
@@ -225,7 +226,8 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The bytes to be encrypted
      * @param offset The position of input to start encrypting at
      * @param len The number of bytes after offset to encrypt
-     * @return Returns ByteBuffer input with the specified section encrypted
+     * @return Returns ByteBuffer input with the specified section encrypted. The buffer will have
+     * a backing array and its array offset will be 0.
      */
     public ByteBuffer encrypt(byte[] input, int offset, int len){
         try{
@@ -264,7 +266,7 @@ public final class CryptByteBuffer implements Serializable{
      * @return The encrypted ByteBuffer
      */
     public ByteBuffer encrypt(ByteBuffer input){
-        return encrypt(input.array());
+        return encrypt(Fields.copyToArray(input));
     }
 
     // FIXME
@@ -290,7 +292,8 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The bytes to be decrypted
      * @param offset The position of input to start decrypting at
      * @param len The number of bytes after offset to decrypt
-     * @return Returns ByteBuffer input with the specified section decrypted
+     * @return Returns ByteBuffer input with the specified section decrypted. The buffer will have
+     * a backing array and its array offset will be 0.
      */
     public ByteBuffer decrypt(byte[] input, int offset, int len){
         try{
@@ -329,7 +332,7 @@ public final class CryptByteBuffer implements Serializable{
      * @return The decrypted ByteBuffer
      */
     public ByteBuffer decrypt(ByteBuffer input){
-        return decrypt(input.array());
+        return decrypt(Fields.copyToArray(input));
     }
 
     // FIXME

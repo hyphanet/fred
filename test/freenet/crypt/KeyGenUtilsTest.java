@@ -300,7 +300,7 @@ public class KeyGenUtilsTest {
 
     @Test
     public void testGenNonceLength() {
-        assertEquals(KeyGenUtils.genNonce(trueLength).array().length, trueLength);
+        assertEquals(KeyGenUtils.genNonce(trueLength).capacity(), trueLength);
     }
 
     @Test (expected = NegativeArraySizeException.class)

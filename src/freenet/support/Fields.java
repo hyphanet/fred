@@ -1,7 +1,9 @@
 package freenet.support;
 
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -972,6 +974,26 @@ public abstract class Fields {
 				return -1;
 		}
 		return 0;
+	}
+	
+	/** Copy the whole contents of the ByteBuffer to an array. This is *NOT* equivalent to 
+	 * ByteBuffer.array() because in general arrayOffset() != 0 and capacity() != array().length.
+	 * Doing .array() is safe ONLY when you've just allocate()'ed it. TODO I wonder if static 
+	 * analysis warns about this? :)
+	 * @param buf The input buffer. Will not be changed.
+	 * @return
+	 */
+	public static byte[] copyToArray(ByteBuffer buf) {
+	    byte[] array = buf.array();
+	    /* We *NEVER* return the original array because we want consistent behaviour: We always 
+	     * return a new array, and modifying it will not affect the original ByteBuffer. This is
+	     * important to avoid nasty intermittent bugs, and these are generally small objects (keys,
+	     * IVs etc); allocating a few bytes is very fast in modern Java.
+	     * 
+	     * If we really wanted to take the risk, we'd do:
+	     * if(array.length == buf.capacity()) return array;
+	     */
+	    return Arrays.copyOfRange(array, buf.arrayOffset(), buf.capacity());
 	}
 
 }

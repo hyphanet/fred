@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
 /**
@@ -219,7 +220,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
-            encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded()).array();
+            encryptedKey = Fields.copyToArray(crypt.encrypt(unencryptedBaseKey.getEncoded()));
         } catch (InvalidKeyException e) {
             throw new GeneralSecurityException("Something went wrong with key generation. please "
                     + "report", e.fillInStackTrace());
@@ -233,7 +234,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         byte[] ver = ByteBuffer.allocate(4).putInt(version).array();
         try {
             MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey);
-            byte[] macResult = mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver).array();
+            byte[] macResult = Fields.copyToArray(mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver));
             System.arraycopy(macResult, 0, footer, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {

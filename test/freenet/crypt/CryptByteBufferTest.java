@@ -18,6 +18,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
+import freenet.support.Fields;
+
 public class CryptByteBufferTest {
     private static final CryptByteBufferType[] cipherTypes = CryptByteBufferType.values();
 
@@ -62,7 +64,7 @@ public class CryptByteBufferTest {
             }
             ByteBuffer ciphertext = crypt.encrypt(Hex.decode(plainText[i]));
 
-            byte[] decipheredtext = crypt.decrypt(ciphertext).array();
+            byte[] decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext));
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
@@ -112,7 +114,7 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] decipheredtext = crypt.decrypt(ciphertext).array();
+            byte[] decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext));
             assertArrayEquals("CryptByteBufferType: "+type.name(), plain, decipheredtext);
         }
     }
