@@ -193,8 +193,12 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		return wakeupTime;
 	}
 	
+	/** Choose a request to run and create the ChosenBlock for it. A request chosen by 
+	 * chooseRequestInner() may not be runnable (it may return null if the request is already 
+	 * running), so we may need to try repeatedly. FIXME this is only necessary because many 
+	 * classes only update their cooldown status when choosing a block to send, e.g. 
+	 * SplitFileInserter. */
 	ChosenBlock chooseRequest(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context) {
-		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
 			SelectorReturn r = chooseRequestInner(fuzz, random, offeredKeys, starter, maxPrio, realTime, context, now);
@@ -289,6 +293,11 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
+	/** Choose a request to run. Does not check whether the SendableRequest is actually runnable at 
+	 * the moment. The cooldown mechanism on the RGAs and SRGAs should ensure that it is usable 
+	 * most of the time.
+	 * @return Either a chosen request or the time at which we should try again if all priorities 
+	 * are waiting for requests to finish / cooldown periods to expire. */
 	SelectorReturn chooseRequestInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, short maxPrio, boolean realTime, ClientContext context, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
