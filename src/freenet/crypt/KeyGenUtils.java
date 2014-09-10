@@ -248,8 +248,8 @@ public final class KeyGenUtils {
     }
 
     /**
-     * Derives a ByteBuffer that is 512 bytes long from the given key using the provided class name 
-     * and kdfString
+     * Derives a ByteBuffer that is 512 bits (32 bytes) long from the given key using the provided 
+     * class name and kdfString
      * @param kdfKey The key to derive from
      * @param c Class name to use in derivation 
      * @param kdfString Sting to use in derivation
