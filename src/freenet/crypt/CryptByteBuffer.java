@@ -221,8 +221,9 @@ public final class CryptByteBuffer implements Serializable{
     }
 
     /**
-     * Encrypts the specified section of provided byte[]. If you are using a RijndaelECB
-     * alg then len must equal the block size. 
+     * Encrypts the specified section of provided byte[] into a new array returned as a ByteBuffer.
+     * Does not modify the original array. If you are using a RijndaelECB alg then len must equal 
+     * the block size. 
      * @param input The bytes to be encrypted
      * @param offset The position of input to start encrypting at
      * @param len The number of bytes after offset to encrypt
@@ -232,9 +233,11 @@ public final class CryptByteBuffer implements Serializable{
     public ByteBuffer encrypt(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
-                return ByteBuffer.wrap(encryptPCFB.blockEncipher(input, offset, len));
-            } 
-            else if(type.cipherName.equals("RIJNDAEL")){
+                // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
+                byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
+                encryptPCFB.blockEncipher(buf, 0, len);
+                return ByteBuffer.wrap(buf);
+            } else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
                 blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
                 return ByteBuffer.wrap(result);
@@ -287,8 +290,9 @@ public final class CryptByteBuffer implements Serializable{
 //    }
 
     /**
-     * Decrypts the specified section of provided byte[]. If you are using a RijndaelECB
-     * alg then len must equal the block size. 
+     * Decrypts the specified section of provided byte[] into an array which is returned as a
+     * ByteBuffer. Does not modify the original array. If you are using a RijndaelECB alg then len 
+     * must equal the block size. 
      * @param input The bytes to be decrypted
      * @param offset The position of input to start decrypting at
      * @param len The number of bytes after offset to decrypt
@@ -298,7 +302,10 @@ public final class CryptByteBuffer implements Serializable{
     public ByteBuffer decrypt(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
-                return ByteBuffer.wrap(decryptPCFB.blockDecipher(input, offset, len));
+                // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
+                byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
+                decryptPCFB.blockDecipher(buf, 0, len);
+                return ByteBuffer.wrap(buf);
             } 
             else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
