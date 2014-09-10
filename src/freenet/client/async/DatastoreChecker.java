@@ -49,27 +49,23 @@ public class DatastoreChecker implements PrioRunnable {
 		/** Request which we will call finishRegister() for when we have
 		 *  checked the keys lists. Deactivated (if persistent). */
 		final SendableGet getter;
-		QueueItem(SendableGet getter) {
+        /** Arrays of keys to check. */
+        Key[] keys;
+        final BlockSet blockSet;
+		QueueItem(Key[] keys, SendableGet getter, BlockSet blockSet) {
 			this.getter = getter;
+            this.keys = keys;
+            this.blockSet = blockSet;
 		}
 		public boolean equals(Object o) {
+		    // Hack to make transientQueue.remove() work.
 			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
 			return this.getter == ((QueueItem)o).getter;
 		}
 	}
 
-	private static final class TransientItem extends QueueItem {
-		/** Arrays of keys to check. */
-		Key[] keys;
-		final BlockSet blockSet;
-		TransientItem(Key[] keys, SendableGet getter, BlockSet blockSet) {
-			super(getter);
-			this.keys = keys;
-			this.blockSet = blockSet;
-		}
-	}
 	/** List of transient requests information. */
-	private final ArrayDeque<TransientItem>[] transientQueue;
+	private final ArrayDeque<QueueItem>[] transientQueue;
 
 	private ClientContext context;
 	private final Node node;
@@ -84,7 +80,7 @@ public class DatastoreChecker implements PrioRunnable {
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
 		transientQueue = new ArrayDeque[priorities];
 		for(int i=0;i<priorities;i++)
-			transientQueue[i] = new ArrayDeque<TransientItem>();
+			transientQueue[i] = new ArrayDeque<QueueItem>();
 	}
 
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
@@ -100,7 +96,7 @@ public class DatastoreChecker implements PrioRunnable {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
 			}
-			TransientItem queueItem = new TransientItem(
+			QueueItem queueItem = new QueueItem(
 					finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]),
 					getter, blocks);
 			if(logMINOR && transientQueue[prio].contains(queueItem)) {
@@ -137,7 +133,7 @@ public class DatastoreChecker implements PrioRunnable {
 		synchronized(this) {
 			while(true) {
 				for(short prio = 0;prio<transientQueue.length;prio++) {
-					TransientItem trans;
+				    QueueItem trans;
 					if((trans = transientQueue[prio].pollFirst()) != null) {
 						keys = trans.keys;
 						getter = trans.getter;
@@ -240,7 +236,7 @@ public class DatastoreChecker implements PrioRunnable {
 	@SuppressWarnings("unchecked")
 	public void removeRequest(SendableGet request, boolean persistent, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
-		QueueItem requestMatcher = new QueueItem(request);
+		QueueItem requestMatcher = new QueueItem(null, request, null);
 		synchronized(this) {
 		    if(!transientQueue[prio].remove(requestMatcher)) return;
 		}
