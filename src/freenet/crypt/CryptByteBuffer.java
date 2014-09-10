@@ -361,7 +361,7 @@ public final class CryptByteBuffer implements Serializable{
 
     /**
      * Changes the current iv to the provided iv and initializes the cipher instances with
-     * the new iv. Only works with algorithms that support IVs.
+     * the new iv. Only works with algorithms that support IVs, not RijndaelPCFB.
      * @param iv The new iv to use as IvParameterSpec
      * @throws InvalidAlgorithmParameterException
      */
@@ -380,7 +380,7 @@ public final class CryptByteBuffer implements Serializable{
 
     /**
      * Generates a new IV to be used and initializes the cipher instances with
-     * the new iv. Only works with algorithms that support IVs.
+     * the new iv. Only works with algorithms that support IVs, not RijndaelPCFB.
      * @return The generated IV
      */
     public IvParameterSpec genIV(){
