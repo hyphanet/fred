@@ -101,7 +101,7 @@ public class SimpleSendableInsert extends SendableInsert {
 				}
 				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
 				onSuccess(req.token, null, context);
-                sched.removeTransientInsertFetching(SimpleSendableInsert.this, req.token.getKey());
+                sched.removeRunningInsert(SimpleSendableInsert.this, req.token.getKey());
 				return true;
 			}
 

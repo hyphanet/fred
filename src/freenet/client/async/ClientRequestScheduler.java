@@ -367,8 +367,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	@Override
-	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		selector.removeInsertFetching(insert, token);
+	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
+		selector.removeRunningInsert(insert, token);
 		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
 		insert.clearWakeupTime(clientContext);
 	}
@@ -437,8 +437,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	@Override
-	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		return selector.addInsertFetching(insert, token);
+	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
+		return selector.addRunningInsert(insert, token);
 	}
 	
 	@Override

@@ -64,9 +64,9 @@ public interface RequestScheduler {
 	 */
 	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent);
 
-	public boolean addTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
+	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
-	public void removeTransientInsertFetching(SendableInsert insert, SendableRequestItemKey token);
+	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token);
 
 	public void wakeStarter();
 

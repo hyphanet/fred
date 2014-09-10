@@ -56,7 +56,7 @@ public class ChosenBlockImpl extends ChosenBlock {
                 try {
                     ((SendableInsert) request).onFailure(e, token, context);
                 } finally {
-                    sched.removeTransientInsertFetching((SendableInsert)(request), token.getKey());
+                    sched.removeRunningInsert((SendableInsert)(request), token.getKey());
                     // Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
                     // so wake the starter thread.
                 }
@@ -76,7 +76,7 @@ public class ChosenBlockImpl extends ChosenBlock {
                 try {
                     ((SendableInsert) request).onSuccess(token, key, context);
                 } finally {
-                    sched.removeTransientInsertFetching((SendableInsert)(request), token.getKey());
+                    sched.removeRunningInsert((SendableInsert)(request), token.getKey());
                 }
                 // Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
                 // so wake the starter thread.

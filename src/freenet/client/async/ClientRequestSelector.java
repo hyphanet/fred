@@ -561,7 +561,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
-	public boolean addInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
+	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
 		RunningInsert tmp = new RunningInsert(insert, token);
 		synchronized(runningInserts) {
 			boolean retval = runningInserts.add(tmp);
@@ -575,7 +575,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 	
-	public void removeInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
+	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
 		RunningInsert tmp = new RunningInsert(insert, token);
 		if(logMINOR)
 			Logger.minor(this, "Removing from runningInserts: "+insert+" : "+token);
