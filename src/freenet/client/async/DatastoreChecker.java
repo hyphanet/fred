@@ -58,7 +58,7 @@ public class DatastoreChecker implements PrioRunnable {
             this.blockSet = blockSet;
 		}
 		public boolean equals(Object o) {
-		    // Hack to make transientQueue.remove() work.
+		    // Hack to make transientQueue.remove() work, see removeRequest() below.
 			if(!(o instanceof QueueItem)) return false; // equals() should not throw ClassCastException
 			return this.getter == ((QueueItem)o).getter;
 		}
