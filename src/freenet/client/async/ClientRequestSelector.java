@@ -89,7 +89,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		} else {
 			keysFetching = null;
-			runningInserts = new HashSet<RunningTransientInsert>();
+			runningInserts = new HashSet<RunningInsert>();
 			recentSuccesses = null;
 		}
 		priorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
@@ -120,12 +120,12 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private transient HashMap<Key, WeakReference<BaseSendableGet>[]> transientRequestsWaitingForKeysFetching;
 	
-	private static class RunningTransientInsert {
+	private static class RunningInsert {
 		
 		final SendableInsert insert;
 		final SendableRequestItemKey token;
 		
-		RunningTransientInsert(SendableInsert i, SendableRequestItemKey t) {
+		RunningInsert(SendableInsert i, SendableRequestItemKey t) {
 			insert = i;
 			token = t;
 		}
@@ -137,14 +137,14 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 		
 		@Override
 		public boolean equals(Object o) {
-			if(!(o instanceof RunningTransientInsert)) return false;
-			RunningTransientInsert r = (RunningTransientInsert) o;
+			if(!(o instanceof RunningInsert)) return false;
+			RunningInsert r = (RunningInsert) o;
 			return r.insert == insert && (r.token == token || r.token.equals(token));
 		}
 		
 	}
 	
-	private transient final HashSet<RunningTransientInsert> runningInserts;
+	private transient final HashSet<RunningInsert> runningInserts;
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
@@ -555,14 +555,14 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 
 	@Override
 	public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
-		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		RunningInsert tmp = new RunningInsert(insert, token);
 		synchronized(runningInserts) {
 			return runningInserts.contains(tmp);
 		}
 	}
 
 	public boolean addInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		RunningInsert tmp = new RunningInsert(insert, token);
 		synchronized(runningInserts) {
 			boolean retval = runningInserts.add(tmp);
 			if(!retval) {
@@ -576,7 +576,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 	
 	public void removeInsertFetching(SendableInsert insert, SendableRequestItemKey token) {
-		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		RunningInsert tmp = new RunningInsert(insert, token);
 		if(logMINOR)
 			Logger.minor(this, "Removing from runningInserts: "+insert+" : "+token);
 		synchronized(runningInserts) {
