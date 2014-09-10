@@ -603,6 +603,7 @@ public class SplitFileInserterSegmentStorage {
     }
     
     public void onFailure(int blockNo, InsertException e) {
+        if(logMINOR) Logger.minor(this, "Failed block "+blockNo+" with "+e+" for "+this+" for "+parent);
         if(parent.hasFinished()) return; // Race condition possible as this is a callback
         parent.addFailure(e);
         if(e.isFatal()) {
