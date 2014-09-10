@@ -984,16 +984,29 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static byte[] copyToArray(ByteBuffer buf) {
-	    byte[] array = buf.array();
-	    /* We *NEVER* return the original array because we want consistent behaviour: We always 
-	     * return a new array, and modifying it will not affect the original ByteBuffer. This is
-	     * important to avoid nasty intermittent bugs, and these are generally small objects (keys,
-	     * IVs etc); allocating a few bytes is very fast in modern Java.
-	     * 
-	     * If we really wanted to take the risk, we'd do:
-	     * if(array.length == buf.capacity()) return array;
-	     */
-	    return Arrays.copyOfRange(array, buf.arrayOffset(), buf.capacity());
+	    if(buf.hasArray()) {
+	        byte[] array = buf.array();
+	        /* We *NEVER* return the original array because we want consistent behaviour: We always 
+	         * return a new array, and modifying it will not affect the original ByteBuffer. This is
+	         * important to avoid nasty intermittent bugs, and these are generally small objects (keys,
+	         * IVs etc); allocating a few bytes is very fast in modern Java.
+	         * 
+	         * If we really wanted to take the risk, we'd do:
+	         * if(array.length == buf.capacity()) return array;
+	         */
+	        return Arrays.copyOfRange(array, buf.arrayOffset(), buf.capacity());
+	    } else {
+	        // FIXME test this.
+	        int l = buf.limit();
+	        int p = buf.position();
+	        buf.position(0);
+	        buf.limit(buf.capacity());
+	        byte[] ret = new byte[buf.capacity()];
+	        buf.get(ret);
+            buf.limit(l);
+	        buf.position(p);
+	        return ret;
+	    }
 	}
 
 }
