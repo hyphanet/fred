@@ -269,7 +269,10 @@ public final class CryptByteBuffer implements Serializable{
      * @return The encrypted ByteBuffer
      */
     public ByteBuffer encrypt(ByteBuffer input){
-        return encrypt(Fields.copyToArray(input));
+        if(input.hasArray())
+            return encrypt(input.array(), input.arrayOffset(), input.capacity());
+        else
+            return encrypt(Fields.copyToArray(input));
     }
 
     // FIXME
@@ -339,7 +342,10 @@ public final class CryptByteBuffer implements Serializable{
      * @return The decrypted ByteBuffer
      */
     public ByteBuffer decrypt(ByteBuffer input){
-        return decrypt(Fields.copyToArray(input));
+        if(input.hasArray())
+            return decrypt(input.array(), input.arrayOffset(), input.capacity());
+        else
+            return decrypt(Fields.copyToArray(input));
     }
 
     // FIXME
