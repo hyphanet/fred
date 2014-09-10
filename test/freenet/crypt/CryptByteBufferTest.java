@@ -85,8 +85,8 @@ public class CryptByteBufferTest {
                 ByteBuffer ciphertext2 = crypt.encrypt(plain);
                 ByteBuffer ciphertext3 = crypt.encrypt(plain);
 
-                ByteBuffer decipheredtext2 = crypt.decrypt(ciphertext2);
                 ByteBuffer decipheredtext1 = crypt.decrypt(ciphertext1);
+                ByteBuffer decipheredtext2 = crypt.decrypt(ciphertext2);
                 ByteBuffer decipheredtext3 = crypt.decrypt(ciphertext3);
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext1));
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext2));
