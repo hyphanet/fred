@@ -642,7 +642,8 @@ public class NodeClientCore implements Persistable {
 		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
         alerts.register(new DiskSpaceUserAlert(this));
         this.migratingAlert = new SimpleUserAlert(true, l10n("migratingAlertTitle"), l10n("migratingAlert"), l10n("migratingAlertTitle"), UserAlert.ERROR);
-        alerts.register(migratingAlert);
+        if(node.dbFile.exists() || node.dbFileCrypt.exists())
+            alerts.register(migratingAlert);
 	}
 
 	protected void updatePersistentRAFSpaceLimit() {
