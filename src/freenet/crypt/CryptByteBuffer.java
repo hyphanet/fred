@@ -80,10 +80,13 @@ public final class CryptByteBuffer implements Serializable{
                 encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
                 decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
             }
-        }catch (UnsupportedCipherException | GeneralSecurityException e) {
+        } catch (UnsupportedCipherException e) {
             e.printStackTrace();
             Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
-        } 
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
+        }
     }
 
     /**
@@ -263,15 +266,22 @@ public final class CryptByteBuffer implements Serializable{
         return encrypt(input.array());
     }
 
-    /**
-     * Encrypts the provided BitSet. If you are using a RijndaelECB
-     * alg then the length of input must equal the block size. 
-     * @param input The BitSet to encrypt
-     * @return The encrypted BitSet
-     */
-    public BitSet encrypt(BitSet input){
-        return BitSet.valueOf(encrypt(input.toByteArray()));
-    }
+    // FIXME
+    /* BitSet based operations commented out. If you need them, wait until we are using java 7,
+     * or implement your own toByteArray(). Please don't steal it from OpenJDK because we are GPL2+
+     * and link ASL2 code, therefore it is illegal for us to use GPL2-only code such as OpenJDK.
+     * Please test very, VERY carefully, as it's essential that the representation not change when
+     * we do switch to using java 7's BitSet.toByteArray(). The javadocs give a precise definition
+     * so you can test it with unit tests. */
+//    /**
+//     * Encrypts the provided BitSet. If you are using a RijndaelECB
+//     * alg then the length of input must equal the block size. 
+//     * @param input The BitSet to encrypt
+//     * @return The encrypted BitSet
+//     */
+//    public BitSet encrypt(BitSet input){
+//        return BitSet.valueOf(encrypt(input.toByteArray()));
+//    }
 
     /**
      * Decrypts the specified section of provided byte[]. If you are using a RijndaelECB
@@ -321,15 +331,16 @@ public final class CryptByteBuffer implements Serializable{
         return decrypt(input.array());
     }
 
-    /**
-     * Decrypts the provided BitSet. If you are using a RijndaelECB
-     * alg then the length of input must equal the block size.
-     * @param input The BitSet to decrypt
-     * @return The decrypted BitSet
-     */
-    public BitSet decrypt(BitSet input){
-        return BitSet.valueOf(decrypt(input.toByteArray()));
-    }
+    // FIXME
+//    /**
+//     * Decrypts the provided BitSet. If you are using a RijndaelECB
+//     * alg then the length of input must equal the block size.
+//     * @param input The BitSet to decrypt
+//     * @return The decrypted BitSet
+//     */
+//    public BitSet decrypt(BitSet input){
+//        return BitSet.valueOf(decrypt(input.toByteArray()));
+//    }
 
     /**
      * Changes the current iv to the provided iv and initializes the cipher instances with

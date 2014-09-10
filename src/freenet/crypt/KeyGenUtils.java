@@ -126,7 +126,9 @@ public final class KeyGenUtils {
             PrivateKey privK = kf.generatePrivate(pks);
 
             return getKeyPair(pubK, privK);
-        } catch (GeneralSecurityException | UnsupportedTypeException e) {
+        } catch (GeneralSecurityException e) {
+            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+        } catch (UnsupportedTypeException e) {
             Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
         }
         return null;
