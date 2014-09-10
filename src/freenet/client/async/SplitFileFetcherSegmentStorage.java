@@ -742,7 +742,7 @@ public class SplitFileFetcherSegmentStorage {
             synchronized(this) {
                 if(succeeded || failed || finished) {
                     if(logMINOR) Logger.minor(this, "Already succeeded/finished/failed");
-                    return false; // Don't double remove from bloom filter!
+                    return saved; // Don't double remove from bloom filter!
                 }
                 if(blockChooser.hasSucceeded(blockNumber)) {
                     if(logMINOR) Logger.minor(this, "Already have block "+blockNumber);
@@ -754,7 +754,7 @@ public class SplitFileFetcherSegmentStorage {
                     if(logMINOR) Logger.minor(this, "Already decoding");
                     // Don't remove it from the filter. We haven't written it, so it could be 
                     // removed twice. And if we decode successfully, the filter will be ignored.
-                    return false;
+                    return saved;
                 }
                 slotNumber = findFreeSlot();
                 assert(slotNumber != -1);
