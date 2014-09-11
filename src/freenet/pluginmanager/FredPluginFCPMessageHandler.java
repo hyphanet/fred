@@ -118,9 +118,10 @@ public interface FredPluginFCPMessageHandler {
         public final Boolean success;
 
         /**
-         * For reply messages with {@link #success} == false, may contain alpha-numeric String which
-         * identifies a reason for the failure.<br>
-         * Otherwise null.<br><br>
+         * For reply messages with {@link #success} == false, may contain an alpha-numeric String
+         * which identifies a reason for the failure in a standardized representation which software
+         * can parse easily. May also be null in that case, but please try to not do that.<br>
+         * For {@link #success} == null or true, this must be null.<br><br>
          * 
          * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.<br>
          * For unclassified errors, such as Exceptions which you do not expect, use "InternalError".
@@ -129,8 +130,9 @@ public interface FredPluginFCPMessageHandler {
 
         /**
          * For reply messages with {@link #errorCode} != null, may contain a String which describes
-         * the problem in a user-friendly manner.
-         * Otherwise null.
+         * the problem in a human-readable, user-friendly manner. May also be null in that case, but
+         * please try to not do that.<br>
+         * For {@link #errorCode} == null, this must be null.<br><br>
          * 
          * You are encouraged to provide it translated to the configured language already.<br>
          * The String shall not be used for identifying problems in programming.<br>
@@ -138,6 +140,12 @@ public interface FredPluginFCPMessageHandler {
          * For Exceptions which you do not expect, {@link Exception#toString()} will return a
          * sufficient errorMessage (containing the name of the Exception and the localized error
          * message, or non-localized if there is no translation).
+         * 
+         * (Notice: This may only be non-null if {@link #errorCode} is non-null instead of just
+         * if {@link #success} == false to ensure that a developer-friendly error signaling is
+         * implemented: errorCode is designed to be easy to parse, errorMessage is designed
+         * to be human readable and thus cannot be parsed. Therefore, the errorCode field should be
+         * more mandatory than this field.)
          */
         public final String errorMessage;
 
