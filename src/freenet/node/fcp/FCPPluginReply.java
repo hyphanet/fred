@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.PluginManager;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -53,44 +54,45 @@ public class FCPPluginReply extends DataCarryingMessage {
     private final Boolean success;
 
     /**
-     * @deprecated Use {@link #FCPPluginReply(String, String, SimpleFieldSet, Bucket, Boolean)}.
-     *             <b>ATTENTION:</b> Upon removal of this constructor, you should change the other
-     *             constructor to consume a {@link FredPluginFCPMessageHandler.FCPPluginMessage}
-     *             and store it as a member variable. This class currently contains a copy of all
-     *             member variables of the other class, and should instead just store the object
-     *             of the other class.
-     * 
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorCode
+     */
+    private final String errorCode;
+
+    /**
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage
+     */
+    private final String errorMessage;
+
+    /**
+     * @deprecated Use {@link #FCPPluginReply(String, String, SimpleFieldSet, Bucket, Boolean, String, String)}.
+     *             <b>ATTENTION:</b> Upon removal of this constructor, you should remove the
+     *             backend constructor so the only remaining constructor is the one which consumes
+     *             a {@link FredPluginFCPMessageHandler.FCPPluginMessage}. Then you should remove
+     *             all the member variables from this class which duplicate the members of that
+     *             class, and instead store a reference to an object of the other class.
      */
     @Deprecated
     public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
-        this(pluginname, identifier2, fs, bucket2, null);
+        this(pluginname, identifier2, fs, bucket2, null, null, null);
     }
-    
+
+    /**
+     * @param pluginname The class name of the plugin which is sending the reply. Must not be null.
+     *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
+     */
+    public FCPPluginReply(String pluginname, FredPluginFCPMessageHandler.FCPPluginMessage reply) {
+        this(pluginname, reply.identifier, reply.parameters, reply.data, reply.success,
+            reply.errorCode, reply.errorMessage);
+        
+        assert(pluginname != null);
+    }
+
     /**
      * The parameters match the member variables of
      * {@link FredPluginFCPMessageHandler.FCPPluginMessage}, and thus their JavaDoc applies.
      */
     public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2,
-            Boolean success) {
-        
-        assert(pluginname != null);
-        
-        assert(identifier2 != null)
-            : "Identifier is required for message tracking, see FredPluginFCPMessageHandler";
-        
-        assert(fs != null || fs == null)
-            : "SFS can be null for data-only messages or success-indicator messages";
-        
-        assert(bucket2 != null || bucket2 == null)
-            : "Bucket can be null if the message is reasonably small to fully put it into the fs";
-        
-        assert(success != null || success == null)
-            : "Success can be null for non-reply messages";
-        
-        assert(fs != null || bucket2 != null || success != null)
-            : "Messages should not be empty";
-        
-        
+            Boolean success, String errorCode, String errorMessage) {
         bucket = bucket2;
         if (bucket == null)
             dataLength = -1;
@@ -102,6 +104,8 @@ public class FCPPluginReply extends DataCarryingMessage {
         identifier = identifier2;
         plugparams = fs;
         this.success = success;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
     }
 
 	@Override
@@ -135,8 +139,17 @@ public class FCPPluginReply extends DataCarryingMessage {
 		if (dataLength() > 0)
 			sfs.put("DataLength", dataLength());
 		sfs.put("Replies", plugparams);
-        if(success != null)
+        if(success != null) {
             sfs.put("Success", success);
+            
+            if(!success && errorCode != null) {
+                sfs.putSingle("ErrorCode", errorCode);
+                
+                if(errorMessage != null) {
+                    sfs.putSingle("ErrorMessage", errorMessage);
+                }
+            }
+        }
 		return sfs;
 	}
 
