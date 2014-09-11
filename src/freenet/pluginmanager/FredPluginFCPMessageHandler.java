@@ -265,9 +265,11 @@ public interface FredPluginFCPMessageHandler {
          * explanation of the parameters.<br>
          */
         public static FCPPluginMessage constructRawMessage(ClientPermissions permissions,
-                String identifier, SimpleFieldSet parameters, Bucket data, Boolean success) {
+                String identifier, SimpleFieldSet parameters, Bucket data, Boolean success,
+                String errorCode, String errorMessage) {
             
-            return new FCPPluginMessage(permissions, identifier, parameters, data, success);
+            return new FCPPluginMessage(permissions, identifier, parameters, data, success,
+                errorCode, errorMessage);
         }
         
         /**

@@ -85,6 +85,16 @@ public class FCPPluginMessage extends DataCarryingMessage {
      */
     private final Boolean success;
 
+    /**
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorCode
+     */
+    private final String errorCode;
+
+    /**
+     * @see FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage
+     */
+    private final String errorMessage;
+
 	FCPPluginMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		if(identifier == null)
@@ -124,6 +134,13 @@ public class FCPPluginMessage extends DataCarryingMessage {
             }
         } else {
             success = null;
+        }
+        
+        if(success != null && success == false) {
+            errorCode = fs.get("ErrorCode");
+            errorMessage = errorCode != null ? fs.get("ErrorMessage") : null;
+        } else {
+            errorCode = errorMessage = null;
         }
 	}
 
@@ -178,7 +195,8 @@ public class FCPPluginMessage extends DataCarryingMessage {
         if(client != null) {
             FredPluginFCPMessageHandler.FCPPluginMessage message
             = FredPluginFCPMessageHandler.FCPPluginMessage.constructRawMessage(
-                client.computePermissions(), identifier, plugparams, this.bucket, success);
+                client.computePermissions(), identifier, plugparams, this.bucket, success,
+                errorCode, errorMessage);
             
             // Call this here instead of in the above try{} because the above
             // handler.getPluginClient() might also throw IOException in the future and we don't
