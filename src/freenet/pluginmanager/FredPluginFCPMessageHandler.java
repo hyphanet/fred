@@ -186,13 +186,13 @@ public interface FredPluginFCPMessageHandler {
         /**
          * For being used by server or client to construct outgoing messages.<br>
          * Those can then be passed to the send functions of {@link FCPPluginClient} or returned in
-         * the message handlers of {@link FredPluginFCPMessageHandler}.
+         * the message handlers of {@link FredPluginFCPMessageHandler}.<br><br>
          * 
          * <b>Notice</b>: Messages constructed with this constructor are <b>not</b> reply messages.
          * <br>
          * If you are replying to a message, notably when returning a message in the message
          * handling function, use {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         * Bucket, boolean, String, String)} instead.
+         * Bucket, boolean, String, String)} instead.<br><br>
          * 
          * See the JavaDoc of the member variables with the same name as the parameters for an
          * explanation of the parameters.
@@ -216,7 +216,10 @@ public interface FredPluginFCPMessageHandler {
          * original message.<br>
          * Those then can be returned from the message handler
          * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
-         * FCPPluginMessage)}.
+         * FCPPluginMessage)}.<br><br>
+         * 
+         * See the JavaDoc of the member variables with the same name as the parameters for an
+         * explanation of the parameters.
          * 
          * @throws IllegalStateException
          *             If the original message was a reply message already.<br>
