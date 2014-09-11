@@ -122,7 +122,8 @@ public interface FredPluginFCPMessageHandler {
          * identifies a reason for the failure.<br>
          * Otherwise null.<br><br>
          * 
-         * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.
+         * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.<br>
+         * For unclassified errors, such as Exceptions which you do not expect, use "InternalError".
          */
         public final String errorCode;
 
@@ -134,6 +135,9 @@ public interface FredPluginFCPMessageHandler {
          * You are encouraged to provide it translated to the configured language already.<br>
          * The String shall not be used for identifying problems in programming.<br>
          * There, use {@link #errorCode}.
+         * For Exceptions which you do not expect, {@link Exception#toString()} will return a
+         * sufficient errorMessage (containing the name of the Exception and the localized error
+         * message, or non-localized if there is no translation).
          */
         public final String errorMessage;
 
