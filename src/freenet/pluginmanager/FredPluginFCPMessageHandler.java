@@ -151,7 +151,8 @@ public interface FredPluginFCPMessageHandler {
          * explanation of the parameters.
          */
         private FCPPluginMessage(ClientPermissions permissions, String identifier,
-                SimpleFieldSet parameters, Bucket data, Boolean success) {
+                SimpleFieldSet parameters, Bucket data, Boolean success, String errorCode,
+                String errorMessage) {
             
             // See JavaDoc of member variables with the same name for reasons of the requirements
             assert(permissions != null || permissions == null);
@@ -163,11 +164,19 @@ public interface FredPluginFCPMessageHandler {
             assert(parameters != null || data != null || success != null)
                 : "Messages should not be empty";
             
+            assert(errorCode == null || (success != null && success == false))
+                : "errorCode should only be provided for reply messages which indicate failure.";
+            
+            assert(errorMessage == null || errorCode != null)
+                : "errorCode should always be provided if there is an errorMessage";
+            
             this.permissions = permissions;
             this.identifier = identifier;
             this.parameters = parameters;
             this.data = data;
             this.success = success;
+            this.errorCode = errorCode;
+            this.errorMessage = errorMessage;
         }
         
         /**
