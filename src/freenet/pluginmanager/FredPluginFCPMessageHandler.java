@@ -201,7 +201,10 @@ public interface FredPluginFCPMessageHandler {
             // collisions are *bad*: They can break the "ACK" mechanism of the "success" variable.
             // This would in turn break things such as the sendSynchronous() functions of
             // FCPPluginClient.
-            return new FCPPluginMessage(null, UUID.randomUUID().toString(), parameters, data, null);
+            return new FCPPluginMessage(null, UUID.randomUUID().toString(), parameters, data,
+                // success, errorCode, errorMessage are null since non-reply messages must not
+                // indicate errors
+                null, null, null);
         }
         
         /**
