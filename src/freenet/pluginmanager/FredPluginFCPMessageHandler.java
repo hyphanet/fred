@@ -188,7 +188,7 @@ public interface FredPluginFCPMessageHandler {
          * <br>
          * If you are replying to a message, notably when returning a message in the message
          * handling function, use {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         * Bucket, boolean)} instead.
+         * Bucket, boolean, String, String)} instead.
          * 
          * See the JavaDoc of the member variables with the same name as the parameters for an
          * explanation of the parameters.
@@ -227,7 +227,8 @@ public interface FredPluginFCPMessageHandler {
          *             explains how you can nevertheless send a reply to reply messages.
          */
         public static FCPPluginMessage constructReplyMessage(FCPPluginMessage originalMessage,
-                SimpleFieldSet parameters, Bucket data, boolean success) {
+                SimpleFieldSet parameters, Bucket data, boolean success, String errorCode,
+                String errorMessage) {
             
             if(originalMessage.isReplyMessage()) {
                 throw new IllegalStateException("Constructing a reply message for a message which "
@@ -235,7 +236,7 @@ public interface FredPluginFCPMessageHandler {
             }
             
             return new FCPPluginMessage(null, originalMessage.identifier,
-                parameters, data, success);
+                parameters, data, success, errorCode, errorMessage);
         }
         
         /**
@@ -244,7 +245,8 @@ public interface FredPluginFCPMessageHandler {
          * You <b>must not</b> use this for constructing outgoing messages in server or client
          * implementations.<br>
          * There, use {@link #construct(SimpleFieldSet, Bucket)} and
-         * {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean)}.<br>
+         * {@link #constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket, boolean, String,
+         * String)}.<br>
          * <br>
          * 
          * This function is typically to construct incoming messages for passing them to the message
@@ -341,8 +343,8 @@ public interface FredPluginFCPMessageHandler {
          * 
          *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean)} to ensure that the {@link FCPPluginMessage#identifier} gets
-         *         preserved.<br/><br/>
+         *         Bucket, boolean, String, String)} to ensure that the
+         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
          *         You <b>must</b> return null if the original message was a reply message as
          *         indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
@@ -406,8 +408,8 @@ public interface FredPluginFCPMessageHandler {
          * 
          *         You <b>must</b> construct this by using the constructor
          *         {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet,
-         *         Bucket, boolean)} to ensure that the {@link FCPPluginMessage#identifier} gets
-         *         preserved.<br/><br/>
+         *         Bucket, boolean, String, String)} to ensure that the
+         *         {@link FCPPluginMessage#identifier} gets preserved.<br/><br/>
          * 
          *         You <b>must</b> return null if the original message was a reply message as
          *         indicated by {@link FCPPluginMessage#isReplyMessage()}<br/>
