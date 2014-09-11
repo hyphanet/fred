@@ -118,6 +118,26 @@ public interface FredPluginFCPMessageHandler {
         public final Boolean success;
 
         /**
+         * For reply messages with {@link #success} == false, may contain alpha-numeric String which
+         * identifies a reason for the failure.<br>
+         * Otherwise null.<br><br>
+         * 
+         * The String shall be for programming purposes and thus <b>must</b> be alpha-numeric.
+         */
+        public final String errorCode;
+
+        /**
+         * For reply messages with {@link #errorCode} != null, may contain a String which describes
+         * the problem in a user-friendly manner.
+         * Otherwise null.
+         * 
+         * You are encouraged to provide it translated to the configured language already.<br>
+         * The String shall not be used for identifying problems in programming.<br>
+         * There, use {@link #errorCode}.
+         */
+        public final String errorMessage;
+
+        /**
          * @return True if the message is merely a reply to a previous message from your side.<br>
          *         In that case, you should probably not send another reply message back to prevent
          *         infinite bouncing of "success!" replies.
