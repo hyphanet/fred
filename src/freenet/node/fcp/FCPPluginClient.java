@@ -463,11 +463,13 @@ public final class FCPPluginClient {
                     // Notice that this is not normal mode of operation: Instead of throwing,
                     // the JavaDoc requests message handlers to return a reply with success=false.
                     
-                    Logger.error(messageHandler, "FredPluginFCPMessageHandler threw"
+                    String errorMessage = "FredPluginFCPMessageHandler threw"
                         + " RuntimeException. See JavaDoc of its member interfaces for how signal"
                         + " errors properly."
                         + " Client = " + this + "; SendDirection = " + direction
-                        + " message = " + reply, e);
+                        + " message = " + reply;
+                    
+                    Logger.error(messageHandler, errorMessage, e);
                     
                     if(!message.isReplyMessage()) {
                         // If the original message was not a reply already, we are allowed to send a
@@ -475,7 +477,8 @@ public final class FCPPluginClient {
                         // This allows eventually waiting sendSynchronous() calls to fail quickly
                         // instead of having to wait for the timeout because no reply arrives.
                         reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
-                            message, null, null, false);
+                            message, null, null, false, "InternalError",
+                            errorMessage + "; RuntimeException = " + e.toString());
                     }
                 }
                 
@@ -498,7 +501,7 @@ public final class FCPPluginClient {
                     // (We don't if the message was a reply, replying to replies is disallowed.)
                     if(!message.isReplyMessage()) {
                         reply = FredPluginFCPMessageHandler.FCPPluginMessage.constructReplyMessage(
-                            message, null, null, true);
+                            message, null, null, true, null, null);
                     }
                 }
                 
