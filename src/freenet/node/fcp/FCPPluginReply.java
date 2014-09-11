@@ -54,6 +54,12 @@ public class FCPPluginReply extends DataCarryingMessage {
 
     /**
      * @deprecated Use {@link #FCPPluginReply(String, String, SimpleFieldSet, Bucket, Boolean)}.
+     *             <b>ATTENTION:</b> Upon removal of this constructor, you should change the other
+     *             constructor to consume a {@link FredPluginFCPMessageHandler.FCPPluginMessage}
+     *             and store it as a member variable. This class currently contains a copy of all
+     *             member variables of the other class, and should instead just store the object
+     *             of the other class.
+     * 
      */
     @Deprecated
     public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
