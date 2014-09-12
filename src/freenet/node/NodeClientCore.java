@@ -848,10 +848,8 @@ public class NodeClientCore implements Persistable {
 		}
 	}
 
-	public void start(Config config, ObjectContainer container) throws NodeInitException {
+	public void start(Config config, final ObjectContainer container) throws NodeInitException {
 	    
-	    finishInitStorage(container);
-
 		persister.start();
 
 		requestStarters.start();
@@ -868,6 +866,7 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
+		        finishInitStorage(container);
 				node.pluginManager.start(node.config);
 				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
