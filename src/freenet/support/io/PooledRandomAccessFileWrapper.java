@@ -191,12 +191,14 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                 if(closed) throw new IOException("Already closed");
                 if(raf != null) {
                     lockLevel++; // Already open, may or may not be already locked.
+                    closables.remove(this);
                     return lock;
                 } else if(OPEN_FDS < MAX_OPEN_FDS) {
                     lockLevel++;
                     OPEN_FDS++;
                     try {
                         raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
+                        closables.remove(this);
                     } catch (IOException e) {
                         // Don't call unlock(), don't want to add to closables.
                         lockLevel--;
