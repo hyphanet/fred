@@ -858,6 +858,8 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
 			fcpServer.maybeStart();
+        node.pluginManager.start(node.config);
+        node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
 		node.executor.execute(compressor, "Compression scheduler");
@@ -875,8 +877,6 @@ public class NodeClientCore implements Persistable {
 				    t.printStackTrace();
 				    // Start the rest of the node anyway ...
 				}
-				node.pluginManager.start(node.config);
-				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
 				// So do we want to make a fuss?
 				// FIXME but a better solution is real request resuming.
