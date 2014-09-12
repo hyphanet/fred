@@ -233,18 +233,20 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
             return null;
         }
     }
-    
-    /** Should be synchronized on class already */
-    private void closeRAF() {
-        if(!closed && lockLevel != 0) throw new IllegalStateException();
-        if(raf == null) return;
-        try {
-            raf.close();
-        } catch (IOException e) {
-            Logger.error(this, "Error closing "+this+" : "+e, e);
+
+    /** Exposed for tests only. Used internally. Must be unlocked. */
+    protected void closeRAF() {
+        synchronized(closables) {
+            if(!closed && lockLevel != 0) throw new IllegalStateException();
+            if(raf == null) return;
+            try {
+                raf.close();
+            } catch (IOException e) {
+                Logger.error(this, "Error closing "+this+" : "+e, e);
+            }
+            raf = null;
+            OPEN_FDS--;
         }
-        raf = null;
-        OPEN_FDS--;
     }
 
     private void unlock() {
