@@ -329,7 +329,6 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
-            mustCheckpoint = true;
             while(runningJobs > 0 || writing) {
                 if(killed) throw new PersistenceDisabledException();
                 Logger.error(this, "Waiting for "+runningJobs+" to finish (writing="+writing+") to checkpoint...");
