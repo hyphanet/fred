@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Constraint;
@@ -63,14 +66,36 @@ public class FCPPersistentRoot {
 		return null;
 	}
 	
-	public ObjectSet<FCPClient> loadClients(NodeClientCore core, ObjectContainer container) {
+	public List<FCPClient> loadClients(NodeClientCore core, ObjectContainer container) {
+	    ArrayList<FCPClient> results = new ArrayList<FCPClient>();
 		Query query = container.query();
 		query.constrain(FCPClient.class);
-		// Don't constrain by root because that set is huge.
-		// I think that was the cause of the OOMs here...
-		query.descend("root").constrain(this).identity();
 		ObjectSet<FCPClient> set = query.execute();
-		return set;
+		while(true) {
+		    try {
+		        if(set.hasNext()) {
+		            FCPClient client = set.next();
+		            try {
+		                container.activate(client, 1);
+		                if(client.root != this) {
+		                    Logger.error(this, "Ignoring client with wrong FCPPersistentRoot");
+		                    continue;
+		                }
+		                if(client.isGlobalQueue) {
+		                    Logger.error(this, "Ignoring global queue");
+		                    continue;
+		                }
+		                Logger.error(this, "Will migrate client "+client.name);
+		                results.add(client);
+		            } catch (Throwable t) {
+		                Logger.error(this, "Failed to load client: "+t, t);
+		            }
+		        } else return results;
+		    } catch (Throwable t) {
+		        Logger.error(this, "Failed to load clients: "+t, t);
+		        return results;
+		    }
+		}
 	}
 
     public FCPClient getGlobalClient() {
