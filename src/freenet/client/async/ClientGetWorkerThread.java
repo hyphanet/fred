@@ -126,17 +126,12 @@ public class ClientGetWorkerThread extends Thread {
 			}
 			// Dump the rest.
 			try {
+			    // WORKAROUND JVM BUG (1.6)
+			    // We should use skip() but it throws IOException: Invalid argument for a FileInputStream.
 				while(true) {
-					long skipped = input.skip(4096);
-					if(skipped < 0) break;
-					if(skipped == 0) {
-						while(true) {
-							byte[] buf = new byte[4096];
-							int r = input.read(buf);
-							if(r < 0) break;
-						}
-						break;
-					}
+				    byte[] buf = new byte[4096];
+				    int r = input.read(buf);
+				    if(r < 0) break;
 				}
 			} catch (EOFException e) {
 				// Okay.
