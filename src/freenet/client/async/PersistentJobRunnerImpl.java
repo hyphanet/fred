@@ -69,8 +69,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 queuedJobs.add(new QueuedJob(job, threadPriority));
             } else {
                 if(logDEBUG) Logger.debug(this, "Running job "+job);
-                runningJobs++;
                 executor.execute(new JobRunnable(job, threadPriority, context));
+                runningJobs++;
             }
         }
     }
