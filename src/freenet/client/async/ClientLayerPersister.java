@@ -533,7 +533,7 @@ public class ClientLayerPersister extends PersistentJobRunnerImpl {
         DelayedFree[] buckets = new DelayedFree[count];
         for(int i=0;i<count;i++) {
             try {
-                buckets[i] = (DelayedFreeBucket) readChecksummedObject(ois, length);
+                buckets[i] = (DelayedFree) readChecksummedObject(ois, length);
             } catch (ChecksumFailedException e) {
                 Logger.warning(this, "Failed to load a bucket to free");
             }
