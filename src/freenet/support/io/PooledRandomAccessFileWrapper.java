@@ -23,7 +23,8 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     
     private static final long serialVersionUID = 1L;
     private static int MAX_OPEN_FDS = 100;
-    static int OPEN_FDS = 0;
+    /** Total number of currently open FDs */
+    static int totalOpenFDs = 0;
     static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
     
     public final File file;
@@ -193,10 +194,10 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                 if(raf != null) {
                     lockLevel++; // Already open, may or may not be already locked.
                     return lock;
-                } else if(OPEN_FDS < MAX_OPEN_FDS) {
+                } else if(totalOpenFDs < MAX_OPEN_FDS) {
                     raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
                     lockLevel++;
-                    OPEN_FDS++;
+                    totalOpenFDs++;
                     return lock;
                 } else {
                     PooledRandomAccessFileWrapper closable = pollFirstClosable();
@@ -237,7 +238,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                 Logger.error(this, "Error closing "+this+" : "+e, e);
             }
             raf = null;
-            OPEN_FDS--;
+            totalOpenFDs--;
         }
     }
 
@@ -280,7 +281,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     /** How many fd's are open right now? Mainly for tests but also for stats. */
     public static int getOpenFDs() {
-        return OPEN_FDS;
+        return totalOpenFDs;
     }
     
     static int getClosableFDs() {
