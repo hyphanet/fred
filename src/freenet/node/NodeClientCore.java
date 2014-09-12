@@ -793,7 +793,7 @@ public class NodeClientCore implements Persistable {
         if(oldRoot == null) return true;
         if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
             success = false;
-        for(FCPClient client : oldRoot.loadClients(this, container)) {
+        for(FCPClient client : oldRoot.findNonGlobalClients(this, container)) {
             if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
                 success = false;
         }

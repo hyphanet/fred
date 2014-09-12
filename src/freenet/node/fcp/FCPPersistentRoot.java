@@ -66,7 +66,7 @@ public class FCPPersistentRoot {
 		return null;
 	}
 	
-	public List<FCPClient> loadClients(NodeClientCore core, ObjectContainer container) {
+	public List<FCPClient> findNonGlobalClients(NodeClientCore core, ObjectContainer container) {
 	    ArrayList<FCPClient> results = new ArrayList<FCPClient>();
 		Query query = container.query();
 		query.constrain(FCPClient.class);
