@@ -143,6 +143,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Deletes any old temp files still unclaimed.
 	 */
 	public synchronized void completedInit() {
+	    if(originalFiles == null) {
+	        Logger.error(this, "Completed init called twice", new Exception("error"));
+	        return;
+	    }
 		for(File f: originalFiles) {
 			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Deleting old tempfile "+f);
