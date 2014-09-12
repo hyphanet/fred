@@ -153,6 +153,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 if(logMINOR) Logger.minor(this, "Not started yet");
                 return;
             }
+            if(runningJobs == 0)
+                // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
+                sync.notifyAll();
             if(!mustCheckpoint) {
                 if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
                     mustCheckpoint = true;
@@ -167,10 +170,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 if(logDEBUG) Logger.debug(this, "Not writing yet");
                 return;
             }
-            if(killed) {
-                sync.notifyAll();
-                return;
-            } else {
+            if(!killed) {
                 writing = true;
                 if(threadPriority < WRITE_AT_PRIORITY) {
                     checkpointOffThread();
