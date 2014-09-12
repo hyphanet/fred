@@ -777,8 +777,8 @@ public class NodeClientCore implements Persistable {
                 }
             }
             System.out.println("Migration completed");
+            alerts.unregister(migratingAlert);
 	    }
-	    alerts.unregister(migratingAlert);
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
 
