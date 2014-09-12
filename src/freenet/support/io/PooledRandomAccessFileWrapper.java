@@ -194,17 +194,10 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                     closables.remove(this);
                     return lock;
                 } else if(OPEN_FDS < MAX_OPEN_FDS) {
+                    raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
+                    closables.remove(this);
                     lockLevel++;
                     OPEN_FDS++;
-                    try {
-                        raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
-                        closables.remove(this);
-                    } catch (IOException e) {
-                        // Don't call unlock(), don't want to add to closables.
-                        lockLevel--;
-                        OPEN_FDS--;
-                        throw e;
-                    }
                     return lock;
                 } else {
                     PooledRandomAccessFileWrapper closable = pollFirstClosable();
