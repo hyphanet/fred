@@ -755,6 +755,7 @@ public class NodeClientCore implements Persistable {
 	        }
             
             // The global queue is the important bit. Write the progress so far.
+            System.out.println("Writing migrated global queue");
             try {
                 clientLayerPersister.waitAndCheckpoint();
             } catch (PersistenceDisabledException e1) {
@@ -784,6 +785,7 @@ public class NodeClientCore implements Persistable {
                     lock.unlock(false, NativeThread.currentThread().getPriority());
             }
             
+            System.out.println("Writing migrated application queues");
             // Write now as well.
             try {
                 clientLayerPersister.waitAndCheckpoint();
