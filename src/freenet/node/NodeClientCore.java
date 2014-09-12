@@ -741,6 +741,7 @@ public class NodeClientCore implements Persistable {
 	            // Try again next time...
 	            return; // Don't GC persistent-temp.
 	        } catch (Throwable t) {
+                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
 	            System.err.println("Unable to migrate from old database: "+t);
 	            t.printStackTrace();
 	            Logger.error(this, "Failed migrating from old database: "+t, t);
@@ -866,7 +867,14 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-		        finishInitStorage(container);
+				try {
+				    finishInitStorage(container);
+				} catch (Throwable t) {
+				    Logger.error(this, "Failed to migrate and/or cleanup persistent temp buckets: "+t, t);
+				    System.err.println("Failed to migrate and/or cleanup persistent temp buckets: "+t);
+				    t.printStackTrace();
+				    // Start the rest of the node anyway ...
+				}
 				node.pluginManager.start(node.config);
 				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
