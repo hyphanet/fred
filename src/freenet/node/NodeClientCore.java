@@ -756,10 +756,13 @@ public class NodeClientCore implements Persistable {
                 // Shutting down?
                 return;
             }
-            if(success)
+            if(success) {
                 System.out.println("Migrated all requests successfully.");
-            else
+                Logger.error(this, "Migrated all requests successfully.");
+            } else {
                 System.out.println("Migrated some requests. You may have lost some downloads.");
+                Logger.error(this, "Migrated some requests. You may have lost some downloads.");
+            }
             try {
                 container.close();
             } catch (Throwable t) {
