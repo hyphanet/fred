@@ -230,7 +230,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
     /** Exposed for tests only. Used internally. Must be unlocked. */
     protected void closeRAF() {
         synchronized(closables) {
-            if(!closed && lockLevel != 0) throw new IllegalStateException();
+            if(lockLevel != 0) throw new IllegalStateException();
             if(raf == null) return;
             try {
                 raf.close();
