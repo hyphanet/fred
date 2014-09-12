@@ -733,9 +733,12 @@ public class NodeClientCore implements Persistable {
 	    if(container != null) {
 	        CheckpointLock lock = null;
 	        boolean success;
+	        FCPPersistentRoot oldRoot;
 	        try {
 	            lock = clientLayerPersister.lock();
-	            success = migrateFromOldDatabase(container);
+	            oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+	            success = migrateGlobalQueueFromOldDatabase(container, oldRoot);
+	            System.out.println(success ? "Successfully migrated global queue" : "Tried to migrate global queue, may have lost some requests");
 	        } catch (PersistenceDisabledException e) {
 	            Logger.error(this, "Cannot migrate as persistence disabled...");
 	            // Try again next time...
@@ -750,12 +753,45 @@ public class NodeClientCore implements Persistable {
 	            if(lock != null)
 	                lock.unlock(false, NativeThread.currentThread().getPriority());
 	        }
+            
+            // The global queue is the important bit. Write the progress so far.
             try {
                 clientLayerPersister.waitAndCheckpoint();
             } catch (PersistenceDisabledException e1) {
                 // Shutting down?
                 return;
             }
+            
+            try {
+                lock = clientLayerPersister.lock();
+                success = migrateApplicationQueuesFromOldDatabase(container, oldRoot);
+                if(success)
+                    System.out.println("Successfully loaded any old per-application queues");
+                else
+                    System.out.println("Failed to load some per-application queues");
+            } catch (PersistenceDisabledException e) {
+                Logger.error(this, "Cannot migrate as persistence disabled...");
+                // Try again next time...
+                return; // Don't GC persistent-temp.
+            } catch (Throwable t) {
+                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
+                System.err.println("Unable to migrate from old database: "+t);
+                t.printStackTrace();
+                Logger.error(this, "Failed migrating from old database: "+t, t);
+                return; // Something went seriously wrong, likely a bug. Don't delete.
+            } finally {
+                if(lock != null)
+                    lock.unlock(false, NativeThread.currentThread().getPriority());
+            }
+            
+            // Write now as well.
+            try {
+                clientLayerPersister.waitAndCheckpoint();
+            } catch (PersistenceDisabledException e1) {
+                // Shutting down?
+                return;
+            }
+            
             if(success) {
                 System.out.println("Migrated all requests successfully.");
                 Logger.error(this, "Migrated all requests successfully.");
@@ -786,13 +822,15 @@ public class NodeClientCore implements Persistable {
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
 
-    private boolean migrateFromOldDatabase(ObjectContainer container) {
-        System.err.println("Attempting to migrate from old database ...");
-        boolean success = true;
-        FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+    private boolean migrateGlobalQueueFromOldDatabase(ObjectContainer container, FCPPersistentRoot oldRoot) {
+        System.err.println("Attempting to migrate global queue from old database ...");
         if(oldRoot == null) return true;
-        if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
-            success = false;
+        return oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext);
+    }
+    
+    private boolean migrateApplicationQueuesFromOldDatabase(ObjectContainer container, FCPPersistentRoot oldRoot) {
+        // Loaded global queue. Save the loaded requests.
+        boolean success = true;
         for(FCPClient client : oldRoot.findNonGlobalClients(this, container)) {
             if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
                 success = false;
