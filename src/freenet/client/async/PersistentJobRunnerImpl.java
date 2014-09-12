@@ -311,7 +311,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
-    /** Typically called after shutdown() to wait for current jobs to complete. */
+    /** Typically called after shutdown() to wait for current jobs to complete. Does not check 
+     * killed for this reason. */
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
@@ -325,7 +326,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         checkpoint(true);
     }
     
-    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. 
+    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. Does check for killed.
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
