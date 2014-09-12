@@ -1111,18 +1111,26 @@ public class Metadata implements Cloneable, Serializable {
             origCompressedDataSize = 0;
             requiredBlocks = 0;
             totalBlocks = 0;
-            this.topCompatibilityMode = 0;
             parsedVersion = 0;
         } else {
             if(splitfileCryptoKey == null) throw new IllegalArgumentException();
-            this.topCompatibilityMode = topCompatibilityMode.code;
             parsedVersion = 1;
         }
-		topSize = origDataSize;
-		topCompressedSize = origCompressedDataSize;
-		topBlocksRequired = requiredBlocks;
-		topBlocksTotal = totalBlocks;
-		this.topDontCompress = topDontCompress;
+        if(origDataSize != 0) {
+            topSize = origDataSize;
+            topCompressedSize = origCompressedDataSize;
+            topBlocksRequired = requiredBlocks;
+            topBlocksTotal = totalBlocks;
+            this.topDontCompress = topDontCompress;
+            this.topCompatibilityMode = topCompatibilityMode.code;
+        } else {
+            topSize = 0;
+            topCompressedSize = 0;
+            topBlocksRequired = 0;
+            topBlocksTotal = 0;
+            this.topDontCompress = false;
+            this.topCompatibilityMode = 0;
+        }
 		
 		if(parsedVersion == 0) {
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
