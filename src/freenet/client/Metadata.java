@@ -1121,8 +1121,14 @@ public class Metadata implements Cloneable, Serializable {
             topCompressedSize = origCompressedDataSize;
             topBlocksRequired = requiredBlocks;
             topBlocksTotal = totalBlocks;
-            this.topDontCompress = topDontCompress;
-            this.topCompatibilityMode = topCompatibilityMode.code;
+            // Bug for bug compatibility ...
+            if(topCompatibilityMode.ordinal() >= CompatibilityMode.COMPAT_1466.ordinal()) {
+                this.topDontCompress = topDontCompress;
+                this.topCompatibilityMode = topCompatibilityMode.code;
+            } else {
+                this.topDontCompress = false;
+                this.topCompatibilityMode = 0;
+            }
         } else {
             topSize = 0;
             topCompressedSize = 0;

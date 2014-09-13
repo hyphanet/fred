@@ -81,7 +81,10 @@ public class InsertContext implements Cloneable, Serializable {
 		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
 		COMPAT_1255((short)5),
 		/** 1416: New CHK encryption */
-		COMPAT_1416((short)6);
+		COMPAT_1416((short)6),
+		/** 1465: Fill in topDontCompress and topCompatibilityMode on splitfiles. Same blocks, but
+		 * slightly different metadata. */
+		COMPAT_1466((short)7);
 		
 		/** Code used in metadata for this CompatibilityMode. Hence we can remove old 
 		 * CompatibilityMode's, and it's also convenient. */
