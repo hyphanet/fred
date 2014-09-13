@@ -211,6 +211,10 @@ public class SplitFileInserterStorageTest extends TestCase {
             // Ignore.
         }
 
+        public synchronized boolean hasFailed() {
+            return failed != null;
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
@@ -1346,6 +1350,81 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
     }
     
+    public void testCancelAlt() throws IOException, InsertException, MissingKeyException {
+        // We need to check that onFailed() isn't called until after all the cross segment encode threads have finished.
+        Random r = new Random(12124);
+        testCancelAlt(r, 32768*6);
+    }
+    
+    public void testCancelAltCrossSegment() throws IOException, InsertException, MissingKeyException {
+        // We need to check that onFailed() isn't called until after all the cross segment encode threads have finished.
+        Random r = new Random(0xb395f44d);
+        testCancelAlt(r, CHKBlock.DATA_LENGTH*128*21);
+    }
+    
+    private void testCancelAlt(Random r, long size) throws IOException, InsertException {
+        BarrierRandomAccessThing data = new BarrierRandomAccessThing(generateData(r, size, smallRAFFactory));
+        HashResult[] hashes = getHashes(data);
+        data.pause();
+        MyCallback cb = new MyCallback();
+        InsertContext context = baseContext.clone();
+        context.earlyEncode = true;
+        KeysFetchingLocally keys = new MyKeysFetchingLocally();
+        SplitFileInserterStorage storage = new SplitFileInserterStorage(data, size, cb, null,
+                new ClientMetadata(), false, null, smallRAFFactory, false, context, 
+                cryptoAlgorithm, cryptoKey, null, hashes, smallBucketFactory, checker, 
+                r, memoryLimitedJobRunner, jobRunner, ticker, keys, false, 0, 0, 0, 0);
+        storage.start();
+        assertEquals(storage.getStatus(), Status.STARTED);
+        if(storage.crossSegments != null)
+            assertTrue(allCrossSegmentsEncoding(storage));
+        else 
+            assertTrue(allSegmentsEncoding(storage));
+        SplitFileInserterSegmentStorage segment = storage.segments[0];
+        assertTrue(memoryLimitedJobRunner.getRunningThreads() > 0);
+        segment.onFailure(0, new InsertException(InsertExceptionMode.INTERNAL_ERROR));
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e1) {
+            // Ignore.
+        }
+        assertFalse(cb.hasFailed()); // Callback must not have been called yet.
+        data.proceed(); // Now it will complete encoding, and then report in, and then fail.
+        try {
+            cb.waitForFinishedEncode();
+            assertFalse(true); // Should have failed now.
+        } catch (InsertException e) {
+            assertEquals(memoryLimitedJobRunner.getRunningThreads(), 0);
+            assertTrue(executor.isIdle());
+            assertFalse(anySegmentEncoding(storage));
+            assertEquals(storage.getStatus(), Status.FAILED);
+        }
+    }
+    
+    private boolean allSegmentsEncoding(SplitFileInserterStorage storage) {
+        for(SplitFileInserterSegmentStorage segment : storage.segments)
+            if(!segment.isEncoding()) return false;
+        return true;
+    }
+    
+    private boolean allCrossSegmentsEncoding(SplitFileInserterStorage storage) {
+        if(storage.crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments)
+                if(!segment.isEncoding()) return false;
+        }
+        return true;
+    }
+
+    private boolean anySegmentEncoding(SplitFileInserterStorage storage) {
+        for(SplitFileInserterSegmentStorage segment : storage.segments)
+            if(segment.isEncoding()) return true;
+        if(storage.crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments)
+                if(segment.isEncoding()) return true;
+        }
+        return false;
+    }
+
     public void testPersistentSmallSplitfileNoLastBlockCompletion() throws IOException, InsertException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block

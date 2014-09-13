@@ -330,5 +330,10 @@ public class SplitFileInserterCrossSegmentStorage {
         if(encoding) return false;
         return encoded || cancelled;
     }
+    
+    /** For tests only */
+    synchronized boolean isEncoding() {
+        return encoding;
+    }
 
 }
