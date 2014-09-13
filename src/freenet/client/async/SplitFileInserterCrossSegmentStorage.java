@@ -151,6 +151,7 @@ public class SplitFileInserterCrossSegmentStorage {
 
     public synchronized void startEncode() {
         if(encoded) return;
+        if(cancelled) return;
         if(encoding) return;
         encoding = true;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
@@ -199,6 +200,9 @@ public class SplitFileInserterCrossSegmentStorage {
     /** Encode a segment. Much simpler than fetcher! */
     private void innerEncode(MemoryLimitedChunk chunk) {
         try {
+            synchronized(this) {
+                if(cancelled) return;
+            }
             if(logMINOR) Logger.minor(this, "Encoding "+this);
             byte[][] dataBlocks = readDataBlocks();
             byte[][] checkBlocks = new byte[crossCheckBlockCount][];
