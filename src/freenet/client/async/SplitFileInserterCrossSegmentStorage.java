@@ -340,4 +340,9 @@ public class SplitFileInserterCrossSegmentStorage {
         return encoding;
     }
 
+    /** For tests only */
+    synchronized boolean hasEncodedSuccessfully() {
+        return encoded;
+    }
+
 }

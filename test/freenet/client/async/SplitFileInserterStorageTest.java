@@ -215,6 +215,10 @@ public class SplitFileInserterStorageTest extends TestCase {
             return failed != null;
         }
 
+        public synchronized boolean hasFinishedEncode() {
+            return finishedEncode;
+        }
+
     }
     
     public void testSmallSplitfileNoLastBlock() throws IOException, InsertException {
@@ -1394,6 +1398,10 @@ public class SplitFileInserterStorageTest extends TestCase {
             cb.waitForFinishedEncode();
             assertFalse(true); // Should have failed now.
         } catch (InsertException e) {
+            if(storage.segments.length > 2) {
+                assertFalse(cb.hasFinishedEncode());
+                assertTrue(anySegmentNotEncoded(storage));
+            }
             assertEquals(memoryLimitedJobRunner.getRunningThreads(), 0);
             assertTrue(executor.isIdle());
             assertFalse(anySegmentEncoding(storage));
@@ -1421,6 +1429,16 @@ public class SplitFileInserterStorageTest extends TestCase {
         if(storage.crossSegments != null) {
             for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments)
                 if(segment.isEncoding()) return true;
+        }
+        return false;
+    }
+
+    private boolean anySegmentNotEncoded(SplitFileInserterStorage storage) {
+        for(SplitFileInserterSegmentStorage segment : storage.segments)
+            if(!segment.hasEncoded()) return true;
+        if(storage.crossSegments != null) {
+            for(SplitFileInserterCrossSegmentStorage segment : storage.crossSegments)
+                if(!segment.hasEncodedSuccessfully()) return true;
         }
         return false;
     }
