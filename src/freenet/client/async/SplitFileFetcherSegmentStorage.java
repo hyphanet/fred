@@ -309,7 +309,7 @@ public class SplitFileFetcherSegmentStorage {
                     parent.fail(new FetchException(FetchExceptionMode.INTERNAL_ERROR, e));
                 } finally {
                     chunk.release();
-                    synchronized(this) {
+                    synchronized(SplitFileFetcherSegmentStorage.this) {
                         tryDecode = false;
                     }
                     try {

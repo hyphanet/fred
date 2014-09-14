@@ -422,7 +422,7 @@ public class SplitFileInserterSegmentStorage {
                         if(!shutdown) {
                             // We do want to call the callback even if we threw something, because we 
                             // may be waiting to cancel. However we DON'T call it if we are shutting down.
-                            synchronized(this) {
+                            synchronized(SplitFileInserterSegmentStorage.this) {
                                 encoding = false;
                             }
                             parent.onFinishedEncoding(SplitFileInserterSegmentStorage.this);
