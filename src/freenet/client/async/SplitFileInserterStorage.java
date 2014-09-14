@@ -1500,7 +1500,6 @@ public class SplitFileInserterStorage {
     }
 
     public void failOnDiskError(IOException e) {
-        Logger.error(this, "Failing with disk error: "+e, e);
         fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null));
     }
     
@@ -1518,6 +1517,10 @@ public class SplitFileInserterStorage {
             if(failing != null) return;
             failing = e;
         }
+        if(e.mode == InsertExceptionMode.BUCKET_ERROR || e.mode == InsertExceptionMode.INTERNAL_ERROR)
+            Logger.error(this, "Failing: "+e+" for "+this, e);
+        else
+            Logger.normal(this, "Failing: "+e+" for "+this, e);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
