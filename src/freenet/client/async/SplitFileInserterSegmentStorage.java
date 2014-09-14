@@ -508,6 +508,15 @@ public class SplitFileInserterSegmentStorage {
     }
 
     public ClientCHKBlock encodeBlock(int blockNo) throws IOException {
+        if(parent.isFinishing()) {
+            throw new IOException("Already finishing reading block "+blockNo+" for "+this+" for "+parent);
+        }
+        synchronized(this) {
+            if(this.blockChooser.hasSucceeded(blockNo)) {
+                Logger.error(this, "Already inserted block "+blockNo+" for "+this+" for "+parent);
+                throw new IOException("Already inserted block "+blockNo+" for "+this+" for "+parent);
+            }
+        }
         byte[] buf = readBlock(blockNo);
         return encodeBlock(buf);
     }
