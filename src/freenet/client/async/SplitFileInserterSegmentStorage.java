@@ -441,6 +441,9 @@ public class SplitFileInserterSegmentStorage {
     private void innerEncode(MemoryLimitedChunk chunk) {
         RAFLock lock = null;
         try {
+            synchronized(this) {
+                if(cancelled) return;
+            }
             lock = parent.lockRAF();
             if(logMINOR) Logger.minor(this, "Encoding "+this+" for "+parent);
             byte[][] dataBlocks = readDataAndCrossCheckBlocks();
