@@ -6,7 +6,11 @@ package freenet.node.fcp;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
@@ -195,6 +199,82 @@ public final class FCPPluginClient {
      * {@link #serverPluginName}.
      */
     private final FCPConnectionHandler clientConnection;
+    
+    /**
+     * @see FCPPluginClient#synchronousSends}.
+     */
+    private final class SynchronousSend {
+        private final Condition completionSignal = synchronousSendsLock.writeLock().newCondition();
+        
+        public FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
+    }
+
+    /**
+     * For each message sent with the <i>blocking</i> send function
+     * {@link #sendSynchronous(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)}
+     * this contains a {@link SynchronousSend} object which shall be used to signal the completion
+     * of the synchronous send to the blocking sendSynchronous() thread. Signaling the completion
+     * tells the blocking sendSynchronous() function that the remote side has sent a reply message
+     * to acknowledge that the original message was processed and sendSynchronous() may return now.
+     * In addition, the reply is added to the SynchronousSend object so that sendSynchronous() can
+     * return it to the caller.<br><br>
+     * 
+     * The key is the identifier
+     * {@link FredPluginFCPMessageHandler.FCPPluginMessage#identifier} of the original message
+     * which was sent by sendSynchronous().<br><br>
+     * 
+     * An entry shall be added by sendSynchronous() when a new synchronous send is started, and then
+     * it shall wait for the Condition {@link SynchronousSend#completionSignal} to be signaled.<br>
+     * When the reply message is received, the node will always dispatch it via
+     * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}. Thus, that
+     * function is obliged to check this map for whether there is an entry for each received
+     * reply. If it contains one for the identifier of a given reply, send() shall store the reply
+     * message in it, and then call {@link Condition#signalAll()} upon its Condition to cause the
+     * blocking sendSynchronous() functions to return.<br>
+     * The sendSynchronous() shall take the job of removing the entry from this map.<br><br>
+     * 
+     * Thread safety is to be guaranteed by the {@link #synchronousSendsLock}.<br><br>
+     * 
+     * When implementing the mechanisms which use this map, please be aware of the fact that bogus
+     * remote implementations could:<br>
+     * - Not sent a reply message at all, even though they should. This shall be compensated by
+     *   sendSynchronous() always specifying a timeout when waiting upon the Conditions.<br>
+     * - Send <i>multiple</i> reply messages for the same identifier even though they should only
+     *   send one. This probably won't matter though:<br>
+     *   * The first arriving reply will complete the matching sendSynchronous() call.<br>
+     *   * Any subsequent replies will not find a matching entry in this table, which is the
+     *   same situation as if the reply was to a <i>non</i>-synchronous send. Non-synchronous sends
+     *   are a normal thing, and thus handling their replies is implemented. It will cause the
+     *   reply to be shipped to the message handler interface of the server/client instead of
+     *   being returned by sendSynchronous() though, which could confuse it. But in that case
+     *   it will probably just log an error message and continue working as normal.
+     *   FIXME: That should be mentioned in the JavaDoc of sendSynchronous(). Especially should
+     *   it be stressed that it is normal operation of sendSynchronous() that the message handler
+     *   function will <i>not</i> be called because sendSynchronous() returns the reply already.
+     *   <br><br>
+     * 
+     * TODO: Optimization: We do not need the order of the map, and thus this could be a HashMap
+     * instead of a TreeMap. We do not use a HashMap for scalability: Java HashMaps never shrink,
+     * they only grows. As we cannot predict how much parallel synchronous sends server/client
+     * implementations will run, we do need a shrinking map. So we use TreeMap. We should use
+     * an automatically shrinking HashMap instead once we have one. This is also documented
+     * <a href="https://bugs.freenetproject.org/view.php?id=6320">in the bugtracker</a>.
+     */
+    private final TreeMap<String, SynchronousSend> synchronousSends
+        = new TreeMap<String, SynchronousSend>();
+    
+    /**
+     * Shall be used to ensure thread-safety of {@link #synchronousSends}. <br>
+     * (Please read its JavaDoc before continuing to read this JavaDoc: It explains the mechanism
+     * of synchronous sends, and it is assumed that you understand it in what follows here.)<br><br>
+     * 
+     * It is a {@link ReadWriteLock} because synchronous sends shall by design be used infrequently,
+     * and thus there will be more reads checking for an existing synchronous send than writes
+     * to terminate one.
+     * (It is a {@link ReentrantReadWriteLock} because that is currently the only implementation of
+     * ReadWriteLock, the re-entrancy is probably not needed by the actual code.)
+     */
+    private final ReadWriteLock synchronousSendsLock = new ReentrantReadWriteLock();
 
 
     /**
