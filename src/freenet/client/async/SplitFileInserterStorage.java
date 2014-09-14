@@ -1513,6 +1513,13 @@ public class SplitFileInserterStorage {
     
     void fail(final InsertException e) {
         synchronized(this) {
+            if(this.status == Status.SUCCEEDED || this.status == Status.FAILED || 
+                    this.status == Status.GENERATING_METADATA) {
+                // Not serious but often indicates a problem e.g. we are sending requests after completing.
+                // So log as ERROR for now.
+                Logger.error(this, "Already finished ("+status+") but failing with "+e+" ("+this+")", e);
+                return;
+            }
             // Only fail once.
             if(failing != null) return;
             failing = e;
