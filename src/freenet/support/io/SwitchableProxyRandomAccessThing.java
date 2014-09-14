@@ -100,6 +100,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
     public RAFLock lockOpen() throws IOException {
         try {
             lock.writeLock().lock();
+            if(closed || underlying == null) throw new IOException("Already closed");
             RAFLock lock = new RAFLock() {
 
                 @Override
