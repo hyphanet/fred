@@ -82,6 +82,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
         try {
             // Write lock as we're going to change the underlying pointer.
             lock.writeLock().lock();
+            closed = true; // Effectively ...
             if(underlying == null) return;
             underlying.free();
             underlying = null;
