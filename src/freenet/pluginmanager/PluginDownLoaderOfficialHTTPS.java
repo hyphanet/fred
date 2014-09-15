@@ -150,12 +150,19 @@ public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	private static void writeCerts(OutputStream os) throws IOException {
 		// try to create pem file
 		ClassLoader loader = ClassLoader.getSystemClassLoader();
+		InputStream in = null;
 		for(String certurl : certURLs) {
-			InputStream in = loader.getResourceAsStream(certurl);
-			if(in != null) {
-				FileUtil.copy(in, os, -1);
-			} else {
-				throw new IOException("Could not find certificates in fred source nor find certificates file");
+			try {
+				in = loader.getResourceAsStream(certurl);
+				if (in != null) {
+					FileUtil.copy(in, os, -1);
+				} else {
+					throw new IOException("Could not find certificates in fred source nor find certificates file");
+				}
+			} finally {
+				if (in != null) {
+					in.close();
+				}
 			}
 		}
 	}

@@ -345,6 +345,11 @@ public class NodeCrypto {
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
+		if(!(forARK || forSetup || forAnonInitiator)) {
+		    // We *do* need the location on noderefs exchanged via path folding and announcement.
+		    // This is necessary so we can take the location into account in OpennetManager.wantPeer().
+		    fs.put("location", node.lm.getLocation());
+		}
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
 		if(!forAnonInitiator)
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
@@ -508,10 +513,6 @@ public class NodeCrypto {
 	    
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
-		// FIXME remove the conditional after we've removed it from exportPublic...
-		// We must save the location!
-		if(fs.get("location") == null)
-			fs.put("location", node.lm.getLocation());
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
 
 	}

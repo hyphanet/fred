@@ -246,9 +246,12 @@ public class PeerManager {
 				fs = new SimpleFieldSet(br, false, true);
 				try {
 					PeerNode pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
-					if(oldOpennetPeers)
-						opennet.addOldOpennetNode(pn);
-					else
+					if(oldOpennetPeers) {
+					    if(!(pn instanceof OpennetPeerNode))
+					        Logger.error(this, "Darknet node in old opennet peers?!: "+pn);
+					    else
+					        opennet.addOldOpennetNode((OpennetPeerNode)pn);
+					} else
 						addPeer(pn, true, false);
 					gotSome = true;
 				} catch(FSParseException e2) {
@@ -336,7 +339,7 @@ public class PeerManager {
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
-				opennet.forceAddPeer(pn, true);
+				opennet.forceAddPeer((OpennetPeerNode)pn, true);
 			else {
 				Logger.error(this, "Adding opennet peer when no opennet enabled!!!: " + pn + " - removing...");
 				removePeer(pn);

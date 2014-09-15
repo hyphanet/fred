@@ -64,6 +64,9 @@ public abstract class Option<T> {
 
 	protected abstract T parseString(String val) throws InvalidConfigValueException; 
 	protected abstract String toString(T val);
+	protected String toDisplayString(T val) {
+		return toString(val);
+	}
 
 	protected final void set(T val) throws InvalidConfigValueException, NodeNeedRestartException {
 		try {
@@ -80,6 +83,13 @@ public abstract class Option<T> {
 	 */
 	public final String getValueString() {
 		return toString(currentValue);
+	}
+
+	/**
+	 * Get the current value of the option as a string suited to end-user display.
+	 */
+	public final String getValueDisplayString() {
+		return toDisplayString(currentValue);
 	}
 
 	/** Set to a value from the config file; this is not passed on to the callback, as we

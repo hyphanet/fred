@@ -13,6 +13,7 @@ import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
@@ -70,7 +71,15 @@ public class PluginRespirator {
 		return container.getPageMaker();
 	}
 	
-	/** Add a valid form including the form password. 
+	/**
+	 * Add a valid form including the {@link NodeClientCore#formPassword}. See the JavaDoc there for an explanation of the purpose of this mechanism. 
+	 * 
+	 * <p><b>ATTENTION</b>: It is critically important to validate the form password when processing requests which "change the server state".
+	 * Other words for this would be requests which change your database or "write" requests.
+	 * Requests which only read values from the server don't have to validate the form password.</p>
+	 * 
+	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p> 
+	 * 
 	 * @param parentNode The parent HTMLNode.
 	 * @param target Where to post to.
 	 * @param name The id/name of the form.

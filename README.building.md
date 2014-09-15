@@ -2,7 +2,7 @@
 
 Install junit 3 and Apache ant. For Debian Wheezy these are `junit` and `ant`.
 
-* `lib/bcprov.jar`: Download Bouncy Castle 1.49 (1.50 breaks something currently): `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.49/bcprov-jdk15on-149.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-149.jar`
+* `lib/bcprov.jar`: Download Bouncy Castle 1.50: `wget --no-passive-ftp ftp://ftp.bouncycastle.org/pub/release1.50/bcprov-jdk15on-150.jar` or `wget http://www.bouncycastle.org/download/bcprov-jdk15on-150.jar`
 * `lib/freenet/freenet-ext.jar`: Build the `contrib/` submodule or [download](https://downloads.freenetproject.org/alpha/freenet-ext.jar) for convenience.
 
 The dependencies could also be copied from an existing Freenet installation.

@@ -281,6 +281,9 @@ maintainers may prefer to use this instead of build.xml.
 		</pathconvert>
 		<jar jarfile="${jar.dst}" basedir="${main.make}">
 			<manifest>
+				<attribute name="Permissions" value="all-permissions"/>
+				<attribute name="Application-Name" value="Freenet REference Daemon"/>
+
 				<attribute name="Main-Class" value="freenet.node.Node"/>
 				<attribute name="Required-Ext-Version" value="29"/>
 				<attribute name="Recommended-Ext-Version" value="29"/>

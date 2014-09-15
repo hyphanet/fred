@@ -252,18 +252,6 @@ public class NodeUpdateManager {
 					"error", e.getLocalizedMessage()));
 		}
 		updateURI = updateURI.setSuggestedEdition(Version.buildNumber());
-		// FIXME remove, or at least disable, pre-1421 backward compatibility code in 6 months or so.
-		// It might be worth keeping it around in case we have to do another transition?
-		if(updateURI.setSuggestedEdition(TRANSITION_VERSION).equals(transitionMainJarURIAsUSK)) {
-			System.out.println("Updating config to new update key.");
-			try {
-				updateURI = new FreenetURI(UPDATE_URI);
-			} catch (MalformedURLException e1) {
-				RuntimeException e = new RuntimeException("Impossible: Cannot parse default update URI!");
-				e.initCause(e1);
-			}
-			config.store();
-		}
 		if(updateURI.hasMetaStrings())
 			throw new InvalidConfigValueException(l10n("updateURIMustHaveNoMetaStrings"));
 		if(!updateURI.isUSK())
