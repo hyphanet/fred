@@ -691,7 +691,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
         short prio = req.getPriorityClass();
         if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
         addToRequestsByClientRequest(req.getClientRequest(), req);
-        sched.selector.addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
+        addToGrabArray(prio, req.getClient(), req.getClientRequest(), req, context);
         if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
     }
     
