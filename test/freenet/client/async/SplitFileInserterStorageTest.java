@@ -1398,6 +1398,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         } catch (InterruptedException e1) {
             // Ignore.
         }
+        data.waitForWaiting();
         assertFalse(cb.hasFailed()); // Callback must not have been called yet.
         data.proceed(); // Now it will complete encoding, and then report in, and then fail.
         try {
