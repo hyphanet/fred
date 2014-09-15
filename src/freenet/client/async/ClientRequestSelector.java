@@ -570,7 +570,8 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(runningInserts) {
 			boolean retval = runningInserts.add(tmp);
 			if(!retval) {
-				Logger.normal(this, "Already in runningInserts: "+insert+" : "+token);
+			    // This shouldn't happen often, because the chooseBlock()'s should check for it...
+				Logger.error(this, "Already in runningInserts: "+insert+" : "+token);
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Added to runningInserts: "+insert+" : "+token);
