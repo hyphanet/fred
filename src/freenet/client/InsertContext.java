@@ -59,9 +59,13 @@ public class InsertContext implements Cloneable, Serializable {
 	public boolean localRequestOnly;
 	/** Don't insert USK DATEHINTs (and ignore them on polling for maximum edition). */
 	public boolean ignoreUSKDatehints;
-	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
-	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
-	
+
+	/** Compatibility mode. This determines exactly how we insert data, so that we can produce the 
+	 * same CHK when reinserting a key even if it is with a later version of Freenet. It is 
+	 * also important for e.g. auto-update to be able to insert keys compatible with older nodes, 
+	 * but CompatibilityMode's are sometimes backwards compatible, there are separate versioning
+	 * systems for keys and Metadata, which will be set as appropriate for an insert depending on 
+	 * the CompatibilityMode. */
 	public static enum CompatibilityMode {
 	    
 		/** We do not know. */
