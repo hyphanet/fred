@@ -351,7 +351,8 @@ public class Metadata implements Cloneable, Serializable {
 			topBlocksTotal = dis.readInt();
 			topDontCompress = dis.readBoolean();
 			short code = dis.readShort();
-			if(CompatibilityMode.hasCode(code)) {
+			if(CompatibilityMode.hasCode(code) 
+			        && code != CompatibilityMode.COMPAT_CURRENT.code) { // COMPAT_UNKNOWN is OK but COMPAT_CURRENT should never be seen in published metadata
 			    topCompatibilityMode = CompatibilityMode.byCode(code);
 			} else {
 			    if(CompatibilityMode.maybeFutureCode(code)) {
