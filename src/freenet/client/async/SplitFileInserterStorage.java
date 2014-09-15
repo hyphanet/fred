@@ -562,8 +562,10 @@ public class SplitFileInserterStorage {
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
         
-        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks;
-        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCheckBlocks + crossCheckBlocks * segments.length;
+        // Include the cross check blocks in the required blocks. The actual number needed may be 
+        // slightly less, but this is consistent with fetching, and also with pre-1466 metadata. 
+        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + crossCheckBlocks * segments.length;
+        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCheckBlocks;
     }
     
     /** Create a splitfile insert from stored data.
