@@ -374,9 +374,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, 
 				Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, 
-				EXTRA_INSERTS_SPLITFILE_HEADER,
-				/** FIXME REVERT TO COMPAT_CURRENT ONCE 1467 ships! */ 
-				InsertContext.CompatibilityMode.COMPAT_1416);
+				EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
 	}
 
     public static InsertContext makeDefaultInsertContext(BucketFactory bucketFactory, 
@@ -386,9 +384,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
                 SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
                 eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, 
                 Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, 
-                EXTRA_INSERTS_SPLITFILE_HEADER,
-                /** FIXME REVERT TO COMPAT_CURRENT ONCE 1467 ships! */ 
-                InsertContext.CompatibilityMode.COMPAT_1416);
+                EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
     }
 
 	@Override
