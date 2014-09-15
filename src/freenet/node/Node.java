@@ -38,6 +38,8 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
+import freenet.node.useralerts.JVMVersionAlert;
+import freenet.support.JVMVersion;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
@@ -1656,11 +1658,6 @@ public class Node implements TimeSkewDetectorCallback {
 			public void set(Integer ibwLimit) throws InvalidConfigValueException {
 				synchronized(Node.this) {
 					checkInputBandwidthLimit(ibwLimit);
-					try {
-						nodeStats.setInputLimit(ibwLimit);
-					} catch (IllegalArgumentException e) {
-						throw new InvalidConfigValueException(e);
-					}
 
 					if(ibwLimit == -1) {
 						inputLimitDefault = true;
@@ -1668,6 +1665,13 @@ public class Node implements TimeSkewDetectorCallback {
 					} else {
 						inputLimitDefault = false;
 					}
+
+					try {
+						nodeStats.setInputLimit(ibwLimit);
+					} catch (IllegalArgumentException e) {
+						throw new InvalidConfigValueException(e);
+					}
+
 					inputBandwidthLimit = ibwLimit;
 				}
 			}
@@ -1750,6 +1754,10 @@ public class Node implements TimeSkewDetectorCallback {
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 		toadlets.setCore(clientCore);
+
+		if (JVMVersion.isTooOld()) {
+			clientCore.alerts.register(new JVMVersionAlert());
+		}
 
 		if(showFriendsVisibilityAlert)
 			registerFriendsVisibilityAlert();

@@ -67,6 +67,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginStores;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
@@ -79,6 +80,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Ticker;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.HTTPRequest;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
@@ -89,6 +91,7 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.plugins.helpers1.WebInterfaceToadlet;
 
 /**
  * The connection between the node and the client layer.
@@ -106,8 +109,23 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
 	public NodeRestartJobsQueue restartJobsQueue;
-	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
+	
+	/**
+	 * <p>Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully.</p>
+	 * <p>The name of the variable is badly chosen: formPassword is an <a href="https://www.owasp.org/index.php/Cross-Site_Request_Forgery_%28CSRF%29">
+	 * anti-CSRF token</a>. As for when to use one, two rules:</p>
+	 * <p>1) if you're changing server side state, you need a POST request</p>
+	 * <p>2) all POST requests need an anti-CSRF token (the exception being a login page, where credentials -that are unpredictable to an attacker-
+	 * are exchanged).</p>
+	 * <p>In practice this means that you must use POST whenever the request can change anything such as your database contents. Other words for this would
+	 * be requests which change your database or "write" requests. Read-only requests can be GET.
+	 * When processing the POST-request, you MUST validate that the received password matches this variable. If it does not, you must NOT process the request.
+	 * In particular, you must NOT modify anything.</p>
+	 * <p>To produce a form which already contains the password, use {@link PluginRespirator#addFormChild(freenet.support.HTMLNode, String, String)}.</p>
+	 * <p>To validate that the right password was received, use {@link WebInterfaceToadlet#isFormPassword(HTTPRequest)}.</p> 
+	 */
 	public final String formPassword;
+	
 	final ProgramDirectory downloadsDir;
 	private File[] downloadAllowedDirs;
 	private boolean includeDownloadDir;

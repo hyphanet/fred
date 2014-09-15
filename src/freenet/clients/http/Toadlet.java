@@ -55,8 +55,19 @@ public abstract class Toadlet {
 
 	public abstract String path();
 	
-	/** So an invisible toadlet can pretend to be a visible one for the sake of the
-	 * menu. */
+	/**
+	 * When displaying this Toadlet, the web interface should show the menu from which it was selected as opened, and mark the 
+	 * appropriate entry as selected in the menu. This function may return the Toadlet whose menu shall be opened and whose
+	 * entry shall be marked as selected in the menu.
+	 * 
+	 * It is necessary to have this function instead of just marking <code>Toadlet.this</code> as selected:
+	 * Some Toadlets won't be added to a menu. They will be only accessible through other Toadlets. For example
+	 * a Toadlet for deleting a single download might only be accessible through the Toadlet which shows all downloads.
+	 * For still being able to figure out the menu entry through which those so-called invisible Toadlets where accessed,
+	 * this function is necessary.
+	 * 
+	 * @return <code>this</code> by default. Override the function to return something else for invisible Toadlets.
+	 */
 	public Toadlet showAsToadlet() {
 		return this;
 	}

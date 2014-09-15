@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import freenet.support.io.Closer;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 
 /**
@@ -39,8 +42,15 @@ public class BinaryBloomFilter extends BloomFilter {
 			needRebuild = true;
 
 		RandomAccessFile raf = new RandomAccessFile(file, "rw");
-		raf.setLength(length / 8);
-		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, length / 8).load();
+		FileChannel channel = null;
+		try {
+			raf.setLength(length / 8);
+			channel = raf.getChannel();
+			filter = channel.map(MapMode.READ_WRITE, 0, length / 8).load();
+		} finally {
+			Closer.close(raf);
+			Closer.close(channel);
+		}
 	}
 
 	public BinaryBloomFilter(ByteBuffer slice, int length, int k) {
