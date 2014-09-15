@@ -14,28 +14,28 @@ import freenet.support.io.StorageFormatException;
 public class CompatibilityAnalyser implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    short min;
-    short max;
+    CompatibilityMode min;
+    CompatibilityMode max;
     byte[] cryptoKey;
     boolean dontCompress;
     boolean definitive;
     
     public CompatibilityAnalyser() {
-        this.min = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
-        this.max = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
+        this.min = CompatibilityMode.COMPAT_UNKNOWN;
+        this.max = CompatibilityMode.COMPAT_UNKNOWN;
     }
     
-    public void merge(short min, short max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
+    public void merge(CompatibilityMode min, CompatibilityMode max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
         if(this.definitive) {
             Logger.warning(this, "merge() after definitive", new Exception("debug"));
             return;
         }
-        assert(min != InsertContext.CompatibilityMode.COMPAT_CURRENT.ordinal());
-        assert(max != InsertContext.CompatibilityMode.COMPAT_CURRENT.ordinal());
+        assert(min != CompatibilityMode.COMPAT_CURRENT);
+        assert(max != CompatibilityMode.COMPAT_CURRENT);
         if(definitive) this.definitive = true;
         if(!dontCompress) this.dontCompress = false;
-        if(min > this.min) this.min = min;
-        if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
+        if(min.ordinal() > this.min.ordinal()) this.min = min;
+        if(max.ordinal() < this.max.ordinal() || this.max == CompatibilityMode.COMPAT_UNKNOWN) this.max = max;
         if(this.cryptoKey == null) {
             this.cryptoKey = cryptoKey;
         } else if(cryptoKey != null && !Arrays.equals(this.cryptoKey, cryptoKey)) {
@@ -45,11 +45,11 @@ public class CompatibilityAnalyser implements Serializable {
     }
 
     public CompatibilityMode min() {
-        return InsertContext.CompatibilityMode.byCode(min);
+        return min;
     }
     
     public CompatibilityMode max() {
-        return InsertContext.CompatibilityMode.byCode(max);
+        return max;
     }
 
     public byte[] getCryptoKey() {
@@ -72,8 +72,8 @@ public class CompatibilityAnalyser implements Serializable {
 
     public void writeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(VERSION);
-        dos.writeShort(min);
-        dos.writeShort(max);
+        dos.writeShort(min.code);
+        dos.writeShort(max.code);
         if(cryptoKey == null) {
             dos.writeBoolean(false);
         } else {
@@ -88,12 +88,12 @@ public class CompatibilityAnalyser implements Serializable {
     public CompatibilityAnalyser(DataInputStream dis) throws IOException, StorageFormatException {
         int ver = dis.readInt();
         if(ver != VERSION) throw new StorageFormatException("Unknown version for CompatibilityAnalyser");
-        min = dis.readShort();
-        if(!CompatibilityMode.hasCode(min))
+        try {
+        min = CompatibilityMode.byCode(dis.readShort());
+        max = CompatibilityMode.byCode(dis.readShort());
+        } catch (IllegalArgumentException e) {
             throw new StorageFormatException("Bad min value");
-        max = dis.readShort();
-        if(!CompatibilityMode.hasCode(max))
-            throw new StorageFormatException("Bad max value");
+        }
         if(dis.readBoolean()) {
             cryptoKey = new byte[32];
             dis.readFully(cryptoKey);
