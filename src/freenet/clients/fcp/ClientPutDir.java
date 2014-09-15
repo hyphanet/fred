@@ -264,7 +264,7 @@ public class ClientPutDir extends ClientPutBase {
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
 		return new PersistentPutDir(identifier, publicURI, uri, verbosity, priorityClass,
-				persistence, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
+				persistence, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null, this.ctx.getCompatibilityMode());
 	}
 	
 	private boolean isRealTime() {
