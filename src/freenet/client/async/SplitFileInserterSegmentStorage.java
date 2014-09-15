@@ -730,6 +730,10 @@ public class SplitFileInserterSegmentStorage {
             return this;
         }
         
+        public String toString() {
+            return "BlockInsert:"+segment+":"+blockNumber;
+        }
+        
     }
 
     /** Set the cross-segment associated with a cross-check block, which tells us how to read that 
