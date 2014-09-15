@@ -1807,8 +1807,8 @@ public class DMT {
 	
 	public static Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
-		int MAX_VALUE_BYTE = 256;
-		int MAX_VALUE_WORD = 65536;
+		int MAX_VALUE_BYTE = 255;
+		int MAX_VALUE_WORD = 65535;
 		if(stats.expectedTransfersInCHK <= MAX_VALUE_BYTE && stats.expectedTransfersInSSK <= MAX_VALUE_BYTE &&
 				stats.expectedTransfersOutCHK <= MAX_VALUE_BYTE && stats.expectedTransfersOutSSK <= MAX_VALUE_BYTE &&
 				stats.averageTransfersOutPerInsert <= MAX_VALUE_BYTE && stats.maxTransfersOut <= MAX_VALUE_BYTE && 
