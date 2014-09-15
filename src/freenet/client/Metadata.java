@@ -992,6 +992,7 @@ public class Metadata implements Cloneable, Serializable {
 	 * @param cm The client metadata, if any.
 	 */
 	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, CompatibilityMode topCompatibilityMode, HashResult[] hashes) {
+	    assert(topCompatibilityMode != CompatibilityMode.COMPAT_CURRENT);
 		hashCode = super.hashCode();
 		if(hashes != null && hashes.length == 0) {
 			throw new IllegalArgumentException();
