@@ -138,7 +138,8 @@ public class InsertContext implements Cloneable, Serializable {
             return code > latest().code;
         }
         
-        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_CURRENT;
+        // FIXME revert to COMPAT_CURRENT after 1466 ships.
+        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
         
 	}
 	
