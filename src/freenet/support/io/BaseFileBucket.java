@@ -475,7 +475,7 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
 			deleteFile();
 			if (file.exists())
 				Logger.error(this,
-					"Delete failed on bucket " + file.getName());
+					"Delete failed on bucket " + file.getName(), new Exception("debug"));
 		}
 	}
 	
