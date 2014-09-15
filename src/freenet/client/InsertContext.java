@@ -138,6 +138,11 @@ public class InsertContext implements Cloneable, Serializable {
             return code > latest().code;
         }
         
+        /** The default compatibility mode for new inserts when it is not specified. Usually this
+         * will be COMPAT_CURRENT (it will get converted into a specific mode later), but when a
+         * new compatibility mode is deployed we may want to keep this at an earlier version to 
+         * avoid a period when data inserted with the new/testing builds can't be fetched with 
+         * earlier versions. */
         // FIXME revert to COMPAT_CURRENT after 1466 ships.
         public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
         
