@@ -350,9 +350,17 @@ public class Metadata implements Cloneable, Serializable {
 			topBlocksRequired = dis.readInt();
 			topBlocksTotal = dis.readInt();
 			topDontCompress = dis.readBoolean();
-			topCompatibilityMode = dis.readShort();
-			if(!CompatibilityMode.hasCode(topCompatibilityMode))
-			    throw new MetadataParseException("Unknown compatibility mode "+topCompatibilityMode);
+			short code = dis.readShort();
+			if(CompatibilityMode.hasCode(code)) {
+			    topCompatibilityMode = code;
+			} else {
+			    if(CompatibilityMode.maybeFutureCode(code)) {
+                    Logger.warning(this, "Content may have been inserted with a newer version of Freenet?");
+                    topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
+			    } else {
+			        throw new MetadataParseException("Bad compatibility mode "+code);
+			    }
+			}
 		} else {
 			topSize = 0;
 			topCompressedSize = 0;

@@ -129,6 +129,10 @@ public class InsertContext implements Cloneable, Serializable {
         public static boolean hasCode(short min) {
             return modesByCode.containsKey(min);
         }
+
+        public static boolean maybeFutureCode(short code) {
+            return code > latest().code;
+        }
         
 	}
 	
