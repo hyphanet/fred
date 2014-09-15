@@ -1023,7 +1023,13 @@ public class SplitFileInserterStorageTest extends TestCase {
         
         int requiredBlocks = fcb.getRequiredBlocks();
         
-        assertEquals((size + CHKBlock.DATA_LENGTH-1)/CHKBlock.DATA_LENGTH, requiredBlocks);
+        int dataBlocks = (int)((size + CHKBlock.DATA_LENGTH-1)/CHKBlock.DATA_LENGTH);
+        
+        int expectedBlocks = dataBlocks;
+        if(storage.crossSegments != null)
+            expectedBlocks += storage.segments.length * 3;
+        
+        assertEquals(expectedBlocks, requiredBlocks);
         
         int i=0;
         while(true) {
@@ -1034,9 +1040,9 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
 
         // Cross-check doesn't necessarily complete in exactly the number of required blocks.
-        assertTrue(i >= requiredBlocks);
-        assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks());
-        assertTrue(i < requiredBlocks + storage.totalCrossCheckBlocks() - 1); // Implies at least one cross-segment block decoded.
+        assertTrue(i >= dataBlocks);
+        assertTrue(i < expectedBlocks);
+        assertTrue(i < expectedBlocks - 1); // Implies at least one cross-segment block decoded.
         executor.waitForIdle(); // Wait for no encodes/decodes running.
         fcb.waitForFinished();
         verifyOutput(fetcherStorage, dataBucket);
@@ -1403,7 +1409,6 @@ public class SplitFileInserterStorageTest extends TestCase {
                 assertTrue(anySegmentNotEncoded(storage));
             }
             assertEquals(memoryLimitedJobRunner.getRunningThreads(), 0);
-            assertTrue(executor.isIdle());
             assertFalse(anySegmentEncoding(storage));
             assertEquals(storage.getStatus(), Status.FAILED);
         }
