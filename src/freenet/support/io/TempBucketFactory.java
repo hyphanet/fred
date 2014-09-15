@@ -470,6 +470,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		
 		@Override
 		protected void finalize() throws Throwable {
+		    synchronized(this) {
+		        // If it's been toRandomAccessThing()'ed, then the Bucket being finalized doesn't matter.
+		        if(currentBucket instanceof RAFBucket) return;
+		    }
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
 					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
