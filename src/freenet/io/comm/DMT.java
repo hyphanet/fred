@@ -1807,11 +1807,13 @@ public class DMT {
 	
 	public static Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
-		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
-				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
-				stats.averageTransfersOutPerInsert < 256 && stats.maxTransfersOut < 256 && 
-				stats.maxTransfersOutPeerLimit < 256 &&
-				stats.maxTransfersOutUpperLimit < 256) {
+		int MAX_VALUE_BYTE = 256;
+		int MAX_VALUE_WORD = 65536;
+		if(stats.expectedTransfersInCHK <= MAX_VALUE_BYTE && stats.expectedTransfersInSSK <= MAX_VALUE_BYTE &&
+				stats.expectedTransfersOutCHK <= MAX_VALUE_BYTE && stats.expectedTransfersOutSSK <= MAX_VALUE_BYTE &&
+				stats.averageTransfersOutPerInsert <= MAX_VALUE_BYTE && stats.maxTransfersOut <= MAX_VALUE_BYTE && 
+				stats.maxTransfersOutPeerLimit <= MAX_VALUE_BYTE &&
+				stats.maxTransfersOutUpperLimit <= MAX_VALUE_BYTE) {
 			msg = new Message(FNPPeerLoadStatusByte);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
@@ -1821,11 +1823,11 @@ public class DMT {
 			msg.set(MAX_TRANSFERS_OUT, (byte)stats.maxTransfersOut);
 			msg.set(MAX_TRANSFERS_OUT_PEER_LIMIT, (byte)stats.maxTransfersOutPeerLimit);
 			msg.set(MAX_TRANSFERS_OUT_UPPER_LIMIT, (byte)stats.maxTransfersOutUpperLimit);
-		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
-				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
-				stats.averageTransfersOutPerInsert < 65536 && stats.maxTransfersOut < 65536 && 
-				stats.maxTransfersOutPeerLimit < 65536 &&
-				stats.maxTransfersOutUpperLimit < 65536) {
+		} else if(stats.expectedTransfersInCHK <= MAX_VALUE_WORD && stats.expectedTransfersInSSK <= MAX_VALUE_WORD &&
+				stats.expectedTransfersOutCHK <= MAX_VALUE_WORD && stats.expectedTransfersOutSSK <= MAX_VALUE_WORD &&
+				stats.averageTransfersOutPerInsert <= MAX_VALUE_WORD && stats.maxTransfersOut <= MAX_VALUE_WORD && 
+				stats.maxTransfersOutPeerLimit <= MAX_VALUE_WORD &&
+				stats.maxTransfersOutUpperLimit <= MAX_VALUE_WORD) {
 			msg = new Message(FNPPeerLoadStatusShort);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
