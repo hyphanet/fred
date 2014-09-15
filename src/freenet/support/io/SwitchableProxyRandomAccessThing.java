@@ -142,6 +142,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
             if(closed) return;
             if(underlying == null) throw new IOException("Already freed");
             LockableRandomAccessThing successor = innerMigrate(underlying);
+            if(successor == null) throw new NullPointerException();
             RAFLock newLock = null;
             if(lockOpenCount > 0) {
                 try {
