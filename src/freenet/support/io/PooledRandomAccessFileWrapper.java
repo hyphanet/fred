@@ -21,6 +21,11 @@ import freenet.support.math.MersenneTwister;
  * FIXME does this need a shutdown hook? I don't see why it would matter ... ??? */
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
     
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(PooledRandomAccessFileWrapper.class);
+    }
+    
     private static final long serialVersionUID = 1L;
     private static int MAX_OPEN_FDS = 100;
     /** Total number of currently open FDs */
@@ -162,6 +167,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     @Override
     public void close() {
+        if(logMINOR) Logger.minor(this, "Closing "+this, new Exception("debug"));
         synchronized(closables) {
             if(lockLevel != 0)
                 throw new IllegalStateException("Must unlock first!");
@@ -190,7 +196,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         synchronized(closables) {
             while(true) {
                 closables.remove(this);
-                if(closed) throw new IOException("Already closed");
+                if(closed) throw new IOException("Already closed "+this);
                 if(raf != null) {
                     lockLevel++; // Already open, may or may not be already locked.
                     return lock;
