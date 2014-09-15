@@ -731,7 +731,7 @@ public class SplitFileInserterSegmentStorage {
         }
         
         public String toString() {
-            return "BlockInsert:"+segment+":"+blockNumber;
+            return "BlockInsert:"+segment+":"+blockNumber+"@memory:"+super.hashCode();
         }
         
     }
