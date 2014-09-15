@@ -564,8 +564,9 @@ public class SplitFileInserterStorage {
         
         // Include the cross check blocks in the required blocks. The actual number needed may be 
         // slightly less, but this is consistent with fetching, and also with pre-1466 metadata. 
-        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + crossCheckBlocks * segments.length;
-        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCheckBlocks;
+        int totalCrossCheckBlocks = crossCheckBlocks * segments.length;
+        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
+        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
     }
     
     /** Create a splitfile insert from stored data.
