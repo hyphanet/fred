@@ -1041,8 +1041,8 @@ public class SplitFileInserterStorageTest extends TestCase {
 
         // Cross-check doesn't necessarily complete in exactly the number of required blocks.
         assertTrue(i >= dataBlocks);
-        assertTrue(i < expectedBlocks);
-        assertTrue(i < expectedBlocks - 1); // Implies at least one cross-segment block decoded.
+        assertTrue("Downloaded more blocks than data+cross check", i < expectedBlocks);
+        assertTrue("No cross-segment blocks decoded", i < expectedBlocks - 1);
         executor.waitForIdle(); // Wait for no encodes/decodes running.
         fcb.waitForFinished();
         verifyOutput(fetcherStorage, dataBucket);
