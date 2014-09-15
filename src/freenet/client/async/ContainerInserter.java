@@ -302,22 +302,24 @@ public class ContainerInserter implements ClientPutState {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
-		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-		TarArchiveEntry ze;
+		try {
+			tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+			TarArchiveEntry ze;
 
-		for(ContainerElement ph : containerItems) {
-			if(logMINOR)
-				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
-			ze = new TarArchiveEntry(ph.targetInArchive);
-			ze.setModTime(0);
-			long size = ph.data.size();
-			ze.setSize(size);
-			tarOS.putArchiveEntry(ze);
-			BucketTools.copyTo(ph.data, tarOS, size);
-			tarOS.closeArchiveEntry();
+			for (ContainerElement ph : containerItems) {
+				if (logMINOR)
+					Logger.minor(this, "Putting into tar: " + ph + " data length " + ph.data.size() + " name " + ph.targetInArchive);
+				ze = new TarArchiveEntry(ph.targetInArchive);
+				ze.setModTime(0);
+				long size = ph.data.size();
+				ze.setSize(size);
+				tarOS.putArchiveEntry(ze);
+				BucketTools.copyTo(ph.data, tarOS, size);
+				tarOS.closeArchiveEntry();
+			}
+		} finally {
+			tarOS.close();
 		}
-		
-		tarOS.close();
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
@@ -326,18 +328,20 @@ public class ContainerInserter implements ClientPutState {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		
 		ZipOutputStream zos = new ZipOutputStream(os);
-		ZipEntry ze;
+		try {
+			ZipEntry ze;
 
-		for(ContainerElement ph: containerItems) {
-			ze = new ZipEntry(ph.targetInArchive);
-			ze.setTime(0);
-			zos.putNextEntry(ze);
-			BucketTools.copyTo(ph.data, zos, ph.data.size());
-			zos.closeEntry();
+			for (ContainerElement ph : containerItems) {
+				ze = new ZipEntry(ph.targetInArchive);
+				ze.setTime(0);
+				zos.putNextEntry(ze);
+				BucketTools.copyTo(ph.data, zos, ph.data.size());
+				zos.closeEntry();
+			}
+		} finally {
+			zos.close();
 		}
-		
-		zos.close();
-		
+
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
