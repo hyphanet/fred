@@ -86,7 +86,8 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
 	private boolean finished;
 	/** Number of times the fetch has been restarted because a container was out of date */
 	private int archiveRestarts;
-	/** If not null, Bucket to return the data in, otherwise we create one. */
+	/** If not null, Bucket to return the data in, otherwise we create one. If non-null, it is the
+	 * responsibility of the callback to create and resume this bucket. */
 	final Bucket returnBucket;
 	/** If not null, BucketWrapper to return a binary blob in */
 	private final BinaryBlobWriter binaryBlobWriter;
@@ -982,8 +983,7 @@ implements WantsCooldownCallback, FileGetCompletionCallback, Serializable {
                 Logger.error(this, "Failed to resume: "+e, e);
                 throw new ResumeFailedException(e);
             }
-        if(returnBucket != null)
-            returnBucket.onResume(context);
+        // returnBucket is responsibility of the callback.
         notifyClients(context);
     }
 
