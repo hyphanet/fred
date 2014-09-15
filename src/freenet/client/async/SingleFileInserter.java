@@ -475,12 +475,12 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		long data = 0;
 		long compressed = 0;
 		boolean topDontCompress = false;
-		short topCompatibilityMode = 0;
+		CompatibilityMode topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 		if(allowTopBlocks) {
 			req = parent.getMinSuccessFetchBlocks();
 			total = parent.totalBlocks;
 			topDontCompress = ctx.dontCompress;
-			topCompatibilityMode = (short) ctx.getCompatibilityCode();
+			topCompatibilityMode = ctx.getCompatibilityMode();
 			data = origDataLength;
 			compressed = origCompressedDataLength;
 		}
