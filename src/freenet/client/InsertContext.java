@@ -138,6 +138,8 @@ public class InsertContext implements Cloneable, Serializable {
             return code > latest().code;
         }
         
+        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_CURRENT;
+        
 	}
 	
 	/** Backward compatibility support for network level metadata. */

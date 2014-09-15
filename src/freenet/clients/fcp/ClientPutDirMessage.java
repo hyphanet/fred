@@ -68,7 +68,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		String s = fs.get("CompatibilityMode");
 		InsertContext.CompatibilityMode cmode = null;
 		if(s == null)
-			cmode = InsertContext.CompatibilityMode.COMPAT_CURRENT;
+			cmode = InsertContext.CompatibilityMode.COMPAT_DEFAULT;
 		else {
 			try {
 				cmode = InsertContext.CompatibilityMode.valueOf(s);
