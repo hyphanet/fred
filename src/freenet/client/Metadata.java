@@ -354,6 +354,8 @@ public class Metadata implements Cloneable, Serializable {
 			if(CompatibilityMode.hasCode(code) 
 			        && code != CompatibilityMode.COMPAT_CURRENT.code) { // COMPAT_UNKNOWN is OK but COMPAT_CURRENT should never be seen in published metadata
 			    topCompatibilityMode = CompatibilityMode.byCode(code);
+			    if(topSize != 0 && topCompatibilityMode == CompatibilityMode.COMPAT_UNKNOWN)
+			        maxCompatMode = CompatibilityMode.COMPAT_1416;
 			} else {
 			    if(CompatibilityMode.maybeFutureCode(code)) {
                     Logger.warning(this, "Content may have been inserted with a newer version of Freenet?");
@@ -573,7 +575,8 @@ public class Metadata implements Cloneable, Serializable {
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
 					else if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256) {
 						minCompatMode = CompatibilityMode.COMPAT_1416;
-						maxCompatMode = CompatibilityMode.latest();
+						if(maxCompatMode == CompatibilityMode.COMPAT_UNKNOWN)
+						    maxCompatMode = CompatibilityMode.latest();
 					}
 					if(params.length < 10)
 						throw new MetadataParseException("Splitfile parameters too short for version 1");
