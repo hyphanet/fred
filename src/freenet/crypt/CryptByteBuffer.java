@@ -21,7 +21,9 @@ import freenet.support.Logger;
 
 /**
  * CryptByteBuffer will encrypt and decrypt both byte[]s and BitSets with a specified
- * algorithm, key, and also an iv if the algorithm requires one. 
+ * algorithm, key, and also an iv if the algorithm requires one. Note that the input and the 
+ * output are the same length, i.e. these are either stream ciphers or non-padded block ciphers
+ * (where it must be called with whole blocks).
  * @author unixninja92
  * 
  * Suggested CryptByteBufferType to use: ChaCha128
