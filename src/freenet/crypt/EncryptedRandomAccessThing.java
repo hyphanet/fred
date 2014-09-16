@@ -220,7 +220,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
-            encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded());
+            encryptedKey = crypt.encryptCopy(unencryptedBaseKey.getEncoded());
         } catch (InvalidKeyException e) {
             throw new GeneralSecurityException("Something went wrong with key generation. please "
                     + "report", e.fillInStackTrace());
@@ -279,7 +279,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
             unencryptedBaseKey = KeyGenUtils.getSecretKey(type.encryptKey, 
-                    crypt.decrypt(encryptedKey));
+                    crypt.decryptCopy(encryptedKey));
         } catch (InvalidKeyException e) {
             throw new IOException("Error reading encryption keys from header.");
         } catch (InvalidAlgorithmParameterException e) {

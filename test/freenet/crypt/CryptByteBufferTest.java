@@ -63,7 +63,7 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] decipheredtext = crypt.encrypt(Hex.decode(plainText[i]));
+            byte[] decipheredtext = crypt.encryptCopy(Hex.decode(plainText[i]));
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
@@ -80,13 +80,13 @@ public class CryptByteBufferTest {
                 } else {
                     crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
                 }
-                ByteBuffer ciphertext1 = crypt.encrypt(plain);
-                ByteBuffer ciphertext2 = crypt.encrypt(plain);
-                ByteBuffer ciphertext3 = crypt.encrypt(plain);
+                ByteBuffer ciphertext1 = crypt.encryptCopy(plain);
+                ByteBuffer ciphertext2 = crypt.encryptCopy(plain);
+                ByteBuffer ciphertext3 = crypt.encryptCopy(plain);
 
-                ByteBuffer decipheredtext1 = crypt.decrypt(ciphertext1);
-                ByteBuffer decipheredtext2 = crypt.decrypt(ciphertext2);
-                ByteBuffer decipheredtext3 = crypt.decrypt(ciphertext3);
+                ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
+                ByteBuffer decipheredtext2 = crypt.decryptCopy(ciphertext2);
+                ByteBuffer decipheredtext3 = crypt.decryptCopy(ciphertext3);
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext1));
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext2));
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext3));
@@ -104,20 +104,20 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] ciphertext = crypt.encrypt(plain);
-            byte[] ciphertext2 = crypt.encrypt(plain);
-            byte[] ciphertext3 = crypt.encrypt(plain);
+            byte[] ciphertext = crypt.encryptCopy(plain);
+            byte[] ciphertext2 = crypt.encryptCopy(plain);
+            byte[] ciphertext3 = crypt.encryptCopy(plain);
 
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] decipheredtext = crypt.decrypt(ciphertext);
+            byte[] decipheredtext = crypt.decryptCopy(ciphertext);
             assertArrayEquals("CryptByteBufferType: "+type.name(), plain, decipheredtext);
-            decipheredtext = crypt.decrypt(ciphertext2);
+            decipheredtext = crypt.decryptCopy(ciphertext2);
             assertArrayEquals("CryptByteBufferType2: "+type.name(), plain, decipheredtext);
-            decipheredtext = crypt.decrypt(ciphertext3);
+            decipheredtext = crypt.decryptCopy(ciphertext3);
             assertArrayEquals("CryptByteBufferType3: "+type.name(), plain, decipheredtext);
         }
     }
@@ -153,7 +153,7 @@ public class CryptByteBufferTest {
 
             byte[] nullArray = null;
             try{
-                crypt.encrypt(nullArray);
+                crypt.encryptCopy(nullArray);
                 fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
@@ -192,7 +192,7 @@ public class CryptByteBufferTest {
 
             byte[] nullArray = null;
             try{
-                crypt.encrypt(nullArray, 0, plainText[i].length());
+                crypt.encryptCopy(nullArray, 0, plainText[i].length());
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "NullPointerException");
             }catch(IllegalArgumentException e) {
@@ -212,7 +212,7 @@ public class CryptByteBufferTest {
             }
 
             try{
-                crypt.encrypt(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
+                crypt.encryptCopy(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException e) {
@@ -233,7 +233,7 @@ public class CryptByteBufferTest {
             }
 
             try{
-                crypt.encrypt(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
+                crypt.encryptCopy(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException e) {
@@ -254,7 +254,7 @@ public class CryptByteBufferTest {
 
             byte[] nullArray = null;
             try{
-                crypt.decrypt(nullArray);
+                crypt.decryptCopy(nullArray);
                 fail("CryptByteBufferType: "+type.name()+": Expected NullPointerException");
             }catch(NullPointerException e){}
         }
@@ -293,7 +293,7 @@ public class CryptByteBufferTest {
 
             byte[] nullArray = null;
             try{
-                crypt.decrypt(nullArray, 0, plainText[i].length());
+                crypt.decryptCopy(nullArray, 0, plainText[i].length());
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "NullPointerException");
             }catch(NullPointerException e) {
@@ -314,7 +314,7 @@ public class CryptByteBufferTest {
             }
 
             try{
-                crypt.decrypt(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
+                crypt.decryptCopy(Hex.decode(plainText[i]), -3, plainText[i].length()-3);
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException e) {
@@ -335,7 +335,7 @@ public class CryptByteBufferTest {
             }
 
             try{
-                crypt.decrypt(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
+                crypt.decryptCopy(Hex.decode(plainText[i]), 0, plainText[i].length()+3);
                 fail("CryptByteBufferType: "+type.name()+": Expected IllegalArgumentException or "
                         + "ArrayIndexOutOfBoundsException");
             }catch(IllegalArgumentException e) {

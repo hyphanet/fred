@@ -231,7 +231,7 @@ public final class CryptByteBuffer implements Serializable{
      * @param len The number of bytes after offset to encrypt
      * @return Returns a new array containing the ciphertext encoding the specified range.
      */
-    public byte[] encrypt(byte[] input, int offset, int len){
+    public byte[] encryptCopy(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
@@ -261,8 +261,8 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The byte[] to be encrypted
      * @return The encrypted data. The original data will be unchanged.
      */
-    public byte[] encrypt(byte[] input){
-        return encrypt(input, 0, input.length);
+    public byte[] encryptCopy(byte[] input){
+        return encryptCopy(input, 0, input.length);
     }
     
     /**
@@ -271,12 +271,12 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The byte[] to be encrypted
      * @return The encrypted ByteBuffer
      */
-    public ByteBuffer encrypt(ByteBuffer input){
+    public ByteBuffer encryptCopy(ByteBuffer input){
         if(input.hasArray())
             // FIXME this is still wrong - we should use the position and limit.
-            return ByteBuffer.wrap(encrypt(input.array(), input.arrayOffset(), input.capacity()));
+            return ByteBuffer.wrap(encryptCopy(input.array(), input.arrayOffset(), input.capacity()));
         else
-            return ByteBuffer.wrap(encrypt(Fields.copyToArray(input)));
+            return ByteBuffer.wrap(encryptCopy(Fields.copyToArray(input)));
     }
 
     // FIXME
@@ -306,7 +306,7 @@ public final class CryptByteBuffer implements Serializable{
      * @return Returns the decrypted plaintext, a newly allocated byte array of the same length as 
      * the input data. 
      */
-    public byte[] decrypt(byte[] input, int offset, int len){
+    public byte[] decryptCopy(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
@@ -337,8 +337,8 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The byte[] to be decrypted
      * @return The decrypted plaintext bytes.
      */
-    public byte[] decrypt(byte[] input){
-        return decrypt(input, 0, input.length);
+    public byte[] decryptCopy(byte[] input){
+        return decryptCopy(input, 0, input.length);
     }
     
     /**
@@ -347,12 +347,12 @@ public final class CryptByteBuffer implements Serializable{
      * @param input The ByteBuffer to be decrypted
      * @return The decrypted ByteBuffer
      */
-    public ByteBuffer decrypt(ByteBuffer input){
+    public ByteBuffer decryptCopy(ByteBuffer input){
         if(input.hasArray())
             // FIXME this is still wrong - we should use the position and limit.
-            return ByteBuffer.wrap(decrypt(input.array(), input.arrayOffset(), input.capacity()));
+            return ByteBuffer.wrap(decryptCopy(input.array(), input.arrayOffset(), input.capacity()));
         else
-            return ByteBuffer.wrap(decrypt(Fields.copyToArray(input)));
+            return ByteBuffer.wrap(decryptCopy(Fields.copyToArray(input)));
     }
 
     // FIXME
