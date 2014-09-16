@@ -14,6 +14,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Security;
+import java.util.Arrays;
 
 import javax.crypto.spec.IvParameterSpec;
 
@@ -91,6 +92,35 @@ public class CryptByteBufferTest {
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext2));
                 assertTrue("CryptByteBufferType: "+type.name(), plain.equals(decipheredtext3));
             }
+    }
+    
+    @Test
+    public void testEncryptDirectByteBuffer() throws GeneralSecurityException {
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+            byte[] origPlaintext = Hex.decode(plainText[i]);
+            ByteBuffer plaintext = ByteBuffer.allocateDirect(origPlaintext.length);
+            plaintext.clear();
+            plaintext.put(origPlaintext);
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
+            plaintext.clear();
+            byte[] copyPlaintext = new byte[origPlaintext.length];
+            plaintext.get(copyPlaintext);
+            assertTrue(Arrays.equals(origPlaintext, copyPlaintext)); // Plaintext not modified.
+            plaintext.clear();
+            assertEquals(ciphertext.remaining(), origPlaintext.length);
+            ByteBuffer deciphered = crypt.decryptCopy(ciphertext);
+            assertTrue(deciphered.equals(plaintext));
+            byte[] data = new byte[origPlaintext.length];
+            deciphered.get(data);
+            assertTrue(Arrays.equals(data, origPlaintext));
+        }
     }
 
     @Test
