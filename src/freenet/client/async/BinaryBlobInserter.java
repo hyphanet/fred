@@ -176,6 +176,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				fail(InsertException.construct(errors), false, context);
 				return;
 			}
+			this.clearWakeupTime(context);
 			// Retry *this block*
 			this.schedule();
 		}

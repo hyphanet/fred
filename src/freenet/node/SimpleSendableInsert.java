@@ -199,6 +199,14 @@ public class SimpleSendableInsert extends SendableInsert {
 		else
 			return mine;
 	}
+	
+	@Override
+	public synchronized long getWakeupTime(ClientContext context, long now) {
+	    if(isEmpty()) return -1;
+	    if(scheduler.fetchingKeys().hasInsert(new MySendableRequestItem(this)))
+	        return Long.MAX_VALUE;
+	    return 0;
+	}
 
 	@Override
 	public boolean isSSK() {
