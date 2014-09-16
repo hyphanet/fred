@@ -555,7 +555,7 @@ public class Metadata implements Cloneable {
 							!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
 						minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
 					} else
-						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode");
+						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode: min="+minCompatMode+" max="+maxCompatMode+" top="+topCompatibilityMode);
 				}
 
 				// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
@@ -1097,6 +1097,10 @@ public class Metadata implements Cloneable {
 			splitfileParams = new byte[len];
 			byte[] b = Fields.shortToBytes(mode);
 			System.arraycopy(b, 0, splitfileParams, 0, 2);
+			// FIXME we set the params but we don't include the values in the metadata.
+			// We don't set keys either.
+			// The format of the Metadata object is different for creating one from scratch for 
+			// inserting vs constructing it from a serialized metadata document.
 			if(mode == SPLITFILE_PARAMS_CROSS_SEGMENT)
 				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments, crossSegmentBlocks } );
 			else if(mode == SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS)
@@ -1109,6 +1113,7 @@ public class Metadata implements Cloneable {
 			this.specifySplitfileKey = specifySplitfileKey;
 			if(splitfileCryptoKey == null) throw new IllegalArgumentException("Splitfile with parsed version 1 must have a crypto key");
 		}
+		// FIXME set up segments?
 	}
 
 	private boolean keysValid(ClientCHK[] keys) {
@@ -1834,6 +1839,7 @@ public class Metadata implements Cloneable {
 		return segmentCount;
 	}
 
+	// FIXME gross hack due to database/memory issues... remove and make segments final.
 	public SplitFileSegmentKeys[] grabSegmentKeys(ObjectContainer container) throws FetchException {
 		synchronized(this) {
 			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
@@ -1845,6 +1851,14 @@ public class Metadata implements Cloneable {
 			return segs;
 		}
 	}
+
+    public SplitFileSegmentKeys[] getSegmentKeys() throws FetchException {
+        synchronized(this) {
+            if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
+                throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+            return segments;
+        }
+    }
 
 	public int getDeductBlocksFromSegments() {
 		return deductBlocksFromSegments;

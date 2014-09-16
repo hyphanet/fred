@@ -44,7 +44,7 @@ import freenet.support.Logger.LogLevel;
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-abstract class ClientRequestSchedulerBase {
+abstract class ClientRequestSchedulerBase implements KeySalter {
 	
 	private static volatile boolean logMINOR;
 	

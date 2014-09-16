@@ -27,6 +27,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -48,6 +49,7 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.TempBucketFactory;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
@@ -945,8 +947,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.TOO_BIG, uncompressedLen, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
-				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
-						realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);
+				ClientGetState sf;
+				// Use the new splitfile code only in certain circumstances.
+				// FIXME relax these conditions once know it works.
+				if(ctx.useNewSplitfileCodeTransient && (!persistent) // Transient only for now
+				        && !((TempBucketFactory)context.tempBucketFactory).isEncrypting() // Only if temp buckets are not encrypted
+				        && metadata.getCrossCheckBlocks() == 0) { // No cross-segment
+				    Logger.error(this, "Creating new splitfile fetcher for "+thisKey+" version "+
+				            metadata.getMinCompatMode());
+				    sf = new SplitFileFetcherNew(metadata, rcb, parent, ctx, realTimeFlag,
+				            decompressors, clientMetadata, token, topDontCompress, 
+				            topCompatibilityMode, false, thisKey, container, context);
+				} else {
+				    sf = new SplitFileFetcher(metadata, rcb, parent, ctx, deleteFetchContext, 
+				            realTimeFlag, decompressors, clientMetadata, actx, recursionLevel, token, topDontCompress, topCompatibilityMode, container, context);
+				}
 				this.deleteFetchContext = false;
 				if(persistent) {
 					container.store(sf); // Avoid problems caused by storing a deactivated sf

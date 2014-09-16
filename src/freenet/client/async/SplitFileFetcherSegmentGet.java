@@ -58,7 +58,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public ClientKey getKey(Object token, ObjectContainer container) {
+	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 		SplitFileFetcherSegmentSendableRequestItem req = (SplitFileFetcherSegmentSendableRequestItem) token;
 		if(persistent) container.activate(segment, 1);
 		return segment.getBlockKey(req.blockNum, container);
@@ -111,36 +111,8 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		return localOnly;
 	}
 
-	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	private FetchException translateException(LowLevelGetException e) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			return new FetchException(FetchException.DATA_NOT_FOUND);
-		case LowLevelGetException.RECENTLY_FAILED:
-			return new FetchException(FetchException.RECENTLY_FAILED);
-		case LowLevelGetException.DECODE_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.INTERNAL_ERROR:
-			return new FetchException(FetchException.INTERNAL_ERROR);
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			return new FetchException(FetchException.REJECTED_OVERLOAD);
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			return new FetchException(FetchException.ROUTE_NOT_FOUND);
-		case LowLevelGetException.TRANSFER_FAILED:
-			return new FetchException(FetchException.TRANSFER_FAILED);
-		case LowLevelGetException.VERIFY_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.CANCELLED:
-			return new FetchException(FetchException.CANCELLED);
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
-		}
-	}
-
 	@Override
-	public void onFailure(LowLevelGetException e, Object token,
+	public void onFailure(LowLevelGetException e, SendableRequestItem token,
 			ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
@@ -179,27 +151,9 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		return segment.getCooldownWakeup(((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, segment.getMaxRetries(container), container, context);
-	}
-
-	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-		/* Only deactivate if was deactivated in the first place. 
-		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
-		boolean activated = false;
-		if(persistent) {
-			activated = container.ext().isActive(segment);
-			if(!activated)
-				container.activate(segment, 1);
-		}
-		long ret = segment.getCooldownWakeupByKey(key, container, context);
-		if(persistent) {
-			if(!activated)
-				container.deactivate(segment, 1);
-		}
-		return ret;
 	}
 
 	@Override

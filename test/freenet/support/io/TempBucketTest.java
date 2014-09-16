@@ -112,7 +112,7 @@ public class TempBucketTest extends TestSuite {
 			OutputStream os = bucket.getOutputStream();
 			os.write(new byte[16]);
 			InputStream is = bucket.getInputStream();
-			bucket.migrateToFileBucket();
+			bucket.migrateToDisk();
 			byte[] readTo = new byte[16];
 			assertTrue(is.read(readTo, 0, 16) == 16);
 			for(int i=0;i<readTo.length;i++)
@@ -131,7 +131,7 @@ public class TempBucketTest extends TestSuite {
 			new Random(89).nextBytes(data);
 			os.write(data);
 			InputStream is = bucket.getInputStream();
-			bucket.migrateToFileBucket();
+			bucket.migrateToDisk();
 			byte[] readTo = new byte[2048];
 			new DataInputStream(is).readFully(readTo);
 			for(int i=0;i<readTo.length;i++)

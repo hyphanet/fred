@@ -15,6 +15,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
+import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -52,46 +53,11 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		});
 	}
-
+	
 	// Translate it, then call the real onFailure
 	@Override
-	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), false, container, context);
-			return;
-		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), false, container, context);
-			return;
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), false, container, context);
-			return;
-		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), false, container, context);
-			return;
-		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
-			return;
-		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
-			return;
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
-			return;
-		}
+	public void onFailure(LowLevelGetException e, SendableRequestItem reqTokenIgnored, ObjectContainer container, ClientContext context) {
+	    onFailure(translateException(e), false, container, context);
 	}
 
 	// Real onFailure
@@ -212,7 +178,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	@Override
-	protected void onBlockDecodeError(Object token, ObjectContainer container,
+	protected void onBlockDecodeError(SendableRequestItem token, ObjectContainer container,
 			ClientContext context) {
 		onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, "Could not decode block with the URI given, probably invalid as inserted, possible the URI is wrong"), true, container, context);
 	}

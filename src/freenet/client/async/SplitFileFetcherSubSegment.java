@@ -89,7 +89,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public ClientKey getKey(Object token, ObjectContainer container) {
+	public ClientKey getKey(SendableRequestItem token, ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -150,7 +150,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	
 	// Translate it, then call the real onFailure
 	@Override
-	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -267,7 +267,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
+	public long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -276,24 +276,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		// We must complete this immediately or risk data loss.
 		// We are not being called by RGA so there is no problem.
 		migrateToSegmentFetcher(container, context);
-	}
-
-	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-		/* Only deactivate if was deactivated in the first place. 
-		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
-		boolean activated = false;
-		if(persistent) {
-			activated = container.ext().isActive(segment);
-			if(!activated)
-				container.activate(segment, 1);
-		}
-		long ret = segment.getCooldownWakeupByKey(key, container, context);
-		if(persistent) {
-			if(!activated)
-				container.deactivate(segment, 1);
-		}
-		return ret;
 	}
 
 	public void reschedule(ObjectContainer container, ClientContext context) {

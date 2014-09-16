@@ -90,6 +90,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
+	/** FIXME remove */
+	static public boolean USE_NEW_SPLITFILE_CODE_TRANSIENT = true;
 
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		this.core = node;
@@ -344,7 +346,19 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE, null, null);
+				false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE_TRANSIENT);
+	}
+	
+	public static FetchContext makeDefaultFetchContext(long maxLength, long maxTempLength, 
+	        BucketFactory bucketFactory, SimpleEventProducer eventProducer) {
+        return
+        new FetchContext(maxLength, maxTempLength, 1024*1024,
+            MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
+            SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
+            FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+            FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+            bucketFactory, eventProducer,
+            false, CAN_WRITE_CLIENT_CACHE, null, null, USE_NEW_SPLITFILE_CODE_TRANSIENT);
 	}
 
 	@Override

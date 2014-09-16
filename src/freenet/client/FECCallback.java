@@ -15,6 +15,7 @@ import freenet.support.api.Bucket;
  * 
  * WARNING: the callback is expected to release the thread !
  */
+@Deprecated // See NewFECCodec
 public interface FECCallback {
 
 	/**

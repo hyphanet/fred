@@ -19,6 +19,7 @@ import freenet.support.api.BucketFactory;
  * about. FIXME these should be final or private, with getters/setters and 
  * checking for valid values e.g. maxRecursionLevel >= 1. */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+// Having said that, there is some support for schema evolution... new fields will be default valued etc IIRC
 public class FetchContext implements Cloneable {
 
 	public static final int IDENTICAL_MASK = 0;
@@ -117,6 +118,10 @@ public class FetchContext implements Cloneable {
 
 	/** Ignore USK DATEHINTs */
 	public boolean ignoreUSKDatehints;
+	
+	/** Whether to use SplitFileFetcherNew etc for splitfile fetches. If false, we use the older
+	 * code. FIXME REMOVE */
+	public boolean useNewSplitfileCodeTransient;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -126,7 +131,8 @@ public class FetchContext implements Cloneable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME,
+			boolean useNewSplitfileCode) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -152,6 +158,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
 		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		this.ignoreUSKDatehints = false; // FIXME
+		this.useNewSplitfileCodeTransient = useNewSplitfileCode;
 		hasOwnEventProducer = true;
 	}
 
@@ -198,6 +205,7 @@ public class FetchContext implements Cloneable {
 		this.cooldownRetries = ctx.cooldownRetries;
 		this.cooldownTime = ctx.cooldownTime;
 		this.ignoreUSKDatehints = ctx.ignoreUSKDatehints;
+		this.useNewSplitfileCodeTransient = ctx.useNewSplitfileCodeTransient;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
@@ -244,11 +252,17 @@ public class FetchContext implements Cloneable {
 			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
 		this.cooldownRetries = cooldownRetries;
 	}
-	
+
+	/** Set the cooldown time */
 	public void setCooldownTime(long cooldownTime) {
+	    setCooldownTime(cooldownTime, false);
+	}
+
+	/** Only for tests */
+	public void setCooldownTime(long cooldownTime, boolean force) {
 		if(cooldownTime < 0)
 			throw new IllegalArgumentException("Bogus negative cooldown time");
-		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD)
+		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD && !force)
 			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
 		this.cooldownTime = cooldownTime;
 	}

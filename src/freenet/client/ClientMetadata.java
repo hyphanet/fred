@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 
 /**
@@ -23,6 +27,26 @@ public class ClientMetadata implements Cloneable {
 
 	public ClientMetadata(String mime) {
 		mimeType = (mime == null) ? null : mime.intern();
+	}
+	
+	private ClientMetadata(DataInputStream dis) throws MetadataParseException, IOException {
+	    int magic = dis.readInt();
+	    if(magic != MAGIC)
+	        throw new MetadataParseException("Bad magic value in ClientMetadata");
+	    short version = dis.readShort();
+	    if(version != VERSION)
+	        throw new MetadataParseException("Unrecognised version "+version+" in ClientMetadata");
+	    boolean hasMIMEType = dis.readBoolean();
+	    if(hasMIMEType)
+	        mimeType = dis.readUTF();
+	    else
+	        mimeType = null;
+	}
+	
+	/** Factory method to keep the API cleaner, avoid ambiguity; this won't be used as often as
+	 * the String constructor. */
+	public static ClientMetadata construct(DataInputStream dis) throws MetadataParseException, IOException {
+	    return new ClientMetadata(dis);
 	}
 	
 	/** Get the document MIME type. Will always be a valid MIME type, unless there
@@ -81,4 +105,19 @@ public class ClientMetadata implements Cloneable {
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+	
+    public void writeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeShort(VERSION);
+        if(mimeType == null)
+            dos.writeBoolean(false);
+        else {
+            dos.writeBoolean(true);
+            dos.writeUTF(mimeType);
+        }
+    }
+    
+    private static int VERSION = 1;
+    private static int MAGIC = 0x021441fe8;
+
 }

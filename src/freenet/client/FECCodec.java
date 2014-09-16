@@ -26,6 +26,7 @@ import freenet.support.io.Closer;
  * @author root
  *
  */
+@Deprecated // See NewFECCodec
 public abstract class FECCodec {
 
 	protected transient FECCode fec;

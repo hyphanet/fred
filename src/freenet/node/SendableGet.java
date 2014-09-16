@@ -6,9 +6,11 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.FetchException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.SimpleSingleFileFetcher;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -24,7 +26,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(Object token, ObjectContainer container);
+	public abstract ClientKey getKey(SendableRequestItem token, ObjectContainer container);
 	
 	@Override
 	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
@@ -45,7 +47,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract FetchContext getContext(ObjectContainer container);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
+	public abstract void onFailure(LowLevelGetException e, SendableRequestItem token, ObjectContainer container, ClientContext context);
 	
 	// Implementation
 
@@ -75,9 +77,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context);
-	
-	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context);
+	public abstract long getCooldownWakeup(SendableRequestItem token, ObjectContainer container, ClientContext context);
 	
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
@@ -126,4 +126,31 @@ public abstract class SendableGet extends BaseSendableGet {
 		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
 	}
 	
+	public static FetchException translateException(LowLevelGetException e) {
+	    switch(e.code) {
+	    case LowLevelGetException.DATA_NOT_FOUND:
+	    case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+	        return new FetchException(FetchException.DATA_NOT_FOUND);
+	    case LowLevelGetException.RECENTLY_FAILED:
+	        return new FetchException(FetchException.RECENTLY_FAILED);
+	    case LowLevelGetException.DECODE_FAILED:
+	        return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+	    case LowLevelGetException.INTERNAL_ERROR:
+	        return new FetchException(FetchException.INTERNAL_ERROR);
+	    case LowLevelGetException.REJECTED_OVERLOAD:
+	        return new FetchException(FetchException.REJECTED_OVERLOAD);
+	    case LowLevelGetException.ROUTE_NOT_FOUND:
+	        return new FetchException(FetchException.ROUTE_NOT_FOUND);
+	    case LowLevelGetException.TRANSFER_FAILED:
+	        return new FetchException(FetchException.TRANSFER_FAILED);
+	    case LowLevelGetException.VERIFY_FAILED:
+	        return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+	    case LowLevelGetException.CANCELLED:
+	        return new FetchException(FetchException.CANCELLED);
+	    default:
+	        Logger.error(SimpleSingleFileFetcher.class, "Unknown LowLevelGetException code: "+e.code);
+	        return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
+	    }
+	}
+
 }

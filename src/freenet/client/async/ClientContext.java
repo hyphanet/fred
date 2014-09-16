@@ -19,10 +19,13 @@ import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
+import freenet.support.io.ByteArrayRandomAccessThingFactory;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -53,6 +56,7 @@ public class ClientContext {
 	public transient PersistentTempBucketFactory persistentBucketFactory;
 	public transient PersistentFileTracker persistentFileTracker;
 	public transient final BucketFactory tempBucketFactory;
+	public transient final LockableRandomAccessThingFactory tempRAFFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
@@ -64,6 +68,10 @@ public class ClientContext {
 	public transient final DatastoreChecker checker;
 	public transient final CooldownTracker cooldownTracker;
 	public transient DownloadCache downloadCache;
+	/** Used for memory intensive jobs such as in-RAM FEC decodes. Some of these jobs may do disk 
+	 * I/O and we don't guarantee to serialise them. The new splitfile code does FEC decodes 
+	 * entirely in memory, which saves a lot of seeks and improves robustness. */
+	public transient final MemoryLimitedJobRunner memoryLimitedJobRunner;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -72,8 +80,9 @@ public class ClientContext {
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom,
-			Random fastWeakRandom, Ticker ticker,
-			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker, LinkFilterExceptionProvider linkFilterExceptionProvider) {
+			Random fastWeakRandom, Ticker ticker, FilenameGenerator fg, FilenameGenerator persistentFG,
+			LockableRandomAccessThingFactory rafFactory, RealCompressor rc, DatastoreChecker checker, 
+			LinkFilterExceptionProvider linkFilterExceptionProvider, long memoryLimitedJobRunnerMemoryLimit) {
 		this.bootID = bootID;
 		this.fecQueue = fecQueue;
 		this.jobRunner = jobRunner;
@@ -94,6 +103,8 @@ public class ClientContext {
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		this.cooldownTracker = new CooldownTracker();
+		this.memoryLimitedJobRunner = new MemoryLimitedJobRunner(memoryLimitedJobRunnerMemoryLimit, mainExecutor);
+		this.tempRAFFactory = rafFactory; 
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
