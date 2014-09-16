@@ -760,5 +760,9 @@ public class SplitFileInserterSegmentStorage {
     public int countSendableKeys() {
         return blockChooser.countFetchable();
     }
+    
+    public String toString() {
+        return super.toString()+":"+parent;
+    }
 
 }

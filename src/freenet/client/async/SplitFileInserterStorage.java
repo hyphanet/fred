@@ -1490,6 +1490,7 @@ public class SplitFileInserterStorage {
     private boolean allSegmentsSucceeded() {
         for(SplitFileInserterSegmentStorage segment : segments) {
             if(!segment.hasSucceeded()) return false;
+            if(logMINOR) Logger.minor(this, "Succeeded "+segment);
         }
         return true;
     }
