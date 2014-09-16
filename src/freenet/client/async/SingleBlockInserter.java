@@ -326,6 +326,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(ctx.getCHKOnly || ctx.earlyEncode) {
 			tryEncode(context);
+		}
+		if(ctx.getCHKOnly) { 
 			onSuccess(null, getKeyNoEncode(), context);
 		} else {
 			getScheduler(context).registerInsert(this, persistent);
