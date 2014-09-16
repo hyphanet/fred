@@ -246,11 +246,6 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         });
     }
 
-    @Override
-    public SendableInsert getSendableInsert() {
-        return sender;
-    }
-
     public long getLength() {
         return storage.dataLength;
     }

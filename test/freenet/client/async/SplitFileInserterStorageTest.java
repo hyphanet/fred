@@ -197,11 +197,6 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
 
         @Override
-        public SendableInsert getSendableInsert() {
-            return null;
-        }
-
-        @Override
         public void onInsertedBlock() {
             // Ignore.
         }

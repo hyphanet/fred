@@ -1571,11 +1571,6 @@ public class SplitFileInserterStorage {
         return status;
     }
 
-    /** Used by KeysFetchingLocally */
-    SendableInsert getSendableInsert() {
-        return callback.getSendableInsert();
-    }
-    
     static final long LAZY_WRITE_METADATA_DELAY = TimeUnit.MINUTES.toMillis(5);
     
     private final PersistentJob writeMetadataJob = new PersistentJob() {
