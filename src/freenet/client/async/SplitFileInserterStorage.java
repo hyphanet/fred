@@ -1407,12 +1407,12 @@ public class SplitFileInserterStorage {
 
     /** Called when a segment completes. Can be called inside locks as it runs off-thread. */
     public void segmentSucceeded(final SplitFileInserterSegmentStorage completedSegment) {
-        if(logMINOR) Logger.minor(this, "Succeeded segment "+completedSegment);
+        if(logMINOR) Logger.minor(this, "Succeeded segment "+completedSegment+" for "+callback);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
-                if(logMINOR) Logger.minor(this, "Succeeding segment "+completedSegment+" for "+this);
+                if(logMINOR) Logger.minor(this, "Succeeding segment "+completedSegment+" for "+callback);
                 if(maybeFail()) return true;
                 if(allSegmentsSucceeded()) {
                     synchronized(this) {

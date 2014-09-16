@@ -212,7 +212,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
 
             @Override
             public boolean run(ClientContext context) {
-                if(logMINOR) Logger.minor(this, "Succeeding on "+this);
+                if(logMINOR) Logger.minor(this, "Succeeding on "+SplitFileInserter.this);
                 if(!(ctx.earlyEncode || ctx.getCHKOnly)) {
                     reportMetadata(metadata);
                 }
