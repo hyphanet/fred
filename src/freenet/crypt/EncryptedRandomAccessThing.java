@@ -220,7 +220,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         try {
             CryptByteBuffer crypt = new CryptByteBuffer(type.encryptType, headerEncKey, 
                     headerEncIV);
-            encryptedKey = Fields.copyToArray(crypt.encrypt(unencryptedBaseKey.getEncoded()));
+            encryptedKey = crypt.encrypt(unencryptedBaseKey.getEncoded());
         } catch (InvalidKeyException e) {
             throw new GeneralSecurityException("Something went wrong with key generation. please "
                     + "report", e.fillInStackTrace());

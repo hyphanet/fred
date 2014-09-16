@@ -3,22 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Security;
-import java.util.BitSet;
 
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
-
-import freenet.support.Fields;
 
 public class CryptByteBufferTest {
     private static final CryptByteBufferType[] cipherTypes = CryptByteBufferType.values();
@@ -62,9 +63,7 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            ByteBuffer ciphertext = crypt.encrypt(Hex.decode(plainText[i]));
-
-            byte[] decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext));
+            byte[] decipheredtext = crypt.encrypt(Hex.decode(plainText[i]));
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
@@ -105,20 +104,20 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            ByteBuffer ciphertext = crypt.encrypt(plain);
-            ByteBuffer ciphertext2 = crypt.encrypt(plain);
-            ByteBuffer ciphertext3 = crypt.encrypt(plain);
+            byte[] ciphertext = crypt.encrypt(plain);
+            byte[] ciphertext2 = crypt.encrypt(plain);
+            byte[] ciphertext3 = crypt.encrypt(plain);
 
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext));
+            byte[] decipheredtext = crypt.decrypt(ciphertext);
             assertArrayEquals("CryptByteBufferType: "+type.name(), plain, decipheredtext);
-            decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext2));
+            decipheredtext = crypt.decrypt(ciphertext2);
             assertArrayEquals("CryptByteBufferType2: "+type.name(), plain, decipheredtext);
-            decipheredtext = Fields.copyToArray(crypt.decrypt(ciphertext3));
+            decipheredtext = crypt.decrypt(ciphertext3);
             assertArrayEquals("CryptByteBufferType3: "+type.name(), plain, decipheredtext);
         }
     }

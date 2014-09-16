@@ -226,28 +226,27 @@ public final class CryptByteBuffer implements Serializable{
      * Encrypts the specified section of provided byte[] into a new array returned as a ByteBuffer.
      * Does not modify the original array. If you are using a RijndaelECB alg then len must equal 
      * the block size. 
-     * @param input The bytes to be encrypted
+     * @param input The bytes to be encrypted. Contents will not be modified.
      * @param offset The position of input to start encrypting at
      * @param len The number of bytes after offset to encrypt
-     * @return Returns ByteBuffer input with the specified section encrypted. The buffer will have
-     * a backing array and its array offset will be 0.
+     * @return Returns a new array containing the ciphertext encoding the specified range.
      */
-    public ByteBuffer encrypt(byte[] input, int offset, int len){
+    public byte[] encrypt(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
                 if(offset+len > input.length) throw new IllegalArgumentException();
                 byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
                 encryptPCFB.blockEncipher(buf, 0, len);
-                return ByteBuffer.wrap(buf);
+                return buf;
             } else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
                 if(offset+len > input.length) throw new IllegalArgumentException();
                 blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
-                return ByteBuffer.wrap(result);
+                return result;
             }
             else{
-                return ByteBuffer.wrap(encryptCipher.doFinal(input, offset, len));
+                return encryptCipher.doFinal(input, offset, len);
             }
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
@@ -260,9 +259,9 @@ public final class CryptByteBuffer implements Serializable{
      * Encrypts the provided byte[]. If you are using a RijndaelECB
      * alg then the length of input must equal the block size. 
      * @param input The byte[] to be encrypted
-     * @return The encrypted ByteBuffer
+     * @return The encrypted data. The original data will be unchanged.
      */
-    public ByteBuffer encrypt(byte[] input){
+    public byte[] encrypt(byte[] input){
         return encrypt(input, 0, input.length);
     }
     
@@ -275,9 +274,9 @@ public final class CryptByteBuffer implements Serializable{
     public ByteBuffer encrypt(ByteBuffer input){
         if(input.hasArray())
             // FIXME this is still wrong - we should use the position and limit.
-            return encrypt(input.array(), input.arrayOffset(), input.capacity());
+            return ByteBuffer.wrap(encrypt(input.array(), input.arrayOffset(), input.capacity()));
         else
-            return encrypt(Fields.copyToArray(input));
+            return ByteBuffer.wrap(encrypt(Fields.copyToArray(input)));
     }
 
     // FIXME
@@ -301,29 +300,29 @@ public final class CryptByteBuffer implements Serializable{
      * Decrypts the specified section of provided byte[] into an array which is returned as a
      * ByteBuffer. Does not modify the original array. If you are using a RijndaelECB alg then len 
      * must equal the block size. 
-     * @param input The bytes to be decrypted
+     * @param input The bytes to be decrypted. Contents will not be modified.
      * @param offset The position of input to start decrypting at
      * @param len The number of bytes after offset to decrypt
-     * @return Returns ByteBuffer input with the specified section decrypted. The buffer will have
-     * a backing array and its array offset will be 0.
+     * @return Returns the decrypted plaintext, a newly allocated byte array of the same length as 
+     * the input data. 
      */
-    public ByteBuffer decrypt(byte[] input, int offset, int len){
+    public byte[] decrypt(byte[] input, int offset, int len){
         try{
             if(type == CryptByteBufferType.RijndaelPCFB){
                 // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
                 if(offset+len > input.length) throw new IllegalArgumentException();
                 byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
                 decryptPCFB.blockDecipher(buf, 0, len);
-                return ByteBuffer.wrap(buf);
+                return buf;
             } 
             else if(type.cipherName.equals("RIJNDAEL")){
                 byte[] result = new byte[len];
                 if(offset+len > input.length) throw new IllegalArgumentException();
                 blockCipher.decipher(Arrays.copyOfRange(input, offset, offset+len), result);
-                return ByteBuffer.wrap(result);
+                return result;
             }
             else{
-                return ByteBuffer.wrap(decryptCipher.doFinal(input, offset, len));
+                return decryptCipher.doFinal(input, offset, len);
             }
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
@@ -336,9 +335,9 @@ public final class CryptByteBuffer implements Serializable{
      * Decrypts the provided byte[]. If you are using a RijndaelECB
      * alg then the length of input must equal the block size. 
      * @param input The byte[] to be decrypted
-     * @return The decrypted ByteBuffer
+     * @return The decrypted plaintext bytes.
      */
-    public ByteBuffer decrypt(byte[] input){
+    public byte[] decrypt(byte[] input){
         return decrypt(input, 0, input.length);
     }
     
@@ -351,9 +350,9 @@ public final class CryptByteBuffer implements Serializable{
     public ByteBuffer decrypt(ByteBuffer input){
         if(input.hasArray())
             // FIXME this is still wrong - we should use the position and limit.
-            return decrypt(input.array(), input.arrayOffset(), input.capacity());
+            return ByteBuffer.wrap(decrypt(input.array(), input.arrayOffset(), input.capacity()));
         else
-            return decrypt(Fields.copyToArray(input));
+            return ByteBuffer.wrap(decrypt(Fields.copyToArray(input)));
     }
 
     // FIXME
