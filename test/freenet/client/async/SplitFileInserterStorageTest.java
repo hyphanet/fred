@@ -719,8 +719,7 @@ public class SplitFileInserterStorageTest extends TestCase {
         }
 
         @Override
-        public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
-            assertTrue(insert == null);
+        public boolean hasInsert(SendableRequestItemKey token) {
             return inserts.contains(token);
         }
 

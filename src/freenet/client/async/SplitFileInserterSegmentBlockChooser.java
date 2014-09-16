@@ -46,8 +46,7 @@ public class SplitFileInserterSegmentBlockChooser extends SimpleBlockChooser {
     
     protected boolean checkValid(int chosen) {
         if(!super.checkValid(chosen)) return false;
-        return !keysFetching.hasInsert(segment.parent.getSendableInsert(), 
-                new BlockInsert(segment, chosen));
+        return !keysFetching.hasInsert(new BlockInsert(segment, chosen));
     }
 
     /** Handle an RNF if the n-consecutive-RNFs-count-as-success hack is enabled.

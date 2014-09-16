@@ -89,7 +89,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 			recentSuccesses = new ArrayDeque<BaseSendableGet>();
 		} else {
 			keysFetching = null;
-			runningInserts = new HashSet<RunningInsert>();
+			runningInserts = new HashSet<SendableRequestItemKey>();
 			recentSuccesses = null;
 		}
 		priorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
@@ -120,31 +120,7 @@ public class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private transient HashMap<Key, WeakReference<BaseSendableGet>[]> transientRequestsWaitingForKeysFetching;
 	
-	private static class RunningInsert {
-		
-		final SendableInsert insert;
-		final SendableRequestItemKey token;
-		
-		RunningInsert(SendableInsert i, SendableRequestItemKey t) {
-			insert = i;
-			token = t;
-		}
-		
-		@Override
-		public int hashCode() {
-			return insert.hashCode() ^ token.hashCode();
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			if(!(o instanceof RunningInsert)) return false;
-			RunningInsert r = (RunningInsert) o;
-			return r.insert == insert && (r.token == token || r.token.equals(token));
-		}
-		
-	}
-	
-	private transient final HashSet<RunningInsert> runningInserts;
+	private transient final HashSet<SendableRequestItemKey> runningInserts;
 	
 	/** Choose a priority to start requests from.
 	 * @return The priority chosen or the time at which a priority will have requests to send.
@@ -558,34 +534,31 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 	}
 
 	@Override
-	public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token) {
-		RunningInsert tmp = new RunningInsert(insert, token);
+	public boolean hasInsert(SendableRequestItemKey token) {
 		synchronized(runningInserts) {
-			return runningInserts.contains(tmp);
+			return runningInserts.contains(token);
 		}
 	}
 
-	public boolean addRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
-		RunningInsert tmp = new RunningInsert(insert, token);
+	public boolean addRunningInsert(SendableRequestItemKey token) {
 		synchronized(runningInserts) {
-			boolean retval = runningInserts.add(tmp);
+			boolean retval = runningInserts.add(token);
 			if(!retval) {
 			    // This shouldn't happen often, because the chooseBlock()'s should check for it...
-				Logger.error(this, "Already in runningInserts: "+insert+" : "+token);
+				Logger.error(this, "Already in runningInserts: "+token);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Added to runningInserts: "+insert+" : "+token);
+					Logger.minor(this, "Added to runningInserts: "+token);
 			}
 			return retval;
 		}
 	}
 	
-	public void removeRunningInsert(SendableInsert insert, SendableRequestItemKey token) {
-		RunningInsert tmp = new RunningInsert(insert, token);
+	public void removeRunningInsert(SendableRequestItemKey token) {
 		if(logMINOR)
-			Logger.minor(this, "Removing from runningInserts: "+insert+" : "+token);
+			Logger.minor(this, "Removing from runningInserts: "+token);
 		synchronized(runningInserts) {
-			runningInserts.remove(tmp);
+			runningInserts.remove(token);
 		}
 	}
 

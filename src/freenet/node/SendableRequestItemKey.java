@@ -5,7 +5,8 @@ package freenet.node;
  * transient inserts are running. @see SendableRequestItem.getKey(). If that method just returns 
  * the request, the default equals() and hashCode() should be fine, however if you have a separate
  * key class for checking quickly whether something is queued you will need real equals() and 
- * hashCode() methods. */
+ * hashCode() methods. Should be globally unique, i.e. should not equal the keys for other 
+ * requests, so don't just use e.g. an integer on its own. */
 public interface SendableRequestItemKey {
 	
 	/** You must implement this! */

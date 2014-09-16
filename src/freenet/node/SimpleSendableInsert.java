@@ -159,7 +159,7 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	@Override
 	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
-		if(keys.hasInsert(this, NullSendableRequestItem.nullItem))
+		if(keys.hasInsert(NullSendableRequestItem.nullItem))
 			return null;
 		if(finished) return null;
 		else
