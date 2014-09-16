@@ -127,7 +127,7 @@ public class SimpleBlockChooser {
      * @param used An array of flags indicating whether we have each block.
      * @return The number of blocks in used.
      */
-    public void replaceSuccesses(boolean[] used) {
+    public synchronized void replaceSuccesses(boolean[] used) {
         for(int i=0;i<blocks;i++) {
             if(used[i] && !completed[i])
                 onSuccess(i);
@@ -145,11 +145,11 @@ public class SimpleBlockChooser {
     }
 
     /** Ugly to include this here, but avoids making completed visible ... */
-    public int getBlockNumber(SplitFileSegmentKeys keys, NodeCHK key) {
+    public synchronized int getBlockNumber(SplitFileSegmentKeys keys, NodeCHK key) {
         return keys.getBlockNumber(key, completed);
     }
     
-    public boolean hasSucceeded(int blockNumber) {
+    public synchronized boolean hasSucceeded(int blockNumber) {
         return completed[blockNumber];
     }
 
@@ -214,7 +214,7 @@ public class SimpleBlockChooser {
         return x;
     }
     
-    public boolean hasSucceededAll() {
+    public synchronized boolean hasSucceededAll() {
         return completedCount == blocks;
     }
 
