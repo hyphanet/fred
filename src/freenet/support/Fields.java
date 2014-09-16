@@ -984,7 +984,6 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static byte[] copyToArray(ByteBuffer buf) {
-	    // FIXME this is still wrong - we should use the position and limit.
 	    if(buf.hasArray()) {
 	        byte[] array = buf.array();
 	        /* We *NEVER* return the original array because we want consistent behaviour: We always 
@@ -995,16 +994,11 @@ public abstract class Fields {
 	         * If we really wanted to take the risk, we'd do:
 	         * if(array.length == buf.capacity()) return array;
 	         */
-	        return Arrays.copyOfRange(array, buf.arrayOffset(), buf.capacity());
+	        return Arrays.copyOfRange(array, buf.arrayOffset() + buf.position(), buf.arrayOffset() + buf.limit());
 	    } else {
-	        // FIXME test this.
-	        int l = buf.limit();
 	        int p = buf.position();
-	        buf.position(0);
-	        buf.limit(buf.capacity());
-	        byte[] ret = new byte[buf.capacity()];
+	        byte[] ret = new byte[buf.remaining()];
 	        buf.get(ret);
-            buf.limit(l);
 	        buf.position(p);
 	        return ret;
 	    }

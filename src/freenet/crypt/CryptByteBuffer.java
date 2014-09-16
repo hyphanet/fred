@@ -266,17 +266,21 @@ public final class CryptByteBuffer implements Serializable{
     }
     
     /**
-     * Encrypts the provided ByteBuffer. If you are using a RijndaelECB
-     * alg then the length of input must equal the block size. 
+     * Encrypts the provided ByteBuffer, returning a new ByteBuffer. Only reads the bytes that are
+     * actually readable, i.e. from position to limit, so equivalent to get()ing into a buffer, 
+     * encrypting that and returning. If you are using a RijndaelECB alg then the length of input 
+     * must equal the block size. 
      * @param input The byte[] to be encrypted
-     * @return The encrypted ByteBuffer
+     * @return A new ByteBuffer containing the ciphertext. It will have a backing array and its 
+     * arrayOffset() will be 0.
      */
     public ByteBuffer encryptCopy(ByteBuffer input){
         if(input.hasArray())
-            // FIXME this is still wrong - we should use the position and limit.
-            return ByteBuffer.wrap(encryptCopy(input.array(), input.arrayOffset(), input.capacity()));
-        else
+            return ByteBuffer.wrap(encryptCopy(input.array(), input.arrayOffset() + input.position(),
+                    input.remaining()));
+        else {
             return ByteBuffer.wrap(encryptCopy(Fields.copyToArray(input)));
+        }
     }
 
     // FIXME
@@ -342,15 +346,18 @@ public final class CryptByteBuffer implements Serializable{
     }
     
     /**
-     * Decrypts the provided ByteBuffer. If you are using a RijndaelECB
-     * alg then the length of input must equal the block size. 
-     * @param input The ByteBuffer to be decrypted
-     * @return The decrypted ByteBuffer
+     * Decrypts the provided ByteBuffer, returning a new ByteBuffer. Only reads the bytes that are
+     * actually readable, i.e. from position to limit, so equivalent to get()ing into a buffer, 
+     * decrypting that and returning. If you are using a RijndaelECB alg then the length of input 
+     * must equal the block size. 
+     * @param input The buffer to be decrypted
+     * @return A new ByteBuffer containing the plaintext. It will have a backing array and its 
+     * arrayOffset() will be 0.
      */
     public ByteBuffer decryptCopy(ByteBuffer input){
         if(input.hasArray())
-            // FIXME this is still wrong - we should use the position and limit.
-            return ByteBuffer.wrap(decryptCopy(input.array(), input.arrayOffset(), input.capacity()));
+            return ByteBuffer.wrap(decryptCopy(input.array(), input.arrayOffset() + input.position(), 
+                    input.remaining()));
         else
             return ByteBuffer.wrap(decryptCopy(Fields.copyToArray(input)));
     }

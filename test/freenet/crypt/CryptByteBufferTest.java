@@ -64,7 +64,7 @@ public class CryptByteBufferTest {
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
-            byte[] decipheredtext = crypt.encryptCopy(Hex.decode(plainText[i]));
+            byte[] decipheredtext = crypt.decryptCopy(crypt.encryptCopy(Hex.decode(plainText[i])));
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
@@ -95,6 +95,65 @@ public class CryptByteBufferTest {
     }
     
     @Test
+    public void testEncryptWrapByteBuffer() throws GeneralSecurityException {
+        int header = 5;
+        int footer = 5;
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+            byte[] origPlaintext = Hex.decode(plainText[i]);
+            byte[] buf = new byte[origPlaintext.length+header+footer];
+            System.arraycopy(origPlaintext, 0, buf, header, origPlaintext.length);
+            byte[] cloneBuf = buf.clone();
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            ByteBuffer plaintext = ByteBuffer.wrap(buf, header, origPlaintext.length);
+            ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
+            assertTrue(Arrays.equals(buf, cloneBuf)); // Plaintext not modified.
+            assertEquals(ciphertext.remaining(), origPlaintext.length);
+            ByteBuffer deciphered = crypt.decryptCopy(ciphertext);
+            assertTrue(deciphered.equals(plaintext));
+            byte[] data = new byte[origPlaintext.length];
+            deciphered.get(data);
+            assertTrue(Arrays.equals(data, origPlaintext));
+        }
+    }
+
+    @Test
+    public void testDecryptWrapByteBuffer() throws GeneralSecurityException {
+        int header = 5;
+        int footer = 5;
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+            byte[] origPlaintext = Hex.decode(plainText[i]);
+            byte[] buf = origPlaintext.clone();
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            ByteBuffer plaintext = ByteBuffer.wrap(buf);
+            ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
+            assertTrue(Arrays.equals(buf, origPlaintext)); // Plaintext not modified.
+            assertEquals(ciphertext.remaining(), origPlaintext.length);
+            byte[] decryptBuf = new byte[header+origPlaintext.length+footer];
+            ciphertext.get(decryptBuf, header, origPlaintext.length);
+            byte[] copyOfDecryptBuf = decryptBuf.clone();
+            ByteBuffer toDecipher = ByteBuffer.wrap(decryptBuf, header, origPlaintext.length);
+            ByteBuffer deciphered = crypt.decryptCopy(toDecipher);
+            assertTrue(Arrays.equals(decryptBuf, copyOfDecryptBuf));
+            assertTrue(deciphered.equals(plaintext));
+            byte[] data = new byte[origPlaintext.length];
+            deciphered.get(data);
+            assertTrue(Arrays.equals(data, origPlaintext));
+        }
+    }
+
+    @Test
     public void testEncryptDirectByteBuffer() throws GeneralSecurityException {
         for(int i = 0; i < cipherTypes.length; i++){
             CryptByteBufferType type = cipherTypes[i];
@@ -103,6 +162,7 @@ public class CryptByteBufferTest {
             ByteBuffer plaintext = ByteBuffer.allocateDirect(origPlaintext.length);
             plaintext.clear();
             plaintext.put(origPlaintext);
+            plaintext.clear();
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
             } else {
