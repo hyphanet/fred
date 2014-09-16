@@ -58,6 +58,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private final Object token;
     /** Insert settings */
     final InsertContext ctx;
+    private transient boolean resumed;
     
     SplitFileInserter(boolean persistent, BaseClientPutter parent, PutCompletionCallback cb,
             LockableRandomAccessThing originalData, boolean freeData, InsertContext ctx, 
@@ -125,6 +126,10 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     @Override
     public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
         assert(persistent);
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
+        }
         this.context = context;
         try {
             raf.onResume(context);

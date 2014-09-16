@@ -545,6 +545,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		final boolean persistent;
 		final long origDataLength;
 		final long origCompressedDataLength;
+		private transient boolean resumed;
 		
 		// A persistent hashCode is helpful in debugging, and also means we can put
 		// these objects into sets etc when we need to.
@@ -965,6 +966,10 @@ class SingleFileInserter implements ClientPutState, Serializable {
 
         @Override
         public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
+            synchronized(this) {
+                if(resumed) return;
+                resumed = true;
+            }
             if(sfi != null)
                 sfi.onResume(context);
             if(metadataPutter != null)
