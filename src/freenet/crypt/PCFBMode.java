@@ -145,10 +145,6 @@ public class PCFBMode {
         return rv;
     }
 
-    /**
-     * NOTE: As a side effect, this will decrypt the data in the array.
-     */
-    //public synchronized byte[] blockDecipher(byte[] buf, int off, int len) {
     public void blockDecipher(byte[] buf, int off, int len) {
 		final int feedback_length = feedback_register.length;
 		if (registerPointer != 0) {
@@ -199,10 +195,6 @@ public class PCFBMode {
         return feedback_register[registerPointer++] & 0xff;
     }
 
-    /**
-     * NOTE: As a sideeffect, this will encrypt the data in the array.
-     */
-    //public synchronized byte[] blockEncipher(byte[] buf, int off, int len) {
     public void blockEncipher(byte[] buf, int off, int len) {
 		final int feedback_length = feedback_register.length;
 		if (registerPointer != 0) {
