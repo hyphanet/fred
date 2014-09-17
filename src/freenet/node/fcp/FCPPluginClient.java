@@ -214,9 +214,13 @@ public final class FCPPluginClient {
          * SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)} thread which is
          * waiting for the reply to arrive.
          */
-        private final Condition completionSignal = synchronousSendsLock.writeLock().newCondition();
+        private final Condition completionSignal;
         
         public FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
+        
+        public SynchronousSend(Condition completionSignal) {
+            this.completionSignal = completionSignal;
+        }
     }
 
     /**
@@ -725,7 +729,8 @@ public final class FCPPluginClient {
         
         synchronousSendsLock.writeLock().lock();
         try {
-            final SynchronousSend send = new SynchronousSend();
+            final Condition completionSignal = synchronousSendsLock.writeLock().newCondition();
+            final SynchronousSend send = new SynchronousSend(completionSignal);
             
             // An assert() instead of a throwing is fine:
             // - The constructor of FCPPluginMessage which we tell the user to use in the JavaDoc
@@ -750,7 +755,7 @@ public final class FCPPluginClient {
             // "SynchronousSend send" object by the thread which receives it.
             // - That usually happens at FCPPluginClient.send().
             // Once it has put it into the SynchronousSend object, it will call signal() upon
-            // its "Condition completionSignal".
+            // our Condition completionSignal.
             // This will make the following await() wake up and return true, which causes this
             // function to be able to return the reply.
             // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
@@ -759,11 +764,10 @@ public final class FCPPluginClient {
                     // The compleditionSignal is a Condition which was created from the
                     // synchronousSendsLock.writeLock(), so it will be released by the await()
                     // while it is blocking, and re-acquired when it returns.
-                    // FIXME: To make this more clear, pass it to the constructor SynchronousSend()
                     // FIXME: Use the await() which eats nanoSeconds because it returns the
                     // non-expired remaining delay so in case of spurious wakeups the next await()
                     // can use the remaining delay
-                    if(!send.completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
+                    if(!completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
                         throw new IOException("The synchronous call timed out for " + this
                             + "; message: " + message);
                     }
