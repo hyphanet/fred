@@ -693,7 +693,7 @@ public final class FCPPluginClient {
             // "SynchronousSend send" object by the thread which receives it.
             // - That usually happens at FCPPluginClient.send().
             // Once it has put it into the SynchronousSend object, it will call signal() upon
-            // its "Condition completionSignal"".
+            // its "Condition completionSignal".
             // This will make the following await() wake up and return true, which causes this
             // function to be able to return the reply.
             // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
