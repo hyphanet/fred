@@ -16,6 +16,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.Random;
 
 import javax.crypto.spec.IvParameterSpec;
 
@@ -69,6 +70,80 @@ public class CryptByteBufferTest {
             assertArrayEquals("CryptByteBufferType: "+type.name(), 
                     Hex.decode(plainText[i]), decipheredtext);
         }
+    }
+    
+    @Test
+    public void testRoundOneByte() throws GeneralSecurityException {
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt1;
+            CryptByteBuffer crypt2;
+            
+            if(!type.isStreamCipher) continue;
+
+            if(ivs[i] == null){
+                crypt1 = new CryptByteBuffer(type, keys[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt1 = new CryptByteBuffer(type, keys[i], ivs[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            
+            byte[] origPlaintext = Hex.decode(plainText[i]);
+            byte[] origCiphertext = crypt1.encryptCopy(origPlaintext);
+            // Now encrypt one byte at a time.
+            byte[] buf = origPlaintext.clone();
+            for(int j=0;j<buf.length;j++) {
+                crypt2.encrypt(buf, j, 1);
+                assertEquals(buf[j], origCiphertext[j]);
+            }
+            for(int j=0;j<buf.length;j++) {
+                crypt2.decrypt(buf, j, 1);
+                assertEquals(buf[j], origPlaintext[j]);
+            }
+        }            
+    }
+
+    @Test
+    public void testRoundRandomLengthBytes() throws GeneralSecurityException {
+        Random random = new Random(0xAAAAAAAA);
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt1;
+            CryptByteBuffer crypt2;
+            
+            if(!type.isStreamCipher) continue;
+
+            if(ivs[i] == null){
+                crypt1 = new CryptByteBuffer(type, keys[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt1 = new CryptByteBuffer(type, keys[i], ivs[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            
+            byte[] origPlaintext = Hex.decode(plainText[i]);
+            byte[] origCiphertext = crypt1.encryptCopy(origPlaintext);
+            
+            // Now encrypt one byte at a time.
+            byte[] buf = origPlaintext.clone();
+            int j=0;
+            while(j < buf.length) {
+                int r = buf.length - j;
+                int copy = 1 + (r == 1 ? 0 : random.nextInt(r-1));
+                crypt2.encrypt(buf, j, copy);
+                j += copy;
+            }
+            assertArrayEquals(buf, origCiphertext);
+            j = 0;
+            while(j < buf.length) {
+                int r = buf.length - j;
+                int copy = 1 + (r == 1 ? 0 : random.nextInt(r-1));
+                crypt2.decrypt(buf, j, copy);
+                j += copy;
+            }
+            assertArrayEquals(buf, origPlaintext);
+        }            
     }
 
     @Test
