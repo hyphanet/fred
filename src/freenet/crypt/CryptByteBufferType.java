@@ -30,6 +30,7 @@ public enum CryptByteBufferType implements Serializable{
     public final String algName;
     public final String cipherName;
     public final KeyType keyType;
+    public final boolean isStreamCipher;
 
     /**
      * Creates the RijndaelECB enum value. iv is null. 
@@ -43,6 +44,7 @@ public enum CryptByteBufferType implements Serializable{
         this.blockSize = keyType.keySize;
         this.ivSize = null;
         algName = name();
+        isStreamCipher = false;
     }
 
     /**
@@ -59,6 +61,7 @@ public enum CryptByteBufferType implements Serializable{
         this.cipherName = keyType.alg;
         this.blockSize = blockSize;
         algName = name();
+        isStreamCipher = false;
     }
 
     /**
@@ -74,6 +77,7 @@ public enum CryptByteBufferType implements Serializable{
         this.blockSize = keyType.keySize;
         this.ivSize = ivSize;
         algName = name();
+        isStreamCipher = true;
     }
 
     /**
@@ -91,6 +95,7 @@ public enum CryptByteBufferType implements Serializable{
         this.blockSize = keyType.keySize;
         this.algName = algName;
         this.keyType = keyType;
+        isStreamCipher = true;
     }
     
     /**
@@ -99,4 +104,5 @@ public enum CryptByteBufferType implements Serializable{
     public boolean hasIV(){
         return ivSize != null;
     }
+
 }
