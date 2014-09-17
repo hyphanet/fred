@@ -620,10 +620,6 @@ public final class FCPPluginClient {
         executor.execute(messageDispatcher, toStringShort());
     }
 
-
-    @SuppressWarnings("serial")
-    public static final class FCPCallFailedException extends IOException { };
-
     /**
      * Can be used by both server and client implementations to send messages to each other.<br><br>
      * 
@@ -635,16 +631,28 @@ public final class FCPPluginClient {
      * of the FCPPluginClient they receive.
      * 
      * @param message FIXME
-     * @return FIXME
-     * @throws FCPCallFailedException
-     *             If message was delivered but the remote message handler indicated that the FCP operation you initiated failed.
+     * @return The reply {@link FredPluginFCPMessageHandler.FCPPluginMessage} which the remote
+     *         partner sent to your message.<br><br>
      * 
-     *             <p>This can be used to decide to retry certain operations. A practical example
-     *             would be a user trying to create an account at an FCP server application: Your UI
-     *             would use this function to try to create the account by FCP. The user might type
-     *             an invalid character in the username. The server could then indicate failure of
-     *             creating the account, and your UI could detect it by this exception type. The UI
-     *             then could prompt the user to chose a valid username.</p>
+     *         It's field {@link FredPluginFCPMessageHandler.FCPPluginMessage#success} will be
+     *         set to false if the message was delivered but the remote message handler indicated
+     *         that the FCP operation you initiated failed.<br>
+     *         The fields {@link FredPluginFCPMessageHandler.FCPPluginMessage#errorCode} and
+     *         {@link FredPluginFCPMessageHandler.FCPPluginMessage#errorMessage} might indicate
+     *         the type of the error.<br><br>
+     * 
+     *         This can be used to decide to retry certain operations. A practical example
+     *         would be a user trying to create an account at an FCP server application:<br>
+     *         - Your UI would use this function to try to create the account by FCP.<br>
+     *         - The user might type an invalid character in the username.<br>
+     *         - The server could then indicate failure of creating the account by sending a reply
+     *           with success == false.<br>
+     *         - Your UI could detect the problem by success == false at the reply and an errorCode
+     *           of "InvalidUsername". The errorCode can be used to decide to highlight the username
+     *           field with a red color.<br>
+     *         - The UI then could prompt the user to chose a valid username by displaying the
+     *           errorMessage which the server provides to ship a translated, human readable
+     *           explanation of what is wrong with the username.<br>
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
@@ -652,7 +660,7 @@ public final class FCPPluginClient {
      */
     public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
             FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutMilliseconds)
-                throws FCPCallFailedException, IOException {
+                throws IOException {
         
         if(message.isReplyMessage()) {
             throw new IllegalArgumentException("sendSynchronous() cannot send reply messages: " +
