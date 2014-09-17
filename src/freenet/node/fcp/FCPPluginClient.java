@@ -659,6 +659,11 @@ public final class FCPPluginClient {
                 "But a reply is needed for sendSynchronous() to determine when to return.");
         }
         
+        assert(timeoutMilliseconds > 0) : "Timeout should not be negative";
+        
+        assert(timeoutMilliseconds < 60 * 1000)
+            : "Please use sane timeouts to prevent thread congestion";
+        
         throw new UnsupportedOperationException("TODO FIXME: Implement");
     }
 
