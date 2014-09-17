@@ -71,6 +71,84 @@ public class CryptByteBufferTest {
     }
 
     @Test
+    public void testSuccessfulRoundTripInPlace() throws GeneralSecurityException {
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            byte[] buffer = Hex.decode(plainText[i]);
+            byte[] plaintextCopy = buffer.clone();
+            crypt.encrypt(buffer, 0, buffer.length);
+            assertTrue(!Arrays.equals(buffer, plaintextCopy));
+            crypt.decrypt(buffer, 0, buffer.length);
+            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+                    plaintextCopy, buffer);
+        }
+    }
+
+    @Test
+    public void testSuccessfulRoundTripInPlaceOffset() throws GeneralSecurityException {
+        int header = 5;
+        int footer = 5;
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            byte[] originalPlaintext = Hex.decode(plainText[i]);
+            byte[] buffer = new byte[header+originalPlaintext.length+footer];
+            byte[] copyBuffer = buffer.clone();
+            System.arraycopy(originalPlaintext, 0, buffer, header, originalPlaintext.length);
+            crypt.encrypt(buffer, footer, originalPlaintext.length);
+            assertTrue(!Arrays.equals(buffer, copyBuffer));
+            crypt.decrypt(buffer, footer, originalPlaintext.length);
+            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+                    originalPlaintext, Arrays.copyOfRange(buffer, footer, footer+originalPlaintext.length));
+        }
+    }
+
+    @Test
+    public void testSuccessfulRoundTripOutOfPlaceOffset() throws GeneralSecurityException {
+        int inHeader = 5;
+        int inFooter = 5;
+        int outHeader = 33;
+        int outFooter = 33;
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt;
+
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            byte[] originalPlaintext = Hex.decode(plainText[i]);
+            byte[] buffer = new byte[inHeader+originalPlaintext.length+inFooter];
+            System.arraycopy(originalPlaintext, 0, buffer, inHeader, originalPlaintext.length);
+            byte[] copyBuffer = buffer.clone();
+            
+            byte[] outBuffer = new byte[outHeader + originalPlaintext.length + outFooter];
+            crypt.encrypt(buffer, inFooter, originalPlaintext.length, outBuffer, outHeader);
+            assertTrue(Arrays.equals(buffer, copyBuffer));
+            copyBuffer = outBuffer.clone();
+            crypt.decrypt(outBuffer, outHeader, originalPlaintext.length, buffer, inFooter);
+            assertTrue(Arrays.equals(copyBuffer, outBuffer));
+            
+            assertArrayEquals("CryptByteBufferType: "+type.name(), 
+                    originalPlaintext, Arrays.copyOfRange(buffer, inFooter, inFooter+originalPlaintext.length));
+        }
+    }
+
+    @Test
     public void testSuccessfulRoundTripByteArrayReset() throws GeneralSecurityException  {
             for(int i = 0; i < cipherTypes.length; i++){
                 CryptByteBufferType type = cipherTypes[i];

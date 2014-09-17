@@ -15,6 +15,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 
 import freenet.crypt.ciphers.Rijndael;
@@ -224,6 +225,39 @@ public final class CryptByteBuffer implements Serializable{
         this(type, Fields.copyToArray(key), Fields.copyToArray(iv), 0);
     }
     
+    /** Encrypt the specified section of the provided byte[] to the output byte[], without 
+     * modifying the input. */
+    public void encrypt(byte[] input, int offset, int len, byte[] output, int outputOffset) {
+        if(offset+len > input.length) throw new IllegalArgumentException();
+        if(type == CryptByteBufferType.RijndaelPCFB){
+            System.arraycopy(input, offset, output, outputOffset, len);
+            encryptPCFB.blockEncipher(output, outputOffset, len);
+        } else if(type.cipherName.equals("RIJNDAEL")){
+            if(offset == 0 && len == input.length && outputOffset == 0 && len == output.length)
+                blockCipher.encipher(input, output);
+            else {
+                byte[] result = new byte[len];
+                blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
+                System.arraycopy(result, 0, output, outputOffset, len);
+            }
+        } else {
+            try {
+                encryptCipher.doFinal(input, offset, len, output, outputOffset);
+            } catch (IllegalBlockSizeException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (BadPaddingException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (ShortBufferException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+    
+    /** Encrypt the specified section of the provided byte[] in-place */
+    public void encrypt(byte[] input, int offset, int len) {
+        encrypt(input, offset, len, input, offset);
+    }
+    
     /**
      * Encrypts the specified section of provided byte[] into a new array returned as a ByteBuffer.
      * Does not modify the original array. If you are using a RijndaelECB alg then len must equal 
@@ -234,26 +268,9 @@ public final class CryptByteBuffer implements Serializable{
      * @return Returns a new array containing the ciphertext encoding the specified range.
      */
     public byte[] encryptCopy(byte[] input, int offset, int len){
-        if(type == CryptByteBufferType.RijndaelPCFB){
-            // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
-            if(offset+len > input.length) throw new IllegalArgumentException();
-            byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
-            encryptPCFB.blockEncipher(buf, 0, len);
-            return buf;
-        } else if(type.cipherName.equals("RIJNDAEL")){
-            byte[] result = new byte[len];
-            if(offset+len > input.length) throw new IllegalArgumentException();
-            blockCipher.encipher(Arrays.copyOfRange(input, offset, offset+len), result);
-            return result;
-        } else {
-            try {
-                return encryptCipher.doFinal(input, offset, len);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            }
-        }
+        byte[] output = Arrays.copyOfRange(input, offset, offset+len);
+        encrypt(input, offset, len, output, 0);
+        return output;
     }
 
     /**
@@ -300,7 +317,40 @@ public final class CryptByteBuffer implements Serializable{
 //    public BitSet encrypt(BitSet input){
 //        return BitSet.valueOf(encrypt(input.toByteArray()));
 //    }
-
+    
+    /** Decrypt the specified section of the provided byte[] to the output byte[], without 
+     * modifying the input. */
+    public void decrypt(byte[] input, int offset, int len, byte[] output, int outputOffset) {
+        if(offset+len > input.length) throw new IllegalArgumentException();
+        if(type == CryptByteBufferType.RijndaelPCFB){
+            System.arraycopy(input, offset, output, outputOffset, len);
+            decryptPCFB.blockDecipher(output, outputOffset, len);
+        } else if(type.cipherName.equals("RIJNDAEL")){
+            if(offset == 0 && len == input.length && outputOffset == 0 && len == output.length)
+                blockCipher.decipher(input, output);
+            else {
+                byte[] result = new byte[len];
+                blockCipher.decipher(Arrays.copyOfRange(input, offset, offset+len), result);
+                System.arraycopy(result, 0, output, outputOffset, len);
+            }
+        } else {
+            try {
+                decryptCipher.doFinal(input, offset, len, output, outputOffset);
+            } catch (IllegalBlockSizeException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (BadPaddingException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (ShortBufferException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+    
+    /** Decrypt the specified section of the provided byte[] in-place */
+    public void decrypt(byte[] input, int offset, int len) {
+        decrypt(input, offset, len, input, offset);
+    }
+    
     /**
      * Decrypts the specified section of provided byte[] into an array which is returned as a
      * ByteBuffer. Does not modify the original array. If you are using a RijndaelECB alg then len 
@@ -312,28 +362,9 @@ public final class CryptByteBuffer implements Serializable{
      * the input data. 
      */
     public byte[] decryptCopy(byte[] input, int offset, int len){
-        if(type == CryptByteBufferType.RijndaelPCFB){
-            // RijndaelPCFB will encrypt the original data. We don't want that, so copy.
-            if(offset+len > input.length) throw new IllegalArgumentException();
-            byte[] buf = Arrays.copyOfRange(input, offset, offset+len);
-            decryptPCFB.blockDecipher(buf, 0, len);
-            return buf;
-        } 
-        else if(type.cipherName.equals("RIJNDAEL")){
-            byte[] result = new byte[len];
-            if(offset+len > input.length) throw new IllegalArgumentException();
-            blockCipher.decipher(Arrays.copyOfRange(input, offset, offset+len), result);
-            return result;
-        }
-        else{
-            try {
-                return decryptCipher.doFinal(input, offset, len);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            }
-        }
+        byte[] output = Arrays.copyOfRange(input, offset, offset+len);
+        decrypt(input, offset, len, output, 0);
+        return output;
     }
 
     /**
