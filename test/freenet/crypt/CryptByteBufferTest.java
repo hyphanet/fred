@@ -749,5 +749,49 @@ public class CryptByteBufferTest {
         crypt.genIV();
         fail("Expected UnsupportedTypeException");
     }
+    
+    @Test
+    public void testOverlappingEncode() throws GeneralSecurityException {
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt, crypt2;
+
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            byte[] originalPlaintext = Hex.decode(plainText[i]);
+            byte[] originalCiphertext = crypt2.encryptCopy(originalPlaintext);
+            byte[] buf = new byte[originalPlaintext.length+1];
+            System.arraycopy(originalPlaintext, 0, buf, 0, originalPlaintext.length);
+            crypt.encrypt(buf, 0, originalPlaintext.length, buf, 1);
+            assertArrayEquals(originalCiphertext, Arrays.copyOfRange(buf, 1, buf.length));
+        }
+    }
+
+    @Test
+    public void testOverlappingDecode() throws GeneralSecurityException {
+        for(int i = 0; i < cipherTypes.length; i++){
+            CryptByteBufferType type = cipherTypes[i];
+            CryptByteBuffer crypt, crypt2;
+
+            if(ivs[i] == null){
+                crypt = new CryptByteBuffer(type, keys[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i]);
+            } else {
+                crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
+            }
+            byte[] originalPlaintext = Hex.decode(plainText[i]);
+            byte[] originalCiphertext = crypt2.encryptCopy(originalPlaintext);
+            byte[] buf = new byte[originalPlaintext.length+1];
+            System.arraycopy(originalCiphertext, 0, buf, 0, originalCiphertext.length);
+            crypt.decrypt(buf, 0, originalCiphertext.length, buf, 1);
+            assertArrayEquals(originalPlaintext, Arrays.copyOfRange(buf, 1, buf.length));
+        }
+    }
 
 }

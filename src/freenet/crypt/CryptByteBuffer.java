@@ -229,6 +229,13 @@ public final class CryptByteBuffer implements Serializable{
      * modifying the input. */
     public void encrypt(byte[] input, int offset, int len, byte[] output, int outputOffset) {
         if(offset+len > input.length) throw new IllegalArgumentException();
+        if(input == output && offset != outputOffset) {
+            // FIXME only copy if it actually overlaps...
+            byte[] temp = Arrays.copyOfRange(input, offset, offset+len);
+            encrypt(temp, 0, temp.length);
+            System.arraycopy(temp, 0, output, outputOffset, len);
+            return;
+        }
         if(type == CryptByteBufferType.RijndaelPCFB){
             System.arraycopy(input, offset, output, outputOffset, len);
             encryptPCFB.blockEncipher(output, outputOffset, len);
@@ -347,6 +354,13 @@ public final class CryptByteBuffer implements Serializable{
      * modifying the input. */
     public void decrypt(byte[] input, int offset, int len, byte[] output, int outputOffset) {
         if(offset+len > input.length) throw new IllegalArgumentException();
+        if(input == output && offset != outputOffset) {
+            // FIXME only copy if it actually overlaps...
+            byte[] temp = Arrays.copyOfRange(input, offset, offset+len);
+            decrypt(temp, 0, temp.length);
+            System.arraycopy(temp, 0, output, outputOffset, len);
+            return;
+        }
         if(type == CryptByteBufferType.RijndaelPCFB){
             System.arraycopy(input, offset, output, outputOffset, len);
             decryptPCFB.blockDecipher(output, outputOffset, len);
