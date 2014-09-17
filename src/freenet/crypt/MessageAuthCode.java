@@ -239,9 +239,8 @@ public final class MessageAuthCode {
     }
     
     /**
-     * Verifies that the two MAC addresses passed are equivalent. Note that we compare the whole
-     * buffers. This should not be a problem, but is different to the usual meaning of 
-     * ByteBuffer.equal().
+     * Verifies that the two MAC addresses passed are equivalent. The two ByteBuffer's will both
+     * be emptied.
      * @param mac1 First MAC to be verified
      * @param mac2 Second MAC to be verified
      * @return Returns true if the MACs match, otherwise false.
