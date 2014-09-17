@@ -300,6 +300,35 @@ public final class CryptByteBuffer implements Serializable{
             return ByteBuffer.wrap(encryptCopy(Fields.copyToArray(input)));
         }
     }
+    
+    /** Get bytes from one ByteBuffer and encrypt them and put them into the other ByteBuffer. */
+    public void encrypt(ByteBuffer input, ByteBuffer output) {
+        if(input.hasArray() && output.hasArray()) {
+            int moved = Math.min(input.remaining(), output.remaining());
+            encrypt(input.array(), input.arrayOffset()+input.position(), moved,
+                    output.array(), output.arrayOffset()+output.position());
+            input.position(input.position()+moved);
+            output.position(output.position()+moved);
+        } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
+            // Use ByteBuffer to ByteBuffer operations.
+            try {
+                encryptCipher.doFinal(input, output);
+            } catch (IllegalBlockSizeException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (BadPaddingException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (ShortBufferException e) {
+                throw new Error("Impossible: "+e, e);
+            }
+        } else {
+            // FIXME use a smaller temporary buffer
+            int moved = Math.min(input.remaining(), output.remaining());
+            byte[] buf = new byte[moved];
+            input.get(buf);
+            encrypt(buf, 0, buf.length);
+            output.put(buf);
+        }
+    }
 
     // FIXME
     /* BitSet based operations commented out. If you need them, wait until we are using java 7,
@@ -392,6 +421,35 @@ public final class CryptByteBuffer implements Serializable{
                     input.remaining()));
         else
             return ByteBuffer.wrap(decryptCopy(Fields.copyToArray(input)));
+    }
+    
+    /** Get bytes from one ByteBuffer and encrypt them and put them into the other ByteBuffer. */
+    public void decrypt(ByteBuffer input, ByteBuffer output) {
+        if(input.hasArray() && output.hasArray()) {
+            int moved = Math.min(input.remaining(), output.remaining());
+            decrypt(input.array(), input.arrayOffset()+input.position(), moved,
+                    output.array(), output.arrayOffset()+output.position());
+            input.position(input.position()+moved);
+            output.position(output.position()+moved);
+        } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
+            // Use ByteBuffer to ByteBuffer operations.
+            try {
+                decryptCipher.doFinal(input, output);
+            } catch (IllegalBlockSizeException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (BadPaddingException e) {
+                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+            } catch (ShortBufferException e) {
+                throw new Error("Impossible: "+e, e);
+            }
+        } else {
+            // FIXME use a smaller temporary buffer
+            int moved = Math.min(input.remaining(), output.remaining());
+            byte[] buf = new byte[moved];
+            input.get(buf);
+            decrypt(buf, 0, buf.length);
+            output.put(buf);
+        }
     }
 
     // FIXME
