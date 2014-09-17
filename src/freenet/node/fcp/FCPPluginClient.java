@@ -730,7 +730,7 @@ public final class FCPPluginClient {
         synchronousSendsLock.writeLock().lock();
         try {
             final Condition completionSignal = synchronousSendsLock.writeLock().newCondition();
-            final SynchronousSend send = new SynchronousSend(completionSignal);
+            final SynchronousSend synchronousSend = new SynchronousSend(completionSignal);
             
             // An assert() instead of a throwing is fine:
             // - The constructor of FCPPluginMessage which we tell the user to use in the JavaDoc
@@ -747,12 +747,12 @@ public final class FCPPluginClient {
             assert(!synchronousSends.containsKey(message.identifier))
                 : "FCPPluginMessage.identifier should be unique";
             
-            synchronousSends.put(message.identifier, send);
+            synchronousSends.put(message.identifier, synchronousSend);
             
             send(direction, message);
             
             // Message is sent, now we wait for the reply message to be put into the
-            // "SynchronousSend send" object by the thread which receives it.
+            // "SynchronousSend synchronousSend" object by the thread which receives it.
             // - That usually happens at FCPPluginClient.send().
             // Once it has put it into the SynchronousSend object, it will call signal() upon
             // our Condition completionSignal.
@@ -772,17 +772,18 @@ public final class FCPPluginClient {
                             + "; message: " + message);
                     }
                     
-                    // The thread which sets send.reply to be non-null calls
-                    // completionSignal.signal() after send.reply has been set.
-                    // So the naive assumption would be that at this point of code, send.reply
-                    // would be null because await() should only return after signal().
+                    // The thread which sets synchronousSend.reply to be non-null calls
+                    // completionSignal.signal() after synchronousSend.reply has been set.
+                    // So the naive assumption would be that at this point of code,
+                    // synchronousSend.reply would be null because await() should only return after
+                    // signal().
                     // However, Condition.await() can wake up spuriously, i.e. wake up without
                     // actually having been signal(). See the JavaDoc of Condition.
                     // So after await() has returned true to indicate that it might have been
                     // signaled we still need to check whether the semantic condition which
                     // would trigger signaling is *really* met, which we do with this if:
-                    if(send.reply != null) {
-                        return send.reply;
+                    if(synchronousSend.reply != null) {
+                        return synchronousSend.reply;
                     }
                     
                     // The spurious wakeup described at the above if() has happened, so we loop.
