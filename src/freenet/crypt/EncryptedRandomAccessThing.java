@@ -198,6 +198,12 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         }
     }
     
+    @Override
+    public void free() {
+        close();
+        underlyingThing.free();
+    }
+
     /**
      * Writes the footer to the end of the underlying RAT
      * @throws IOException
