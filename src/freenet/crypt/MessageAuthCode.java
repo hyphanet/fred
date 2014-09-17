@@ -63,19 +63,20 @@ public final class MessageAuthCode {
 
     /**
      * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * key. If that algorithms requires an IV it will generate one. 
+     * key. Must not be used on algorithms that require an IV, as a specified key but a random IV 
+     * is probably not useful for an HMAC. 
      * @param type The MAC algorithm to use
      * @param cryptoKey The key to use
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type, SecretKey cryptoKey) throws InvalidKeyException {
-        this(type, cryptoKey, true, null);
+        this(type, cryptoKey, false, null);
     }
 
     /**
      * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * key which is converted from a byte[] to a SecretKey. If that algorithms requires 
-     * an IV it will generate one. 
+     * key which is converted from a byte[] to a SecretKey. Must not be used on algorithms that 
+     * require an IV, as a specified key but a random IV is probably not useful for an HMAC.
      * @param type The MAC algorithm to use
      * @param cryptoKey The key to use
      * @throws InvalidKeyException
@@ -98,12 +99,12 @@ public final class MessageAuthCode {
 
     /**
      * Creates an instance of MessageAuthCode that will use the specified algorithm and 
-     * will generate a key. If the algorithm requires an IV it will generate one. 
+     * will generate a key (and an IV if necessary).
      * @param type The MAC algorithm to 
      * @throws InvalidKeyException
      */
     public MessageAuthCode(MACType type) throws InvalidKeyException{
-        this(type, KeyGenUtils.genSecretKey(type.keyType));
+        this(type, KeyGenUtils.genSecretKey(type.keyType), true, null);
     }
 
     /**
