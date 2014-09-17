@@ -976,32 +976,13 @@ public abstract class Fields {
 		return 0;
 	}
 	
-	/** Copy the whole contents of the ByteBuffer to an array. This is *NOT* equivalent to 
-	 * ByteBuffer.array() because in general arrayOffset() != 0 and capacity() != array().length.
-	 * Doing .array() is safe ONLY when you've just allocate()'ed it. TODO I wonder if static 
-	 * analysis warns about this? :)
-	 * @param buf The input buffer. Will not be changed.
-	 * @return
+	/** Copy all of the remaining bytes in the buffer to a byte array.
+	 * @param buf The input buffer. Position will be at the limit when returning.
 	 */
 	public static byte[] copyToArray(ByteBuffer buf) {
-	    if(buf.hasArray()) {
-	        byte[] array = buf.array();
-	        /* We *NEVER* return the original array because we want consistent behaviour: We always 
-	         * return a new array, and modifying it will not affect the original ByteBuffer. This is
-	         * important to avoid nasty intermittent bugs, and these are generally small objects (keys,
-	         * IVs etc); allocating a few bytes is very fast in modern Java.
-	         * 
-	         * If we really wanted to take the risk, we'd do:
-	         * if(array.length == buf.capacity()) return array;
-	         */
-	        return Arrays.copyOfRange(array, buf.arrayOffset() + buf.position(), buf.arrayOffset() + buf.limit());
-	    } else {
-	        int p = buf.position();
-	        byte[] ret = new byte[buf.remaining()];
-	        buf.get(ret);
-	        buf.position(p);
-	        return ret;
-	    }
+	    byte[] ret = new byte[buf.remaining()];
+	    buf.get(ret);
+	    return ret;
 	}
 
 }
