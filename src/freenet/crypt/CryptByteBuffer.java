@@ -8,17 +8,18 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.BitSet;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
-import freenet.support.Logger;
 
 /**
  * CryptByteBuffer will encrypt and decrypt both byte[]s and BitSets with a specified
@@ -88,11 +89,11 @@ public final class CryptByteBuffer implements Serializable{
                 decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
             }
         } catch (UnsupportedCipherException e) {
-            e.printStackTrace();
-            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
+            throw new Error(e); // Should be impossible as we bundle BC
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e); // Should be impossible as we bundle BC
+        } catch (NoSuchPaddingException e) {
+            throw new Error(e); // Should be impossible as we don't use padded modes
         }
     }
 
@@ -484,7 +485,7 @@ public final class CryptByteBuffer implements Serializable{
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
             decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
         } catch (InvalidKeyException e) {
-            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
+            throw new IllegalArgumentException(e);
         } 
     }
 
@@ -501,8 +502,10 @@ public final class CryptByteBuffer implements Serializable{
         try {
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.key, this.iv);
             decryptCipher.init(Cipher.DECRYPT_MODE, this.key, this.iv);
-        } catch (GeneralSecurityException e) {
-            Logger.error(CryptByteBuffer.class, "Internal error; please report:", e);
+        } catch (InvalidKeyException e) {
+            throw new IllegalArgumentException(e); // Definitely a bug ...
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new IllegalArgumentException(e); // Definitely a bug ...
         } 
         return iv;
     }
