@@ -707,13 +707,14 @@ public final class FCPPluginClient {
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
+     * @throws InterruptedException FIXME
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
      */
     public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
             FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutMilliseconds)
-                throws IOException {
+                throws IOException, InterruptedException {
         
         if(message.isReplyMessage()) {
             throw new IllegalArgumentException("sendSynchronous() cannot send reply messages: " +
@@ -759,7 +760,6 @@ public final class FCPPluginClient {
             // This will make the following await() wake up and return true, which causes this
             // function to be able to return the reply.
             // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
-            try {
                 do {
                     // The compleditionSignal is a Condition which was created from the
                     // synchronousSendsLock.writeLock(), so it will be released by the await()
@@ -788,9 +788,6 @@ public final class FCPPluginClient {
                     
                     // The spurious wakeup described at the above if() has happened, so we loop.
                 } while(true);
-            } catch (InterruptedException e) {
-                throw new IOException("Shutdown requested for " + this, e);
-            }
         } finally {
             synchronousSendsLock.writeLock().unlock();
         }
