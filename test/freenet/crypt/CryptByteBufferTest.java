@@ -154,7 +154,9 @@ public class CryptByteBufferTest {
             for(int i = 0; i < cipherTypes.length; i++){
                 CryptByteBufferType type = cipherTypes[i];
                 CryptByteBuffer crypt;
-                ByteBuffer plain = ByteBuffer.wrap(Hex.decode(plainText[i]));
+                byte[] originalData = Hex.decode(plainText[i]);
+                int len = originalData.length;
+                ByteBuffer plain = ByteBuffer.wrap(originalData);
                 if(ivs[i] == null){
                     crypt = new CryptByteBuffer(type, keys[i]);
                 } else {
@@ -163,7 +165,13 @@ public class CryptByteBufferTest {
                 ByteBuffer ciphertext1 = crypt.encryptCopy(plain);
                 ByteBuffer ciphertext2 = crypt.encryptCopy(plain);
                 ByteBuffer ciphertext3 = crypt.encryptCopy(plain);
-
+                assertEquals(ciphertext1.capacity(), len);
+                assertEquals(ciphertext2.capacity(), len);
+                assertEquals(ciphertext3.capacity(), len);
+                assertEquals(ciphertext1.remaining(), len);
+                assertEquals(ciphertext2.remaining(), len);
+                assertEquals(ciphertext3.remaining(), len);
+                
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
                 ByteBuffer decipheredtext2 = crypt.decryptCopy(ciphertext2);
                 ByteBuffer decipheredtext3 = crypt.decryptCopy(ciphertext3);

@@ -290,7 +290,8 @@ public final class CryptByteBuffer implements Serializable{
      * must equal the block size. 
      * @param input The byte[] to be encrypted
      * @return A new ByteBuffer containing the ciphertext. It will have a backing array and its 
-     * arrayOffset() will be 0.
+     * arrayOffset() will be 0, its position will be 0 and its capacity will be the length of the
+     * input data.
      */
     public ByteBuffer encryptCopy(ByteBuffer input){
         if(input.hasArray())
@@ -413,7 +414,8 @@ public final class CryptByteBuffer implements Serializable{
      * must equal the block size. 
      * @param input The buffer to be decrypted
      * @return A new ByteBuffer containing the plaintext. It will have a backing array and its 
-     * arrayOffset() will be 0.
+     * arrayOffset() will be 0, its position will be 0 and its capacity will be the length of the
+     * input data.
      */
     public ByteBuffer decryptCopy(ByteBuffer input){
         if(input.hasArray())
