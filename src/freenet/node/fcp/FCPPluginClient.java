@@ -621,7 +621,27 @@ public final class FCPPluginClient {
     }
 
     /**
-     * Can be used by both server and client implementations to send messages to each other.<br><br>
+     * Can be used by both server and client implementations to send messages in a blocking
+     * manner to each other.<br>
+     * This has the following differences to a regular non-synchronous
+     * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}:<br>
+     * - The function will <b>not</b> return immediately after the message has been queued for
+     *   sending. Instead, it will wait for a reply message of the remote side.<br>
+     * - The reply message will be returned to the calling thread <b>instead of</b> being passed to
+     *   the message handler {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
+     *   FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in another thread.<br>
+     *   NOTICE: It is possible that the reply message <b>is</b> passed to the message handler
+     *   upon certain error conditions, for example if the timeout you specify when calling this
+     *   function expires before the reply arrives. This is not guaranteed though.<br>
+     * - Once this function returns without throwing, it is <b>guaranteed</b> that the message has
+     *   arrived at the remote side.<br>
+     *   NOTICE: This is only true as long the message which you passed to this function does
+     *   contain a message identifier which does not collide with one of another message.<br>
+     *   To prevent this, you <b>must</b> use the constructor
+     *   {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet,
+     *   freenet.support.api.Bucket)} and do not call this function twice upon the same message.<br>
+     *   If you do not follow this rule, this function might return the reply to the colliding
+     *   message instead of the reply to your message.<br><br>
      * 
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
@@ -679,16 +699,16 @@ public final class FCPPluginClient {
             final SynchronousSend send = new SynchronousSend();
             
             // An assert() instead of a throwing is fine:
-            // - The constructors of FCPPluginMessage ensure that the identifier is unique enough.
-            //   So to fail the assert, someone would have to modify the constructor or use the
-            //   wrong one against the usage rules in the JavaDoc
+            // - The constructor of FCPPluginMessage which we tell the user to use in the JavaDoc
+            //   does generate a random identifier, so collisions will only happen if the user
+            //   ignores the JavaDoc or changes the constructor.
             // - If the assert is not true, then the following put() will replace the old
             //   SynchronousSend, so its Condition will never get signaled, and its
             //   thread waiting in sendSynchronous() will timeout safely. It IS possible that this
             //   thread will then get a reply which does not belong to it. But the wrong reply will
-            //   only affect the caller, the FCPPluginClient will keep working fine = no threads
-            //   will become stall for ever. As the caller is at fault for the issue, it is fine if
-            //   he breaks his own stuff :)
+            //   only affect the caller, the FCPPluginClient will keep working fine, especially
+            //   no threads will become stalled for ever. As the caller is at fault for the issue,
+            //   it is fine if he breaks his own stuff :) The JavaDoc also documents this.
             
             assert(!synchronousSends.containsKey(message.identifier))
                 : "FCPPluginMessage.identifier should be unique";
