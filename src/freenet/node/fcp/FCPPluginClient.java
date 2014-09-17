@@ -766,9 +766,6 @@ public final class FCPPluginClient {
                     // signaled we still need to check whether the semantic condition which
                     // would trigger signaling is *really* met, which we do with this if:
                     if(send.reply != null) {
-                        // FIXME: We should throw if reply.success == false. But then the other
-                        // data in the reply is lost. So it probably would be best to get rid of
-                        // the FCPCallFailedException throws declaration.
                         return send.reply;
                     }
                     
