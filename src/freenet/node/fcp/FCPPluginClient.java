@@ -475,6 +475,8 @@ public final class FCPPluginClient {
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.
      * 
+     * FIXME: This has gotten too large, split it up.
+     * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
@@ -531,6 +533,70 @@ public final class FCPPluginClient {
         assert(direction == SendDirection.ToServer ? server != null : client != null)
             : "We already decided that the message handler exists locally. "
             + "We should have only decided so if the handler is not null.";
+        
+        
+        // Since the message handler is determined to be local at this point, we now must check
+        // whether it is a blocking sendSynchronous() thread instead of a regular
+        // FredPluginFCPMessageHandler.
+        // sendSynchronous() does the following: It sends a message and then blocks its thread
+        // waiting for a message replying to it to arrive so it can return it to the caller.
+        // If the message we are processing here is a reply, it might be the one which a
+        // sendSynchronous() is waiting for.
+        // So it is our job to pass the reply to an eventually existing sendSynchronous() thread.
+        // We do this through the Map FCPPluginClient.synchronousSends, which is guarded by.
+        // FCPPluginClient.synchronousSendsLock. Also see the JavaDoc of the Map for an overview of
+        // this mechanism.
+        if(message.isReplyMessage()) {
+            // Since the JavaDoc of sendSynchronous() tells people to use it not very often due to
+            // the impact upon thread count, we assume that the percentage of messages which pass
+            // through here for which there is an actual sendSynchronous() thread waiting is small.
+            // Thus, a ReadWriteLock is used, and we here only take the ReadLock, which can be taken
+            // by *multiple* threads at once. We then read the map to check whether there is a
+            //  waiter, and if there is, take the write lock to hand the message to it.
+            // (The implementation of ReentrantReadWritelock does not allow upgrading a readLock()
+            // to a writeLock(), so we must release it in between and re-check afterwards.)
+            
+            boolean maybeGotWaiter = false;
+            
+            synchronousSendsLock.readLock().lock();
+            try {
+                if(synchronousSends.containsKey(message.identifier)) {
+                    maybeGotWaiter = true;
+                }
+            } finally {
+                synchronousSendsLock.readLock().unlock();
+            }
+            
+            if(maybeGotWaiter) {
+                synchronousSendsLock.writeLock().lock();
+                try {
+                    SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
+                    if(synchronousSend != null) {
+                        assert(synchronousSend.reply == null)
+                            : "One identifier should not be used for multiple messages or replies";
+                        
+                        synchronousSend.reply = message;
+                        // Wake up the waiting synchronousSend() thread
+                        synchronousSend.completionSignal.signal();
+                        
+                        // The message was delivered to the synchronousSend() successfully.
+                        // We now return instead of also passing it to the regular message handler
+                        // because we don't want to deliver it twice, and thats also the contract
+                        // of synchronousSend()
+                        return;
+                    }
+                } finally {
+                    synchronousSendsLock.writeLock().unlock();
+                }
+            }
+            
+            // The waiting sendSynchronous() has probably returned already because its timeout
+            // expired.
+            // We just continue this function and deliver the message to the regular message
+            // handling interface to make sure that it is not lost. This is also documented
+            // at sendSynchronous()
+        }
+        
 
         messageHandler = (direction == SendDirection.ToServer) ? server.get() : client;
 
@@ -759,7 +825,6 @@ public final class FCPPluginClient {
             // our Condition completionSignal.
             // This will make the following awaitNanos() wake up and return true, which causes this
             // function to be able to return the reply.
-            // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
             do {
                 // The compleditionSignal is a Condition which was created from the
                 // synchronousSendsLock.writeLock(), so it will be released by the awaitNanos()
