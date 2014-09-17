@@ -366,6 +366,12 @@ public class CryptByteBufferTest {
             byte[] ciphertext = crypt.encryptCopy(plain);
             byte[] ciphertext2 = crypt.encryptCopy(plain);
             byte[] ciphertext3 = crypt.encryptCopy(plain);
+            
+            if(type.isStreamCipher) {
+                assertFalse(Arrays.equals(ciphertext, ciphertext2));
+                assertFalse(Arrays.equals(ciphertext, ciphertext3));
+                assertFalse(Arrays.equals(ciphertext2, ciphertext3));
+            }
 
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
