@@ -768,6 +768,9 @@ public final class FCPPluginClient {
                 // remaining delay so in case of spurious wakeups the next await() can use the
                 // remaining delay
                 if(!completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
+                    // Include the FCPPluginMessage in the Exception so the developer can determine
+                    // whether it is an issue of the remote side taking a long time to execute
+                    // for certain messages.
                     throw new IOException("The synchronous call timed out for " + this
                         + "; message: " + message);
                 }
