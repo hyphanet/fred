@@ -143,7 +143,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
                     + " be read from.");
         }
 
-        if(fileOffset < 0) throw new IOException("Cannot read before zero");
+        if(fileOffset < 0) throw new IllegalArgumentException("Cannot read before zero");
         if(fileOffset+length > size()){
             throw new IOException("Cannot read after end: trying to read from "+fileOffset+" to "+
                     (fileOffset+length)+" on block length "+size());
@@ -172,7 +172,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
                     + " be written to.");
         }
 
-        if(fileOffset < 0) throw new IOException("Cannot read before zero");
+        if(fileOffset < 0) throw new IllegalArgumentException("Cannot read before zero");
         if(fileOffset+length > size()){
             throw new IOException("Cannot write after end: trying to write from "+fileOffset+" to "+
                     (fileOffset+length)+" on block length "+size());

@@ -165,7 +165,7 @@ public class EncryptedRandomAccessThingTest {
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
         EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
         byte[] result = new byte[20];
-        thrown.expect(IOException.class);
+        thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Cannot read before zero");
         erat.pread(-1, result, 0, 20);
     }
@@ -190,7 +190,7 @@ public class EncryptedRandomAccessThingTest {
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
         EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
         byte[] result = new byte[20];
-        thrown.expect(IOException.class);
+        thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Cannot read before zero");
         erat.pwrite(-1, result, 0, 20);
     }
