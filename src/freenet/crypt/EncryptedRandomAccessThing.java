@@ -111,10 +111,10 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         ParametersWithIV tempPram = null;
         try{
             KeyParameter cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
-        			(Class<?>)this.getClass(), kdfInput.underlyingKey.input, 
+        			getClass(), kdfInput.underlyingKey.input, 
         			type.encryptKey).getEncoded());
             tempPram = new ParametersWithIV(cipherKey, 
-        			KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, this.getClass(), 
+        			KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, getClass(), 
         					kdfInput.underlyingIV.input, type.encryptKey).getIV());
         } catch(InvalidKeyException e) {
             throw new IllegalStateException(e); // Must be a bug.
