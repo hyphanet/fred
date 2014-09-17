@@ -275,20 +275,27 @@ public class CryptByteBufferTest {
         int footer = 5;
         for(int i = 0; i < cipherTypes.length; i++){
             CryptByteBufferType type = cipherTypes[i];
-            CryptByteBuffer crypt;
+            CryptByteBuffer crypt, crypt2;
             byte[] origPlaintext = Hex.decode(plainText[i]);
             byte[] buf = new byte[origPlaintext.length+header+footer];
             System.arraycopy(origPlaintext, 0, buf, header, origPlaintext.length);
             byte[] cloneBuf = buf.clone();
             if(ivs[i] == null){
                 crypt = new CryptByteBuffer(type, keys[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i]);
             } else {
                 crypt = new CryptByteBuffer(type, keys[i], ivs[i]);
+                crypt2 = new CryptByteBuffer(type, keys[i], ivs[i]);
             }
             ByteBuffer plaintext = ByteBuffer.wrap(buf, header, origPlaintext.length);
             ByteBuffer ciphertext = crypt.encryptCopy(plaintext);
             assertTrue(Arrays.equals(buf, cloneBuf)); // Plaintext not modified.
             assertEquals(ciphertext.remaining(), origPlaintext.length);
+            byte[] altCiphertext = crypt2.encryptCopy(origPlaintext);
+            byte[] ciphertextBytes = new byte[origPlaintext.length];
+            ciphertext.get(ciphertextBytes);
+            ciphertext.position(0);
+            assertTrue(Arrays.equals(altCiphertext, ciphertextBytes));
             ByteBuffer deciphered = crypt.decryptCopy(ciphertext);
             assertTrue(deciphered.equals(plaintext));
             byte[] data = new byte[origPlaintext.length];
