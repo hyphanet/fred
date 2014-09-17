@@ -15,7 +15,6 @@ import javax.crypto.spec.IvParameterSpec;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 
 import freenet.support.Fields;
-import freenet.support.Logger;
 
 /**
  * The MessageAuthCode class will generate the Message Authentication Code of a given set

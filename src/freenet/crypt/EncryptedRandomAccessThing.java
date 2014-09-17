@@ -17,7 +17,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.io.RandomAccessThing;
 /**
  * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
