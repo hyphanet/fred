@@ -239,7 +239,7 @@ public final class FCPPluginClient {
      * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}. Thus, that
      * function is obliged to check this map for whether there is an entry for each received
      * reply. If it contains one for the identifier of a given reply, send() shall store the reply
-     * message in it, and then call {@link Condition#signalAll()} upon its Condition to cause the
+     * message in it, and then call {@link Condition#signal()} upon its Condition to cause the
      * blocking sendSynchronous() functions to return.<br>
      * The sendSynchronous() shall take the job of removing the entry from this map.<br><br>
      * 
