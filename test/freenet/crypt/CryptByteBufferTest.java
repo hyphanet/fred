@@ -172,6 +172,15 @@ public class CryptByteBufferTest {
                 assertEquals(ciphertext2.remaining(), len);
                 assertEquals(ciphertext3.remaining(), len);
                 
+                if(type.isStreamCipher) {
+                    // Once we have initialised the cipher, it is treated as a stream.
+                    // Repeated encryption of the same data will return different ciphertext, 
+                    // as it is treated as a later point in the stream.
+                    assertNotEquals(ciphertext1, ciphertext2);
+                    assertNotEquals(ciphertext1, ciphertext3);
+                    assertNotEquals(ciphertext2, ciphertext3);
+                }
+                
                 ByteBuffer decipheredtext1 = crypt.decryptCopy(ciphertext1);
                 ByteBuffer decipheredtext2 = crypt.decryptCopy(ciphertext2);
                 ByteBuffer decipheredtext3 = crypt.decryptCopy(ciphertext3);
@@ -181,6 +190,10 @@ public class CryptByteBufferTest {
             }
     }
     
+    private void assertNotEquals(Object o1, Object o2) {
+        assertFalse(o1.equals(o2));
+    }
+
     @Test
     public void testEncryptWrapByteBuffer() throws GeneralSecurityException {
         int header = 5;

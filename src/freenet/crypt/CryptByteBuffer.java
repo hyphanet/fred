@@ -26,7 +26,9 @@ import freenet.support.Logger;
  * CryptByteBuffer will encrypt and decrypt both byte[]s and BitSets with a specified
  * algorithm, key, and also an iv if the algorithm requires one. Note that the input and the 
  * output are the same length, i.e. these are either stream ciphers or non-padded block ciphers
- * (where it must be called with whole blocks).
+ * (where it must be called with whole blocks). For a stream cipher, once a CryptByteBuffer is 
+ * initialised, processed bytes will be treated as a single stream, i.e. repeatedly encrypting the
+ * same data will give different results.
  * @author unixninja92
  * 
  * Suggested CryptByteBufferType to use: ChaCha128
@@ -242,11 +244,7 @@ public final class CryptByteBuffer implements Serializable{
             }
         } else {
             try {
-                encryptCipher.doFinal(input, offset, len, output, outputOffset);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+                encryptCipher.update(input, offset, len, output, outputOffset);
             } catch (ShortBufferException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -313,11 +311,7 @@ public final class CryptByteBuffer implements Serializable{
         } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
             // Use ByteBuffer to ByteBuffer operations.
             try {
-                encryptCipher.doFinal(input, output);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+                encryptCipher.update(input, output);
             } catch (ShortBufferException e) {
                 throw new Error("Impossible: "+e, e);
             }
@@ -365,11 +359,7 @@ public final class CryptByteBuffer implements Serializable{
             }
         } else {
             try {
-                decryptCipher.doFinal(input, offset, len, output, outputOffset);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+                decryptCipher.update(input, offset, len, output, outputOffset);
             } catch (ShortBufferException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -436,11 +426,7 @@ public final class CryptByteBuffer implements Serializable{
         } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
             // Use ByteBuffer to ByteBuffer operations.
             try {
-                decryptCipher.doFinal(input, output);
-            } catch (IllegalBlockSizeException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
-            } catch (BadPaddingException e) {
-                throw new Error("Impossible: "+e, e); // These are all stream ciphers.
+                decryptCipher.update(input, output);
             } catch (ShortBufferException e) {
                 throw new Error("Impossible: "+e, e);
             }
