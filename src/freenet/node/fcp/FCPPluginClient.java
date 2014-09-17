@@ -643,6 +643,23 @@ public final class FCPPluginClient {
      *   If you do not follow this rule, this function might return the reply to the colliding
      *   message instead of the reply to your message.<br><br>
      * 
+     * ATTENTION: This function can cause the current thread to block for a long time, while
+     * bypassing the thread limit. Therefore, only use this if the desired operation at the remote
+     * side is expected to execute quickly and the thread which sends the message <b>immediately</b>
+     * needs one of these after sending it to continue its computations:<br>
+     * - An guarantee that the message arrived at the remote side.<br>
+     * - An indication of whether the operation requested by the message succeeded.<br>
+     * - The reply to the message.<br>
+     * A typical example for a place where this is needed is a user interface which has a user
+     * click a button and want to see the result of the operation as soon as possible. A detailed
+     * example is given at the documentation of the return value below.<br>
+     * Notice that even this could be done asynchronously with certain UI frameworks: An event
+     * handler could wait asynchronously for the result and fill it in the UI. However, for things
+     * such as web interfaces, you might need JavaScript then, so a synchronous call will simplify
+     * the code.<br>
+     * In addition to only using synchronous calls when absolutely necessary, please make sure to
+     * set a timeout parameter which is as small as possible.<br><br>
+     * 
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
      * {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler} or
