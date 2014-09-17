@@ -18,7 +18,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
 import freenet.support.Fields;
-import freenet.support.Logger;
 
 public class MessageAuthCodeTest{
     static private final MACType[] types = MACType.values();
@@ -33,8 +32,7 @@ public class MessageAuthCodeTest{
         try {
             temp = "Hi There".getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            Logger.error(MessageAuthCodeTest.class, "Internal error; please report:", e);
+            throw new Error(e);
         }
         hmacMessage = temp;
     }
