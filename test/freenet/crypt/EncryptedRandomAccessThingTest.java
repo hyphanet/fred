@@ -6,6 +6,7 @@ package freenet.crypt;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Security;
@@ -20,7 +21,14 @@ import freenet.support.io.ByteArrayRandomAccessThing;
 public class EncryptedRandomAccessThingTest {
     private final static EncryptedRandomAccessThingType[] types = 
             EncryptedRandomAccessThingType.values();
-    private final static byte[] message = "message".getBytes();
+    private final static byte[] message;
+    static {
+        try {
+            message = "message".getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new Error(e);
+        }
+    }
     private final static MasterSecret secret = new MasterSecret();
     private final static long falseMagic = 0x2c158a6c8882ffd3L;
     
