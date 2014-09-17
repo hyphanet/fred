@@ -5,7 +5,7 @@ package freenet.crypt;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -13,6 +13,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -23,7 +24,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import freenet.node.NodeStarter;
 import freenet.support.Fields;
-import freenet.support.Logger;
 
 /**
  * KeyGenUtils offers a set of methods to easily generate Keys and KeyPairs for 
@@ -48,10 +48,11 @@ public final class KeyGenUtils {
             KeyPairGenerator kg = KeyPairGenerator.getInstance(type.alg);
             kg.initialize(type.spec);
             return kg.generateKeyPair();
-        } catch (GeneralSecurityException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
-        } 
-        return null;
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e); // Impossible?
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new Error(e); // Impossible?
+        }
     }
 
     /**
@@ -68,10 +69,11 @@ public final class KeyGenUtils {
             KeyFactory kf = KeyFactory.getInstance(type.alg);
             X509EncodedKeySpec xks = new X509EncodedKeySpec(pub);
             return kf.generatePublic(xks);
-        } catch (GeneralSecurityException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e); // Impossible?
+        } catch (InvalidKeySpecException e) {
+            throw new IllegalArgumentException(e); // Indicates passed in key is bogus
         }
-        return null;
     }
 
     /**
@@ -128,12 +130,13 @@ public final class KeyGenUtils {
             // FIXME verify that the keys are consistent if assertions/logging enabled??
 
             return getKeyPair(pubK, privK);
-        } catch (GeneralSecurityException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
         } catch (UnsupportedTypeException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+            throw new Error(e); // Should be impossible
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e); // Should be impossible
+        } catch (InvalidKeySpecException e) {
+            throw new IllegalArgumentException(e);
         }
-        return null;
     }
 
     /**
@@ -169,9 +172,8 @@ public final class KeyGenUtils {
             kg.init(type.keySize);
             return kg.generateKey();
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+            throw new Error(e); // Impossible?
         }
-        return null;
     }
 
     /**
@@ -266,9 +268,8 @@ public final class KeyGenUtils {
         try {
             return kdf.genMac((c.getName()+kdfString).getBytes("UTF-8"));
         } catch (UnsupportedEncodingException e) {
-            Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+            throw new Error(e); // Impossible
         }
-        return null;
     }
 
 
