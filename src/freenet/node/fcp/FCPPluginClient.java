@@ -670,6 +670,18 @@ public final class FCPPluginClient {
         try {
             final SynchronousSend send = new SynchronousSend();
             
+            // An assert() instead of a throwing is fine:
+            // - The constructors of FCPPluginMessage ensure that the identifier is unique enough.
+            //   So to fail the assert, someone would have to modify the constructor or use the
+            //   wrong one against the usage rules in the JavaDoc
+            // - If the assert is not true, then the following put() will replace the old
+            //   SynchronousSend, so its Condition will never get signaled, and its
+            //   thread waiting in sendSynchronous() will timeout safely. It IS possible that this
+            //   thread will then get a reply which does not belong to it. But the wrong reply will
+            //   only affect the caller, the FCPPluginClient will keep working fine = no threads
+            //   will become stall for ever. As the caller is at fault for the issue, it is fine if
+            //   he breaks his own stuff :)
+            
             assert(!synchronousSends.containsKey(message.identifier))
                 : "FCPPluginMessage.identifier should be unique";
             
