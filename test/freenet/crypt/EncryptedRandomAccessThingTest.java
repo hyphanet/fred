@@ -188,7 +188,7 @@ public class EncryptedRandomAccessThingTest {
     }
     
     @Test
-    public void testPwirteFileOffsetTooBig() throws IOException, GeneralSecurityException {
+    public void testPwriteFileOffsetTooBig() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
         EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);

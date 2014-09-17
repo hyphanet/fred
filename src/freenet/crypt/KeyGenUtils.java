@@ -276,7 +276,7 @@ public final class KeyGenUtils {
      * and kdfString
      * @param kdfKey The key to derive from
      * @param c Class name to use in derivation 
-     * @param kdfString Sting to use in derivation
+     * @param kdfString String to use in derivation
      * @param len How long the new ByteBuffer should be. 
      * @return A ByteBuffer of the specified length
      * @throws InvalidKeyException
@@ -293,7 +293,7 @@ public final class KeyGenUtils {
      * and kdfString
      * @param kdfKey The key to derive from
      * @param c Class name to use in derivation 
-     * @param kdfString Sting to use in derivation
+     * @param kdfString String to use in derivation
      * @param type The type of key to derive
      * @return The derived key as a SecretKey
      * @throws InvalidKeyException
@@ -308,7 +308,7 @@ public final class KeyGenUtils {
      * name and kdfString
      * @param kdfKey The key to derive from
      * @param c Class name to use in derivation 
-     * @param kdfString Sting to use in derivation
+     * @param kdfString String to use in derivation
      * @param ivType The type of IV to derive
      * @return The derived IV as an IvParameterSpec
      * @throws InvalidKeyException
