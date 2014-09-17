@@ -751,8 +751,8 @@ public final class FCPPluginClient {
             
             send(direction, message);
             
-            // Message is sent, now we wait for the reply message to be put into the
-            // "SynchronousSend synchronousSend" object by the thread which receives it.
+            // Message is sent, now we wait for the reply message to be put into the SynchronousSend
+            // object by the thread which receives the reply message.
             // - That usually happens at FCPPluginClient.send().
             // Once it has put it into the SynchronousSend object, it will call signal() upon
             // our Condition completionSignal.
