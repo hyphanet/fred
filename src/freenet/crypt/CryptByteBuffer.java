@@ -11,9 +11,7 @@ import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
@@ -244,7 +242,8 @@ public final class CryptByteBuffer implements Serializable{
             }
         } else {
             try {
-                encryptCipher.update(input, offset, len, output, outputOffset);
+                int copied = encryptCipher.update(input, offset, len, output, outputOffset);
+                if(copied != len) throw new IllegalStateException("Not a stream cipher???");
             } catch (ShortBufferException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -311,7 +310,9 @@ public final class CryptByteBuffer implements Serializable{
         } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
             // Use ByteBuffer to ByteBuffer operations.
             try {
-                encryptCipher.update(input, output);
+                int copy = Math.min(input.remaining(), output.remaining());
+                int copied = encryptCipher.update(input, output);
+                if(copied != copy) throw new IllegalStateException("Not a stream cipher???");
             } catch (ShortBufferException e) {
                 throw new Error("Impossible: "+e, e);
             }
@@ -359,7 +360,8 @@ public final class CryptByteBuffer implements Serializable{
             }
         } else {
             try {
-                decryptCipher.update(input, offset, len, output, outputOffset);
+                int copied = decryptCipher.update(input, offset, len, output, outputOffset);
+                if(copied != len) throw new IllegalStateException("Not a stream cipher???");
             } catch (ShortBufferException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -426,7 +428,9 @@ public final class CryptByteBuffer implements Serializable{
         } else if(!(type == CryptByteBufferType.RijndaelPCFB || type.cipherName.equals("RIJNDAEL"))) {
             // Use ByteBuffer to ByteBuffer operations.
             try {
-                decryptCipher.update(input, output);
+                int copy = Math.min(input.remaining(), output.remaining());
+                int copied = decryptCipher.update(input, output);
+                if(copied != copy) throw new IllegalStateException("Not a stream cipher???");
             } catch (ShortBufferException e) {
                 throw new Error("Impossible: "+e, e);
             }
