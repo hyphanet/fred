@@ -790,6 +790,10 @@ public final class FCPPluginClient {
                 // The spurious wakeup described at the above if() has happened, so we loop.
             } while(true);
         } finally {
+            // We MUST always remove the SynchronousSend object which we added to the map,
+            // otherwise it will leak memory eternally.
+            synchronousSends.remove(message.identifier);
+            
             synchronousSendsLock.writeLock().unlock();
         }
     }
