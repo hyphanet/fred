@@ -405,8 +405,8 @@ public class MessageAuthCodeTest{
     public void testSetIVIvParameterSpec() 
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         MessageAuthCode mac = new MessageAuthCode(types[3], keys[3], IVs[3]);
-        mac.genIv();
-        mac.setIv(IVs[3]);
+        mac.genIV();
+        mac.setIV(IVs[3]);
         assertArrayEquals(IVs[3].getIV(), mac.getIv().getIV());
     }
 
@@ -415,32 +415,32 @@ public class MessageAuthCodeTest{
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         IvParameterSpec nullInput = null;
         MessageAuthCode mac = new MessageAuthCode(types[3], keys[3], IVs[3]);
-        mac.setIv(nullInput);
+        mac.setIV(nullInput);
     }
 
     @Test (expected = UnsupportedTypeException.class)
     public void testSetIVIvParameterSpecUnsupportedTypeException() 
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         MessageAuthCode mac = new MessageAuthCode(types[0], keys[0]);
-        mac.setIv(IVs[1]);
+        mac.setIV(IVs[1]);
     }
 
     @Test
     public void testGenIV() throws InvalidKeyException, InvalidAlgorithmParameterException {
         MessageAuthCode mac = new MessageAuthCode(types[3], keys[3], IVs[3]);
-        assertNotNull(mac.genIv());
+        assertNotNull(mac.genIV());
     }
 
     @Test
     public void testGenIVLength() throws InvalidKeyException, InvalidAlgorithmParameterException {
         MessageAuthCode mac = new MessageAuthCode(types[3], keys[3], IVs[3]);
-        assertEquals(mac.genIv().getIV().length, types[3].ivlen);
+        assertEquals(mac.genIV().getIV().length, types[3].ivlen);
     }
 
     @Test (expected = UnsupportedTypeException.class)
     public void testGenIVUnsupportedTypeException() throws InvalidKeyException {
         MessageAuthCode mac = new MessageAuthCode(types[0], keys[0]);
-        mac.genIv();
+        mac.genIV();
     }
 
 }

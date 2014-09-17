@@ -47,9 +47,9 @@ public final class MessageAuthCode {
             if(type.ivlen != -1){;
             checkPoly1305Key(key.getEncoded());
             if(genIV){
-                genIv();
+                genIV();
             } else{
-                setIv(iv);
+                setIV(iv);
             }
             mac.init(key, this.iv);
             }
@@ -301,7 +301,7 @@ public final class MessageAuthCode {
      * @param iv The new iv to use as IvParameterSpec
      * @throws InvalidAlgorithmParameterException
      */
-    public final void setIv(IvParameterSpec iv) throws InvalidAlgorithmParameterException{
+    public final void setIV(IvParameterSpec iv) throws InvalidAlgorithmParameterException{
         if(type.ivlen == -1){
             throw new UnsupportedTypeException(type);
         }
@@ -317,12 +317,12 @@ public final class MessageAuthCode {
      * Generates a new IV to be used. Only works with algorithms that support IVs.
      * @return The generated IV
      */
-    public final IvParameterSpec genIv() {
+    public final IvParameterSpec genIV() {
         if(type.ivlen == -1){
             throw new UnsupportedTypeException(type);
         }
         try {
-            setIv(KeyGenUtils.genIV(type.ivlen));
+            setIV(KeyGenUtils.genIV(type.ivlen));
         } catch (InvalidAlgorithmParameterException e) {
             throw new IllegalArgumentException(e); // Definitely a bug ...
         }
