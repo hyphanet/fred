@@ -777,8 +777,8 @@ public final class FCPPluginClient {
                     // So the naive assumption would be that at this point of code,
                     // synchronousSend.reply would be non-null because await() should only return
                     // true after signal() was called.
-                    // However, Condition.await() can wake up spuriously, i.e. wake up without
-                    // actually having been signal(). See the JavaDoc of Condition.
+                    // However, Condition.await() can wake up "spuriously", i.e. wake up without
+                    // actually having been signal()ed. See the JavaDoc of Condition.
                     // So after await() has returned true to indicate that it might have been
                     // signaled we still need to check whether the semantic condition which
                     // would trigger signaling is *really* met, which we do with this if:
