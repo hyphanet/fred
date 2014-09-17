@@ -8,6 +8,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -664,7 +665,64 @@ public final class FCPPluginClient {
         assert(timeoutMilliseconds < 60 * 1000)
             : "Please use sane timeouts to prevent thread congestion";
         
-        throw new UnsupportedOperationException("TODO FIXME: Implement");
+        
+        synchronousSendsLock.writeLock().lock();
+        try {
+            final SynchronousSend send = new SynchronousSend();
+            
+            assert(!synchronousSends.containsKey(message.identifier))
+                : "FCPPluginMessage.identifier should be unique";
+            
+            synchronousSends.put(message.identifier, send);
+            
+            send(direction, message);
+            
+            // Message is sent, now we wait for the reply message to be put into the
+            // "SynchronousSend send" object by the thread which receives it.
+            // - That usually happens at FCPPluginClient.send().
+            // Once it has put it into the SynchronousSend object, it will call signal() upon
+            // its "Condition completionSignal"".
+            // This will make the following await() wake up and return true, which causes this
+            // function to be able to return the reply.
+            // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
+            try {
+                do {
+                    // The compleditionSignal is a Condition which was created from the
+                    // synchronousSendsLock.writeLock(), so it will be released by the await()
+                    // while it is blocking, and re-acquired when it returns.
+                    // FIXME: To make this more clear, pass it to the constructor SynchronousSend()
+                    // FIXME: Use the await() which eats nanoSeconds because it returns the
+                    // non-expired remaining delay so in case of spurious wakeups the next await()
+                    // can use the remaining delay
+                    if(!send.completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
+                        throw new IOException("The synchronous call timed out for " + this
+                            + "; message: " + message);
+                    }
+                    
+                    // The thread which sets send.reply to be non-null calls
+                    // completionSignal.signal() after send.reply has been set.
+                    // So the naive assumption would be that at this point of code, send.reply
+                    // would be null because await() should only return after signal().
+                    // However, Condition.await() can wake up spuriously, i.e. wake up without
+                    // actually having been signal(). See the JavaDoc of Condition.
+                    // So after await() has returned true to indicate that it might have been
+                    // signaled we still need to check whether the semantic condition which
+                    // would trigger signaling is *really* met, which we do with this if:
+                    if(send.reply != null) {
+                        // FIXME: We should throw if reply.success == false. But then the other
+                        // data in the reply is lost. So it probably would be best to get rid of
+                        // the FCPCallFailedException throws declaration.
+                        return send.reply;
+                    }
+                    
+                    // The spurious wakeup described at the above if() has happened, so we loop.
+                } while(true);
+            } catch (InterruptedException e) {
+                throw new IOException("Shutdown requested for " + this, e);
+            }
+        } finally {
+            synchronousSendsLock.writeLock().unlock();
+        }
     }
 
     @Override
