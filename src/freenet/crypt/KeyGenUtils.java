@@ -125,6 +125,7 @@ public final class KeyGenUtils {
 
             PKCS8EncodedKeySpec pks = new PKCS8EncodedKeySpec(pri);
             PrivateKey privK = kf.generatePrivate(pks);
+            // FIXME verify that the keys are consistent if assertions/logging enabled??
 
             return getKeyPair(pubK, privK);
         } catch (GeneralSecurityException e) {
