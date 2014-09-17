@@ -118,7 +118,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
         			KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, this.getClass(), 
         					kdfInput.underlyingIV.input, type.encryptKey).getIV());
         } catch(InvalidKeyException e) {
-            Logger.error(EncryptedRandomAccessThing.class, "Internal error; please report:", e);
+            throw new IllegalStateException(e); // Must be a bug.
         }
         this.cipherParams = tempPram;
     	cipherRead.init(false, cipherParams);

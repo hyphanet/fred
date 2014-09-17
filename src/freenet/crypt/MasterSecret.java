@@ -37,9 +37,8 @@ public final class MasterSecret implements Serializable{
         try {
             return KeyGenUtils.deriveSecretKey(masterKey, getClass(), type.name()+" key", type);
         } catch (InvalidKeyException e) {
-            Logger.error(MasterSecret.class, "Internal error; please report:", e);
+            throw new IllegalStateException(e); // Definitely a bug.
         }
-        return null;
     }
     
     /**
@@ -52,8 +51,7 @@ public final class MasterSecret implements Serializable{
             return KeyGenUtils.deriveIvParameterSpec(masterKey, getClass(), type.name()+" iv", 
                     type);
         } catch (InvalidKeyException e) {
-            Logger.error(MasterSecret.class, "Internal error; please report:", e);
+            throw new IllegalStateException(e); // Definitely a bug.
         }
-        return null;
     }
 }

@@ -63,9 +63,8 @@ public enum MACType {
         try {
             return Mac.getInstance(mac);
         } catch (NoSuchAlgorithmException e) {
-            Logger.error(MACType.class, "Internal error; please report:", e);
+            throw new Error(e); // Definitely a bug...
         }
-        return null;
     }
 
 }

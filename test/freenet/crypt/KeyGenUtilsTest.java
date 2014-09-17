@@ -106,7 +106,7 @@ public class KeyGenUtilsTest {
                 pks = new PKCS8EncodedKeySpec(truePrivateKeys[i]);
                 privateKeys[i] = kf.generatePrivate(pks);
             } catch (GeneralSecurityException e) {
-                Logger.error(KeyGenUtils.class, "Internal error; please report:", e);
+                throw new Error(e); // Classpath error?
             }
         }
     }

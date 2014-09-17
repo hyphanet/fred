@@ -57,7 +57,7 @@ public final class MessageAuthCode {
                 mac.init(key);
             }
         }catch (InvalidAlgorithmParameterException e) {
-            Logger.error(MessageAuthCode.class, "Internal error; please report:", e);
+            throw new IllegalArgumentException(e); // Definitely a bug ...
         }
     }
 
@@ -308,7 +308,7 @@ public final class MessageAuthCode {
         try {
             mac.init(key, iv);
         } catch (InvalidKeyException e) {
-            Logger.error(MessageAuthCode.class, "Internal error; please report:", e);
+            throw new IllegalArgumentException(e); // Definitely a bug ...
         }
     }
 
@@ -323,7 +323,7 @@ public final class MessageAuthCode {
         try {
             setIv(KeyGenUtils.genIV(type.ivlen));
         } catch (InvalidAlgorithmParameterException e) {
-            Logger.error(MessageAuthCode.class, "Internal error; please report:", e);
+            throw new IllegalArgumentException(e); // Definitely a bug ...
         }
         return this.iv;
     }
