@@ -775,8 +775,8 @@ public final class FCPPluginClient {
                     // The thread which sets synchronousSend.reply to be non-null calls
                     // completionSignal.signal() after synchronousSend.reply has been set.
                     // So the naive assumption would be that at this point of code,
-                    // synchronousSend.reply would be null because await() should only return after
-                    // signal().
+                    // synchronousSend.reply would be non-null because await() should only return
+                    // true after signal() was called.
                     // However, Condition.await() can wake up spuriously, i.e. wake up without
                     // actually having been signal(). See the JavaDoc of Condition.
                     // So after await() has returned true to indicate that it might have been
