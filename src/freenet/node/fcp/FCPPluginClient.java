@@ -760,34 +760,34 @@ public final class FCPPluginClient {
             // This will make the following await() wake up and return true, which causes this
             // function to be able to return the reply.
             // FIXME: Actually implement the signaling mechanism at the FCPPluginClient.send()
-                do {
-                    // The compleditionSignal is a Condition which was created from the
-                    // synchronousSendsLock.writeLock(), so it will be released by the await()
-                    // while it is blocking, and re-acquired when it returns.
-                    // FIXME: Use the await() which eats nanoSeconds because it returns the
-                    // non-expired remaining delay so in case of spurious wakeups the next await()
-                    // can use the remaining delay
-                    if(!completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
-                        throw new IOException("The synchronous call timed out for " + this
-                            + "; message: " + message);
-                    }
-                    
-                    // The thread which sets synchronousSend.reply to be non-null calls
-                    // completionSignal.signal() only after synchronousSend.reply has been set.
-                    // So the naive assumption would be that at this point of code,
-                    // synchronousSend.reply would be non-null because await() should only return
-                    // true after signal() was called.
-                    // However, Condition.await() can wake up "spuriously", i.e. wake up without
-                    // actually having been signal()ed. See the JavaDoc of Condition.
-                    // So after await() has returned true to indicate that it might have been
-                    // signaled we still need to check whether the semantic condition which
-                    // would trigger signaling is *really* met, which we do with this if:
-                    if(synchronousSend.reply != null) {
-                        return synchronousSend.reply;
-                    }
-                    
-                    // The spurious wakeup described at the above if() has happened, so we loop.
-                } while(true);
+            do {
+                // The compleditionSignal is a Condition which was created from the
+                // synchronousSendsLock.writeLock(), so it will be released by the await() while it
+                // is blocking, and re-acquired when it returns.
+                // FIXME: Use the await() which eats nanoSeconds because it returns the non-expired
+                // remaining delay so in case of spurious wakeups the next await() can use the
+                // remaining delay
+                if(!completionSignal.await(timeoutMilliseconds, TimeUnit.MILLISECONDS)) {
+                    throw new IOException("The synchronous call timed out for " + this
+                        + "; message: " + message);
+                }
+
+                // The thread which sets synchronousSend.reply to be non-null calls
+                // completionSignal.signal() only after synchronousSend.reply has been set.
+                // So the naive assumption would be that at this point of code,
+                // synchronousSend.reply would be non-null because await() should only return true
+                // after signal() was called.
+                // However, Condition.await() can wake up "spuriously", i.e. wake up without
+                // actually having been signal()ed. See the JavaDoc of Condition.
+                // So after await() has returned true to indicate that it might have been signaled
+                // we still need to check whether the semantic condition which would trigger
+                // signaling is *really* met, which we do with this if:
+                if(synchronousSend.reply != null) {
+                    return synchronousSend.reply;
+                }
+
+                // The spurious wakeup described at the above if() has happened, so we loop.
+            } while(true);
         } finally {
             synchronousSendsLock.writeLock().unlock();
         }
