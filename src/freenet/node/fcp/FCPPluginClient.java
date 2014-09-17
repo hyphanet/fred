@@ -202,9 +202,18 @@ public final class FCPPluginClient {
     private final FCPConnectionHandler clientConnection;
     
     /**
-     * @see FCPPluginClient#synchronousSends}.
+     * @see FCPPluginClient#synchronousSends
+     *          An overview of how synchronous sends and especially their threading work internally
+     *          is provided at the map which stores them.
      */
     private final class SynchronousSend {
+        /**
+         * {@link FCPPluginClient#send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}
+         * shall call {@link Condition#signal()} upon this once the reply message has been stored to
+         * {@link #reply} to wake up the sleeping {@link FCPPluginClient#sendSynchronous(
+         * SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)} thread which is
+         * waiting for the reply to arrive.
+         */
         private final Condition completionSignal = synchronousSendsLock.writeLock().newCondition();
         
         public FredPluginFCPMessageHandler.FCPPluginMessage reply = null;
@@ -694,6 +703,9 @@ public final class FCPPluginClient {
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
+     * @see FCPPluginClient#synchronousSends
+     *          An overview of how synchronous sends and especially their threading work internally
+     *          is provided at the map which stores them.
      */
     public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
             FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutMilliseconds)
