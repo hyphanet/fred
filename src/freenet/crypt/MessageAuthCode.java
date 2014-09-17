@@ -34,11 +34,11 @@ public final class MessageAuthCode {
      * key. If that algorithms requires an IV it will generate one or use the passed in IV
      * @param type The MAC algorithm to use
      * @param key The key to use
-     * @param genIv Does an IV need to be generated if type requires one
+     * @param genIV Does an IV need to be generated if type requires one
      * @param iv The iv to be used. Can be null if none provided or required. 
      * @throws InvalidKeyException
      */
-    private MessageAuthCode(MACType type, SecretKey key, boolean genIv, IvParameterSpec iv) 
+    private MessageAuthCode(MACType type, SecretKey key, boolean genIV, IvParameterSpec iv) 
             throws InvalidKeyException{
         this.type = type;
         mac = type.get();
@@ -46,7 +46,7 @@ public final class MessageAuthCode {
         try {
             if(type.ivlen != -1){;
             checkPoly1305Key(key.getEncoded());
-            if(genIv){
+            if(genIV){
                 genIv();
             } else{
                 setIv(iv);
