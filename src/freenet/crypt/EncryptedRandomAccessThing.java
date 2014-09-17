@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -16,19 +17,21 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Fields;
-import freenet.support.io.RandomAccessThing;
+import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.ResumeFailedException;
 /**
  * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
  * SkippingStreamCipher. 
  * @author unixninja92
  * Suggested EncryptedRandomAccessThingType to use: ChaCha128
  */
-public final class EncryptedRandomAccessThing implements RandomAccessThing { 
+public final class EncryptedRandomAccessThing implements LockableRandomAccessThing { 
     private final ReentrantLock readLock = new ReentrantLock();
     private final ReentrantLock writeLock = new ReentrantLock();
     private final EncryptedRandomAccessThingType type;
-    private final RandomAccessThing underlyingThing;
+    private final LockableRandomAccessThing underlyingThing;
     
     private final SkippingStreamCipher cipherRead;
     private final SkippingStreamCipher cipherWrite;
@@ -60,7 +63,7 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
      * @throws GeneralSecurityException
      */
     public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
-            RandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, 
+            LockableRandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, 
             GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
@@ -312,6 +315,21 @@ public final class EncryptedRandomAccessThing implements RandomAccessThing {
             this.input = name();
         }
         
+    }
+
+    @Override
+    public RAFLock lockOpen() throws IOException {
+        return underlyingThing.lockOpen();
+    }
+
+    @Override
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
 }

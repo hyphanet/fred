@@ -1,10 +1,13 @@
 package freenet.support.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class ByteArrayRandomAccessThing implements RandomAccessThing, Serializable {
+import freenet.client.async.ClientContext;
+
+public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
 
     private static final long serialVersionUID = 1L;
     private final byte[] data;
@@ -62,6 +65,18 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing, Serializab
 	}
 	
     @Override
+    public RAFLock lockOpen() {
+        return new RAFLock() {
+
+            @Override
+            protected void innerUnlock() {
+                // Do nothing. Always open.
+            }
+            
+        };
+    }
+
+    @Override
     public void free() {
         // Do nothing.
     }
@@ -69,6 +84,16 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing, Serializab
     /** Package-local! */
     byte[] getBuffer() {
         return data;
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Do nothing.
+    }
+
+    @Override
+    public void storeTo(DataOutputStream dos) {
+        throw new UnsupportedOperationException();
     }
 
 }
