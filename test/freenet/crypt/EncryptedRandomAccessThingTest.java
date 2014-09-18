@@ -18,13 +18,19 @@ import java.security.Security;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import freenet.client.async.ClientContext;
+import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 
 public class EncryptedRandomAccessThingTest {
     private final static EncryptedRandomAccessThingType[] types = 
@@ -250,6 +256,49 @@ public class EncryptedRandomAccessThingTest {
         thrown.expectMessage("This RandomAccessThing has already been closed. It can no longer"
                     + " be written to.");
         erat.pwrite(0, result, 0, 20);
+    }
+    
+    private File base = new File("tmp.encrypted-random-access-thing-test");
+    
+    @Before
+    public void setUp() {
+        base.mkdir();
+    }
+    
+    @After
+    public void tearDown() {
+        FileUtil.removeAll(base);
+    }
+
+    @Test
+    public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException {
+        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        byte[] buf = new byte[4096];
+        Random r = new Random(1267612);
+        r.nextBytes(buf);
+        RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].footerLen, false);
+        EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret);
+        eraf.pwrite(0, buf, 0, buf.length);
+        byte[] tmp = new byte[buf.length];
+        eraf.pread(0, tmp, 0, buf.length);
+        assertArrayEquals(buf, tmp);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        eraf.storeTo(dos);
+        dos.close();
+        eraf.close();
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
+        ClientContext context = new ClientContext(0, 0, null, null, null, null, null, null, null, 
+                null, null, null, null, r, null, null, null, null, null, null);
+        context.setPersistentMasterSecret(secret);
+        EncryptedRandomAccessThing restored = (EncryptedRandomAccessThing) BucketTools.restoreRAFFrom(dis, context);
+        assertEquals(buf.length, restored.size());
+        //assertEquals(rafw, restored);
+        tmp = new byte[buf.length];
+        restored.pread(0, tmp, 0, buf.length);
+        assertArrayEquals(buf, tmp);
+        restored.close();
+        restored.free();
     }
     
 }
