@@ -702,6 +702,10 @@ public final class FCPPluginClient {
     /**
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
+     * The messages sent by this function will be delivered to the message handler
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * FredPluginFCPMessageHandler.FCPPluginMessage)} of the remote side.<br><br>
+     * 
      * This has the following differences to a regular non-synchronous
      * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}:<br>
      * - The function will <b>not</b> return immediately after the message has been queued for
