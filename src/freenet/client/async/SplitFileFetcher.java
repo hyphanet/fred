@@ -145,7 +145,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
                     persistent ? context.persistentRAFFactory : context.tempRAFFactory, 
                     persistent ? context.jobRunner : context.dummyJobRunner, 
                     context.ticker, context.memoryLimitedJobRunner, checker, persistent,
-                    fileCompleteViaTruncation, context.getDiskSpaceCheckingRandomAccessThingFactory(persistent), 
+                    fileCompleteViaTruncation, context.getFileRandomAccessThingFactory(persistent), 
                     context.getChkFetchScheduler(realTimeFlag).fetchingKeys());
         } catch (InsufficientDiskSpaceException e) {
             throw new FetchException(FetchExceptionMode.NOT_ENOUGH_DISK_SPACE);

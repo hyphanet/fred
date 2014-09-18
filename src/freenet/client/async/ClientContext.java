@@ -26,6 +26,7 @@ import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
+import freenet.support.io.FileRandomAccessThingFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
@@ -298,11 +299,14 @@ public class ClientContext {
         return persistent ? jobRunner : dummyJobRunner;
     }
 
-    public DiskSpaceCheckingRandomAccessThingFactory getDiskSpaceCheckingRandomAccessThingFactory(
-            boolean persistent) {
+    public FileRandomAccessThingFactory getFileRandomAccessThingFactory(boolean persistent) {
         return persistent ? (DiskSpaceCheckingRandomAccessThingFactory)persistentRAFFactory :
                 tempBucketFactory.getUnderlyingRAFFactory();
                  
+    }
+
+    public LockableRandomAccessThingFactory getRandomAccessThingFactory(boolean persistent) {
+        return persistent ? persistentRAFFactory : tempBucketFactory;
     }
 	
 }

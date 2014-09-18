@@ -369,7 +369,7 @@ public class NodeClientCore implements Persistable {
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		LockableRandomAccessThingFactory raff = 
+		PooledFileRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
 		        persistentTempDir.dir(), minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());

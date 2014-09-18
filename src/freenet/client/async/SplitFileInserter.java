@@ -76,7 +76,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
         try {
             storage = new SplitFileInserterStorage(originalData, decompressedLength, this, 
                     compressionCodec, meta, isMetadata, archiveType, 
-                    context.getDiskSpaceCheckingRandomAccessThingFactory(persistent), persistent, 
+                    context.getRandomAccessThingFactory(persistent), persistent, 
                     ctx, splitfileCryptoAlgorithm, splitfileCryptoKey, hashThisLayerOnly, hashes,
                     context.tempBucketFactory /* only used for temporaries within constructor */,
                     new CRCChecksumChecker(), context.fastWeakRandom, context.memoryLimitedJobRunner,

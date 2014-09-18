@@ -603,6 +603,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
 	static final double MAX_USAGE_LOW = 0.8;
 	static final double MAX_USAGE_HIGH = 0.9;
+    public static final EncryptedRandomAccessThingType CRYPT_TYPE = EncryptedRandomAccessThingType.ChaCha128;
 	
 	/**
 	 * Create a temp bucket
@@ -774,7 +775,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		// Do we want it to be encrypted?
 		synchronized(encryptLock) {
 		    if(reallyEncrypt) {
-		        return new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, fileBucket, secret);
+		        return new EncryptedRandomAccessBucket(CRYPT_TYPE, fileBucket, secret);
 		    }
 		}
 		return fileBucket;

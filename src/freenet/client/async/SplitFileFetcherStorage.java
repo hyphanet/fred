@@ -46,7 +46,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
+import freenet.support.io.FileRandomAccessThingFactory;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
@@ -250,7 +250,7 @@ public class SplitFileFetcherStorage {
             BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
             ChecksumChecker checker, boolean persistent, 
-            File storageFile, DiskSpaceCheckingRandomAccessThingFactory diskSpaceCheckingRAFFactory,
+            File storageFile, FileRandomAccessThingFactory diskSpaceCheckingRAFFactory,
             KeysFetchingLocally keysFetching) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
