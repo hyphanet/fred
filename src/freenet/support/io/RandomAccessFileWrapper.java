@@ -3,15 +3,18 @@ package freenet.support.io;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
-public class RandomAccessFileWrapper implements LockableRandomAccessThing {
+public class RandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
 
-	final RandomAccessFile raf;
+    private static final long serialVersionUID = 1L;
+    transient RandomAccessFile raf;
 	final File file;
 	private boolean closed = false;
 	private final long length;
@@ -117,8 +120,14 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing {
     }
 
     @Override
-    public void onResume(ClientContext context) {
-        // Ignore.
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        if(!file.exists()) throw new ResumeFailedException("File does not exist any more");
+        if(file.length() != length) throw new ResumeFailedException("File is wrong length");
+        try {
+            raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
+        } catch (FileNotFoundException e) {
+            throw new ResumeFailedException("File does not exist any more");
+        }
     }
     
     static final int MAGIC = 0xdd0f4ab2;
