@@ -239,7 +239,7 @@ public class MasterKeys {
 		offset += clientCacheMasterKey.length;
 		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
 		offset += databaseKey.length;
-        System.arraycopy(tempfilesMasterSecret, 0, data, offset, databaseKey.length);
+        System.arraycopy(tempfilesMasterSecret, 0, data, offset, tempfilesMasterSecret.length);
         offset += tempfilesMasterSecret.length;
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(data, hashedStart, offset-hashedStart);
