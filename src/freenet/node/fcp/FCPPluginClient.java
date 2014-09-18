@@ -829,7 +829,6 @@ public final class FCPPluginClient {
      *            produce deadlocks with your own thread synchronization measures.<br><br>
      * 
      * @param message
-     *            The message to be sent.<br>
      *            <b>Must be</b> constructed using
      *            {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet,
      *            Bucket)}.<br><br>
