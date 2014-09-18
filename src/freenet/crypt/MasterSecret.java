@@ -59,4 +59,27 @@ public final class MasterSecret implements Serializable{
             throw new IllegalStateException(e); // Definitely a bug.
         }
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((masterKey == null) ? 0 : masterKey.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        MasterSecret other = (MasterSecret) obj;
+        return masterKey.equals(other.masterKey);
+    }
 }

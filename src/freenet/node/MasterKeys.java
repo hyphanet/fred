@@ -158,7 +158,7 @@ public class MasterKeys {
 		FileOutputStream fos = new FileOutputStream(masterKeysFile);
 		long flags = 0;
 		byte[] flagBytes = Fields.longToBytes(flags);
-		byte[] data = new byte[flagBytes.length + clientCacheKey.length + databaseKey.length + HASH_LENGTH];
+		byte[] data = new byte[flagBytes.length + clientCacheKey.length + databaseKey.length + tempfilesMasterSecret.length + HASH_LENGTH];
 		int offset = 0;
 		System.arraycopy(flagBytes, 0, data, offset, flagBytes.length);
 		offset += flagBytes.length;
@@ -166,6 +166,8 @@ public class MasterKeys {
 		offset += clientCacheKey.length;
 		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
 		offset += databaseKey.length;
+		System.arraycopy(tempfilesMasterSecret, 0, data, offset, tempfilesMasterSecret.length);
+		offset += tempfilesMasterSecret.length;
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(data, 0, offset);
 		byte[] hash = md.digest();
