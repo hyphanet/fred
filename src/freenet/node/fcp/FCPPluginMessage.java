@@ -24,6 +24,16 @@ import freenet.support.SimpleFieldSet;
  * (There is a class {@link FredPluginFCPMessageHandler.FCPPluginMessage} with the same name.
  * Consider that one as the external representation used by actual server/client plugin
  * implementations, while this class here is the internal representation used for parsing.)
+ * FIXME: A good way to resolve this would be to rename this class to FCPPluginClientMessage. It
+ * always represents a message from the client to the server, so that would fit.
+ * When doing that, make sure to also:
+ * - adapt the JavaDoc at class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
+ * - adapt the JavaDoc at class {@link FCPPluginReply}. Also, that class should probably be renamed
+ *   to FCPPluginServerMessage, because it will always be a server-to-client message.
+ * - adapt all JavaDoc and classes which use the explicit name
+ *   "FredPluginFCPMessageHandler.FCPPluginMessage" to use "FCPPluginMessage" because the name
+ *   is not ambiguous anymore. This can probably be done with grep.
+ * 
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
  * @author saces
