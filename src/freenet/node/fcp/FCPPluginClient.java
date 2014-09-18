@@ -512,6 +512,16 @@ public final class FCPPluginClient {
      * 
      * <br><br>FIXME: This has gotten too large, split it up.
      * 
+     * @param direction
+     *            Whether to send the message to the server or the client message handler.<br><br>
+     * 
+     *            While you <b>can</b> use this to send messages to yourself, be careful not to
+     *            cause thread deadlocks with this. The function will call your message
+     *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
+     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in <b>a
+     *            different thread</b>, so it should not cause deadlocks on its own, but you might
+     *            produce deadlocks with your own thread synchronization measures.<br><br>
+     * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
@@ -811,12 +821,12 @@ public final class FCPPluginClient {
      * @param direction
      *            Whether to send the message to the server or the client message handler.<br><br>
      * 
-     *            While you <i>can</i> use this to send messages to yourself, be careful not to
-     *            cause thread deadlocks with this. The function <i>will</i> call your message
+     *            While you <b>can</b> use this to send messages to yourself, be careful not to
+     *            cause thread deadlocks with this. The function will call your message
      *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
-     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in a secondary
-     *            thread, so it should not cause deadlocks on its own, but you might produce
-     *            deadlocks with your own thread synchronization objects.<br><br>
+     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in <b>a
+     *            different thread</b>, so it should not cause deadlocks on its own, but you might
+     *            produce deadlocks with your own thread synchronization measures.<br><br>
      * 
      * @param message
      *            The message to be sent.<br>
