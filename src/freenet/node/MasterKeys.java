@@ -48,7 +48,8 @@ public class MasterKeys {
 		clear(clientCacheMasterKey);
 	}
 
-	static final int HASH_LENGTH = 4;
+	static final int OLD_HASH_LENGTH = 4;
+	static final int HASH_LENGTH = 12;
 	
 	static final int VERSION = 1;
 	
@@ -206,14 +207,14 @@ public class MasterKeys {
         PCFBMode pcfb = PCFBMode.create(cipher, iv);
         pcfb.blockDecipher(dataAndHash, 0, dataAndHash.length);
 //      System.err.println("Decrypted data and hash: "+HexUtil.bytesToHex(dataAndHash));
-        byte[] data = Arrays.copyOf(dataAndHash, dataAndHash.length - HASH_LENGTH);
+        byte[] data = Arrays.copyOf(dataAndHash, dataAndHash.length - OLD_HASH_LENGTH);
         byte[] hash = Arrays.copyOfRange(dataAndHash, data.length, dataAndHash.length);
 //      System.err.println("Data: "+HexUtil.bytesToHex(data));
 //      System.err.println("Hash: "+HexUtil.bytesToHex(hash));
         clear(dataAndHash);
         byte[] checkHash = md.digest(data);
 //      System.err.println("Check hash: "+HexUtil.bytesToHex(checkHash));
-        if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, HASH_LENGTH)) {
+        if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, OLD_HASH_LENGTH)) {
             clear(data);
             clear(hash);
             throw new MasterKeysWrongPasswordException();
