@@ -61,12 +61,6 @@ public class FCPPluginMessage extends DataCarryingMessage {
      * the original messages succeeded.<br>
      * For non-reply messages, this is null.
      * 
-     * FIXME: Also add fields "ErrorCode", "ErrorMessage": The existing plugins which I have worked
-     * with usually have fields to indicate error messages, so there is a need for them. It will
-     * be better to put this here so it can have a standardized format instead of having each
-     * plugin re-invent it. When adding this, make sure to also add it to the
-     * {@link FredPluginFCPMessageHandler.FCPPluginMessage} and {@link FCPPluginReply}.
-     * 
      * FIXME: To make the distinction between reply and non-reply messages even clearer, maybe have
      * an "IsReply" field instead of implicitly assuming messages to be replies if they contain
      * this "Success" field. This will hopefully prevent implementors of custom clients from not
