@@ -1,23 +1,40 @@
 package freenet.crypt;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTestBase;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.RAFBucket;
+import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThingTestBase;
+import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 
 public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     
@@ -123,6 +140,53 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             int start = r.nextInt(end);
             RandomAccessThingTestBase.checkArraySectionEqualsReadData(data, raf, start, end, true);
         }
+    }
+    
+    private File base = new File("tmp.encrypted-random-access-thing-test");
+    
+    @Before
+    public void setUp() {
+        base.mkdir();
+    }
+    
+    @After
+    public void tearDown() {
+        FileUtil.removeAll(base);
+    }
+
+    @Test
+    public void testStoreTo() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException {
+        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        byte[] buf = new byte[4096];
+        Random r = new Random(1267612);
+        r.nextBytes(buf);
+        FileBucket fb = new FileBucket(tempFile, false, false, false, false, true);
+        EncryptedRandomAccessBucket erab = new EncryptedRandomAccessBucket(types[0], fb, secret);
+        OutputStream os = erab.getOutputStream();
+        os.write(buf, 0, buf.length);
+        os.close();
+        InputStream is = erab.getInputStream();
+        byte[] tmp = new byte[buf.length];
+        is.read(tmp, 0, buf.length);
+        is.close();
+        assertArrayEquals(buf, tmp);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        erab.storeTo(dos);
+        dos.close();
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
+        ClientContext context = new ClientContext(0, 0, null, null, null, null, null, null, null, 
+                null, null, r, null, null, null, null, null, null, null, null, null, null, null, null);
+        context.setPersistentMasterSecret(secret);
+        EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
+        assertEquals(buf.length, restored.size());
+        //assertEquals(rafw, restored);
+        tmp = new byte[buf.length];
+        is = erab.getInputStream();
+        is.read(tmp, 0, buf.length);
+        assertArrayEquals(buf, tmp);
+        is.close();
+        restored.free();
     }
 
 }
