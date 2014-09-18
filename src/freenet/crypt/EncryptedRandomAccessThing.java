@@ -88,19 +88,19 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         this.headerMacKey = masterSecret.deriveKey(type.macKey);
         
         
-        if(underlyingThing.size() < type.footerLen){
+        if(underlyingThing.size() < type.headerLen){
             throw new IOException("Underlying RandomAccessThing is not long enough to include the "
                     + "footer.");
         }
         
-        byte[] footer = new byte[VERSION_AND_MAGIC_LENGTH];
+        byte[] header = new byte[VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(underlyingThing.size()-VERSION_AND_MAGIC_LENGTH, footer, offset, 
+        underlyingThing.pread(type.headerLen-VERSION_AND_MAGIC_LENGTH, header, offset, 
                 VERSION_AND_MAGIC_LENGTH);
         
-        int readVersion = ByteBuffer.wrap(footer, offset, 4).getInt();
+        int readVersion = ByteBuffer.wrap(header, offset, 4).getInt();
         offset += 4;
-        long magic = ByteBuffer.wrap(footer, offset, 8).getLong();
+        long magic = ByteBuffer.wrap(header, offset, 8).getLong();
 
         if(END_MAGIC != magic && magic != 0){
         	throw new IOException("This is not an EncryptedRandomAccessThing!");
@@ -110,7 +110,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         if(magic == 0){
             this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
             this.unencryptedBaseKey = KeyGenUtils.genSecretKey(type.encryptKey);
-        	writeFooter();
+        	writeHeader();
         }
         else{
         	if(readVersion != version){
@@ -118,7 +118,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         				+ "incompatible with this ERATType");
         	}
 
-        	if(!verifyFooter()){
+        	if(!verifyHeader()){
         		throw new GeneralSecurityException("MAC is incorrect");
         	}
         }
@@ -143,7 +143,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         if(isClosed){
             throw new IOException("This RandomAccessThing has already been closed.");
         }
-        return underlyingThing.size()-type.footerLen;
+        return underlyingThing.size()-type.headerLen;
     }
 
     /**
@@ -164,7 +164,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         }
         
         byte[] cipherText = new byte[length];
-        underlyingThing.pread(fileOffset, cipherText, 0, length);
+        underlyingThing.pread(fileOffset+type.headerLen, cipherText, 0, length);
 
         readLock.lock();
         try{
@@ -201,7 +201,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         }finally{
             writeLock.unlock();
         }
-        underlyingThing.pwrite(fileOffset, cipherText, 0, length);
+        underlyingThing.pwrite(fileOffset+type.headerLen, cipherText, 0, length);
     }
     
     @Override
@@ -223,16 +223,16 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    private void writeFooter() throws IOException, GeneralSecurityException{
+    private void writeHeader() throws IOException, GeneralSecurityException{
         if(isClosed){
             throw new IOException("This RandomAccessThing has already been closed. This should not"
                     + " happen.");
         }
-        byte[] footer = new byte[type.footerLen];
+        byte[] header = new byte[type.headerLen];
         int offset = 0;
         
         int ivLen = headerEncIV.length;
-        System.arraycopy(headerEncIV, 0, footer, offset, ivLen);
+        System.arraycopy(headerEncIV, 0, header, offset, ivLen);
         offset += ivLen;
 
         byte[] encryptedKey = null;
@@ -247,27 +247,27 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
             throw new GeneralSecurityException("Something went wrong with key generation. please "
                     + "report", e.fillInStackTrace());
         }
-        System.arraycopy(encryptedKey, 0, footer, offset, encryptedKey.length);
+        System.arraycopy(encryptedKey, 0, header, offset, encryptedKey.length);
         offset += encryptedKey.length;
 
         byte[] ver = ByteBuffer.allocate(4).putInt(version).array();
         try {
             MessageAuthCode mac = new MessageAuthCode(type.macType, headerMacKey);
             byte[] macResult = Fields.copyToArray(mac.genMac(headerEncIV, unencryptedBaseKey.getEncoded(), ver));
-            System.arraycopy(macResult, 0, footer, offset, macResult.length);
+            System.arraycopy(macResult, 0, header, offset, macResult.length);
             offset += macResult.length;
         } catch (InvalidKeyException e) {
             throw new GeneralSecurityException("Something went wrong with key generation. please "
                     + "report", e.fillInStackTrace());
         }
         
-        System.arraycopy(ver, 0, footer, offset, ver.length);
+        System.arraycopy(ver, 0, header, offset, ver.length);
         offset +=ver.length; 
         
         byte[] magic = ByteBuffer.allocate(8).putLong(END_MAGIC).array();
-        System.arraycopy(magic, 0, footer, offset, magic.length);
+        System.arraycopy(magic, 0, header, offset, magic.length);
         
-        underlyingThing.pwrite(size(), footer, 0, footer.length);
+        underlyingThing.pwrite(0, header, 0, header.length);
     }
     
     /**
@@ -277,14 +277,14 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      * @throws IOException
      * @throws InvalidKeyException
      */
-    private boolean verifyFooter() throws IOException, InvalidKeyException {
+    private boolean verifyHeader() throws IOException, InvalidKeyException {
         if(isClosed){
             throw new IOException("This RandomAccessThing has already been closed. This should not"
                     + " happen.");
         }
-        byte[] footer = new byte[type.footerLen-VERSION_AND_MAGIC_LENGTH];
+        byte[] footer = new byte[type.headerLen-VERSION_AND_MAGIC_LENGTH];
         int offset = 0;
-        underlyingThing.pread(size(), footer, offset, type.footerLen-VERSION_AND_MAGIC_LENGTH);
+        underlyingThing.pread(0, footer, offset, type.headerLen-VERSION_AND_MAGIC_LENGTH);
         
         headerEncIV = new byte[type.encryptType.ivSize];
         System.arraycopy(footer, offset, headerEncIV, 0, headerEncIV.length);

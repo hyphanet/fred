@@ -118,7 +118,7 @@ public class EncryptedRandomAccessThingTest {
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         byte[] magic = ByteBuffer.allocate(8).putLong(falseMagic).array();
-        barat2.pwrite(barat2.size()-8, magic, 0, 8);
+        barat2.pwrite(types[0].headerLen-8, magic, 0, 8);
         thrown.expect(IOException.class);
         thrown.expectMessage("This is not an EncryptedRandomAccessThing!");
         EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[0], barat2, secret);
@@ -172,7 +172,7 @@ public class EncryptedRandomAccessThingTest {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
         EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
-        assertEquals(erat.size(), barat.size()-types[0].footerLen);
+        assertEquals(erat.size(), barat.size()-types[0].headerLen);
     }
 
     @Test
@@ -278,7 +278,7 @@ public class EncryptedRandomAccessThingTest {
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
-        RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].footerLen, false);
+        RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].headerLen, false);
         EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret);
         eraf.pwrite(0, buf, 0, buf.length);
         byte[] tmp = new byte[buf.length];
@@ -309,7 +309,7 @@ public class EncryptedRandomAccessThingTest {
         byte[] buf = new byte[4096];
         Random r = new Random(1267612);
         r.nextBytes(buf);
-        RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].footerLen, false);
+        RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].headerLen, false);
         EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret);
         eraf.pwrite(0, buf, 0, buf.length);
         byte[] tmp = new byte[buf.length];

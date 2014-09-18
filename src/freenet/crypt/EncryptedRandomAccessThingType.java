@@ -17,7 +17,7 @@ public enum EncryptedRandomAccessThingType {
     ChaCha256(2, 12, CryptByteBufferType.ChaCha256, MACType.HMACSHA256, 32);
 
     public final int bitmask;
-    public final int footerLen;//bytes
+    public final int headerLen;//bytes
     public final CryptByteBufferType encryptType;
     public final KeyType encryptKey;
     public final MACType macType;
@@ -40,7 +40,7 @@ public enum EncryptedRandomAccessThingType {
         this.macType = macType;
         this.macKey = macType.keyType;
         this.macLen = macLen;
-        this.footerLen = magAndVerLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
+        this.headerLen = magAndVerLen + (encryptKey.keySize >> 3)+ (encryptKey.ivSize >>3) + macLen;
     }
 
     /**

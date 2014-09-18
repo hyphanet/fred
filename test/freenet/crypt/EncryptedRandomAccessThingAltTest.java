@@ -29,7 +29,7 @@ public class EncryptedRandomAccessThingAltTest extends RandomAccessThingTestBase
     
     @Override
     protected RandomAccessThing construct(long size) throws IOException {
-        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing((int)(size+types[0].footerLen));
+        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing((int)(size+types[0].headerLen));
         try {
             return new EncryptedRandomAccessThing(types[0], barat, secret);
         } catch (GeneralSecurityException e) {
