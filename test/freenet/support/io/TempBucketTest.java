@@ -7,12 +7,16 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.Security;
 import java.util.Random;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import freenet.crypt.DummyRandomSource;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
@@ -22,6 +26,12 @@ import freenet.support.io.TempBucketFactory.TempBucket;
 public class TempBucketTest extends TestSuite {
 
     private static final long MIN_DISK_SPACE = 2*1024*1024;
+    
+    static final MasterSecret secret = new MasterSecret();
+    
+    static{
+        Security.addProvider(new BouncyCastleProvider());
+    }
     
 	public static class TempBucketMigrationTest extends TestCase {
 		private RandomSource strongPRNG = new DummyRandomSource(43210);
@@ -34,7 +44,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testRamLimitCreate() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, null);
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, secret);
 
 			int maxRamBucket = 128 / 16;
 
@@ -67,7 +77,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessConversionFactor() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, null);
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 128, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, secret);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -88,7 +98,7 @@ public class TempBucketTest extends TestSuite {
 		}
 
 		public void testWriteExcessLimit() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 17, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, null);
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 16, 17, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, secret);
 
 			TempBucket b = (TempBucket) tbf.makeBucket(16);
 			try {
@@ -108,7 +118,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// This CAN happen due to memory pressure.
 		public void testConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, null);
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, secret);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(64);
 			OutputStream os = bucket.getOutputStreamUnbuffered();
@@ -125,7 +135,7 @@ public class TempBucketTest extends TestSuite {
 		
 		// Do a bigger read, verify contents.
 		public void testBigConversionWhileReading() throws IOException {
-			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, null);
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false, MIN_DISK_SPACE, secret);
 			
 			TempBucket bucket = (TempBucket) tbf.makeBucket(2048);
 			OutputStream os = bucket.getOutputStreamUnbuffered();
@@ -155,7 +165,7 @@ public class TempBucketTest extends TestSuite {
 
 		public RealTempBucketTest_(int maxRamSize, int maxTotalRamSize, boolean encrypted) throws IOException {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
-			tbf = new TempBucketFactory(exec, fg, maxRamSize, maxTotalRamSize, strongPRNG, weakPRNG, encrypted, MIN_DISK_SPACE, null);
+			tbf = new TempBucketFactory(exec, fg, maxRamSize, maxTotalRamSize, strongPRNG, weakPRNG, encrypted, MIN_DISK_SPACE, secret);
 
 			canOverwrite = false;
 		}
@@ -189,25 +199,25 @@ public class TempBucketTest extends TestSuite {
 		}
 	}
 
-//	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest_ {
-//		public RealTempBucketTest_8_16_T() throws IOException {
-//			super(8, 16, true);
-//		}
-//	}
+	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest_ {
+		public RealTempBucketTest_8_16_T() throws IOException {
+			super(8, 16, true);
+		}
+	}
 
-//	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest_ {
-//		public RealTempBucketTest_64k_128k_T() throws IOException {
-//			super(64 * 1024, 128 * 1024, true);
-//		}
-//	}
+	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest_ {
+		public RealTempBucketTest_64k_128k_T() throws IOException {
+			super(64 * 1024, 128 * 1024, true);
+		}
+	}
 
     public TempBucketTest() {
 		super("TempBucketTest");
 		addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
 		addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
 		addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-//		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-//		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
+		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
+		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
 		addTest(new TestSuite(TempBucketMigrationTest.class));
 	}
 
@@ -216,8 +226,8 @@ public class TempBucketTest extends TestSuite {
 		suite.addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
 		suite.addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
 		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
-//		suite.addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
-//		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
+		suite.addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
+		suite.addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
 		suite.addTest(new TestSuite(TempBucketMigrationTest.class));
 		return suite;
 	}
