@@ -13,6 +13,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ClientSideFCPMessageHandler;
@@ -826,7 +827,23 @@ public final class FCPPluginClient {
      *             connection has been closed meanwhile.<br>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
      *             should then discard it and obtain a fresh one.
-     * @throws InterruptedException FIXME
+     * @throws InterruptedException
+     *             If another thread called {@link Thread#interrupt()} upon the thread which you
+     *             used to execute this function.<br>
+     *             This is a shutdown mechanism: You can use it to abort a call to this function
+     *             which is waiting for the timeout to expire.<br><br>
+     * 
+     *             If this happens even though you did not interrupt() yourself, you should
+     *             <b>not</b> swallow the InterruptedException, and especially <b>not</b> just loop
+     *             your thread to send the message again.<br>
+     *             Instead, consider it as a shutdown request from Freenet, and honour it by
+     *             terminating your thread quickly.<br><br>
+     * 
+     *             FIXME: Does fred call interrupt() upon all threads from the
+     *             {@link Node#executor} upon shutdown? And does it do that when only a plugin
+     *             is requested to be unloaded, not the complete node? If not, this class should
+     *             store a list of all threads which are executing this function, and call
+     *             interrupt() upon them during shutdown.
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
