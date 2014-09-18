@@ -317,7 +317,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     /**
      *  The Strings used to derive keys and ivs from the unencryptedBaseKey. 
      */
-    private enum kdfInput {
+    enum kdfInput {
         underlyingKey(),/** For deriving the key that will be used to encrypt the underlying RAT*/
         underlyingIV();/** For deriving the iv that will be used to encrypt the underlying RAT*/
         
