@@ -70,6 +70,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.ECDH;
 import freenet.crypt.EncryptingIoAdapter;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
@@ -1220,7 +1221,7 @@ public class Node implements TimeSkewDetectorCallback {
 		dbFileCrypt = userDir.file("node.db4o.crypt");
 
         byte[] clientCacheKey = null;
-
+        
         MasterKeys keys = null;
         for(int i=0;i<2; i++) {
 
@@ -1681,6 +1682,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// clientCore needs new load management and other settings from stats.
 		clientCore = new NodeClientCore(this, config, nodeConfig, installConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, databaseKey, db);
+		if(keys != null)
+		    clientCore.setupMasterSecret(keys);
 		toadlets.setCore(clientCore);
 
 		if (JVMVersion.isTooOld()) {
