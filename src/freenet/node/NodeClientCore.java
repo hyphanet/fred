@@ -1928,4 +1928,9 @@ public class NodeClientCore implements Persistable {
         return fcpPersistentRoot.getPersistentRequests();
     }
 
+    public void setupMasterSecret(MasterKeys keys) {
+        if(clientContext.getPersistentMasterSecret() == null)
+            clientContext.setPersistentMasterSecret(keys.getPersistentMasterSecret());
+    }
+
 }

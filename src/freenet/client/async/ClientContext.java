@@ -13,6 +13,7 @@ import freenet.client.InsertException;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.LinkFilterExceptionProvider;
 import freenet.clients.fcp.PersistentRequestRoot;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -78,6 +79,8 @@ public class ClientContext {
 	public transient final PersistentRequestRoot persistentRoot;
 	private transient FetchContext defaultPersistentFetchContext;
 	private transient InsertContext defaultPersistentInsertContext;
+	public transient final MasterSecret cryptoSecretTransient;
+	private transient MasterSecret cryptoSecretPersistent;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -118,6 +121,7 @@ public class ClientContext {
 		this.dummyJobRunner = new DummyJobRunner(mainExecutor, this);
 		this.defaultPersistentFetchContext = defaultPersistentFetchContext;
 		this.defaultPersistentInsertContext = defaultPersistentInsertContext;
+		this.cryptoSecretTransient = new MasterSecret();
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
@@ -130,6 +134,14 @@ public class ClientContext {
 		this.sskInsertSchedulerRT = starters.sskPutSchedulerRT;
 		this.chkInsertSchedulerRT = starters.chkPutSchedulerRT;
 		this.alerts = alerts;
+	}
+	
+	public synchronized void setPersistentMasterSecret(MasterSecret secret) {
+	    this.cryptoSecretPersistent = secret;
+	}
+	
+	public synchronized MasterSecret getPersistentMasterSecret() {
+	    return cryptoSecretPersistent;
 	}
 
 	public ClientRequestScheduler getSskFetchScheduler(boolean realTime) {

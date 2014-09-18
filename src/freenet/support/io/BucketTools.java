@@ -17,6 +17,9 @@ import java.util.Random;
 import freenet.support.math.MersenneTwister;
 
 import freenet.crypt.AEADCryptBucket;
+
+import freenet.client.async.ClientContext;
+import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -601,6 +604,8 @@ public class BucketTools {
             return new ReadOnlyRandomAccessThing(dis, fg, persistentFileTracker);
         case DelayedFreeRandomAccessThing.MAGIC:
             return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker);
+        case EncryptedRandomAccessThing.MAGIC:
+            return EncryptedRandomAccessThing.create(dis, context);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }

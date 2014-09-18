@@ -220,7 +220,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     }
 
     /** Check that the array section equals the read data, then write it and repeat the check. */
-    protected void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end, boolean readOnly) throws IOException {
+    public static void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end, boolean readOnly) throws IOException {
         int len = end - start;
         if(len == 0) return;
         byte[] tmp = new byte[len];

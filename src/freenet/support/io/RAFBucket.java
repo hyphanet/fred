@@ -16,7 +16,7 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     private final LockableRandomAccessThing underlying;
     final long size;
 
-    public RAFBucket(LockableRandomAccessThing underlying) {
+    public RAFBucket(LockableRandomAccessThing underlying) throws IOException {
         this.underlying = underlying;
         size = underlying.size();
     }

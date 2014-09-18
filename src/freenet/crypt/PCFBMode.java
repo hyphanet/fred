@@ -145,11 +145,7 @@ public class PCFBMode {
         return rv;
     }
 
-    /**
-     * NOTE: As a side effect, this will decrypt the data in the array.
-     */
-    //public synchronized byte[] blockDecipher(byte[] buf, int off, int len) {
-    public byte[] blockDecipher(byte[] buf, int off, int len) {
+    public void blockDecipher(byte[] buf, int off, int len) {
 		final int feedback_length = feedback_register.length;
 		if (registerPointer != 0) {
 			/* handle first incomplete feedback run */
@@ -160,7 +156,7 @@ public class PCFBMode {
                 buf[off++] ^= feedback_register[registerPointer];
                 feedback_register[registerPointer++] = b;
             }
-			if (len == 0) return buf;
+			if (len == 0) return;
 			refillBuffer();
 		}
 		// assert(registerPointer == 0);
@@ -182,7 +178,7 @@ public class PCFBMode {
 			buf[off++] ^= feedback_register[registerPointer];
 			feedback_register[registerPointer++] = b;
 		}
-        return buf;
+        return;
     }
 
     /**
@@ -199,18 +195,14 @@ public class PCFBMode {
         return feedback_register[registerPointer++] & 0xff;
     }
 
-    /**
-     * NOTE: As a sideeffect, this will encrypt the data in the array.
-     */
-    //public synchronized byte[] blockEncipher(byte[] buf, int off, int len) {
-    public byte[] blockEncipher(byte[] buf, int off, int len) {
+    public void blockEncipher(byte[] buf, int off, int len) {
 		final int feedback_length = feedback_register.length;
 		if (registerPointer != 0) {
 			/* handle first incomplete feedback run */
 			int l = Math.min(feedback_length - registerPointer, len);
 			for(len -= l; l-- > 0; off++)
                 buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
-			if (len == 0) return buf;
+			if (len == 0) return;
 			refillBuffer();
 		}
 		// assert(registerPointer == 0);
@@ -227,7 +219,7 @@ public class PCFBMode {
 			/* handle final partial block */
 			buf[off] = (feedback_register[registerPointer++] ^= buf[off]);
 		}
-        return buf;
+        return;
     }
         
     // Refills the encrypted buffer with data.

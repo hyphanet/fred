@@ -4734,6 +4734,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+        clientCore.setupMasterSecret(keys);
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {
