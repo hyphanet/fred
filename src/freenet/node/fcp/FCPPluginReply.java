@@ -22,7 +22,14 @@ import freenet.support.api.Bucket;
  * they were only allowed to send messages as reply to an original message of the client. The new
  * API allows that.<br>
  * To stay backward compatible, it was decided to keep the raw network message name "FCPPluginReply"
- * as is - and thus also the name of this class.<br><br>
+ * as is - and thus also the name of this class.<br>
+ * FIXME: To resolve this, we could rename the class to FCPPluginServerMessage: It will always
+ * represent a message sent by the server, so the name fits. Then please move the above
+ * documentation to {@link #NAME} because the on-network name should stay as is for backward
+ * compatibility. Also, there maybe add a FIXME which asks to find out whether it would technically
+ * be possible to add a second name to the on-network data so we can get rid of the old name after
+ * a transition period.
+ * <br><br>
  * 
  * <b>ATTENTION:</b> There is a similar class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
  * which serves as a container of FCP plugin messages which are produced and consumed by the
