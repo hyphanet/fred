@@ -25,6 +25,8 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 /**
@@ -262,9 +264,6 @@ public final class FCPPluginClient {
      *   reply to be shipped to the message handler interface of the server/client instead of
      *   being returned by sendSynchronous() though, which could confuse it. But in that case
      *   it will probably just log an error message and continue working as normal.
-     *   FIXME: That should be mentioned in the JavaDoc of sendSynchronous(). Especially should
-     *   it be stressed that it is normal operation of sendSynchronous() that the message handler
-     *   function will <i>not</i> be called because sendSynchronous() returns the reply already.
      *   <br><br>
      * 
      * TODO: Optimization: We do not need the order of the map, and thus this could be a HashMap
@@ -713,14 +712,7 @@ public final class FCPPluginClient {
      *   upon certain error conditions, for example if the timeout you specify when calling this
      *   function expires before the reply arrives. This is not guaranteed though.<br>
      * - Once this function returns without throwing, it is <b>guaranteed</b> that the message has
-     *   arrived at the remote side.<br>
-     *   NOTICE: This is only true as long the message which you passed to this function does
-     *   contain a message identifier which does not collide with one of another message.<br>
-     *   To prevent this, you <b>must</b> use the constructor
-     *   {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet,
-     *   freenet.support.api.Bucket)} and do not call this function twice upon the same message.<br>
-     *   If you do not follow this rule, this function might return the reply to the colliding
-     *   message instead of the reply to your message.<br><br>
+     *   arrived at the remote side.<br><br>
      * 
      * ATTENTION: This function can cause the current thread to block for a long time, while
      * bypassing the thread limit. Therefore, only use this if the desired operation at the remote
@@ -738,6 +730,30 @@ public final class FCPPluginClient {
      * the code.<br>
      * In addition to only using synchronous calls when absolutely necessary, please make sure to
      * set a timeout parameter which is as small as possible.<br><br>
+     * 
+     * ATTENTION: This function can only work properly as long the message which you passed to this
+     * function does contain a message identifier which does not collide with one of another
+     * message.<br>
+     * To ensure this, you <b>must</b> use the constructor
+     * {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet, Bucket)} and do
+     * not call this function twice upon the same message.<br>
+     * If you do not follow this rule and use colliding message identifiers, there might be side
+     * effects such as:<br>
+     * - This function might return the reply to the colliding message instead of the reply to
+     *   your message. Notice that this implicitly means that you cannot be sure anymore that
+     *   a message was delivered successfully if this function does not throw.<br>
+     * - The reply might be passed to the {@link FredPluginFCPMessageHandler} instead of being
+     *   returned from this function.<br>
+     * Please notice that both these side effects can also happen if the remote partner erroneously
+     * sends multiple replies to the same message identifier.<br>
+     * As long as the remote side is implemented using FCPPluginClient as well, and uses it
+     * properly, this shouldn't happen though. Thus in general, you should assume that the reply
+     * which this function returns <b>is</b> the right one, and your
+     * {@link FredPluginFCPMessageHandler} should just drop reply messages which were not expected
+     * and log them as at {@link LogLevel#WARNING}. The information here was merely provided to help
+     * you with debugging the cause of these events, <b>not</b> to make you change your code
+     * to assume that sendSynchronous does not work. For clean code, please write it in a way which
+     * assumes that the function works properly.<br><br>
      * 
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
