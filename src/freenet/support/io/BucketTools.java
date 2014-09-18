@@ -615,6 +615,8 @@ public class BucketTools {
             return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         case EncryptedRandomAccessThing.MAGIC:
             return EncryptedRandomAccessThing.create(dis, fg, persistentFileTracker, masterSecret);
+        case TrivialPaddedRandomAccessThing.MAGIC:
+            return new TrivialPaddedRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }
