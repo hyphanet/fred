@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -19,8 +20,11 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Fields;
+import freenet.support.Logger;
+import freenet.support.io.BucketTools;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 /**
  * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
  * SkippingStreamCipher. 
@@ -321,6 +325,8 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     public RAFLock lockOpen() throws IOException {
         return underlyingThing.lockOpen();
     }
+    
+    public static final int MAGIC = 0x39ea94c2;
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
@@ -329,7 +335,27 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
 
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
-        throw new UnsupportedOperationException();
+        dos.writeInt(MAGIC);
+        dos.writeUTF(type.name());
+        underlyingThing.storeTo(dos);
+    }
+
+    public static LockableRandomAccessThing create(DataInputStream dis, ClientContext context) 
+    throws IOException, StorageFormatException, ResumeFailedException {
+        String t = dis.readUTF();
+        EncryptedRandomAccessThingType type;
+        try {
+            type = EncryptedRandomAccessThingType.valueOf(t);
+        } catch (IllegalArgumentException e) {
+            throw new StorageFormatException("Unknown EncryptedRandomAccessThingType");
+        }
+        LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, context);
+        try {
+            return new EncryptedRandomAccessThing(type, underlying, context.getPersistentMasterSecret());
+        } catch (GeneralSecurityException e) {
+            Logger.error(EncryptedRandomAccessThing.class, "Crypto error resuming: "+e, e);
+            throw new ResumeFailedException(e);
+        }
     }
 
 }

@@ -18,6 +18,8 @@ import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
+import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -524,6 +526,19 @@ public class BucketTools {
             FileUtil.fill(os, length);
         } finally {
             if(os != null) os.close();
+        }
+    }
+
+    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, ClientContext context) 
+    throws IOException, StorageFormatException, ResumeFailedException {
+        int magic = dis.readInt();
+        switch(magic) {
+        case RandomAccessFileWrapper.MAGIC:
+            return new RandomAccessFileWrapper(dis);
+        case EncryptedRandomAccessThing.MAGIC:
+            return EncryptedRandomAccessThing.create(dis, context);
+        default:
+            throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }
     }
 
