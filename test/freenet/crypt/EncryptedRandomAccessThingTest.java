@@ -5,11 +5,17 @@ package freenet.crypt;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Security;
+import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Rule;
@@ -17,6 +23,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.FileUtil;
+import freenet.support.io.RandomAccessFileWrapper;
 
 public class EncryptedRandomAccessThingTest {
     private final static EncryptedRandomAccessThingType[] types = 
@@ -243,5 +251,5 @@ public class EncryptedRandomAccessThingTest {
                     + " be written to.");
         erat.pwrite(0, result, 0, 20);
     }
-
+    
 }
