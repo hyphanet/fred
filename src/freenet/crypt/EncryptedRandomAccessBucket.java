@@ -1,6 +1,9 @@
 package freenet.crypt;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
@@ -19,6 +22,7 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessThing.kdfInput;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -26,6 +30,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NullInputStream;
+import freenet.support.io.ResumeFailedException;
 
 /** A Bucket encrypted using the same format as an EncryptedRandomAccessThing, which can therefore
  * be converted easily when needed.
@@ -234,12 +239,12 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket {
     }
     
     @Override
-    public OutputStream getOutputStream() throws IOException {
+    public OutputStream getOutputStreamUnbuffered() throws IOException {
         if(isFreed){
             throw new IOException("This RandomAccessThing has already been closed. This should not"
                     + " happen.");
         }
-        OutputStream uos = underlying.getOutputStream();
+        OutputStream uos = underlying.getOutputStreamUnbuffered();
         try {
             return new MyOutputStream(uos, setup(uos));
         } catch (GeneralSecurityException e) {
@@ -282,13 +287,13 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket {
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public InputStream getInputStreamUnbuffered() throws IOException {
         if(size() == 0) return new NullInputStream();
         if(isFreed){
             throw new IOException("This RandomAccessThing has already been closed. This should not"
                     + " happen.");
         }
-        InputStream is = underlying.getInputStream();
+        InputStream is = underlying.getInputStreamUnbuffered();
         try {
             return new MyInputStream(is, setup(is));
         } catch (GeneralSecurityException e) {
@@ -344,6 +349,16 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket {
             Logger.error(this, "Unable to convert encrypted bucket: "+e, e);
             throw new IOException(e);
         }
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        return new BufferedOutputStream(getOutputStreamUnbuffered());
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return new BufferedInputStream(getInputStreamUnbuffered());
     }
 
 }
