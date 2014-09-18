@@ -10,6 +10,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.Security;
@@ -188,5 +190,42 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         is.close();
         restored.free();
     }
-
+    
+    @Test
+    public void testSerialize() throws IOException, StorageFormatException, ResumeFailedException, GeneralSecurityException, ClassNotFoundException {
+        File tempFile = File.createTempFile("test-storeto", ".tmp", base);
+        byte[] buf = new byte[4096];
+        Random r = new Random(1267612);
+        r.nextBytes(buf);
+        FileBucket fb = new FileBucket(tempFile, false, false, false, false, true);
+        EncryptedRandomAccessBucket erab = new EncryptedRandomAccessBucket(types[0], fb, secret);
+        OutputStream os = erab.getOutputStream();
+        os.write(buf, 0, buf.length);
+        os.close();
+        InputStream is = erab.getInputStream();
+        byte[] tmp = new byte[buf.length];
+        is.read(tmp, 0, buf.length);
+        is.close();
+        assertArrayEquals(buf, tmp);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(erab);
+        oos.close();
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
+        ClientContext context = new ClientContext(0, 0, null, null, null, null, null, null, null, 
+                null, null, r, null, null, null, null, null, null, null, null, null, null, null, null);
+        context.setPersistentMasterSecret(secret);
+        ObjectInputStream ois = new ObjectInputStream(dis);
+        EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) ois.readObject();
+        restored.onResume(context);
+        assertEquals(buf.length, restored.size());
+        //assertEquals(erab, restored);
+        tmp = new byte[buf.length];
+        is = erab.getInputStream();
+        is.read(tmp, 0, buf.length);
+        assertArrayEquals(buf, tmp);
+        is.close();
+        restored.free();
+    }
+    
 }

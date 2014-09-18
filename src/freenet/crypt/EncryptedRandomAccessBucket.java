@@ -10,6 +10,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -40,7 +41,7 @@ import freenet.support.io.StorageFormatException;
  * be converted easily when needed.
  * @author toad
  */
-public class EncryptedRandomAccessBucket implements RandomAccessBucket {
+public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializable {
     
     private static final long serialVersionUID = 1L;
     
