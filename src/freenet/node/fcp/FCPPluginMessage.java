@@ -21,10 +21,9 @@ import freenet.support.SimpleFieldSet;
  * It is the inverse of {@link FCPPluginReply} which produces the on-network format of server
  * to client messages.<br>
  * 
- * <b>ATTENTION:</b> There is a similar class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
- * which serves as a container of FCP plugin messages which are produced and consumed by the
- * actual server and client plugins. Consider this class here as an internal representation of
- * FCP plugin messages, while the other one is the external representation.
+ * (There is a class {@link FredPluginFCPMessageHandler.FCPPluginMessage} with the same name.
+ * Consider that one as the external representation used by actual server/client plugin
+ * implementations, while this class here is the internal representation used for parsing.)
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
  * @author saces

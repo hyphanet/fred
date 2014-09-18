@@ -51,6 +51,10 @@ public interface FredPluginFCPMessageHandler {
 
     /**
      * Container class for both incoming and outgoing FCP messages.
+     * 
+     * (There is a class {@link freenet.node.fcp.FCPPluginMessage} with the same name.
+     * Consider that one as the internal representation used for parsing, while this class here is
+     * the external representation to be used by actual server/client plugin implementations.)
      */
     public final class FCPPluginMessage {
         public static enum ClientPermissions {
