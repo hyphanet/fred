@@ -327,14 +327,12 @@ public class EncryptedRandomAccessThingTest {
         EncryptedRandomAccessThing restored = (EncryptedRandomAccessThing) ois.readObject();
         restored.onResume(context);
         assertEquals(buf.length, restored.size());
-        //assertEquals(rafw, restored);
+        assertEquals(eraf, restored);
         tmp = new byte[buf.length];
         restored.pread(0, tmp, 0, buf.length);
         assertArrayEquals(buf, tmp);
         restored.close();
         restored.free();
     }
-    
-
     
 }
