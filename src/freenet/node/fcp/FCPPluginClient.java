@@ -522,6 +522,14 @@ public final class FCPPluginClient {
      *            different thread</b>, so it should not cause deadlocks on its own, but you might
      *            produce deadlocks with your own thread synchronization measures.<br><br>
      * 
+     * @param message
+     *            You <b>must not</b> send the same message twice: This can break
+     *            {@link #sendSynchronous(SendDirection,
+     *            FredPluginFCPMessageHandler.FCPPluginMessage, long)}.<br>
+     *            To ensure this, always construct a fresh FCPPluginMessage object when re-sending
+     *            a message. If you use the constructor which allows specifying your own identifier,
+     *            always generate a fresh, random identifier.<br><br>
+     * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
      *             This FCPPluginClient <b>should be</b> considered as dead once this happens, you
