@@ -717,7 +717,12 @@ public final class FCPPluginClient {
      *   upon certain error conditions, for example if the timeout you specify when calling this
      *   function expires before the reply arrives. This is not guaranteed though.<br>
      * - Once this function returns without throwing, it is <b>guaranteed</b> that the message has
-     *   arrived at the remote side.<br><br>
+     *   arrived at the remote side.<br>
+     * - The <b>order</b> of messages can be preserved: If you call sendSynchronous() twice in a
+     *   row, the second call cannot execute before the first one has returned, and the returning
+     *   of the first call guarantees that the first message was delivered already.<br>
+     *   Regular send() calls deploy each message in a thread. This means that the order of delivery
+     *   can be different than the order of sending.<br><br>
      * 
      * ATTENTION: This function can cause the current thread to block for a long time, while
      * bypassing the thread limit. Therefore, only use this if the desired operation at the remote
@@ -726,6 +731,7 @@ public final class FCPPluginClient {
      * - An guarantee that the message arrived at the remote side.<br>
      * - An indication of whether the operation requested by the message succeeded.<br>
      * - The reply to the message.<br>
+     * - A guaranteed order of arrival of messages at the remote side.<br>
      * A typical example for a place where this is needed is a user interface which has a user
      * click a button and want to see the result of the operation as soon as possible. A detailed
      * example is given at the documentation of the return value below.<br>
