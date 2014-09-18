@@ -28,9 +28,13 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.io.BucketTools;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.NullInputStream;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
+import freenet.support.io.StorageFormatException;
 
 /** A Bucket encrypted using the same format as an EncryptedRandomAccessThing, which can therefore
  * be converted easily when needed.
@@ -364,6 +368,23 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket {
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
         baseSetup(context.getPersistentMasterSecret());
+    }
+    
+    public static final int MAGIC = 0xd8ba4c7e;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeInt(type.bitmask);
+        underlying.storeTo(dos);
+    }
+    
+    public EncryptedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg,
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey2) throws IOException, ResumeFailedException, StorageFormatException {
+        type = EncryptedRandomAccessThingType.getByBitmask(dis.readInt());
+        if(type == null) throw new ResumeFailedException("Unknown EncryptedRandomAccessBucket type");
+        underlying = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey2);
+        this.baseSetup(masterKey2);
     }
 
 }

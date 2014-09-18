@@ -19,6 +19,7 @@ import freenet.support.math.MersenneTwister;
 import freenet.crypt.AEADCryptBucket;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.SHA256;
@@ -589,6 +590,8 @@ public class BucketTools {
             return new TrivialPaddedBucket(dis, fg, persistentFileTracker, masterKey);
         case RAFBucket.MAGIC:
             return new RAFBucket(dis, fg, persistentFileTracker, masterKey);
+        case EncryptedRandomAccessBucket.MAGIC:
+            return new EncryptedRandomAccessBucket(dis, fg, persistentFileTracker, masterKey);
         default:
             throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }
