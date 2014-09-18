@@ -86,7 +86,7 @@ import freenet.support.compress.RealCompressor;
 import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
-import freenet.support.io.MaybeEncryptingRandomAccessThingFactory;
+import freenet.support.io.MaybeEncryptedRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PooledFileRandomAccessThingFactory;
@@ -137,7 +137,7 @@ public class NodeClientCore implements Persistable {
 	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	private final DiskSpaceCheckingRandomAccessThingFactory persistentDiskChecker;
-	public final MaybeEncryptingRandomAccessThingFactory persistentRAFFactory;
+	public final MaybeEncryptedRandomAccessThingFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
@@ -379,7 +379,7 @@ public class NodeClientCore implements Persistable {
 		persistentDiskChecker = 
 		    new DiskSpaceCheckingRandomAccessThingFactory(raff, persistentTempDir.dir(), 
 		            minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
-		persistentRAFFactory = new MaybeEncryptingRandomAccessThingFactory(persistentDiskChecker);
+		persistentRAFFactory = new MaybeEncryptedRandomAccessThingFactory(persistentDiskChecker);
 		persistentTempBucketFactory.setDiskSpaceChecker(persistentDiskChecker);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
