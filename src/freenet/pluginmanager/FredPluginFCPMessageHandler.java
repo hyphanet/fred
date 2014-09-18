@@ -283,14 +283,17 @@ public interface FredPluginFCPMessageHandler {
             return new FCPPluginMessage(permissions, identifier, parameters, data, success,
                 errorCode, errorMessage);
         }
-        
-        /**
-         * FIXME: Implement this. Will be used by {@link FCPPluginClient} to log messages which
-         * failed to send.
-         */
+
         @Override
         public String toString() {
-            return super.toString();
+            return super.toString() +
+                " (permissions: " + permissions +
+                "; identifier: " + identifier +
+                "; parameters: " + parameters +
+                "; data: " + data +
+                "; success: " + success +
+                "; errorCode: " + errorCode +
+                "; errorMessage: " + errorMessage + ")";
         }
     }
 
