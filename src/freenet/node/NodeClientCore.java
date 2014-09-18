@@ -40,6 +40,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -162,6 +163,7 @@ public class NodeClientCore implements Persistable {
 	/** How much disk space must be free when starting a quick but disk-heavy job such as 
 	 * completing a download? */
 	private long minDiskFreeShortTerm;
+	private final MasterSecret cryptoSecretTransient;
 
 	public transient final ClientContext clientContext;
 
@@ -334,7 +336,8 @@ public class NodeClientCore implements Persistable {
         
         initDiskSpaceLimits(nodeConfig, sortOrder);
         
-        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm);
+        cryptoSecretTransient = new MasterSecret();
+        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm, cryptoSecretTransient);
 
         bandwidthStatsPutter = new PersistentStatsPutter();
         
@@ -447,7 +450,7 @@ public class NodeClientCore implements Persistable {
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
 		        persistentRAFFactory, tempBucketFactory.getUnderlyingRAFFactory(), persistentDiskChecker,
-		        compressor, storeChecker, fcpPersistentRoot, toadlets, defaultFetchContext, defaultInsertContext);
+		        compressor, storeChecker, fcpPersistentRoot, cryptoSecretTransient, toadlets, defaultFetchContext, defaultInsertContext);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);

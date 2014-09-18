@@ -97,7 +97,7 @@ public class ClientContext {
 			Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
 			FileRandomAccessThingFactory fileRAFTransient, FileRandomAccessThingFactory fileRAFPersistent,
-			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot,
+			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot, MasterSecret cryptoSecretTransient,
 			LinkFilterExceptionProvider linkFilterExceptionProvider,
 			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
 		this.bootID = bootID;
@@ -127,7 +127,7 @@ public class ClientContext {
 		this.dummyJobRunner = new DummyJobRunner(mainExecutor, this);
 		this.defaultPersistentFetchContext = defaultPersistentFetchContext;
 		this.defaultPersistentInsertContext = defaultPersistentInsertContext;
-		this.cryptoSecretTransient = new MasterSecret();
+		this.cryptoSecretTransient = cryptoSecretTransient;
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {

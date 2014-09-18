@@ -68,9 +68,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
 	private final Executor executor;
-	private final Object encryptLock = new Object();
 	private volatile boolean reallyEncrypt;
-	private MasterSecret secret;
+	private final MasterSecret secret;
 	
 	/** How big can the defaultSize be for us to consider using RAMBuckets? */
 	private long maxRAMBucketSize;
@@ -526,7 +525,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	// Storage accounting disabled by default.
-	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt, long minDiskSpace) {
+	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt, long minDiskSpace, MasterSecret masterSecret) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
@@ -539,12 +538,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.minDiskSpace = minDiskSpace;
 		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
 		        filenameGenerator.getDir(), minDiskSpace - maxRamUsed);
-	}
-	
-	public void setMasterSecret(MasterSecret secret) {
-	    synchronized(encryptLock) {
-	        this.secret = secret;
-	    }
+		this.secret = masterSecret;
 	}
 	
 	@Override
@@ -586,9 +580,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public void setEncryption(boolean value) {
-	    synchronized(encryptLock) {
-	        reallyEncrypt = value;
-	    }
+	    reallyEncrypt = value;
 		underlyingDiskRAFFactory.enableCrypto(value);
 	}
 	
@@ -598,9 +590,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public boolean isEncrypting() {
-	    synchronized(encryptLock) {
-	        return reallyEncrypt;
-	    }
+	    return reallyEncrypt;
 	}
 
 	static final double MAX_USAGE_LOW = 0.8;
@@ -775,10 +765,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private RandomAccessBucket _makeFileBucket() throws IOException {
 		RandomAccessBucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
-		synchronized(encryptLock) {
-		    if(reallyEncrypt) {
-		        return new EncryptedRandomAccessBucket(CRYPT_TYPE, fileBucket, secret);
-		    }
+		if(reallyEncrypt) {
+		    return new EncryptedRandomAccessBucket(CRYPT_TYPE, fileBucket, secret);
 		}
 		return fileBucket;
 	}
