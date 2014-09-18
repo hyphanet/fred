@@ -59,7 +59,7 @@ public class EncryptedRandomAccessThingTest {
         for(EncryptedRandomAccessThingType type: types){
             byte[] bytes = new byte[100];
             ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-            EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret);
+            EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret, true);
             erat.pwrite(0, message, 0, message.length);
             byte[] result = new byte[message.length];
             erat.pread(0, result, 0, result.length);
@@ -73,11 +73,11 @@ public class EncryptedRandomAccessThingTest {
         for(EncryptedRandomAccessThingType type: types){
             byte[] bytes = new byte[100];
             ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-            EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret);
+            EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(type, barat, secret, true);
             erat.pwrite(0, message, 0, message.length);
             erat.close();
             ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
-            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat2, secret);
+            EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(type, barat2, secret, false);
             byte[] result = new byte[message.length];
             erat2.pread(0, result, 0, result.length);
             erat2.close();
@@ -89,14 +89,14 @@ public class EncryptedRandomAccessThingTest {
     public void testWrongERATType() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         thrown.expect(IOException.class);
         thrown.expectMessage("Version of the underlying RandomAccessThing is incompatible with "
                 + "this ERATType");
         EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[1], barat2, 
-                secret);
+                secret, false);
     }
     
     @Test
@@ -107,34 +107,34 @@ public class EncryptedRandomAccessThingTest {
         thrown.expect(IOException.class);
         thrown.expectMessage("Underlying RandomAccessThing is not long enough to include the "
                 + "footer.");
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
     }
     
     @Test
     public void testWrongMagic() throws IOException, GeneralSecurityException{
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         byte[] magic = ByteBuffer.allocate(8).putLong(falseMagic).array();
         barat2.pwrite(types[0].headerLen-8, magic, 0, 8);
         thrown.expect(IOException.class);
         thrown.expectMessage("This is not an EncryptedRandomAccessThing!");
-        EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[0], barat2, secret);
+        EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[0], barat2, secret, false);
     }
     
     @Test
     public void testWrongMasterSecret() throws IOException, GeneralSecurityException{
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         thrown.expect(GeneralSecurityException.class);
         thrown.expectMessage("MAC is incorrect");
         EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[0], barat2, 
-                new MasterSecret());
+                new MasterSecret(), false);
     }
     
     @Test (expected = NullPointerException.class)
@@ -142,21 +142,21 @@ public class EncryptedRandomAccessThingTest {
             throws GeneralSecurityException, IOException {
         byte[] bytes = new byte[10];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(null, barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(null, barat, secret, true);
     }
     
     @Test (expected = NullPointerException.class)
     public void testEncryptedRandomAccessThingNullByteArray() 
             throws GeneralSecurityException, IOException {
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(null);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
     }
     
     @Test (expected = NullPointerException.class)
     public void testEncryptedRandomAccessThingNullBARAT() 
             throws GeneralSecurityException, IOException {
         ByteArrayRandomAccessThing barat = null;
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
     }
     
     @Test (expected = NullPointerException.class)
@@ -164,14 +164,14 @@ public class EncryptedRandomAccessThingTest {
             throws GeneralSecurityException, IOException {
         byte[] bytes = new byte[10];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, null);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, null, true);
     }
 
     @Test
     public void testSize() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         assertEquals(erat.size(), barat.size()-types[0].headerLen);
     }
 
@@ -179,7 +179,7 @@ public class EncryptedRandomAccessThingTest {
     public void testPreadFileOffsetTooSmall() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         byte[] result = new byte[20];
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Cannot read before zero");
@@ -190,7 +190,7 @@ public class EncryptedRandomAccessThingTest {
     public void testPreadFileOffsetTooBig() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         int len = 20;
         byte[] result = new byte[len];
         int offset = 100;
@@ -204,7 +204,7 @@ public class EncryptedRandomAccessThingTest {
     public void testPwriteFileOffsetTooSmall() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         byte[] result = new byte[20];
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Cannot read before zero");
@@ -215,7 +215,7 @@ public class EncryptedRandomAccessThingTest {
     public void testPwriteFileOffsetTooBig() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         int len = 20;
         byte[] result = new byte[len];
         int offset = 100;
@@ -229,7 +229,7 @@ public class EncryptedRandomAccessThingTest {
     public void testClose() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         erat.close();
     }
@@ -238,7 +238,7 @@ public class EncryptedRandomAccessThingTest {
     public void testClosePread() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         byte[] result = new byte[20];
         thrown.expect(IOException.class);
@@ -251,7 +251,7 @@ public class EncryptedRandomAccessThingTest {
     public void testClosePwrite() throws IOException, GeneralSecurityException {
         byte[] bytes = new byte[100];
         ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing(bytes);
-        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret);
+        EncryptedRandomAccessThing erat = new EncryptedRandomAccessThing(types[0], barat, secret, true);
         erat.close();
         byte[] result = new byte[20];
         thrown.expect(IOException.class);
@@ -279,7 +279,7 @@ public class EncryptedRandomAccessThingTest {
         Random r = new Random(1267612);
         r.nextBytes(buf);
         RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].headerLen, false);
-        EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret);
+        EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret, true);
         eraf.pwrite(0, buf, 0, buf.length);
         byte[] tmp = new byte[buf.length];
         eraf.pread(0, tmp, 0, buf.length);
@@ -310,7 +310,7 @@ public class EncryptedRandomAccessThingTest {
         Random r = new Random(1267612);
         r.nextBytes(buf);
         RandomAccessFileWrapper rafw = new RandomAccessFileWrapper(tempFile, buf.length+types[0].headerLen, false);
-        EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret);
+        EncryptedRandomAccessThing eraf = new EncryptedRandomAccessThing(types[0], rafw, secret, true);
         eraf.pwrite(0, buf, 0, buf.length);
         byte[] tmp = new byte[buf.length];
         eraf.pread(0, tmp, 0, buf.length);

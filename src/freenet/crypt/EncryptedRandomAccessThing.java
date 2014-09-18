@@ -65,19 +65,21 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      * @param underlyingThing The underlying RAT that will be storing the data. Must be larger than
      * the footer size specified in type. 
      * @param masterKey The MasterSecret that will be used to derive various keys. 
+     * @param newFile If true, treat it as a new file, and writer a header. If false, the ERAT must 
+     * already have been initialised.
      * @throws IOException
      * @throws GeneralSecurityException
      */
     public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
-            LockableRandomAccessThing underlyingThing, MasterSecret masterKey) throws IOException, 
+            LockableRandomAccessThing underlyingThing, MasterSecret masterKey, boolean newFile) throws IOException, 
             GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
         
-        setup(masterKey);
+        setup(masterKey, newFile);
     }
     
-    private void setup(MasterSecret masterKey) throws IOException, GeneralSecurityException {
+    private void setup(MasterSecret masterKey, boolean newFile) throws IOException, GeneralSecurityException {
         this.cipherRead = this.type.get();
         this.cipherWrite = this.type.get();
         
@@ -102,17 +104,16 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         offset += 4;
         long magic = ByteBuffer.wrap(header, offset, 8).getLong();
 
-        if(END_MAGIC != magic && magic != 0){
+        if(!newFile && END_MAGIC != magic) {
         	throw new IOException("This is not an EncryptedRandomAccessThing!");
         }
 
         version = type.bitmask;
-        if(magic == 0){
+        if(newFile) {
             this.headerEncIV = KeyGenUtils.genIV(type.encryptType.ivSize).getIV();
             this.unencryptedBaseKey = KeyGenUtils.genSecretKey(type.encryptKey);
         	writeHeader();
-        }
-        else{
+        } else {
         	if(readVersion != version){
         		throw new IOException("Version of the underlying RandomAccessThing is "
         				+ "incompatible with this ERATType");
@@ -339,7 +340,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     public void onResume(ClientContext context) throws ResumeFailedException {
         underlyingThing.onResume(context);
         try {
-            setup(context.getPersistentMasterSecret());
+            setup(context.getPersistentMasterSecret(), false);
         } catch (IOException e) {
             Logger.error(this, "Disk I/O error resuming: "+e, e);
             throw new ResumeFailedException(e);
@@ -367,7 +368,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         }
         LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, context);
         try {
-            return new EncryptedRandomAccessThing(type, underlying, context.getPersistentMasterSecret());
+            return new EncryptedRandomAccessThing(type, underlying, context.getPersistentMasterSecret(), false);
         } catch (GeneralSecurityException e) {
             Logger.error(EncryptedRandomAccessThing.class, "Crypto error resuming: "+e, e);
             throw new ResumeFailedException(e);
