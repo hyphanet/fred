@@ -137,7 +137,7 @@ public class NodeClientCore implements Persistable {
 	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	private final DiskSpaceCheckingRandomAccessThingFactory persistentDiskChecker;
-	public final LockableRandomAccessThingFactory persistentRAFFactory;
+	public final MaybeEncryptingRandomAccessThingFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
@@ -237,6 +237,7 @@ public class NodeClientCore implements Persistable {
 				if (get().equals(val) || (persistentTempBucketFactory == null))
 					        return;
 				persistentTempBucketFactory.setEncryption(val);
+                persistentRAFFactory.setEncryption(val);
 			}
 		});
 
@@ -479,6 +480,7 @@ public class NodeClientCore implements Persistable {
 					        persistentTempBucketFactory.setEncryption(false);
 					    }
 					}
+					persistentRAFFactory.setEncryption(false);
 				} else { // newLevel >= PHYSICAL_THREAT_LEVEL.NORMAL
 					if(!tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(true);
@@ -488,6 +490,7 @@ public class NodeClientCore implements Persistable {
 					        persistentTempBucketFactory.setEncryption(true);
 					    }
 					}
+					persistentRAFFactory.setEncryption(true);
 				}
                 if(clientLayerPersister.hasStarted()) {
                     try {
