@@ -5,11 +5,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * A bucket that stores data in the memory.
@@ -18,10 +20,12 @@ import freenet.support.api.Bucket;
  * 
  * @author oskar
  */
-public class ArrayBucket implements Bucket {
-	private volatile byte[] data;
+public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
+    private static final long serialVersionUID = 1L;
+    private volatile byte[] data;
 	private String name;
 	private boolean readOnly;
+	private boolean freed;
 
 	public ArrayBucket() {
 		this("ArrayBucket");
@@ -40,11 +44,13 @@ public class ArrayBucket implements Bucket {
 	@Override
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
+		if(freed) throw new IOException("Already fred");
 		return new ArrayBucketOutputStream();
 	}
-
+	
 	@Override
-	public InputStream getInputStream() {
+	public InputStream getInputStream() throws IOException {
+        if(freed) throw new IOException("Already fred");
 		return new ByteArrayInputStream(data);
 	}
 
@@ -92,7 +98,8 @@ public class ArrayBucket implements Bucket {
 
 	@Override
 	public void free() {
-		data = new byte[0];
+	    freed = true;
+		data = null;
 		// Not much else we can do.
 	}
 
@@ -101,21 +108,29 @@ public class ArrayBucket implements Bucket {
 		int size = (int)sz;
 		return Arrays.copyOf(data, size);
 	}
-
-	@Override
-	public void storeTo(ObjectContainer container) {
-		container.store(data);
-		container.store(this);
-	}
-
-	@Override
-	public void removeFrom(ObjectContainer container) {
-		container.delete(data);
-		container.delete(this);
-	}
+	
+    @Override
+    public void storeTo(ObjectContainer container) {
+        container.store(data);
+        container.store(this);
+    }
+    
+    @Override
+    public void removeFrom(ObjectContainer container) {
+        container.delete(data);
+        container.delete(this);
+    }
 
 	@Override
 	public Bucket createShadow() {
 		return null;
 	}
+
+    @Override
+    public LockableRandomAccessThing toRandomAccessThing() {
+        readOnly = true;
+        LockableRandomAccessThing raf = new ByteArrayRandomAccessThing(data, 0, data.length, true);
+        return raf;
+    }
+
 }
