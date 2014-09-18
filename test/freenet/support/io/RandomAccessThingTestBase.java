@@ -196,12 +196,12 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     public void testArray() throws IOException {
         Random r = new Random(21162506);
         for(int size : sizeList)
-            innerTestArray(size, r);
+            innerTestArray(size, r, false);
     }
     
     /** Create an array, fill it with random numbers, write it sequentially to the 
      * RandomAccessThing, then read randomly and compare. */
-    protected void innerTestArray(int len, Random r) throws IOException {
+    protected void innerTestArray(int len, Random r, boolean readOnly) throws IOException {
         if(len == 0) return;
         byte[] buf = new byte[len];
         r.nextBytes(buf);
@@ -210,24 +210,26 @@ public abstract class RandomAccessThingTestBase extends TestCase {
         for(int i=0;i<100;i++) {
             int end = len == 1 ? 1 : r.nextInt(len)+1;
             int start = r.nextInt(end);
-            checkArraySectionEqualsReadData(buf, raf, start, end);
+            checkArraySectionEqualsReadData(buf, raf, start, end, readOnly);
         }
-        checkArraySectionEqualsReadData(buf, raf, 0, len);
+        checkArraySectionEqualsReadData(buf, raf, 0, len, readOnly);
         if(len > 1)
-            checkArraySectionEqualsReadData(buf, raf, 1, len-1);
+            checkArraySectionEqualsReadData(buf, raf, 1, len-1, readOnly);
         raf.close();
         raf.free();
     }
 
     /** Check that the array section equals the read data, then write it and repeat the check. */
-    protected void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end) throws IOException {
+    protected void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end, boolean readOnly) throws IOException {
         int len = end - start;
         if(len == 0) return;
         byte[] tmp = new byte[len];
         raf.pread(start, tmp, 0, len);
         for(int i=0;i<len;i++)
             assertEquals(tmp[i], buf[start+i]);
-        raf.pwrite(start, buf, start, len);
+        if(!readOnly) {
+            raf.pwrite(start, buf, start, len);
+        }
         for(int i=0;i<len;i++) tmp[i] = 0;
         raf.pread(start, tmp, 0, len);
         for(int i=0;i<len;i++)
