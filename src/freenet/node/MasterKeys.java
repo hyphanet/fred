@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -168,6 +169,8 @@ public class MasterKeys {
 
 		// New IV, new salt, same client cache key, same database key
 
+	    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    
 		byte[] iv = new byte[32];
 		hardRandom.nextBytes(iv);
 		byte[] salt = new byte[32];
@@ -175,29 +178,21 @@ public class MasterKeys {
 
 		byte[] flagBytes = Fields.longToBytes(flags);
 
-		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + databaseKey.length + tempfilesMasterSecret.length + HASH_LENGTH];
-
-		int offset = 0;
-		System.arraycopy(salt, 0, data, offset, salt.length);
-		offset += salt.length;
-		System.arraycopy(iv, 0, data, offset, iv.length);
-		offset += iv.length;
-
-		int hashedStart = offset;
-		System.arraycopy(flagBytes, 0, data, offset, flagBytes.length);
-		offset += flagBytes.length;
-		System.arraycopy(clientCacheMasterKey, 0, data, offset, clientCacheMasterKey.length);
-		offset += clientCacheMasterKey.length;
-		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
-		offset += databaseKey.length;
-        System.arraycopy(tempfilesMasterSecret, 0, data, offset, tempfilesMasterSecret.length);
-        offset += tempfilesMasterSecret.length;
+		baos.write(salt);
+		baos.write(iv);
+		int hashedStart = salt.length + iv.length;
+		baos.write(flagBytes);
+		baos.write(clientCacheMasterKey);
+		baos.write(databaseKey);
+		baos.write(tempfilesMasterSecret);
+		
+		byte[] data = baos.toByteArray();
+		
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, hashedStart, offset-hashedStart);
+		md.update(data, hashedStart, data.length-hashedStart);
 		byte[] hash = md.digest();
-		System.arraycopy(hash, 0, data, offset, HASH_LENGTH);
-		offset += HASH_LENGTH;
-		/* assert(offset == data.length); */
+		baos.write(hash, 0, HASH_LENGTH);
+		data = baos.toByteArray();
 
 		byte[] pwd;
 		try {
