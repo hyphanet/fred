@@ -21,15 +21,19 @@ public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAcc
     @Override
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
         long realSize = size;
+        long paddedSize = size;
         MasterSecret secret = null;
         synchronized(this) {
             if(reallyEncrypt) {
                 secret = this.secret;
                 realSize += TempBucketFactory.CRYPT_TYPE.headerLen;
+                paddedSize = PaddedEphemerallyEncryptedBucket.paddedLength(realSize, PaddedEphemerallyEncryptedBucket.MIN_PADDED_SIZE);
             }
         }
-        LockableRandomAccessThing raf = factory.makeRAF(realSize);
+        LockableRandomAccessThing raf = factory.makeRAF(paddedSize);
         if(secret != null) {
+            if(realSize != paddedSize)
+                raf = new TrivialPaddedRandomAccessThing(raf, realSize);
             try {
                 raf = new EncryptedRandomAccessThing(TempBucketFactory.CRYPT_TYPE, raf, secret, true);
             } catch (GeneralSecurityException e) {

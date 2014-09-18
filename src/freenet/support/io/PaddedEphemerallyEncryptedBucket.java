@@ -285,11 +285,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 			in.close();
 		}
 	}
+	
+	public synchronized long paddedLength() {
+	    return paddedLength(dataLength, minPaddedSize);
+	}
 
+	public static final int MIN_PADDED_SIZE = 1024;
+	
 	/**
 	 * Return the length of the data in the proxied bucket, after padding.
 	 */
-	public synchronized long paddedLength() {
+	public static long paddedLength(long dataLength, long minPaddedSize) {
 		long size = dataLength;
 		if(size < minPaddedSize) size = minPaddedSize;
 		if(size == minPaddedSize) return size;
@@ -302,7 +308,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
 				throw new IllegalStateException("???");
 			if((size >= min) && (size <= max)) {
 				if(logMINOR)
-					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
+					Logger.minor(PaddedEphemerallyEncryptedBucket.class, "Padded: "+max+" was: "+dataLength);
 				return max;
 			}
 			min = max;
