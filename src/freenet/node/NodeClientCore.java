@@ -86,7 +86,6 @@ import freenet.support.compress.RealCompressor;
 import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
-import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.io.MaybeEncryptingRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -1939,8 +1938,11 @@ public class NodeClientCore implements Persistable {
     }
 
     public void setupMasterSecret(MasterKeys keys) {
+        MasterSecret persistentSecret = keys.getPersistentMasterSecret();
         if(clientContext.getPersistentMasterSecret() == null)
-            clientContext.setPersistentMasterSecret(keys.getPersistentMasterSecret());
+            clientContext.setPersistentMasterSecret(persistentSecret);
+        persistentTempBucketFactory.setMasterSecret(persistentSecret);
+        persistentRAFFactory.setMasterSecret(persistentSecret);
     }
 
 }
