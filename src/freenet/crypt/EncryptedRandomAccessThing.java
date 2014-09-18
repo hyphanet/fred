@@ -6,6 +6,7 @@ package freenet.crypt;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -31,25 +32,26 @@ import freenet.support.io.StorageFormatException;
  * @author unixninja92
  * Suggested EncryptedRandomAccessThingType to use: ChaCha128
  */
-public final class EncryptedRandomAccessThing implements LockableRandomAccessThing { 
+public final class EncryptedRandomAccessThing implements LockableRandomAccessThing, Serializable { 
+    private static final long serialVersionUID = 1L;
     private final ReentrantLock readLock = new ReentrantLock();
     private final ReentrantLock writeLock = new ReentrantLock();
     private final EncryptedRandomAccessThingType type;
     private final LockableRandomAccessThing underlyingThing;
     
-    private final SkippingStreamCipher cipherRead;
-    private final SkippingStreamCipher cipherWrite;
-    private final ParametersWithIV cipherParams;//includes key
+    private transient SkippingStreamCipher cipherRead;
+    private transient SkippingStreamCipher cipherWrite;
+    private transient ParametersWithIV cipherParams;//includes key
     
-    private final SecretKey headerMacKey;
+    private transient SecretKey headerMacKey;
     
-    private volatile boolean isClosed = false;
+    private transient volatile boolean isClosed = false;
     
-    private SecretKey unencryptedBaseKey;
+    private transient SecretKey unencryptedBaseKey;
     
-    private final SecretKey headerEncKey;
-    private byte[] headerEncIV;
-    private final int version; 
+    private transient SecretKey headerEncKey;
+    private transient byte[] headerEncIV;
+    private int version; 
     
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     private static final int VERSION_AND_MAGIC_LENGTH = 12;
@@ -71,6 +73,11 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
             GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
+        
+        setup(masterKey);
+    }
+    
+    private void setup(MasterSecret masterKey) throws IOException, GeneralSecurityException {
         this.cipherRead = this.type.get();
         this.cipherWrite = this.type.get();
         
@@ -330,7 +337,16 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        throw new UnsupportedOperationException();
+        underlyingThing.onResume(context);
+        try {
+            setup(context.getPersistentMasterSecret());
+        } catch (IOException e) {
+            Logger.error(this, "Disk I/O error resuming: "+e, e);
+            throw new ResumeFailedException(e);
+        } catch (GeneralSecurityException e) {
+            Logger.error(this, "Impossible security error resuming - maybe we lost a codec?: "+e, e);
+            throw new ResumeFailedException(e);
+        }
     }
 
     @Override
