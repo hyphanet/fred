@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -22,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.EncryptedRandomAccessBucket;
+import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.EncryptedRandomAccessThingType;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
@@ -882,7 +884,27 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             }
             return raf;
 	    } else {
-	        return diskRAFFactory.makeRAF(size);
+	        boolean encrypt;
+	        encrypt = this.reallyEncrypt;
+	        long realSize = size;
+	        long paddedSize = size;
+	        if(encrypt) {
+	            realSize += TempBucketFactory.CRYPT_TYPE.headerLen;
+	            paddedSize = PaddedEphemerallyEncryptedBucket.paddedLength(realSize, PaddedEphemerallyEncryptedBucket.MIN_PADDED_SIZE);
+	        }
+	        LockableRandomAccessThing ret = diskRAFFactory.makeRAF(size);
+	        if(encrypt) {
+	            if(realSize != paddedSize)
+	                ret = new TrivialPaddedRandomAccessThing(ret, realSize);
+	            if(reallyEncrypt) {
+	                try {
+	                    ret = new EncryptedRandomAccessThing(CRYPT_TYPE, ret, secret, true);
+	                } catch (GeneralSecurityException e) {
+	                    Logger.error(this, "Cannot create encrypted tempfile: "+e, e);
+	                }
+	            }
+	        }
+	        return ret;
 	    }
     }
 
@@ -913,6 +935,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             }
             return raf;
         } else {
+            if(reallyEncrypt) {
+                // FIXME do the encryption in memory? Test it ...
+                LockableRandomAccessThing ret = makeRAF(size);
+                ret.pwrite(0, initialContents, offset, size);
+                if(readOnly) ret = new ReadOnlyRandomAccessThing(ret);
+                return ret;
+            }
             return diskRAFFactory.makeRAF(initialContents, offset, size, readOnly);
         }
     }
