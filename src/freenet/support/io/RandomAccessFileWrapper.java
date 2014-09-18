@@ -156,5 +156,21 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing, Seria
         if(length > file.length()) throw new ResumeFailedException("Bad length");
         this.raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof RandomAccessFileWrapper)) return false;
+        RandomAccessFileWrapper rafw = (RandomAccessFileWrapper) o;
+        if(!file.equals(rafw.file)) return false;
+        if(length != rafw.length) return false;
+        if(readOnly != rafw.readOnly) return false;
+        if(secureDelete != rafw.secureDelete) return false;
+        return true;
+    }
+    
+    @Override
+    public int hashCode() {
+        return file.hashCode();
+    }
 
 }
