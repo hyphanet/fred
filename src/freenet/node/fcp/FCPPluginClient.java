@@ -762,7 +762,43 @@ public final class FCPPluginClient {
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.
      * 
-     * @param message FIXME
+     * @param direction
+     *            Whether to send the message to the server or the client message handler.<br><br>
+     * 
+     *            While you <i>can</i> use this to send messages to yourself, be careful not to
+     *            cause thread deadlocks with this. The function <i>will</i> call your message
+     *            handler function of {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
+     *            FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in a secondary
+     *            thread, so it should not cause deadlocks on its own, but you might produce
+     *            deadlocks with your own thread synchronization objects.<br><br>
+     * 
+     * @param message
+     *            The message to be sent.<br>
+     *            <b>Must be</b> constructed using
+     *            {@link FredPluginFCPMessageHandler.FCPPluginMessage#construct(SimpleFieldSet,
+     *            Bucket)}.<br><br>
+     * 
+     *            Must <b>not</b> be a reply message: This function needs determine when the remote
+     *            side has finished processing the message so it knows when to return. That requires
+     *            the remote side to send a reply to indicate that the FCP call is finished.
+     *            Replies to replies are not allowed though (to prevent infinite bouncing).<br><br>
+     * 
+     * @param timeoutNanoSeconds
+     *            The function will wait for a reply to arrive for this amount of time.<br><br>
+     * 
+     *            If the timeout expires, an {@link IOException} is thrown.<br>
+     *            This FCPPluginClient <b>should be</b> considered as dead once this happens, you
+     *            should then discard it and obtain a fresh one.<br><br>
+     * 
+     *            ATTENTION: The sending of the message is not affected by this timeout, it only
+     *            affects how long we wait for a reply. The sending is done in another thread, so
+     *            if your message is very large, and takes longer to transfer than the timeout
+     *            grants, this function will throw before the message has been sent.<br>
+     *            Additionally, the sending of the message is <b>not</b> terminated if the timeout
+     *            expires before it was fully transferred. Thus, the message can arrive at the
+     *            remote side even if this function has thrown, and you might receive an off-thread
+     *            reply to the message in the {@link FredPluginFCPMessageHandler}.<br><br>
+     * 
      * @return The reply {@link FredPluginFCPMessageHandler.FCPPluginMessage} which the remote
      *         partner sent to your message.<br><br>
      * 
