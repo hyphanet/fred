@@ -466,7 +466,42 @@ public final class FCPPluginClient {
     }
 
     /**
-     * Can be used by both server and client implementations to send messages to each other.<br><br>
+     * Can be used by both server and client implementations to send messages to each other.<br>
+     * The messages sent by this function will be delivered to the message handler
+     * {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
+     * FredPluginFCPMessageHandler.FCPPluginMessage)} of the remote side.<br><br>
+     * 
+     * This is an <b>asynchronous</b>, non-blocking send function.<br>
+     * This has the following differences to the blocking send {@link #sendSynchronous(
+     * SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)}:<br>
+     * - It may return <b>before</b> the message has been sent.<br>
+     *   The message sending happens in another thread so this function can return immediately.<br>
+     *   In opposite to that, a synchronousSend() would wait for a reply to arrive, so once it
+     *   returns, the message is guaranteed to have been sent.<br>
+     * - The reply is delivered to your message handler {@link FredPluginFCPMessageHandler}. It will
+     *   not be directly available to the thread which called this function.<br>
+     *   A synchronousSend() would return the reply to the caller.<br>
+     * - You have no guarantee whatsoever that the message will be delivered.<br>
+     *   A synchronousSend() will tell you that a reply was received, which guarantees that the
+     *   message was delivered.<br>
+     * - The order of arrival of messages is random.<br>
+     *   A synchronousSend() only returns after the message was delivered already, so by calling
+     *   it multiple times in a row on the same thread, you would enforce the order of the
+     *   messages arriving at the remote side.<br><br>
+     * 
+     * ATTENTION: The consequences of this are:<br>
+     * - If the function returned without throwing an {@link IOException} you must <b>not</b>
+     *   assume that the message has been sent.<br>
+     * - If the function did throw an {@link IOException}, you <b>must</b> assume that the
+     *   connection is dead and the message has not been sent.<br>
+     *   You <b>must</b> consider this FCPPluginClient as dead then and create a fresh one.<br>
+     * - You can only be sure that a message has been delivered if your message handler receives
+     *   a reply message with the same value of
+     *   {@link FredPluginFCPMessageHandler.FCPPluginMessage#identifier} as the original message.
+     *   <br>
+     * - You <b>can</b> send many messages in parallel by calling this many times in a row.<br>
+     *   But you <b>must not</b> call this too often in a row to prevent excessive threads creation.
+     *   <br><br>
      * 
      * ATTENTION: If you plan to use this inside of message handling functions of your
      * implementations of the interfaces
@@ -475,7 +510,7 @@ public final class FCPPluginClient {
      * of the message handling functions first as it puts additional constraints on the usage
      * of the FCPPluginClient they receive.
      * 
-     * FIXME: This has gotten too large, split it up.
+     * <br><br>FIXME: This has gotten too large, split it up.
      * 
      * @throws IOException
      *             If the connection has been closed meanwhile.<br/>
