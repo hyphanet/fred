@@ -21,6 +21,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.AEADCryptBucket;
+import freenet.crypt.EncryptedRandomAccessBucket;
+import freenet.crypt.EncryptedRandomAccessThingType;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
@@ -66,6 +69,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final Random weakPRNG;
 	private final Executor executor;
 	private volatile boolean reallyEncrypt;
+	private MasterSecret secret;
 	
 	/** How big can the defaultSize be for us to consider using RAMBuckets? */
 	private long maxRAMBucketSize;
@@ -535,7 +539,11 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
 		        filenameGenerator.getDir(), minDiskSpace - maxRamUsed);
 	}
-
+	
+	public void setMasterSecret(MasterSecret secret) {
+	    this.secret = secret;
+	}
+	
 	@Override
 	public RandomAccessBucket makeBucket(long size) throws IOException {
 		return makeBucket(size, DEFAULT_FACTOR, defaultIncrement);
@@ -575,7 +583,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public void setEncryption(boolean value) {
-		reallyEncrypt = value;
+	    reallyEncrypt = value;
 		underlyingDiskRAFFactory.enableCrypto(value);
 	}
 	
@@ -585,7 +593,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public boolean isEncrypting() {
-		return reallyEncrypt;
+	    return reallyEncrypt;
 	}
 
 	static final double MAX_USAGE_LOW = 0.8;
@@ -760,12 +768,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		RandomAccessBucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
-		    throw new UnsupportedOperationException();
-//            fileBucket = new TrivialPaddedBucket(fileBucket);
-//		    byte[] key = new byte[16];
-//		    SecureRandom srng = NodeStarter.getGlobalSecureRandom();
-//		    srng.nextBytes(key);
-//		    fileBucket = new AEADCryptBucket(fileBucket, key);
+		    return new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, fileBucket, secret);
 		}
 		return fileBucket;
 	}

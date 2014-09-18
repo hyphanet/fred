@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
+import freenet.crypt.EncryptedRandomAccessBucket;
+import freenet.crypt.EncryptedRandomAccessThingType;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.support.LogThresholdCallback;
@@ -52,11 +55,13 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Buckets to free. When buckets are freed, we write them to this list, and delete the files *after*
 	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFree> bucketsToFree;
-	
+
 	/** Should we encrypt temporary files? */
-	private volatile boolean encrypt;
+	private boolean encrypt;
+    private MasterSecret secret;
 	
 	private DiskSpaceChecker checker;
+	
 	
 	private long commitID;
 
@@ -124,6 +129,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	    this.checker = checker;
 	}
 	
+	public void setMasterSecret(MasterSecret secret) {
+	    this.secret = secret;
+	}
+	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
 	 * currently used. @see #completedInit() */
 	@Override
@@ -161,8 +170,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg, this);
 		if(encrypt)
-			//rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
-		    throw new UnsupportedOperationException();
+		    rawBucket = new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, 
+		            rawBucket, secret);
 		if(mustWrap)
 			rawBucket = new DelayedFreeRandomAccessBucket(this, rawBucket);
 		return rawBucket;
@@ -213,7 +222,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
-		return encrypt;
+	    return encrypt;
 	}
 
 	/**
@@ -221,7 +230,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * this changes.
 	 */
 	public void setEncryption(boolean encrypt) {
-		this.encrypt = encrypt;
+	    this.encrypt = encrypt;
 	}
 
 	/**
