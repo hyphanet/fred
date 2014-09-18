@@ -361,4 +361,9 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket {
         return new BufferedInputStream(getInputStreamUnbuffered());
     }
 
+    @Override
+    public void onResume(ClientContext context) throws ResumeFailedException {
+        baseSetup(context.getPersistentMasterSecret());
+    }
+
 }
