@@ -441,8 +441,8 @@ public class NodeClientCore implements Persistable {
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        persistentRAFFactory, compressor, storeChecker, fcpPersistentRoot, toadlets,
-		        defaultFetchContext, defaultInsertContext);
+		        persistentRAFFactory, tempBucketFactory.getUnderlyingRAFFactory(), persistentRAFFactory,
+		        compressor, storeChecker, fcpPersistentRoot, toadlets, defaultFetchContext, defaultInsertContext);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		clientLayerPersister.start(clientContext);

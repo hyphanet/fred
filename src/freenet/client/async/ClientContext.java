@@ -82,6 +82,8 @@ public class ClientContext {
 	private transient InsertContext defaultPersistentInsertContext;
 	public transient final MasterSecret cryptoSecretTransient;
 	private transient MasterSecret cryptoSecretPersistent;
+	private transient FileRandomAccessThingFactory fileRAFTransient;
+	private transient FileRandomAccessThingFactory fileRAFPersistent;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -94,6 +96,7 @@ public class ClientContext {
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom, Random fastWeakRandom, 
 			Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, FilenameGenerator fg, FilenameGenerator persistentFG,
 			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
+			FileRandomAccessThingFactory fileRAFTransient, FileRandomAccessThingFactory fileRAFPersistent,
 			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot,
 			LinkFilterExceptionProvider linkFilterExceptionProvider,
 			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
@@ -113,6 +116,8 @@ public class ClientContext {
 		this.fg = fg;
 		this.persistentFG = persistentFG;
 		this.persistentRAFFactory = persistentRAFFactory;
+		this.fileRAFPersistent = fileRAFPersistent;
+		this.fileRAFTransient = fileRAFTransient;
 		this.rc = rc;
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
@@ -300,8 +305,7 @@ public class ClientContext {
     }
 
     public FileRandomAccessThingFactory getFileRandomAccessThingFactory(boolean persistent) {
-        return persistent ? (DiskSpaceCheckingRandomAccessThingFactory)persistentRAFFactory :
-                tempBucketFactory.getUnderlyingRAFFactory();
+        return persistent ? fileRAFPersistent : fileRAFTransient;
                  
     }
 
