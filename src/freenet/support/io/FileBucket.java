@@ -172,5 +172,55 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
         createFileOnly = dis.readBoolean();
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (createFileOnly ? 1231 : 1237);
+        result = prime * result + (deleteOnExit ? 1231 : 1237);
+        result = prime * result + (deleteOnFinalize ? 1231 : 1237);
+        result = prime * result + (deleteOnFree ? 1231 : 1237);
+        result = prime * result + ((file == null) ? 0 : file.hashCode());
+        result = prime * result + (readOnly ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        FileBucket other = (FileBucket) obj;
+        if (createFileOnly != other.createFileOnly) {
+            return false;
+        }
+        if (deleteOnExit != other.deleteOnExit) {
+            return false;
+        }
+        if (deleteOnFinalize != other.deleteOnFinalize) {
+            return false;
+        }
+        if (deleteOnFree != other.deleteOnFree) {
+            return false;
+        }
+        if (file == null) {
+            if (other.file != null) {
+                return false;
+            }
+        } else if (!file.equals(other.file)) {
+            return false;
+        }
+        if (readOnly != other.readOnly) {
+            return false;
+        }
+        return true;
+    }
+
 
 }

@@ -388,4 +388,31 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
         this.baseSetup(masterKey2);
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + type.hashCode();
+        result = prime * result + underlying.hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        EncryptedRandomAccessBucket other = (EncryptedRandomAccessBucket) obj;
+        if (type != other.type) {
+            return false;
+        }
+        return underlying.equals(other.underlying);
+    }
+
 }

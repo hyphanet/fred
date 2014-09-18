@@ -182,7 +182,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         context.setPersistentMasterSecret(secret);
         EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
         assertEquals(buf.length, restored.size());
-        //assertEquals(rafw, restored);
+        assertEquals(erab, restored);
         tmp = new byte[buf.length];
         is = erab.getInputStream();
         is.read(tmp, 0, buf.length);
@@ -219,7 +219,7 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
         EncryptedRandomAccessBucket restored = (EncryptedRandomAccessBucket) ois.readObject();
         restored.onResume(context);
         assertEquals(buf.length, restored.size());
-        //assertEquals(erab, restored);
+        assertEquals(erab, restored);
         tmp = new byte[buf.length];
         is = erab.getInputStream();
         is.read(tmp, 0, buf.length);

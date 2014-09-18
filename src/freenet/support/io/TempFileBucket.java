@@ -203,4 +203,38 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
         file = new File(dis.readUTF());
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (deleteOnFree ? 1231 : 1237);
+        result = prime * result + (int) (filenameID ^ (filenameID >>> 32));
+        result = prime * result + (readOnly ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TempFileBucket other = (TempFileBucket) obj;
+        if (deleteOnFree != other.deleteOnFree) {
+            return false;
+        }
+        if (filenameID != other.filenameID) {
+            return false;
+        }
+        if (readOnly != other.readOnly) {
+            return false;
+        }
+        return true;
+    }
+
 }
