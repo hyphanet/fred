@@ -542,7 +542,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public void setMasterSecret(MasterSecret secret) {
-	    this.secret = secret;
+	    synchronized(encryptLock) {
+	        this.secret = secret;
+	    }
 	}
 	
 	@Override
