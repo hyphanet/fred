@@ -2353,6 +2353,7 @@ public class Node implements TimeSkewDetectorCallback {
 					random.nextBytes(clientCacheKey);
 				} else {
 					keys = MasterKeys.read(masterKeysFile, random, "");
+					clientCore.setupMasterSecret(keys);
 					clientCacheKey = keys.clientCacheMasterKey;
 					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
 						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
@@ -5169,6 +5170,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+        clientCore.setupMasterSecret(keys);
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {

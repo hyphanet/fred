@@ -28,6 +28,11 @@ public final class MasterSecret implements Serializable{
         masterKey = KeyGenUtils.genSecretKey(KeyType.HMACSHA512);
     }
     
+    public MasterSecret(byte[] secret) {
+        if(secret.length != 64) throw new IllegalArgumentException();
+        masterKey = KeyGenUtils.getSecretKey(KeyType.HMACSHA512, secret);
+    }
+
     /**
      * Derives a SecretKey of the specified type from the MasterSecret. 
      * @param type The type of key to derive

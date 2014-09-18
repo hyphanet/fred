@@ -12,6 +12,7 @@ import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.client.filter.LinkFilterExceptionProvider;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -64,6 +65,8 @@ public class ClientContext {
 	public transient final DatastoreChecker checker;
 	public transient final CooldownTracker cooldownTracker;
 	public transient DownloadCache downloadCache;
+	public transient final MasterSecret cryptoSecretTransient;
+	private transient MasterSecret cryptoSecretPersistent;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -94,6 +97,7 @@ public class ClientContext {
 		this.checker = checker;
 		this.linkFilterExceptionProvider = linkFilterExceptionProvider;
 		this.cooldownTracker = new CooldownTracker();
+		this.cryptoSecretTransient = new MasterSecret();
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
@@ -107,6 +111,14 @@ public class ClientContext {
 		this.chkInsertSchedulerRT = starters.chkPutSchedulerRT;
 		this.alerts = alerts;
 		this.cooldownTracker.startMaintenance(ticker);
+	}
+	
+	public synchronized void setPersistentMasterSecret(MasterSecret secret) {
+	    this.cryptoSecretPersistent = secret;
+	}
+	
+	public synchronized MasterSecret getPersistentMasterSecret() {
+	    return cryptoSecretPersistent;
 	}
 
 	public ClientRequestScheduler getSskFetchScheduler(boolean realTime) {

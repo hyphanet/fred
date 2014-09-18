@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -30,14 +31,16 @@ public class MasterKeys {
 
 	final byte[] clientCacheMasterKey;
 	private final byte[] databaseKey;
+	private final byte[] tempfilesMasterSecret;
 	final long flags;
 
 	final static long FLAG_ENCRYPT_DATABASE = 2;
 
-	public MasterKeys(byte[] clientCacheKey, byte[] databaseKey, long flags) {
+	public MasterKeys(byte[] clientCacheKey, byte[] databaseKey, byte[] tempfilesMasterSecret, long flags) {
 		this.clientCacheMasterKey = clientCacheKey;
 		this.databaseKey = databaseKey;
 		this.flags = flags;
+		this.tempfilesMasterSecret = tempfilesMasterSecret;
 	}
 
 	void clearClientCacheKeys() {
@@ -109,11 +112,23 @@ public class MasterKeys {
 				byte[] databaseKey = null;
 				databaseKey = new byte[32];
 				dis.readFully(databaseKey);
-				MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, flags);
+				byte[] tempfilesMasterSecret = new byte[64];
+				boolean mustWrite = false;
+				if(data.length >= 8+32+32+64) {
+				    dis.readFully(tempfilesMasterSecret);
+				} else {
+                    System.err.println("Created new master secret for encrypted tempfiles");
+				    hardRandom.nextBytes(tempfilesMasterSecret);
+				    mustWrite = true;
+				}
+				MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
 				clear(data);
 				clear(hash);
 				SHA256.returnMessageDigest(md);
 				System.err.println("Read old master keys file");
+				if(mustWrite) {
+				    ret.changePassword(masterKeysFile, password, hardRandom);
+				}
 				return ret;
 			} catch (FileNotFoundException e) {
 				// Ok, create a new one.
@@ -134,6 +149,8 @@ public class MasterKeys {
 		hardRandom.nextBytes(clientCacheKey);
 		byte[] databaseKey = new byte[32];
 		hardRandom.nextBytes(databaseKey);
+		byte[] tempfilesMasterSecret = new byte[64];
+		hardRandom.nextBytes(tempfilesMasterSecret);
 		byte[] iv = new byte[32];
 		hardRandom.nextBytes(iv);
 		byte[] salt = new byte[32];
@@ -184,7 +201,7 @@ public class MasterKeys {
 		fos.close();
 		clear(data);
 		clear(hash);
-		return new MasterKeys(clientCacheKey, databaseKey, flags);
+		return new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
 	}
 
 	public static void clear(byte[] buf) {
@@ -205,7 +222,7 @@ public class MasterKeys {
 
 		byte[] flagBytes = Fields.longToBytes(flags);
 
-		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + databaseKey.length + HASH_LENGTH];
+		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + databaseKey.length + tempfilesMasterSecret.length + HASH_LENGTH];
 
 		int offset = 0;
 		System.arraycopy(salt, 0, data, offset, salt.length);
@@ -220,6 +237,8 @@ public class MasterKeys {
 		offset += clientCacheMasterKey.length;
 		System.arraycopy(databaseKey, 0, data, offset, databaseKey.length);
 		offset += databaseKey.length;
+        System.arraycopy(tempfilesMasterSecret, 0, data, offset, databaseKey.length);
+        offset += tempfilesMasterSecret.length;
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(data, hashedStart, offset-hashedStart);
 		byte[] hash = md.digest();
@@ -270,15 +289,18 @@ public class MasterKeys {
 
 	public void clearAllNotClientCacheKey() {
 		clear(databaseKey);
+        clear(tempfilesMasterSecret);
 	}
 
 	public void clearAllNotDatabaseKey() {
 		clear(clientCacheMasterKey);
+        clear(tempfilesMasterSecret);
 	}
 
 	public void clearAll() {
 		clear(clientCacheMasterKey);
 		clear(databaseKey);
+		clear(tempfilesMasterSecret);
 	}
 
 	public void clearAllNotClientCacheKeyOrDatabaseKey() {
@@ -288,5 +310,10 @@ public class MasterKeys {
 	public DatabaseKey createDatabaseKey(RandomSource random) {
 	    return new DatabaseKey(databaseKey, random);
 	}
+
+	/** Used for creating keys for persistent encrypted tempfiles */
+    public MasterSecret getPersistentMasterSecret() {
+        return new MasterSecret(tempfilesMasterSecret.clone());
+    }
 
 }

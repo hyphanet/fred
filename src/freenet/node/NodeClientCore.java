@@ -2120,4 +2120,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, ExecutorIdleCal
         return pluginStores;
     }
 
+    public void setupMasterSecret(MasterKeys keys) {
+        if(clientContext.getPersistentMasterSecret() == null)
+            clientContext.setPersistentMasterSecret(keys.getPersistentMasterSecret());
+    }
+
 }
