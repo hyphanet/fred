@@ -279,7 +279,7 @@ public class MasterKeys {
         long iterations = 0;
         if(!newPassword.equals("")) {
             long startTime = System.currentTimeMillis();
-            while(System.currentTimeMillis() < startTime + ITERATE_TIME) {
+            while(System.currentTimeMillis() < startTime + ITERATE_TIME && iterations < MAX_ITERATIONS-20) {
                 for(int i=0;i<10;i++) {
                     iterations++;
                     md.update(salt);
