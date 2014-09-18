@@ -910,7 +910,8 @@ public final class FCPPluginClient {
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
      * @see #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)
-     *          The asynchronous send() should be used instead of this whenever possible.
+     *          The non-blocking, asynchronous send() should be used instead of this whenever
+     *          possible.
      */
     public FredPluginFCPMessageHandler.FCPPluginMessage sendSynchronous(SendDirection direction,
             FredPluginFCPMessageHandler.FCPPluginMessage message, long timeoutNanoSeconds)
