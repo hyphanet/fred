@@ -352,19 +352,15 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     @Override
     public void storeTo(DataOutputStream dos) throws IOException {
         dos.writeInt(MAGIC);
-        dos.writeUTF(type.name());
+        dos.writeInt(type.bitmask);
         underlyingThing.storeTo(dos);
     }
 
     public static LockableRandomAccessThing create(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ResumeFailedException {
-        String t = dis.readUTF();
-        EncryptedRandomAccessThingType type;
-        try {
-            type = EncryptedRandomAccessThingType.valueOf(t);
-        } catch (IllegalArgumentException e) {
+        EncryptedRandomAccessThingType type = EncryptedRandomAccessThingType.getByBitmask(dis.readInt());
+        if(type == null)
             throw new StorageFormatException("Unknown EncryptedRandomAccessThingType");
-        }
         LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
         try {
             return new EncryptedRandomAccessThing(type, underlying, masterKey, false);

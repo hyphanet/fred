@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 
@@ -23,7 +26,7 @@ public enum EncryptedRandomAccessThingType {
     public final MACType macType;
     public final KeyType macKey;
     public final int macLen;//bytes
-
+    
     /**
      * Creates the ChaCha enum values. 
      * @param bitmask The version number
@@ -48,6 +51,18 @@ public enum EncryptedRandomAccessThingType {
      */
     public final SkippingStreamCipher get(){
         return new ChaChaEngine();
+    }
+
+    private static final Map<Integer, EncryptedRandomAccessThingType> byBitmask;
+    
+    static {
+        byBitmask = new HashMap<Integer, EncryptedRandomAccessThingType>();
+        for(EncryptedRandomAccessThingType type : values())
+            byBitmask.put(type.bitmask, type);
+    }
+
+    public static EncryptedRandomAccessThingType getByBitmask(int val) {
+        return byBitmask.get(val);
     }
 
 }
