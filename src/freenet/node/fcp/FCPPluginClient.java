@@ -542,6 +542,10 @@ public final class FCPPluginClient {
      *             {@link #sendSynchronous(SendDirection,
      *             FredPluginFCPMessageHandler.FCPPluginMessage, long)}.
      *             </p>
+     * @see #sendSynchronous(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage, long)
+     *          You may instead use the blocking sendSynchronous() if your thread needs to know
+     *          whether messages arrived, to ensure a certain order of arrival, or to know
+     *          the reply to a message.
      */
     public void send(final SendDirection direction,
             final FredPluginFCPMessageHandler.FCPPluginMessage message)
