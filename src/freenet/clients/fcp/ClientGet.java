@@ -1102,7 +1102,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
         else
             extensionCheck = null;
         if(dis.readBoolean()) {
-            initialMetadata = BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker);
+            initialMetadata = BucketTools.restoreFrom(dis, context.persistentFG, context.persistentFileTracker, context.getPersistentMasterSecret());
             // No way to recover if we don't have the initialMetadata.
         } else {
             initialMetadata = null;
@@ -1116,7 +1116,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
                         DataInputStream innerDIS =
                             new DataInputStream(checker.checksumReaderWithLength(dis, context.tempBucketFactory, 65536));
                         try {
-                            returnBucketDirect = BucketTools.restoreFrom(innerDIS, context.persistentFG, context.persistentFileTracker);
+                            returnBucketDirect = BucketTools.restoreFrom(innerDIS, context.persistentFG, context.persistentFileTracker, context.getPersistentMasterSecret());
                         } catch (IOException e) {
                             Logger.error(this, "Failed to restore completed download-to-temp-space request, restarting instead");
                             returnBucketDirect = null;

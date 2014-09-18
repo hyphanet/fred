@@ -50,7 +50,7 @@ public class RandomAccessFileWrapperTest extends RandomAccessThingTestBase {
         dos.close();
         rafw.close();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        RandomAccessFileWrapper restored = (RandomAccessFileWrapper) BucketTools.restoreRAFFrom(dis, null, null);
+        RandomAccessFileWrapper restored = (RandomAccessFileWrapper) BucketTools.restoreRAFFrom(dis, null, null, null);
         assertEquals(buf.length, restored.size());
         assertEquals(rafw, restored);
         tmp = new byte[buf.length];

@@ -470,7 +470,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             // FIXME check against finalLength too, maybe we can finish straight away.
             this.raf = new PooledRandomAccessFileWrapper(fileCompleteViaTruncation, false, rafSize, null, -1, true);
         } else {
-            this.raf = BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker);
+            this.raf = BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker, context.getPersistentMasterSecret());
             fileCompleteViaTruncation = null;
             callbackCompleteViaTruncation = null;
         }

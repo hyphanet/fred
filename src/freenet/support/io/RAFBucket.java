@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 
@@ -84,8 +85,10 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
         underlying.storeTo(dos);
     }
     
-    RAFBucket(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
-        underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
+    RAFBucket(DataInputStream dis, FilenameGenerator fg, 
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+            throws IOException, StorageFormatException, ResumeFailedException {
+        underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
         size = underlying.size();
     }
 

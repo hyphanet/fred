@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -160,10 +161,11 @@ public class DelayedFreeBucket implements Bucket, Serializable, DelayedFree {
     }
 
     protected DelayedFreeBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws StorageFormatException, IOException, ResumeFailedException {
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
-        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker);
+        bucket = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
     
     /** Convert to a RandomAccessBucket if it can be done quickly. Otherwise return null. 

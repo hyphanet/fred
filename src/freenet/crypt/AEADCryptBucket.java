@@ -120,7 +120,8 @@ public class AEADCryptBucket implements Bucket, Serializable {
     }
 
     public AEADCryptBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws IOException, StorageFormatException, ResumeFailedException {
         // Magic already read by caller.
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Unknown version "+version);
@@ -130,7 +131,7 @@ public class AEADCryptBucket implements Bucket, Serializable {
         key = new byte[keyLength];
         dis.readFully(key);
         readOnly = dis.readBoolean();
-        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
+        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
 
 }

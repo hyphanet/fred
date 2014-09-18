@@ -292,7 +292,7 @@ public class EncryptedRandomAccessThingTest {
         ClientContext context = new ClientContext(0, 0, null, null, null, null, null, null, null, 
                 null, null, r, null, null, null, null, null, null, null, null, null, null, null, null);
         context.setPersistentMasterSecret(secret);
-        EncryptedRandomAccessThing restored = (EncryptedRandomAccessThing) BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker);
+        EncryptedRandomAccessThing restored = (EncryptedRandomAccessThing) BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker, secret);
         assertEquals(buf.length, restored.size());
         //assertEquals(rafw, restored);
         tmp = new byte[buf.length];

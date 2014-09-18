@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
@@ -411,7 +412,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
     }
     
     protected PaddedEphemerallyEncryptedBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws StorageFormatException, IOException, ResumeFailedException {
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         minPaddedSize = dis.readInt();
@@ -425,7 +427,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, Serializable {
         }
         dataLength = dis.readLong();
         readOnly = dis.readBoolean();
-        bucket = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
+        bucket = BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
 
 }

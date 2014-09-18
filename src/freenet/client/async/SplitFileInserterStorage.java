@@ -28,6 +28,7 @@ import freenet.client.async.SplitFileInserterSegmentStorage.MissingKeyException;
 import freenet.crypt.ChecksumChecker;
 import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
+import freenet.crypt.MasterSecret;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.node.KeysFetchingLocally;
@@ -585,7 +586,7 @@ public class SplitFileInserterStorage {
             LockableRandomAccessThing originalData, SplitFileInserterStorageCallback callback, Random random, 
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner, 
             Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG, 
-            PersistentFileTracker persistentFileTracker) 
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ChecksumFailedException, ResumeFailedException {
         this.persistent = true;
         this.callback = callback;
@@ -611,7 +612,7 @@ public class SplitFileInserterStorage {
         int version = dis.readInt();
         if(version != VERSION)
             throw new StorageFormatException("Bad version");
-        LockableRandomAccessThing rafOrig = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker);
+        LockableRandomAccessThing rafOrig = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker, masterKey);
         if(originalData == null) {
             this.originalData = rafOrig;
         } else {

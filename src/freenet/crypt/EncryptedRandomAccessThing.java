@@ -23,7 +23,9 @@ import freenet.client.async.ClientContext;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 /**
@@ -354,7 +356,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         underlyingThing.storeTo(dos);
     }
 
-    public static LockableRandomAccessThing create(DataInputStream dis, ClientContext context) 
+    public static LockableRandomAccessThing create(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ResumeFailedException {
         String t = dis.readUTF();
         EncryptedRandomAccessThingType type;
@@ -363,9 +365,9 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         } catch (IllegalArgumentException e) {
             throw new StorageFormatException("Unknown EncryptedRandomAccessThingType");
         }
-        LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker);
+        LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
         try {
-            return new EncryptedRandomAccessThing(type, underlying, context.getPersistentMasterSecret(), false);
+            return new EncryptedRandomAccessThing(type, underlying, masterKey, false);
         } catch (GeneralSecurityException e) {
             Logger.error(EncryptedRandomAccessThing.class, "Crypto error resuming: "+e, e);
             throw new ResumeFailedException(e);

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 
 public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, Serializable, DelayedFree {
     
@@ -82,8 +83,9 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
     }
     
     public DelayedFreeRandomAccessThing(DataInputStream dis, FilenameGenerator fg,
-            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
-        underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
+            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
+    throws IOException, StorageFormatException, ResumeFailedException {
+        underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterSecret);
         factory = persistentFileTracker;
     }
     

@@ -20,6 +20,7 @@ import freenet.crypt.AEADCryptBucket;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessThing;
+import freenet.crypt.MasterSecret;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -563,36 +564,37 @@ public class BucketTools {
      * @throws StorageFormatException 
      * @throws ResumeFailedException */
     public static Bucket restoreFrom(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
         case AEADCryptBucket.MAGIC:
-            return new AEADCryptBucket(dis, fg, persistentFileTracker);
+            return new AEADCryptBucket(dis, fg, persistentFileTracker, masterKey);
         case FileBucket.MAGIC:
             return new FileBucket(dis);
         case PersistentTempFileBucket.MAGIC:
             return new PersistentTempFileBucket(dis);
         case DelayedFreeBucket.MAGIC:
-            return new DelayedFreeBucket(dis, fg, persistentFileTracker);
+            return new DelayedFreeBucket(dis, fg, persistentFileTracker, masterKey);
         case DelayedFreeRandomAccessBucket.MAGIC:
-            return new DelayedFreeRandomAccessBucket(dis, fg, persistentFileTracker);
+            return new DelayedFreeRandomAccessBucket(dis, fg, persistentFileTracker, masterKey);
         case NoFreeBucket.MAGIC:
-            return new NoFreeBucket(dis, fg, persistentFileTracker);
+            return new NoFreeBucket(dis, fg, persistentFileTracker, masterKey);
         case PaddedEphemerallyEncryptedBucket.MAGIC:
-            return new PaddedEphemerallyEncryptedBucket(dis, fg, persistentFileTracker);
+            return new PaddedEphemerallyEncryptedBucket(dis, fg, persistentFileTracker, masterKey);
         case ReadOnlyFileSliceBucket.MAGIC:
             return new ReadOnlyFileSliceBucket(dis);
         case TrivialPaddedBucket.MAGIC:
-            return new TrivialPaddedBucket(dis, fg, persistentFileTracker);
+            return new TrivialPaddedBucket(dis, fg, persistentFileTracker, masterKey);
         case RAFBucket.MAGIC:
-            return new RAFBucket(dis, fg, persistentFileTracker);
+            return new RAFBucket(dis, fg, persistentFileTracker, masterKey);
         default:
             throw new StorageFormatException("Unknown magic value for bucket "+magic);
         }
     }
     
     public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, 
-            FilenameGenerator fg, PersistentFileTracker persistentFileTracker)
+            FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterSecret)
     throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
@@ -601,11 +603,11 @@ public class BucketTools {
         case RandomAccessFileWrapper.MAGIC:
             return new RandomAccessFileWrapper(dis);
         case ReadOnlyRandomAccessThing.MAGIC:
-            return new ReadOnlyRandomAccessThing(dis, fg, persistentFileTracker);
+            return new ReadOnlyRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         case DelayedFreeRandomAccessThing.MAGIC:
-            return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker);
+            return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         case EncryptedRandomAccessThing.MAGIC:
-            return EncryptedRandomAccessThing.create(dis, context);
+            return EncryptedRandomAccessThing.create(dis, fg, persistentFileTracker, masterSecret);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }

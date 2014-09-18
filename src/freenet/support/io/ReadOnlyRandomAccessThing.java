@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 
 public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
     
@@ -15,10 +16,10 @@ public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
     }
 
     public ReadOnlyRandomAccessThing(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) 
+            PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
     throws IOException, StorageFormatException, ResumeFailedException {
         // Caller has already read magic
-        this.underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker);
+        this.underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterSecret);
     }
 
     @Override

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
 
 /** Pads a bucket to the next power of 2 file size. 
@@ -273,12 +274,13 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     }
     
     protected TrivialPaddedBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         size = dis.readLong();
         readOnly = dis.readBoolean();
-        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
+        underlying = BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
     
 }

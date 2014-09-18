@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
+import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
 
 public class NoFreeBucket implements Bucket, Serializable {
@@ -88,8 +89,9 @@ public class NoFreeBucket implements Bucket, Serializable {
     }
 
     protected NoFreeBucket(DataInputStream dis, FilenameGenerator fg, 
-            PersistentFileTracker persistentFileTracker) throws IOException, StorageFormatException, ResumeFailedException {
-        proxy = BucketTools.restoreFrom(dis, fg, persistentFileTracker);
+            PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    throws IOException, StorageFormatException, ResumeFailedException {
+        proxy = BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey);
     }
 
 }

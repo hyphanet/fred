@@ -19,8 +19,6 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-import com.db4o.ObjectContainer;
-
 import freenet.crypt.EncryptedRandomAccessThing.kdfInput;
 import freenet.support.Fields;
 import freenet.support.Logger;
