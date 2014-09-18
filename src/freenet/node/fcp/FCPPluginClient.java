@@ -708,9 +708,9 @@ public final class FCPPluginClient {
      * 
      * This has the following differences to a regular non-synchronous
      * {@link #send(SendDirection, FredPluginFCPMessageHandler.FCPPluginMessage)}:<br>
-     * - The function will <b>not</b> return immediately after the message has been queued for
-     *   sending. Instead, it will wait for a reply message of the remote side.<br>
-     * - The reply message will be returned to the calling thread <b>instead of</b> being passed to
+     * - It will <b>wait</b> for a reply message of the remote side before returning.<br>
+     *   A regular send() would instead queue the message for sending, and then return immediately.
+     * - The reply message will be <b>returned to the calling thread</b> instead of being passed to
      *   the message handler {@link FredPluginFCPMessageHandler#handlePluginFCPMessage(
      *   FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)} in another thread.<br>
      *   NOTICE: It is possible that the reply message <b>is</b> passed to the message handler
