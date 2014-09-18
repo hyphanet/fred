@@ -93,8 +93,7 @@ public class EncryptedRandomAccessThingTest {
         erat.close();
         ByteArrayRandomAccessThing barat2 = new ByteArrayRandomAccessThing(bytes);
         thrown.expect(IOException.class);
-        thrown.expectMessage("Version of the underlying RandomAccessThing is incompatible with "
-                + "this ERATType");
+        thrown.expectMessage("This is not an EncryptedRandomAccessThing"); // Different header lengths.
         EncryptedRandomAccessThing erat2 = new EncryptedRandomAccessThing(types[1], barat2, 
                 secret, false);
     }
