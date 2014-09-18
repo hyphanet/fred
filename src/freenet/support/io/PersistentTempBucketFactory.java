@@ -56,6 +56,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFree> bucketsToFree;
 
+	private final Object encryptLock = new Object();
 	/** Should we encrypt temporary files? */
 	private boolean encrypt;
     private MasterSecret secret;
@@ -130,7 +131,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 	
 	public void setMasterSecret(MasterSecret secret) {
-	    this.secret = secret;
+	    synchronized(encryptLock) {
+	        this.secret = secret;
+	    }
 	}
 	
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
@@ -169,9 +172,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		boolean mustWrap = true;
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg, this);
-		if(encrypt)
-		    rawBucket = new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, 
-		            rawBucket, secret);
+		synchronized(encryptLock) {
+		    if(encrypt)
+		        rawBucket = new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, 
+		                rawBucket, secret);
+		}
 		if(mustWrap)
 			rawBucket = new DelayedFreeRandomAccessBucket(this, rawBucket);
 		return rawBucket;
@@ -222,7 +227,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
-	    return encrypt;
+	    synchronized(encryptLock) {
+	        return encrypt;
+	    }
 	}
 
 	/**
@@ -230,7 +237,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * this changes.
 	 */
 	public void setEncryption(boolean encrypt) {
-	    this.encrypt = encrypt;
+	    synchronized(encryptLock) {
+	        this.encrypt = encrypt;
+	    }
 	}
 
 	/**

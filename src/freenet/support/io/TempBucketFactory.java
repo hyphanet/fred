@@ -68,6 +68,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
 	private final Executor executor;
+	private final Object encryptLock = new Object();
 	private volatile boolean reallyEncrypt;
 	private MasterSecret secret;
 	
@@ -583,7 +584,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public void setEncryption(boolean value) {
-	    reallyEncrypt = value;
+	    synchronized(encryptLock) {
+	        reallyEncrypt = value;
+	    }
 		underlyingDiskRAFFactory.enableCrypto(value);
 	}
 	
@@ -593,7 +596,9 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	public boolean isEncrypting() {
-	    return reallyEncrypt;
+	    synchronized(encryptLock) {
+	        return reallyEncrypt;
+	    }
 	}
 
 	static final double MAX_USAGE_LOW = 0.8;
@@ -767,8 +772,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private RandomAccessBucket _makeFileBucket() throws IOException {
 		RandomAccessBucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
-		if(reallyEncrypt) {
-		    return new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, fileBucket, secret);
+		synchronized(encryptLock) {
+		    if(reallyEncrypt) {
+		        return new EncryptedRandomAccessBucket(EncryptedRandomAccessThingType.ChaCha256, fileBucket, secret);
+		    }
 		}
 		return fileBucket;
 	}
