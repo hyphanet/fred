@@ -551,7 +551,7 @@ public class FCPServer implements Runnable, DownloadCache {
      *          The JavaDoc of FCPPluginClientTracker explains the general purpose of this
      *          mechanism.
      */
-    public FCPPluginClient getPluginClient(UUID clientID) throws PluginNotFoundException {
+    public FCPPluginClient getPluginClient(UUID clientID) throws IOException {
         return pluginClientTracker.getClient(clientID);
     }
 

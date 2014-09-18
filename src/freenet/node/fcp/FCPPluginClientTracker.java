@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.TreeMap;
@@ -13,7 +14,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.ServerSideFCPMessageHandler;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -127,14 +127,10 @@ final class FCPPluginClientTracker extends NativeThread {
      *            {@link ServerSideFCPMessageHandler#handlePluginFCPMessage(FCPPluginClient,
      *            FCPPluginMessage)}
      * @return The client with the given ID, for as long as it is still connected to the node.
-     * @throws PluginNotFoundException
-     *             If there has been no client with the given ID or if it has disconnected
-     *             meanwhile.<br>
-     *             Notice: The client does not necessarily have to be a plugin. The type of the
-     *             Exception is similar to PluginNotFoundException so it matches what the send()
-     *             functions of {@link FCPPluginClient} throw.
+     * @throws IOException
+     *             If there has been no client with the given ID or if it has disconnected already.
      */
-    public FCPPluginClient getClient(UUID clientID) throws PluginNotFoundException {
+    public FCPPluginClient getClient(UUID clientID) throws IOException {
         FCPPluginClientWeakReference ref = null;
         
         clientsByIDLock.readLock().lock();
@@ -147,7 +143,8 @@ final class FCPPluginClientTracker extends NativeThread {
         FCPPluginClient client = ref != null ? ref.get() : null;
         
         if(client == null) {
-            throw new PluginNotFoundException();
+            throw new IOException("FCPPluginClient not found, maybe it has disconnected already."
+                + " ClientID: " + clientID);
         }
         
         return client;

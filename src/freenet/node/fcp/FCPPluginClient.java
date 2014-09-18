@@ -25,8 +25,8 @@ import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
@@ -132,14 +132,6 @@ import freenet.support.io.NativeThread;
  *   connections. If we extended class {@link FCPClient}, a lot of care would have to be taken to
  *   allow it to exist without a network connection - that would even be more work.<br/>
  * </p>
- * 
- * <p>FIXME: Instead of {@link PluginNotFoundException}, use IOException in places where it would indicate that the client/server has disconnected.
- *        This includes stuff such as {@link FCPPluginClientTracker}, the {@link FCPServer} functions which are a frontend to {@link FCPPluginClientTracker},
- *        and the {@link PluginRespirator} functions which are a frontend to that. This will allow us to get rid of their JavaDoc saying:<br/>
- *        "Notice: The client does not necessarily have to be a plugin, it can also be connected via networked FCP.
- *        The type of the Exception is PluginNotFoundException so it matches what the send() functions of FCPPluginClient
- *        throw and you only need a single catch-block."
- *        </p>
  * 
  * @author xor (xor@freenetproject.org)
  */

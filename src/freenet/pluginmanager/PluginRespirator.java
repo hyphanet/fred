@@ -165,15 +165,10 @@ public class PluginRespirator {
      * @param clientID
      *            The ID as obtained by {@link FCPPluginClient#getID()}
      * @return The client if it is still connected.
-     * @throws PluginNotFoundException
-     *             If there has been no client with the given ID or if it has disconnected
-     *             meanwhile.<br>
-     *             Notice: The client does not necessarily have to be a plugin, it can also be
-     *             connected via networked FCP. The type of the Exception is PluginNotFoundException
-     *             so it matches what the send() functions of {@link FCPPluginClient} throw and you
-     *             only need a single catch-block.
+     * @throws IOException
+     *             If there has been no client with the given ID or if it has disconnected already.
      */
-    public FCPPluginClient getPluginClientByID(UUID clientID) throws PluginNotFoundException {
+    public FCPPluginClient getPluginClientByID(UUID clientID) throws IOException {
         return node.clientCore.getFCPServer().getPluginClient(clientID);
     }
 
