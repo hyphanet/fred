@@ -53,7 +53,11 @@ public class MasterKeys {
 	static final int VERSION = 1;
 	
 	/** Sanity check */
-	static final long MAX_ITERATIONS = 1 << 40;
+	static final long MAX_ITERATIONS = 1L << 40;
+	
+	/** Time in milliseconds to iterate for when encrypting a non-empty password. 
+	 * FIXME make this configurable. FIXME Have a look at real password to key functions. */
+	static int ITERATE_TIME = 1000;
 
 	public static MasterKeys read(File masterKeysFile, RandomSource hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		System.err.println("Trying to read master keys file...");
@@ -76,7 +80,7 @@ public class MasterKeys {
 				}
 				if(dis.readInt() != VERSION) throw new IOException("Bad version for master.keys");
 				long iterations = dis.readLong();
-				if(iterations < 0 || iterations > MAX_ITERATIONS) throw new IOException("Bad iterations for master.keys");
+				if(iterations < 0 || iterations > MAX_ITERATIONS) throw new IOException("Bad iterations "+iterations+" for master.keys");
 				
 				byte[] salt = new byte[32];
 				dis.readFully(salt);
@@ -261,9 +265,33 @@ public class MasterKeys {
 		byte[] salt = new byte[32];
 		hardRandom.nextBytes(salt);
 
+        byte[] pwd;
+        try {
+            pwd = newPassword.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // Impossible
+            throw new Error(e);
+        }
+        MessageDigest md = SHA256.getMessageDigest();
+        md.update(pwd);
+        md.update(salt);
+        byte[] outerKey = md.digest();
+        long iterations = 0;
+        if(!newPassword.equals("")) {
+            long startTime = System.currentTimeMillis();
+            while(System.currentTimeMillis() < startTime + ITERATE_TIME) {
+                for(int i=0;i<10;i++) {
+                    iterations++;
+                    md.update(salt);
+                    md.update(outerKey);
+                    outerKey = md.digest();
+                }
+            }
+            System.out.println("Encrypted password with "+iterations+" iterations.");
+        }
+
 		DataOutputStream dos = new DataOutputStream(baos);
 		dos.writeInt(VERSION);
-		long iterations = 0;
 		dos.writeLong(iterations);
 		baos.write(salt);
 		baos.write(iv);
@@ -275,23 +303,11 @@ public class MasterKeys {
 		
 		byte[] data = baos.toByteArray();
 		
-		MessageDigest md = SHA256.getMessageDigest();
 		md.update(data, hashedStart, data.length-hashedStart);
 		byte[] hash = md.digest();
+        SHA256.returnMessageDigest(md); md = null;
 		baos.write(hash, 0, HASH_LENGTH);
 		data = baos.toByteArray();
-
-		byte[] pwd;
-		try {
-			pwd = newPassword.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// Impossible
-			throw new Error(e);
-		}
-		md.update(pwd);
-		md.update(salt);
-		byte[] outerKey = md.digest();
-		SHA256.returnMessageDigest(md); md = null;
 
 		BlockCipher cipher;
 		try {

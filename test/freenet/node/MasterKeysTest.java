@@ -23,6 +23,7 @@ public class MasterKeysTest {
     public void setUp() {
         FileUtil.removeAll(base);
         base.mkdir();
+        MasterKeys.ITERATE_TIME = 100; // Speed up test.
     }
     
     @After
