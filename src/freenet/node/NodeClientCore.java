@@ -86,6 +86,7 @@ import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.LockableRandomAccessThingFactory;
+import freenet.support.io.MaybeEncryptingRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.PooledFileRandomAccessThingFactory;
@@ -135,7 +136,8 @@ public class NodeClientCore implements Persistable {
 	public final FilenameGenerator persistentFilenameGenerator;
 	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	public final DiskSpaceCheckingRandomAccessThingFactory persistentRAFFactory;
+	private final DiskSpaceCheckingRandomAccessThingFactory persistentDiskChecker;
+	public final LockableRandomAccessThingFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
@@ -371,9 +373,11 @@ public class NodeClientCore implements Persistable {
 
 		PooledFileRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
-		persistentRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(raff, 
-		        persistentTempDir.dir(), minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
-		persistentTempBucketFactory.setDiskSpaceChecker(persistentRAFFactory);
+		persistentDiskChecker = 
+		    new DiskSpaceCheckingRandomAccessThingFactory(raff, persistentTempDir.dir(), 
+		            minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
+		persistentRAFFactory = new MaybeEncryptingRandomAccessThingFactory(persistentDiskChecker);
+		persistentTempBucketFactory.setDiskSpaceChecker(persistentDiskChecker);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();
 		InsertContext defaultInsertContext = client.getInsertContext(false);
@@ -441,7 +445,7 @@ public class NodeClientCore implements Persistable {
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
-		        persistentRAFFactory, tempBucketFactory.getUnderlyingRAFFactory(), persistentRAFFactory,
+		        persistentRAFFactory, tempBucketFactory.getUnderlyingRAFFactory(), persistentDiskChecker,
 		        compressor, storeChecker, fcpPersistentRoot, toadlets, defaultFetchContext, defaultInsertContext);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
@@ -655,7 +659,7 @@ public class NodeClientCore implements Persistable {
                 size = minDiskFreeLongTerm;
             }
             size += tempBucketFactory.getMaxRamUsed();
-            persistentRAFFactory.setMinDiskSpace(size);
+            persistentDiskChecker.setMinDiskSpace(size);
         }
     }
 
