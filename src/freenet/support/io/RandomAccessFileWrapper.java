@@ -1,12 +1,15 @@
 package freenet.support.io;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
-public class RandomAccessFileWrapper implements RandomAccessThing {
+public class RandomAccessFileWrapper implements LockableRandomAccessThing {
 
 	final RandomAccessFile raf;
 	final File file;
@@ -83,6 +86,18 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 	}
 
     @Override
+    public RAFLock lockOpen() {
+        return new RAFLock() {
+
+            @Override
+            protected void innerUnlock() {
+                // Do nothing. RAFW is always open.
+            }
+            
+        };
+    }
+
+    @Override
     public void free() {
         close();
         if(secureDelete) {
@@ -99,6 +114,38 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
     
     public void setSecureDelete(boolean secureDelete) {
         this.secureDelete = secureDelete;
+    }
+
+    @Override
+    public void onResume(ClientContext context) {
+        // Ignore.
+    }
+    
+    static final int MAGIC = 0xdd0f4ab2;
+    static final int VERSION = 1;
+
+    @Override
+    public void storeTo(DataOutputStream dos) throws IOException {
+        dos.writeInt(MAGIC);
+        dos.writeInt(VERSION);
+        dos.writeUTF(file.toString());
+        dos.writeBoolean(readOnly);
+        dos.writeLong(length);
+        dos.writeBoolean(secureDelete);
+    }
+
+    public RandomAccessFileWrapper(DataInputStream dis) throws IOException, StorageFormatException, ResumeFailedException {
+        int version = dis.readInt();
+        if(version != VERSION) throw new StorageFormatException("Bad version");
+        file = new File(dis.readUTF());
+        readOnly = dis.readBoolean();
+        length = dis.readLong();
+        secureDelete = dis.readBoolean();
+        if(length < 0) throw new StorageFormatException("Bad length");
+        // Have to check here because we need the RAF immediately.
+        if(!file.exists()) throw new ResumeFailedException("File does not exist");
+        if(length > file.length()) throw new ResumeFailedException("Bad length");
+        this.raf = new RandomAccessFile(file, readOnly ? "r" : "rw");
     }
 
 }
