@@ -559,7 +559,8 @@ public class BucketTools {
         }
     }
     
-    /** Inverse of Bucket.storeTo(). Uses the magic value to identify the bucket type. 
+    /** Inverse of Bucket.storeTo(). Uses the magic value to identify the bucket type.
+     * FIXME Maybe we should just pass the ClientContext? 
      * @throws IOException 
      * @throws StorageFormatException 
      * @throws ResumeFailedException */
@@ -593,6 +594,9 @@ public class BucketTools {
         }
     }
     
+    /** Restore a LockableRandomAccessThing from a DataInputStream. Inverse of storeTo().
+     * FIXME Maybe we should just pass the ClientContext? 
+     */
     public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, 
             FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterSecret)
     throws IOException, StorageFormatException, ResumeFailedException {
