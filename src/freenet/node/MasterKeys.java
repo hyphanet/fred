@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,24 +49,40 @@ public class MasterKeys {
 	}
 
 	static final int HASH_LENGTH = 4;
+	
+	static final int VERSION = 1;
+	
+	/** Sanity check */
+	static final long MAX_ITERATIONS = 1 << 40;
 
 	public static MasterKeys read(File masterKeysFile, RandomSource hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		System.err.println("Trying to read master keys file...");
-		if(masterKeysFile != null) {
+		if(masterKeysFile != null && masterKeysFile.exists()) {
 			// Try to read the keys
 			FileInputStream fis = null;
 			// FIXME move declarations of sensitive data out and clear() in finally {}
+			long len = masterKeysFile.length();
+            if(len > 1024) throw new MasterKeysFileSizeException(true);
+            if(len < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
+			int length = (int) len;
 			try {
 				fis = new FileInputStream(masterKeysFile);
 				DataInputStream dis = new DataInputStream(fis);
+				if(len == 140) {
+				    MasterKeys ret = readOldFormat(dis, length, hardRandom, password);
+				    System.out.println("Read old-format master keys file. Writing new format master.keys ...");
+                    ret.changePassword(masterKeysFile, password, hardRandom);
+                    return ret;
+				}
+				if(dis.readInt() != VERSION) throw new IOException("Bad version for master.keys");
+				long iterations = dis.readLong();
+				if(iterations < 0 || iterations > MAX_ITERATIONS) throw new IOException("Bad iterations for master.keys");
+				
 				byte[] salt = new byte[32];
 				dis.readFully(salt);
 				byte[] iv = new byte[32];
 				dis.readFully(iv);
-				int length = (int)Math.min(Integer.MAX_VALUE, masterKeysFile.length());
-				if(masterKeysFile.length() > 1024) throw new MasterKeysFileSizeException(true);
-				if(masterKeysFile.length() < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
-				byte[] dataAndHash = new byte[length - salt.length - iv.length];
+				byte[] dataAndHash = new byte[length - salt.length - iv.length - 4 - 8];
 				dis.readFully(dataAndHash);
 //				System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
 				byte[] pwd = password.getBytes("UTF-8");
@@ -73,6 +90,14 @@ public class MasterKeys {
 				md.update(pwd);
 				md.update(salt);
 				byte[] outerKey = md.digest();
+				if(iterations > 0) {
+				    System.out.println("Decrypting master keys using password with "+iterations+" iterations...");
+				    for(long i=0;i<iterations;i++) {
+				        md.update(salt);
+				        md.update(outerKey);
+				        outerKey = md.digest();
+				    }
+				}
 				BlockCipher cipher;
 				try {
 					cipher = new Rijndael(256, 256);
@@ -101,10 +126,7 @@ public class MasterKeys {
 				// It matches. Now decode it.
 				ByteArrayInputStream bais = new ByteArrayInputStream(data);
 				dis = new DataInputStream(bais);
-				// FIXME Fields.longToBytes and dis.readLong may not be compatible, find out if they are.
-				byte[] flagsBytes = new byte[8];
-				dis.readFully(flagsBytes);
-				long flags = Fields.bytesToLong(flagsBytes);
+				long flags = dis.readLong();
 				// At the moment there are no interesting flags.
 				// In future the flags will tell us whether the database and the datastore are encrypted.
 				byte[] clientCacheKey = new byte[32];
@@ -154,7 +176,70 @@ public class MasterKeys {
 		return ret;
 	}
 
-	public static void clear(byte[] buf) {
+	private static MasterKeys readOldFormat(DataInputStream dis, int length, RandomSource hardRandom,
+            String password) throws IOException, MasterKeysWrongPasswordException {
+        byte[] salt = new byte[32];
+        dis.readFully(salt);
+        byte[] iv = new byte[32];
+        dis.readFully(iv);
+        byte[] dataAndHash = new byte[length - salt.length - iv.length];
+        dis.readFully(dataAndHash);
+//      System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
+        byte[] pwd = password.getBytes("UTF-8");
+        MessageDigest md = SHA256.getMessageDigest();
+        md.update(pwd);
+        md.update(salt);
+        byte[] outerKey = md.digest();
+        BlockCipher cipher;
+        try {
+            cipher = new Rijndael(256, 256);
+        } catch (UnsupportedCipherException e) {
+            // Impossible
+            throw new Error(e);
+        }
+//      System.err.println("Outer key: "+HexUtil.bytesToHex(outerKey));
+        cipher.initialize(outerKey);
+        PCFBMode pcfb = PCFBMode.create(cipher, iv);
+        pcfb.blockDecipher(dataAndHash, 0, dataAndHash.length);
+//      System.err.println("Decrypted data and hash: "+HexUtil.bytesToHex(dataAndHash));
+        byte[] data = Arrays.copyOf(dataAndHash, dataAndHash.length - HASH_LENGTH);
+        byte[] hash = Arrays.copyOfRange(dataAndHash, data.length, dataAndHash.length);
+//      System.err.println("Data: "+HexUtil.bytesToHex(data));
+//      System.err.println("Hash: "+HexUtil.bytesToHex(hash));
+        clear(dataAndHash);
+        byte[] checkHash = md.digest(data);
+//      System.err.println("Check hash: "+HexUtil.bytesToHex(checkHash));
+        if(!Fields.byteArrayEqual(checkHash, hash, 0, 0, HASH_LENGTH)) {
+            clear(data);
+            clear(hash);
+            throw new MasterKeysWrongPasswordException();
+        }
+
+        // It matches. Now decode it.
+        ByteArrayInputStream bais = new ByteArrayInputStream(data);
+        dis = new DataInputStream(bais);
+        // FIXME Fields.longToBytes and dis.readLong may not be compatible, find out if they are.
+        byte[] flagsBytes = new byte[8];
+        dis.readFully(flagsBytes);
+        long flags = Fields.bytesToLong(flagsBytes);
+        // At the moment there are no interesting flags.
+        // In future the flags will tell us whether the database and the datastore are encrypted.
+        byte[] clientCacheKey = new byte[32];
+        dis.readFully(clientCacheKey);
+        byte[] databaseKey = null;
+        databaseKey = new byte[32];
+        dis.readFully(databaseKey);
+        byte[] tempfilesMasterSecret = new byte[64];
+        System.err.println("Created new master secret for encrypted tempfiles");
+        hardRandom.nextBytes(tempfilesMasterSecret);
+        MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, tempfilesMasterSecret, flags);
+        clear(data);
+        clear(hash);
+        SHA256.returnMessageDigest(md);
+        return ret;
+    }
+
+    public static void clear(byte[] buf) {
 		if(buf == null) return; // Valid no-op, simplifies code
 		Arrays.fill(buf, (byte)0x00);
 	}
@@ -176,12 +261,14 @@ public class MasterKeys {
 		byte[] salt = new byte[32];
 		hardRandom.nextBytes(salt);
 
-		byte[] flagBytes = Fields.longToBytes(flags);
-
+		DataOutputStream dos = new DataOutputStream(baos);
+		dos.writeInt(VERSION);
+		long iterations = 0;
+		dos.writeLong(iterations);
 		baos.write(salt);
 		baos.write(iv);
-		int hashedStart = salt.length + iv.length;
-		baos.write(flagBytes);
+		int hashedStart = salt.length + iv.length + 4 + 8;
+		dos.writeLong(flags);
 		baos.write(clientCacheMasterKey);
 		baos.write(databaseKey);
 		baos.write(tempfilesMasterSecret);
@@ -215,7 +302,7 @@ public class MasterKeys {
 		}
 		cipher.initialize(outerKey);
 		PCFBMode pcfb = PCFBMode.create(cipher, iv);
-		pcfb.blockEncipher(data, iv.length + salt.length, data.length - iv.length - salt.length);
+		pcfb.blockEncipher(data, hashedStart, data.length - hashedStart);
 
 		RandomAccessFile raf = new RandomAccessFile(masterKeysFile, "rw");
 
