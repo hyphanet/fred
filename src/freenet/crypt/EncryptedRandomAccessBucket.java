@@ -36,6 +36,7 @@ import freenet.support.io.NullInputStream;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
+import freenet.support.io.TempFileBucket;
 
 /** A Bucket encrypted using the same format as an EncryptedRandomAccessThing, which can therefore
  * be converted easily when needed.
@@ -413,6 +414,10 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
             return false;
         }
         return underlying.equals(other.underlying);
+    }
+
+    public RandomAccessBucket getUnderlying() {
+        return underlying;
     }
 
 }
