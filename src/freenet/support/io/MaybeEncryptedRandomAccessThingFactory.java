@@ -47,6 +47,7 @@ public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAcc
             reallyEncrypt = this.reallyEncrypt;
         }
         if(reallyEncrypt) {
+            // FIXME do the encryption in memory? Test it ...
             LockableRandomAccessThing ret = makeRAF(size);
             ret.pwrite(0, initialContents, offset, size);
             if(readOnly) ret = new ReadOnlyRandomAccessThing(ret);
