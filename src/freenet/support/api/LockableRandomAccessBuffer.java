@@ -9,7 +9,8 @@ import freenet.support.io.ResumeFailedException;
 /** A RandomAccessBuffer which allows you to lock it open for a brief period to indicate that you are
  * using it and it would be a bad idea to close the pooled fd. Locking the RAF open does not provide
  * any concurrency guarantees but the implementation must guarantee to do the right thing, either
- * using a mutex or supporting concurrent writes.
+ * using a mutex or supporting concurrent writes. Also has methods for persisting itself to a
+ * DataOutputStream. Implementations must register with BucketTools.restoreRAFFrom().
  * @author toad
  */
 public interface LockableRandomAccessBuffer extends RandomAccessBuffer {
@@ -44,7 +45,9 @@ public interface LockableRandomAccessBuffer extends RandomAccessBuffer {
     public void onResume(ClientContext context) throws ResumeFailedException;
 
     /** Write enough data to reconstruct the Bucket, or throw UnsupportedOperationException. Used
-     * for recovering in emergencies, should be versioned if necessary. 
+     * for recovering in emergencies, should be versioned if necessary. To make this work, write
+     * a fixed, unique integer magic value for the class, and add a clause to 
+     * BucketTools.restoreRAFFrom().
      * @throws IOException */
     public void storeTo(DataOutputStream dos) throws IOException;
     
