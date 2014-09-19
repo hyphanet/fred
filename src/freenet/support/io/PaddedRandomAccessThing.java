@@ -76,4 +76,34 @@ public class PaddedRandomAccessThing implements LockableRandomAccessThing, Seria
             throw new ResumeFailedException("Padded file is smaller than expected length");
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + raf.hashCode();
+        result = prime * result + (int) (realSize ^ (realSize >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        PaddedRandomAccessThing other = (PaddedRandomAccessThing) obj;
+        if (!raf.equals(other.raf)) {
+            return false;
+        }
+        if (realSize != other.realSize) {
+            return false;
+        }
+        return true;
+    }
+
 }
