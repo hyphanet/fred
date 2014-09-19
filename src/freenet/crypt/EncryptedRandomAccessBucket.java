@@ -369,7 +369,9 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
 
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
-        baseSetup(context.getPersistentMasterSecret());
+        underlying.onResume(context);
+        this.masterKey = context.getPersistentMasterSecret();
+        baseSetup(masterKey);
     }
     
     public static final int MAGIC = 0xd8ba4c7e;
