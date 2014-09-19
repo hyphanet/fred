@@ -95,7 +95,7 @@ public class ClientRequestSelectorTest extends TestCase {
         persistentFileTracker = new TrivialPersistentFileTracker(dir, fg);
         bigRAFFactory = new PooledFileRandomAccessThingFactory(fg, r);
         smallBucketFactory = new ArrayBucketFactory();
-        bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, r, false, 0);
+        bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, false, 0, null);
         baseContext = HighLevelSimpleClientImpl.makeDefaultInsertContext(bigBucketFactory, new SimpleEventProducer());
         cryptoKey = new byte[32];
         r.nextBytes(cryptoKey);
