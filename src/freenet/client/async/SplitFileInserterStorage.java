@@ -1394,12 +1394,16 @@ public class SplitFileInserterStorage {
         assert (buf.length == SplitFileInserterSegmentStorage.getKeyLength(this));
         assert (segNo >= 0 && segNo < segments.length);
         assert (blockNo >= 0 && blockNo < segments[segNo].totalBlockCount);
-        raf.pwrite(this.offsetSegmentKeys[segNo] + keyLength * blockNo, buf, 0, buf.length);
+        long fileOffset = this.offsetSegmentKeys[segNo] + keyLength * blockNo;
+        if(logDEBUG) Logger.debug(this, "Writing key for block "+blockNo+" for segment "+segNo+" of "+this+" to "+fileOffset);
+        raf.pwrite(fileOffset, buf, 0, buf.length);
     }
     
     byte[] innerReadSegmentKey(int segNo, int blockNo) throws IOException {
         byte[] buf = new byte[keyLength];
-        raf.pread(this.offsetSegmentKeys[segNo] + keyLength * blockNo, buf, 0, buf.length);
+        long fileOffset = this.offsetSegmentKeys[segNo] + keyLength * blockNo;
+        if(logDEBUG) Logger.debug(this, "Reading key for block "+blockNo+" for segment "+segNo+" of "+this+" to "+fileOffset);
+        raf.pread(fileOffset, buf, 0, buf.length);
         return buf;
     }
 

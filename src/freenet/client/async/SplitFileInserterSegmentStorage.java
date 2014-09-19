@@ -574,6 +574,7 @@ public class SplitFileInserterSegmentStorage {
         if(b != 1) throw new MissingKeyException();
         ClientCHK key = innerReadKey(dis);
         setHasKey(blockNumber);
+        if(logDEBUG) Logger.debug(this, "Returning "+key);
         return key;
     }
 
