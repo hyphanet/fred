@@ -556,9 +556,10 @@ public class SplitFileInserterStorage {
                     segment.storeStatus();
                 }
             }
-            for (SplitFileInserterSegmentStorage segment : segments) {
-                segment.clearKeys();
-            }
+        }
+        // Encrypted RAFs are not initialised with 0's, so we need to clear explicitly (we do store keys even for transient inserts).
+        for (SplitFileInserterSegmentStorage segment : segments) {
+            segment.clearKeys();
         }
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
