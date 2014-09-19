@@ -758,12 +758,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final Queue<WeakReference<Migratable>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<Migratable>>();
 	
 	private RandomAccessBucket _makeFileBucket() throws IOException {
-		RandomAccessBucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
+		RandomAccessBucket ret = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
-		    return new EncryptedRandomAccessBucket(CRYPT_TYPE, fileBucket, secret);
+		    ret = new EncryptedRandomAccessBucket(CRYPT_TYPE, ret, secret);
+		    ret = new TrivialPaddedRandomAccessBucket(ret);
 		}
-		return fileBucket;
+		return ret;
 	}
 	
 	/** Unlike a TempBucket, the size is fixed, so migrate only happens on the migration thread. */
