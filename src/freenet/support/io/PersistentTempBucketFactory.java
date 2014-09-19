@@ -173,9 +173,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg, this);
 		synchronized(encryptLock) {
-		    if(encrypt)
+		    if(encrypt) {
 		        rawBucket = new EncryptedRandomAccessBucket(TempBucketFactory.CRYPT_TYPE, 
 		                rawBucket, secret);
+		        rawBucket = new TrivialPaddedRandomAccessBucket(rawBucket);
+		    }
 		}
 		if(mustWrap)
 			rawBucket = new DelayedFreeRandomAccessBucket(this, rawBucket);
