@@ -884,7 +884,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	            realSize += TempBucketFactory.CRYPT_TYPE.headerLen;
 	            paddedSize = PaddedEphemerallyEncryptedBucket.paddedLength(realSize, PaddedEphemerallyEncryptedBucket.MIN_PADDED_SIZE);
 	        }
-	        LockableRandomAccessThing ret = diskRAFFactory.makeRAF(size);
+	        LockableRandomAccessThing ret = diskRAFFactory.makeRAF(paddedSize);
 	        if(encrypt) {
 	            if(realSize != paddedSize)
 	                ret = new TrivialPaddedRandomAccessThing(ret, realSize);
