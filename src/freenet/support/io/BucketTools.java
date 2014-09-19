@@ -527,4 +527,45 @@ public class BucketTools {
         }
     }
 
+    /** Copy the contents of a Bucket to a RandomAccessThing at a specific offset.
+     * @param bucket The bucket to read data from.
+     * @param raf The RandomAccessThing to write to.
+     * @param fileOffset The offset within raf to start writing at.
+     * @param truncateLength The maximum number of bytes to transfer, or -1 to copy the whole 
+     * bucket. 
+     * @return The number of bytes moved.
+     * @throws IOException If something breaks while copying the data. */
+    public static long copyTo(Bucket bucket, RandomAccessThing raf, long fileOffset, 
+            long truncateLength) throws IOException {
+        if(truncateLength == 0) return 0;
+        if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
+        InputStream is = bucket.getInputStream();
+        try {
+            int bufferSize = BUFFER_SIZE;
+            if(truncateLength > 0 && truncateLength < bufferSize) bufferSize = (int) truncateLength;
+            byte[] buf = new byte[bufferSize];
+            long moved = 0;
+            while(moved < truncateLength) {
+                // DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
+                int bytes = (int) Math.min(buf.length, truncateLength - moved);
+                if(bytes <= 0)
+                    throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+                bytes = is.read(buf, 0, bytes);
+                if(bytes <= 0) {
+                    if(truncateLength == Long.MAX_VALUE)
+                        break;
+                    IOException ioException = new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+                    ioException.printStackTrace();
+                    throw ioException; 
+                }
+                raf.pwrite(fileOffset, buf, 0, bytes);
+                moved += bytes;
+                fileOffset += bytes;
+            }
+            return moved;
+        } finally {
+            is.close();
+        }
+    }
+
 }
