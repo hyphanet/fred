@@ -16,6 +16,11 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
     private static final long serialVersionUID = 1L;
     
     transient PersistentFileTracker tracker;
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(PersistentTempFileBucket.class);
+    }
 
     public PersistentTempFileBucket(long id, FilenameGenerator generator, PersistentFileTracker tracker) {
 		this(id, generator, tracker, true);
@@ -70,6 +75,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
     @Override
     public void onResume(ClientContext context) throws ResumeFailedException {
         super.onResume(context);
+        if(logMINOR) Logger.minor(this, "Resuming "+this, new Exception("debug"));
         tracker = context.persistentFileTracker;
         tracker.register(getFile());
     }
