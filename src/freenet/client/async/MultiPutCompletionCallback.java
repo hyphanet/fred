@@ -308,8 +308,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
     @Override
     public void onResume(ClientContext context) throws InsertException, ResumeFailedException {
-        if(resumed) return;
-        resumed = true;
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
+        }
         for(ClientPutState s : waitingFor)
             s.onResume(context);
         if(cb != parent) cb.onResume(context);

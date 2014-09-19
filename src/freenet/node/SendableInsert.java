@@ -70,8 +70,10 @@ public abstract class SendableInsert extends SendableRequest {
 	private transient boolean resumed = false;
 	
 	public final void onResume(ClientContext context) throws InsertException, ResumeFailedException {
-	    if(resumed) return;
-	    resumed = true;
+	    synchronized(this) {
+	        if(resumed) return;
+	        resumed = true;
+	    }
 	    innerOnResume(context);
 	}
 	

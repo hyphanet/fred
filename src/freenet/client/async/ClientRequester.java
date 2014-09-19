@@ -391,8 +391,10 @@ public abstract class ClientRequester implements Serializable {
      * after the callback has been registered etc. 
      * @throws ResumeFailedException */
     public final void onResume(ClientContext context) throws ResumeFailedException {
-        if(resumed) return;
-        resumed = true;
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
+        }
         innerOnResume(context);
     }
 
