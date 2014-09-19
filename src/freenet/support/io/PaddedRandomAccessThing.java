@@ -3,12 +3,14 @@ package freenet.support.io;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 
-public class PaddedRandomAccessThing implements LockableRandomAccessThing {
+public class PaddedRandomAccessThing implements LockableRandomAccessThing, Serializable {
     
+    private static final long serialVersionUID = 1L;
     final LockableRandomAccessThing raf;
     final long realSize;
 
