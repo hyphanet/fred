@@ -68,7 +68,7 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     }
 
     @Override
-    public Bucket createShadow() {
+    public RandomAccessBucket createShadow() {
         return null;
     }
 

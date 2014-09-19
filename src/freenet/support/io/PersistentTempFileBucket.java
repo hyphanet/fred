@@ -9,6 +9,7 @@ import java.io.Serializable;
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 public class PersistentTempFileBucket extends TempFileBucket implements Serializable {
 
@@ -59,7 +60,7 @@ public class PersistentTempFileBucket extends TempFileBucket implements Serializ
 	 * deleteOnExit() = deleteOnFinalize() = false.
 	 */
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, tracker, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());

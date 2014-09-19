@@ -11,6 +11,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 /*
  *  This code is part of FProxy, an HTTP proxy server for Freenet.
@@ -122,7 +123,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());

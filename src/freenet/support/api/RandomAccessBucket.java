@@ -15,5 +15,8 @@ public interface RandomAccessBucket extends Bucket {
      * Both the parent Bucket and the return value will be made read only.
      * @throws IOException */
     public LockableRandomAccessThing toRandomAccessThing() throws IOException;
+    
+    @Override
+    public RandomAccessBucket createShadow();
 
 }

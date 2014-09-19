@@ -338,8 +338,8 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     }
 
     @Override
-    public Bucket createShadow() {
-        RandomAccessBucket copy = (RandomAccessBucket) underlying.createShadow();
+    public RandomAccessBucket createShadow() {
+        RandomAccessBucket copy = underlying.createShadow();
         return new EncryptedRandomAccessBucket(type, copy, masterKey);
     }
 

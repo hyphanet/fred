@@ -250,8 +250,8 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     }
 
     @Override
-    public Bucket createShadow() {
-        RandomAccessBucket shadow = (RandomAccessBucket) underlying.createShadow();
+    public RandomAccessBucket createShadow() {
+        RandomAccessBucket shadow = underlying.createShadow();
         PaddedRandomAccessBucket ret = new PaddedRandomAccessBucket(shadow, size);
         ret.setReadOnly();
         return ret;

@@ -111,7 +111,7 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
 	}
 
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		return null;
 	}
 

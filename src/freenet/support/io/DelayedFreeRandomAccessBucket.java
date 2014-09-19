@@ -125,7 +125,7 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
 	}
 	
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		return bucket.createShadow();
 	}
 

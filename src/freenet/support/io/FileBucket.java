@@ -12,6 +12,7 @@ import java.io.Serializable;
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 
 /**
  * A file Bucket is an implementation of Bucket that writes to a file.
@@ -128,7 +129,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, Serializable {
 	}
 
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		String fnam = file.getPath();
 		File newFile = new File(fnam);
 		return new FileBucket(newFile, true, false, false, false, false);

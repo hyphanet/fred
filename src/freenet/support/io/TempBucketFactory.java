@@ -459,7 +459,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		}
 
 		@Override
-		public Bucket createShadow() {
+		public RandomAccessBucket createShadow() {
 			return currentBucket.createShadow();
 		}
 

@@ -83,7 +83,7 @@ public class SimpleReadOnlyArrayBucket implements Bucket, RandomAccessBucket {
 	}
 
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		if(buf.length < 256*1024) {
 			return new SimpleReadOnlyArrayBucket(Arrays.copyOfRange(buf, offset, offset+length));
 		}

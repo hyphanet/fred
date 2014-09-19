@@ -77,7 +77,7 @@ public class NullBucket implements Bucket, Serializable, RandomAccessBucket {
 	}
 
 	@Override
-	public Bucket createShadow() {
+	public RandomAccessBucket createShadow() {
 		return new NullBucket();
 	}
 
