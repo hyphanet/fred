@@ -888,12 +888,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	        if(encrypt) {
 	            if(realSize != paddedSize)
 	                ret = new TrivialPaddedRandomAccessThing(ret, realSize);
-	            if(reallyEncrypt) {
-	                try {
-	                    ret = new EncryptedRandomAccessThing(CRYPT_TYPE, ret, secret, true);
-	                } catch (GeneralSecurityException e) {
-	                    Logger.error(this, "Cannot create encrypted tempfile: "+e, e);
-	                }
+	            try {
+	                ret = new EncryptedRandomAccessThing(CRYPT_TYPE, ret, secret, true);
+	            } catch (GeneralSecurityException e) {
+	                Logger.error(this, "Cannot create encrypted tempfile: "+e, e);
 	            }
 	        }
 	        return ret;
