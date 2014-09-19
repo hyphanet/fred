@@ -127,16 +127,12 @@ public class ClientGetWorkerThread extends Thread {
 			// Dump the rest.
 			try {
 				while(true) {
-					long skipped = input.skip(4096);
-					if(skipped < 0) break;
-					if(skipped == 0) {
-						while(true) {
-							byte[] buf = new byte[4096];
-							int r = input.read(buf);
-							if(r < 0) break;
-						}
-						break;
-					}
+				    // FileInputStream.skip() doesn't do what we want. Use read().
+				    // Note this is only necessary because we might have an AEADInputStream?
+				    // FIXME get rid - they should check the end anyway?
+				    byte[] buf = new byte[4096];
+				    int r = input.read(buf);
+				    if(r < 0) break;
 				}
 			} catch (EOFException e) {
 				// Okay.
