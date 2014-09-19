@@ -336,7 +336,7 @@ public class NodeClientCore implements Persistable {
         initDiskSpaceLimits(nodeConfig, sortOrder);
         
         cryptoSecretTransient = new MasterSecret();
-        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm, cryptoSecretTransient);
+        tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"), minDiskFreeShortTerm, cryptoSecretTransient);
 
         bandwidthStatsPutter = new PersistentStatsPutter();
         

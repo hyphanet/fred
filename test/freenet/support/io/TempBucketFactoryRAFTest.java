@@ -11,10 +11,8 @@ import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import freenet.crypt.DummyRandomSource;
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.MasterSecret;
-import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
 import freenet.support.io.TempBucketFactory.TempBucket;
@@ -31,7 +29,6 @@ public abstract class TempBucketFactoryRAFTest extends RandomAccessThingTestBase
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
     private static final int[] TEST_LIST_NOT_MIGRATED = new int[] { 1, 32, 64, 1024, 2048, 4095 };
     
-    private RandomSource strongPRNG = new DummyRandomSource(43210);
     private Random weakPRNG = new Random(12340);
     private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
     private File f = new File("temp-bucket-raf-test");
@@ -47,7 +44,7 @@ public abstract class TempBucketFactoryRAFTest extends RandomAccessThingTestBase
     @Override
     public void setUp() throws IOException {
         fg = new FilenameGenerator(weakPRNG, true, f, "temp-raf-test-");
-        factory = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false, 1024*1024*2, secret);
+        factory = new TempBucketFactory(exec, fg, 4096, 65536, weakPRNG, false, 1024*1024*2, secret);
         factory.setEncryption(enableCrypto());
         assertEquals(factory.getRamUsed(), 0);
         FileUtil.removeAll(f);

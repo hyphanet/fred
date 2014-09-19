@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -21,13 +20,11 @@ import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import freenet.client.async.ClientContext;
-import freenet.crypt.AEADCryptBucket;
 import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.EncryptedRandomAccessThingType;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
-import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -67,8 +64,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	private final DiskSpaceCheckingRandomAccessThingFactory diskRAFFactory;
 	private volatile long minDiskSpace;
 	private long bytesInUse = 0;
-	private final RandomSource strongPRNG;
-	private final Random weakPRNG;
 	private final Executor executor;
 	private volatile boolean reallyEncrypt;
 	private final MasterSecret secret;
@@ -527,12 +522,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	// Storage accounting disabled by default.
-	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt, long minDiskSpace, MasterSecret masterSecret) {
+	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, Random weakPRNG, boolean reallyEncrypt, long minDiskSpace, MasterSecret masterSecret) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
-		this.strongPRNG = strongPRNG;
-		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
 		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
@@ -862,7 +855,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	    if(size < 0) throw new IllegalArgumentException();
 	    if(size > Integer.MAX_VALUE) return diskRAFFactory.makeRAF(size);
 	    
-	    boolean useRAMBucket = false;
 	    long now = System.currentTimeMillis();
 	    
 	    TempLockableRandomAccessThing raf = null;
@@ -913,7 +905,6 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
             throws IOException {
         if(size < 0) throw new IllegalArgumentException();
         
-        boolean useRAMBucket = false;
         long now = System.currentTimeMillis();
         
         TempLockableRandomAccessThing raf = null;
