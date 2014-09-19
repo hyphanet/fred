@@ -4,7 +4,7 @@
 package freenet.pluginmanager;
 
 import freenet.node.fcp.FCPConnectionHandler;
-import freenet.node.fcp.FCPPluginReply;
+import freenet.node.fcp.FCPPluginServerMessage;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -26,7 +26,7 @@ public class PluginReplySenderFCP extends PluginReplySender {
 		// like in linux everthing is a file, in Plugintalker everything is a plugin. So it throws PluginNotFoundException
 		// instead fcp connection errors 
 		if (handler.isClosed()) throw new PluginNotFoundException("FCP connection closed");
-		FCPPluginReply reply = new FCPPluginReply(pluginname, identifier, params, bucket);
+        FCPPluginServerMessage reply = new FCPPluginServerMessage(pluginname, identifier, params, bucket);
 		handler.outputHandler.queue(reply);
 	}
 }

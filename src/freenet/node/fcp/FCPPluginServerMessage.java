@@ -15,21 +15,18 @@ import freenet.support.api.Bucket;
  * This class produces the network format for a FCP message which is send from a FCP server
  * plugin to a FCP client.<br>
  * It is the inverse of {@link FCPPluginMessage} which parses the on-network format of client
- * to server messages.<br>
+ * to server messages.<br><br>
  * 
- * <b>ATTENTION:</b> As opposed to its name, it can be a <i>non-reply</i> message. This is because
- * in the legacy plugin FCP API, server plugins could not send messages to the client on their own,
- * they were only allowed to send messages as reply to an original message of the client. The new
- * API allows that.<br>
- * To stay backward compatible, it was decided to keep the raw network message name "FCPPluginReply"
- * as is - and thus also the name of this class.<br>
- * FIXME: To resolve this, we could rename the class to FCPPluginServerMessage: It will always
- * represent a message sent by the server, so the name fits. Then please move the above
- * documentation to {@link #NAME} because the on-network name should stay as is for backward
- * compatibility. Also, there maybe add a FIXME which asks to find out whether it would technically
- * be possible to add a second name to the on-network data so we can get rid of the old name after
- * a transition period.
- * <br><br>
+ * ATTENTION: The on-network name of this message is different: It is {@value #NAME}. The class
+ * previously had the same name but it was decided to rename it: Previously, it was only allowed
+ * for the server to send messages to the client as a direct <i>reply</i> to a message. Nowadays,
+ * the server can send messages to the client any time he wants, even if there hasn't been a client
+ * message for a long time. So the class was renamed to FCPPluginServerMessage to prevent the
+ * misconception that it would be reply only, and also to make the name symmetrical to class
+ * {@link FCPPluginClientMessage}. To stay backward compatible, it was decided to keep the raw
+ * network message name as is. <br>
+ * TODO FIXME: Would it technically be possible to add a second name to the on-network data so we
+ * can get rid of the old name after a transition period?<br><br>
  * 
  * <b>ATTENTION:</b> There is a similar class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
  * which serves as a container of FCP plugin messages which are produced and consumed by the
@@ -40,8 +37,14 @@ import freenet.support.api.Bucket;
  * @author saces
  * @author xor (xor@freenetproject.org)
  */
-public class FCPPluginReply extends DataCarryingMessage {
+public class FCPPluginServerMessage extends DataCarryingMessage {
 	
+    /**
+     * On-network format name of the message.
+     * 
+     * ATTENTION: This one is different to the class name. For an explanation, see the class-level
+     * JavaDoc {@link FCPPluginServerMessage}.
+     */
 	private static final String NAME = "FCPPluginReply";
 	
 	public static final String PARAM_PREFIX = "Param";
@@ -71,7 +74,9 @@ public class FCPPluginReply extends DataCarryingMessage {
     private final String errorMessage;
 
     /**
-     * @deprecated Use {@link #FCPPluginReply(String, String, SimpleFieldSet, Bucket, Boolean, String, String)}.
+     * @deprecated Use {@link #FCPPluginServerMessage(String, String, SimpleFieldSet, Bucket,
+     *             Boolean, String, String)}.<br><br>
+     * 
      *             <b>ATTENTION:</b> Upon removal of this constructor, you should remove the
      *             backend constructor so the only remaining constructor is the one which consumes
      *             a {@link FredPluginFCPMessageHandler.FCPPluginMessage}. Then you should remove
@@ -79,7 +84,8 @@ public class FCPPluginReply extends DataCarryingMessage {
      *             class, and instead store a reference to an object of the other class.
      */
     @Deprecated
-    public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2) {
+    public FCPPluginServerMessage(String pluginname, String identifier2, SimpleFieldSet fs,
+            Bucket bucket2) {
         this(pluginname, identifier2, fs, bucket2, null, null, null);
     }
 
@@ -87,7 +93,9 @@ public class FCPPluginReply extends DataCarryingMessage {
      * @param pluginname The class name of the plugin which is sending the reply. Must not be null.
      *                   See {@link PluginManager#getPluginInfoByClassName(String)}.
      */
-    public FCPPluginReply(String pluginname, FredPluginFCPMessageHandler.FCPPluginMessage reply) {
+    public FCPPluginServerMessage(String pluginname,
+            FredPluginFCPMessageHandler.FCPPluginMessage reply) {
+        
         this(pluginname, reply.identifier, reply.parameters, reply.data, reply.success,
             reply.errorCode, reply.errorMessage);
         
@@ -98,8 +106,9 @@ public class FCPPluginReply extends DataCarryingMessage {
      * The parameters match the member variables of
      * {@link FredPluginFCPMessageHandler.FCPPluginMessage}, and thus their JavaDoc applies.
      */
-    public FCPPluginReply(String pluginname, String identifier2, SimpleFieldSet fs, Bucket bucket2,
-            Boolean success, String errorCode, String errorMessage) {
+    public FCPPluginServerMessage(String pluginname, String identifier2, SimpleFieldSet fs,
+            Bucket bucket2, Boolean success, String errorCode, String errorMessage) {
+        
         bucket = bucket2;
         if (bucket == null)
             dataLength = -1;

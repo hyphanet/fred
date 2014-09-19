@@ -18,8 +18,8 @@ import freenet.support.SimpleFieldSet;
 /**
  * This class parses the network format for a FCP message which is send from a FCP client
  * to a FCP server plugin.<br>
- * It is the inverse of {@link FCPPluginReply} which produces the on-network format of server
- * to client messages.<br>
+ * It is the inverse of {@link FCPPluginServerMessage} which produces the on-network format of
+ * server to client messages.<br>
  * 
  * (There is a class {@link FredPluginFCPMessageHandler.FCPPluginMessage} with the same name.
  * Consider that one as the external representation used by actual server/client plugin
@@ -28,8 +28,7 @@ import freenet.support.SimpleFieldSet;
  * always represents a message from the client to the server, so that would fit.
  * When doing that, make sure to also:
  * - adapt the JavaDoc at class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
- * - adapt the JavaDoc at class {@link FCPPluginReply}. Also, that class should probably be renamed
- *   to FCPPluginServerMessage, because it will always be a server-to-client message.
+ * - adapt the JavaDoc at class {@link FCPPluginServerMessage}.
  * - adapt all JavaDoc and classes which use the explicit name
  *   "FredPluginFCPMessageHandler.FCPPluginMessage" to use "FCPPluginMessage" because the name
  *   is not ambiguous anymore. This can probably be done with grep.
@@ -77,10 +76,12 @@ public class FCPPluginMessage extends DataCarryingMessage {
      * specifying reply messages as replies - they would be more likely to do that with "Success"
      * because that name doesn't indicate any relation with replys. When adding this, make sure to
      * also add it to the {@link FredPluginFCPMessageHandler.FCPPluginMessage} and
-     * {@link FCPPluginReply}. Addendum: To differentiate properly between the name of the
-     * "FCPPluginReply", which is used for any server-to-client messages, including NON-reply ones,
-     * we should probably use "IsAnswer" or something else which is a different word than reply.
-     * (We cannot rename the "FCPPluginReply" message for backwards compatibility, see its JavaDoc.)
+     * {@link FCPPluginServerMessage}. Addendum: To differentiate properly between the name of the
+     * "FCPPluginReply" FCP message (represented by class {@link FCPPluginServerMessage}), which is
+     * used for any server-to-client messages, including NON-reply ones, we should probably use
+     * "IsAnswer" or something else which is a different word than reply.
+     * (We cannot rename the "FCPPluginReply" message for backwards compatibility, see JavaDoc at
+     * class {@link FCPPluginServerMessage}.)
      * This addendum of course also applies to using "answer" instead of reply at
      * {@link FredPluginFCPMessageHandler.FCPPluginMessage}
      * 
