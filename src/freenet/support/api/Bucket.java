@@ -87,7 +87,7 @@ public interface Bucket {
 
 	/** Called after restarting. The Bucket should do any necessary housekeeping after resuming,
 	 * e.g. registering itself with the appropriate persistent bucket tracker to avoid being 
-	 * garbage-collected. 
+	 * garbage-collected.  May be called twice, so the Bucket may need to track this internally.
 	 * @param context All the necessary runtime support will be on this object. 
 	 * @throws ResumeFailedException */
 	public void onResume(ClientContext context) throws ResumeFailedException;

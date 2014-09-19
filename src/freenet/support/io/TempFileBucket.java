@@ -31,6 +31,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	private boolean readOnly;
 	private final boolean deleteOnFree;
 	private File file;
+	private transient boolean resumed;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -129,32 +130,36 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
 	}
+	
+	protected void innerResume(ClientContext context) throws ResumeFailedException {
+	    generator = context.persistentFG;
+	    if(file == null) {
+	        // Migrating from old tempfile, possibly db4o era.
+	        file = generator.getFilename(filenameID);
+	        checkExists(file);
+	    } else {
+	        // File must exist!
+	        if(!file.exists()) {
+	            // Maybe moved after the last checkpoint?
+	            File f = generator.getFilename(filenameID);
+	            if(f.exists()) {
+	                file = f;
+	            }
+	        }
+	        checkExists(file);
+	        file = generator.maybeMove(file, filenameID);
+	    }
+	}
 
     @Override
-    public void onResume(ClientContext context) throws ResumeFailedException {
-        if(persistent()) {
-            generator = context.persistentFG;
-            if(file == null) {
-                // Migrating from old tempfile, possibly db4o era.
-                file = generator.getFilename(filenameID);
-                checkExists(file);
-            } else {
-                // File must exist!
-                if(!file.exists()) {
-                    // Maybe moved after the last checkpoint?
-                    File f = generator.getFilename(filenameID);
-                    if(f.exists()) {
-                        file = f;
-                    }
-                }
-                checkExists(file);
-                file = generator.maybeMove(file, filenameID);
-            }
-        } else {
-            // Plain TempFileBucket's are not persistent.
-            throw new UnsupportedOperationException();
+    public final void onResume(ClientContext context) throws ResumeFailedException {
+        if(!persistent()) throw new UnsupportedOperationException();
+        synchronized(this) {
+            if(resumed) return;
+            resumed = true;
         }
         super.onResume(context);
+        innerResume(context);
     }
     
     private void checkExists(File file) throws ResumeFailedException {
