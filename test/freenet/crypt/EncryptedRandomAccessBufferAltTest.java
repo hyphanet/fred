@@ -10,7 +10,7 @@ import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.RandomAccessBufferTestBase;
 
-public class EncryptedRandomAccessThingAltTest extends RandomAccessBufferTestBase {
+public class EncryptedRandomAccessBufferAltTest extends RandomAccessBufferTestBase {
     
     private final static EncryptedRandomAccessBufferType[] types = 
         EncryptedRandomAccessBufferType.values();
@@ -23,7 +23,7 @@ public class EncryptedRandomAccessThingAltTest extends RandomAccessBufferTestBas
     
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };
     
-    public EncryptedRandomAccessThingAltTest() {
+    public EncryptedRandomAccessBufferAltTest() {
         super(TEST_LIST);
     }
     

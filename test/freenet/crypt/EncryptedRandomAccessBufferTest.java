@@ -34,7 +34,7 @@ import freenet.support.io.FileRandomAccessBuffer;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
-public class EncryptedRandomAccessThingTest {
+public class EncryptedRandomAccessBufferTest {
     private final static EncryptedRandomAccessBufferType[] types = 
             EncryptedRandomAccessBufferType.values();
     private final static byte[] message;
