@@ -4,7 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
-import freenet.support.io.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThing;
 
 public class BarrierRandomAccessThing implements LockableRandomAccessThing {
     

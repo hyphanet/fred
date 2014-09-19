@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-import freenet.support.io.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessThing.RAFLock;
 
 public class PooledRandomAccessFileWrapperTest extends RandomAccessThingTestBase {
 

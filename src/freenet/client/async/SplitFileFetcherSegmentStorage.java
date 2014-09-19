@@ -28,7 +28,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
-import freenet.support.io.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessThing.RAFLock;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 

@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
+import freenet.support.api.LockableRandomAccessThing;
 
 public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
 

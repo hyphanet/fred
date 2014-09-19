@@ -2,7 +2,6 @@ package freenet.support.api;
 
 import java.io.IOException;
 
-import freenet.support.io.LockableRandomAccessThing;
 
 /** A Bucket which can be converted to a LockableRandomAccessThing without copying. Mostly we need 
  * this where the size of something we will later use as a RandomAccessThing is uncertain. It 

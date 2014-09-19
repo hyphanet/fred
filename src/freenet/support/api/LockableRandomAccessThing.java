@@ -1,10 +1,10 @@
-package freenet.support.io;
+package freenet.support.api;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.io.ResumeFailedException;
 
 /** A RandomAccessThing which allows you to lock it open for a brief period to indicate that you are
  * using it and it would be a bad idea to close the pooled fd. Locking the RAF open does not provide
@@ -18,11 +18,11 @@ public interface LockableRandomAccessThing extends RandomAccessThing {
      * if necessary. Hence can deadlock. */
 	public RAFLock lockOpen() throws IOException;
 	
-	abstract class RAFLock {
+	public abstract class RAFLock {
 	    
 	    private boolean locked;
 	    
-	    RAFLock() {
+	    public RAFLock() {
 	        locked = true;
 	    }
 	    

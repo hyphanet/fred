@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
+import freenet.support.api.LockableRandomAccessThing;
 
 public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
     

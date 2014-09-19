@@ -3,6 +3,8 @@ package freenet.support.io;
 import java.io.IOException;
 import java.util.Arrays;
 
+import freenet.support.api.LockableRandomAccessThing;
+
 public class ByteArrayRandomAccessThingFactory implements LockableRandomAccessThingFactory {
 
     @Override

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import freenet.support.api.LockableRandomAccessThing;
+
 /** Proxy LockableRandomAccessThing allowing changing the pointer to the underlying RAT. */
 abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessThing {
 

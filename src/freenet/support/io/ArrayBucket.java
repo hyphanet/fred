@@ -11,6 +11,7 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.LockableRandomAccessThing;
 import freenet.support.api.RandomAccessBucket;
 
 /**

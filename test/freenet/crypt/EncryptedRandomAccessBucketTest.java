@@ -25,13 +25,13 @@ import org.junit.Test;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
+import freenet.support.api.LockableRandomAccessThing;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTestBase;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.RAFBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThingTestBase;

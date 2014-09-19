@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
+import freenet.support.api.LockableRandomAccessThing;
 
 public class RandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
 

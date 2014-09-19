@@ -6,6 +6,7 @@ import java.security.GeneralSecurityException;
 import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.MasterSecret;
 import freenet.support.Logger;
+import freenet.support.api.LockableRandomAccessThing;
 
 /** Wraps another RandomAccessThingFactory to enable encryption if currently turned on. */
 public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAccessThingFactory {

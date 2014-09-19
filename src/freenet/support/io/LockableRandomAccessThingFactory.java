@@ -2,6 +2,8 @@ package freenet.support.io;
 
 import java.io.IOException;
 
+import freenet.support.api.LockableRandomAccessThing;
+
 /** Serves a similar function to BucketFactory. Different factories may serve different functions 
  * e.g. temporary storage (not persistent across restarts) only.
  * @author toad

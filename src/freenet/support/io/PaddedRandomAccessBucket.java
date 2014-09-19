@@ -12,6 +12,7 @@ import java.io.Serializable;
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
+import freenet.support.api.LockableRandomAccessThing;
 import freenet.support.api.RandomAccessBucket;
 
 /** Pads a bucket to the next power of 2 file size. 

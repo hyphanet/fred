@@ -15,8 +15,8 @@ import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
+import freenet.support.api.LockableRandomAccessThing;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-import freenet.support.io.LockableRandomAccessThing;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 

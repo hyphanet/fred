@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
+import freenet.support.api.LockableRandomAccessThing;
 
 public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, Serializable, DelayedFree {
     

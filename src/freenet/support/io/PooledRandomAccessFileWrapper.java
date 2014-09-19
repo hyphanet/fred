@@ -12,6 +12,7 @@ import java.util.Random;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
+import freenet.support.api.LockableRandomAccessThing;
 import freenet.support.math.MersenneTwister;
 
 /** Random access files with a limited number of open files, using a pool. 
