@@ -326,6 +326,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(ctx.getCHKOnly || ctx.earlyEncode) {
 			tryEncode(context);
+		}
+		if(ctx.getCHKOnly) { 
 			onSuccess(null, getKeyNoEncode(), context);
 		} else {
 			getScheduler(context).registerInsert(this, persistent);
@@ -605,7 +607,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			synchronized(this) {
 				if(finished) return null;
 				key = new BlockItemKey(this, hashCode());
-				if(ignored.hasInsert(this, key))
+				if(ignored.hasInsert(key))
 				    return null;
 				return getBlockItem(key, context);
 			}
@@ -621,7 +623,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	    synchronized(this) {
 	        if(finished) return -1;
             BlockItemKey key = new BlockItemKey(this, hashCode());
-            if(keysFetching.hasInsert(this, key))
+            if(keysFetching.hasInsert(key))
                 return Long.MAX_VALUE;
             return 0;
 	    }

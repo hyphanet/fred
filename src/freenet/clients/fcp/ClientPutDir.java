@@ -91,7 +91,7 @@ public class ClientPutDir extends ClientPutBase {
 	 * @throws InsertException 
 	*/
 	public ClientPutDir(PersistentRequestClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, Persistence persistence, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean includeHiddenFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, NodeClientCore core) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
-		super(checkEmptySSK(uri, "site", core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistence, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, false/*XXX ignoreUSKDatehints*/, core);
+		super(checkEmptySSK(uri, "site", core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistence, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_DEFAULT, false/*XXX ignoreUSKDatehints*/, core);
 		wasDiskPut = true;
 		this.overrideSplitfileCryptoKey = overrideSplitfileCryptoKey;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -109,7 +109,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	public ClientPutDir(PersistentRequestClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, Persistence persistence, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, byte[] overrideSplitfileCryptoKey, NodeClientCore core) throws IdentifierCollisionException, MalformedURLException, TooManyFilesInsertException {
-		super(checkEmptySSK(uri, "site", core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistence, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, false/*XXX ignoreUSKDatehints*/, core);
+		super(checkEmptySSK(uri, "site", core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistence, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_DEFAULT, false/*XXX ignoreUSKDatehints*/, core);
 		wasDiskPut = false;
 		this.overrideSplitfileCryptoKey = overrideSplitfileCryptoKey;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -264,7 +264,7 @@ public class ClientPutDir extends ClientPutBase {
 			Logger.error(this, "putter == null", new Exception("error"));
 		// FIXME end
 		return new PersistentPutDir(identifier, publicURI, uri, verbosity, priorityClass,
-				persistence, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null);
+				persistence, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, ctx.dontCompress, ctx.compressorDescriptor, wasDiskPut, isRealTime(), putter != null ? putter.getSplitfileCryptoKey() : null, this.ctx.getCompatibilityMode());
 	}
 	
 	private boolean isRealTime() {

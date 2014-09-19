@@ -10,6 +10,7 @@ public class BarrierRandomAccessThing implements LockableRandomAccessThing {
     
     private final LockableRandomAccessThing underlying;
     private boolean proceed;
+    private int waiting;
     
     public BarrierRandomAccessThing(LockableRandomAccessThing underlying) {
         this.underlying = underlying;
@@ -20,9 +21,27 @@ public class BarrierRandomAccessThing implements LockableRandomAccessThing {
     public long size() {
         return underlying.size();
     }
+    
+    /** Wait until some threads are waiting for the proceed thread. */
+    public void waitForWaiting() {
+        synchronized(this) {
+            if(proceed) throw new IllegalArgumentException();
+            while(waiting == 0) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Ignore.
+                }
+            }
+        }
+    }
 
+    /** Wait until the proceed flag is set. */
     private void waitForClear() {
         synchronized(this) {
+            waiting++;
+            if(waiting == 1)
+                notifyAll();
             while(!proceed) {
                 try {
                     wait();

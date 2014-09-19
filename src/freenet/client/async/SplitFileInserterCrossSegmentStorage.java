@@ -151,6 +151,7 @@ public class SplitFileInserterCrossSegmentStorage {
 
     public synchronized void startEncode() {
         if(encoded) return;
+        if(cancelled) return;
         if(encoding) return;
         encoding = true;
         long limit = totalBlocks * CHKBlock.DATA_LENGTH + 
@@ -176,16 +177,19 @@ public class SplitFileInserterCrossSegmentStorage {
                     shutdown = true;
                 } finally {
                     chunk.release();
-                    if(!shutdown) {
-                        // We do want to call the callback even if we threw something, because we 
-                        // may be waiting to cancel. However we DON'T call it if we are shutting down.
-                        synchronized(this) {
-                            encoding = false;
+                    try {
+                        if(!shutdown) {
+                            // We do want to call the callback even if we threw something, because we 
+                            // may be waiting to cancel. However we DON'T call it if we are shutting down.
+                            synchronized(SplitFileInserterCrossSegmentStorage.this) {
+                                encoding = false;
+                            }
+                            parent.onFinishedEncoding(SplitFileInserterCrossSegmentStorage.this);
                         }
-                        parent.onFinishedEncoding(SplitFileInserterCrossSegmentStorage.this);
+                    } finally {
+                        // Callback is part of the persistent job, unlock *after* calling it.
+                        if(lock != null) lock.unlock(false, prio);
                     }
-                    // Callback is part of the persistent job, unlock *after* calling it.
-                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }
@@ -196,6 +200,9 @@ public class SplitFileInserterCrossSegmentStorage {
     /** Encode a segment. Much simpler than fetcher! */
     private void innerEncode(MemoryLimitedChunk chunk) {
         try {
+            synchronized(this) {
+                if(cancelled) return;
+            }
             if(logMINOR) Logger.minor(this, "Encoding "+this);
             byte[][] dataBlocks = readDataBlocks();
             byte[][] checkBlocks = new byte[crossCheckBlockCount][];
@@ -326,6 +333,16 @@ public class SplitFileInserterCrossSegmentStorage {
     public synchronized boolean hasCompletedOrFailed() {
         if(encoding) return false;
         return encoded || cancelled;
+    }
+    
+    /** For tests only */
+    synchronized boolean isEncoding() {
+        return encoding;
+    }
+
+    /** For tests only */
+    synchronized boolean hasEncodedSuccessfully() {
+        return encoded;
     }
 
 }

@@ -26,6 +26,6 @@ public interface KeysFetchingLocally {
 	 * Is this request:token pair being executed? FIXME this should be tracked by the inserter 
 	 * itself.
 	 */
-	public boolean hasInsert(SendableInsert insert, SendableRequestItemKey token);
+	public boolean hasInsert(SendableRequestItemKey token);
 
 }

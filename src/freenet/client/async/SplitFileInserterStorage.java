@@ -563,8 +563,11 @@ public class SplitFileInserterStorage {
         // Keys are empty, and invalid.
         status = Status.NOT_STARTED;
         
-        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks;
-        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCheckBlocks + crossCheckBlocks * segments.length;
+        // Include the cross check blocks in the required blocks. The actual number needed may be 
+        // slightly less, but this is consistent with fetching, and also with pre-1466 metadata. 
+        int totalCrossCheckBlocks = crossCheckBlocks * segments.length;
+        this.topRequiredBlocks = topRequiredBlocks + totalDataBlocks + totalCrossCheckBlocks;
+        this.topTotalBlocks = topTotalBlocks + totalDataBlocks + totalCrossCheckBlocks + totalCheckBlocks;
     }
     
     /** Create a splitfile insert from stored data.
@@ -1405,12 +1408,12 @@ public class SplitFileInserterStorage {
 
     /** Called when a segment completes. Can be called inside locks as it runs off-thread. */
     public void segmentSucceeded(final SplitFileInserterSegmentStorage completedSegment) {
-        if(logMINOR) Logger.minor(this, "Succeeded segment "+completedSegment);
+        if(logMINOR) Logger.minor(this, "Succeeded segment "+completedSegment+" for "+callback);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
             public boolean run(ClientContext context) {
-                if(logMINOR) Logger.minor(this, "Succeeding segment "+completedSegment+" for "+this);
+                if(logMINOR) Logger.minor(this, "Succeeding segment "+completedSegment+" for "+callback);
                 if(maybeFail()) return true;
                 if(allSegmentsSucceeded()) {
                     synchronized(this) {
@@ -1488,6 +1491,7 @@ public class SplitFileInserterStorage {
     private boolean allSegmentsSucceeded() {
         for(SplitFileInserterSegmentStorage segment : segments) {
             if(!segment.hasSucceeded()) return false;
+            if(logMINOR) Logger.minor(this, "Succeeded "+segment);
         }
         return true;
     }
@@ -1501,7 +1505,6 @@ public class SplitFileInserterStorage {
     }
 
     public void failOnDiskError(IOException e) {
-        Logger.error(this, "Failing with disk error: "+e, e);
         fail(new InsertException(InsertExceptionMode.BUCKET_ERROR, e, null));
     }
     
@@ -1515,10 +1518,21 @@ public class SplitFileInserterStorage {
     
     void fail(final InsertException e) {
         synchronized(this) {
+            if(this.status == Status.SUCCEEDED || this.status == Status.FAILED || 
+                    this.status == Status.GENERATING_METADATA) {
+                // Not serious but often indicates a problem e.g. we are sending requests after completing.
+                // So log as ERROR for now.
+                Logger.error(this, "Already finished ("+status+") but failing with "+e+" ("+this+")", e);
+                return;
+            }
             // Only fail once.
             if(failing != null) return;
             failing = e;
         }
+        if(e.mode == InsertExceptionMode.BUCKET_ERROR || e.mode == InsertExceptionMode.INTERNAL_ERROR)
+            Logger.error(this, "Failing: "+e+" for "+this, e);
+        else
+            Logger.normal(this, "Failing: "+e+" for "+this, e);
         jobRunner.queueNormalOrDrop(new PersistentJob() {
 
             @Override
@@ -1558,11 +1572,6 @@ public class SplitFileInserterStorage {
         return status;
     }
 
-    /** Used by KeysFetchingLocally */
-    SendableInsert getSendableInsert() {
-        return callback.getSendableInsert();
-    }
-    
     static final long LAZY_WRITE_METADATA_DELAY = TimeUnit.MINUTES.toMillis(5);
     
     private final PersistentJob writeMetadataJob = new PersistentJob() {

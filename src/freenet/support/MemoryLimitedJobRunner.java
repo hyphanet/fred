@@ -124,5 +124,9 @@ public class MemoryLimitedJobRunner {
         }
     }
 
+    public synchronized int getRunningThreads() {
+        return runningThreads;
+    }
+
 }
 

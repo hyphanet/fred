@@ -560,7 +560,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.equals(""))
-					cmode = CompatibilityMode.COMPAT_CURRENT.intern();
+					cmode = CompatibilityMode.COMPAT_DEFAULT.intern();
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode).intern();
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);
@@ -660,7 +660,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 100);
 				final CompatibilityMode cmode;
 				if(compatibilityMode.equals(""))
-					cmode = CompatibilityMode.COMPAT_CURRENT;
+					cmode = CompatibilityMode.COMPAT_DEFAULT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				String s = request.getPartAsStringFailsafe("overrideSplitfileKey", 65);

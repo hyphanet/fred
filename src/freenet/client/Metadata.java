@@ -207,7 +207,7 @@ public class Metadata implements Cloneable, Serializable {
 	public final int topBlocksRequired;
 	public final int topBlocksTotal;
 	public final boolean topDontCompress;
-	public final short topCompatibilityMode;
+	public final CompatibilityMode topCompatibilityMode;
 
         private static volatile boolean logMINOR;
         private static volatile boolean logDEBUG;
@@ -350,16 +350,27 @@ public class Metadata implements Cloneable, Serializable {
 			topBlocksRequired = dis.readInt();
 			topBlocksTotal = dis.readInt();
 			topDontCompress = dis.readBoolean();
-			topCompatibilityMode = dis.readShort();
-			if(!CompatibilityMode.hasCode(topCompatibilityMode))
-			    throw new MetadataParseException("Unknown compatibility mode "+topCompatibilityMode);
+			short code = dis.readShort();
+			if(CompatibilityMode.hasCode(code) 
+			        && code != CompatibilityMode.COMPAT_CURRENT.code) { // COMPAT_UNKNOWN is OK but COMPAT_CURRENT should never be seen in published metadata
+			    topCompatibilityMode = CompatibilityMode.byCode(code);
+			    if(topSize != 0 && topCompatibilityMode == CompatibilityMode.COMPAT_UNKNOWN)
+			        maxCompatMode = CompatibilityMode.COMPAT_1416;
+			} else {
+			    if(CompatibilityMode.maybeFutureCode(code)) {
+                    Logger.warning(this, "Content may have been inserted with a newer version of Freenet?");
+                    topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN;
+			    } else {
+			        throw new MetadataParseException("Bad compatibility mode "+code);
+			    }
+			}
 		} else {
 			topSize = 0;
 			topCompressedSize = 0;
 			topBlocksRequired = 0;
 			topBlocksTotal = 0;
 			topDontCompress = false;
-			topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN.code;
+			topCompatibilityMode = InsertContext.CompatibilityMode.COMPAT_UNKNOWN;
 		}
 
 		if(documentType == DocumentType.ARCHIVE_MANIFEST) {
@@ -564,7 +575,8 @@ public class Metadata implements Cloneable, Serializable {
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
 					else if(splitfileSingleCryptoAlgorithm == Key.ALGO_AES_CTR_256_SHA256) {
 						minCompatMode = CompatibilityMode.COMPAT_1416;
-						maxCompatMode = CompatibilityMode.latest();
+						if(maxCompatMode == CompatibilityMode.COMPAT_UNKNOWN)
+						    maxCompatMode = CompatibilityMode.latest();
 					}
 					if(params.length < 10)
 						throw new MetadataParseException("Splitfile parameters too short for version 1");
@@ -583,11 +595,11 @@ public class Metadata implements Cloneable, Serializable {
 						deductBlocksFromSegments = 0;
 				}
 				
-				if(topCompatibilityMode != 0) {
+				if(topCompatibilityMode != CompatibilityMode.COMPAT_UNKNOWN) {
 					// If we have top compatibility mode, then we can give a definitive answer immediately, with the splitfile key, with dontcompress, etc etc.
 					if(minCompatMode == CompatibilityMode.COMPAT_UNKNOWN ||
-							!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
-						minCompatMode = maxCompatMode = CompatibilityMode.byCode(topCompatibilityMode);
+							!(minCompatMode.ordinal() > topCompatibilityMode.ordinal() || maxCompatMode.ordinal() < topCompatibilityMode.ordinal())) {
+						minCompatMode = maxCompatMode = topCompatibilityMode;
 					} else
 						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode: min="+minCompatMode+" max="+maxCompatMode+" top="+topCompatibilityMode);
 				}
@@ -775,7 +787,7 @@ public class Metadata implements Cloneable, Serializable {
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
 		topDontCompress = false;
-		topCompatibilityMode = 0;
+		topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 	}
 
 	/**
@@ -902,7 +914,7 @@ public class Metadata implements Cloneable, Serializable {
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
 		topDontCompress = false;
-		topCompatibilityMode = 0;
+		topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 	}
 
 	/**
@@ -939,7 +951,7 @@ public class Metadata implements Cloneable, Serializable {
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
 		topDontCompress = false;
-		topCompatibilityMode = 0;
+		topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 	}
 
 	/**
@@ -969,11 +981,11 @@ public class Metadata implements Cloneable, Serializable {
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
 		topDontCompress = false;
-		topCompatibilityMode = 0;
+		topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 	}
 
 	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
-		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, false, (short)0, null);
+		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, false, CompatibilityMode.COMPAT_UNKNOWN, null);
 	}
 	
 	/**
@@ -982,7 +994,8 @@ public class Metadata implements Cloneable, Serializable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
+	public Metadata(DocumentType docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, CompatibilityMode topCompatibilityMode, HashResult[] hashes) {
+	    assert(topCompatibilityMode != CompatibilityMode.COMPAT_CURRENT);
 		hashCode = super.hashCode();
 		if(hashes != null && hashes.length == 0) {
 			throw new IllegalArgumentException();
@@ -1012,7 +1025,6 @@ public class Metadata implements Cloneable, Serializable {
 			this.topBlocksTotal = totalBlocks;
 			this.topDontCompress = topDontCompress;
 			this.topCompatibilityMode = topCompatibilityMode;
-			assert(CompatibilityMode.hasCode(topCompatibilityMode));
 			parsedVersion = 1;
 		} else {
 			this.topSize = 0;
@@ -1020,7 +1032,7 @@ public class Metadata implements Cloneable, Serializable {
 			this.topBlocksRequired = 0;
 			this.topBlocksTotal = 0;
 			this.topDontCompress = false;
-			this.topCompatibilityMode = 0;
+			this.topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
 			parsedVersion = 0;
 		}
 	}
@@ -1111,18 +1123,32 @@ public class Metadata implements Cloneable, Serializable {
             origCompressedDataSize = 0;
             requiredBlocks = 0;
             totalBlocks = 0;
-            this.topCompatibilityMode = 0;
             parsedVersion = 0;
         } else {
             if(splitfileCryptoKey == null) throw new IllegalArgumentException();
-            this.topCompatibilityMode = topCompatibilityMode.code;
             parsedVersion = 1;
         }
-		topSize = origDataSize;
-		topCompressedSize = origCompressedDataSize;
-		topBlocksRequired = requiredBlocks;
-		topBlocksTotal = totalBlocks;
-		this.topDontCompress = topDontCompress;
+        if(origDataSize != 0) {
+            topSize = origDataSize;
+            topCompressedSize = origCompressedDataSize;
+            topBlocksRequired = requiredBlocks;
+            topBlocksTotal = totalBlocks;
+            // Bug for bug compatibility ...
+            if(topCompatibilityMode.ordinal() >= CompatibilityMode.COMPAT_1466.ordinal()) {
+                this.topDontCompress = topDontCompress;
+                this.topCompatibilityMode = topCompatibilityMode;
+            } else {
+                this.topDontCompress = false;
+                this.topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
+            }
+        } else {
+            topSize = 0;
+            topCompressedSize = 0;
+            topBlocksRequired = 0;
+            topBlocksTotal = 0;
+            this.topDontCompress = false;
+            this.topCompatibilityMode = CompatibilityMode.COMPAT_UNKNOWN;
+        }
 		
 		if(parsedVersion == 0) {
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
@@ -1428,7 +1454,7 @@ public class Metadata implements Cloneable, Serializable {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(parsedVersion); // version
 		dos.writeByte(documentType.code);
-		boolean hasTopBlocks = topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != 0;
+		boolean hasTopBlocks = topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != CompatibilityMode.COMPAT_UNKNOWN;
 		if(haveFlags()) {
 			short flags = 0;
 			if(splitfile) flags |= FLAGS_SPLITFILE;
@@ -1460,7 +1486,7 @@ public class Metadata implements Cloneable, Serializable {
 			dos.writeInt(topBlocksRequired);
 			dos.writeInt(topBlocksTotal);
 			dos.writeBoolean(topDontCompress);
-			dos.writeShort(topCompatibilityMode);
+			dos.writeShort(topCompatibilityMode.code);
 		}
 
 		if(documentType == DocumentType.ARCHIVE_MANIFEST) {
@@ -1831,7 +1857,7 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	public CompatibilityMode getTopCompatibilityMode() {
-		return InsertContext.CompatibilityMode.byCode(topCompatibilityMode);
+		return topCompatibilityMode;
 	}
 
 	public boolean getTopDontCompress() {
@@ -1839,7 +1865,7 @@ public class Metadata implements Cloneable, Serializable {
 	}
 
 	public short getTopCompatibilityCode() {
-		return topCompatibilityMode;
+		return topCompatibilityMode.code;
 	}
 
 	public CompatibilityMode getMinCompatMode() {

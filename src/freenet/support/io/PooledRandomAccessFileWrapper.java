@@ -21,9 +21,15 @@ import freenet.support.math.MersenneTwister;
  * FIXME does this need a shutdown hook? I don't see why it would matter ... ??? */
 public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
     
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(PooledRandomAccessFileWrapper.class);
+    }
+    
     private static final long serialVersionUID = 1L;
     private static int MAX_OPEN_FDS = 100;
-    static int OPEN_FDS = 0;
+    /** Total number of currently open FDs */
+    static int totalOpenFDs = 0;
     static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
     
     public final File file;
@@ -161,6 +167,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     @Override
     public void close() {
+        if(logMINOR) Logger.minor(this, "Closing "+this, new Exception("debug"));
         synchronized(closables) {
             if(lockLevel != 0)
                 throw new IllegalStateException("Must unlock first!");
@@ -188,21 +195,15 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         };
         synchronized(closables) {
             while(true) {
-                if(closed) throw new IOException("Already closed");
+                closables.remove(this);
+                if(closed) throw new IOException("Already closed "+this);
                 if(raf != null) {
                     lockLevel++; // Already open, may or may not be already locked.
                     return lock;
-                } else if(OPEN_FDS < MAX_OPEN_FDS) {
+                } else if(totalOpenFDs < MAX_OPEN_FDS) {
+                    raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
                     lockLevel++;
-                    OPEN_FDS++;
-                    try {
-                        raf = new RandomAccessFile(file, (readOnly && !forceWrite) ? "r" : "rw");
-                    } catch (IOException e) {
-                        // Don't call unlock(), don't want to add to closables.
-                        lockLevel--;
-                        OPEN_FDS--;
-                        throw e;
-                    }
+                    totalOpenFDs++;
                     return lock;
                 } else {
                     PooledRandomAccessFileWrapper closable = pollFirstClosable();
@@ -231,18 +232,20 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
             return null;
         }
     }
-    
-    /** Should be synchronized on class already */
-    private void closeRAF() {
-        if(!closed && lockLevel != 0) throw new IllegalStateException();
-        if(raf == null) return;
-        try {
-            raf.close();
-        } catch (IOException e) {
-            Logger.error(this, "Error closing "+this+" : "+e, e);
+
+    /** Exposed for tests only. Used internally. Must be unlocked. */
+    protected void closeRAF() {
+        synchronized(closables) {
+            if(lockLevel != 0) throw new IllegalStateException();
+            if(raf == null) return;
+            try {
+                raf.close();
+            } catch (IOException e) {
+                Logger.error(this, "Error closing "+this+" : "+e, e);
+            }
+            raf = null;
+            totalOpenFDs--;
         }
-        raf = null;
-        OPEN_FDS--;
     }
 
     private void unlock() {
@@ -284,7 +287,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
     /** How many fd's are open right now? Mainly for tests but also for stats. */
     public static int getOpenFDs() {
-        return OPEN_FDS;
+        return totalOpenFDs;
     }
     
     static int getClosableFDs() {

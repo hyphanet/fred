@@ -418,16 +418,19 @@ public class SplitFileInserterSegmentStorage {
                     shutdown = true;
                 } finally {
                     chunk.release();
-                    if(!shutdown) {
-                        // We do want to call the callback even if we threw something, because we 
-                        // may be waiting to cancel. However we DON'T call it if we are shutting down.
-                        synchronized(this) {
-                            encoding = false;
+                    try {
+                        if(!shutdown) {
+                            // We do want to call the callback even if we threw something, because we 
+                            // may be waiting to cancel. However we DON'T call it if we are shutting down.
+                            synchronized(SplitFileInserterSegmentStorage.this) {
+                                encoding = false;
+                            }
+                            parent.onFinishedEncoding(SplitFileInserterSegmentStorage.this);
                         }
-                        parent.onFinishedEncoding(SplitFileInserterSegmentStorage.this);
+                    } finally {
+                        // Callback is part of the persistent job, unlock *after* calling it.
+                        if(lock != null) lock.unlock(false, prio);
                     }
-                    // Callback is part of the persistent job, unlock *after* calling it.
-                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }
@@ -438,6 +441,9 @@ public class SplitFileInserterSegmentStorage {
     private void innerEncode(MemoryLimitedChunk chunk) {
         RAFLock lock = null;
         try {
+            synchronized(this) {
+                if(cancelled) return;
+            }
             lock = parent.lockRAF();
             if(logMINOR) Logger.minor(this, "Encoding "+this+" for "+parent);
             byte[][] dataBlocks = readDataAndCrossCheckBlocks();
@@ -502,6 +508,15 @@ public class SplitFileInserterSegmentStorage {
     }
 
     public ClientCHKBlock encodeBlock(int blockNo) throws IOException {
+        if(parent.isFinishing()) {
+            throw new IOException("Already finishing reading block "+blockNo+" for "+this+" for "+parent);
+        }
+        synchronized(this) {
+            if(this.blockChooser.hasSucceeded(blockNo)) {
+                Logger.error(this, "Already inserted block "+blockNo+" for "+this+" for "+parent);
+                throw new IOException("Already inserted block "+blockNo+" for "+this+" for "+parent);
+            }
+        }
         byte[] buf = readBlock(blockNo);
         return encodeBlock(buf);
     }
@@ -724,6 +739,10 @@ public class SplitFileInserterSegmentStorage {
             return this;
         }
         
+        public String toString() {
+            return "BlockInsert:"+segment+":"+blockNumber+"@memory:"+super.hashCode();
+        }
+        
     }
 
     /** Set the cross-segment associated with a cross-check block, which tells us how to read that 
@@ -740,6 +759,10 @@ public class SplitFileInserterSegmentStorage {
 
     public int countSendableKeys() {
         return blockChooser.countFetchable();
+    }
+    
+    public String toString() {
+        return super.toString()+":"+parent;
     }
 
 }

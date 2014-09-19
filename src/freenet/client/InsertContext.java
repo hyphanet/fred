@@ -59,9 +59,13 @@ public class InsertContext implements Cloneable, Serializable {
 	public boolean localRequestOnly;
 	/** Don't insert USK DATEHINTs (and ignore them on polling for maximum edition). */
 	public boolean ignoreUSKDatehints;
-	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
-	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
-	
+
+	/** Compatibility mode. This determines exactly how we insert data, so that we can produce the 
+	 * same CHK when reinserting a key even if it is with a later version of Freenet. It is 
+	 * also important for e.g. auto-update to be able to insert keys compatible with older nodes, 
+	 * but CompatibilityMode's are sometimes backwards compatible, there are separate versioning
+	 * systems for keys and Metadata, which will be set as appropriate for an insert depending on 
+	 * the CompatibilityMode. */
 	public static enum CompatibilityMode {
 	    
 		/** We do not know. */
@@ -81,7 +85,10 @@ public class InsertContext implements Cloneable, Serializable {
 		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
 		COMPAT_1255((short)5),
 		/** 1416: New CHK encryption */
-		COMPAT_1416((short)6);
+		COMPAT_1416((short)6),
+		/** 1465: Fill in topDontCompress and topCompatibilityMode on splitfiles. Same blocks, but
+		 * slightly different metadata. */
+		COMPAT_1466((short)7);
 		
 		/** Code used in metadata for this CompatibilityMode. Hence we can remove old 
 		 * CompatibilityMode's, and it's also convenient. */
@@ -126,6 +133,18 @@ public class InsertContext implements Cloneable, Serializable {
         public static boolean hasCode(short min) {
             return modesByCode.containsKey(min);
         }
+
+        public static boolean maybeFutureCode(short code) {
+            return code > latest().code;
+        }
+        
+        /** The default compatibility mode for new inserts when it is not specified. Usually this
+         * will be COMPAT_CURRENT (it will get converted into a specific mode later), but when a
+         * new compatibility mode is deployed we may want to keep this at an earlier version to 
+         * avoid a period when data inserted with the new/testing builds can't be fetched with 
+         * earlier versions. */
+        // FIXME revert to COMPAT_CURRENT after 1466 ships.
+        public static final CompatibilityMode COMPAT_DEFAULT = COMPAT_1416;
         
 	}
 	

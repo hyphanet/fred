@@ -69,8 +69,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 queuedJobs.add(new QueuedJob(job, threadPriority));
             } else {
                 if(logDEBUG) Logger.debug(this, "Running job "+job);
-                runningJobs++;
                 executor.execute(new JobRunnable(job, threadPriority, context));
+                runningJobs++;
             }
         }
     }
@@ -153,6 +153,9 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 if(logMINOR) Logger.minor(this, "Not started yet");
                 return;
             }
+            if(runningJobs == 0)
+                // Even if not going to checkpoint indirectly, somebody might be waiting, need to notify.
+                sync.notifyAll();
             if(!mustCheckpoint) {
                 if(System.currentTimeMillis() - lastCheckpointed > checkpointInterval) {
                     mustCheckpoint = true;
@@ -167,10 +170,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
                 if(logDEBUG) Logger.debug(this, "Not writing yet");
                 return;
             }
-            if(killed) {
-                sync.notifyAll();
-                return;
-            } else {
+            if(!killed) {
                 writing = true;
                 if(threadPriority < WRITE_AT_PRIORITY) {
                     checkpointOffThread();
@@ -311,7 +311,8 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         }
     }
     
-    /** Typically called after shutdown() to wait for current jobs to complete. */
+    /** Typically called after shutdown() to wait for current jobs to complete. Does not check 
+     * killed for this reason. */
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
@@ -326,13 +327,13 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
         checkpoint(true);
     }
     
-    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. 
+    /** Checkpoint on-thread ASAP. Similar to waitForIdleAndCheckpoint. Does check for killed.
      * @throws PersistenceDisabledException */
     public void waitAndCheckpoint() throws PersistenceDisabledException {
         synchronized(sync) {
-            mustCheckpoint = true;
             while(runningJobs > 0 || writing) {
                 if(killed) throw new PersistenceDisabledException();
+                Logger.error(this, "Waiting for "+runningJobs+" to finish (writing="+writing+") to checkpoint...");
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {

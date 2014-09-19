@@ -130,16 +130,19 @@ public class SplitFileFetcherCrossSegmentStorage {
                     shutdown = true;
                 } finally {
                     chunk.release();
-                    if(!shutdown) {
-                        // We do want to call the callback even if we threw something, because we 
-                        // may be waiting to cancel. However we DON'T call it if we are shutting down.
-                        synchronized(this) {
-                            tryDecode = false;
+                    try {
+                        if(!shutdown) {
+                            // We do want to call the callback even if we threw something, because we 
+                            // may be waiting to cancel. However we DON'T call it if we are shutting down.
+                            synchronized(SplitFileFetcherCrossSegmentStorage.this) {
+                                tryDecode = false;
+                            }
+                            parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
                         }
-                        parent.finishedEncoding(SplitFileFetcherCrossSegmentStorage.this);
+                    } finally {
+                        // Callback is part of the persistent job, unlock *after* calling it.
+                        if(lock != null) lock.unlock(false, prio);
                     }
-                    // Callback is part of the persistent job, unlock *after* calling it.
-                    if(lock != null) lock.unlock(false, prio);
                 }
                 return true;
             }

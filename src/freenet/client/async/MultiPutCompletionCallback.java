@@ -312,7 +312,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
             if(resumed) return;
             resumed = true;
         }
-        for(ClientPutState s : waitingFor)
+        for(ClientPutState s : getWaitingFor())
             s.onResume(context);
         if(cb != parent) cb.onResume(context);
     }

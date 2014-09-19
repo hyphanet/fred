@@ -21,8 +21,6 @@ import freenet.support.io.NativeThread;
 class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable {
 
     private static final long serialVersionUID = 1L;
-    /** For persistence */
-	public final long nodeDBHandle;
 	/** The callback */
 	public final USKFetcherCallback callback;
 	/** The original USK */
@@ -46,8 +44,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable 
 	private final int hashCode;
 	private final boolean realTimeFlag;
 	
-	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
-		this.nodeDBHandle = nodeDBHandle;
+	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, boolean persistent, boolean realTime, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
 		this.callback = callback;
 		this.origUSK = origUSK;
 		this.edition = origUSK.suggestedEdition;
@@ -75,7 +72,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable 
 	 * deleting the USKFetcherCallback and the FetchContext.
 	 * @param usk
 	 * @param callback
-	 * @param nodeDBHandle
 	 * @param persistent
 	 * @param container
 	 * @param ctx
@@ -83,9 +79,9 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback, Serializable 
 	 * @param token
 	 * @return
 	 */
-	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, boolean realTime, 
+	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, boolean persistent, boolean realTime, 
 			FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
-		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, realTime, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
+		USKFetcherTag tag = new USKFetcherTag(usk, callback, persistent, realTime, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
 		return tag;
 	}
 	

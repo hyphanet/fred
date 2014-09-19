@@ -85,8 +85,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * @param strongPRNG Cryptographically strong random number generator, for making keys etc.
 	 * @param weakPRNG Weak but fast random number generator.
 	 * @param encrypt Whether to encrypt temporary files.
-	 * @param nodeDBHandle The node database handle, used to find big objects in the database (such as the
-	 * one and only PersistentTempBucketFactory).
 	 * @throws IOException If we are unable to read the directory, etc.
 	 */
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt) throws IOException {
@@ -155,6 +153,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Deletes any old temp files still unclaimed.
 	 */
 	public synchronized void completedInit() {
+	    if(originalFiles == null) {
+	        Logger.error(this, "Completed init called twice", new Exception("error"));
+	        return;
+	    }
 		for(File f: originalFiles) {
 			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Deleting old tempfile "+f);

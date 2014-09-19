@@ -109,6 +109,61 @@ public class PooledRandomAccessFileWrapperTest extends RandomAccessThingTestBase
         assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 0);
     }
     
+    public void testLockedNotClosable() throws IOException {
+        int sz = 1024;
+        PooledRandomAccessFileWrapper.setMaxFDs(2);
+        PooledRandomAccessFileWrapper a = construct(sz);
+        PooledRandomAccessFileWrapper b = construct(sz);
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 2);
+        assertTrue(a.isOpen());
+        assertTrue(b.isOpen());
+        assertFalse(a.isLocked());
+        assertFalse(b.isLocked());
+        // Open and open FD -> locked
+        RAFLock la = a.lockOpen();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 1);
+        RAFLock lb = b.lockOpen();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 0);
+        la.unlock();
+        lb.unlock();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 2);       
+        a.close();
+        b.close();
+    }
+    
+    public void testLockedNotClosableFromNotOpenFD() throws IOException {
+        int sz = 1024;
+        PooledRandomAccessFileWrapper.setMaxFDs(2);
+        PooledRandomAccessFileWrapper a = construct(sz);
+        PooledRandomAccessFileWrapper b = construct(sz);
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 2);
+        assertTrue(a.isOpen());
+        assertTrue(b.isOpen());
+        // Close the RAFs to exercise the other code path.
+        a.closeRAF();
+        b.closeRAF();
+        assertFalse(a.isLocked());
+        assertFalse(b.isLocked());
+        // Open and open FD -> locked
+        RAFLock la = a.lockOpen();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 1);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 1);
+        RAFLock lb = b.lockOpen();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 0);
+        la.unlock();
+        lb.unlock();
+        assertEquals(PooledRandomAccessFileWrapper.getOpenFDs(), 2);
+        assertEquals(PooledRandomAccessFileWrapper.getClosableFDs(), 2);
+        a.close();
+        b.close();
+    }
+    
     /** Test that locking enforces limits and blocks when appropriate. 
      * @throws InterruptedException */
     public void testLockBlocking() throws IOException, InterruptedException {

@@ -5,6 +5,7 @@ package freenet.clients.fcp;
 
 import java.util.HashMap;
 
+import freenet.client.InsertContext;
 import freenet.client.async.BaseManifestPutter;
 import freenet.clients.fcp.ClientRequest.Persistence;
 import freenet.keys.FreenetURI;
@@ -44,10 +45,12 @@ public class PersistentPutDir extends FCPMessage {
 	final String compressorDescriptor;
 	final boolean realTime;
 	final byte[] splitfileCryptoKey;
+	final InsertContext.CompatibilityMode compatMode;
 	
 	public PersistentPutDir(String identifier, FreenetURI publicURI, FreenetURI privateURI, int verbosity, short priorityClass,
 	        Persistence persistence, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey) {
+	        String token, boolean started, int maxRetries, boolean dontCompress, String compressorDescriptor, boolean wasDiskPut, boolean realTime, byte[] splitfileCryptoKey,
+	        InsertContext.CompatibilityMode cmode) {
 		this.identifier = identifier;
 		this.uri = publicURI;
 		this.privateURI = privateURI;
@@ -65,6 +68,7 @@ public class PersistentPutDir extends FCPMessage {
 		this.compressorDescriptor = compressorDescriptor;
 		this.realTime = realTime;
 		this.splitfileCryptoKey = splitfileCryptoKey;
+		this.compatMode = cmode;
 		cached = generateFieldSet();
 	}
 
@@ -79,6 +83,7 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("PriorityClass", priorityClass);
 		fs.put("Global", global);
 		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
+		fs.putOverwrite("CompatibilityMode", compatMode.name());
 		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.

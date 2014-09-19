@@ -372,7 +372,7 @@ public class NodeClientCore implements Persistable {
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(
 						0, 2, 0, 0, new SimpleEventProducer(),
-						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_DEFAULT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		PooledFileRandomAccessThingFactory raff = 
 		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
@@ -444,7 +444,7 @@ public class NodeClientCore implements Persistable {
 		    }
 		    
 		});
-		clientContext = new ClientContext(node.bootID, nodeDBHandle, clientLayerPersister, node.executor, 
+		clientContext = new ClientContext(node.bootID, clientLayerPersister, node.executor, 
 		        archiveManager, persistentTempBucketFactory, tempBucketFactory, 
 		        persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, 
 		        node.getTicker(), memoryLimitedJobRunner, tempFilenameGenerator, persistentFilenameGenerator, tempBucketFactory, 
@@ -672,7 +672,7 @@ public class NodeClientCore implements Persistable {
     }
 
     private void initDiskSpaceLimits(SubConfig nodeConfig, int sortOrder) {
-        nodeConfig.register("minDiskFreeLongTerm", "100M", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
+        nodeConfig.register("minDiskFreeLongTerm", "1G", sortOrder++, true, true, "NodeClientCore.minDiskFreeLongTerm", "NodeClientCore.minDiskFreeLongTermLong", new LongCallback() {
 
             @Override
             public Long get() {
@@ -693,7 +693,7 @@ public class NodeClientCore implements Persistable {
         }, true);
         minDiskFreeLongTerm = nodeConfig.getLong("minDiskFreeLongTerm");
         
-        nodeConfig.register("minDiskFreeShortTerm", "50M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
+        nodeConfig.register("minDiskFreeShortTerm", "512M", sortOrder++, true, true, "NodeClientCore.minDiskFreeShortTerm", "NodeClientCore.minDiskFreeShortTermLong", new LongCallback() {
 
             @Override
             public Long get() {
@@ -745,14 +745,18 @@ public class NodeClientCore implements Persistable {
 	    if(container != null) {
 	        CheckpointLock lock = null;
 	        boolean success;
+	        FCPPersistentRoot oldRoot;
 	        try {
 	            lock = clientLayerPersister.lock();
-	            success = migrateFromOldDatabase(container);
+	            oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+	            success = migrateGlobalQueueFromOldDatabase(container, oldRoot);
+	            System.out.println(success ? "Successfully migrated global queue" : "Tried to migrate global queue, may have lost some requests");
 	        } catch (PersistenceDisabledException e) {
 	            Logger.error(this, "Cannot migrate as persistence disabled...");
 	            // Try again next time...
 	            return; // Don't GC persistent-temp.
 	        } catch (Throwable t) {
+                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
 	            System.err.println("Unable to migrate from old database: "+t);
 	            t.printStackTrace();
 	            Logger.error(this, "Failed migrating from old database: "+t, t);
@@ -761,16 +765,54 @@ public class NodeClientCore implements Persistable {
 	            if(lock != null)
 	                lock.unlock(false, NativeThread.currentThread().getPriority());
 	        }
+            
+            // The global queue is the important bit. Write the progress so far.
+            System.out.println("Writing migrated global queue");
             try {
                 clientLayerPersister.waitAndCheckpoint();
             } catch (PersistenceDisabledException e1) {
                 // Shutting down?
                 return;
             }
-            if(success)
+            
+            try {
+                lock = clientLayerPersister.lock();
+                success = migrateApplicationQueuesFromOldDatabase(container, oldRoot);
+                if(success)
+                    System.out.println("Successfully loaded any old per-application queues");
+                else
+                    System.out.println("Failed to load some per-application queues");
+            } catch (PersistenceDisabledException e) {
+                Logger.error(this, "Cannot migrate as persistence disabled...");
+                // Try again next time...
+                return; // Don't GC persistent-temp.
+            } catch (Throwable t) {
+                // Paranoia. Have seen something like this... make it more obvious and make plugins still work...
+                System.err.println("Unable to migrate from old database: "+t);
+                t.printStackTrace();
+                Logger.error(this, "Failed migrating from old database: "+t, t);
+                return; // Something went seriously wrong, likely a bug. Don't delete.
+            } finally {
+                if(lock != null)
+                    lock.unlock(false, NativeThread.currentThread().getPriority());
+            }
+            
+            System.out.println("Writing migrated application queues");
+            // Write now as well.
+            try {
+                clientLayerPersister.waitAndCheckpoint();
+            } catch (PersistenceDisabledException e1) {
+                // Shutting down?
+                return;
+            }
+            
+            if(success) {
                 System.out.println("Migrated all requests successfully.");
-            else
+                Logger.error(this, "Migrated all requests successfully.");
+            } else {
                 System.out.println("Migrated some requests. You may have lost some downloads.");
+                Logger.error(this, "Migrated some requests. You may have lost some downloads.");
+            }
             try {
                 container.close();
             } catch (Throwable t) {
@@ -789,23 +831,23 @@ public class NodeClientCore implements Persistable {
                 }
             }
             System.out.println("Migration completed");
+            alerts.unregister(migratingAlert);
 	    }
-	    alerts.unregister(migratingAlert);
 	    persistentTempBucketFactory.completedInit(); // Only GC persistent-temp after a successful load.
     }
 
-    private boolean migrateFromOldDatabase(ObjectContainer container) {
-        System.err.println("Attempting to migrate from old database ...");
-        boolean success = true;
-        FCPPersistentRoot oldRoot = FCPPersistentRoot.load(node.nodeDBHandle, container);
+    private boolean migrateGlobalQueueFromOldDatabase(ObjectContainer container, FCPPersistentRoot oldRoot) {
+        System.err.println("Attempting to migrate global queue from old database ...");
         if(oldRoot == null) return true;
-        if(!oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext))
-            success = false;
-        for(FCPClient client : oldRoot.loadClients(this, container)) {
-            if(!client.isGlobalQueue) {
-                if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
-                    success = false;
-            }
+        return oldRoot.getGlobalClient().migrate(clientContext.persistentRoot, container, this, clientContext);
+    }
+    
+    private boolean migrateApplicationQueuesFromOldDatabase(ObjectContainer container, FCPPersistentRoot oldRoot) {
+        // Loaded global queue. Save the loaded requests.
+        boolean success = true;
+        for(FCPClient client : oldRoot.findNonGlobalClients(this, container)) {
+            if(!client.migrate(clientContext.persistentRoot, container, this, clientContext))
+                success = false;
         }
         return success;
     }
@@ -860,10 +902,8 @@ public class NodeClientCore implements Persistable {
 		}
 	}
 
-	public void start(Config config, ObjectContainer container) throws NodeInitException {
+	public void start(Config config, final ObjectContainer container) throws NodeInitException {
 	    
-	    finishInitStorage(container);
-
 		persister.start();
 
 		requestStarters.start();
@@ -871,6 +911,8 @@ public class NodeClientCore implements Persistable {
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
 			fcpServer.maybeStart();
+        node.pluginManager.start(node.config);
+        node.ipDetector.ipDetectorManager.start();
 		if(tmci != null)
 			tmci.start();
 		node.executor.execute(compressor, "Compression scheduler");
@@ -880,8 +922,14 @@ public class NodeClientCore implements Persistable {
 			@Override
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-				node.pluginManager.start(node.config);
-				node.ipDetector.ipDetectorManager.start();
+				try {
+				    finishInitStorage(container);
+				} catch (Throwable t) {
+				    Logger.error(this, "Failed to migrate and/or cleanup persistent temp buckets: "+t, t);
+				    System.err.println("Failed to migrate and/or cleanup persistent temp buckets: "+t);
+				    t.printStackTrace();
+				    // Start the rest of the node anyway ...
+				}
 				// FIXME most of the work is done after this point on splitfile starter threads.
 				// So do we want to make a fuss?
 				// FIXME but a better solution is real request resuming.

@@ -156,14 +156,56 @@ public class SimpleSendableInsert extends SendableInsert {
 		if(finished) return 0;
 		return 1;
 	}
+	
+	// FIXME share with SingleBlockInserter???
+	private static class MySendableRequestItem implements SendableRequestItem, SendableRequestItemKey {
+	    
+	    final SimpleSendableInsert parent;
+
+        public MySendableRequestItem(SimpleSendableInsert parent) {
+            this.parent = parent;
+        }
+
+        @Override
+        public void dump() {
+            // Ignore.
+        }
+
+        @Override
+        public SendableRequestItemKey getKey() {
+            return this;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if(o instanceof MySendableRequestItem) {
+                return ((MySendableRequestItem)o).parent == parent;
+            } else return false;
+        }
+        
+        @Override
+        public int hashCode() {
+            return parent.hashCode();
+        }
+	    
+	}
 
 	@Override
 	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ClientContext context) {
-		if(keys.hasInsert(this, NullSendableRequestItem.nullItem))
+	    MySendableRequestItem mine = new MySendableRequestItem(this);
+		if(keys.hasInsert(mine))
 			return null;
 		if(finished) return null;
 		else
-			return NullSendableRequestItem.nullItem;
+			return mine;
+	}
+	
+	@Override
+	public synchronized long getWakeupTime(ClientContext context, long now) {
+	    if(isEmpty()) return -1;
+	    if(scheduler.fetchingKeys().hasInsert(new MySendableRequestItem(this)))
+	        return Long.MAX_VALUE;
+	    return 0;
 	}
 
 	@Override

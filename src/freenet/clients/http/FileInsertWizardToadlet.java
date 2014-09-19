@@ -142,7 +142,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 				// FIXME l10n???
 				HTMLNode option = select.addChild("option", "value", mode.name(),
 				        NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
-				if (mode == CompatibilityMode.COMPAT_CURRENT) option.addAttribute("selected", "");
+				if (mode == CompatibilityMode.COMPAT_DEFAULT) option.addAttribute("selected", "");
 			}
 			insertForm.addChild("br");
 			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
