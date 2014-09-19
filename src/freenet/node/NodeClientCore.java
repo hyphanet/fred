@@ -176,7 +176,7 @@ public class NodeClientCore implements Persistable {
 	private final PluginStores pluginStores;
 	private final UserAlert migratingAlert;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, SubConfig installConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, DatabaseKey databaseKey, final ObjectContainer container, MasterKeys keys) throws NodeInitException {
 		this.node = node;
 		this.tracker = node.tracker;
 		this.nodeStats = node.nodeStats;
@@ -461,6 +461,9 @@ public class NodeClientCore implements Persistable {
 		}
 		
         clientContext.init(requestStarters, alerts);
+        
+        if(keys != null)
+            setupMasterSecret(keys);
         
         try {
             initStorage(databaseKey, container);
