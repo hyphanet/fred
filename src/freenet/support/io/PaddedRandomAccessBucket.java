@@ -74,6 +74,8 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     
     private class MyOutputStream extends FilterOutputStream {
         
+        private boolean closed;
+        
         MyOutputStream(OutputStream os) {
             super(os);
         }
@@ -90,6 +92,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         public void write(byte[] buf) throws IOException {
             out.write(buf);
             synchronized(PaddedRandomAccessBucket.this) {
+                if(closed) throw new IOException("Already closed");
                 size += buf.length;
             }
         }
@@ -98,6 +101,7 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         public void write(byte[] buf, int offset, int length) throws IOException {
             out.write(buf, offset, length);
             synchronized(PaddedRandomAccessBucket.this) {
+                if(closed) throw new IOException("Already closed");
                 size += length;
             }
         }
@@ -107,6 +111,8 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
             try {
                 long padding;
                 synchronized(PaddedRandomAccessBucket.this) {
+                    if(closed) return;
+                    closed = true;
                     long paddedLength = paddedLength(size);
                     padding = paddedLength - size;
                 }
