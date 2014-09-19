@@ -434,12 +434,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	    if(persistence == Persistence.CONNECTION) {
 	        if(handler == null)
 	            handler = origHandler.outputHandler;
+	    }
+	    if(handler != null) {
 	        FCPMessage allData = getAllDataMessage();
 	        if(allData != null)
 	            handler.queue(allData);
 	    }
 	}
-
 
 	private void queueProgressMessageInner(FCPMessage msg, FCPConnectionOutputHandler handler, int verbosityMask) {
 	    if(persistence == Persistence.CONNECTION && handler == null)
