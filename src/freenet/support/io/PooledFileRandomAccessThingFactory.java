@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 
 /** Creates temporary RAFs using a FilenameGenerator. */
 public class PooledFileRandomAccessThingFactory implements LockableRandomAccessThingFactory {

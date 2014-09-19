@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 
 public class ByteArrayRandomAccessThingFactory implements LockableRandomAccessThingFactory {
 

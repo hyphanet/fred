@@ -34,6 +34,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 import freenet.support.api.RandomAccessBucket;
 
 import java.util.ArrayList;

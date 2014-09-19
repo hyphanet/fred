@@ -44,6 +44,7 @@ import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 import freenet.support.api.LockableRandomAccessThing.RAFLock;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
@@ -51,7 +52,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileRandomAccessThingFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
-import freenet.support.io.LockableRandomAccessThingFactory;
 import freenet.support.math.MersenneTwister;
 
 /** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 

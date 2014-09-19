@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 
 public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandomAccessThingFactory, 
     DiskSpaceChecker, FileRandomAccessThingFactory {

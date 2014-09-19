@@ -7,6 +7,7 @@ import freenet.crypt.EncryptedRandomAccessThing;
 import freenet.crypt.MasterSecret;
 import freenet.support.Logger;
 import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessThingFactory;
 
 /** Wraps another RandomAccessThingFactory to enable encryption if currently turned on. */
 public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAccessThingFactory {
