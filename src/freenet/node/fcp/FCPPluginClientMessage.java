@@ -11,6 +11,7 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
@@ -21,17 +22,15 @@ import freenet.support.SimpleFieldSet;
  * It is the inverse of {@link FCPPluginServerMessage} which produces the on-network format of
  * server to client messages.<br>
  * 
- * (There is a class {@link FredPluginFCPMessageHandler.FCPPluginMessage} with the same name.
- * Consider that one as the external representation used by actual server/client plugin
- * implementations, while this class here is the internal representation used for parsing.)
- * FIXME: A good way to resolve this would be to rename this class to FCPPluginClientMessage. It
- * always represents a message from the client to the server, so that would fit.
- * When doing that, make sure to also:
- * - adapt the JavaDoc at class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
- * - adapt the JavaDoc at class {@link FCPPluginServerMessage}.
- * - adapt all JavaDoc and classes which use the explicit name
- *   "FredPluginFCPMessageHandler.FCPPluginMessage" to use "FCPPluginMessage" because the name
- *   is not ambiguous anymore. This can probably be done with grep.
+ * There is a similar class {@link FCPPluginMessage} which serves as a container of FCP plugin
+ * messages which are produced and consumed by the actual server and client plugin implementations.
+ * Consider this class here as an internal representation of FCP plugin messages used solely
+ * for parsing client-to-server messages, while the other one is the external representation used
+ * for both server and client messages.
+ * Also notice that class {@link FCPPluginClient} consumes only objects of type
+ * {@link FCPPluginMessage}, not of this class here: As the external representation to both server
+ * and client, it does not care whether a message is from the server or the client, and is
+ * only interested in the external representation {@link FCPPluginMessage} of the message.
  * 
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
@@ -52,7 +51,7 @@ import freenet.support.SimpleFieldSet;
  * <datasize> bytes of data
  * 
  */
-public class FCPPluginMessage extends DataCarryingMessage {
+public class FCPPluginClientMessage extends DataCarryingMessage {
 	
 	public static final String NAME = "FCPPluginMessage";
 	
@@ -99,7 +98,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
      */
     private final String errorMessage;
 
-	FCPPluginMessage(SimpleFieldSet fs) throws MessageInvalidException {
+    FCPPluginClientMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a Identifier field", null, false);

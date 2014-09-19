@@ -65,10 +65,10 @@ import freenet.support.io.NativeThread;
  * - The {@link FCPServer} creates a {@link FCPConnectionHandler} whose
  *   {@link FCPConnectionInputHandler} receives the FCP message.<br/>
  * - The {@link FCPConnectionInputHandler} uses {@link FCPMessage#create(String, SimpleFieldSet)}
- *   to parse the message and obtain the actual {@link FCPPluginMessage}.<br/>
- * - The {@link FCPPluginMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
+ *   to parse the message and obtain the actual {@link FCPPluginClientMessage}.<br/>
+ * - The {@link FCPPluginClientMessage} uses {@link FCPConnectionHandler#getPluginClient(String)} to
  *   obtain the FCPPluginClient which wants to send.<br/>
- * - The {@link FCPPluginMessage} uses {@link FCPPluginClient#send(SendDirection,
+ * - The {@link FCPPluginClientMessage} uses {@link FCPPluginClient#send(SendDirection,
  *   FredPluginFCPMessageHandler.FCPPluginMessage)} or
  *   {@link FCPPluginClient#sendSynchronous(SendDirection,
  *   FredPluginFCPMessageHandler.FCPPluginMessage, long)}

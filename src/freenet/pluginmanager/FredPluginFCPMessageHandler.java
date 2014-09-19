@@ -52,9 +52,10 @@ public interface FredPluginFCPMessageHandler {
     /**
      * Container class for both incoming and outgoing FCP messages.
      * 
-     * (There is a class {@link freenet.node.fcp.FCPPluginMessage} with the same name.
-     * Consider that one as the internal representation used for parsing, while this class here is
-     * the external representation to be used by actual server/client plugin implementations.)
+     * FIXME: There once was a name clash with a class freenet.node.fcp.FCPPluginMessage. Because of
+     * that, this class here is typically called "FredPluginFCPMessageHandler.FCPPluginMessage" in
+     * any code and JavaDoc which uses it. The conflicting class has been renamed, so please strip
+     * the "FredPluginFCPMessageHandler." prefix everywhere. This can probably be done with grep.
      */
     public final class FCPPluginMessage {
         public static enum ClientPermissions {

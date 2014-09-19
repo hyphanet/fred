@@ -14,8 +14,14 @@ import freenet.support.api.Bucket;
 /**
  * This class produces the network format for a FCP message which is send from a FCP server
  * plugin to a FCP client.<br>
- * It is the inverse of {@link FCPPluginMessage} which parses the on-network format of client
+ * It is the inverse of {@link FCPPluginClientMessage} which parses the on-network format of client
  * to server messages.<br><br>
+ * 
+ * There is a similar class {@link FCPPluginMessage} which serves as a container of FCP plugin
+ * messages which are produced and consumed by the actual server and client plugin implementations.
+ * Consider this class here as an internal representation of FCP plugin messages used solely
+ * for encoding server-to-client messages, while the other one is the external representation used
+ * for both server and client messages.
  * 
  * ATTENTION: The on-network name of this message is different: It is {@value #NAME}. The class
  * previously had the same name but it was decided to rename it: Previously, it was only allowed
@@ -27,11 +33,6 @@ import freenet.support.api.Bucket;
  * network message name as is. <br>
  * TODO FIXME: Would it technically be possible to add a second name to the on-network data so we
  * can get rid of the old name after a transition period?<br><br>
- * 
- * <b>ATTENTION:</b> There is a similar class {@link FredPluginFCPMessageHandler.FCPPluginMessage}
- * which serves as a container of FCP plugin messages which are produced and consumed by the
- * actual server and client plugins. Consider this class here as an internal representation of
- * FCP plugin messages, while the other one is the external representation.
  * 
  * @link FCPPluginClient FCPPluginClient gives an overview of the code paths which messages take.
  * @author saces
