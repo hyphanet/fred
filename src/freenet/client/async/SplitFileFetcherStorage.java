@@ -43,18 +43,18 @@ import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
-import freenet.support.api.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
+import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FileRandomAccessThingFactory;
+import freenet.support.io.FileRandomAccessBufferFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 import freenet.support.math.MersenneTwister;
 
-/** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessThing (i.e. a 
+/** <p>Stores the state for a SplitFileFetcher, persisted to a LockableRandomAccessBuffer (i.e. a 
  * single random access file), but with most of the metadata in memory. The data, and the larger
  * metadata such as the full keys, are read from disk when needed, and persisted to disk.</p>
  * 
@@ -127,7 +127,7 @@ public class SplitFileFetcherStorage {
     final SplitFileFetcherStorageCallback fetcher;
     // Metadata for the fetch
     /** The underlying presumably-on-disk storage. */ 
-    private final LockableRandomAccessThing raf;
+    private final LockableRandomAccessBuffer raf;
     private final long rafLength;
     /** If true we will complete the download by truncating the file. The file was passed in at
      * construction and we are not responsible for freeing it. Once all segments have decoded and
@@ -223,7 +223,7 @@ public class SplitFileFetcherStorage {
      * startup. */
     private List<SplitFileFetcherSegmentStorage> segmentsToTryDecode;
     
-    /** Construct a new SplitFileFetcherStorage from metadata. Creates the RandomAccessThing and
+    /** Construct a new SplitFileFetcherStorage from metadata. Creates the RandomAccessBuffer and
      * writes the initial data to it. There is another constructor for resuming a download. 
      * @param persistent 
      * @param topCompatibilityMode 
@@ -235,7 +235,7 @@ public class SplitFileFetcherStorage {
      * @param storageFile If non-null, we will use this file to store the data in. It must already
      * exist, and must be 0 bytes long. We will use it, and then when complete, truncate the file 
      * so it only contains the final data before calling onSuccess(). Also, in this case, 
-     * rafFactory must be a DiskSpaceCheckingRandomAccessThingFactory.
+     * rafFactory must be a DiskSpaceCheckingRandomAccessBufferFactory.
      * @param keysFetching Must be passed in at this point as we will need it later. However, none
      * of this is persisted directly, so this is not a problem.
      * @throws FetchException If we failed to set up the download due to a problem with the metadata. 
@@ -247,10 +247,10 @@ public class SplitFileFetcherStorage {
             boolean topDontCompress, short topCompatibilityMode, FetchContext origFetchContext,
             boolean realTime, KeySalter salt, FreenetURI thisKey, FreenetURI origKey, 
             boolean isFinalFetch, byte[] clientDetails, RandomSource random, 
-            BucketFactory tempBucketFactory, LockableRandomAccessThingFactory rafFactory, 
+            BucketFactory tempBucketFactory, LockableRandomAccessBufferFactory rafFactory, 
             PersistentJobRunner exec, Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, 
             ChecksumChecker checker, boolean persistent, 
-            File storageFile, FileRandomAccessThingFactory diskSpaceCheckingRAFFactory,
+            File storageFile, FileRandomAccessBufferFactory diskSpaceCheckingRAFFactory,
             KeysFetchingLocally keysFetching) 
     throws FetchException, MetadataParseException, IOException {
         this.fetcher = fetcher;
@@ -510,7 +510,7 @@ public class SplitFileFetcherStorage {
             encodedURI = encodedBasicSettings = null;
         }
         
-        // Create the actual LockableRandomAccessThing
+        // Create the actual LockableRandomAccessBuffer
         
         rafLength = totalLength;
         if(storageFile != null) {
@@ -580,7 +580,7 @@ public class SplitFileFetcherStorage {
         if(logMINOR) Logger.minor(this, "Fetching "+thisKey+" on "+this+" for "+fetcher);
     }
     
-    /** Construct a SplitFileFetcherStorage from a stored RandomAccessThing, and appropriate local
+    /** Construct a SplitFileFetcherStorage from a stored RandomAccessBuffer, and appropriate local
      * settings passed in. Ideally this would work with only basic system utilities such as 
      * those on ClientContext, i.e. we'd be able to restore the splitfile download without knowing
      * anything about it.
@@ -591,7 +591,7 @@ public class SplitFileFetcherStorage {
      * @throws StorageFormatException 
      * @throws FetchException If the request has already failed (but it wasn't processed before 
      * restarting). */
-    public SplitFileFetcherStorage(LockableRandomAccessThing raf, boolean realTime,  
+    public SplitFileFetcherStorage(LockableRandomAccessBuffer raf, boolean realTime,  
             SplitFileFetcherStorageCallback callback, FetchContext origContext,
             RandomSource random, PersistentJobRunner exec, KeysFetchingLocally keysFetching,
             Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, ChecksumChecker checker, 
@@ -1150,7 +1150,7 @@ public class SplitFileFetcherStorage {
             @Override
             public void writeTo(OutputStream os, ClientContext context)
                     throws IOException {
-                LockableRandomAccessThing.RAFLock lock = raf.lockOpen();
+                LockableRandomAccessBuffer.RAFLock lock = raf.lockOpen();
                 try {
                     for(SplitFileFetcherSegmentStorage segment : segments) {
                         segment.writeToInner(os);
@@ -1721,7 +1721,7 @@ public class SplitFileFetcherStorage {
     }
 
     /** Needed for resuming. */
-    LockableRandomAccessThing getRAF() {
+    LockableRandomAccessBuffer getRAF() {
         return raf;
     }
 

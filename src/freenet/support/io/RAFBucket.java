@@ -10,15 +10,15 @@ import java.io.OutputStream;
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 public class RAFBucket implements Bucket, RandomAccessBucket {
     
-    private final LockableRandomAccessThing underlying;
+    private final LockableRandomAccessBuffer underlying;
     final long size;
 
-    public RAFBucket(LockableRandomAccessThing underlying) throws IOException {
+    public RAFBucket(LockableRandomAccessBuffer underlying) throws IOException {
         this.underlying = underlying;
         size = underlying.size();
     }
@@ -94,7 +94,7 @@ public class RAFBucket implements Bucket, RandomAccessBucket {
     }
 
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() {
+    public LockableRandomAccessBuffer toRandomAccessThing() {
         return underlying;
     }
 

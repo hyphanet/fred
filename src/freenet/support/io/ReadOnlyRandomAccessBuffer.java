@@ -6,17 +6,17 @@ import java.io.IOException;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
+public class ReadOnlyRandomAccessBuffer implements LockableRandomAccessBuffer {
     
-    private final LockableRandomAccessThing underlying;
+    private final LockableRandomAccessBuffer underlying;
 
-    public ReadOnlyRandomAccessThing(LockableRandomAccessThing underlying) {
+    public ReadOnlyRandomAccessBuffer(LockableRandomAccessBuffer underlying) {
         this.underlying = underlying;
     }
 
-    public ReadOnlyRandomAccessThing(DataInputStream dis, FilenameGenerator fg, 
+    public ReadOnlyRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg, 
             PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
     throws IOException, StorageFormatException, ResumeFailedException {
         // Caller has already read magic
@@ -82,7 +82,7 @@ public class ReadOnlyRandomAccessThing implements LockableRandomAccessThing {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        ReadOnlyRandomAccessThing other = (ReadOnlyRandomAccessThing) obj;
+        ReadOnlyRandomAccessBuffer other = (ReadOnlyRandomAccessBuffer) obj;
         return underlying.equals(other.underlying);
     }
 

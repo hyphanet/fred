@@ -24,11 +24,11 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 import freenet.client.async.ClientContext;
-import freenet.crypt.EncryptedRandomAccessThing.kdfInput;
+import freenet.crypt.EncryptedRandomAccessBuffer.kdfInput;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FilenameGenerator;
@@ -38,7 +38,7 @@ import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 import freenet.support.io.TempFileBucket;
 
-/** A Bucket encrypted using the same format as an EncryptedRandomAccessThing, which can therefore
+/** A Bucket encrypted using the same format as an EncryptedRandomAccessBuffer, which can therefore
  * be converted easily when needed.
  * @author toad
  */
@@ -46,7 +46,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     
     private static final long serialVersionUID = 1L;
     
-    private final EncryptedRandomAccessThingType type;
+    private final EncryptedRandomAccessBufferType type;
     private final RandomAccessBucket underlying;
     
     private transient ParametersWithIV cipherParams;//includes key
@@ -66,7 +66,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     private static final long END_MAGIC = 0x2c158a6c7772acd3L;
     private static final int VERSION_AND_MAGIC_LENGTH = 12;
     
-    public EncryptedRandomAccessBucket(EncryptedRandomAccessThingType type, 
+    public EncryptedRandomAccessBucket(EncryptedRandomAccessBufferType type, 
             RandomAccessBucket underlying, MasterSecret masterKey) {
         this.type = type;
         this.underlying = underlying;
@@ -143,7 +143,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
         try {
             new DataInputStream(is).readFully(fullHeader);
         } catch (EOFException e) {
-            throw new IOException("Underlying RandomAccessThing is not long enough to include the "
+            throw new IOException("Underlying RandomAccessBuffer is not long enough to include the "
                     + "footer.");
         }
         byte[] header = Arrays.copyOfRange(fullHeader, fullHeader.length-VERSION_AND_MAGIC_LENGTH, 
@@ -153,10 +153,10 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
         offset += 4;
         long magic = ByteBuffer.wrap(header, offset, 8).getLong();
         if(END_MAGIC != magic) {
-            throw new IOException("This is not an EncryptedRandomAccessThing!");
+            throw new IOException("This is not an EncryptedRandomAccessBuffer!");
         }
         if(readVersion != version){
-            throw new IOException("Version of the underlying RandomAccessThing is "
+            throw new IOException("Version of the underlying RandomAccessBuffer is "
                     + "incompatible with this ERATType");
         }
         if(!verifyHeader(fullHeader))
@@ -202,10 +202,10 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
         ParametersWithIV tempPram = null;
         try{
             KeyParameter cipherKey = new KeyParameter(KeyGenUtils.deriveSecretKey(unencryptedBaseKey, 
-                    EncryptedRandomAccessThing.class, kdfInput.underlyingKey.input, 
+                    EncryptedRandomAccessBuffer.class, kdfInput.underlyingKey.input, 
                     type.encryptKey).getEncoded());
             tempPram = new ParametersWithIV(cipherKey, 
-                    KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, EncryptedRandomAccessThing.class, 
+                    KeyGenUtils.deriveIvParameterSpec(unencryptedBaseKey, EncryptedRandomAccessBuffer.class, 
                             kdfInput.underlyingIV.input, type.encryptKey).getIV());
         } catch(InvalidKeyException e) {
             throw new IllegalStateException(e); // Must be a bug.
@@ -247,7 +247,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     @Override
     public OutputStream getOutputStreamUnbuffered() throws IOException {
         if(isFreed){
-            throw new IOException("This RandomAccessThing has already been closed. This should not"
+            throw new IOException("This RandomAccessBuffer has already been closed. This should not"
                     + " happen.");
         }
         OutputStream uos = underlying.getOutputStreamUnbuffered();
@@ -296,7 +296,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     public InputStream getInputStreamUnbuffered() throws IOException {
         if(size() == 0) return new NullInputStream();
         if(isFreed){
-            throw new IOException("This RandomAccessThing has already been closed. This should not"
+            throw new IOException("This RandomAccessBuffer has already been closed. This should not"
                     + " happen.");
         }
         InputStream is = underlying.getInputStreamUnbuffered();
@@ -344,13 +344,13 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     }
 
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
         if(underlying.size() < type.headerLen)
             throw new IOException("Converting empty bucket");
         underlying.setReadOnly();
-        LockableRandomAccessThing r = underlying.toRandomAccessThing();
+        LockableRandomAccessBuffer r = underlying.toRandomAccessThing();
         try {
-            return new EncryptedRandomAccessThing(type, r, masterKey, false);
+            return new EncryptedRandomAccessBuffer(type, r, masterKey, false);
         } catch (GeneralSecurityException e) {
             Logger.error(this, "Unable to convert encrypted bucket: "+e, e);
             throw new IOException(e);
@@ -385,7 +385,7 @@ public class EncryptedRandomAccessBucket implements RandomAccessBucket, Serializ
     
     public EncryptedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg,
             PersistentFileTracker persistentFileTracker, MasterSecret masterKey2) throws IOException, ResumeFailedException, StorageFormatException {
-        type = EncryptedRandomAccessThingType.getByBitmask(dis.readInt());
+        type = EncryptedRandomAccessBufferType.getByBitmask(dis.readInt());
         if(type == null) throw new ResumeFailedException("Unknown EncryptedRandomAccessBucket type");
         underlying = (RandomAccessBucket) BucketTools.restoreFrom(dis, fg, persistentFileTracker, masterKey2);
         this.baseSetup(masterKey2);

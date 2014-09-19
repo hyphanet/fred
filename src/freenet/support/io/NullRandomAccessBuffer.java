@@ -4,13 +4,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class NullRandomAccessThing implements LockableRandomAccessThing {
+public class NullRandomAccessBuffer implements LockableRandomAccessBuffer {
     
     final long length;
 
-    public NullRandomAccessThing(long length) {
+    public NullRandomAccessBuffer(long length) {
         this.length = length;
     }
 

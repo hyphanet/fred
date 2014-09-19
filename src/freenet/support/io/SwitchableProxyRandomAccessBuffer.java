@@ -4,17 +4,17 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-/** Proxy LockableRandomAccessThing allowing changing the pointer to the underlying RAT. */
-abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessThing {
+/** Proxy LockableRandomAccessBuffer allowing changing the pointer to the underlying RAT. */
+abstract class SwitchableProxyRandomAccessBuffer implements LockableRandomAccessBuffer {
 
     /** Size of the temporary storage. Note that this may be smaller than underlying.size(),
      * and will be enforced before passing requests on. */
     final long size;
     /** Underlying temporary storage. May change! Will be thread-safe as with all RAT's.
      * Current implementations just lock all writes/reads. */
-    private LockableRandomAccessThing underlying;
+    private LockableRandomAccessBuffer underlying;
     /** Number of currently valid RAFLock's on this RAF. We centralise this here so that we
      * only have to take a single new lock when migrating. */
     private int lockOpenCount;
@@ -27,7 +27,7 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
      * ensure that there is no other I/O going on during a migration. */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    SwitchableProxyRandomAccessThing(LockableRandomAccessThing initialWrap, long size) throws IOException {
+    SwitchableProxyRandomAccessBuffer(LockableRandomAccessBuffer initialWrap, long size) throws IOException {
         this.underlying = initialWrap;
         this.size = size;
         if(underlying.size() < size) throw new IOException("Underlying must be >= size given");
@@ -137,13 +137,13 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
         }
     }
     
-    /** Migrate from one underlying LockableRandomAccessThing to another. */
+    /** Migrate from one underlying LockableRandomAccessBuffer to another. */
     protected final void migrate() throws IOException {
         try {
             lock.writeLock().lock();
             if(closed) return;
             if(underlying == null) throw new IOException("Already freed");
-            LockableRandomAccessThing successor = innerMigrate(underlying);
+            LockableRandomAccessBuffer successor = innerMigrate(underlying);
             if(successor == null) throw new NullPointerException();
             RAFLock newLock = null;
             if(lockOpenCount > 0) {
@@ -167,12 +167,12 @@ abstract class SwitchableProxyRandomAccessThing implements LockableRandomAccessT
         afterFreeUnderlying();
     }
     
-    /** Create a new LockableRandomAccessThing containing the same data as the current underlying. 
+    /** Create a new LockableRandomAccessBuffer containing the same data as the current underlying. 
      * @throws IOException If the migrate failed. */
-    protected abstract LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException;
+    protected abstract LockableRandomAccessBuffer innerMigrate(LockableRandomAccessBuffer underlying) throws IOException;
     
     /** For unit tests only */
-    synchronized LockableRandomAccessThing getUnderlying() {
+    synchronized LockableRandomAccessBuffer getUnderlying() {
         return underlying;
     }
     

@@ -7,15 +7,15 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class PaddedRandomAccessThing implements LockableRandomAccessThing, Serializable {
+public class PaddedRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
     
     private static final long serialVersionUID = 1L;
-    final LockableRandomAccessThing raf;
+    final LockableRandomAccessBuffer raf;
     final long realSize;
 
-    public PaddedRandomAccessThing(LockableRandomAccessThing raf, long realSize) {
+    public PaddedRandomAccessBuffer(LockableRandomAccessBuffer raf, long realSize) {
         this.raf = raf;
         this.realSize = realSize;
     }
@@ -68,7 +68,7 @@ public class PaddedRandomAccessThing implements LockableRandomAccessThing, Seria
         raf.storeTo(dos);
     }
     
-    public PaddedRandomAccessThing(DataInputStream dis, FilenameGenerator fg,
+    public PaddedRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg,
             PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) throws ResumeFailedException, IOException, StorageFormatException {
         realSize = dis.readLong();
         if(realSize < 0) throw new StorageFormatException("Negative length");
@@ -97,7 +97,7 @@ public class PaddedRandomAccessThing implements LockableRandomAccessThing, Seria
         if (getClass() != obj.getClass()) {
             return false;
         }
-        PaddedRandomAccessThing other = (PaddedRandomAccessThing) obj;
+        PaddedRandomAccessBuffer other = (PaddedRandomAccessBuffer) obj;
         if (!raf.equals(other.raf)) {
             return false;
         }

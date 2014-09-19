@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 /**
@@ -128,9 +128,9 @@ public class ArrayBucket implements Bucket, Serializable, RandomAccessBucket {
     }
 
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() {
+    public LockableRandomAccessBuffer toRandomAccessThing() {
         readOnly = true;
-        LockableRandomAccessThing raf = new ByteArrayRandomAccessThing(data, 0, data.length, true);
+        LockableRandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data, 0, data.length, true);
         return raf;
     }
 

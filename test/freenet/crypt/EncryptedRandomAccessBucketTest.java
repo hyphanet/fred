@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTestBase;
@@ -33,16 +33,16 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RAFBucket;
-import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThingTestBase;
+import freenet.support.io.FileRandomAccessBuffer;
+import freenet.support.io.RandomAccessBufferTestBase;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
 public class EncryptedRandomAccessBucketTest extends BucketTestBase {
     
     private final static MasterSecret secret = new MasterSecret();
-    private final static EncryptedRandomAccessThingType[] types = 
-        EncryptedRandomAccessThingType.values();
+    private final static EncryptedRandomAccessBufferType[] types = 
+        EncryptedRandomAccessBufferType.values();
     
     static{
         Security.addProvider(new BouncyCastleProvider());
@@ -133,14 +133,14 @@ public class EncryptedRandomAccessBucketTest extends BucketTestBase {
             assertTrue(Arrays.equals(Arrays.copyOfRange(buf, 0, readBytes), Arrays.copyOfRange(data, moved, moved+readBytes)));
             moved += readBytes;
         }
-        LockableRandomAccessThing raf = bucket.toRandomAccessThing();
+        LockableRandomAccessBuffer raf = bucket.toRandomAccessThing();
         assertEquals(length, raf.size());
         RAFBucket wrapped = new RAFBucket(raf);
         assertTrue(BucketTools.equalBuckets(bucket, wrapped));
         for(int i=0;i<100;i++) {
             int end = length == 1 ? 1 : r.nextInt(length)+1;
             int start = r.nextInt(end);
-            RandomAccessThingTestBase.checkArraySectionEqualsReadData(data, raf, start, end, true);
+            RandomAccessBufferTestBase.checkArraySectionEqualsReadData(data, raf, start, end, true);
         }
     }
     

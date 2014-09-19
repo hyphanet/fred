@@ -7,13 +7,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 
-public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandomAccessThingFactory, 
-    DiskSpaceChecker, FileRandomAccessThingFactory {
+public class DiskSpaceCheckingRandomAccessBufferFactory implements LockableRandomAccessBufferFactory, 
+    DiskSpaceChecker, FileRandomAccessBufferFactory {
 
-    private final LockableRandomAccessThingFactory underlying;
+    private final LockableRandomAccessBufferFactory underlying;
     private final File dir;
     private volatile long minDiskSpace;
     
@@ -22,7 +22,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
      * possible to get that information from Java (1.7) via java.nio.file. */
     private static final Lock lock = new ReentrantLock(true);
     
-    public DiskSpaceCheckingRandomAccessThingFactory(LockableRandomAccessThingFactory underlying, 
+    public DiskSpaceCheckingRandomAccessBufferFactory(LockableRandomAccessBufferFactory underlying, 
             File dir, long minDiskSpace) {
         this.underlying = underlying;
         this.dir = dir;
@@ -35,7 +35,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
     }
     
     @Override
-    public LockableRandomAccessThing makeRAF(long size) throws IOException {
+    public LockableRandomAccessBuffer makeRAF(long size) throws IOException {
         lock.lock();
         try {
             if(dir.getUsableSpace() > size + minDiskSpace)
@@ -48,7 +48,7 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
     }
 
     @Override
-    public synchronized LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
+    public synchronized LockableRandomAccessBuffer makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         lock.lock();
         try {
@@ -69,15 +69,15 @@ public class DiskSpaceCheckingRandomAccessThingFactory implements LockableRandom
      * the file if an RAF cannot be created.
      * @throws InsufficientDiskSpaceException If there is not enough disk space.
      * @throws IOException If some other disk I/O error occurs. */
-    public PooledRandomAccessFileWrapper createNewRAF(File file, long size, Random random) throws IOException {
+    public PooledFileRandomAccessBuffer createNewRAF(File file, long size, Random random) throws IOException {
         lock.lock();
-        PooledRandomAccessFileWrapper ret = null;
+        PooledFileRandomAccessBuffer ret = null;
         try {
             if(!file.exists()) throw new IOException("File does not exist");
             if(file.length() != 0) throw new IOException("File is wrong length");
             // FIXME ideally we would have separate locks for each filesystem ...
             if(dir.getUsableSpace() > size + minDiskSpace) {
-                ret = new PooledRandomAccessFileWrapper(file, false, size, random, -1, true);
+                ret = new PooledFileRandomAccessBuffer(file, false, size, random, -1, true);
                 return ret;
             } else {
                 throw new InsufficientDiskSpaceException();

@@ -4,16 +4,16 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 
 public class RAFInputStream extends InputStream {
     
-    private final RandomAccessThing underlying;
+    private final RandomAccessBuffer underlying;
     private long rafOffset;
     private long rafLength;
     private final byte[] oneByte = new byte[1];
 
-    public RAFInputStream(RandomAccessThing data, long offset, long size) {
+    public RAFInputStream(RandomAccessBuffer data, long offset, long size) {
         this.underlying = data;
         this.rafOffset = offset;
         this.rafLength = size;

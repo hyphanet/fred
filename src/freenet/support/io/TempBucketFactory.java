@@ -21,8 +21,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessBucket;
-import freenet.crypt.EncryptedRandomAccessThing;
-import freenet.crypt.EncryptedRandomAccessThingType;
+import freenet.crypt.EncryptedRandomAccessBuffer;
+import freenet.crypt.EncryptedRandomAccessBufferType;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
@@ -33,8 +33,8 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.api.RandomAccessBucket;
 
 import java.util.ArrayList;
@@ -57,13 +57,13 @@ import java.util.ArrayList;
  *	- if they are long-lived or not (@see RAMBUCKET_MAX_AGE)
  *	- if their size is over RAMBUCKET_CONVERSION_FACTOR*maxRAMBucketSize
  */
-public class TempBucketFactory implements BucketFactory, LockableRandomAccessThingFactory {
+public class TempBucketFactory implements BucketFactory, LockableRandomAccessBufferFactory {
 	public final static long defaultIncrement = 4096;
 	public final static float DEFAULT_FACTOR = 1.25F;
 	
 	private final FilenameGenerator filenameGenerator;
-	private final PooledFileRandomAccessThingFactory underlyingDiskRAFFactory;
-	private final DiskSpaceCheckingRandomAccessThingFactory diskRAFFactory;
+	private final PooledFileRandomAccessBufferFactory underlyingDiskRAFFactory;
+	private final DiskSpaceCheckingRandomAccessBufferFactory diskRAFFactory;
 	private volatile long minDiskSpace;
 	private long bytesInUse = 0;
 	private final Executor executor;
@@ -502,13 +502,13 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         }
 
         @Override
-        public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+        public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
             synchronized(this) {
                 if(hasBeenFreed) throw new IOException("Already freed");
                 if(os != null) throw new IOException("Can't migrate with open OutputStream's");
                 if(!tbis.isEmpty()) throw new IOException("Can't migrate with open InputStream's");
                 setReadOnly();
-                TempLockableRandomAccessThing raf = new TempLockableRandomAccessThing(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
+                TempRandomAccessBuffer raf = new TempRandomAccessBuffer(currentBucket.toRandomAccessThing(), creationTime, !isRAMBucket());
                 if(isRAMBucket()) {
                     synchronized(ramBucketQueue) {
                         // No change in space usage.
@@ -534,10 +534,10 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.underlyingDiskRAFFactory = new PooledFileRandomAccessThingFactory(filenameGenerator, weakPRNG);
+		this.underlyingDiskRAFFactory = new PooledFileRandomAccessBufferFactory(filenameGenerator, weakPRNG);
 		underlyingDiskRAFFactory.enableCrypto(reallyEncrypt);
 		this.minDiskSpace = minDiskSpace;
-		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessThingFactory(underlyingDiskRAFFactory, 
+		this.diskRAFFactory = new DiskSpaceCheckingRandomAccessBufferFactory(underlyingDiskRAFFactory, 
 		        filenameGenerator.getDir(), minDiskSpace - maxRamUsed);
 		this.secret = masterSecret;
 	}
@@ -596,7 +596,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 
 	static final double MAX_USAGE_LOW = 0.8;
 	static final double MAX_USAGE_HIGH = 0.9;
-    public static final EncryptedRandomAccessThingType CRYPT_TYPE = EncryptedRandomAccessThingType.ChaCha128;
+    public static final EncryptedRandomAccessBufferType CRYPT_TYPE = EncryptedRandomAccessBufferType.ChaCha128;
 	
 	/**
 	 * Create a temp bucket
@@ -774,33 +774,33 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	}
 	
 	/** Unlike a TempBucket, the size is fixed, so migrate only happens on the migration thread. */
-	class TempLockableRandomAccessThing extends SwitchableProxyRandomAccessThing implements Migratable {
+	class TempRandomAccessBuffer extends SwitchableProxyRandomAccessBuffer implements Migratable {
 	    
 	    protected boolean hasMigrated = false;
 	    private boolean hasFreedRAM = false;
 	    private final long creationTime;
 	    
-	    TempLockableRandomAccessThing(int size, long time) throws IOException {
-	        super(new ByteArrayRandomAccessThing(size), size);
+	    TempRandomAccessBuffer(int size, long time) throws IOException {
+	        super(new ByteArrayRandomAccessBuffer(size), size);
 	        creationTime = time;
 	        hasMigrated = false;
 	    }
 
-        public TempLockableRandomAccessThing(byte[] initialContents, int offset, int size, long time, boolean readOnly) throws IOException {
-            super(new ByteArrayRandomAccessThing(initialContents, offset, size, readOnly), size);
+        public TempRandomAccessBuffer(byte[] initialContents, int offset, int size, long time, boolean readOnly) throws IOException {
+            super(new ByteArrayRandomAccessBuffer(initialContents, offset, size, readOnly), size);
             creationTime = time;
             hasMigrated = false;
         }
 
-        public TempLockableRandomAccessThing(LockableRandomAccessThing underlying, long creationTime, boolean migrated) throws IOException {
+        public TempRandomAccessBuffer(LockableRandomAccessBuffer underlying, long creationTime, boolean migrated) throws IOException {
             super(underlying, underlying.size());
             this.creationTime = creationTime;
             this.hasMigrated = hasFreedRAM = migrated;
         }
 
         @Override
-        protected LockableRandomAccessThing innerMigrate(LockableRandomAccessThing underlying) throws IOException {
-            ByteArrayRandomAccessThing b = (ByteArrayRandomAccessThing)underlying;
+        protected LockableRandomAccessBuffer innerMigrate(LockableRandomAccessBuffer underlying) throws IOException {
+            ByteArrayRandomAccessBuffer b = (ByteArrayRandomAccessBuffer)underlying;
             byte[] buf = b.getBuffer();
             return diskRAFFactory.makeRAF(buf, 0, (int)size, b.isReadOnly());
         }
@@ -858,17 +858,17 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	// FIXME encrypt (and pad) RAF's.
 	
 	@Override
-    public LockableRandomAccessThing makeRAF(long size) throws IOException {
+    public LockableRandomAccessBuffer makeRAF(long size) throws IOException {
 	    if(size < 0) throw new IllegalArgumentException();
 	    if(size > Integer.MAX_VALUE) return diskRAFFactory.makeRAF(size);
 	    
 	    long now = System.currentTimeMillis();
 	    
-	    TempLockableRandomAccessThing raf = null;
+	    TempRandomAccessBuffer raf = null;
 	    
 	    synchronized(this) {
 	        if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
-	            raf = new TempLockableRandomAccessThing((int)size, now);
+	            raf = new TempRandomAccessBuffer((int)size, now);
 	            bytesInUse += size;
 	        }
 	        if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
@@ -891,12 +891,12 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	            realSize += TempBucketFactory.CRYPT_TYPE.headerLen;
 	            paddedSize = PaddedEphemerallyEncryptedBucket.paddedLength(realSize, PaddedEphemerallyEncryptedBucket.MIN_PADDED_SIZE);
 	        }
-	        LockableRandomAccessThing ret = diskRAFFactory.makeRAF(paddedSize);
+	        LockableRandomAccessBuffer ret = diskRAFFactory.makeRAF(paddedSize);
 	        if(encrypt) {
 	            if(realSize != paddedSize)
-	                ret = new PaddedRandomAccessThing(ret, realSize);
+	                ret = new PaddedRandomAccessBuffer(ret, realSize);
 	            try {
-	                ret = new EncryptedRandomAccessThing(CRYPT_TYPE, ret, secret, true);
+	                ret = new EncryptedRandomAccessBuffer(CRYPT_TYPE, ret, secret, true);
 	            } catch (GeneralSecurityException e) {
 	                Logger.error(this, "Cannot create encrypted tempfile: "+e, e);
 	            }
@@ -906,17 +906,17 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
     }
 
     @Override
-    public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
+    public LockableRandomAccessBuffer makeRAF(byte[] initialContents, int offset, int size, boolean readOnly)
             throws IOException {
         if(size < 0) throw new IllegalArgumentException();
         
         long now = System.currentTimeMillis();
         
-        TempLockableRandomAccessThing raf = null;
+        TempRandomAccessBuffer raf = null;
         
         synchronized(this) {
             if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse < maxRamUsed) && (bytesInUse + size <= maxRamUsed)) {
-                raf = new TempLockableRandomAccessThing(initialContents, offset, size, now, readOnly);
+                raf = new TempRandomAccessBuffer(initialContents, offset, size, now, readOnly);
                 bytesInUse += size;
             }
             if(bytesInUse >= maxRamUsed * MAX_USAGE_HIGH && !runningCleaner) {
@@ -933,16 +933,16 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
         } else {
             if(reallyEncrypt) {
                 // FIXME do the encryption in memory? Test it ...
-                LockableRandomAccessThing ret = makeRAF(size);
+                LockableRandomAccessBuffer ret = makeRAF(size);
                 ret.pwrite(0, initialContents, offset, size);
-                if(readOnly) ret = new ReadOnlyRandomAccessThing(ret);
+                if(readOnly) ret = new ReadOnlyRandomAccessBuffer(ret);
                 return ret;
             }
             return diskRAFFactory.makeRAF(initialContents, offset, size, readOnly);
         }
     }
 
-    public DiskSpaceCheckingRandomAccessThingFactory getUnderlyingRAFFactory() {
+    public DiskSpaceCheckingRandomAccessBufferFactory getUnderlyingRAFFactory() {
         return diskRAFFactory;
     }
 }

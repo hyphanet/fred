@@ -4,15 +4,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class BarrierRandomAccessThing implements LockableRandomAccessThing {
+public class BarrierRandomAccessBuffer implements LockableRandomAccessBuffer {
     
-    private final LockableRandomAccessThing underlying;
+    private final LockableRandomAccessBuffer underlying;
     private boolean proceed;
     private int waiting;
     
-    public BarrierRandomAccessThing(LockableRandomAccessThing underlying) {
+    public BarrierRandomAccessBuffer(LockableRandomAccessBuffer underlying) {
         this.underlying = underlying;
         proceed = true;
     }
@@ -114,7 +114,7 @@ public class BarrierRandomAccessThing implements LockableRandomAccessThing {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        BarrierRandomAccessThing other = (BarrierRandomAccessThing) obj;
+        BarrierRandomAccessBuffer other = (BarrierRandomAccessBuffer) obj;
         return underlying.equals(other.underlying);
     }
     

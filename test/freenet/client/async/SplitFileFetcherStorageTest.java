@@ -43,12 +43,12 @@ import freenet.support.Ticker;
 import freenet.support.WaitableExecutor;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThingFactory;
+import freenet.support.io.ByteArrayRandomAccessBufferFactory;
 import freenet.support.io.StorageFormatException;
 import junit.framework.TestCase;
 
@@ -66,7 +66,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
         
     };
     static BucketFactory bf = new ArrayBucketFactory();
-    static LockableRandomAccessThingFactory rafFactory = new ByteArrayRandomAccessThingFactory();
+    static LockableRandomAccessBufferFactory rafFactory = new ByteArrayRandomAccessBufferFactory();
     static final WaitableExecutor exec = new WaitableExecutor(new PooledExecutor());
     static final PersistentJobRunner jobRunner = new DummyJobRunner(exec, null);
     static final Ticker ticker = new CheatingTicker(exec);
@@ -267,19 +267,19 @@ public class SplitFileFetcherStorageTest extends TestCase {
         }
 
         public SplitFileFetcherStorage createStorage(final StorageCallback cb, FetchContext ctx) throws FetchException, MetadataParseException, IOException {
-            LockableRandomAccessThingFactory f = new LockableRandomAccessThingFactory() {
+            LockableRandomAccessBufferFactory f = new LockableRandomAccessBufferFactory() {
 
                 @Override
-                public LockableRandomAccessThing makeRAF(long size) throws IOException {
-                    LockableRandomAccessThing t = rafFactory.makeRAF(size);
+                public LockableRandomAccessBuffer makeRAF(long size) throws IOException {
+                    LockableRandomAccessBuffer t = rafFactory.makeRAF(size);
                     cb.snoopRAF(t);
                     return t;
                 }
 
                 @Override
-                public LockableRandomAccessThing makeRAF(byte[] initialContents, int offset,
+                public LockableRandomAccessBuffer makeRAF(byte[] initialContents, int offset,
                         int size, boolean readOnly) throws IOException {
-                    LockableRandomAccessThing t = rafFactory.makeRAF(initialContents, offset, size, readOnly);
+                    LockableRandomAccessBuffer t = rafFactory.makeRAF(initialContents, offset, size, readOnly);
                     cb.snoopRAF(t);
                     return t;
                 }
@@ -295,7 +295,7 @@ public class SplitFileFetcherStorageTest extends TestCase {
          * @throws IOException 
          * @throws FetchException */
         public SplitFileFetcherStorage createStorage(StorageCallback cb, FetchContext ctx,
-                LockableRandomAccessThing raf) throws IOException, StorageFormatException, FetchException {
+                LockableRandomAccessBuffer raf) throws IOException, StorageFormatException, FetchException {
             assertTrue(persistent);
             return new SplitFileFetcherStorage(raf, false, cb, ctx, random, jobRunner, fetchingKeys, ticker, memoryLimitedJobRunner, new CRCChecksumChecker(), false, null, false, false);
         }
@@ -361,18 +361,18 @@ public class SplitFileFetcherStorageTest extends TestCase {
         private boolean closed;
         private boolean failed;
         private boolean hasRestartedOnCorruption;
-        private LockableRandomAccessThing raf;
+        private LockableRandomAccessBuffer raf;
 
         public StorageCallback(TestSplitfile splitfile) {
             this.splitfile = splitfile;
             encodedBlocks = new boolean[splitfile.dataBlocks.length + splitfile.checkBlocks.length];
         }
 
-        synchronized void snoopRAF(LockableRandomAccessThing t) {
+        synchronized void snoopRAF(LockableRandomAccessBuffer t) {
             this.raf = t;
         }
         
-        synchronized LockableRandomAccessThing getRAF() {
+        synchronized LockableRandomAccessBuffer getRAF() {
             return raf;
         }
 

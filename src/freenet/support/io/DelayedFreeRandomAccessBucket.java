@@ -18,7 +18,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, RandomAccessBucket, DelayedFree {
@@ -160,12 +160,12 @@ public class DelayedFreeRandomAccessBucket implements Bucket, Serializable, Rand
     }
 
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
         synchronized(this) {
             if(freed) throw new IOException("Already freed");
         }
         setReadOnly();
-        return new DelayedFreeRandomAccessThing(bucket.toRandomAccessThing(), factory);
+        return new DelayedFreeRandomAccessBuffer(bucket.toRandomAccessThing(), factory);
     }
 
 }

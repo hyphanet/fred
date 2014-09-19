@@ -3,41 +3,41 @@ package freenet.support.io;
 import java.io.IOException;
 import java.util.Random;
 
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 
 import junit.framework.TestCase;
 
-/** Base class for testing RandomAccessThing's. */
-public abstract class RandomAccessThingTestBase extends TestCase {
+/** Base class for testing RandomAccessBuffer's. */
+public abstract class RandomAccessBufferTestBase extends TestCase {
     
     /** Size list for small tests i.e. stuff that definitely fits in RAM */
     protected final int[] sizeList;
     /** Size list for big tests i.e. stuff that might not fit in RAM */
     private final long[] fullSizeList;
     
-    protected RandomAccessThingTestBase(int[] allSmallTests) {
+    protected RandomAccessBufferTestBase(int[] allSmallTests) {
         sizeList = allSmallTests;
         fullSizeList = new long[sizeList.length];
         for(int i=0;i<sizeList.length;i++) fullSizeList[i] = sizeList[i];
     }
     
-    protected RandomAccessThingTestBase(int[] smallTests, long[] bigTests) {
+    protected RandomAccessBufferTestBase(int[] smallTests, long[] bigTests) {
         sizeList = smallTests;
         fullSizeList = bigTests;
     }
     
     /** Construct an instance of a given size. 
      * @throws IOException */
-    protected abstract RandomAccessThing construct(long size) throws IOException;
+    protected abstract RandomAccessBuffer construct(long size) throws IOException;
     
     private void innerTestSize(long sz) throws IOException {
-        RandomAccessThing raf = construct(sz);
+        RandomAccessBuffer raf = construct(sz);
         assertEquals(raf.size(), sz);
         raf.close();
         raf.free();
     }
 
-    /** Test that we can create and free a RandomAccessThing of various sizes, and it returns the correct
+    /** Test that we can create and free a RandomAccessBuffer of various sizes, and it returns the correct
      * size. */
     public void testSize() throws IOException {
         for(long size : fullSizeList)
@@ -76,7 +76,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     
     /** Write using a given formula in random small writes, then check using random small reads. */
     protected void innerTestFormula(long sz, Random r, Formula f) throws IOException {
-        RandomAccessThing raf = construct(sz);
+        RandomAccessBuffer raf = construct(sz);
         assertEquals(raf.size(), sz);
         int x = 0;
         // Write (and check as go)
@@ -126,7 +126,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     }
     
     private void innerTestWriteOverLimit(long sz, int choppedBytes) throws IOException {
-        RandomAccessThing raf = construct(sz);
+        RandomAccessBuffer raf = construct(sz);
         assertEquals(raf.size(), sz);
         long startAt = sz - choppedBytes;
         byte[] buf = new byte[choppedBytes];
@@ -158,12 +158,12 @@ public abstract class RandomAccessThingTestBase extends TestCase {
         raf.free();
     }
 
-    private void readWriteMustSucceed(RandomAccessThing raf, long startAt, byte[] buf, int offset, int length) throws IOException {
+    private void readWriteMustSucceed(RandomAccessBuffer raf, long startAt, byte[] buf, int offset, int length) throws IOException {
         raf.pread(startAt, buf, 0, buf.length); // Should work
         raf.pwrite(startAt, buf, 0, buf.length); // Should work
     }
 
-    private void readWriteMustFail(RandomAccessThing raf, long startAt, byte[] buf, int offset, int length) throws IOException {
+    private void readWriteMustFail(RandomAccessBuffer raf, long startAt, byte[] buf, int offset, int length) throws IOException {
         if(length == 0) return; // NOP.
         try {
             raf.pread(startAt, buf, 0, buf.length); // Should work
@@ -186,9 +186,9 @@ public abstract class RandomAccessThingTestBase extends TestCase {
             innerTestClose(size);
     }
     
-    /** Test that after closing a RandomAccessThing we cannot read from it or write to it */
+    /** Test that after closing a RandomAccessBuffer we cannot read from it or write to it */
     protected void innerTestClose(long sz) throws IOException {
-        RandomAccessThing raf = construct(sz);
+        RandomAccessBuffer raf = construct(sz);
         raf.close();
         byte[] buf = new byte[(int)Math.min(1024, sz)];
         readWriteMustFail(raf, 0L, buf, 0, buf.length);
@@ -202,12 +202,12 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     }
     
     /** Create an array, fill it with random numbers, write it sequentially to the 
-     * RandomAccessThing, then read randomly and compare. */
+     * RandomAccessBuffer, then read randomly and compare. */
     protected void innerTestArray(int len, Random r, boolean readOnly) throws IOException {
         if(len == 0) return;
         byte[] buf = new byte[len];
         r.nextBytes(buf);
-        RandomAccessThing raf = construct(len);
+        RandomAccessBuffer raf = construct(len);
         raf.pwrite(0L, buf, 0, buf.length);
         for(int i=0;i<100;i++) {
             int end = len == 1 ? 1 : r.nextInt(len)+1;
@@ -222,7 +222,7 @@ public abstract class RandomAccessThingTestBase extends TestCase {
     }
 
     /** Check that the array section equals the read data, then write it and repeat the check. */
-    public static void checkArraySectionEqualsReadData(byte[] buf, RandomAccessThing raf, int start, int end, boolean readOnly) throws IOException {
+    public static void checkArraySectionEqualsReadData(byte[] buf, RandomAccessBuffer raf, int start, int end, boolean readOnly) throws IOException {
         int len = end - start;
         if(len == 0) return;
         byte[] tmp = new byte[len];

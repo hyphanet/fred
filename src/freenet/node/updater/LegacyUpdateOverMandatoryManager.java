@@ -20,7 +20,7 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Legacy UOM. This class simply enables older nodes to pull the transition
@@ -53,7 +53,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		
 		Message msg;
 		final BulkTransmitter bt;
-		final RandomAccessFileWrapper raf;
+		final FileRandomAccessBuffer raf;
 
 		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
@@ -82,7 +82,7 @@ public class LegacyUpdateOverMandatoryManager implements RequestClient {
 		try {
 			
 			try {
-				raf = new RandomAccessFileWrapper(data, true);
+				raf = new FileRandomAccessBuffer(data, true);
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;

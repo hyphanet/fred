@@ -28,7 +28,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
-import freenet.support.api.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.NativeThread;
 import freenet.support.io.StorageFormatException;
 
@@ -172,7 +172,7 @@ public class SplitFileFetcherSegmentStorage {
      * @param splitFileFetcherStorage
      * @param raf
      * @param dis DataInputStream to which the static settings have been saved. Anything else we 
-     * will need to read separately from the RandomAccessThing.
+     * will need to read separately from the RandomAccessBuffer.
      * @param segNo The segment number.
      * @param segmentCrossCheckDataOffset -1 to mean store the cross-check blocks just after the 
      * data and check blocks for this segment. Otherwise the offset.
@@ -853,7 +853,7 @@ public class SplitFileFetcherSegmentStorage {
         return;
     }
     
-    /** Only called during construction. Reads the variable metadata from the RandomAccessThing. 
+    /** Only called during construction. Reads the variable metadata from the RandomAccessBuffer. 
      * @throws ChecksumFailedException 
      * @throws StorageFormatException */
     void readMetadata() throws IOException, StorageFormatException, ChecksumFailedException {

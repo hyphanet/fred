@@ -20,7 +20,7 @@ import freenet.crypt.AEADCryptBucket;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.EncryptedRandomAccessBucket;
-import freenet.crypt.EncryptedRandomAccessThing;
+import freenet.crypt.EncryptedRandomAccessBuffer;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.SHA256;
 import freenet.support.LogThresholdCallback;
@@ -28,9 +28,9 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 
 /**
  * Helper functions for working with Buckets.
@@ -498,7 +498,7 @@ public class BucketTools {
     }
 
     /** @deprecated Only for unit tests */
-    public static void fill(RandomAccessThing raf, Random random, long offset, long length) 
+    public static void fill(RandomAccessBuffer raf, Random random, long offset, long length) 
     throws IOException {
         long moved = 0;
         byte[] buf = new byte[BUFFER_SIZE];
@@ -521,15 +521,15 @@ public class BucketTools {
         }
     }
 
-    /** Copy the contents of a Bucket to a RandomAccessThing at a specific offset.
+    /** Copy the contents of a Bucket to a RandomAccessBuffer at a specific offset.
      * @param bucket The bucket to read data from.
-     * @param raf The RandomAccessThing to write to.
+     * @param raf The RandomAccessBuffer to write to.
      * @param fileOffset The offset within raf to start writing at.
      * @param truncateLength The maximum number of bytes to transfer, or -1 to copy the whole 
      * bucket. 
      * @return The number of bytes moved.
      * @throws IOException If something breaks while copying the data. */
-    public static long copyTo(Bucket bucket, RandomAccessThing raf, long fileOffset, 
+    public static long copyTo(Bucket bucket, RandomAccessBuffer raf, long fileOffset, 
             long truncateLength) throws IOException {
         if(truncateLength == 0) return 0;
         if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
@@ -601,26 +601,26 @@ public class BucketTools {
         }
     }
     
-    /** Restore a LockableRandomAccessThing from a DataInputStream. Inverse of storeTo().
+    /** Restore a LockableRandomAccessBuffer from a DataInputStream. Inverse of storeTo().
      * FIXME Maybe we should just pass the ClientContext? 
      */
-    public static LockableRandomAccessThing restoreRAFFrom(DataInputStream dis, 
+    public static LockableRandomAccessBuffer restoreRAFFrom(DataInputStream dis, 
             FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterSecret)
     throws IOException, StorageFormatException, ResumeFailedException {
         int magic = dis.readInt();
         switch(magic) {
-        case PooledRandomAccessFileWrapper.MAGIC:
-            return new PooledRandomAccessFileWrapper(dis, fg, persistentFileTracker);
-        case RandomAccessFileWrapper.MAGIC:
-            return new RandomAccessFileWrapper(dis);
-        case ReadOnlyRandomAccessThing.MAGIC:
-            return new ReadOnlyRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
-        case DelayedFreeRandomAccessThing.MAGIC:
-            return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
-        case EncryptedRandomAccessThing.MAGIC:
-            return EncryptedRandomAccessThing.create(dis, fg, persistentFileTracker, masterSecret);
-        case PaddedRandomAccessThing.MAGIC:
-            return new PaddedRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
+        case PooledFileRandomAccessBuffer.MAGIC:
+            return new PooledFileRandomAccessBuffer(dis, fg, persistentFileTracker);
+        case FileRandomAccessBuffer.MAGIC:
+            return new FileRandomAccessBuffer(dis);
+        case ReadOnlyRandomAccessBuffer.MAGIC:
+            return new ReadOnlyRandomAccessBuffer(dis, fg, persistentFileTracker, masterSecret);
+        case DelayedFreeRandomAccessBuffer.MAGIC:
+            return new DelayedFreeRandomAccessBuffer(dis, fg, persistentFileTracker, masterSecret);
+        case EncryptedRandomAccessBuffer.MAGIC:
+            return EncryptedRandomAccessBuffer.create(dis, fg, persistentFileTracker, masterSecret);
+        case PaddedRandomAccessBuffer.MAGIC:
+            return new PaddedRandomAccessBuffer(dis, fg, persistentFileTracker, masterSecret);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }

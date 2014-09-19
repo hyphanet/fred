@@ -7,17 +7,17 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, Serializable, DelayedFree {
+public class DelayedFreeRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable, DelayedFree {
     
     private static final long serialVersionUID = 1L;
-    final LockableRandomAccessThing underlying;
+    final LockableRandomAccessBuffer underlying;
     private boolean freed;
     private transient PersistentFileTracker factory;
     private transient long createdCommitID;
 
-    public DelayedFreeRandomAccessThing(LockableRandomAccessThing raf, PersistentFileTracker factory) {
+    public DelayedFreeRandomAccessBuffer(LockableRandomAccessBuffer raf, PersistentFileTracker factory) {
         underlying = raf;
         this.createdCommitID = factory.commitID();
         this.factory = factory;
@@ -83,7 +83,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         underlying.storeTo(dos);
     }
     
-    public DelayedFreeRandomAccessThing(DataInputStream dis, FilenameGenerator fg,
+    public DelayedFreeRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg,
             PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) 
     throws IOException, StorageFormatException, ResumeFailedException {
         underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterSecret);
@@ -95,7 +95,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         return freed;
     }
     
-    public LockableRandomAccessThing getUnderlying() {
+    public LockableRandomAccessBuffer getUnderlying() {
         if(freed) return null;
         return underlying;
     }
@@ -123,7 +123,7 @@ public class DelayedFreeRandomAccessThing implements LockableRandomAccessThing, 
         if (getClass() != obj.getClass()) {
             return false;
         }
-        DelayedFreeRandomAccessThing other = (DelayedFreeRandomAccessThing) obj;
+        DelayedFreeRandomAccessBuffer other = (DelayedFreeRandomAccessBuffer) obj;
         return underlying.equals(other.underlying);
     }
     

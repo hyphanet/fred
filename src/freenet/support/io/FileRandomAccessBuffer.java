@@ -10,9 +10,9 @@ import java.io.Serializable;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class RandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
+public class FileRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
 
     private static final long serialVersionUID = 1L;
     transient RandomAccessFile raf;
@@ -22,14 +22,14 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing, Seria
 	private final boolean readOnly;
 	private boolean secureDelete;
 	
-	public RandomAccessFileWrapper(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
+	public FileRandomAccessBuffer(RandomAccessFile raf, File filename, boolean readOnly) throws IOException {
 		this.raf = raf;
 		this.file = filename;
 		length = raf.length();
         this.readOnly = readOnly;
 	}
 	
-    public RandomAccessFileWrapper(File filename, long length, boolean readOnly) throws IOException {
+    public FileRandomAccessBuffer(File filename, long length, boolean readOnly) throws IOException {
         raf = new RandomAccessFile(filename, readOnly ? "r" : "rw");
         raf.setLength(length);
         this.length = length;
@@ -37,7 +37,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing, Seria
         this.readOnly = readOnly;
     }
 
-    public RandomAccessFileWrapper(File filename, boolean readOnly) throws IOException {
+    public FileRandomAccessBuffer(File filename, boolean readOnly) throws IOException {
         raf = new RandomAccessFile(filename, readOnly ? "r" : "rw");
         this.length = raf.length();
         this.file = filename;
@@ -144,7 +144,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing, Seria
         dos.writeBoolean(secureDelete);
     }
 
-    public RandomAccessFileWrapper(DataInputStream dis) throws IOException, StorageFormatException, ResumeFailedException {
+    public FileRandomAccessBuffer(DataInputStream dis) throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
         file = new File(dis.readUTF());
@@ -180,7 +180,7 @@ public class RandomAccessFileWrapper implements LockableRandomAccessThing, Seria
         if (getClass() != obj.getClass()) {
             return false;
         }
-        RandomAccessFileWrapper other = (RandomAccessFileWrapper) obj;
+        FileRandomAccessBuffer other = (FileRandomAccessBuffer) obj;
         if (!file.equals(other.file)) {
             return false;
         }

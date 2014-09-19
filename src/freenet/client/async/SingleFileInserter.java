@@ -29,7 +29,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -339,7 +339,7 @@ class SingleFileInserter implements ClientPutState, Serializable {
 		// Job of SplitHandler: when the splitinserter has the metadata,
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
-		LockableRandomAccessThing dataRAF;
+		LockableRandomAccessBuffer dataRAF;
         try {
             dataRAF = data.toRandomAccessThing();
         } catch (IOException e) {

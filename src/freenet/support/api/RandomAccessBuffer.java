@@ -10,10 +10,10 @@ import java.io.IOException;
  * Trivial random access file base interface. Guaranteed to be thread-safe - that is, either the 
  * implementation will serialise reads, or it will support parallel reads natively. The length of
  * the file is constant. Many implementations will provide a nulling constructor - one that takes
- * a size and creates a RandomAccessThing of that length whose content is all 0's.
+ * a size and creates a RandomAccessBuffer of that length whose content is all 0's.
  * @author toad
  */
-public interface RandomAccessThing extends Closeable {
+public interface RandomAccessBuffer extends Closeable {
 
 	public long size();
 	

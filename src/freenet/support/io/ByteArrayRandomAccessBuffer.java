@@ -6,29 +6,29 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import freenet.client.async.ClientContext;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 
-public class ByteArrayRandomAccessThing implements LockableRandomAccessThing, Serializable {
+public class ByteArrayRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
 
     private static final long serialVersionUID = 1L;
     private final byte[] data;
 	private boolean readOnly;
 	private boolean closed;
 	
-	public ByteArrayRandomAccessThing(byte[] padded) {
+	public ByteArrayRandomAccessBuffer(byte[] padded) {
 		this.data = padded;
 	}
 	
-	public ByteArrayRandomAccessThing(int size) {
+	public ByteArrayRandomAccessBuffer(int size) {
 	    this.data = new byte[size];
 	}
 
-	public ByteArrayRandomAccessThing(byte[] initialContents, int offset, int size, boolean readOnly) {
+	public ByteArrayRandomAccessBuffer(byte[] initialContents, int offset, int size, boolean readOnly) {
 	    data = Arrays.copyOfRange(initialContents, offset, offset+size);
 	    this.readOnly = readOnly;
     }
 	
-	protected ByteArrayRandomAccessThing() {
+	protected ByteArrayRandomAccessBuffer() {
 	    // For serialization.
 	    data = null;
 	}

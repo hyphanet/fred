@@ -39,9 +39,9 @@ import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
-import freenet.support.api.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
+import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -57,7 +57,7 @@ import freenet.support.math.MersenneTwister;
 /**
  * Similar to SplitFileFetcherStorage. The status of a splitfile insert,
  * including the encoded check and cross-check blocks, is stored in a
- * RandomAccessThing separate to that containing the data itself. This class is
+ * RandomAccessBuffer separate to that containing the data itself. This class is
  * only concerned with encoding, storage etc, and should have as few
  * dependencies on the runtime as possible, partly so that it can be tested in
  * isolation. Actual details of inserting the blocks will be kept on
@@ -95,9 +95,9 @@ public class SplitFileInserterStorage {
     }
 
     /** The original file to upload */
-    final LockableRandomAccessThing originalData;
+    final LockableRandomAccessBuffer originalData;
     /** The RAF containing check blocks, status etc. */
-    private final LockableRandomAccessThing raf;
+    private final LockableRandomAccessBuffer raf;
     private final long rafLength;
     /** Is the request persistent? */
     final boolean persistent;
@@ -225,7 +225,7 @@ public class SplitFileInserterStorage {
      * Create a SplitFileInserterStorage.
      * 
      * @param originalData
-     *            The original data as a RandomAccessThing. We need to be able
+     *            The original data as a RandomAccessBuffer. We need to be able
      *            to read single blocks.
      * @param rafFactory
      *            A factory (persistent or not as appropriate) used to create
@@ -238,10 +238,10 @@ public class SplitFileInserterStorage {
      * @throws IOException
      * @throws InsertException
      */
-    public SplitFileInserterStorage(LockableRandomAccessThing originalData,
+    public SplitFileInserterStorage(LockableRandomAccessBuffer originalData,
             long decompressedLength, SplitFileInserterStorageCallback callback,
             COMPRESSOR_TYPE compressionCodec, ClientMetadata meta, boolean isMetadata, 
-            ARCHIVE_TYPE archiveType, LockableRandomAccessThingFactory rafFactory, 
+            ARCHIVE_TYPE archiveType, LockableRandomAccessBufferFactory rafFactory, 
             boolean persistent, InsertContext ctx, byte splitfileCryptoAlgorithm, 
             byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, HashResult[] hashes, 
             BucketFactory bf, ChecksumChecker checker, Random random,
@@ -585,8 +585,8 @@ public class SplitFileInserterStorage {
      * @throws ChecksumFailedException 
      * @throws ResumeFailedException 
      */
-    public SplitFileInserterStorage(LockableRandomAccessThing raf, 
-            LockableRandomAccessThing originalData, SplitFileInserterStorageCallback callback, Random random, 
+    public SplitFileInserterStorage(LockableRandomAccessBuffer raf, 
+            LockableRandomAccessBuffer originalData, SplitFileInserterStorageCallback callback, Random random, 
             MemoryLimitedJobRunner memoryLimitedJobRunner, PersistentJobRunner jobRunner, 
             Ticker ticker, KeysFetchingLocally keysFetching, FilenameGenerator persistentFG, 
             PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
@@ -615,7 +615,7 @@ public class SplitFileInserterStorage {
         int version = dis.readInt();
         if(version != VERSION)
             throw new StorageFormatException("Bad version");
-        LockableRandomAccessThing rafOrig = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker, masterKey);
+        LockableRandomAccessBuffer rafOrig = BucketTools.restoreRAFFrom(dis, persistentFG, persistentFileTracker, masterKey);
         if(originalData == null) {
             this.originalData = rafOrig;
         } else {
@@ -1672,7 +1672,7 @@ public class SplitFileInserterStorage {
         return offsetSegmentStatus[segNo];
     }
 
-    LockableRandomAccessThing getRAF() {
+    LockableRandomAccessBuffer getRAF() {
         return raf;
     }
 

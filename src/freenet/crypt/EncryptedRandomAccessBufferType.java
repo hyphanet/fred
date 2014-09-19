@@ -11,11 +11,11 @@ import org.bouncycastle.crypto.engines.ChaChaEngine;
 
 /**
  * Stores information about the algorithms used, the version number, and the footer length for a
- * EncryptedRandomAccessThing
+ * EncryptedRandomAccessBuffer
  * @author unixninja92
  *
  */
-public enum EncryptedRandomAccessThingType {
+public enum EncryptedRandomAccessBufferType {
     ChaCha128(1, 12, CryptByteBufferType.ChaCha128, MACType.HMACSHA256, 32),
     ChaCha256(2, 12, CryptByteBufferType.ChaCha256, MACType.HMACSHA256, 32);
 
@@ -35,7 +35,7 @@ public enum EncryptedRandomAccessThingType {
      * @param macType Alg to use for MAC generation
      * @param macLen The length of the MAC output in bytes
      */
-    private EncryptedRandomAccessThingType(int bitmask, int magAndVerLen, CryptByteBufferType type, 
+    private EncryptedRandomAccessBufferType(int bitmask, int magAndVerLen, CryptByteBufferType type, 
             MACType macType, int macLen){
         this.bitmask = bitmask;
         this.encryptType = type;
@@ -53,15 +53,15 @@ public enum EncryptedRandomAccessThingType {
         return new ChaChaEngine();
     }
 
-    private static final Map<Integer, EncryptedRandomAccessThingType> byBitmask;
+    private static final Map<Integer, EncryptedRandomAccessBufferType> byBitmask;
     
     static {
-        byBitmask = new HashMap<Integer, EncryptedRandomAccessThingType>();
-        for(EncryptedRandomAccessThingType type : values())
+        byBitmask = new HashMap<Integer, EncryptedRandomAccessBufferType>();
+        for(EncryptedRandomAccessBufferType type : values())
             byBitmask.put(type.bitmask, type);
     }
 
-    public static EncryptedRandomAccessThingType getByBitmask(int val) {
+    public static EncryptedRandomAccessBufferType getByBitmask(int val) {
         return byBitmask.get(val);
     }
 

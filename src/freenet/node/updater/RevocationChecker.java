@@ -24,13 +24,13 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.MediaType;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
@@ -355,12 +355,12 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		return new FileBucket(f, true, false, false, false, false);
 	}
 	
-	public RandomAccessThing getBlobThing() {
+	public RandomAccessBuffer getBlobThing() {
 		if(!manager.isBlown()) return null;
 		synchronized(this) {
 			if(blobBucket != null) {
 			    try {
-			        ByteArrayRandomAccessThing t = new ByteArrayRandomAccessThing(blobBucket.toByteArray());
+			        ByteArrayRandomAccessBuffer t = new ByteArrayRandomAccessBuffer(blobBucket.toByteArray());
 			        t.setReadOnly();
 			        return t;
 			    } catch (IOException e) {
@@ -372,7 +372,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		File f = getBlobFile();
 		if(f == null) return null;
 		try {
-			return new RandomAccessFileWrapper(f, true);
+			return new FileRandomAccessBuffer(f, true);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "We do not have the blob file for the revocation even though we have successfully downloaded it!", e);
 			return null;

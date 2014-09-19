@@ -50,11 +50,11 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPUploadedFile;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.FileRandomAccessBuffer;
 
 public class DarknetPeerNode extends PeerNode {
 
@@ -903,7 +903,7 @@ public class DarknetPeerNode extends PeerNode {
 		final String comment;
 		/** Only valid if amIOffering == false. Set when start receiving. */
 		private File destination;
-		private RandomAccessThing data;
+		private RandomAccessBuffer data;
 		final long size;
 		/** Who is offering it? True = I am offering it, False = I am being offered it */
 		final boolean amIOffering;
@@ -913,7 +913,7 @@ public class DarknetPeerNode extends PeerNode {
 		/** True if the offer has either been accepted or rejected */
 		private boolean acceptedOrRejected;
 
-		FileOffer(long uid, RandomAccessThing data, String filename, String mimeType, String comment) throws IOException {
+		FileOffer(long uid, RandomAccessBuffer data, String filename, String mimeType, String comment) throws IOException {
 			this.uid = uid;
 			this.data = data;
 			this.filename = filename;
@@ -956,7 +956,7 @@ public class DarknetPeerNode extends PeerNode {
 			final File dest = node.clientCore.downloadsDir().file(baseFilename+".part");
 			destination = node.clientCore.downloadsDir().file(baseFilename);
 			try {
-				data = new RandomAccessFileWrapper(dest, false);
+				data = new FileRandomAccessBuffer(dest, false);
 			} catch (IOException e) {
 				// Impossible
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
@@ -1435,7 +1435,7 @@ public class DarknetPeerNode extends PeerNode {
 		return getPeerNodeStatus();
 	}
 
-	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data) throws IOException {
+	private int sendFileOffer(String fnam, String mime, String message, RandomAccessBuffer data) throws IOException {
 		long uid = node.random.nextLong();
 		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
@@ -1457,14 +1457,14 @@ public class DarknetPeerNode extends PeerNode {
 	public int sendFileOffer(File file, String message) throws IOException {
 		String fnam = file.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		RandomAccessThing data = new RandomAccessFileWrapper(file, true);
+		RandomAccessBuffer data = new FileRandomAccessBuffer(file, true);
 		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
 		String fnam = file.getFilename();
 		String mime = file.getContentType();
-		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
+		RandomAccessBuffer data = new ByteArrayRandomAccessBuffer(BucketTools.toByteArray(file.getData()));
 		return sendFileOffer(fnam, mime, message, data);
 	}
 
@@ -1822,7 +1822,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			byte[] data = baos.toByteArray();
 			long uid = node.fastWeakRandom.nextLong();
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, data.length, Node.PACKET_SIZE, raf, true);
 			try {
 				sendAsync(DMT.createFNPMyFullNoderef(uid, data.length), null, node.nodeStats.foafCounter);
@@ -1887,7 +1887,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		try {
 			final byte[] data = new byte[length];
-			RandomAccessThing raf = new ByteArrayRandomAccessThing(data);
+			RandomAccessBuffer raf = new ByteArrayRandomAccessBuffer(data);
 			PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, length, Node.PACKET_SIZE, raf, false);
 			final BulkReceiver br = new BulkReceiver(prb, this, uid, node.nodeStats.foafCounter);
 			node.executor.execute(new Runnable() {

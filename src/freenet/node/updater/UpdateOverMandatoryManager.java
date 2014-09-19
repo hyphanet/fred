@@ -67,13 +67,13 @@ import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ByteArrayRandomAccessThing;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.RandomAccessFileWrapper;
+import freenet.support.io.FileRandomAccessBuffer;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -698,7 +698,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public boolean handleRequestRevocation(Message m, final PeerNode source) {
 		// Do we have the data?
 
-		final RandomAccessThing data = updateManager.revocationChecker.getBlobThing();
+		final RandomAccessBuffer data = updateManager.revocationChecker.getBlobThing();
 
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key but we don't have it!");
@@ -872,9 +872,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		try {
-			raf = new RandomAccessFileWrapper(temp, false);
+			raf = new FileRandomAccessBuffer(temp, false);
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
@@ -1177,7 +1177,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		Message msg;
 		final BulkTransmitter bt;
-		final RandomAccessFileWrapper raf;
+		final FileRandomAccessBuffer raf;
 
 		if (source.isOpennet() && updateManager.dontAllowUOM()) {
 			Logger.normal(this, "Peer " + source
@@ -1213,7 +1213,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			
 			try {
-				raf = new RandomAccessFileWrapper(data, true);
+				raf = new FileRandomAccessBuffer(data, true);
 			} catch(FileNotFoundException e) {
 				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
 				return;
@@ -1386,9 +1386,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		try {
-			raf = new RandomAccessFileWrapper(temp, false);
+			raf = new FileRandomAccessBuffer(temp, false);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " sending us a main jar binary blob, but we " +
 					((e instanceof FileNotFoundException) ? "lost the temp file " : "cannot read the temp file ") + temp + " : " + e, e);
@@ -1670,12 +1670,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			data = dependencies.get(buf);
 		}
 		boolean fail = !incrementDependencies(source);
-		RandomAccessFileWrapper raf;
+		FileRandomAccessBuffer raf;
 		final BulkTransmitter bt;
 		
 		try {
 			if(data != null)
-				raf = new RandomAccessFileWrapper(data, true);
+				raf = new FileRandomAccessBuffer(data, true);
 			else {
 				Logger.error(this, "Dependency with hash "+HexUtil.bytesToHex(buf.getData())+" not found!");
 				fail = true;
@@ -1699,7 +1699,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		    }
 		} else {
 		    prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), 0,
-		            Node.PACKET_SIZE, new ByteArrayRandomAccessThing(new byte[0]), true);
+		            Node.PACKET_SIZE, new ByteArrayRandomAccessBuffer(new byte[0]), true);
 		    fail = true;
 		}
 		
@@ -1716,7 +1716,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			cancelSend(source, uid);
 			decrementDependencies(source);
 		} else {
-			final RandomAccessFileWrapper r = raf;
+			final FileRandomAccessBuffer r = raf;
 			updateManager.node.executor.execute(new Runnable() {
 				
 				@Override
@@ -1909,13 +1909,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				public void run() {
 					boolean failed = false;
 					File tmp = null;
-					RandomAccessFileWrapper raf = null;
+					FileRandomAccessBuffer raf = null;
 					try {
 						System.out.println("Fetching "+saveTo+" from "+fetchFrom);
 						long uid = updateManager.node.fastWeakRandom.nextLong();
 						fetchFrom.sendAsync(DMT.createUOMFetchDependency(uid, expectedHash, size), null, updateManager.ctr);
 						tmp = FileUtil.createTempFile(saveTo.getName(), NodeUpdateManager.TEMP_FILE_SUFFIX, saveTo.getParentFile());
-						raf = new RandomAccessFileWrapper(tmp, false);
+						raf = new FileRandomAccessBuffer(tmp, false);
 						PartiallyReceivedBulk prb = 
 							new PartiallyReceivedBulk(updateManager.node.getUSM(), size,
 								Node.PACKET_SIZE, raf, false);

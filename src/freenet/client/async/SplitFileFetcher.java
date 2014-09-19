@@ -21,11 +21,11 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.BaseSendableGet;
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.InsufficientDiskSpaceException;
-import freenet.support.io.PooledRandomAccessFileWrapper;
+import freenet.support.io.PooledFileRandomAccessBuffer;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 
@@ -76,7 +76,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
 
     private transient SplitFileFetcherStorage storage;
     /** Kept here so we can resume from storage */
-    private LockableRandomAccessThing raf;
+    private LockableRandomAccessBuffer raf;
     final ClientRequester parent;
     final GetCompletionCallback cb;
     /** If non-null, we will complete via truncation. */
@@ -468,7 +468,7 @@ public class SplitFileFetcher implements ClientGetState, SplitFileFetcherStorage
             if(fileCompleteViaTruncation.length() != rafSize)
                 throw new ResumeFailedException("Storage file is not of the correct length");
             // FIXME check against finalLength too, maybe we can finish straight away.
-            this.raf = new PooledRandomAccessFileWrapper(fileCompleteViaTruncation, false, rafSize, null, -1, true);
+            this.raf = new PooledFileRandomAccessBuffer(fileCompleteViaTruncation, false, rafSize, null, -1, true);
         } else {
             this.raf = BucketTools.restoreRAFFrom(dis, context.persistentFG, context.persistentFileTracker, context.getPersistentMasterSecret());
             fileCompleteViaTruncation = null;

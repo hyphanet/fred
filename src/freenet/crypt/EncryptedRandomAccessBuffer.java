@@ -22,24 +22,24 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import freenet.client.async.ClientContext;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
 /**
- * EncryptedRandomAccessThing is a encrypted RandomAccessThing implementation using a 
+ * EncryptedRandomAccessBuffer is a encrypted RandomAccessBuffer implementation using a 
  * SkippingStreamCipher. 
  * @author unixninja92
- * Suggested EncryptedRandomAccessThingType to use: ChaCha128
+ * Suggested EncryptedRandomAccessBufferType to use: ChaCha128
  */
-public final class EncryptedRandomAccessThing implements LockableRandomAccessThing, Serializable { 
+public final class EncryptedRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable { 
     private static final long serialVersionUID = 1L;
     private final ReentrantLock readLock = new ReentrantLock();
     private final ReentrantLock writeLock = new ReentrantLock();
-    private final EncryptedRandomAccessThingType type;
-    private final LockableRandomAccessThing underlyingThing;
+    private final EncryptedRandomAccessBufferType type;
+    private final LockableRandomAccessBuffer underlyingThing;
     
     private transient SkippingStreamCipher cipherRead;
     private transient SkippingStreamCipher cipherWrite;
@@ -59,7 +59,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     private static final int VERSION_AND_MAGIC_LENGTH = 12;
     
     /**
-     * Creates an instance of EncryptedRandomAccessThing wrapping underlyingThing. Keys for key 
+     * Creates an instance of EncryptedRandomAccessBuffer wrapping underlyingThing. Keys for key 
      * encryption and MAC generation are derived from the MasterSecret. If this is a new ERAT then
      * keys are generated and the footer is written to the end of the underlying RAT. Otherwise the
      * footer is read from the underlying RAT. 
@@ -72,8 +72,8 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    public EncryptedRandomAccessThing(EncryptedRandomAccessThingType type, 
-            LockableRandomAccessThing underlyingThing, MasterSecret masterKey, boolean newFile) throws IOException, 
+    public EncryptedRandomAccessBuffer(EncryptedRandomAccessBufferType type, 
+            LockableRandomAccessBuffer underlyingThing, MasterSecret masterKey, boolean newFile) throws IOException, 
             GeneralSecurityException{
         this.type = type;
         this.underlyingThing = underlyingThing;
@@ -93,7 +93,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         
         
         if(underlyingThing.size() < type.headerLen){
-            throw new IOException("Underlying RandomAccessThing is not long enough to include the "
+            throw new IOException("Underlying RandomAccessBuffer is not long enough to include the "
                     + "footer.");
         }
         
@@ -107,7 +107,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         long magic = ByteBuffer.wrap(header, offset, 8).getLong();
 
         if(!newFile && END_MAGIC != magic) {
-        	throw new IOException("This is not an EncryptedRandomAccessThing!");
+        	throw new IOException("This is not an EncryptedRandomAccessBuffer!");
         }
 
         version = type.bitmask;
@@ -117,7 +117,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         	writeHeader();
         } else {
         	if(readVersion != version){
-        		throw new IOException("Version of the underlying RandomAccessThing is "
+        		throw new IOException("Version of the underlying RandomAccessBuffer is "
         				+ "incompatible with this ERATType");
         	}
 
@@ -153,7 +153,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
         if(isClosed){
-            throw new IOException("This RandomAccessThing has already been closed. It can no longer"
+            throw new IOException("This RandomAccessBuffer has already been closed. It can no longer"
                     + " be read from.");
         }
 
@@ -182,7 +182,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
             throws IOException {
         if(isClosed){
-            throw new IOException("This RandomAccessThing has already been closed. It can no longer"
+            throw new IOException("This RandomAccessBuffer has already been closed. It can no longer"
                     + " be written to.");
         }
 
@@ -225,7 +225,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      */
     private void writeHeader() throws IOException, GeneralSecurityException{
         if(isClosed){
-            throw new IOException("This RandomAccessThing has already been closed. This should not"
+            throw new IOException("This RandomAccessBuffer has already been closed. This should not"
                     + " happen.");
         }
         byte[] header = new byte[type.headerLen];
@@ -279,7 +279,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
      */
     private boolean verifyHeader() throws IOException, InvalidKeyException {
         if(isClosed){
-            throw new IOException("This RandomAccessThing has already been closed. This should not"
+            throw new IOException("This RandomAccessBuffer has already been closed. This should not"
                     + " happen.");
         }
         byte[] footer = new byte[type.headerLen-VERSION_AND_MAGIC_LENGTH];
@@ -356,16 +356,16 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         underlyingThing.storeTo(dos);
     }
 
-    public static LockableRandomAccessThing create(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
+    public static LockableRandomAccessBuffer create(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ResumeFailedException {
-        EncryptedRandomAccessThingType type = EncryptedRandomAccessThingType.getByBitmask(dis.readInt());
+        EncryptedRandomAccessBufferType type = EncryptedRandomAccessBufferType.getByBitmask(dis.readInt());
         if(type == null)
-            throw new StorageFormatException("Unknown EncryptedRandomAccessThingType");
-        LockableRandomAccessThing underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
+            throw new StorageFormatException("Unknown EncryptedRandomAccessBufferType");
+        LockableRandomAccessBuffer underlying = BucketTools.restoreRAFFrom(dis, fg, persistentFileTracker, masterKey);
         try {
-            return new EncryptedRandomAccessThing(type, underlying, masterKey, false);
+            return new EncryptedRandomAccessBuffer(type, underlying, masterKey, false);
         } catch (GeneralSecurityException e) {
-            Logger.error(EncryptedRandomAccessThing.class, "Crypto error resuming: "+e, e);
+            Logger.error(EncryptedRandomAccessBuffer.class, "Crypto error resuming: "+e, e);
             throw new ResumeFailedException(e);
         }
     }
@@ -390,7 +390,7 @@ public final class EncryptedRandomAccessThing implements LockableRandomAccessThi
         if (getClass() != obj.getClass()) {
             return false;
         }
-        EncryptedRandomAccessThing other = (EncryptedRandomAccessThing) obj;
+        EncryptedRandomAccessBuffer other = (EncryptedRandomAccessBuffer) obj;
         if (type != other.type) {
             return false;
         }

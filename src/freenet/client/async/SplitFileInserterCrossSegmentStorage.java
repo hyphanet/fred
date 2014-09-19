@@ -13,7 +13,7 @@ import freenet.keys.ClientCHK;
 import freenet.support.Logger;
 import freenet.support.MemoryLimitedChunk;
 import freenet.support.MemoryLimitedJob;
-import freenet.support.api.LockableRandomAccessThing.RAFLock;
+import freenet.support.api.LockableRandomAccessBuffer.RAFLock;
 import freenet.support.io.CountedOutputStream;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullOutputStream;

@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 import freenet.crypt.EncryptedRandomAccessBucket;
-import freenet.crypt.EncryptedRandomAccessThingType;
+import freenet.crypt.EncryptedRandomAccessBufferType;
 import freenet.crypt.MasterSecret;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;

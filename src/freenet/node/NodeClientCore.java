@@ -83,13 +83,13 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.RealCompressor;
-import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
+import freenet.support.io.DiskSpaceCheckingRandomAccessBufferFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
-import freenet.support.io.MaybeEncryptedRandomAccessThingFactory;
+import freenet.support.io.MaybeEncryptedRandomAccessBufferFactory;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentTempBucketFactory;
-import freenet.support.io.PooledFileRandomAccessThingFactory;
+import freenet.support.io.PooledFileRandomAccessBufferFactory;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.plugins.helpers1.WebInterfaceToadlet;
 
@@ -136,8 +136,8 @@ public class NodeClientCore implements Persistable {
 	public final FilenameGenerator persistentFilenameGenerator;
 	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	private final DiskSpaceCheckingRandomAccessThingFactory persistentDiskChecker;
-	public final MaybeEncryptedRandomAccessThingFactory persistentRAFFactory;
+	private final DiskSpaceCheckingRandomAccessBufferFactory persistentDiskChecker;
+	public final MaybeEncryptedRandomAccessBufferFactory persistentRAFFactory;
 	public final ClientLayerPersister clientLayerPersister;
 	public final Node node;
 	public final RequestTracker tracker;
@@ -374,12 +374,12 @@ public class NodeClientCore implements Persistable {
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_DEFAULT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		PooledFileRandomAccessThingFactory raff = 
-		    new PooledFileRandomAccessThingFactory(persistentFilenameGenerator, node.fastWeakRandom);
+		PooledFileRandomAccessBufferFactory raff = 
+		    new PooledFileRandomAccessBufferFactory(persistentFilenameGenerator, node.fastWeakRandom);
 		persistentDiskChecker = 
-		    new DiskSpaceCheckingRandomAccessThingFactory(raff, persistentTempDir.dir(), 
+		    new DiskSpaceCheckingRandomAccessBufferFactory(raff, persistentTempDir.dir(), 
 		            minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
-		persistentRAFFactory = new MaybeEncryptedRandomAccessThingFactory(persistentDiskChecker, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
+		persistentRAFFactory = new MaybeEncryptedRandomAccessBufferFactory(persistentDiskChecker, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		persistentTempBucketFactory.setDiskSpaceChecker(persistentDiskChecker);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();

@@ -42,28 +42,28 @@ import freenet.support.PooledExecutor;
 import freenet.support.Ticker;
 import freenet.support.WaitableExecutor;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThing;
-import freenet.support.api.LockableRandomAccessThingFactory;
+import freenet.support.api.LockableRandomAccessBuffer;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.ByteArrayRandomAccessThingFactory;
+import freenet.support.io.ByteArrayRandomAccessBufferFactory;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NullOutputStream;
 import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.PooledFileRandomAccessThingFactory;
+import freenet.support.io.PooledFileRandomAccessBufferFactory;
 import freenet.support.io.RAFInputStream;
-import freenet.support.io.ReadOnlyRandomAccessThing;
+import freenet.support.io.ReadOnlyRandomAccessBuffer;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.io.TrivialPersistentFileTracker;
 
 public class ClientRequestSelectorTest extends TestCase {
     
-    final LockableRandomAccessThingFactory smallRAFFactory = new ByteArrayRandomAccessThingFactory();
+    final LockableRandomAccessBufferFactory smallRAFFactory = new ByteArrayRandomAccessBufferFactory();
     final FilenameGenerator fg;
     final PersistentFileTracker persistentFileTracker;
-    final LockableRandomAccessThingFactory bigRAFFactory;
+    final LockableRandomAccessBufferFactory bigRAFFactory;
     final BucketFactory smallBucketFactory;
     final BucketFactory bigBucketFactory;
     final File dir;
@@ -93,7 +93,7 @@ public class ClientRequestSelectorTest extends TestCase {
         RandomSource r = new DummyRandomSource(12345);
         fg = new FilenameGenerator(r, true, dir, "freenet-test");
         persistentFileTracker = new TrivialPersistentFileTracker(dir, fg);
-        bigRAFFactory = new PooledFileRandomAccessThingFactory(fg, r);
+        bigRAFFactory = new PooledFileRandomAccessBufferFactory(fg, r);
         smallBucketFactory = new ArrayBucketFactory();
         bigBucketFactory = new TempBucketFactory(executor, fg, 0, 0, r, false, 0, null);
         baseContext = HighLevelSimpleClientImpl.makeDefaultInsertContext(bigBucketFactory, new SimpleEventProducer());
@@ -207,7 +207,7 @@ public class ClientRequestSelectorTest extends TestCase {
 
     }
     
-    private HashResult[] getHashes(LockableRandomAccessThing data) throws IOException {
+    private HashResult[] getHashes(LockableRandomAccessBuffer data) throws IOException {
         InputStream is = new RAFInputStream(data, 0, data.size());
         MultiHashInputStream hashStream = new MultiHashInputStream(is, HashType.SHA256.bitmask);
         FileUtil.copy(is, new NullOutputStream(), data.size());
@@ -215,11 +215,11 @@ public class ClientRequestSelectorTest extends TestCase {
         return hashStream.getResults();
     }
 
-    private LockableRandomAccessThing generateData(Random random, long size,
-            LockableRandomAccessThingFactory smallRAFFactory) throws IOException {
-        LockableRandomAccessThing thing = smallRAFFactory.makeRAF(size);
+    private LockableRandomAccessBuffer generateData(Random random, long size,
+            LockableRandomAccessBufferFactory smallRAFFactory) throws IOException {
+        LockableRandomAccessBuffer thing = smallRAFFactory.makeRAF(size);
         BucketTools.fill(thing, random, 0, size);
-        return new ReadOnlyRandomAccessThing(thing);
+        return new ReadOnlyRandomAccessBuffer(thing);
     }
     
     class NullSendableInsert extends SendableInsert {
@@ -320,7 +320,7 @@ public class ClientRequestSelectorTest extends TestCase {
     public void testSmallSplitfileChooseCompletion() throws IOException, InsertException, MissingKeyException {
         Random r = new Random(12121);
         long size = 65536; // Exact multiple, so no last block
-        LockableRandomAccessThing data = generateData(r, size, smallRAFFactory);
+        LockableRandomAccessBuffer data = generateData(r, size, smallRAFFactory);
         HashResult[] hashes = getHashes(data);
         NullSendableInsert insert = new NullSendableInsert(false, false);
         MyCallback cb = new MyCallback(insert);

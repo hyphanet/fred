@@ -36,7 +36,7 @@ import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.DelayedFree;
 import freenet.support.io.DelayedFreeBucket;
-import freenet.support.io.DelayedFreeRandomAccessThing;
+import freenet.support.io.DelayedFreeRandomAccessBuffer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -47,7 +47,7 @@ import freenet.support.io.TempBucketFactory;
 /** Top level of persistence mechanism for ClientRequest's (persistent downloads and uploads).
  * Note that we use three different persistence mechanisms here:
  * 1) Splitfile persistence. The downloaded data and all the status for a splitfile is kept in a 
- * single random access file (technically a LockableRandomAccessThing).
+ * single random access file (technically a LockableRandomAccessBuffer).
  * 2) Java persistence. The overall list of ClientRequest's is stored to client.dat using 
  * serialization, by this class.
  * 3) A simple binary fallback. For complicated requests this will just record enough information 

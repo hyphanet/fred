@@ -12,7 +12,7 @@ import java.util.Random;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.math.MersenneTwister;
 
 /** Random access files with a limited number of open files, using a pool. 
@@ -20,18 +20,18 @@ import freenet.support.math.MersenneTwister;
  * However, this is doing disk I/O (even if cached, system calls), so maybe it's not a big deal ... 
  * 
  * FIXME does this need a shutdown hook? I don't see why it would matter ... ??? */
-public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing, Serializable {
+public class PooledFileRandomAccessBuffer implements LockableRandomAccessBuffer, Serializable {
     
     private static volatile boolean logMINOR;
     static {
-        Logger.registerClass(PooledRandomAccessFileWrapper.class);
+        Logger.registerClass(PooledFileRandomAccessBuffer.class);
     }
     
     private static final long serialVersionUID = 1L;
     private static int MAX_OPEN_FDS = 100;
     /** Total number of currently open FDs */
     static int totalOpenFDs = 0;
-    static final LinkedHashSet<PooledRandomAccessFileWrapper> closables = new LinkedHashSet<PooledRandomAccessFileWrapper>();
+    static final LinkedHashSet<PooledFileRandomAccessBuffer> closables = new LinkedHashSet<PooledFileRandomAccessBuffer>();
     
     public final File file;
     private final boolean readOnly;
@@ -57,7 +57,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
      * @param persistentTempID The tempfile ID, or -1.
      * @throws IOException
      */
-    public PooledRandomAccessFileWrapper(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID, boolean deleteOnFree) throws IOException {
+    public PooledFileRandomAccessBuffer(File file, boolean readOnly, long forceLength, Random seedRandom, long persistentTempID, boolean deleteOnFree) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
         this.persistentTempID = persistentTempID;
@@ -98,7 +98,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         }
     }
 
-    public PooledRandomAccessFileWrapper(File file, String mode, byte[] initialContents,
+    public PooledFileRandomAccessBuffer(File file, String mode, byte[] initialContents,
             int offset, int size, long persistentTempID, boolean deleteOnFree, boolean readOnly) throws IOException {
         this.file = file;
         this.readOnly = readOnly;
@@ -119,7 +119,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         }
     }
     
-    protected PooledRandomAccessFileWrapper() {
+    protected PooledFileRandomAccessBuffer() {
         // For serialization.
         file = null;
         readOnly = false;
@@ -190,7 +190,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
 
             @Override
             protected void innerUnlock() {
-                PooledRandomAccessFileWrapper.this.unlock();
+                PooledFileRandomAccessBuffer.this.unlock();
             }
             
         };
@@ -207,7 +207,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
                     totalOpenFDs++;
                     return lock;
                 } else {
-                    PooledRandomAccessFileWrapper closable = pollFirstClosable();
+                    PooledFileRandomAccessBuffer closable = pollFirstClosable();
                     if(closable != null) {
                         closable.closeRAF();
                         continue;
@@ -222,11 +222,11 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         }
     }
     
-    private PooledRandomAccessFileWrapper pollFirstClosable() {
+    private PooledFileRandomAccessBuffer pollFirstClosable() {
         synchronized(closables) {
-            Iterator<PooledRandomAccessFileWrapper> it = closables.iterator();
+            Iterator<PooledFileRandomAccessBuffer> it = closables.iterator();
             if (it.hasNext()) {
-                PooledRandomAccessFileWrapper first = it.next();
+                PooledFileRandomAccessBuffer first = it.next();
                 it.remove();
                 return first;
             }
@@ -341,7 +341,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
      * @throws StorageFormatException 
      * @throws IOException 
      * @throws ResumeFailedException */
-    PooledRandomAccessFileWrapper(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) 
+    PooledFileRandomAccessBuffer(DataInputStream dis, FilenameGenerator fg, PersistentFileTracker persistentFileTracker) 
     throws StorageFormatException, IOException, ResumeFailedException {
         int version = dis.readInt();
         if(version != VERSION) throw new StorageFormatException("Bad version");
@@ -402,7 +402,7 @@ public class PooledRandomAccessFileWrapper implements LockableRandomAccessThing,
         if (getClass() != obj.getClass()) {
             return false;
         }
-        PooledRandomAccessFileWrapper other = (PooledRandomAccessFileWrapper) obj;
+        PooledFileRandomAccessBuffer other = (PooledFileRandomAccessBuffer) obj;
         if (deleteOnFree != other.deleteOnFree) {
             return false;
         }

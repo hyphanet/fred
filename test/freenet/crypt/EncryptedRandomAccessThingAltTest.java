@@ -6,14 +6,14 @@ import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import freenet.support.api.RandomAccessThing;
-import freenet.support.io.ByteArrayRandomAccessThing;
-import freenet.support.io.RandomAccessThingTestBase;
+import freenet.support.api.RandomAccessBuffer;
+import freenet.support.io.ByteArrayRandomAccessBuffer;
+import freenet.support.io.RandomAccessBufferTestBase;
 
-public class EncryptedRandomAccessThingAltTest extends RandomAccessThingTestBase {
+public class EncryptedRandomAccessThingAltTest extends RandomAccessBufferTestBase {
     
-    private final static EncryptedRandomAccessThingType[] types = 
-        EncryptedRandomAccessThingType.values();
+    private final static EncryptedRandomAccessBufferType[] types = 
+        EncryptedRandomAccessBufferType.values();
 
     private final static MasterSecret secret = new MasterSecret();
     
@@ -28,10 +28,10 @@ public class EncryptedRandomAccessThingAltTest extends RandomAccessThingTestBase
     }
     
     @Override
-    protected RandomAccessThing construct(long size) throws IOException {
-        ByteArrayRandomAccessThing barat = new ByteArrayRandomAccessThing((int)(size+types[0].headerLen));
+    protected RandomAccessBuffer construct(long size) throws IOException {
+        ByteArrayRandomAccessBuffer barat = new ByteArrayRandomAccessBuffer((int)(size+types[0].headerLen));
         try {
-            return new EncryptedRandomAccessThing(types[0], barat, secret, true);
+            return new EncryptedRandomAccessBuffer(types[0], barat, secret, true);
         } catch (GeneralSecurityException e) {
             throw new Error(e);
         }

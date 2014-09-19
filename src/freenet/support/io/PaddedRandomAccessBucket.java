@@ -12,7 +12,7 @@ import java.io.Serializable;
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 /** Pads a bucket to the next power of 2 file size. 
@@ -292,14 +292,14 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
     }
 
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
         synchronized(this) {
             if(outputStreamOpen) throw new IOException("Must close first");
             readOnly = true;
         }
         underlying.setReadOnly();
-        LockableRandomAccessThing u = underlying.toRandomAccessThing();
-        return new PaddedRandomAccessThing(u, size);
+        LockableRandomAccessBuffer u = underlying.toRandomAccessThing();
+        return new PaddedRandomAccessBuffer(u, size);
     }
 
     public RandomAccessBucket getUnderlying() {

@@ -15,7 +15,7 @@ import freenet.crypt.ChecksumFailedException;
 import freenet.crypt.HashResult;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ResumeFailedException;
 import freenet.support.io.StorageFormatException;
@@ -40,12 +40,12 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     /** Callback to send Metadata, completion status etc to */
     private final PutCompletionCallback cb;
     /** The file to be inserted */
-    private final LockableRandomAccessThing originalData;
+    private final LockableRandomAccessBuffer originalData;
     /** Whether to free the data when the insert completes/fails. E.g. this is true if the data is
      * the result of compression. */
     private final boolean freeData;
     /** The RAF that stores check blocks and status info, used and created by storage. */
-    private final LockableRandomAccessThing raf;
+    private final LockableRandomAccessBuffer raf;
     /** Stores the state of the insert and does most of the work. */
     private transient SplitFileInserterStorage storage;
     /** Actually does the insert */
@@ -61,7 +61,7 @@ public class SplitFileInserter implements ClientPutState, Serializable, SplitFil
     private transient boolean resumed;
     
     SplitFileInserter(boolean persistent, BaseClientPutter parent, PutCompletionCallback cb,
-            LockableRandomAccessThing originalData, boolean freeData, InsertContext ctx, 
+            LockableRandomAccessBuffer originalData, boolean freeData, InsertContext ctx, 
             ClientContext context, long decompressedLength, COMPRESSOR_TYPE compressionCodec, 
             ClientMetadata meta, boolean isMetadata, ARCHIVE_TYPE archiveType, 
             byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, byte[] hashThisLayerOnly, 

@@ -21,7 +21,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.api.LockableRandomAccessThing;
+import freenet.support.api.LockableRandomAccessBuffer;
 import freenet.support.api.RandomAccessBucket;
 
 public abstract class BaseFileBucket implements RandomAccessBucket {
@@ -525,12 +525,12 @@ public abstract class BaseFileBucket implements RandomAccessBucket {
     }
     
     @Override
-    public LockableRandomAccessThing toRandomAccessThing() throws IOException {
+    public LockableRandomAccessBuffer toRandomAccessThing() throws IOException {
         if(freed) throw new IOException("Already freed");
         setReadOnly();
         long size = size();
         if(size == 0) throw new IOException("Must not be empty");
-        return new PooledRandomAccessFileWrapper(getFile(), true, size, null, 
+        return new PooledFileRandomAccessBuffer(getFile(), true, size, null, 
                 getPersistentTempID(), deleteOnFree());
     }
     

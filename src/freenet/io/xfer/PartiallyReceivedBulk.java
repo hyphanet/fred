@@ -12,7 +12,7 @@ import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.RandomAccessThing;
+import freenet.support.api.RandomAccessBuffer;
 
 /**
  * Equivalent of PartiallyReceivedBlock, for large(ish) file transfers.
@@ -27,7 +27,7 @@ public class PartiallyReceivedBulk {
 	final long size;
 	/** The size of the blocks sent as packets. */
 	final int blockSize;
-	private final RandomAccessThing raf;
+	private final RandomAccessBuffer raf;
 	/** Which blocks have been received and written? */
 	private final BitArray blocksReceived;
 	final int blocks;
@@ -59,7 +59,7 @@ public class PartiallyReceivedBulk {
 	 * @param initialState If true, assume all blocks have been received. If false, assume no blocks have
 	 * been received.
 	 */
-	public PartiallyReceivedBulk(MessageCore usm, long size, int blockSize, RandomAccessThing raf, boolean initialState) {
+	public PartiallyReceivedBulk(MessageCore usm, long size, int blockSize, RandomAccessBuffer raf, boolean initialState) {
 		this.size = size;
 		this.blockSize = blockSize;
 		this.raf = raf;

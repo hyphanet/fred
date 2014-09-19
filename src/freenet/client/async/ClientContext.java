@@ -24,10 +24,10 @@ import freenet.support.Executor;
 import freenet.support.MemoryLimitedJobRunner;
 import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
-import freenet.support.api.LockableRandomAccessThingFactory;
+import freenet.support.api.LockableRandomAccessBufferFactory;
 import freenet.support.compress.RealCompressor;
-import freenet.support.io.DiskSpaceCheckingRandomAccessThingFactory;
-import freenet.support.io.FileRandomAccessThingFactory;
+import freenet.support.io.DiskSpaceCheckingRandomAccessBufferFactory;
+import freenet.support.io.FileRandomAccessBufferFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PersistentFileTracker;
@@ -60,8 +60,8 @@ public class ClientContext {
 	public transient final PersistentTempBucketFactory persistentBucketFactory;
 	public transient PersistentFileTracker persistentFileTracker;
 	public transient final TempBucketFactory tempBucketFactory;
-	public transient final LockableRandomAccessThingFactory tempRAFFactory;
-	public transient final LockableRandomAccessThingFactory persistentRAFFactory;
+	public transient final LockableRandomAccessBufferFactory tempRAFFactory;
+	public transient final LockableRandomAccessBufferFactory persistentRAFFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
@@ -81,8 +81,8 @@ public class ClientContext {
 	private transient InsertContext defaultPersistentInsertContext;
 	public transient final MasterSecret cryptoSecretTransient;
 	private transient MasterSecret cryptoSecretPersistent;
-	private transient FileRandomAccessThingFactory fileRAFTransient;
-	private transient FileRandomAccessThingFactory fileRAFPersistent;
+	private transient FileRandomAccessBufferFactory fileRAFTransient;
+	private transient FileRandomAccessBufferFactory fileRAFPersistent;
 
 	/** Provider for link filter exceptions. */
 	public transient final LinkFilterExceptionProvider linkFilterExceptionProvider;
@@ -94,8 +94,8 @@ public class ClientContext {
 			ArchiveManager archiveManager, PersistentTempBucketFactory ptbf, TempBucketFactory tbf, PersistentFileTracker tracker,
 			HealingQueue hq, USKManager uskManager, RandomSource strongRandom, Random fastWeakRandom, 
 			Ticker ticker, MemoryLimitedJobRunner memoryLimitedJobRunner, FilenameGenerator fg, FilenameGenerator persistentFG,
-			LockableRandomAccessThingFactory rafFactory, LockableRandomAccessThingFactory persistentRAFFactory,
-			FileRandomAccessThingFactory fileRAFTransient, FileRandomAccessThingFactory fileRAFPersistent,
+			LockableRandomAccessBufferFactory rafFactory, LockableRandomAccessBufferFactory persistentRAFFactory,
+			FileRandomAccessBufferFactory fileRAFTransient, FileRandomAccessBufferFactory fileRAFPersistent,
 			RealCompressor rc, DatastoreChecker checker, PersistentRequestRoot persistentRoot, MasterSecret cryptoSecretTransient,
 			LinkFilterExceptionProvider linkFilterExceptionProvider,
 			FetchContext defaultPersistentFetchContext, InsertContext defaultPersistentInsertContext) {
@@ -302,12 +302,12 @@ public class ClientContext {
         return persistent ? jobRunner : dummyJobRunner;
     }
 
-    public FileRandomAccessThingFactory getFileRandomAccessThingFactory(boolean persistent) {
+    public FileRandomAccessBufferFactory getFileRandomAccessThingFactory(boolean persistent) {
         return persistent ? fileRAFPersistent : fileRAFTransient;
                  
     }
 
-    public LockableRandomAccessThingFactory getRandomAccessThingFactory(boolean persistent) {
+    public LockableRandomAccessBufferFactory getRandomAccessThingFactory(boolean persistent) {
         return persistent ? persistentRAFFactory : tempBucketFactory;
     }
 	
