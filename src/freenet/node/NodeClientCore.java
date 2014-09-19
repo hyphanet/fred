@@ -379,7 +379,7 @@ public class NodeClientCore implements Persistable {
 		persistentDiskChecker = 
 		    new DiskSpaceCheckingRandomAccessThingFactory(raff, persistentTempDir.dir(), 
 		            minDiskFreeLongTerm + tempBucketFactory.getMaxRamUsed());
-		persistentRAFFactory = new MaybeEncryptedRandomAccessThingFactory(persistentDiskChecker);
+		persistentRAFFactory = new MaybeEncryptedRandomAccessThingFactory(persistentDiskChecker, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		persistentTempBucketFactory.setDiskSpaceChecker(persistentDiskChecker);
 		HighLevelSimpleClient client = makeClient((short)0, false, false);
 		FetchContext defaultFetchContext = client.getFetchContext();

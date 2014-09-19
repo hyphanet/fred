@@ -10,13 +10,19 @@ import freenet.support.Logger;
 /** Wraps another RandomAccessThingFactory to enable encryption if currently turned on. */
 public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAccessThingFactory {
     
-    public MaybeEncryptedRandomAccessThingFactory(LockableRandomAccessThingFactory factory) {
+    public MaybeEncryptedRandomAccessThingFactory(LockableRandomAccessThingFactory factory, boolean encrypt) {
         this.factory = factory;
+        this.reallyEncrypt = encrypt;
     }
     
     private final LockableRandomAccessThingFactory factory;
     private volatile boolean reallyEncrypt;
     private MasterSecret secret;
+    
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerClass(MaybeEncryptedRandomAccessThingFactory.class);
+    }
 
     @Override
     public LockableRandomAccessThing makeRAF(long size) throws IOException {
@@ -24,10 +30,11 @@ public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAcc
         long paddedSize = size;
         MasterSecret secret = null;
         synchronized(this) {
-            if(reallyEncrypt) {
+            if(reallyEncrypt && this.secret != null) {
                 secret = this.secret;
                 realSize += TempBucketFactory.CRYPT_TYPE.headerLen;
                 paddedSize = PaddedEphemerallyEncryptedBucket.paddedLength(realSize, PaddedEphemerallyEncryptedBucket.MIN_PADDED_SIZE);
+                if(logMINOR) Logger.minor(this, "Encrypting and padding "+size+" to "+paddedSize);
             }
         }
         LockableRandomAccessThing raf = factory.makeRAF(paddedSize);
