@@ -7,12 +7,12 @@ import java.io.IOException;
 import freenet.client.async.ClientContext;
 import freenet.crypt.MasterSecret;
 
-public class TrivialPaddedRandomAccessThing implements LockableRandomAccessThing {
+public class PaddedRandomAccessThing implements LockableRandomAccessThing {
     
     final LockableRandomAccessThing raf;
     final long realSize;
 
-    public TrivialPaddedRandomAccessThing(LockableRandomAccessThing raf, long realSize) {
+    public PaddedRandomAccessThing(LockableRandomAccessThing raf, long realSize) {
         this.raf = raf;
         this.realSize = realSize;
     }
@@ -65,7 +65,7 @@ public class TrivialPaddedRandomAccessThing implements LockableRandomAccessThing
         raf.storeTo(dos);
     }
     
-    public TrivialPaddedRandomAccessThing(DataInputStream dis, FilenameGenerator fg,
+    public PaddedRandomAccessThing(DataInputStream dis, FilenameGenerator fg,
             PersistentFileTracker persistentFileTracker, MasterSecret masterSecret) throws ResumeFailedException, IOException, StorageFormatException {
         realSize = dis.readLong();
         if(realSize < 0) throw new StorageFormatException("Negative length");

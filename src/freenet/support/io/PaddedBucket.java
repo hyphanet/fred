@@ -18,7 +18,7 @@ import freenet.support.api.Bucket;
  * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
-public class TrivialPaddedBucket implements Bucket, Serializable {
+public class PaddedBucket implements Bucket, Serializable {
     
     private static final long serialVersionUID = 1L;
     private final Bucket underlying;
@@ -26,22 +26,22 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     private transient boolean outputStreamOpen;
     private boolean readOnly;
 
-    /** Create a TrivialPaddedBucket, assumed to be empty */
-    public TrivialPaddedBucket(Bucket underlying) {
+    /** Create a PaddedBucket, assumed to be empty */
+    public PaddedBucket(Bucket underlying) {
         this(underlying, 0);
     }
     
-    /** Create a TrivialPaddedBucket, specifying the actual size of the existing bucket, which we
+    /** Create a PaddedBucket, specifying the actual size of the existing bucket, which we
      * do not store on disk.
      * @param underlying The underlying bucket.
      * @param size The actual size of the data.
      */
-    public TrivialPaddedBucket(Bucket underlying, long size) {
+    public PaddedBucket(Bucket underlying, long size) {
         this.underlying = underlying;
         this.size = size;
     }
     
-    protected TrivialPaddedBucket() {
+    protected PaddedBucket() {
         // For serialization.
         underlying = null;
         size = 0;
@@ -80,7 +80,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         @Override
         public void write(int b) throws IOException {
             out.write(b);
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 size++;
             }
         }
@@ -88,7 +88,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         @Override
         public void write(byte[] buf) throws IOException {
             out.write(buf);
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 size += buf.length;
             }
         }
@@ -96,7 +96,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         @Override
         public void write(byte[] buf, int offset, int length) throws IOException {
             out.write(buf, offset, length);
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 size += length;
             }
         }
@@ -105,21 +105,21 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         public void close() throws IOException {
             try {
                 long padding;
-                synchronized(TrivialPaddedBucket.this) {
+                synchronized(PaddedBucket.this) {
                     long paddedLength = paddedLength(size);
                     padding = paddedLength - size;
                 }
                 FileUtil.fill(out, padding);
                 out.close();
             } finally {
-                synchronized(TrivialPaddedBucket.this) {
+                synchronized(PaddedBucket.this) {
                     outputStreamOpen = false;
                 }
             }
         }
         
         public String toString() {
-            return "TrivialPaddedBucketOutputStream:"+out+"("+TrivialPaddedBucket.this+")";
+            return "TrivialPaddedBucketOutputStream:"+out+"("+PaddedBucket.this+")";
         }
 
     }
@@ -164,11 +164,11 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         
         @Override
         public int read() throws IOException {
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 if(counter >= size) return -1;
             }
             int ret = in.read();
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 counter++;
             }
             return ret;
@@ -181,7 +181,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         
         @Override
         public int read(byte[] buf, int offset, int length) throws IOException {
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 if(length < 0) return -1;
                 if(length == 0) return 0;
                 if(counter >= size) return -1;
@@ -190,7 +190,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
                 }
             }
             int ret = in.read(buf, offset, length);
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 if(ret > 0)
                 counter += ret;
             }
@@ -198,14 +198,14 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         }
         
         public long skip(long length) throws IOException {
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 if(counter >= size) return -1;
                 if(counter + length >= size) {
                     length = (int)Math.min(length, counter + length - size);
                 }
             }
             long ret = in.skip(length);
-            synchronized(TrivialPaddedBucket.this) {
+            synchronized(PaddedBucket.this) {
                 if(ret > 0) counter += ret;
             }
             return ret;
@@ -251,7 +251,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
     @Override
     public Bucket createShadow() {
         Bucket shadow = underlying.createShadow();
-        TrivialPaddedBucket ret = new TrivialPaddedBucket(shadow, size);
+        PaddedBucket ret = new PaddedBucket(shadow, size);
         ret.setReadOnly();
         return ret;
     }
@@ -273,7 +273,7 @@ public class TrivialPaddedBucket implements Bucket, Serializable {
         underlying.storeTo(dos);
     }
     
-    protected TrivialPaddedBucket(DataInputStream dis, FilenameGenerator fg, 
+    protected PaddedBucket(DataInputStream dis, FilenameGenerator fg, 
             PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();

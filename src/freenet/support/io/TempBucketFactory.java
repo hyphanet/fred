@@ -762,7 +762,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
 		    ret = new EncryptedRandomAccessBucket(CRYPT_TYPE, ret, secret);
-		    ret = new TrivialPaddedRandomAccessBucket(ret);
+		    ret = new PaddedRandomAccessBucket(ret);
 		}
 		return ret;
 	}
@@ -888,7 +888,7 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 	        LockableRandomAccessThing ret = diskRAFFactory.makeRAF(paddedSize);
 	        if(encrypt) {
 	            if(realSize != paddedSize)
-	                ret = new TrivialPaddedRandomAccessThing(ret, realSize);
+	                ret = new PaddedRandomAccessThing(ret, realSize);
 	            try {
 	                ret = new EncryptedRandomAccessThing(CRYPT_TYPE, ret, secret, true);
 	            } catch (GeneralSecurityException e) {

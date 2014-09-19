@@ -586,10 +586,10 @@ public class BucketTools {
             return new PaddedEphemerallyEncryptedBucket(dis, fg, persistentFileTracker, masterKey);
         case ReadOnlyFileSliceBucket.MAGIC:
             return new ReadOnlyFileSliceBucket(dis);
-        case TrivialPaddedBucket.MAGIC:
-            return new TrivialPaddedBucket(dis, fg, persistentFileTracker, masterKey);
-        case TrivialPaddedRandomAccessBucket.MAGIC:
-            return new TrivialPaddedRandomAccessBucket(dis, fg, persistentFileTracker, masterKey);
+        case PaddedBucket.MAGIC:
+            return new PaddedBucket(dis, fg, persistentFileTracker, masterKey);
+        case PaddedRandomAccessBucket.MAGIC:
+            return new PaddedRandomAccessBucket(dis, fg, persistentFileTracker, masterKey);
         case RAFBucket.MAGIC:
             return new RAFBucket(dis, fg, persistentFileTracker, masterKey);
         case EncryptedRandomAccessBucket.MAGIC:
@@ -617,8 +617,8 @@ public class BucketTools {
             return new DelayedFreeRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         case EncryptedRandomAccessThing.MAGIC:
             return EncryptedRandomAccessThing.create(dis, fg, persistentFileTracker, masterSecret);
-        case TrivialPaddedRandomAccessThing.MAGIC:
-            return new TrivialPaddedRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
+        case PaddedRandomAccessThing.MAGIC:
+            return new PaddedRandomAccessThing(dis, fg, persistentFileTracker, masterSecret);
         default:
             throw new StorageFormatException("Unknown magic value for RAF "+magic);
         }

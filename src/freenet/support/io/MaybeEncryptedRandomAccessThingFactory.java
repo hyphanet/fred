@@ -33,7 +33,7 @@ public class MaybeEncryptedRandomAccessThingFactory implements LockableRandomAcc
         LockableRandomAccessThing raf = factory.makeRAF(paddedSize);
         if(secret != null) {
             if(realSize != paddedSize)
-                raf = new TrivialPaddedRandomAccessThing(raf, realSize);
+                raf = new PaddedRandomAccessThing(raf, realSize);
             try {
                 raf = new EncryptedRandomAccessThing(TempBucketFactory.CRYPT_TYPE, raf, secret, true);
             } catch (GeneralSecurityException e) {

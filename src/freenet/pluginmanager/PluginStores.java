@@ -17,7 +17,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
-import freenet.support.io.TrivialPaddedBucket;
+import freenet.support.io.PaddedBucket;
 
 public class PluginStores {
     
@@ -66,7 +66,7 @@ public class PluginStores {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key);
-                bucket = new TrivialPaddedBucket(bucket);
+                bucket = new PaddedBucket(bucket);
             }
         }
         return bucket;
@@ -83,7 +83,7 @@ public class PluginStores {
                 // We pad then encrypt, which is wasteful, but we have no way to persist the size.
                 // Unfortunately AEADCryptBucket needs to know the real termination point.
                 bucket = new AEADCryptBucket(bucket, key);
-                bucket = new TrivialPaddedBucket(bucket, bucket.size());
+                bucket = new PaddedBucket(bucket, bucket.size());
             }
         }
         return bucket;

@@ -19,7 +19,7 @@ import freenet.support.api.RandomAccessBucket;
  * length. This pads with FileUtil.fill(), which is reasonably random but is faster than using
  * SecureRandom, and vastly more secure than using a non-secure Random.
  */
-public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Serializable {
+public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializable {
     
     private static final long serialVersionUID = 1L;
     private final RandomAccessBucket underlying;
@@ -27,22 +27,22 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
     private transient boolean outputStreamOpen;
     private boolean readOnly;
 
-    /** Create a TrivialPaddedBucket, assumed to be empty */
-    public TrivialPaddedRandomAccessBucket(RandomAccessBucket underlying) {
+    /** Create a PaddedBucket, assumed to be empty */
+    public PaddedRandomAccessBucket(RandomAccessBucket underlying) {
         this(underlying, 0);
     }
     
-    /** Create a TrivialPaddedBucket, specifying the actual size of the existing bucket, which we
+    /** Create a PaddedBucket, specifying the actual size of the existing bucket, which we
      * do not store on disk.
      * @param underlying The underlying bucket.
      * @param size The actual size of the data.
      */
-    public TrivialPaddedRandomAccessBucket(RandomAccessBucket underlying, long size) {
+    public PaddedRandomAccessBucket(RandomAccessBucket underlying, long size) {
         this.underlying = underlying;
         this.size = size;
     }
     
-    protected TrivialPaddedRandomAccessBucket() {
+    protected PaddedRandomAccessBucket() {
         // For serialization.
         underlying = null;
         size = 0;
@@ -81,7 +81,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         @Override
         public void write(int b) throws IOException {
             out.write(b);
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 size++;
             }
         }
@@ -89,7 +89,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         @Override
         public void write(byte[] buf) throws IOException {
             out.write(buf);
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 size += buf.length;
             }
         }
@@ -97,7 +97,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         @Override
         public void write(byte[] buf, int offset, int length) throws IOException {
             out.write(buf, offset, length);
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 size += length;
             }
         }
@@ -106,21 +106,21 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         public void close() throws IOException {
             try {
                 long padding;
-                synchronized(TrivialPaddedRandomAccessBucket.this) {
+                synchronized(PaddedRandomAccessBucket.this) {
                     long paddedLength = paddedLength(size);
                     padding = paddedLength - size;
                 }
                 FileUtil.fill(out, padding);
                 out.close();
             } finally {
-                synchronized(TrivialPaddedRandomAccessBucket.this) {
+                synchronized(PaddedRandomAccessBucket.this) {
                     outputStreamOpen = false;
                 }
             }
         }
         
         public String toString() {
-            return "TrivialPaddedBucketOutputStream:"+out+"("+TrivialPaddedRandomAccessBucket.this+")";
+            return "TrivialPaddedBucketOutputStream:"+out+"("+PaddedRandomAccessBucket.this+")";
         }
 
     }
@@ -165,11 +165,11 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         
         @Override
         public int read() throws IOException {
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 if(counter >= size) return -1;
             }
             int ret = in.read();
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 counter++;
             }
             return ret;
@@ -182,7 +182,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         
         @Override
         public int read(byte[] buf, int offset, int length) throws IOException {
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 if(length < 0) return -1;
                 if(length == 0) return 0;
                 if(counter >= size) return -1;
@@ -191,7 +191,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
                 }
             }
             int ret = in.read(buf, offset, length);
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 if(ret > 0)
                 counter += ret;
             }
@@ -199,14 +199,14 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         }
         
         public long skip(long length) throws IOException {
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 if(counter >= size) return -1;
                 if(counter + length >= size) {
                     length = (int)Math.min(length, counter + length - size);
                 }
             }
             long ret = in.skip(length);
-            synchronized(TrivialPaddedRandomAccessBucket.this) {
+            synchronized(PaddedRandomAccessBucket.this) {
                 if(ret > 0) counter += ret;
             }
             return ret;
@@ -252,7 +252,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
     @Override
     public Bucket createShadow() {
         RandomAccessBucket shadow = (RandomAccessBucket) underlying.createShadow();
-        TrivialPaddedRandomAccessBucket ret = new TrivialPaddedRandomAccessBucket(shadow, size);
+        PaddedRandomAccessBucket ret = new PaddedRandomAccessBucket(shadow, size);
         ret.setReadOnly();
         return ret;
     }
@@ -274,7 +274,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         underlying.storeTo(dos);
     }
     
-    protected TrivialPaddedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg, 
+    protected PaddedRandomAccessBucket(DataInputStream dis, FilenameGenerator fg, 
             PersistentFileTracker persistentFileTracker, MasterSecret masterKey) 
     throws IOException, StorageFormatException, ResumeFailedException {
         int version = dis.readInt();
@@ -292,7 +292,7 @@ public class TrivialPaddedRandomAccessBucket implements RandomAccessBucket, Seri
         }
         underlying.setReadOnly();
         LockableRandomAccessThing u = underlying.toRandomAccessThing();
-        return new TrivialPaddedRandomAccessThing(u, size);
+        return new PaddedRandomAccessThing(u, size);
     }
     
 }

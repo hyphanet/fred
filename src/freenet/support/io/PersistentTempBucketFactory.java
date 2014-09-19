@@ -176,7 +176,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		    if(encrypt) {
 		        rawBucket = new EncryptedRandomAccessBucket(TempBucketFactory.CRYPT_TYPE, 
 		                rawBucket, secret);
-		        rawBucket = new TrivialPaddedRandomAccessBucket(rawBucket);
+		        rawBucket = new PaddedRandomAccessBucket(rawBucket);
 		    }
 		}
 		if(mustWrap)
