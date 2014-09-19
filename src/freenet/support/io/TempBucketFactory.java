@@ -761,8 +761,8 @@ public class TempBucketFactory implements BucketFactory, LockableRandomAccessThi
 		RandomAccessBucket ret = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
 		// Do we want it to be encrypted?
 		if(reallyEncrypt) {
+            ret = new PaddedRandomAccessBucket(ret);
 		    ret = new EncryptedRandomAccessBucket(CRYPT_TYPE, ret, secret);
-		    ret = new PaddedRandomAccessBucket(ret);
 		}
 		return ret;
 	}

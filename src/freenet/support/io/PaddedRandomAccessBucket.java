@@ -294,5 +294,9 @@ public class PaddedRandomAccessBucket implements RandomAccessBucket, Serializabl
         LockableRandomAccessThing u = underlying.toRandomAccessThing();
         return new PaddedRandomAccessThing(u, size);
     }
+
+    public RandomAccessBucket getUnderlying() {
+        return underlying;
+    }
     
 }

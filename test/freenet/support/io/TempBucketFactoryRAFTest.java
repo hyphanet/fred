@@ -15,6 +15,7 @@ import freenet.crypt.EncryptedRandomAccessBucket;
 import freenet.crypt.MasterSecret;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.TempBucketFactory.TempBucket;
 import freenet.support.io.TempBucketFactory.TempLockableRandomAccessThing;
 
@@ -320,9 +321,12 @@ public abstract class TempBucketFactoryRAFTest extends RandomAccessThingTestBase
         if(!this.enableCrypto())
             return ((TempFileBucket)(((TempBucket) bucket).getUnderlying())).getFile();
         else {
-            EncryptedRandomAccessBucket erab = 
-                (EncryptedRandomAccessBucket) (((TempBucket)bucket).getUnderlying());
-            return ((TempFileBucket)erab.getUnderlying()).getFile();
+            EncryptedRandomAccessBucket erab = (EncryptedRandomAccessBucket) bucket.getUnderlying();
+            RandomAccessBucket b = erab.getUnderlying();
+            if(b instanceof PaddedRandomAccessBucket) {
+                b = ((PaddedRandomAccessBucket)b).getUnderlying();
+            }
+            return ((TempFileBucket) b).getFile();
         }
     }
 
@@ -349,10 +353,16 @@ public abstract class TempBucketFactoryRAFTest extends RandomAccessThingTestBase
         assertFalse(bucket.isRAMBucket());
         File f = getFile(bucket);
         assertTrue(f.exists());
-        assertEquals(len, f.length() - (enableCrypto() ? TempBucketFactory.CRYPT_TYPE.headerLen : 0));
+        if(enableCrypto())
+            assertEquals(f.length(), 8192);
+        else
+            assertEquals(f.length(), 4095);
         TempLockableRandomAccessThing raf = (TempLockableRandomAccessThing) bucket.toRandomAccessThing();
         assertTrue(f.exists());
-        assertEquals(len, f.length() - (enableCrypto() ? TempBucketFactory.CRYPT_TYPE.headerLen : 0));
+        if(enableCrypto())
+            assertEquals(f.length(), 8192);
+        else
+            assertEquals(f.length(), 4095);
         assertEquals(len, raf.size());
         checkArrayInner(buf, raf, len, r);
         assertEquals(factory.getRamUsed(), 0);
