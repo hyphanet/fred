@@ -33,7 +33,7 @@ public class TrivialPaddedRandomAccessThing implements LockableRandomAccessThing
     public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException {
         if(fileOffset + length > realSize)
             throw new IOException("Length limit exceeded");
-        raf.pread(fileOffset, buf, bufOffset, length);
+        raf.pwrite(fileOffset, buf, bufOffset, length);
     }
 
     @Override
