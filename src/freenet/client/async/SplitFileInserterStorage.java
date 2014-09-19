@@ -618,7 +618,7 @@ public class SplitFileInserterStorage {
         } else {
             // Check that it's the same, but use the passed-in one.
             if(!originalData.equals(rafOrig))
-                throw new StorageFormatException("Original data restored from different filename!");
+                throw new StorageFormatException("Original data restored from different filename! Expected "+originalData+" but restored "+rafOrig);
             this.originalData = originalData;
         }
         this.totalDataBlocks = dis.readInt();
