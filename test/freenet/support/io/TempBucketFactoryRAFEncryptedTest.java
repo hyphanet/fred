@@ -1,6 +1,6 @@
 package freenet.support.io;
 
-public class TempBucketFactoryRAFTestEncrypted extends TempBucketFactoryRAFTest {
+public class TempBucketFactoryRAFEncryptedTest extends TempBucketFactoryRAFBase {
 
     @Override
     public boolean enableCrypto() {

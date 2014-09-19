@@ -19,9 +19,9 @@ import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.TempBucketFactory.TempBucket;
 import freenet.support.io.TempBucketFactory.TempLockableRandomAccessThing;
 
-public abstract class TempBucketFactoryRAFTest extends RandomAccessThingTestBase {
+public abstract class TempBucketFactoryRAFBase extends RandomAccessThingTestBase {
     
-    public TempBucketFactoryRAFTest() {
+    public TempBucketFactoryRAFBase() {
         super(TEST_LIST);
     }
     
