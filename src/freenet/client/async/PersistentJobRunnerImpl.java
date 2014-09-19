@@ -315,6 +315,7 @@ public abstract class PersistentJobRunnerImpl implements PersistentJobRunner {
     public void waitForIdleAndCheckpoint() {
         synchronized(sync) {
             while(runningJobs > 0 || writing) {
+                System.out.println("Waiting to shutdown: "+runningJobs+" running"+(writing ? " (writing)" : ""));
                 try {
                     sync.wait();
                 } catch (InterruptedException e) {
