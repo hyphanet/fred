@@ -16,6 +16,7 @@ import freenet.crypt.MasterSecret;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessThing;
 import freenet.support.io.TempBucketFactory.TempBucket;
 import freenet.support.io.TempBucketFactory.TempLockableRandomAccessThing;
 

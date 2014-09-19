@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.client.async.ClientContext;
+import freenet.support.api.RandomAccessThing;
 
 /** A RandomAccessThing which allows you to lock it open for a brief period to indicate that you are
  * using it and it would be a bad idea to close the pooled fd. Locking the RAF open does not provide

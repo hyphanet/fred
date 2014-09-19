@@ -3,6 +3,8 @@ package freenet.support.io;
 import java.io.IOException;
 import java.util.Random;
 
+import freenet.support.api.RandomAccessThing;
+
 import junit.framework.TestCase;
 
 /** Base class for testing RandomAccessThing's. */

@@ -50,11 +50,11 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.HTTPUploadedFile;
+import freenet.support.api.RandomAccessThing;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
 
 public class DarknetPeerNode extends PeerNode {
 

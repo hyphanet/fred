@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import freenet.support.api.RandomAccessThing;
+
 public class RandomAccessFileWrapperTest extends RandomAccessThingTestBase {
     
     private static final int[] TEST_LIST = new int[] { 0, 1, 32, 64, 32768, 1024*1024, 1024*1024+1 };

@@ -6,8 +6,8 @@ import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import freenet.support.api.RandomAccessThing;
 import freenet.support.io.ByteArrayRandomAccessThing;
-import freenet.support.io.RandomAccessThing;
 import freenet.support.io.RandomAccessThingTestBase;
 
 public class EncryptedRandomAccessThingAltTest extends RandomAccessThingTestBase {

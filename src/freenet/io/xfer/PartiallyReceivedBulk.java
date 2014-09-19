@@ -12,7 +12,7 @@ import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.io.RandomAccessThing;
+import freenet.support.api.RandomAccessThing;
 
 /**
  * Equivalent of PartiallyReceivedBlock, for large(ish) file transfers.

@@ -24,13 +24,13 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.MediaType;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
+import freenet.support.api.RandomAccessThing;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
-import freenet.support.io.RandomAccessThing;
 
 /**
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
