@@ -588,6 +588,8 @@ public class BucketTools {
             return new ReadOnlyFileSliceBucket(dis);
         case TrivialPaddedBucket.MAGIC:
             return new TrivialPaddedBucket(dis, fg, persistentFileTracker, masterKey);
+        case TrivialPaddedRandomAccessBucket.MAGIC:
+            return new TrivialPaddedRandomAccessBucket(dis, fg, persistentFileTracker, masterKey);
         case RAFBucket.MAGIC:
             return new RAFBucket(dis, fg, persistentFileTracker, masterKey);
         case EncryptedRandomAccessBucket.MAGIC:
