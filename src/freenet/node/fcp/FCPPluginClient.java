@@ -547,26 +547,7 @@ public final class FCPPluginClient {
         final FredPluginFCPMessageHandler messageHandler;
         
         if(!messageHandlerExistsLocally) {
-            // The message handler is attached by network.
-            // In theory, we could construct a mock handler object for it and just let below
-            // messageDispatcher eat it. Then we wouldn't know the reply message immediately
-            // because the messages take time to travel over the network - but the messageDispatcher
-            // needs the reply.
-            // So instead, we just queue the network message here and return.
-            
-            assert (direction == SendDirection.ToClient)
-                : "By design, this class always shall execute in the same VM as the server plugin. "
-                + "So if messageHandlerExistsLocally is false, we should be sending to the client.";
-            
-            assert (clientConnection != null)
-                : "messageHandlerExistsLocally is false, and we are sending to the client."
-                + "So the network connection to it should not be null.";
-            
-            if (clientConnection.isClosed())
-                throw new IOException("Connection to client closed for " + this);
-            
-            clientConnection.outputHandler.queue(new FCPPluginServerMessage(serverPluginName, message));
-            
+            sendNetworked(direction, message);
             return;
         }
         
@@ -736,6 +717,40 @@ public final class FCPPluginClient {
         };
         
         executor.execute(messageDispatcher, toStringShort());
+    }
+    
+    /**
+     * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages which need
+     * to be transported by network.
+     * 
+     * This shall only be called for messages for which it was determined that the message handler
+     * is not a plugin running in the local VM.
+     */
+    private void sendNetworked(final SendDirection direction, final FCPPluginMessage message)
+            throws IOException {
+        
+        // The message handler is attached by network.
+        // In theory, we could construct a mock FredPluginFCPMessagehandler object for it to
+        // pretend it was a local message. But then we wouldn't know the reply message immediately
+        // because the messages take time to travel over the network. This wouldn't work with the
+        // local message dispatching code as it needs to know the reply immediately so it can send
+        // it out. To get the reply, we would have to create a thread which would exist until the
+        // reply arrives over the network.
+        // So instead, for simplicity and reduced thread count, we just queue the message directly
+        // to the network queue here and return.
+        
+        assert (direction == SendDirection.ToClient)
+            : "By design, this class always shall execute in the same VM as the server plugin. "
+            + "So for networked messages, we should always be sending to the client.";
+        
+        assert (clientConnection != null)
+            : "Trying to send a message over the network to the client. "
+            + "So the network connection to it should not be null.";
+        
+        if (clientConnection.isClosed())
+            throw new IOException("Connection to client closed for " + this);
+        
+        clientConnection.outputHandler.queue(new FCPPluginServerMessage(serverPluginName, message));
     }
 
     /**
