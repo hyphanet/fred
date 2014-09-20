@@ -713,7 +713,9 @@ public final class FCPPluginClient {
      *         then.<br><br>
      * 
      *         False if there was no thread waiting for the message. You <b>must<b/> dispatch it
-     *         to the {@link FredPluginFCPMessageHandler} then.
+     *         to the {@link FredPluginFCPMessageHandler} then.<br><br>
+     * 
+     *         (Both these rules are specified in the documentation of sendSynchronous().)
      * @see FCPPluginClient#synchronousSends
      *          An overview of how synchronous sends and especially their threading work internally
      *          is provided at the map which stores them.
@@ -758,7 +760,14 @@ public final class FCPPluginClient {
             synchronousSendsLock.writeLock().lock();
             try {
                 SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
-                if(synchronousSend != null) {
+                if(synchronousSend == null) {
+                    // The waiting sendSynchronous() has probably returned already because its
+                    // timeout expired.
+                    // So by returning false, we ask the caller to deliver the message to the
+                    // regular message handling interface to make sure that it is not lost.
+                    return false;
+                }
+                
                     assert(synchronousSend.reply == null)
                     : "One identifier should not be used for multiple messages or replies";
 
@@ -766,21 +775,10 @@ public final class FCPPluginClient {
                     // Wake up the waiting synchronousSend() thread
                     synchronousSend.completionSignal.signal();
 
-                    // The message was delivered to the synchronousSend() successfully.
-                    // We now return instead of also passing it to the regular message handler
-                    // because we don't want to deliver it twice, and thats also the contract
-                    // of synchronousSend()
-                    return;
-                }
+                    return true;
             } finally {
                 synchronousSendsLock.writeLock().unlock();
             }
-
-        // The waiting sendSynchronous() has probably returned already because its timeout
-        // expired.
-        // We just continue this function and deliver the message to the regular message
-        // handling interface to make sure that it is not lost. This is also documented
-        // at sendSynchronous()
     }
 
     /**
