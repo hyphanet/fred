@@ -737,54 +737,54 @@ public final class FCPPluginClient {
             return false;
         }
 
-            // Since the JavaDoc of sendSynchronous() tells people to use it not very often due to
-            // the impact upon thread count, we assume that the percentage of messages which pass
-            // through here for which there is an actual sendSynchronous() thread waiting is small.
-            // Thus, a ReadWriteLock is used, and we here only take the ReadLock, which can be taken
-            // by *multiple* threads at once. We then read the map to check whether there is a
-            //  waiter, and if there is, take the write lock to hand the message to it.
-            // (The implementation of ReentrantReadWritelock does not allow upgrading a readLock()
-            // to a writeLock(), so we must release it in between and re-check afterwards.)
-            
-            boolean maybeGotWaiter = false;
-            
-            synchronousSendsLock.readLock().lock();
+        // Since the JavaDoc of sendSynchronous() tells people to use it not very often due to
+        // the impact upon thread count, we assume that the percentage of messages which pass
+        // through here for which there is an actual sendSynchronous() thread waiting is small.
+        // Thus, a ReadWriteLock is used, and we here only take the ReadLock, which can be taken
+        // by *multiple* threads at once. We then read the map to check whether there is a
+        //  waiter, and if there is, take the write lock to hand the message to it.
+        // (The implementation of ReentrantReadWritelock does not allow upgrading a readLock()
+        // to a writeLock(), so we must release it in between and re-check afterwards.)
+
+        boolean maybeGotWaiter = false;
+
+        synchronousSendsLock.readLock().lock();
+        try {
+            if(synchronousSends.containsKey(message.identifier)) {
+                maybeGotWaiter = true;
+            }
+        } finally {
+            synchronousSendsLock.readLock().unlock();
+        }
+
+        if(maybeGotWaiter) {
+            synchronousSendsLock.writeLock().lock();
             try {
-                if(synchronousSends.containsKey(message.identifier)) {
-                    maybeGotWaiter = true;
+                SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
+                if(synchronousSend != null) {
+                    assert(synchronousSend.reply == null)
+                    : "One identifier should not be used for multiple messages or replies";
+
+                    synchronousSend.reply = message;
+                    // Wake up the waiting synchronousSend() thread
+                    synchronousSend.completionSignal.signal();
+
+                    // The message was delivered to the synchronousSend() successfully.
+                    // We now return instead of also passing it to the regular message handler
+                    // because we don't want to deliver it twice, and thats also the contract
+                    // of synchronousSend()
+                    return;
                 }
             } finally {
-                synchronousSendsLock.readLock().unlock();
+                synchronousSendsLock.writeLock().unlock();
             }
-            
-            if(maybeGotWaiter) {
-                synchronousSendsLock.writeLock().lock();
-                try {
-                    SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
-                    if(synchronousSend != null) {
-                        assert(synchronousSend.reply == null)
-                            : "One identifier should not be used for multiple messages or replies";
-                        
-                        synchronousSend.reply = message;
-                        // Wake up the waiting synchronousSend() thread
-                        synchronousSend.completionSignal.signal();
-                        
-                        // The message was delivered to the synchronousSend() successfully.
-                        // We now return instead of also passing it to the regular message handler
-                        // because we don't want to deliver it twice, and thats also the contract
-                        // of synchronousSend()
-                        return;
-                    }
-                } finally {
-                    synchronousSendsLock.writeLock().unlock();
-                }
-            }
-            
-            // The waiting sendSynchronous() has probably returned already because its timeout
-            // expired.
-            // We just continue this function and deliver the message to the regular message
-            // handling interface to make sure that it is not lost. This is also documented
-            // at sendSynchronous()
+        }
+
+        // The waiting sendSynchronous() has probably returned already because its timeout
+        // expired.
+        // We just continue this function and deliver the message to the regular message
+        // handling interface to make sure that it is not lost. This is also documented
+        // at sendSynchronous()
     }
 
     /**
