@@ -17,6 +17,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.FCPPluginClient;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
@@ -159,7 +160,7 @@ public class PluginRespirator {
      * would be garbage collected and thus considered as disconnected.
      * 
      * @see FredPluginFCPMessageHandler.ServerSideFCPMessageHandler#handlePluginFCPMessage(
-     *      FCPPluginClient, FredPluginFCPMessageHandler.FCPPluginMessage)
+     *      FCPPluginClient, FCPPluginMessage)
      *          The message handler at FredPluginFCPMessageHandler.ServerSideFCPMessageHandler
      *          provides an explanation of when to use this.
      * @param clientID
