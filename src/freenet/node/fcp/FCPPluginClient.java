@@ -746,18 +746,15 @@ public final class FCPPluginClient {
         // (The implementation of ReentrantReadWritelock does not allow upgrading a readLock()
         // to a writeLock(), so we must release it in between and re-check afterwards.)
 
-        boolean maybeGotWaiter = false;
-
         synchronousSendsLock.readLock().lock();
         try {
-            if(synchronousSends.containsKey(message.identifier)) {
-                maybeGotWaiter = true;
+            if(!synchronousSends.containsKey(message.identifier)) {
+                return false;
             }
         } finally {
             synchronousSendsLock.readLock().unlock();
         }
-
-        if(maybeGotWaiter) {
+        
             synchronousSendsLock.writeLock().lock();
             try {
                 SynchronousSend synchronousSend = synchronousSends.get(message.identifier);
@@ -778,7 +775,6 @@ public final class FCPPluginClient {
             } finally {
                 synchronousSendsLock.writeLock().unlock();
             }
-        }
 
         // The waiting sendSynchronous() has probably returned already because its timeout
         // expired.
