@@ -547,7 +547,7 @@ public final class FCPPluginClient {
         final FredPluginFCPMessageHandler messageHandler;
         
         if(!messageHandlerExistsLocally) {
-            sendNetworked(direction, message);
+            dispatchMessageByNetwork(direction, message);
             return;
         }
         
@@ -726,8 +726,9 @@ public final class FCPPluginClient {
      * This shall only be called for messages for which it was determined that the message handler
      * is not a plugin running in the local VM.
      */
-    private void sendNetworked(final SendDirection direction, final FCPPluginMessage message)
-            throws IOException {
+    private void dispatchMessageByNetwork(final SendDirection direction,
+            final FCPPluginMessage message)
+                throws IOException {
         
         // The message handler is attached by network.
         // In theory, we could construct a mock FredPluginFCPMessagehandler object for it to
