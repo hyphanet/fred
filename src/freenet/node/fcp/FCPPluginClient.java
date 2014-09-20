@@ -755,6 +755,29 @@ public final class FCPPluginClient {
     }
 
     /**
+     * Backend for {@link #send(SendDirection, FCPPluginMessage)} to dispatch messages to a thread
+     * waiting in {@link #sendSynchronous(SendDirection, FCPPluginMessage, long)} for the message.
+     * 
+     * This shall only be called for messages for which it was determined that the message handler
+     * is a plugin running in the local VM.
+     * 
+     * @return True if there was a thread waiting for the message and the message was dispatched
+     *         to it. You <b>must not</b> dispatch it to the {@link FredPluginFCPMessageHandler}
+     *         then.<br><br>
+     * 
+     *         False if there was no thread waiting for the message. You <b>must<b/> dispatch it
+     *         to the {@link FredPluginFCPMessageHandler} then.
+     * @see FCPPluginClient#synchronousSends
+     *          An overview of how synchronous sends and especially their threading work internally
+     *          is provided at the map which stores them.
+     */
+    private boolean maybeDispatchMessageLocallyToSendSynchronousThread(final SendDirection direction,
+            final FCPPluginMessage message)
+                throws IOException {
+        
+    }
+
+    /**
      * Can be used by both server and client implementations to send messages in a blocking
      * manner to each other.<br>
      * The messages sent by this function will be delivered to the message handler
